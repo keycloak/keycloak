@@ -1,15 +1,5 @@
 package org.keycloak.models.utils;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import net.iharder.Base64;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ApplicationModel;
@@ -17,6 +7,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -37,11 +28,21 @@ import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 public class RepresentationToModel {
 
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
 
-    public static void importRealm(RealmRepresentation rep, RealmModel newRealm) {
+    public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
         newRealm.setName(rep.getRealm());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) newRealm.setSocial(rep.isSocial());
@@ -210,7 +211,7 @@ public class RepresentationToModel {
 
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
-                UserModel user = createUser(newRealm, userRep, appMap);
+                UserModel user = createUser(session, newRealm, userRep, appMap);
             }
         }
     }
@@ -571,8 +572,8 @@ public class RepresentationToModel {
 
     // Users
 
-    public static UserModel createUser(RealmModel newRealm, UserRepresentation userRep, Map<String, ApplicationModel> appMap) {
-        UserModel user = newRealm.addUser(userRep.getId(), userRep.getUsername(), false);
+    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ApplicationModel> appMap) {
+        UserModel user = session.users().addUser(newRealm, userRep.getId(), userRep.getUsername(), false);
         user.setEnabled(userRep.isEnabled());
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());
@@ -600,7 +601,7 @@ public class RepresentationToModel {
         if (userRep.getSocialLinks() != null) {
             for (SocialLinkRepresentation socialLink : userRep.getSocialLinks()) {
                 SocialLinkModel mappingModel = new SocialLinkModel(socialLink.getSocialProvider(), socialLink.getSocialUserId(), socialLink.getSocialUsername());
-                newRealm.addSocialLink(user, mappingModel);
+                session.users().addSocialLink(newRealm, user, mappingModel);
             }
         }
         if (userRep.getRealmRoles() != null) {

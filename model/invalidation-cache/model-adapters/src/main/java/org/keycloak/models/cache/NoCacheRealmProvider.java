@@ -1,42 +1,34 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UsernameLoginFailureModel;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class NoCacheModelProvider implements CacheModelProvider {
+public class NoCacheRealmProvider implements CacheRealmProvider {
     protected KeycloakSession session;
-    protected ModelProvider delegate;
+    protected RealmProvider delegate;
 //    protected KeycloakTransaction transactionDelegate;
 //    protected boolean transactionActive;
 //    protected boolean setRollbackOnly;
 
-    public NoCacheModelProvider(KeycloakSession session) {
+    public NoCacheRealmProvider(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
-    public ModelProvider getDelegate() {
+    public RealmProvider getDelegate() {
 //        if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
-        delegate = session.getProvider(ModelProvider.class);
+        delegate = session.getProvider(RealmProvider.class);
 //        transactionDelegate = delegate.getTransaction();
 //        if (!transactionDelegate.isActive()) {
 //            transactionDelegate.begin();
@@ -84,21 +76,6 @@ public class NoCacheModelProvider implements CacheModelProvider {
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
-        return getDelegate().getUserById(id, realm);
-    }
-
-    @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
-        return getDelegate().getUserByUsername(username, realm);
-    }
-
-    @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
-        return getDelegate().getUserByEmail(email, realm);
-    }
-
-    @Override
     public List<RealmModel> getRealms() {
         // we don't cache this for now
         return getDelegate().getRealms();
@@ -112,36 +89,6 @@ public class NoCacheModelProvider implements CacheModelProvider {
     @Override
     public void close() {
         if (delegate != null) delegate.close();
-    }
-
-    @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
-        return getDelegate().getUserBySocialLink(socialLink, realm);
-    }
-
-    @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getDelegate().getUsers(realm);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return getDelegate().searchForUser(search, realm);
-    }
-
-    @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return getDelegate().searchForUserByAttributes(attributes, realm);
-    }
-
-    @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
-        return getDelegate().getSocialLinks(user, realm);
-    }
-
-    @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        return getDelegate().getSocialLink(user, socialProvider, realm);
     }
 
     @Override

@@ -4,7 +4,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.entities.CachedClient;
 
 import java.util.HashSet;
@@ -16,12 +15,12 @@ import java.util.Set;
  */
 public abstract class ClientAdapter implements ClientModel {
     protected CachedClient cachedClient;
-    protected CacheModelProvider cacheSession;
+    protected CacheRealmProvider cacheSession;
     protected ClientModel updatedClient;
     protected RealmModel cachedRealm;
-    protected KeycloakCache cache;
+    protected RealmCache cache;
 
-    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, KeycloakCache cache, CacheModelProvider cacheSession) {
+    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, RealmCache cache, CacheRealmProvider cacheSession) {
         this.cachedRealm = cachedRealm;
         this.cache = cache;
         this.cacheSession = cacheSession;

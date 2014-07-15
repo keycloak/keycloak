@@ -31,8 +31,8 @@ public class MultipleRealmsTest extends AbstractModelTest {
 
     @Test
     public void testUsers() {
-        UserModel r1user1 = realm1.getUser("user1");
-        UserModel r2user1 = realm2.getUser("user1");
+        UserModel r1user1 = realmManager.getSession().users().getUserByUsername("user1", realm1);
+        UserModel r2user1 = realmManager.getSession().users().getUserByUsername("user1", realm2);
         Assert.assertEquals(r1user1.getUsername(), r2user1.getUsername());
         Assert.assertNotEquals(r1user1.getId(), r2user1.getId());
 
@@ -46,16 +46,16 @@ public class MultipleRealmsTest extends AbstractModelTest {
         Assert.assertTrue(realm2.validatePassword(r2user1, "pass2"));
 
         // Test searching
-        Assert.assertEquals(2, realm1.searchForUser("user").size());
+        Assert.assertEquals(2, realmManager.getSession().users().searchForUser("user", realm1).size());
 
         commit();
         realm1 = model.getRealm("id1");
         realm2 = model.getRealm("id2");
 
-        realm1.removeUser("user1");
-        realm1.removeUser("user2");
-        Assert.assertEquals(0, realm1.searchForUser("user").size());
-        Assert.assertEquals(2, realm2.searchForUser("user").size());
+        realmManager.getSession().users().removeUser(realm1, "user1");
+        realmManager.getSession().users().removeUser(realm1, "user2");
+        Assert.assertEquals(0, realmManager.getSession().users().searchForUser("user", realm1).size());
+        Assert.assertEquals(2, realmManager.getSession().users().searchForUser("user", realm2).size());
     }
 
     @Test
@@ -90,8 +90,8 @@ public class MultipleRealmsTest extends AbstractModelTest {
         ApplicationModel app1 = realm.addApplication("app1");
         realm.addApplication("app2");
 
-        realm.addUser("user1");
-        realm.addUser("user2");
+        realmManager.getSession().users().addUser(realm, "user1");
+        realmManager.getSession().users().addUser(realm, "user2");
 
         realm.addRole("role1");
         realm.addRole("role2");

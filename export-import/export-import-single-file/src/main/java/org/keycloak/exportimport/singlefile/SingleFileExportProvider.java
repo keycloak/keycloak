@@ -42,10 +42,10 @@ public class SingleFileExportProvider implements ExportProvider {
 
             @Override
             public void run(KeycloakSession session) throws IOException {
-                List<RealmModel> realms = session.model().getRealms();
+                List<RealmModel> realms = session.realms().getRealms();
                 List<RealmRepresentation> reps = new ArrayList<RealmRepresentation>();
                 for (RealmModel realm : realms) {
-                    reps.add(ExportUtils.exportRealm(realm, true));
+                    reps.add(ExportUtils.exportRealm(session, realm, true));
                 }
 
                 writeToFile(reps);
@@ -62,8 +62,8 @@ public class SingleFileExportProvider implements ExportProvider {
 
             @Override
             public void run(KeycloakSession session) throws IOException {
-                RealmModel realm = session.model().getRealmByName(realmName);
-                RealmRepresentation realmRep = ExportUtils.exportRealm(realm, true);
+                RealmModel realm = session.realms().getRealmByName(realmName);
+                RealmRepresentation realmRep = ExportUtils.exportRealm(session, realm, true);
                 writeToFile(realmRep);
             }
 

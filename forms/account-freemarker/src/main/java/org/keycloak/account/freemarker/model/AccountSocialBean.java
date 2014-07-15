@@ -8,6 +8,7 @@ import java.util.Set;
 
 import javax.ws.rs.core.UriBuilder;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
@@ -22,13 +23,15 @@ public class AccountSocialBean {
 
     private final List<SocialLinkEntry> socialLinks;
     private final boolean removeLinkPossible;
+    private final KeycloakSession session;
 
-    public AccountSocialBean(RealmModel realm, UserModel user, URI baseUri) {
+    public AccountSocialBean(KeycloakSession session, RealmModel realm, UserModel user, URI baseUri) {
+        this.session = session;
         URI accountSocialUpdateUri = Urls.accountSocialUpdate(baseUri, realm.getName());
         this.socialLinks = new LinkedList<SocialLinkEntry>();
 
         Map<String, String> socialConfig = realm.getSocialConfig();
-        Set<SocialLinkModel> userSocialLinks = realm.getSocialLinks(user);
+        Set<SocialLinkModel> userSocialLinks = session.users().getSocialLinks(user, realm);
 
         int availableLinks = 0;
         if (socialConfig != null && !socialConfig.isEmpty()) {

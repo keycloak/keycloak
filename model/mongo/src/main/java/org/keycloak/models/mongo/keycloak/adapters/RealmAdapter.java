@@ -9,24 +9,21 @@ import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidation;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.AuthenticationProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
-import org.keycloak.models.entities.SocialLinkEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 
@@ -49,7 +46,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     private static final Logger logger = Logger.getLogger(RealmAdapter.class);
 
     private final MongoRealmEntity realm;
-    private final ModelProvider model;
+    private final RealmProvider model;
 
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
@@ -61,7 +58,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         super(invocationContext);
         this.realm = realmEntity;
         this.session = session;
-        this.model = session.model();
+        this.model = session.realms();
     }
 
     @Override
@@ -439,66 +436,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public UserModel getUser(String name) {
-        return model.getUserByUsername(name, this);
-    }
-
-    @Override
-    public UserModel getUserByEmail(String email) {
-        return model.getUserByEmail(email, this);
-    }
-
-    @Override
-    public UserModel getUserById(String id) {
-        return model.getUserById(id, this);
-    }
-
-    @Override
-    public UserAdapter addUser(String username) {
-        return this.addUser(null, username, true);
-    }
-
-    @Override
-    public UserAdapter addUser(String id, String username, boolean addDefaultRoles) {
-        UserAdapter userModel = addUserEntity(id, username);
-
-        if (addDefaultRoles) {
-            for (String r : getDefaultRoles()) {
-                userModel.grantRole(getRole(r));
-            }
-
-            for (ApplicationModel application : getApplications()) {
-                for (String r : application.getDefaultRoles()) {
-                    userModel.grantRole(application.getRole(r));
-                }
-            }
-        }
-
-        return userModel;
-    }
-
-    protected UserAdapter addUserEntity(String id, String username) {
-        MongoUserEntity userEntity = new MongoUserEntity();
-        userEntity.setId(id);
-        userEntity.setUsername(username);
-        // Compatibility with JPA model, which has user disabled by default
-        // userEntity.setEnabled(true);
-        userEntity.setRealmId(getId());
-
-        getMongoStore().insertEntity(userEntity, invocationContext);
-        return new UserAdapter(session, this, userEntity, invocationContext);
-    }
-
-    @Override
-    public boolean removeUser(String name) {
-        DBObject query = new QueryBuilder()
-                .and("username").is(name)
-                .and("realmId").is(getId())
-                .get();
-        return getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);
-    }
-
-    @Override
     public RoleAdapter getRole(String name) {
         DBObject query = new QueryBuilder()
                 .and("name").is(name)
@@ -536,6 +473,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public boolean removeRoleById(String id) {
+        RoleModel role = getRoleById(id);
+        if (role == null) return false;
+        session.users().preRemove(role);
         return getMongoStore().removeEntity(MongoRoleEntity.class, id, invocationContext);
     }
 
@@ -799,60 +739,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return false;
     }
 
-
-
-
-    @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        return model.getUserBySocialLink(socialLink, this);
-    }
-
-    @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        return model.getSocialLinks(user, this);
-    }
-
-    @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
-        return model.getSocialLink(user, socialProvider, this);
-    }
-
-    @Override
-    public void addSocialLink(UserModel user, SocialLinkModel socialLink) {
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
-        socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
-        socialLinkEntity.setSocialUserId(socialLink.getSocialUserId());
-        socialLinkEntity.setSocialUsername(socialLink.getSocialUsername());
-
-        getMongoStore().pushItemToList(userEntity, "socialLinks", socialLinkEntity, true, invocationContext);
-    }
-
-    @Override
-    public boolean removeSocialLink(UserModel userModel, String socialProvider) {
-        UserModel user = getUserById(userModel.getId());
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        SocialLinkEntity socialLinkEntity = findSocialLink(userEntity, socialProvider);
-        if (socialLinkEntity == null) {
-            return false;
-        }
-        return getMongoStore().pullItemFromList(userEntity, "socialLinks", socialLinkEntity, invocationContext);
-    }
-
-    private SocialLinkEntity findSocialLink(MongoUserEntity userEntity, String socialProvider) {
-        List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
-        if (linkEntities == null) {
-            return null;
-        }
-
-        for (SocialLinkEntity socialLinkEntity : linkEntities) {
-            if (socialLinkEntity.getSocialProvider().equals(socialProvider)) {
-                return socialLinkEntity;
-            }
-        }
-        return null;
-    }
-
     protected void updateRealm() {
         super.updateMongoEntity();
     }
@@ -864,23 +750,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         return model;
     }
-
-    @Override
-    public List<UserModel> getUsers() {
-        return model.getUsers(this);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search) {
-        return model.searchForUser(search, this);
-
-    }
-
-    @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        return model.searchForUserByAttributes(attributes, this);
-    }
-
 
     @Override
     public Map<String, String> getSmtpConfig() {

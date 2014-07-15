@@ -1,8 +1,7 @@
 package org.keycloak.models.realms.jpa;
 
-import org.keycloak.models.realms.RealmProvider;
 import org.keycloak.models.realms.OAuthClient;
-import org.keycloak.models.realms.Realm;
+import org.keycloak.models.realms.RealmProvider;
 import org.keycloak.models.realms.jpa.entities.OAuthClientEntity;
 
 import javax.persistence.EntityManager;

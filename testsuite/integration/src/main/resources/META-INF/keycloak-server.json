@@ -7,16 +7,24 @@
         "provider": "${keycloak.audit.provider,keycloak.model.provider:jpa}"
     },
 
-    "model": {
-        "provider": "${keycloak.model.provider:jpa}"
+    "realm": {
+        "provider": "${keycloak.realm.provider:jpa}"
+    },
+
+    "user": {
+        "provider": "${keycloak.user.provider:jpa}"
     },
 
     "userSessions": {
         "provider" : "${keycloak.userSessions.provider:mem}"
     },
 
-    "modelCache": {
-        "provider": "${keycloak.model.cache.provider:simple}"
+    "realmCache": {
+        "provider": "${keycloak.realm.cache.provider:mem}"
+    },
+
+    "userCache": {
+        "provider": "${keycloak.user.cache.provider:mem}"
     },
 
     "timer": {

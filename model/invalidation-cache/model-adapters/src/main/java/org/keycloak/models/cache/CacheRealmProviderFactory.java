@@ -6,6 +6,6 @@ import org.keycloak.provider.ProviderFactory;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface CacheModelProviderFactory extends ProviderFactory<CacheModelProvider> {
+public interface CacheRealmProviderFactory extends ProviderFactory<CacheRealmProvider> {
 
 }

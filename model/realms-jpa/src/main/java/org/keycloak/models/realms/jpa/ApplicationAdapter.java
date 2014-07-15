@@ -2,13 +2,13 @@ package org.keycloak.models.realms.jpa;
 
 import org.keycloak.models.realms.Application;
 import org.keycloak.models.realms.Client;
-import org.keycloak.models.realms.RealmProvider;
 import org.keycloak.models.realms.Realm;
+import org.keycloak.models.realms.RealmProvider;
 import org.keycloak.models.realms.Role;
 import org.keycloak.models.realms.RoleContainer;
-import org.keycloak.models.realms.jpa.entities.ScopeMappingEntity;
 import org.keycloak.models.realms.jpa.entities.ApplicationEntity;
 import org.keycloak.models.realms.jpa.entities.RoleEntity;
+import org.keycloak.models.realms.jpa.entities.ScopeMappingEntity;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;

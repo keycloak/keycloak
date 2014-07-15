@@ -72,7 +72,7 @@ public class RequiredActionUpdateProfileTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-                UserModel user = appRealm.getUser("test-user@localhost");
+                UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
             }
         });

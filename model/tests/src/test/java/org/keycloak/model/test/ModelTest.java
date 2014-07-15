@@ -4,8 +4,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.HashMap;
 

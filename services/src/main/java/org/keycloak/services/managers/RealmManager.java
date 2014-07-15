@@ -1,15 +1,14 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
-import org.keycloak.exportimport.util.ExportImportUtils;
+import org.keycloak.Config;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -18,6 +17,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +32,7 @@ public class RealmManager {
     protected static final Logger logger = Logger.getLogger(RealmManager.class);
 
     protected KeycloakSession session;
-    protected ModelProvider model;
+    protected RealmProvider model;
     protected String contextPath = "";
 
     public String getContextPath() {
@@ -45,7 +45,7 @@ public class RealmManager {
 
     public RealmManager(KeycloakSession session) {
         this.session = session;
-        this.model = session.model();
+        this.model = session.realms();
     }
 
     public KeycloakSession getSession() {
@@ -196,7 +196,7 @@ public class RealmManager {
     }
 
     public void importRealm(RealmRepresentation rep, RealmModel newRealm) {
-        RepresentationToModel.importRealm(rep, newRealm);
+        RepresentationToModel.importRealm(session, rep, newRealm);
     }
 
     /**
@@ -214,7 +214,7 @@ public class RealmManager {
         if (searchString == null) {
             return Collections.emptyList();
         }
-        return realmModel.searchForUser(searchString.trim());
+        return session.users().searchForUser(searchString.trim(), realmModel);
     }
 
 }

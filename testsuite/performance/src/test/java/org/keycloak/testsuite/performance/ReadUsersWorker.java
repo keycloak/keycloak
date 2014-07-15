@@ -67,7 +67,7 @@ public class ReadUsersWorker implements Worker {
     @Override
     public void run(SampleResult result, KeycloakSession session) {
         // We need to obtain realm first
-        RealmModel realm = session.model().getRealm(realmId);
+        RealmModel realm = session.realms().getRealm(realmId);
         if (realm == null) {
             throw new IllegalStateException("Realm '" + realmId + "' not found");
         }
@@ -86,7 +86,7 @@ public class ReadUsersWorker implements Worker {
             String username = PerfTestUtils.getUsername(userCounterInRealm);
             lastUsername = username;
 
-            UserModel user = realm.getUser(username);
+            UserModel user = session.users().getUserByUsername(username, realm);
 
             // Read roles of user in realm
             if (readRoles) {
@@ -106,13 +106,13 @@ public class ReadUsersWorker implements Worker {
 
             // Read socialLinks of user
             if (readSocialLinks) {
-                realm.getSocialLinks(user);
+                session.users().getSocialLinks(user, realm);
             }
 
             // Try to search by social links
             if (searchBySocialLinks) {
                 SocialLinkModel socialLink = new SocialLinkModel("facebook", username, username);
-                realm.getUserBySocialLink(socialLink);
+                session.users().getUserBySocialLink(socialLink, realm);
             }
         }
 

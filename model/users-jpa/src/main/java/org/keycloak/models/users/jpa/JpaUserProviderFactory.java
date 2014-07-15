@@ -2,7 +2,6 @@ package org.keycloak.models.users.jpa;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.users.Feature;
 import org.keycloak.models.users.UserProvider;
 import org.keycloak.models.users.UserProviderFactory;
 import org.keycloak.util.JpaUtils;

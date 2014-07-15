@@ -1,10 +1,10 @@
 package org.keycloak.models.entities;
 
+import org.keycloak.models.UserModel;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

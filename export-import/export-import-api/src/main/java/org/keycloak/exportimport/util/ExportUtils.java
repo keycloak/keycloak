@@ -22,6 +22,7 @@ import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -47,7 +48,7 @@ import org.keycloak.representations.idm.UserRepresentation;
  */
 public class ExportUtils {
 
-    public static RealmRepresentation exportRealm(RealmModel realm, boolean includeUsers) {
+    public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers) {
         RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm);
 
         // Audit
@@ -147,10 +148,10 @@ public class ExportUtils {
 
         // Finally users if needed
         if (includeUsers) {
-            List<UserModel> allUsers = realm.getUsers();
+            List<UserModel> allUsers = session.users().getUsers(realm);
             List<UserRepresentation> users = new ArrayList<UserRepresentation>();
             for (UserModel user : allUsers) {
-                UserRepresentation userRep = exportUser(realm, user);
+                UserRepresentation userRep = exportUser(session, realm, user);
                 users.add(userRep);
             }
 
@@ -251,7 +252,7 @@ public class ExportUtils {
      * @param user
      * @return fully exported user representation
      */
-    public static UserRepresentation exportUser(RealmModel realm, UserModel user) {
+    public static UserRepresentation exportUser(KeycloakSession session, RealmModel realm, UserModel user) {
         UserRepresentation userRep = ModelToRepresentation.toRepresentation(user);
 
         // AuthenticationLink
@@ -262,7 +263,7 @@ public class ExportUtils {
         }
 
         // Social links
-        Set<SocialLinkModel> socialLinks = realm.getSocialLinks(user);
+        Set<SocialLinkModel> socialLinks = session.users().getSocialLinks(user, realm);
         List<SocialLinkRepresentation> socialLinkReps = new ArrayList<SocialLinkRepresentation>();
         for (SocialLinkModel socialLink : socialLinks) {
             SocialLinkRepresentation socialLinkRep = exportSocialLink(socialLink);
@@ -338,7 +339,7 @@ public class ExportUtils {
 
     // Streaming API
 
-    public static void exportUsersToStream(RealmModel realm, List<UserModel> usersToExport, ObjectMapper mapper, OutputStream os) throws IOException {
+    public static void exportUsersToStream(KeycloakSession session, RealmModel realm, List<UserModel> usersToExport, ObjectMapper mapper, OutputStream os) throws IOException {
         JsonFactory factory = mapper.getJsonFactory();
         JsonGenerator generator = factory.createJsonGenerator(os, JsonEncoding.UTF8);
         try {
@@ -352,7 +353,7 @@ public class ExportUtils {
             generator.writeStartArray();
 
             for (UserModel user : usersToExport) {
-                UserRepresentation userRep = ExportUtils.exportUser(realm, user);
+                UserRepresentation userRep = ExportUtils.exportUser(session, realm, user);
                 generator.writeObject(userRep);
             }
 

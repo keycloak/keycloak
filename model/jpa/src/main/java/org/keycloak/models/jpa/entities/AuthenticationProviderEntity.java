@@ -1,6 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
-import java.util.Map;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -11,8 +11,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
-
-import org.hibernate.annotations.GenericGenerator;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

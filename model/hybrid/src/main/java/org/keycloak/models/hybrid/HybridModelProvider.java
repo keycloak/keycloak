@@ -1,7 +1,6 @@
 package org.keycloak.models.hybrid;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelProvider;
@@ -10,13 +9,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.realms.RealmProvider;
 import org.keycloak.models.sessions.SessionProvider;
 import org.keycloak.models.users.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.util.Time;
 
 import java.util.HashSet;
 import java.util.List;

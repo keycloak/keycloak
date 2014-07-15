@@ -1,1 +1,2 @@
-org.keycloak.models.cache.CacheModelProviderSpi
+org.keycloak.models.cache.CacheRealmProviderSpi
+org.keycloak.models.cache.CacheUserProviderSpi

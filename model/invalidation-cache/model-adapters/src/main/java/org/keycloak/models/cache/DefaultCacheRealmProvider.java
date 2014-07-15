@@ -1,24 +1,19 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.cache.entities.CachedApplication;
 import org.keycloak.models.cache.entities.CachedApplicationRole;
 import org.keycloak.models.cache.entities.CachedOAuthClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRealmRole;
 import org.keycloak.models.cache.entities.CachedRole;
-import org.keycloak.models.cache.entities.CachedUser;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,10 +25,10 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class DefaultCacheModelProvider implements CacheModelProvider {
-    protected KeycloakCache cache;
+public class DefaultCacheRealmProvider implements CacheRealmProvider {
+    protected RealmCache cache;
     protected KeycloakSession session;
-    protected ModelProvider delegate;
+    protected RealmProvider delegate;
     protected boolean transactionActive;
     protected boolean setRollbackOnly;
 
@@ -50,7 +45,7 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
 
     protected boolean clearAll;
 
-    public DefaultCacheModelProvider(KeycloakCache cache, KeycloakSession session) {
+    public DefaultCacheRealmProvider(RealmCache cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
 
@@ -58,10 +53,10 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
     }
 
     @Override
-    public ModelProvider getDelegate() {
+    public RealmProvider getDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
-        delegate = session.getProvider(ModelProvider.class);
+        delegate = session.getProvider(RealmProvider.class);
         return delegate;
     }
 
@@ -103,10 +98,6 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
         for (String id : clientInvalidations) {
             cache.invalidateCachedOAuthClientById(id);
         }
-        for (String id : userInvalidations) {
-            cache.invalidateCachedUserById(id);
-        }
-
     }
 
     private KeycloakTransaction getTransaction() {
@@ -201,63 +192,6 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
-        CachedUser cached = cache.getCachedUser(id);
-        if (cached == null) {
-            UserModel model = getDelegate().getUserById(id, realm);
-            if (model == null) return null;
-            if (userInvalidations.contains(id)) return model;
-            cached = new CachedUser(realm, model);
-            cache.addCachedUser(cached);
-        } else if (userInvalidations.contains(id)) {
-            return getDelegate().getUserById(id, realm);
-        } else if (managedUsers.containsKey(id)) {
-            return managedUsers.get(id);
-        }
-        UserAdapter adapter = new UserAdapter(cached, cache, this, realm);
-        managedUsers.put(id, adapter);
-        return adapter;
-    }
-
-    @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
-        CachedUser cached = cache.getCachedUserByUsername(username, realm);
-        if (cached == null) {
-            UserModel model = getDelegate().getUserByUsername(username, realm);
-            if (model == null) return null;
-            if (userInvalidations.contains(model.getId())) return model;
-            cached = new CachedUser(realm, model);
-            cache.addCachedUser(cached);
-        } else if (userInvalidations.contains(cached.getId())) {
-            return getDelegate().getUserById(cached.getId(), realm);
-        } else if (managedUsers.containsKey(cached.getId())) {
-            return managedUsers.get(cached.getId());
-        }
-        UserAdapter adapter = new UserAdapter(cached, cache, this, realm);
-        managedUsers.put(cached.getId(), adapter);
-        return adapter;
-    }
-
-    @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
-        CachedUser cached = cache.getCachedUserByEmail(email, realm);
-        if (cached == null) {
-            UserModel model = getDelegate().getUserByEmail(email, realm);
-            if (model == null) return null;
-            if (userInvalidations.contains(model.getId())) return model;
-            cached = new CachedUser(realm, model);
-            cache.addCachedUser(cached);
-        } else if (userInvalidations.contains(cached.getId())) {
-            return getDelegate().getUserByEmail(email, realm);
-        } else if (managedUsers.containsKey(cached.getId())) {
-            return managedUsers.get(cached.getId());
-        }
-        UserAdapter adapter = new UserAdapter(cached, cache, this, realm);
-        managedUsers.put(cached.getId(), adapter);
-        return adapter;
-    }
-
-    @Override
     public List<RealmModel> getRealms() {
         // we don't cache this for now
         return getDelegate().getRealms();
@@ -289,36 +223,6 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
     @Override
     public void close() {
         if (delegate != null) delegate.close();
-    }
-
-    @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
-        return getDelegate().getUserBySocialLink(socialLink, realm);
-    }
-
-    @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getDelegate().getUsers(realm);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return getDelegate().searchForUser(search, realm);
-    }
-
-    @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return getDelegate().searchForUserByAttributes(attributes, realm);
-    }
-
-    @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
-        return getDelegate().getSocialLinks(user, realm);
-    }
-
-    @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        return getDelegate().getSocialLink(user, socialProvider, realm);
     }
 
     @Override

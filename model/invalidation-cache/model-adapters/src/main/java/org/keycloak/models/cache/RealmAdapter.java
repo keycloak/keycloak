@@ -9,15 +9,11 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.models.utils.TimeBasedOTP;
 
 import java.security.PrivateKey;
@@ -35,13 +31,13 @@ import java.util.Set;
  */
 public class RealmAdapter implements RealmModel {
     protected CachedRealm cached;
-    protected CacheModelProvider cacheSession;
+    protected CacheRealmProvider cacheSession;
     protected RealmModel updated;
-    protected KeycloakCache cache;
+    protected RealmCache cache;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
 
-    public RealmAdapter(CachedRealm cached, CacheModelProvider cacheSession) {
+    public RealmAdapter(CachedRealm cached, CacheRealmProvider cacheSession) {
         this.cached = cached;
         this.cacheSession = cacheSession;
     }
@@ -396,39 +392,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserModel getUser(String name) {
-        return cacheSession.getUserByUsername(name, this);
-    }
-
-    @Override
-    public UserModel getUserByEmail(String email) {
-        return cacheSession.getUserByEmail(email, this);
-    }
-
-    @Override
-    public UserModel getUserById(String id) {
-        return cacheSession.getUserById(id, this);
-    }
-
-    @Override
-    public UserModel addUser(String id, String username, boolean addDefaultRoles) {
-        getDelegateForUpdate();
-        return updated.addUser(id, username, addDefaultRoles);
-    }
-
-    @Override
-    public UserModel addUser(String username) {
-        getDelegateForUpdate();
-        return updated.addUser(username);
-    }
-
-    @Override
-    public boolean removeUser(String name) {
-        getDelegateForUpdate();
-        return updated.removeUser(name);
-    }
-
-    @Override
     public RoleModel getRoleById(String id) {
         if (updated != null) return updated.getRoleById(id);
         return cacheSession.getRoleById(id, this);
@@ -539,36 +502,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        if (updated != null) return updated.getUserBySocialLink(socialLink);
-        return cacheSession.getUserBySocialLink(socialLink, this);
-    }
-
-    @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        if (updated != null) return updated.getSocialLinks(user);
-        return cacheSession.getSocialLinks(user, this);
-    }
-
-    @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
-        if (updated != null) return updated.getSocialLink(user, socialProvider);
-        return cacheSession.getSocialLink(user, socialProvider, this);
-    }
-
-    @Override
-    public void addSocialLink(UserModel user, SocialLinkModel socialLink) {
-        getDelegateForUpdate();
-        updated.addSocialLink(user, socialLink);
-    }
-
-    @Override
-    public boolean removeSocialLink(UserModel user, String socialProvider) {
-        getDelegateForUpdate();
-        return updated.removeSocialLink(user, socialProvider);
-    }
-
-    @Override
     public boolean isSocial() {
         if (updated != null) return updated.isSocial();
         return cached.isSocial();
@@ -590,24 +523,6 @@ public class RealmAdapter implements RealmModel {
     public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
         getDelegateForUpdate();
         updated.setUpdateProfileOnInitialSocialLogin(updateProfileOnInitialSocialLogin);
-    }
-
-    @Override
-    public List<UserModel> getUsers() {
-        if (updated != null) return updated.getUsers();
-        return cacheSession.getUsers(this);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search) {
-        if (updated != null) return updated.searchForUser(search);
-        return cacheSession.searchForUser(search, this);
-    }
-
-    @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        if (updated != null) return updated.searchForUserByAttributes(attributes);
-        return cacheSession.searchForUserByAttributes(attributes, this);
     }
 
     @Override

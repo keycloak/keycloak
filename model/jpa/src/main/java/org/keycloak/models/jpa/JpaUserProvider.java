@@ -2,16 +2,11 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.ModelProvider;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.jpa.entities.ApplicationEntity;
-import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.SocialLinkEntity;
@@ -23,7 +18,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +33,6 @@ public class JpaUserProvider implements UserProvider {
     public JpaUserProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
         this.em = em;
-        this.em = PersistenceExceptionConverter.create(em);
     }
 
     @Override
@@ -99,12 +92,38 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public void preRemove(RealmModel realm) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm", UserEntity.class);
+    public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
+        SocialLinkEntity entity = new SocialLinkEntity();
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        query.setParameter("realm", realmEntity);
-        for (UserEntity u : query.getResultList()) {
-            em.remove(u);
+        entity.setRealm(realmEntity);
+        entity.setSocialProvider(socialLink.getSocialProvider());
+        entity.setSocialUserId(socialLink.getSocialUserId());
+        entity.setSocialUsername(socialLink.getSocialUsername());
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+        entity.setUser(userEntity);
+        em.persist(entity);
+        em.flush();
+    }
+
+    @Override
+    public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider) {
+        SocialLinkEntity entity = findSocialLink(user, socialProvider);
+        if (entity != null) {
+            em.remove(entity);
+            em.flush();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+
+    @Override
+    public void preRemove(RealmModel realm) {
+        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
+        for (UserEntity u : em.createQuery("from UserEntity u where u.realm = :realm", UserEntity.class).setParameter("realm", realmEntity).getResultList()) {
+            removeUser(realm, u.getUsername());
         }
     }
 
@@ -112,12 +131,6 @@ public class JpaUserProvider implements UserProvider {
     public void preRemove(RoleModel role) {
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
-    }
-
-
-    @Override
-    public KeycloakTransaction getTransaction() {
-        return new JpaKeycloakTransaction(em);
     }
 
     @Override
@@ -154,8 +167,6 @@ public class JpaUserProvider implements UserProvider {
 
      @Override
     public void close() {
-        if (em.getTransaction().isActive()) em.getTransaction().rollback();
-        if (em.isOpen()) em.close();
     }
 
     @Override

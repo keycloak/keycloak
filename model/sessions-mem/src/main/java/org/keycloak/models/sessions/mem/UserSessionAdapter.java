@@ -36,7 +36,7 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     public UserModel getUser() {
-        return realm.getUserById(entity.getUser());
+        return session.users().getUserById(entity.getUser(), realm);
     }
 
     public void setUser(UserModel user) {

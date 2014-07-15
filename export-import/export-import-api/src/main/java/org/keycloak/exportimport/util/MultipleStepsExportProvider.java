@@ -28,7 +28,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
             @Override
             public void run(KeycloakSession session) {
-                List<RealmModel> realms = session.model().getRealms();
+                List<RealmModel> realms = session.realms().getRealms();
                 holder.realms = realms;
             }
 
@@ -49,15 +49,15 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
             @Override
             public void run(KeycloakSession session) throws IOException {
-                RealmModel realm = session.model().getRealmByName(realmName);
-                RealmRepresentation rep = ExportUtils.exportRealm(realm, exportUsersIntoSameFile);
+                RealmModel realm = session.realms().getRealmByName(realmName);
+                RealmRepresentation rep = ExportUtils.exportRealm(session, realm, exportUsersIntoSameFile);
                 writeRealm(realmName + "-realm.json", rep);
                 logger.info("Realm '" + realmName + "' - data exported");
 
                 // Count total number of users
                 if (!exportUsersIntoSameFile) {
                     // TODO: getUsersCount method on model
-                    usersHolder.totalCount = realm.getUsers().size();
+                    usersHolder.totalCount = session.users().getUsers(realm).size();
                 }
             }
 
@@ -81,12 +81,12 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
                     @Override
                     public void run(KeycloakSession session) throws IOException {
-                        RealmModel realm = session.model().getRealmByName(realmName);
+                        RealmModel realm = session.realms().getRealmByName(realmName);
                         // TODO: pagination
-                        List<UserModel> users = realm.getUsers();
+                        List<UserModel> users = session.users().getUsers(realm);
                         usersHolder.users = users.subList(usersHolder.currentPageStart, usersHolder.currentPageEnd);
 
-                        writeUsers(realmName + "-users-" + (usersHolder.currentPageStart / countPerPage) + ".json", realm, usersHolder.users);
+                        writeUsers(realmName + "-users-" + (usersHolder.currentPageStart / countPerPage) + ".json", session, realm, usersHolder.users);
 
                         logger.info("Users " + usersHolder.currentPageStart + "-" + usersHolder.currentPageEnd + " exported");
                     }
@@ -100,7 +100,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
     protected abstract void writeRealm(String fileName, RealmRepresentation rep) throws IOException;
 
-    protected abstract void writeUsers(String fileName, RealmModel realm, List<UserModel> users) throws IOException;
+    protected abstract void writeUsers(String fileName, KeycloakSession session, RealmModel realm, List<UserModel> users) throws IOException;
 
     public static class RealmsHolder {
         List<RealmModel> realms;

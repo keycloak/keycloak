@@ -7,21 +7,21 @@ import org.keycloak.provider.Spi;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ModelSpi implements Spi {
+public class RealmSpi implements Spi {
 
     @Override
     public String getName() {
-        return "model";
+        return "realm";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return ModelProvider.class;
+        return RealmProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return ModelProviderFactory.class;
+        return RealmProviderFactory.class;
     }
 
 }

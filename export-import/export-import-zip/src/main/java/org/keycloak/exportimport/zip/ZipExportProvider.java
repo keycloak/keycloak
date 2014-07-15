@@ -12,6 +12,7 @@ import de.idyl.winzipaes.impl.AESEncrypterBC;
 import org.jboss.logging.Logger;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.exportimport.util.MultipleStepsExportProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -53,9 +54,9 @@ public class ZipExportProvider extends MultipleStepsExportProvider {
     }
 
     @Override
-    protected void writeUsers(String fileName, RealmModel realm, List<UserModel> users) throws IOException {
+    protected void writeUsers(String fileName, KeycloakSession session, RealmModel realm, List<UserModel> users) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        ExportUtils.exportUsersToStream(realm, users, JsonSerialization.mapper, stream);
+        ExportUtils.exportUsersToStream(session, realm, users, JsonSerialization.mapper, stream);
 
         byte[] byteArray = stream.toByteArray();
         ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);

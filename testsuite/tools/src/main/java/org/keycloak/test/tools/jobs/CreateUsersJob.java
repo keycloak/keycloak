@@ -28,9 +28,9 @@ public class CreateUsersJob extends UsersJob {
     }
 
     @Override
-    protected void runIteration(RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter) {
+    protected void runIteration(KeycloakSession session, RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter) {
         String username = prefix + "-" + counter;
-        UserModel user = realm.addUser(username);
+        UserModel user = session.users().addUser(realm, username);
         user.setEnabled(true);
         user.setFirstName("First");
         user.setLastName("Last");

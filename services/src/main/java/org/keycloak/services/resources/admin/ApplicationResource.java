@@ -11,6 +11,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.adapters.action.UserStats;
@@ -18,7 +19,6 @@ import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -302,7 +302,7 @@ public class ApplicationResource {
             if (users) stats.setUsers(new HashMap<String, UserStats>());
             return stats;
         }
-        SessionStats stats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), realm, application, users);
+        SessionStats stats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), session, realm, application, users);
         if (stats == null) {
             logger.info("app returned null stats");
         } else {
@@ -372,7 +372,7 @@ public class ApplicationResource {
     @POST
     public void logout(final @PathParam("username") String username) {
         auth.requireManage();
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }

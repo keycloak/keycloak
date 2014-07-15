@@ -47,7 +47,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         entity.setLastSessionRefresh(currentTime);
 
         mongoStore.insertEntity(entity, invocationContext);
-        return new UserSessionAdapter(entity, realm, invocationContext);
+        return new UserSessionAdapter(session, entity, realm, invocationContext);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         if (entity == null) {
             return null;
         } else {
-            return new UserSessionAdapter(entity, realm, invocationContext);
+            return new UserSessionAdapter(session, entity, realm, invocationContext);
         }
     }
 
@@ -65,7 +65,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         DBObject query = new BasicDBObject("user", user.getId());
         List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
         for (MongoUserSessionEntity e : mongoStore.loadEntities(MongoUserSessionEntity.class, query, invocationContext)) {
-            sessions.add(new UserSessionAdapter(e, realm, invocationContext));
+            sessions.add(new UserSessionAdapter(session, e, realm, invocationContext));
         }
         return sessions;
     }
@@ -79,7 +79,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
 
         List<UserSessionModel> result = new LinkedList<UserSessionModel>();
         for (MongoUserSessionEntity session : sessions) {
-            result.add(new UserSessionAdapter(session, realm, invocationContext));
+            result.add(new UserSessionAdapter(this.session, session, realm, invocationContext));
         }
         return result;
     }
@@ -93,7 +93,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         List<MongoUserSessionEntity> sessions = mongoStore.loadEntities(MongoUserSessionEntity.class, query, sort, invocationContext, firstResult, maxResults);
         List<UserSessionModel> result = new LinkedList<UserSessionModel>();
         for (MongoUserSessionEntity session : sessions) {
-            result.add(new UserSessionAdapter(session, realm, invocationContext));
+            result.add(new UserSessionAdapter(this.session, session, realm, invocationContext));
         }
         return result;
     }

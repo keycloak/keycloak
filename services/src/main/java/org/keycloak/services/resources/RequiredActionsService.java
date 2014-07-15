@@ -28,6 +28,8 @@ import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.EventType;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.login.LoginFormsProvider;
@@ -48,8 +50,6 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.authentication.AuthenticationProviderManager;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -226,7 +226,7 @@ public class RequiredActionsService {
 
         // Password reset through email won't have an associated session
         if (accessCode.getSessionState() == null) {
-            UserSessionModel userSession = session.sessions().createUserSession(realm, realm.getUserById(accessCode.getUser().getId()), clientConnection.getRemoteAddr());
+            UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserById(accessCode.getUser().getId(), realm), clientConnection.getRemoteAddr());
             accessCode.getToken().setSessionState(userSession.getId());
             audit.session(userSession);
         }
@@ -239,7 +239,7 @@ public class RequiredActionsService {
     @GET
     public Response emailVerification() {
         if (uriInfo.getQueryParameters().containsKey("key")) {
-            AccessCodeEntry accessCode = tokenManager.parseCode(uriInfo.getQueryParameters().getFirst("key"), realm);
+            AccessCodeEntry accessCode = tokenManager.parseCode(uriInfo.getQueryParameters().getFirst("key"), session, realm);
             if (accessCode == null || accessCode.isExpired()
                     || !accessCode.hasRequiredAction(RequiredAction.VERIFY_EMAIL)) {
                 return unauthorized();
@@ -275,7 +275,7 @@ public class RequiredActionsService {
     @GET
     public Response passwordReset() {
         if (uriInfo.getQueryParameters().containsKey("key")) {
-            AccessCodeEntry accessCode = tokenManager.parseCode(uriInfo.getQueryParameters().getFirst("key"), realm);
+            AccessCodeEntry accessCode = tokenManager.parseCode(uriInfo.getQueryParameters().getFirst("key"), session, realm);
             accessCode.setAuthMethod("form");
             if (accessCode == null || accessCode.isExpired()
                     || !accessCode.hasRequiredAction(RequiredAction.UPDATE_PASSWORD)) {
@@ -317,9 +317,9 @@ public class RequiredActionsService {
                 .detail(Details.AUTH_METHOD, "form")
                 .detail(Details.USERNAME, username);
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null && username.contains("@")) {
-            user = realm.getUserByEmail(username);
+            user = session.users().getUserByEmail(username, realm);
         }
 
         if (user == null) {
@@ -329,7 +329,7 @@ public class RequiredActionsService {
             Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
             requiredActions.add(RequiredAction.UPDATE_PASSWORD);
 
-            AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user, null);
+            AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, session, realm, client, user, null);
             accessCode.setRequiredActions(requiredActions);
             accessCode.setAuthMethod("form");
             accessCode.setUsernameUsed(username);
@@ -360,7 +360,7 @@ public class RequiredActionsService {
             return null;
         }
 
-        AccessCodeEntry accessCodeEntry = tokenManager.parseCode(code, realm);
+        AccessCodeEntry accessCodeEntry = tokenManager.parseCode(code, session, realm);
         if (accessCodeEntry == null) {
             logger.debug("getAccessCodeEntry access code entry null");
             return null;
@@ -381,7 +381,7 @@ public class RequiredActionsService {
     }
 
     private UserModel getUser(AccessCodeEntry accessCode) {
-        return realm.getUser(accessCode.getUser().getUsername());
+        return session.users().getUserByUsername(accessCode.getUser().getUsername(), realm);
     }
 
     private Response redirectOauth(UserModel user, AccessCodeEntry accessCode) {

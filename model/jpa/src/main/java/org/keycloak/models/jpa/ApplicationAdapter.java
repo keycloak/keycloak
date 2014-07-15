@@ -2,12 +2,13 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.*;
+import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -25,10 +26,12 @@ import java.util.Set;
 public class ApplicationAdapter extends ClientAdapter implements ApplicationModel {
 
     protected EntityManager em;
+    protected KeycloakSession session;
     protected ApplicationEntity applicationEntity;
 
-    public ApplicationAdapter(RealmModel realm, EntityManager em, ApplicationEntity applicationEntity) {
+    public ApplicationAdapter(RealmModel realm, EntityManager em, KeycloakSession session, ApplicationEntity applicationEntity) {
         super(realm, applicationEntity, em);
+        this.session = session;
         this.realm = realm;
         this.em = em;
         this.applicationEntity = applicationEntity;
@@ -135,6 +138,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
         }
         if (!roleModel.getContainer().equals(this)) return false;
 
+        session.users().preRemove(roleModel);
         RoleEntity role = RoleAdapter.toRoleEntity(roleModel, em);
         if (!role.isApplicationRole()) return false;
 
@@ -143,7 +147,6 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
         applicationEntity.getDefaultRoles().remove(role);
         em.createNativeQuery("delete from CompositeRole where childRole = :role").setParameter("role", role).executeUpdate();
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
-        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
         role.setApplication(null);
         em.flush();
         em.remove(role);

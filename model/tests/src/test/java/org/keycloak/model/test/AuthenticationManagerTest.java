@@ -18,7 +18,6 @@ import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus
 import org.keycloak.services.managers.BruteForceProtector;
 
 import javax.ws.rs.core.MultivaluedMap;
-
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -168,7 +167,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         protector.start();
         am = new AuthenticationManager(protector);
 
-        user = realm.addUser("test");
+        user = realmManager.getSession().users().addUser(realm, "test");
         user.setEnabled(true);
 
         UserCredentialModel credential = new UserCredentialModel();

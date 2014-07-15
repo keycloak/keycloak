@@ -1,12 +1,12 @@
 package org.keycloak.services;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.cache.CacheModelProvider;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
@@ -23,7 +23,8 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final DefaultKeycloakSessionFactory factory;
     private final Map<Integer, Provider> providers = new HashMap<Integer, Provider>();
     private final DefaultKeycloakTransactionManager transactionManager;
-    private ModelProvider model;
+    private RealmProvider model;
+    private UserProvider userModel;
     private UserSessionProvider sessionProvider;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
@@ -31,11 +32,19 @@ public class DefaultKeycloakSession implements KeycloakSession {
         this.transactionManager = new DefaultKeycloakTransactionManager();
     }
 
-    private ModelProvider getModelProvider() {
-        if (factory.getDefaultProvider(CacheModelProvider.class) != null) {
-            return getProvider(CacheModelProvider.class);
+    private RealmProvider getModelProvider() {
+        if (factory.getDefaultProvider(CacheRealmProvider.class) != null) {
+            return getProvider(CacheRealmProvider.class);
         } else {
-            return getProvider(ModelProvider.class);
+            return getProvider(RealmProvider.class);
+        }
+    }
+
+    private UserProvider getUserProvider() {
+        if (factory.getDefaultProvider(CacheUserProvider.class) != null) {
+            return getProvider(CacheUserProvider.class);
+        } else {
+            return getProvider(UserProvider.class);
         }
     }
 
@@ -84,11 +93,19 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public ModelProvider model() {
+    public RealmProvider realms() {
         if (model == null) {
             model = getModelProvider();
         }
         return model;
+    }
+
+    @Override
+    public UserProvider users() {
+        if (userModel == null) {
+            userModel = getUserProvider();
+        }
+        return userModel;
     }
 
     @Override

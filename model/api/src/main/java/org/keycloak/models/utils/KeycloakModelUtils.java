@@ -1,5 +1,15 @@
 package org.keycloak.models.utils;
 
+import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.util.PemUtils;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.security.Key;
@@ -10,16 +20,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.bouncycastle.openssl.PEMWriter;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.util.PemUtils;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -122,10 +122,10 @@ public final class KeycloakModelUtils {
      * @param username username or email of user
      * @return found user
      */
-    public static UserModel findUserByNameOrEmail(RealmModel realm, String username) {
-        UserModel user = realm.getUser(username);
+    public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null && username.contains("@")) {
-            user = realm.getUserByEmail(username);
+            user =  session.users().getUserByEmail(username, realm);
         }
         return user;
     }

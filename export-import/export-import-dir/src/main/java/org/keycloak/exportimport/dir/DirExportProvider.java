@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.exportimport.util.MultipleStepsExportProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -61,10 +62,10 @@ public class DirExportProvider extends MultipleStepsExportProvider {
     }
 
     @Override
-    protected void writeUsers(String fileName, RealmModel realm, List<UserModel> users) throws IOException {
+    protected void writeUsers(String fileName, KeycloakSession session, RealmModel realm, List<UserModel> users) throws IOException {
         File file = new File(this.rootDirectory, fileName);
         FileOutputStream os = new FileOutputStream(file);
-        ExportUtils.exportUsersToStream(realm, users, JsonSerialization.prettyMapper, os);
+        ExportUtils.exportUsersToStream(session, realm, users, JsonSerialization.prettyMapper, os);
     }
 
     @Override

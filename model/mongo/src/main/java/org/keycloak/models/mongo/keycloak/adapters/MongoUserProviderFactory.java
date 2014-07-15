@@ -4,16 +4,16 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
-import org.keycloak.models.ModelProviderFactory;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserProviderFactory;
 
 /**
  * KeycloakSessionFactory implementation based on MongoDB
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MongoModelProviderFactory implements ModelProviderFactory {
-    protected static final Logger logger = Logger.getLogger(MongoModelProviderFactory.class);
+public class MongoUserProviderFactory implements UserProviderFactory {
+    protected static final Logger logger = Logger.getLogger(MongoUserProviderFactory.class);
 
     @Override
     public String getId() {
@@ -25,9 +25,9 @@ public class MongoModelProviderFactory implements ModelProviderFactory {
     }
 
     @Override
-    public ModelProvider create(KeycloakSession session) {
+    public UserProvider create(KeycloakSession session) {
         MongoConnectionProvider connection = session.getProvider(MongoConnectionProvider.class);
-        return new MongoModelProvider(session, connection.getMongoStore(), connection.getInvocationContext());
+        return new MongoUserProvider(session, connection.getMongoStore(), connection.getInvocationContext());
     }
 
     @Override

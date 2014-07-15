@@ -1,4 +1,4 @@
-package org.keycloak.models;
+package org.keycloak.models.cache;
 
 import org.keycloak.provider.ProviderFactory;
 
@@ -6,5 +6,6 @@ import org.keycloak.provider.ProviderFactory;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ModelProviderFactory extends ProviderFactory<ModelProvider> {
+public interface CacheUserProviderFactory extends ProviderFactory<CacheUserProvider> {
+
 }

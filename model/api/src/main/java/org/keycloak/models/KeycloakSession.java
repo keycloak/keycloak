@@ -2,8 +2,6 @@ package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -29,7 +27,7 @@ public interface KeycloakSession {
      * @return
      * @throws IllegalStateException if transaction is not active
      */
-    ModelProvider model();
+    RealmProvider realms();
 
     /**
      * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
@@ -42,4 +40,5 @@ public interface KeycloakSession {
 
     void close();
 
+    UserProvider users();
 }

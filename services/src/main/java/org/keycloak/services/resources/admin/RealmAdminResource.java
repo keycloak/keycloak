@@ -13,12 +13,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
@@ -261,7 +261,7 @@ public class RealmAdminResource {
         Map<String, SessionStats> stats = new HashMap<String, SessionStats>();
         for (ApplicationModel applicationModel : realm.getApplications()) {
             if (applicationModel.getManagementUrl() == null) continue;
-            SessionStats appStats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), realm, applicationModel, false);
+            SessionStats appStats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), this.session, realm, applicationModel, false);
             stats.put(applicationModel.getName(), appStats);
         }
         return stats;

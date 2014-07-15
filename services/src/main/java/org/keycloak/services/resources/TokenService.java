@@ -21,7 +21,6 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
@@ -232,7 +231,7 @@ public class TokenService {
         }
         audit.detail(Details.USERNAME, username);
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user != null) audit.user(user);
 
         ClientModel client = authorizeClient(authorizationHeader, form, audit);
@@ -418,7 +417,7 @@ public class TokenService {
             authManager.expireRememberMeCookie(realm, uriInfo);
         }
 
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
         if (user != null) {
             audit.user(user);
         }
@@ -534,12 +533,12 @@ public class TokenService {
         AuthenticationProviderManager authenticationProviderManager = AuthenticationProviderManager.getManager(realm, session);
 
         // Validate that user with this username doesn't exist in realm or any authentication provider
-        if (realm.getUser(username) != null || authenticationProviderManager.getUser(username) != null) {
+        if (session.users().getUserByUsername(username, realm) != null || authenticationProviderManager.getUser(username) != null) {
             audit.error(Errors.USERNAME_IN_USE);
             return Flows.forms(session, realm, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
         }
 
-        UserModel user = realm.addUser(username);
+        UserModel user = session.users().addUser(realm, username);
         user.setEnabled(true);
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));
@@ -624,7 +623,7 @@ public class TokenService {
 
 
 
-        AccessCodeEntry accessCode = tokenManager.parseCode(code, realm);
+        AccessCodeEntry accessCode = tokenManager.parseCode(code, session, realm);
         if (accessCode == null) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
@@ -665,7 +664,7 @@ public class TokenService {
                     .build();
         }
 
-        UserModel user = realm.getUserById(accessCode.getUser().getId());
+        UserModel user = session.users().getUserById(accessCode.getUser().getId(), realm);
         if (user == null) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
@@ -969,7 +968,7 @@ public class TokenService {
 
         String code = formData.getFirst(OAuth2Constants.CODE);
 
-        AccessCodeEntry accessCodeEntry = tokenManager.parseCode(code, realm);
+        AccessCodeEntry accessCodeEntry = tokenManager.parseCode(code, session, realm);
         if (accessCodeEntry == null) {
             audit.error(Errors.INVALID_CODE);
             return oauth.forwardToSecurityFailure("Unknown access code.");

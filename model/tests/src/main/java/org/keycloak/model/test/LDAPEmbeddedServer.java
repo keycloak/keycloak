@@ -1,11 +1,8 @@
 package org.keycloak.model.test;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Properties;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
+import org.picketbox.test.ldap.AbstractLDAPTest;
 
 import javax.naming.CompositeName;
 import javax.naming.Context;
@@ -16,10 +13,12 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
-
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
-import org.picketbox.test.ldap.AbstractLDAPTest;
+import java.io.File;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Forked from Picketlink project

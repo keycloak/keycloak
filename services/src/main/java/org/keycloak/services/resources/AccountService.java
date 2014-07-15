@@ -46,6 +46,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -53,7 +54,6 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
@@ -516,12 +516,12 @@ public class AccountService {
                     return account.setError(Messages.SOCIAL_REDIRECT_ERROR).createResponse(AccountPages.SOCIAL);
                 }
             case REMOVE:
-                SocialLinkModel link = realm.getSocialLink(user, providerId);
+                SocialLinkModel link = session.users().getSocialLink(user, providerId, realm);
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (realm.getSocialLinks(user).size() > 1 || user.getAuthenticationLink() != null) {
-                        realm.removeSocialLink(user, providerId);
+                    if (session.users().getSocialLinks(user, realm).size() > 1 || user.getAuthenticationLink() != null) {
+                        session.users().removeSocialLink(realm, user, providerId);
 
                         logger.debug("Social provider " + providerId + " removed successfully from user " + user.getUsername());
 

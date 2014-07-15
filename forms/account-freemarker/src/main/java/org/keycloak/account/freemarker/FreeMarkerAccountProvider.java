@@ -124,7 +124,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                 attributes.put("totp", new TotpBean(user, baseUri));
                 break;
             case SOCIAL:
-                attributes.put("social", new AccountSocialBean(realm, user, uriInfo.getBaseUri()));
+                attributes.put("social", new AccountSocialBean(session, realm, user, uriInfo.getBaseUri()));
                 break;
             case LOG:
                 attributes.put("log", new LogBean(events));

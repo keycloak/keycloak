@@ -1,7 +1,6 @@
 package org.keycloak.models;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

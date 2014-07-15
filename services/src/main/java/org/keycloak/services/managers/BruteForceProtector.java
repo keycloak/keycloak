@@ -128,7 +128,7 @@ public class BruteForceProtector implements Runnable {
     }
 
     protected RealmModel getRealmModel(KeycloakSession session, LoginEvent event) {
-        RealmModel realm = session.model().getRealm(event.realmId);
+        RealmModel realm = session.realms().getRealm(event.realmId);
         if (realm == null) return null;
         return realm;
     }

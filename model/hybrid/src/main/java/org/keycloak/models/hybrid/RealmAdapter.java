@@ -1,11 +1,5 @@
 package org.keycloak.models.hybrid;
 
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.realms.Application;
-import org.keycloak.models.realms.Client;
-import org.keycloak.models.realms.OAuthClient;
-import org.keycloak.models.realms.Realm;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
@@ -15,9 +9,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.realms.Application;
+import org.keycloak.models.realms.Client;
+import org.keycloak.models.realms.OAuthClient;
+import org.keycloak.models.realms.Realm;
 import org.keycloak.models.users.Credentials;
 import org.keycloak.models.users.Feature;
 import org.keycloak.models.users.User;

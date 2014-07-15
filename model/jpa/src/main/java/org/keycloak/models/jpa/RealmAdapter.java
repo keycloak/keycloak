@@ -10,11 +10,9 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.AuthenticationProviderEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
@@ -22,9 +20,6 @@ import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
-import org.keycloak.models.jpa.entities.SocialLinkEntity;
-import org.keycloak.models.jpa.entities.UserEntity;
-import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 
@@ -412,75 +407,6 @@ public class RealmAdapter implements RealmModel {
 
 
     @Override
-    public UserModel getUser(String name) {
-        return session.model().getUserByUsername(name, this);
-    }
-
-    @Override
-    public UserModel getUserByEmail(String email) {
-        return session.model().getUserByEmail(email, this);
-    }
-
-    @Override
-    public UserModel getUserById(String id) {
-        return session.model().getUserById(id, this);
-    }
-
-    @Override
-    public UserModel addUser(String username) {
-        return this.addUser(KeycloakModelUtils.generateId(), username, true);
-    }
-
-    @Override
-    public UserModel addUser(String id, String username, boolean addDefaultRoles) {
-        if (id == null) {
-            id = KeycloakModelUtils.generateId();
-        }
-
-        UserEntity entity = new UserEntity();
-        entity.setId(id);
-        entity.setUsername(username);
-        entity.setRealm(realm);
-        em.persist(entity);
-        em.flush();
-        UserModel userModel = new UserAdapter(this, em, entity);
-
-        if (addDefaultRoles) {
-            for (String r : getDefaultRoles()) {
-                userModel.grantRole(getRole(r));
-            }
-
-            for (ApplicationModel application : getApplications()) {
-                for (String r : application.getDefaultRoles()) {
-                    userModel.grantRole(application.getRole(r));
-                }
-            }
-        }
-
-        return userModel;
-    }
-
-    @Override
-    public boolean removeUser(String name) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
-        query.setParameter("username", name);
-        query.setParameter("realm", realm);
-        List<UserEntity> results = query.getResultList();
-        if (results.size() == 0) return false;
-        removeUser(results.get(0));
-        return true;
-    }
-
-    private void removeUser(UserEntity user) {
-        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        if (user.getAuthenticationLink() != null) {
-            em.remove(user.getAuthenticationLink());
-        }
-        em.remove(user);
-    }
-
-    @Override
     public List<String> getDefaultRoles() {
         Collection<RoleEntity> entities = realm.getDefaultRoles();
         List<String> roles = new ArrayList<String>();
@@ -567,7 +493,7 @@ public class RealmAdapter implements RealmModel {
         List<ApplicationModel> list = new ArrayList<ApplicationModel>();
         if (realm.getApplications() == null) return list;
         for (ApplicationEntity entity : realm.getApplications()) {
-            list.add(new ApplicationAdapter(this, em, entity));
+            list.add(new ApplicationAdapter(this, em, session, entity));
         }
         return list;
     }
@@ -587,7 +513,7 @@ public class RealmAdapter implements RealmModel {
         realm.getApplications().add(applicationData);
         em.persist(applicationData);
         em.flush();
-        ApplicationModel resource = new ApplicationAdapter(this, em, applicationData);
+        ApplicationModel resource = new ApplicationAdapter(this, em, session, applicationData);
         em.flush();
         return resource;
     }
@@ -628,64 +554,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        return session.model().getApplicationById(id, this);
+        return session.realms().getApplicationById(id, this);
     }
 
     @Override
     public ApplicationModel getApplicationByName(String name) {
         return getApplicationNameMap().get(name);
     }
-
-    @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        return session.model().getUserBySocialLink(socialLink, this);
-    }
-
-    @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        return session.model().getSocialLinks(user, this);
-    }
-
-    @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
-        return session.model().getSocialLink(user, socialProvider, this);
-    }
-
-    @Override
-    public void addSocialLink(UserModel user, SocialLinkModel socialLink) {
-        SocialLinkEntity entity = new SocialLinkEntity();
-        entity.setRealm(realm);
-        entity.setSocialProvider(socialLink.getSocialProvider());
-        entity.setSocialUserId(socialLink.getSocialUserId());
-        entity.setSocialUsername(socialLink.getSocialUsername());
-        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
-        entity.setUser(userEntity);
-        em.persist(entity);
-        em.flush();
-    }
-
-    private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
-        TypedQuery<SocialLinkEntity> query = em.createNamedQuery("findSocialLinkByUserAndProvider", SocialLinkEntity.class);
-        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
-        query.setParameter("user", userEntity);
-        query.setParameter("socialProvider", socialProvider);
-        List<SocialLinkEntity> results = query.getResultList();
-        return results.size() > 0 ? results.get(0) : null;
-    }
-
-
-    @Override
-    public boolean removeSocialLink(UserModel user, String socialProvider) {
-        SocialLinkEntity entity = findSocialLink(user, socialProvider);
-        if (entity != null) {
-            em.remove(entity);
-            em.flush();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
 
     @Override
     public boolean isSocial() {
@@ -707,21 +582,6 @@ public class RealmAdapter implements RealmModel {
     public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
         realm.setUpdateProfileOnInitialSocialLogin(updateProfileOnInitialSocialLogin);
         em.flush();
-    }
-
-    @Override
-    public List<UserModel> getUsers() {
-        return session.model().getUsers(this);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search) {
-        return session.model().searchForUser(search, this);
-    }
-
-    @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        return session.model().searchForUserByAttributes(attributes, this);
     }
 
     @Override
@@ -764,7 +624,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
-        return session.model().getOAuthClientById(id, this);
+        return session.realms().getOAuthClientById(id, this);
     }
 
 
@@ -899,13 +759,12 @@ public class RealmAdapter implements RealmModel {
             return false;
         }
         if (!role.getContainer().equals(this)) return false;
-
+        session.users().preRemove(role);
         RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
         realm.getRoles().remove(role);
         realm.getDefaultRoles().remove(role);
 
         em.createNativeQuery("delete from CompositeRole where childRole = :role").setParameter("role", roleEntity).executeUpdate();
-        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
 
         em.remove(roleEntity);
@@ -926,7 +785,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRoleById(String id) {
-        return session.model().getRoleById(id, this);
+        return session.realms().getRoleById(id, this);
     }
 
     @Override
@@ -1060,7 +919,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getMasterAdminApp() {
-        return new ApplicationAdapter(this, em, realm.getMasterAdminApp());
+        return new ApplicationAdapter(this, em, session, realm.getMasterAdminApp());
     }
 
     @Override

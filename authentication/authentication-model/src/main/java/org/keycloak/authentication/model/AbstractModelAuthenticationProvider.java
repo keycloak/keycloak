@@ -3,6 +3,7 @@ package org.keycloak.authentication.model;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -22,17 +23,23 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
 
     private static final Logger logger = Logger.getLogger(AbstractModelAuthenticationProvider.class);
 
+    protected KeycloakSession keycloakSession;
+
+    protected AbstractModelAuthenticationProvider(KeycloakSession keycloakSession) {
+        this.keycloakSession = keycloakSession;
+    }
+
     @Override
     public AuthUser getUser(RealmModel currentRealm, Map<String, String> config, String username) throws AuthenticationProviderException {
         RealmModel realm = getRealm(currentRealm, config);
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(keycloakSession, realm, username);
         return user == null ? null : createAuthenticatedUserInstance(user);
     }
 
     @Override
     public String registerUser(RealmModel currentRealm, Map<String, String> config, UserModel user) throws AuthenticationProviderException {
         RealmModel realm = getRealm(currentRealm, config);
-        UserModel newUser = realm.addUser(user.getUsername());
+        UserModel newUser = keycloakSession.users().addUser(realm, user.getUsername());
         newUser.setFirstName(user.getFirstName());
         newUser.setLastName(user.getLastName());
         newUser.setEmail(user.getEmail());
@@ -43,7 +50,7 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
     @Override
     public AuthProviderStatus validatePassword(RealmModel currentRealm, Map<String, String> config, String username, String password) throws AuthenticationProviderException {
         RealmModel realm = getRealm(currentRealm, config);
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(keycloakSession, realm, username);
 
         boolean result = realm.validatePassword(user, password);
         return result ? AuthProviderStatus.SUCCESS : AuthProviderStatus.INVALID_CREDENTIALS;
@@ -59,7 +66,7 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
             throw new AuthenticationProviderException(error);
         }
 
-        UserModel user = realm.getUser(username);
+        UserModel user = keycloakSession.users().getUserByUsername(username, realm);
         if (user == null) {
             logger.warnf("User '%s' doesn't exists. Skip password update", username);
             return false;

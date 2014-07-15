@@ -1,9 +1,9 @@
 package org.keycloak.models.realms.jpa;
 
 import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.realms.RealmProvider;
 import org.keycloak.models.realms.RealmProviderFactory;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JpaUtils;
 
 import javax.persistence.EntityManagerFactory;

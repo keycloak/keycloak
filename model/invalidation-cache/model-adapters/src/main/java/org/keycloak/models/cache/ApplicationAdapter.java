@@ -19,7 +19,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     protected ApplicationModel updated;
     protected CachedApplication cached;
 
-    public ApplicationAdapter(RealmModel cachedRealm, CachedApplication cached, CacheModelProvider cacheSession, KeycloakCache cache) {
+    public ApplicationAdapter(RealmModel cachedRealm, CachedApplication cached, CacheRealmProvider cacheSession, RealmCache cache) {
         super(cachedRealm, cached, cache, cacheSession);
         this.cached = cached;
     }

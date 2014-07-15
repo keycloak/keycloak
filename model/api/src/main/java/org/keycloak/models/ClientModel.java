@@ -1,6 +1,5 @@
 package org.keycloak.models;
 
-import java.util.List;
 import java.util.Set;
 
 /**

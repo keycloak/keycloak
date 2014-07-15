@@ -1,10 +1,10 @@
 package org.keycloak.models.hybrid;
 
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.realms.Application;
 import org.keycloak.models.realms.Realm;
 import org.keycloak.models.realms.Role;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashSet;

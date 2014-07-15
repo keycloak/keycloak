@@ -1,25 +1,18 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.entities.SocialLinkEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,13 +25,13 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MongoModelProvider implements ModelProvider {
+public class MongoUserProvider implements UserProvider {
 
     private final MongoStoreInvocationContext invocationContext;
     private final KeycloakSession session;
     private final MongoStore mongoStore;
 
-    public MongoModelProvider(KeycloakSession session, MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
+    public MongoUserProvider(KeycloakSession session, MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
         this.session = session;
         this.mongoStore = mongoStore;
         this.invocationContext = invocationContext;
@@ -47,51 +40,6 @@ public class MongoModelProvider implements ModelProvider {
     @Override
     public void close() {
         // TODO
-    }
-
-    @Override
-    public RealmModel createRealm(String name) {
-        return createRealm(KeycloakModelUtils.generateId(), name);
-    }
-
-    @Override
-    public RealmModel createRealm(String id, String name) {
-        MongoRealmEntity newRealm = new MongoRealmEntity();
-        newRealm.setId(id);
-        newRealm.setName(name);
-
-        getMongoStore().insertEntity(newRealm, invocationContext);
-
-        return new RealmAdapter(session, newRealm, invocationContext);
-    }
-
-    @Override
-    public RealmModel getRealm(String id) {
-        MongoRealmEntity realmEntity = getMongoStore().loadEntity(MongoRealmEntity.class, id, invocationContext);
-        return realmEntity != null ? new RealmAdapter(session, realmEntity, invocationContext) : null;
-    }
-
-    @Override
-    public List<RealmModel> getRealms() {
-        DBObject query = new BasicDBObject();
-        List<MongoRealmEntity> realms = getMongoStore().loadEntities(MongoRealmEntity.class, query, invocationContext);
-
-        List<RealmModel> results = new ArrayList<RealmModel>();
-        for (MongoRealmEntity realmEntity : realms) {
-            results.add(new RealmAdapter(session, realmEntity, invocationContext));
-        }
-        return results;
-    }
-
-    @Override
-    public RealmModel getRealmByName(String name) {
-        DBObject query = new QueryBuilder()
-                .and("name").is(name)
-                .get();
-        MongoRealmEntity realm = getMongoStore().loadSingleEntity(MongoRealmEntity.class, query, invocationContext);
-
-        if (realm == null) return null;
-        return new RealmAdapter(session, realm, invocationContext);
     }
 
     @Override
@@ -134,11 +82,6 @@ public class MongoModelProvider implements ModelProvider {
         } else {
             return new UserAdapter(session, realm, user, invocationContext);
         }
-    }
-
-    @Override
-    public boolean removeRealm(String id) {
-        return getMongoStore().removeEntity(MongoRealmEntity.class, id, invocationContext);
     }
 
     protected MongoStore getMongoStore() {
@@ -278,34 +221,94 @@ public class MongoModelProvider implements ModelProvider {
     }
 
     @Override
-    public RoleModel getRoleById(String id, RealmModel realm) {
-        MongoRoleEntity role = getMongoStore().loadEntity(MongoRoleEntity.class, id, invocationContext);
-        if (role == null) return null;
-        if (role.getRealmId() != null && !role.getRealmId().equals(realm.getId())) return null;
-        if (role.getApplicationId() != null && realm.getApplicationById(role.getApplicationId()) == null) return null;
-        return new RoleAdapter(session, realm, role, null, invocationContext);
+    public UserAdapter addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
+        UserAdapter userModel = addUserEntity(realm, id, username);
+
+        if (addDefaultRoles) {
+            for (String r : realm.getDefaultRoles()) {
+                userModel.grantRole(realm.getRole(r));
+            }
+
+            for (ApplicationModel application : realm.getApplications()) {
+                for (String r : application.getDefaultRoles()) {
+                    userModel.grantRole(application.getRole(r));
+                }
+            }
+        }
+
+        return userModel;
+    }
+
+    protected UserAdapter addUserEntity(RealmModel realm, String id, String username) {
+        MongoUserEntity userEntity = new MongoUserEntity();
+        userEntity.setId(id);
+        userEntity.setUsername(username);
+        // Compatibility with JPA model, which has user disabled by default
+        // userEntity.setEnabled(true);
+        userEntity.setRealmId(realm.getId());
+
+        getMongoStore().insertEntity(userEntity, invocationContext);
+        return new UserAdapter(session, realm, userEntity, invocationContext);
     }
 
     @Override
-    public ApplicationModel getApplicationById(String id, RealmModel realm) {
-        MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, id, invocationContext);
+    public boolean removeUser(RealmModel realm, String name) {
+        DBObject query = new QueryBuilder()
+                .and("username").is(name)
+                .and("realmId").is(realm.getId())
+                .get();
+        return getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);
+    }
 
-        // Check if application belongs to this realm
-        if (appData == null || !realm.getId().equals(appData.getRealmId())) {
+
+    @Override
+    public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
+        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
+        SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
+        socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
+        socialLinkEntity.setSocialUserId(socialLink.getSocialUserId());
+        socialLinkEntity.setSocialUsername(socialLink.getSocialUsername());
+
+        getMongoStore().pushItemToList(userEntity, "socialLinks", socialLinkEntity, true, invocationContext);
+    }
+
+    @Override
+    public boolean removeSocialLink(RealmModel realm, UserModel userModel, String socialProvider) {
+        UserModel user = getUserById(userModel.getId(), realm);
+        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
+        SocialLinkEntity socialLinkEntity = findSocialLink(userEntity, socialProvider);
+        if (socialLinkEntity == null) {
+            return false;
+        }
+        return getMongoStore().pullItemFromList(userEntity, "socialLinks", socialLinkEntity, invocationContext);
+    }
+
+    private SocialLinkEntity findSocialLink(MongoUserEntity userEntity, String socialProvider) {
+        List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
+        if (linkEntities == null) {
             return null;
         }
 
-        return new ApplicationAdapter(session, realm, appData, invocationContext);
+        for (SocialLinkEntity socialLinkEntity : linkEntities) {
+            if (socialLinkEntity.getSocialProvider().equals(socialProvider)) {
+                return socialLinkEntity;
+            }
+        }
+        return null;
     }
 
     @Override
-    public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
-        MongoOAuthClientEntity clientEntity = getMongoStore().loadEntity(MongoOAuthClientEntity.class, id, invocationContext);
-
-        // Check if client belongs to this realm
-        if (clientEntity == null || !realm.getId().equals(clientEntity.getRealmId())) return null;
-
-        return new OAuthClientAdapter(session, realm, clientEntity, invocationContext);
+    public UserModel addUser(RealmModel realm, String username) {
+        return this.addUser(realm, null, username, true);
     }
 
+    @Override
+    public void preRemove(RealmModel realm) {
+        // todo not sure what to do for this
+    }
+
+    @Override
+    public void preRemove(RoleModel role) {
+        // todo not sure what to do for this
+    }
 }

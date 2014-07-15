@@ -11,8 +11,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.services.managers.ApplicationManager;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.Consumes;

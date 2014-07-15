@@ -1,9 +1,9 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClaimRepresentation;
-import org.keycloak.models.utils.ModelToRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;

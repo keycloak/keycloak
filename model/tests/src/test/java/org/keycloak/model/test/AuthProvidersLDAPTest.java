@@ -1,10 +1,5 @@
 package org.keycloak.model.test;
 
-import java.util.Arrays;
-import java.util.Collections;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -12,6 +7,9 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.authentication.AuthProviderConstants;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.RealmModel;
@@ -19,9 +17,10 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.authentication.AuthProviderConstants;
-import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.authentication.AuthenticationProviderManager;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -80,14 +79,14 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(session, null, realm, formData));
-        Assert.assertNull(realm.getUser("johnkeycloak"));
+        Assert.assertNull(session.users().getUserByUsername("johnkeycloak", realm));
 
         // Add ldap authenticationProvider
         setupAuthenticationProviders();
 
         // Authenticate john and verify that now he exists in realm
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(session, null, realm, formData));
-        UserModel john = realm.getUser("johnkeycloak");
+        UserModel john = session.users().getUserByUsername("johnkeycloak", realm);
         Assert.assertNotNull(john);
         Assert.assertEquals("johnkeycloak", john.getUsername());
         Assert.assertEquals("John", john.getFirstName());
@@ -103,9 +102,8 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
     @Test
     public void testLdapInvalidAuthentication() {
         setupAuthenticationProviders();
-
         // Add some user and password to realm
-        UserModel realmUser = realm.addUser("realmUser");
+        UserModel realmUser = session.users().addUser(realm, "realmUser");
         realmUser.setEnabled(true);
         UserCredentialModel credential = new UserCredentialModel();
         credential.setType(CredentialRepresentation.PASSWORD);
@@ -149,7 +147,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         // Change credential and validate that user can authenticate
         AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, session);
 
-        UserModel john = realm.getUser("johnkeycloak");
+        UserModel john = session.users().getUserByUsername("johnkeycloak", realm);
         try {
             Assert.assertTrue(authProviderManager.updatePassword(john, "password-updated"));
         } catch (AuthenticationProviderException ape) {

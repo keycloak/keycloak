@@ -224,7 +224,7 @@ public class AdminConsole {
     }
 
     private void addMasterRealmAccess(RealmModel masterRealm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        List<RealmModel> realms = session.model().getRealms();
+        List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
             ApplicationModel realmAdminApp = realm.getMasterAdminApp();
             Set<RoleModel> roles = realmAdminApp.getRoles();

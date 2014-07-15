@@ -24,15 +24,15 @@ public class DeleteUsersJob extends UsersJob {
         RealmModel realm = new RealmManager(session).getRealmByName(realmName);
 
         // TODO: pagination
-        List<UserModel> users = (prefix==null) ? realm.getUsers() : realm.searchForUser(prefix);
+        List<UserModel> users = (prefix==null) ? session.users().getUsers(realm) : session.users().searchForUser(prefix, realm);
         users = users.subList(start, start + count);
 
         this.users = users.iterator();
     }
 
     @Override
-    protected void runIteration(RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter) {
+    protected void runIteration(KeycloakSession session, RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter) {
         String username = users.next().getUsername();
-        realm.removeUser(username);
+        session.users().removeUser(realm, username);
     }
 }

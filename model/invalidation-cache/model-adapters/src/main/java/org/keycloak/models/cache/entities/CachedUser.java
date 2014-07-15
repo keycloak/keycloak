@@ -20,11 +20,9 @@ import java.util.Set;
 public class CachedUser {
     private String id;
     private String username;
-    private String usernameKey;
     private String firstName;
     private String lastName;
     private String email;
-    private String emailKey;
     private boolean emailVerified;
     private List<UserCredentialValueModel> credentials = new LinkedList<UserCredentialValueModel>();
     private boolean enabled;
@@ -38,14 +36,10 @@ public class CachedUser {
     public CachedUser(RealmModel realm, UserModel user) {
         this.id = user.getId();
         this.username = user.getUsername();
-        this.usernameKey = realm.getId() + "." + this.username;
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.attributes.putAll(user.getAttributes());
         this.email = user.getEmail();
-        if (this.email != null) {
-            this.emailKey = realm.getId() + "." + this.email;
-        }
         this.emailVerified = user.isEmailVerified();
         this.credentials.addAll(user.getCredentialsDirectly());
         this.enabled = user.isEnabled();
@@ -63,14 +57,6 @@ public class CachedUser {
 
     public String getUsername() {
         return username;
-    }
-
-    public String getUsernameKey() {
-        return usernameKey;
-    }
-
-    public String getEmailKey() {
-        return emailKey;
     }
 
     public String getFirstName() {

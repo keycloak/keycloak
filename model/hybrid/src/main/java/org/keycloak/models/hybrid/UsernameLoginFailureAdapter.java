@@ -3,9 +3,6 @@ package org.keycloak.models.hybrid;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.sessions.LoginFailure;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */

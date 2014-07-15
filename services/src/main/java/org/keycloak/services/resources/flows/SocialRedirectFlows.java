@@ -3,18 +3,15 @@ package org.keycloak.services.resources.flows;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SocialResource;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.social.AuthRequest;
-import org.keycloak.social.UriBuilder;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

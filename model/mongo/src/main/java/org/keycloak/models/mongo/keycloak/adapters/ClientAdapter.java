@@ -1,13 +1,13 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.entities.ClientEntity;
-import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
-import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 
@@ -24,14 +24,14 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     protected final T clientEntity;
     private final RealmModel realm;
     protected  KeycloakSession session;
-    private final ModelProvider model;
+    private final RealmProvider model;
 
     public ClientAdapter(KeycloakSession session, RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.clientEntity = clientEntity;
         this.realm = realm;
         this.session = session;
-        this.model = session.model();
+        this.model = session.realms();
     }
 
     @Override

@@ -1,7 +1,6 @@
 package org.keycloak.models.picketlink;
 
 import org.bouncycastle.openssl.PEMWriter;
-import org.keycloak.util.PemUtils;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.IdGenerator;
 import org.keycloak.models.KeycloakSession;
@@ -22,6 +21,7 @@ import org.keycloak.models.picketlink.relationships.RequiredApplicationCredentia
 import org.keycloak.models.picketlink.relationships.RequiredCredentialRelationship;
 import org.keycloak.models.picketlink.relationships.ScopeRelationship;
 import org.keycloak.models.picketlink.relationships.SocialLinkRelationship;
+import org.keycloak.util.PemUtils;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
@@ -46,7 +46,14 @@ import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Meant to be a per-request object

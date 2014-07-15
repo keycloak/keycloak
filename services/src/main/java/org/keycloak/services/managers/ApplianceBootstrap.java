@@ -40,7 +40,7 @@ public class ApplianceBootstrap {
 
     public void bootstrap(KeycloakSession session, String contextPath) {
         String adminRealmName = Config.getAdminRealm();
-        if (session.model().getRealm(adminRealmName) != null) {
+        if (session.realms().getRealm(adminRealmName) != null) {
             return;
         }
 
@@ -64,7 +64,7 @@ public class ApplianceBootstrap {
 
         realm.setAuditListeners(Collections.singleton("jboss-logging"));
 
-        UserModel adminUser = realm.addUser("admin");
+        UserModel adminUser = session.users().addUser(realm, "admin");
         adminUser.setEnabled(true);
         UserCredentialModel password = new UserCredentialModel();
         password.setType(UserCredentialModel.PASSWORD);
