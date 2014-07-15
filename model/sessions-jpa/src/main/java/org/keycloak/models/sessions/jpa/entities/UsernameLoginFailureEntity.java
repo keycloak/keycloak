@@ -1,5 +1,6 @@
 package org.keycloak.models.sessions.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
@@ -21,9 +22,11 @@ import java.io.Serializable;
 public class UsernameLoginFailureEntity {
 
     @Id
+    @Column(length = 200)
     protected String username;
 
     @Id
+    @Column(length = 36)
     protected String realmId;
 
     protected int failedLoginNotBefore;
