@@ -44,6 +44,7 @@ import java.util.Set;
 })
 public class UserEntity {
     @Id
+    @Column(length = 36)
     protected String id;
 
     protected String username;

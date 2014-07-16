@@ -2,6 +2,7 @@ package org.keycloak.models.jpa.entities;
 
 import org.hibernate.annotations.GenericGenerator;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -23,6 +24,7 @@ import javax.persistence.NamedQuery;
 @Entity
 public class ScopeMappingEntity {
     @Id
+    @Column(length = 36)
     @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
     @GeneratedValue(generator = "keycloak_generator")
     protected String id;

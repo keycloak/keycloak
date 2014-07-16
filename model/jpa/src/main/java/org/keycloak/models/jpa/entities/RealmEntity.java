@@ -33,6 +33,7 @@ import java.util.Set;
 })
 public class RealmEntity {
     @Id
+    @Column(length = 36)
     protected String id;
 
     @Column(unique = true)

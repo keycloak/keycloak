@@ -1,10 +1,11 @@
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.GenericGenerator;
-
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+
+import org.hibernate.annotations.GenericGenerator;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -13,6 +14,7 @@ import javax.persistence.Id;
 public class AuthenticationLinkEntity {
 
     @Id
+    @Column(length = 36)
     @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
     @GeneratedValue(generator = "keycloak_generator")
     private String id;

@@ -30,7 +30,7 @@ import java.util.Collection;
 
 public class RoleEntity {
     @Id
-    @Column(name="id")
+    @Column(name="id", length = 36)
     private String id;
 
     private String name;
@@ -51,6 +51,7 @@ public class RoleEntity {
     private ApplicationEntity application;
 
     // Hack to ensure that either name+application or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
+    @Column(length = 36)
     private String appRealmConstraint;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})

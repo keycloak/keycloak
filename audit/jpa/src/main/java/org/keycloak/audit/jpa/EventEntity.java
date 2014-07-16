@@ -11,6 +11,7 @@ import javax.persistence.Id;
 public class EventEntity {
 
     @Id
+    @Column(length = 36)
     private String id;
 
     private long time;

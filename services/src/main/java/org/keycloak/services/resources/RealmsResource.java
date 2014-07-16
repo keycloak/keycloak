@@ -103,10 +103,6 @@ public class RealmsResource {
         if (client == null) {
             throw new NotFoundException("could not find client: " + client_id);
         }
-        AuthenticationManager.AuthResult result = auth.authenticateIdentityCookie(session, realm, uriInfo, headers);
-        if (result == null) {
-            throw new UnauthorizedException("not logged in, can't get page");
-        }
 
         InputStream is = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
         if (is == null) throw new NotFoundException("Could not find login-status-iframe.html ");

@@ -1,5 +1,6 @@
 package org.keycloak.models.sessions.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -30,6 +31,7 @@ public class ClientUserSessionAssociationEntity {
     protected UserSessionEntity session;
 
     @Id
+    @Column(length = 36)
     protected String clientId;
 
     public UserSessionEntity getSession() {
