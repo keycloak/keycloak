@@ -21,10 +21,8 @@ import java.util.Map;
 public class AuthenticationProviderEntity {
 
     @Id
-    @Column(length = 36)
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
-    protected String id;
+    @GeneratedValue
+    protected long id;
 
     private String providerName;
     private boolean passwordUpdateSupported;
@@ -38,11 +36,11 @@ public class AuthenticationProviderEntity {
     })
     private Map<String, String> config;
 
-    public String getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 

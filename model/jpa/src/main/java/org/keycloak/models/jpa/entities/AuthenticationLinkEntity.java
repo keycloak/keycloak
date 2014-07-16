@@ -14,19 +14,17 @@ import org.hibernate.annotations.GenericGenerator;
 public class AuthenticationLinkEntity {
 
     @Id
-    @Column(length = 36)
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
-    private String id;
+    @GeneratedValue
+    protected long id;
 
     protected String authProvider;
     protected String authUserId;
 
-    public String getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 

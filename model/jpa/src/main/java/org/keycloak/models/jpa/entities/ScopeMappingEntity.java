@@ -24,10 +24,9 @@ import javax.persistence.NamedQuery;
 @Entity
 public class ScopeMappingEntity {
     @Id
-    @Column(length = 36)
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
-    protected String id;
+    @GeneratedValue
+    protected long id;
+
     @ManyToOne(fetch= FetchType.LAZY)
     protected ClientEntity client;
 
@@ -35,11 +34,11 @@ public class ScopeMappingEntity {
     @JoinColumn(name="roleId")
     protected RoleEntity role;
 
-    public String getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 

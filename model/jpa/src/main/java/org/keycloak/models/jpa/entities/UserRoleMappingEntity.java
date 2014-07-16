@@ -24,22 +24,22 @@ import org.hibernate.annotations.GenericGenerator;
 @Entity
 public class UserRoleMappingEntity  {
     @Id
-    @Column(length = 36)
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
-    protected String id;
+    @GeneratedValue
+    protected long id;
+
     @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name="userId")
     protected UserEntity user;
 
     @ManyToOne(fetch= FetchType.LAZY)
     @JoinColumn(name="roleId")
     protected RoleEntity role;
 
-    public String getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 

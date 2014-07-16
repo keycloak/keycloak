@@ -72,7 +72,7 @@ public class UserEntity {
     @CollectionTable
     protected Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>();
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
     @OneToOne(cascade = CascadeType.REMOVE, orphanRemoval = true)
