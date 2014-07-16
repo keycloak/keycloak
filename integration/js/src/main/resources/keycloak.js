@@ -608,7 +608,7 @@
                 var origin = loginIframe.iframeOrigin;
                 loginIframe.iframe.contentWindow.postMessage(msg, origin);
             } else {
-                promise.setError();
+                promise.setSuccess();
             }
 
             return promise.promise;
