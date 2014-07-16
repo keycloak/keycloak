@@ -35,6 +35,13 @@ public class UserCredentialModel {
         return model;
     }
 
+    public static UserCredentialModel totp(String key) {
+        UserCredentialModel model = new UserCredentialModel();
+        model.setType(TOTP);
+        model.setValue(key);
+        return model;
+    }
+
     public static UserCredentialModel generateSecret() {
         UserCredentialModel model = new UserCredentialModel();
         model.setType(SECRET);

@@ -33,6 +33,7 @@ public interface UserProvider extends Provider {
     void preRemove(RealmModel realm);
     void preRemove(RoleModel role);
 
-
+    boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input);
+    boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input);
     void close();
 }

@@ -15,6 +15,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -129,16 +130,17 @@ public class AdapterTest extends AbstractModelTest {
     @Test
     public void testCredentialValidation() throws Exception {
         test1CreateRealm();
-        UserModel user = realmManager.getSession().users().addUser(realmModel, "bburke");
+        UserProvider userProvider = realmManager.getSession().users();
+        UserModel user = userProvider.addUser(realmModel, "bburke");
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue("geheim");
         user.updateCredential(cred);
-        Assert.assertTrue(realmModel.validatePassword(user, "geheim"));
+        Assert.assertTrue(userProvider.validCredentials(realmModel, user, UserCredentialModel.password("geheim")));
         List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
         Assert.assertEquals(creds.get(0).getHashIterations(), 1);
         realmModel.setPasswordPolicy( new PasswordPolicy("hashIterations(200)"));
-        Assert.assertTrue(realmModel.validatePassword(user, "geheim"));
+        Assert.assertTrue(userProvider.validCredentials(realmModel, user, UserCredentialModel.password("geheim")));
         creds = user.getCredentialsDirectly();
         Assert.assertEquals(creds.get(0).getHashIterations(), 200);
         realmModel.setPasswordPolicy( new PasswordPolicy("hashIterations(1)"));

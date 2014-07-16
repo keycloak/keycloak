@@ -158,7 +158,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(session, null, realm, formData));
 
         // Password updated just in LDAP, so validating directly in realm should fail
-        Assert.assertFalse(realm.validatePassword(john, "password-updated"));
+        Assert.assertFalse(session.users().validCredentials(realm, john, UserCredentialModel.password("password-updated")));
 
         // Switch to not allow updating passwords in ldap
         AuthProvidersExternalModelTest.setPasswordUpdateForProvider(false, AuthProviderConstants.PROVIDER_NAME_PICKETLINK, realm);

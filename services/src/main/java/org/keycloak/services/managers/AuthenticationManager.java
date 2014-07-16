@@ -11,6 +11,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -296,7 +297,7 @@ public class AuthenticationManager {
                 }
 
                 logger.debug("validating TOTP");
-                if (!realm.validateTOTP(user, password, token)) {
+                if (!session.users().validCredentials(realm, user, UserCredentialModel.totp(token))) {
                     return AuthenticationStatus.INVALID_CREDENTIALS;
                 }
             } else {

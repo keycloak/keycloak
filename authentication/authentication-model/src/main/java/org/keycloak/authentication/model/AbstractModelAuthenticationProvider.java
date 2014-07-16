@@ -52,7 +52,7 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
         RealmModel realm = getRealm(currentRealm, config);
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(keycloakSession, realm, username);
 
-        boolean result = realm.validatePassword(user, password);
+        boolean result = keycloakSession.users().validCredentials(realm, user, UserCredentialModel.password(password));
         return result ? AuthProviderStatus.SUCCESS : AuthProviderStatus.INVALID_CREDENTIALS;
     }
 

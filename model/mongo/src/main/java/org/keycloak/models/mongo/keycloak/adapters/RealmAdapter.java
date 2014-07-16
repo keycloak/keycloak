@@ -7,7 +7,7 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.CredentialValidation;
+import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
@@ -721,22 +721,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             result.add(model);
         }
         return result;
-    }
-
-    @Override
-    public boolean validatePassword(UserModel user, String password) {
-        return CredentialValidation.validatePassword(this, user, password);
-    }
-
-    @Override
-    public boolean validateTOTP(UserModel user, String password, String token) {
-        if (!validatePassword(user, password)) return false;
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.TOTP)) {
-                return new TimeBasedOTP().validate(token, cred.getValue().getBytes());
-            }
-        }
-        return false;
     }
 
     protected void updateRealm() {
