@@ -1,10 +1,38 @@
 package org.keycloak.testsuite.exportimport;
 
+import java.io.File;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.rules.ExternalResource;
+import org.junit.rules.RuleChain;
+import org.junit.rules.TestRule;
+import org.keycloak.Config;
+import org.keycloak.exportimport.ExportImportConfig;
+import org.keycloak.exportimport.dir.DirExportProvider;
+import org.keycloak.exportimport.dir.DirExportProviderFactory;
+import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
+import org.keycloak.exportimport.zip.ZipExportProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.rule.KeycloakRule;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ExportImportTest {
-    /*
+
 
     // We want data to be persisted among server restarts
     private static ExternalResource hibernateSetupRule = new ExternalResource() {
@@ -76,50 +104,21 @@ public class ExportImportTest {
     }) {
         @Override
         protected void after() {
-            {
-                KeycloakSession session = server.getSessionFactory().create();
-                session.getTransaction().begin();
-
-                try {
-                    RealmManager manager = new RealmManager(session);
-
-                    RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
-                    RealmModel appRealm = manager.getRealm("test");
-                    boolean removed = session.users().removeUser(appRealm, "user1");
-                    removed = session.users().removeUser(appRealm, "user2");
-                    removed = session.users().removeUser(appRealm, "user3");
-                    removed = session.users().removeUser(adminstrationRealm, "admin2");
-
-                    session.getTransaction().commit();
-                } finally {
-                    session.close();
-                }
-            }
-            {
-                KeycloakSession session = server.getSessionFactory().create();
-                session.getTransaction().begin();
-
-                try {
-                    RealmManager manager = new RealmManager(session);
-
-                    RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
-                    RealmModel appRealm = manager.getRealm("test");
-                    UserModel user1 = session.users().getUserByUsername("user1", appRealm);
-                    UserModel user2= session.users().getUserByUsername("user2", appRealm);
-                    UserModel user3 = session.users().getUserByUsername("user3", appRealm);
-                    UserModel admin2 = session.users().getUserByUsername("admin2", adminstrationRealm);
-                    Assert.assertNull(user1);
-                    Assert.assertNull(user2);
-                    Assert.assertNull(user3);
-                    Assert.assertNull(admin2);
-
-                    session.getTransaction().commit();
-                } finally {
-                    session.close();
-                }
-            }
-
             super.after();
+
+            // Clear export/import properties after test
+            Properties systemProps = System.getProperties();
+            Set<String> propsToRemove = new HashSet<String>();
+
+            for (Object key : systemProps.keySet()) {
+                if (key.toString().startsWith(ExportImportConfig.PREFIX)) {
+                    propsToRemove.add(key.toString());
+                }
+            }
+
+            for (String propToRemove : propsToRemove) {
+                systemProps.remove(propToRemove);
+            }
         }
     };
 
@@ -209,18 +208,18 @@ public class ExportImportTest {
         // Delete some realm (and some data in admin realm)
         KeycloakSession session = keycloakRule.startSession();
         try {
-            ModelProvider model = session.model();
+            RealmProvider realmProvider = session.realms();
             UserProvider userProvider = session.users();
-            new RealmManager(session).removeRealm(model.getRealmByName("test"));
-            Assert.assertEquals(1, model.getRealms().size());
+            new RealmManager(session).removeRealm(realmProvider.getRealmByName("test"));
+            Assert.assertEquals(1, realmProvider.getRealms().size());
 
-            RealmModel master = model.getRealmByName(Config.getAdminRealm());
+            RealmModel master = realmProvider.getRealmByName(Config.getAdminRealm());
             session.users().removeUser(master, "admin2");
-            assertNotAuthenticated(userProvider, model, Config.getAdminRealm(), "admin2", "admin2");
-            assertNotAuthenticated(userProvider, model, "test", "test-user@localhost", "password");
-            assertNotAuthenticated(userProvider, model, "test", "user1", "password");
-            assertNotAuthenticated(userProvider, model, "test", "user2", "password");
-            assertNotAuthenticated(userProvider, model, "test", "user3", "password");
+            assertNotAuthenticated(userProvider, realmProvider, Config.getAdminRealm(), "admin2", "admin2");
+            assertNotAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");
+            assertNotAuthenticated(userProvider, realmProvider, "test", "user1", "password");
+            assertNotAuthenticated(userProvider, realmProvider, "test", "user2", "password");
+            assertNotAuthenticated(userProvider, realmProvider, "test", "user3", "password");
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -234,7 +233,7 @@ public class ExportImportTest {
         // Ensure data are imported back
         session = keycloakRule.startSession();
         try {
-            ModelProvider model = session.model();
+            RealmProvider model = session.realms();
             UserProvider userProvider = session.users();
             Assert.assertEquals(2, model.getRealms().size());
 
@@ -259,19 +258,19 @@ public class ExportImportTest {
         // Delete some realm (and some data in admin realm)
         KeycloakSession session = keycloakRule.startSession();
         try {
-            ModelProvider model = session.model();
+            RealmProvider realmProvider = session.realms();
             UserProvider userProvider = session.users();
-            new RealmManager(session).removeRealm(model.getRealmByName("test"));
-            Assert.assertEquals(1, model.getRealms().size());
+            new RealmManager(session).removeRealm(realmProvider.getRealmByName("test"));
+            Assert.assertEquals(1, realmProvider.getRealms().size());
 
-            RealmModel master = model.getRealmByName(Config.getAdminRealm());
+            RealmModel master = realmProvider.getRealmByName(Config.getAdminRealm());
             session.users().removeUser(master, "admin2");
 
-            assertNotAuthenticated(userProvider, model, Config.getAdminRealm(), "admin2", "admin2");
-            assertNotAuthenticated(userProvider, model, "test", "test-user@localhost", "password");
-            assertNotAuthenticated(userProvider, model, "test", "user1", "password");
-            assertNotAuthenticated(userProvider, model, "test", "user2", "password");
-            assertNotAuthenticated(userProvider, model, "test", "user3", "password");
+            assertNotAuthenticated(userProvider, realmProvider, Config.getAdminRealm(), "admin2", "admin2");
+            assertNotAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");
+            assertNotAuthenticated(userProvider, realmProvider, "test", "user1", "password");
+            assertNotAuthenticated(userProvider, realmProvider, "test", "user2", "password");
+            assertNotAuthenticated(userProvider, realmProvider, "test", "user3", "password");
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -285,24 +284,24 @@ public class ExportImportTest {
         // Ensure data are imported back, but just for "test" realm
         session = keycloakRule.startSession();
         try {
-            ModelProvider model = session.model();
+            RealmProvider realmProvider = session.realms();
             UserProvider userProvider = session.users();
-            Assert.assertEquals(2, model.getRealms().size());
+            Assert.assertEquals(2, realmProvider.getRealms().size());
 
-            assertNotAuthenticated(userProvider, model, Config.getAdminRealm(), "admin2", "admin2");
-            assertAuthenticated(userProvider, model, "test", "test-user@localhost", "password");
-            assertAuthenticated(userProvider, model, "test", "user1", "password");
-            assertAuthenticated(userProvider, model, "test", "user2", "password");
-            assertAuthenticated(userProvider, model, "test", "user3", "password");
+            assertNotAuthenticated(userProvider, realmProvider, Config.getAdminRealm(), "admin2", "admin2");
+            assertAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");
+            assertAuthenticated(userProvider, realmProvider, "test", "user1", "password");
+            assertAuthenticated(userProvider, realmProvider, "test", "user2", "password");
+            assertAuthenticated(userProvider, realmProvider, "test", "user3", "password");
 
-            addUser(userProvider, model.getRealmByName(Config.getAdminRealm()), "admin2", "admin2");
+            addUser(userProvider, realmProvider.getRealmByName(Config.getAdminRealm()), "admin2", "admin2");
         } finally {
             keycloakRule.stopSession(session, true);
         }
     }
 
-    private void assertAuthenticated(UserProvider userProvider, ModelProvider model, String realmName, String username, String password) {
-        RealmModel realm = model.getRealmByName(realmName);
+    private void assertAuthenticated(UserProvider userProvider, RealmProvider realmProvider, String realmName, String username, String password) {
+        RealmModel realm = realmProvider.getRealmByName(realmName);
         if (realm == null) {
             Assert.fail("realm " + realmName + " not found");
         }
@@ -312,11 +311,11 @@ public class ExportImportTest {
             Assert.fail("user " + username + " not found");
         }
 
-        Assert.assertTrue(realm.validatePassword(user, password));
+        Assert.assertTrue(userProvider.validCredentials(realm, user, UserCredentialModel.password(password)));
     }
 
-    private void assertNotAuthenticated(UserProvider userProvider, ModelProvider model, String realmName, String username, String password) {
-        RealmModel realm = model.getRealmByName(realmName);
+    private void assertNotAuthenticated(UserProvider userProvider, RealmProvider realmProvider, String realmName, String username, String password) {
+        RealmModel realm = realmProvider.getRealmByName(realmName);
         if (realm == null) {
             return;
         }
@@ -326,7 +325,7 @@ public class ExportImportTest {
             return;
         }
 
-        Assert.assertFalse(realm.validatePassword(user, password));
+        Assert.assertFalse(userProvider.validCredentials(realm, user, UserCredentialModel.password(password)));
     }
 
     private static void addUser(UserProvider userProvider, RealmModel appRealm, String username, String password) {
@@ -345,11 +344,11 @@ public class ExportImportTest {
         String relativeDirExportImportPath = "testsuite" + File.separator + "integration" + File.separator + "target" + File.separator + "export-import";
 
         if (System.getProperties().containsKey("maven.home")) {
-            dirPath = System.getProperty("user.dir").replaceFirst("testsuite.integration.*", relativeDirExportImportPath);
+            dirPath = System.getProperty("user.dir").replaceFirst("testsuite.integration.*", Matcher.quoteReplacement(relativeDirExportImportPath));
         } else {
             for (String c : System.getProperty("java.class.path").split(File.pathSeparator)) {
                 if (c.contains(File.separator + "testsuite" + File.separator + "integration")) {
-                    dirPath = c.replaceFirst("testsuite.integration.*", relativeDirExportImportPath);
+                    dirPath = c.replaceFirst("testsuite.integration.*", Matcher.quoteReplacement(relativeDirExportImportPath));
                 }
             }
         }
@@ -357,5 +356,5 @@ public class ExportImportTest {
         String absolutePath = new File(dirPath).getAbsolutePath();
         return absolutePath;
     }
-    */
+
 }
