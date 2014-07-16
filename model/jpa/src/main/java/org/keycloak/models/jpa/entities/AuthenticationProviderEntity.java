@@ -21,6 +21,7 @@ import java.util.Map;
 public class AuthenticationProviderEntity {
 
     @Id
+    @Column(length = 36)
     @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
     @GeneratedValue(generator = "keycloak_generator")
     protected String id;

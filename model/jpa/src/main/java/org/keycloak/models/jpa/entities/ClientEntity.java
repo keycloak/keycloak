@@ -24,6 +24,7 @@ import java.util.Set;
 @Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"realm", "name"})})
 public abstract class ClientEntity {
     @Id
+    @Column(length = 36)
     private String id;
     @Column(name = "name")
     private String name;
