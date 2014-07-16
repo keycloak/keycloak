@@ -134,18 +134,42 @@ module.controller('UserSocialCtrl', function($scope, realm, user, socialLinks) {
 
 module.controller('UserListCtrl', function($scope, realm, User) {
     $scope.realm = realm;
+    $scope.page = 0;
+
+    $scope.query = {
+        realm: realm.realm,
+        max : 5,
+        first : 0
+    }
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.searchQuery();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.searchQuery();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.searchQuery();
+    }
+
     $scope.searchQuery = function() {
         $scope.searchLoaded = false;
         $scope.currentSearch = $scope.search;
 
-        var params = { realm: realm.realm };
-        if ($scope.search) {
-            params.search = $scope.search;
-        }
-
-        $scope.users = User.query(params, function() {
+        $scope.users = User.query($scope.query, function() {
             $scope.searchLoaded = true;
-            $scope.lastSearch = params.search;
+            $scope.lastSearch = $scope.query.search;
         });
     };
 });

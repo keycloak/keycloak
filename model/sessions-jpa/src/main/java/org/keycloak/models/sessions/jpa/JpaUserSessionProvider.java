@@ -97,16 +97,20 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
-        return getUserSessions(realm, client, 0, Integer.MAX_VALUE);
+        return getUserSessions(realm, client, -1, -1);
     }
 
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
         List<UserSessionModel> list = new LinkedList<UserSessionModel>();
         TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionByClient", UserSessionEntity.class)
                 .setParameter("realmId", realm.getId())
-                .setParameter("clientId", client.getClientId())
-                .setFirstResult(firstResult)
-                .setMaxResults(maxResults);
+                .setParameter("clientId", client.getClientId());
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
         for (UserSessionEntity entity : query.getResultList()) {
             list.add(new UserSessionAdapter(session, em, realm, entity));
         }

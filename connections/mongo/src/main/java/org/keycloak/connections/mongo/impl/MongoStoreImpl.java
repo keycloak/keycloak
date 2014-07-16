@@ -281,14 +281,18 @@ public class MongoStoreImpl implements MongoStore {
     }
 
     @Override
-    public <T extends MongoIdentifiableEntity> List<T> loadEntities(Class<T> type, DBObject query, DBObject sort, MongoStoreInvocationContext context, int firstResult, int maxResults) {
+    public <T extends MongoIdentifiableEntity> List<T> loadEntities(Class<T> type, DBObject query, DBObject sort, int firstResult, int maxResults, MongoStoreInvocationContext context) {
         // First we should execute all pending tasks before searching DB
         context.beforeDBSearch(type);
 
         DBCollection dbCollection = getDBCollectionForType(type);
         DBCursor cursor = dbCollection.find(query);
-        cursor.skip(firstResult);
-        cursor.limit(maxResults);
+        if (firstResult != -1) {
+            cursor.skip(firstResult);
+        }
+        if (maxResults != -1) {
+            cursor.limit(maxResults);
+        }
         if (sort != null) {
             cursor.sort(sort);
         }

@@ -343,8 +343,8 @@ public class ApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
         auth.requireView();
-        firstResult = firstResult != null ? firstResult : 0;
-        maxResults = maxResults != null ? maxResults : Integer.MAX_VALUE;
+        firstResult = firstResult != null ? firstResult : -1;
+        maxResults = maxResults != null ? maxResults : -1;
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
         for (UserSessionModel userSession : session.sessions().getUserSessions(application.getRealm(), application, firstResult, maxResults)) {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);

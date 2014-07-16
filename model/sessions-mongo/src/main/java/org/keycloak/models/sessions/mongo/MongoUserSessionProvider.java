@@ -72,16 +72,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
 
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
-        DBObject query = new QueryBuilder()
-                .and("associatedClientIds").is(client.getId())
-                .get();
-        List<MongoUserSessionEntity> sessions = mongoStore.loadEntities(MongoUserSessionEntity.class, query, invocationContext);
-
-        List<UserSessionModel> result = new LinkedList<UserSessionModel>();
-        for (MongoUserSessionEntity session : sessions) {
-            result.add(new UserSessionAdapter(this.session, session, realm, invocationContext));
-        }
-        return result;
+        return getUserSessions(realm, client, -1, -1);
     }
 
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
@@ -90,7 +81,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
                 .get();
         DBObject sort = new BasicDBObject("started", 1).append("id", 1);
 
-        List<MongoUserSessionEntity> sessions = mongoStore.loadEntities(MongoUserSessionEntity.class, query, sort, invocationContext, firstResult, maxResults);
+        List<MongoUserSessionEntity> sessions = mongoStore.loadEntities(MongoUserSessionEntity.class, query, sort, firstResult, maxResults, invocationContext);
         List<UserSessionModel> result = new LinkedList<UserSessionModel>();
         for (MongoUserSessionEntity session : sessions) {
             result.add(new UserSessionAdapter(this.session, session, realm, invocationContext));
