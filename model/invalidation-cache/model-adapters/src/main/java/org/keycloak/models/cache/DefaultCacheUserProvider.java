@@ -5,6 +5,7 @@ import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.entities.CachedUser;
@@ -229,6 +230,16 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     @Override
     public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider) {
         return getDelegate().removeSocialLink(realm, user, socialProvider);
+    }
+
+    @Override
+    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
+        return getDelegate().validCredentials(realm, user, input);
+    }
+
+    @Override
+    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
+        return getDelegate().validCredentials(realm, user, input);
     }
 
     @Override

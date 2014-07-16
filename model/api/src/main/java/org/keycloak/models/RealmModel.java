@@ -106,10 +106,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void setPasswordPolicy(PasswordPolicy policy);
 
-    boolean validatePassword(UserModel user, String password);
-
-    boolean validateTOTP(UserModel user, String password, String token);
-
     RoleModel getRoleById(String id);
 
     List<String> getDefaultRoles();

@@ -5,6 +5,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -12,6 +13,7 @@ import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.SocialLinkEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -274,4 +276,13 @@ public class JpaUserProvider implements UserProvider {
         return (entity != null) ? new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUserId(), entity.getSocialUsername()) : null;
     }
 
+    @Override
+    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
+        return CredentialValidation.validCredentials(realm, user, input);
+    }
+
+    @Override
+    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
+        return CredentialValidation.validCredentials(realm, user, input);
+    }
 }

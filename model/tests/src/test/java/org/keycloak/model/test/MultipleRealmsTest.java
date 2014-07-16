@@ -9,6 +9,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -31,8 +32,9 @@ public class MultipleRealmsTest extends AbstractModelTest {
 
     @Test
     public void testUsers() {
-        UserModel r1user1 = realmManager.getSession().users().getUserByUsername("user1", realm1);
-        UserModel r2user1 = realmManager.getSession().users().getUserByUsername("user1", realm2);
+        UserProvider userProvider = realmManager.getSession().users();
+        UserModel r1user1 = userProvider.getUserByUsername("user1", realm1);
+        UserModel r2user1 = userProvider.getUserByUsername("user1", realm2);
         Assert.assertEquals(r1user1.getUsername(), r2user1.getUsername());
         Assert.assertNotEquals(r1user1.getId(), r2user1.getId());
 
@@ -40,22 +42,22 @@ public class MultipleRealmsTest extends AbstractModelTest {
         r1user1.updateCredential(UserCredentialModel.password("pass1"));
         r2user1.updateCredential(UserCredentialModel.password("pass2"));
 
-        Assert.assertTrue(realm1.validatePassword(r1user1, "pass1"));
-        Assert.assertFalse(realm1.validatePassword(r1user1, "pass2"));
-        Assert.assertFalse(realm2.validatePassword(r2user1, "pass1"));
-        Assert.assertTrue(realm2.validatePassword(r2user1, "pass2"));
+        Assert.assertTrue(userProvider.validCredentials(realm1, r1user1, UserCredentialModel.password("pass1")));
+        Assert.assertFalse(userProvider.validCredentials(realm1, r1user1, UserCredentialModel.password("pass2")));
+        Assert.assertFalse(userProvider.validCredentials(realm2, r2user1, UserCredentialModel.password("pass1")));
+        Assert.assertTrue(userProvider.validCredentials(realm2, r2user1, UserCredentialModel.password("pass2")));
 
         // Test searching
-        Assert.assertEquals(2, realmManager.getSession().users().searchForUser("user", realm1).size());
+        Assert.assertEquals(2, userProvider.searchForUser("user", realm1).size());
 
         commit();
         realm1 = model.getRealm("id1");
         realm2 = model.getRealm("id2");
 
-        realmManager.getSession().users().removeUser(realm1, "user1");
-        realmManager.getSession().users().removeUser(realm1, "user2");
-        Assert.assertEquals(0, realmManager.getSession().users().searchForUser("user", realm1).size());
-        Assert.assertEquals(2, realmManager.getSession().users().searchForUser("user", realm2).size());
+        userProvider.removeUser(realm1, "user1");
+        userProvider.removeUser(realm1, "user2");
+        Assert.assertEquals(0, userProvider.searchForUser("user", realm1).size());
+        Assert.assertEquals(2, userProvider.searchForUser("user", realm2).size());
     }
 
     @Test

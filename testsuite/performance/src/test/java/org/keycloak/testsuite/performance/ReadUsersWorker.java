@@ -6,6 +6,7 @@ import org.apache.log.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -101,7 +102,7 @@ public class ReadUsersWorker implements Worker {
 
             // Validate password (shoould be same as username)
             if (readPassword) {
-                realm.validatePassword(user, username);
+                session.users().validCredentials(realm, user, UserCredentialModel.password(username));
             }
 
             // Read socialLinks of user

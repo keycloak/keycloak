@@ -3,7 +3,7 @@ package org.keycloak.models.cache;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.CredentialValidation;
+import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -373,22 +373,6 @@ public class RealmAdapter implements RealmModel {
     public void setPasswordPolicy(PasswordPolicy policy) {
         getDelegateForUpdate();
         updated.setPasswordPolicy(policy);
-    }
-
-    @Override
-    public boolean validatePassword(UserModel user, String password) {
-        return CredentialValidation.validatePassword(this, user, password);
-    }
-
-    @Override
-    public boolean validateTOTP(UserModel user, String password, String token) {
-        if (!validatePassword(user, password)) return false;
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.TOTP)) {
-                return new TimeBasedOTP().validate(token, cred.getValue().getBytes());
-            }
-        }
-        return false;
     }
 
     @Override
