@@ -1,7 +1,10 @@
 package org.keycloak.testsuite.exportimport;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -101,50 +104,21 @@ public class ExportImportTest {
     }) {
         @Override
         protected void after() {
-            {
-                KeycloakSession session = server.getSessionFactory().create();
-                session.getTransaction().begin();
-
-                try {
-                    RealmManager manager = new RealmManager(session);
-
-                    RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
-                    RealmModel appRealm = manager.getRealm("test");
-                    boolean removed = session.users().removeUser(appRealm, "user1");
-                    removed = session.users().removeUser(appRealm, "user2");
-                    removed = session.users().removeUser(appRealm, "user3");
-                    removed = session.users().removeUser(adminstrationRealm, "admin2");
-
-                    session.getTransaction().commit();
-                } finally {
-                    session.close();
-                }
-            }
-            {
-                KeycloakSession session = server.getSessionFactory().create();
-                session.getTransaction().begin();
-
-                try {
-                    RealmManager manager = new RealmManager(session);
-
-                    RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
-                    RealmModel appRealm = manager.getRealm("test");
-                    UserModel user1 = session.users().getUserByUsername("user1", appRealm);
-                    UserModel user2= session.users().getUserByUsername("user2", appRealm);
-                    UserModel user3 = session.users().getUserByUsername("user3", appRealm);
-                    UserModel admin2 = session.users().getUserByUsername("admin2", adminstrationRealm);
-                    Assert.assertNull(user1);
-                    Assert.assertNull(user2);
-                    Assert.assertNull(user3);
-                    Assert.assertNull(admin2);
-
-                    session.getTransaction().commit();
-                } finally {
-                    session.close();
-                }
-            }
-
             super.after();
+
+            // Clear export/import properties after test
+            Properties systemProps = System.getProperties();
+            Set<String> propsToRemove = new HashSet<String>();
+
+            for (Object key : systemProps.keySet()) {
+                if (key.toString().startsWith(ExportImportConfig.PREFIX)) {
+                    propsToRemove.add(key.toString());
+                }
+            }
+
+            for (String propToRemove : propsToRemove) {
+                systemProps.remove(propToRemove);
+            }
         }
     };
 
@@ -337,7 +311,7 @@ public class ExportImportTest {
             Assert.fail("user " + username + " not found");
         }
 
-        Assert.assertTrue(realm.validatePassword(user, password));
+        Assert.assertTrue(userProvider.validCredentials(realm, user, UserCredentialModel.password(password)));
     }
 
     private void assertNotAuthenticated(UserProvider userProvider, RealmProvider realmProvider, String realmName, String username, String password) {
@@ -351,7 +325,7 @@ public class ExportImportTest {
             return;
         }
 
-        Assert.assertFalse(realm.validatePassword(user, password));
+        Assert.assertFalse(userProvider.validCredentials(realm, user, UserCredentialModel.password(password)));
     }
 
     private static void addUser(UserProvider userProvider, RealmModel appRealm, String username, String password) {
@@ -370,11 +344,11 @@ public class ExportImportTest {
         String relativeDirExportImportPath = "testsuite" + File.separator + "integration" + File.separator + "target" + File.separator + "export-import";
 
         if (System.getProperties().containsKey("maven.home")) {
-            dirPath = System.getProperty("user.dir").replaceFirst("testsuite.integration.*", relativeDirExportImportPath);
+            dirPath = System.getProperty("user.dir").replaceFirst("testsuite.integration.*", Matcher.quoteReplacement(relativeDirExportImportPath));
         } else {
             for (String c : System.getProperty("java.class.path").split(File.pathSeparator)) {
                 if (c.contains(File.separator + "testsuite" + File.separator + "integration")) {
-                    dirPath = c.replaceFirst("testsuite.integration.*", relativeDirExportImportPath);
+                    dirPath = c.replaceFirst("testsuite.integration.*", Matcher.quoteReplacement(relativeDirExportImportPath));
                 }
             }
         }

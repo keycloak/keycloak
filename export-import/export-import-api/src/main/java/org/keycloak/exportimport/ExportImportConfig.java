@@ -5,30 +5,31 @@ package org.keycloak.exportimport;
  */
 public class ExportImportConfig {
 
-    public static final String ACTION = "keycloak.migration.action";
+    public static final String PREFIX = "keycloak.migration.";
+    public static final String ACTION = PREFIX + "action";
     public static final String ACTION_EXPORT = "export";
     public static final String ACTION_IMPORT = "import";
 
-    public static final String PROVIDER = "keycloak.migration.provider";
+    public static final String PROVIDER = PREFIX + "provider";
     public static final String PROVIDER_DEFAULT = "zip";
 
     // Name of the realm to export. If null, then full export will be triggered
-    public static final String REALM_NAME = "keycloak.migration.realmName";
+    public static final String REALM_NAME = PREFIX + "realmName";
 
     // used for "dir" provider
-    public static final String DIR = "keycloak.migration.dir";
+    public static final String DIR = PREFIX + "dir";
     // used for "zip" provider
-    public static final String ZIP_FILE = "keycloak.migration.zipFile";
-    public static final String ZIP_PASSWORD = "keycloak.migration.zipPassword";
+    public static final String ZIP_FILE = PREFIX + "zipFile";
+    public static final String ZIP_PASSWORD = PREFIX + "zipPassword";
     // used for "singleFile" provider
-    public static final String FILE = "keycloak.migration.file";
+    public static final String FILE = PREFIX + "file";
 
     // Number of users per file used in "dir" and "zip" providers. -1 means adding users to same file with realm. 0 means adding to separate file with unlimited page number
-    public static final String USERS_PER_FILE = "keycloak.migration.usersPerFile";
+    public static final String USERS_PER_FILE = PREFIX + "usersPerFile";
     public static final Integer DEFAULT_USERS_PER_FILE = 5000;
 
     // Strategy used during import data
-    public static final String STRATEGY = "keycloak.migration.strategy";
+    public static final String STRATEGY = PREFIX + "strategy";
     public static final Strategy DEFAULT_STRATEGY = Strategy.OVERWRITE_EXISTING;
 
     public static String getAction() {

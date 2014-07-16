@@ -14,6 +14,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.Retry;
 import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 
@@ -21,6 +22,8 @@ import javax.servlet.Servlet;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.Socket;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -114,15 +117,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     @Override
     protected void after() {
-        server.stop();
-
-        // Add some variable delay (Some windows envs have issues as server is not stopped immediately after server.stop)
-        try {
-            int sleepInterval = Integer.parseInt(System.getProperty("testsuite.delay", "0"));
-            Thread.sleep(sleepInterval);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-        }
+        stopServer();
     }
 
     public RealmRepresentation loadJson(String path) throws IOException {
@@ -151,10 +146,32 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     public void restartServer() {
         try {
-            server.stop();
+            stopServer();
             server.start();
         } catch (Throwable t) {
             throw new RuntimeException(t);
+        }
+    }
+
+    private void stopServer() {
+        server.stop();
+
+        // Add some variable delay (Some windows envs have issues as server is not stopped immediately after server.stop)
+        try {
+            Retry.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        new Socket(server.getConfig().getHost(), server.getConfig().getPort());
+                        throw new RuntimeException();
+                    } catch (IOException expected) {
+                    }
+                }
+
+            }, 10, 500);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
         }
     }
 }
