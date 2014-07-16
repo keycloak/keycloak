@@ -1,5 +1,6 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoStore;
@@ -110,15 +111,26 @@ public class MongoUserProvider implements UserProvider {
 
     @Override
     public List<UserModel> getUsers(RealmModel realm) {
+        return getUsers(realm, -1, -1);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(realm.getId())
                 .get();
-        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, query, invocationContext);
+        DBObject sort = new BasicDBObject("username", 1);
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, query, sort, firstResult, maxResults, invocationContext);
         return convertUserEntities(realm, users);
     }
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm) {
+        return searchForUser(search, realm, -1, -1);
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
         search = search.trim();
         Pattern caseInsensitivePattern = Pattern.compile("(?i:" + search + ")");
 
@@ -153,11 +165,19 @@ public class MongoUserProvider implements UserProvider {
                 ).get()
         );
 
-        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, builder.get(), invocationContext);
-        return convertUserEntities(realm, users);    }
+        DBObject sort = new BasicDBObject("username", 1);
+
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, builder.get(), sort, firstResult, maxResults, invocationContext);
+        return convertUserEntities(realm, users);
+    }
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
+        return searchForUserByAttributes(attributes, realm, -1, -1);
+    }
+
+    @Override
+    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         QueryBuilder queryBuilder = new QueryBuilder()
                 .and("realmId").is(realm.getId());
 
@@ -174,7 +194,10 @@ public class MongoUserProvider implements UserProvider {
                 queryBuilder.and(UserModel.EMAIL).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
             }
         }
-        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, queryBuilder.get(), invocationContext);
+
+        DBObject sort = new BasicDBObject("username", 1);
+
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, queryBuilder.get(), sort, firstResult, maxResults, invocationContext);
         return convertUserEntities(realm, users);
     }
 

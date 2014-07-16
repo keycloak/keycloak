@@ -190,9 +190,20 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public List<UserModel> getUsers(RealmModel realm) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm", UserEntity.class);
+        return getUsers(realm, -1, -1);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm order by u.username", UserEntity.class);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         query.setParameter("realm", realmEntity);
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
@@ -201,10 +212,21 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search )", UserEntity.class);
+        return searchForUser(search, realm, -1, -1);
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username", UserEntity.class);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         query.setParameter("realm", realmEntity);
         query.setParameter("search", "%" + search.toLowerCase() + "%");
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
@@ -213,6 +235,11 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
+        return searchForUserByAttributes(attributes, realm, -1, -1);
+    }
+
+    @Override
+    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         StringBuilder builder = new StringBuilder("select u from UserEntity u");
         boolean first = true;
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
@@ -235,10 +262,17 @@ public class JpaUserProvider implements UserProvider {
             }
             builder.append(attribute).append(" like '%").append(entry.getValue().toLowerCase()).append("%'");
         }
+        builder.append(" order by u.username");
         String q = builder.toString();
         TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         query.setParameter("realm", realmEntity);
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));

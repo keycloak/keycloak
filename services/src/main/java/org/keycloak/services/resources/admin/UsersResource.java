@@ -317,14 +317,18 @@ public class UsersResource {
                                              @QueryParam("lastName") String last,
                                              @QueryParam("firstName") String first,
                                              @QueryParam("email") String email,
-                                             @QueryParam("username") String username) {
+                                             @QueryParam("username") String username,
+                                             @QueryParam("first") Integer firstResult,
+                                             @QueryParam("max") Integer maxResults) {
         auth.requireView();
 
-        RealmManager manager = new RealmManager(session);
+        firstResult = firstResult != null ? firstResult : -1;
+        maxResults = maxResults != null ? maxResults : -1;
+
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels;
         if (search != null) {
-            userModels = manager.searchUsers(search, realm);
+            userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
         } else if (last != null || first != null || email != null || username != null) {
             Map<String, String> attributes = new HashMap<String, String>();
             if (last != null) {
@@ -339,12 +343,12 @@ public class UsersResource {
             if (username != null) {
                 attributes.put(UserModel.LOGIN_NAME, username);
             }
-            userModels = session.users().searchForUserByAttributes(attributes, realm);
+            userModels = session.users().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
             for (UserModel user : userModels) {
                 results.add(ModelToRepresentation.toRepresentation(user));
             }
         } else {
-            userModels = session.users().getUsers(realm);
+            userModels = session.users().getUsers(realm, firstResult, maxResults);
         }
 
         for (UserModel user : userModels) {

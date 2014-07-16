@@ -25,8 +25,11 @@ public interface UserProvider extends Provider {
     UserModel getUserByEmail(String email, RealmModel realm);
     UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm);
     List<UserModel> getUsers(RealmModel realm);
+    List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults);
     List<UserModel> searchForUser(String search, RealmModel realm);
+    List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm);
+    List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults);
     Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm);
     SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm);
 
