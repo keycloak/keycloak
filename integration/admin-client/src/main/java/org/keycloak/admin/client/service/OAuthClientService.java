@@ -1,6 +1,7 @@
 package org.keycloak.admin.client.service;
 
 import org.keycloak.admin.client.Config;
+import org.keycloak.admin.client.KeycloakException;
 import org.keycloak.admin.client.URI;
 import org.keycloak.admin.client.json.JsonSerialization;
 import org.keycloak.admin.client.token.TokenManager;
@@ -37,7 +38,7 @@ public class OAuthClientService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(oAuthClientRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -46,7 +47,7 @@ public class OAuthClientService extends KeycloakService {
         try {
             http.put(uri).withBody(writeValueAsString(oAuthClientRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -65,7 +66,7 @@ public class OAuthClientService extends KeycloakService {
         try {
             http.put(uri).withBody(writeValueAsString(claimRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -75,9 +76,8 @@ public class OAuthClientService extends KeycloakService {
         try {
             return JsonSerialization.readValue(response.getEntity().getContent(), CredentialRepresentation.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
-        return null;
     }
 
     public CredentialRepresentation getSecret(String oAuthClientId){
@@ -105,7 +105,7 @@ public class OAuthClientService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(rolesToAdd)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -114,7 +114,7 @@ public class OAuthClientService extends KeycloakService {
         try {
             http.delete(uri).withBody(writeValueAsString(rolesToRemove)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -138,7 +138,7 @@ public class OAuthClientService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(rolesToAdd)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -147,7 +147,7 @@ public class OAuthClientService extends KeycloakService {
         try {
             http.delete(uri).withBody(writeValueAsString(rolesToRemove)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 

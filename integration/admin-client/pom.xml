@@ -10,24 +10,26 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>admin-client</artifactId>
+    <artifactId>keycloak-admin-client</artifactId>
     <name>Keycloak Admin REST Client</name>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <version>1.0-beta-2</version>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.13</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.0-alpha4</version>
+            <version>${keycloak.apache.httpcomponents.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

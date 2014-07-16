@@ -1,5 +1,7 @@
 package org.keycloak.admin.client.utils;
 
+import org.keycloak.admin.client.KeycloakException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Scanner;
@@ -17,11 +19,9 @@ public final class StringUtils {
                 if(is != null)
                     is.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new KeycloakException(e);
             }
         }
     }
-
-
 
 }

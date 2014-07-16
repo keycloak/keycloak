@@ -180,6 +180,11 @@
             <artifactId>httpclient</artifactId>
             <version>${keycloak.apache.httpcomponents.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!--
         <dependency>

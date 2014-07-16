@@ -1,6 +1,7 @@
 package org.keycloak.admin.client.service;
 
 import org.keycloak.admin.client.Config;
+import org.keycloak.admin.client.KeycloakException;
 import org.keycloak.admin.client.URI;
 import org.keycloak.admin.client.token.TokenManager;
 import org.codehaus.jackson.type.TypeReference;
@@ -48,7 +49,7 @@ public class UserService extends KeycloakService {
         try {
             http.put(uri).withBody(writeValueAsString(userRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -57,7 +58,7 @@ public class UserService extends KeycloakService {
         try {
             http.delete(uri).withBody(writeValueAsString(userRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -66,7 +67,7 @@ public class UserService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(userRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -92,7 +93,7 @@ public class UserService extends KeycloakService {
         try {
             http.put(uri).withBody(writeValueAsString(credentialRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -158,7 +159,7 @@ public class UserService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(roles)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -167,7 +168,7 @@ public class UserService extends KeycloakService {
         try {
             http.delete(uri).withBody(writeValueAsString(rolesToDelete)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -199,7 +200,7 @@ public class UserService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(roles)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -208,7 +209,7 @@ public class UserService extends KeycloakService {
         try {
             http.delete(uri).withBody(writeValueAsString(rolesToDelete)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 

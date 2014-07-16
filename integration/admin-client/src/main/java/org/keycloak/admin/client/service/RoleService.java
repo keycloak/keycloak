@@ -1,6 +1,7 @@
 package org.keycloak.admin.client.service;
 
 import org.keycloak.admin.client.Config;
+import org.keycloak.admin.client.KeycloakException;
 import org.keycloak.admin.client.URI;
 import org.keycloak.admin.client.token.TokenManager;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -27,7 +28,7 @@ public class RoleService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(roleRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -36,7 +37,7 @@ public class RoleService extends KeycloakService {
         try {
             http.put(uri).withBody(writeValueAsString(roleRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -56,7 +57,7 @@ public class RoleService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(rolesToAdd)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -65,7 +66,7 @@ public class RoleService extends KeycloakService {
         try {
             http.delete(uri).withBody(writeValueAsString(rolesToRemove)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -79,7 +80,7 @@ public class RoleService extends KeycloakService {
         try {
             http.put(uri).withBody(writeValueAsString(roleRepresentation)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -98,7 +99,7 @@ public class RoleService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(rolesToAdd)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -107,7 +108,7 @@ public class RoleService extends KeycloakService {
         try {
             http.delete(uri).withBody(writeValueAsString(rolesToRemove)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -121,7 +122,7 @@ public class RoleService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(rolesToAdd)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -130,7 +131,7 @@ public class RoleService extends KeycloakService {
         try {
             http.delete(uri).withBody(writeValueAsString(rolesToRemove)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -159,7 +160,7 @@ public class RoleService extends KeycloakService {
         try {
             http.post(uri).withBody(writeValueAsString(rolesToAdd)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 
@@ -168,7 +169,7 @@ public class RoleService extends KeycloakService {
         try {
             http.delete(uri).withBody(writeValueAsString(rolesToRemove)).execute();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
     }
 

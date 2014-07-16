@@ -1,6 +1,7 @@
 package org.keycloak.admin.client.token;
 
 import org.keycloak.admin.client.Config;
+import org.keycloak.admin.client.KeycloakException;
 import org.keycloak.admin.client.URI;
 import org.keycloak.admin.client.http.AuthorizationHeader;
 import org.keycloak.admin.client.http.KeycloakHttp;
@@ -63,7 +64,7 @@ public class TokenManager {
         try {
             response = JsonSerialization.readValue(entity.getContent(), AccessTokenResponse.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         defineCurrentToken(response);
@@ -90,7 +91,7 @@ public class TokenManager {
         try {
             response = JsonSerialization.readValue(entity.getContent(), AccessTokenResponse.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         defineCurrentToken(response);

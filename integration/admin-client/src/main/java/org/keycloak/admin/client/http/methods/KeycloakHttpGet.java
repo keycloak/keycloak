@@ -1,5 +1,6 @@
 package org.keycloak.admin.client.http.methods;
 
+import org.keycloak.admin.client.KeycloakException;
 import org.keycloak.admin.client.http.AuthorizationHeader;
 import org.keycloak.admin.client.json.JsonSerialization;
 import org.keycloak.admin.client.token.TokenManager;
@@ -35,7 +36,7 @@ public class KeycloakHttpGet extends KeycloakHttpMethod {
         } catch (JsonParseException e){
             responseElement = null;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         return responseElement;
@@ -51,7 +52,7 @@ public class KeycloakHttpGet extends KeycloakHttpMethod {
         } catch (JsonParseException e){
             responseElement = null;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         return responseElement;
@@ -67,7 +68,7 @@ public class KeycloakHttpGet extends KeycloakHttpMethod {
         } catch (JsonParseException e){
             responseElement = null;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         return responseElement;
@@ -80,7 +81,7 @@ public class KeycloakHttpGet extends KeycloakHttpMethod {
             InputStream content = execute().getEntity().getContent();
             responseString = StringUtils.inputStreamToString(content);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         return responseString;
@@ -95,12 +96,8 @@ public class KeycloakHttpGet extends KeycloakHttpMethod {
             handleHeaders(get);
 
             response = client.execute(get);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        } catch (HttpException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         return response;

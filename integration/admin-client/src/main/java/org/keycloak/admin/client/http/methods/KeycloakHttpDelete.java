@@ -1,5 +1,6 @@
 package org.keycloak.admin.client.http.methods;
 
+import org.keycloak.admin.client.KeycloakException;
 import org.keycloak.admin.client.http.AuthorizationHeader;
 import org.keycloak.admin.client.token.TokenManager;
 import org.apache.http.HttpEntity;
@@ -42,10 +43,8 @@ public class KeycloakHttpDelete extends KeycloakHttpMethod{
             delete.setEntity(entity);
             handleHeaders(delete);
             response = client.execute(delete);
-        } catch (HttpException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
         return response;
     }
@@ -57,12 +56,8 @@ public class KeycloakHttpDelete extends KeycloakHttpMethod{
             handleHeaders(delete);
 
             response = client.execute(delete);
-        } catch (HttpException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
         return response;
     }
@@ -76,7 +71,7 @@ public class KeycloakHttpDelete extends KeycloakHttpMethod{
             entity = stringEntity;
             hasStringBody = true;
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         return this;

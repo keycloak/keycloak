@@ -1,5 +1,6 @@
 package org.keycloak.admin.client.http.methods;
 
+import org.keycloak.admin.client.KeycloakException;
 import org.keycloak.admin.client.http.AuthorizationHeader;
 import org.keycloak.admin.client.token.TokenManager;
 import org.apache.http.HttpEntity;
@@ -40,12 +41,8 @@ public class KeycloakHttpPost extends KeycloakHttpMethod {
             handleHeaders(post);
 
             response = client.execute(post);
-        } catch (HttpException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
         return response;
     }
@@ -59,7 +56,7 @@ public class KeycloakHttpPost extends KeycloakHttpMethod {
             entity = stringEntity;
             hasStringBody = true;
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         return this;
@@ -76,7 +73,7 @@ public class KeycloakHttpPost extends KeycloakHttpMethod {
             entity = new UrlEncodedFormEntity(params, "UTF-8");
             hasStringBody = false;
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            throw new KeycloakException(e);
         }
 
         return this;
