@@ -125,13 +125,17 @@ public class JpaUserProvider implements UserProvider {
     @Override
     public void preRemove(RealmModel realm) {
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        int num = em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " mapping where mapping.user IN (select u from UserEntity u where realm=:realm)")
+        int num = em.createNamedQuery("deleteUserRoleMappingsByRealm")
                 .setParameter("realm", realmEntity).executeUpdate();
-        num = em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " socialLink where socialLink.user IN (select u from UserEntity u where realm=:realm)")
+        num = em.createNamedQuery("deleteSocialLinkByRealm")
                 .setParameter("realm", realmEntity).executeUpdate();
-        num = em.createQuery("delete from " + CredentialEntity.class.getSimpleName() + " mapping where mapping.user IN (select u from UserEntity u where realm=:realm)")
+        num = em.createNamedQuery("deleteCredentialsByRealm")
                 .setParameter("realm", realmEntity).executeUpdate();
-        num = em.createQuery("delete from UserEntity u where u.realm = :realm")
+        num = em.createNamedQuery("deleteUserAttributesByRealm")
+                .setParameter("realm", realmEntity).executeUpdate();
+        num = em.createNamedQuery("deleteAuthenticationLinksByRealm")
+                .setParameter("realm", realmEntity).executeUpdate();
+        num = em.createNamedQuery("deleteUsersByRealm")
                 .setParameter("realm", realmEntity).executeUpdate();
     }
 

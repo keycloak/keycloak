@@ -17,7 +17,9 @@ import org.hibernate.annotations.GenericGenerator;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="credentialByUserAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type")
+        @NamedQuery(name="credentialByUserAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type"),
+        @NamedQuery(name="deleteCredentialsByRealm", query="delete from CredentialEntity cred where cred.user IN (select u from UserEntity u where realm=:realm)")
+
 })
 @Entity
 public class CredentialEntity {

@@ -35,7 +35,8 @@ import java.util.Set;
         @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realm = :realm")
+        @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realm = :realm"),
+        @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realm = :realm")
 })
 @Entity
 @Table(uniqueConstraints = {
@@ -62,20 +63,17 @@ public class UserEntity {
     @JoinColumn(name = "realm")
     protected RealmEntity realm;
 
-    @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value")
-    @CollectionTable
-    protected Map<String, String> attributes = new HashMap<String, String>();
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    protected Collection<UserAttributeEntity> attributes = new ArrayList<UserAttributeEntity>();
 
-    @ElementCollection
-    @CollectionTable
-    protected Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>();
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    protected Collection<UserRequiredActionEntity> requiredActions = new ArrayList<UserRequiredActionEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
-    @OneToOne(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @ManyToOne
+    @JoinColumn(name="link_id")
     protected AuthenticationLinkEntity authenticationLink;
 
     public String getId() {
@@ -151,19 +149,19 @@ public class UserEntity {
         this.emailVerified = emailVerified;
     }
 
-    public Map<String, String> getAttributes() {
+    public Collection<UserAttributeEntity> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, String> attributes) {
+    public void setAttributes(Collection<UserAttributeEntity> attributes) {
         this.attributes = attributes;
     }
 
-    public Set<UserModel.RequiredAction> getRequiredActions() {
+    public Collection<UserRequiredActionEntity> getRequiredActions() {
         return requiredActions;
     }
 
-    public void setRequiredActions(Set<UserModel.RequiredAction> requiredActions) {
+    public void setRequiredActions(Collection<UserRequiredActionEntity> requiredActions) {
         this.requiredActions = requiredActions;
     }
 

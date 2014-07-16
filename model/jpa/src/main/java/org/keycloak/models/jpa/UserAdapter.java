@@ -12,7 +12,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
@@ -21,6 +23,7 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,52 +82,84 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void setAttribute(String name, String value) {
-        Map<String, String> attributes = user.getAttributes();
-        if (attributes == null) {
-            attributes = new HashMap<String, String>();
+        for (UserAttributeEntity attr : user.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                attr.setValue(value);
+                return;
+            }
         }
-        attributes.put(name, value);
-        user.setAttributes(attributes);
+        UserAttributeEntity attr = new UserAttributeEntity();
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setUser(user);
+        em.persist(attr);
+        user.getAttributes().add(attr);
     }
 
     @Override
     public void removeAttribute(String name) {
-        Map<String, String> attributes = user.getAttributes();
-        if (attributes == null) {
-            attributes = new HashMap<String, String>();
+        Iterator<UserAttributeEntity> it = user.getAttributes().iterator();
+        while (it.hasNext()) {
+            UserAttributeEntity attr = it.next();
+            if (attr.getName().equals(name)) {
+                it.remove();
+                em.remove(attr);
+            }
         }
-        attributes.remove(name);
-        user.setAttributes(attributes);
     }
 
     @Override
     public String getAttribute(String name) {
-        if (user.getAttributes() == null) return null;
-        return user.getAttributes().get(name);
+        for (UserAttributeEntity attr : user.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                return attr.getValue();
+            }
+        }
+        return null;
     }
 
     @Override
     public Map<String, String> getAttributes() {
         Map<String, String> result = new HashMap<String, String>();
-        result.putAll(user.getAttributes());
+        for (UserAttributeEntity attr : user.getAttributes()) {
+            result.put(attr.getName(), attr.getValue());
+        }
         return result;
     }
 
     @Override
     public Set<RequiredAction> getRequiredActions() {
         Set<RequiredAction> result = new HashSet<RequiredAction>();
-        result.addAll(user.getRequiredActions());
+        for (UserRequiredActionEntity attr : user.getRequiredActions()) {
+            result.add(attr.getAction());
+        }
         return result;
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        user.getRequiredActions().add(action);
+        for (UserRequiredActionEntity attr : user.getRequiredActions()) {
+            if (attr.getAction().equals(action)) {
+                return;
+            }
+        }
+        UserRequiredActionEntity attr = new UserRequiredActionEntity();
+        attr.setAction(action);
+        attr.setUser(user);
+        em.persist(attr);
+        user.getRequiredActions().add(attr);
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        user.getRequiredActions().remove(action);
+        Iterator<UserRequiredActionEntity> it = user.getRequiredActions().iterator();
+        while (it.hasNext()) {
+            UserRequiredActionEntity attr = it.next();
+            if (attr.getAction().equals(action)) {
+                it.remove();
+                em.remove(attr);
+            }
+        }
     }
 
 
@@ -357,10 +392,17 @@ public class UserAdapter implements UserModel {
         AuthenticationLinkEntity entity = new AuthenticationLinkEntity();
         entity.setAuthProvider(authenticationLink.getAuthProvider());
         entity.setAuthUserId(authenticationLink.getAuthUserId());
+        entity.setUser(user);
 
-        user.setAuthenticationLink(entity);
+        if (user.getAuthenticationLink() != null) {
+            AuthenticationLinkEntity old = user.getAuthenticationLink();
+            old.setUser(null);
+            em.remove(old);
+            user.setAuthenticationLink(null);
+            em.flush();
+        }
         em.persist(entity);
-        em.persist(user);
+        user.setAuthenticationLink(entity);
         em.flush();
     }
 
