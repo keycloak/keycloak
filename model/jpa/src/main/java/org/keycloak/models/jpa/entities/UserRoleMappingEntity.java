@@ -19,27 +19,29 @@ import org.hibernate.annotations.GenericGenerator;
 @NamedQueries({
         @NamedQuery(name="userHasRole", query="select m from UserRoleMappingEntity m where m.user = :user and m.role = :role"),
         @NamedQuery(name="userRoleMappings", query="select m from UserRoleMappingEntity m where m.user = :user"),
-        @NamedQuery(name="userRoleMappingIds", query="select m.role.id from UserRoleMappingEntity m where m.user = :user")
+        @NamedQuery(name="userRoleMappingIds", query="select m.role.id from UserRoleMappingEntity m where m.user = :user"),
+        @NamedQuery(name="deleteUserRoleMappingsByRealm", query="delete from  UserRoleMappingEntity mapping where mapping.user IN (select u from UserEntity u where realm=:realm)")
+
 })
 @Entity
 public class UserRoleMappingEntity  {
     @Id
-    @Column(length = 36)
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
-    protected String id;
+    @GeneratedValue
+    protected long id;
+
     @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name="userId")
     protected UserEntity user;
 
     @ManyToOne(fetch= FetchType.LAZY)
     @JoinColumn(name="roleId")
     protected RoleEntity role;
 
-    public String getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 

@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -18,15 +19,14 @@ import org.hibernate.annotations.GenericGenerator;
 @NamedQueries({
         @NamedQuery(name="findSocialLinkByUser", query="select link from SocialLinkEntity link where link.user = :user"),
         @NamedQuery(name="findSocialLinkByUserAndProvider", query="select link from SocialLinkEntity link where link.user = :user and link.socialProvider = :socialProvider"),
-        @NamedQuery(name="findUserByLinkAndRealm", query="select link.user from SocialLinkEntity link where link.realm = :realm and link.socialProvider = :socialProvider and link.socialUserId = :socialUserId")
+        @NamedQuery(name="findUserByLinkAndRealm", query="select link.user from SocialLinkEntity link where link.realm = :realm and link.socialProvider = :socialProvider and link.socialUserId = :socialUserId"),
+        @NamedQuery(name="deleteSocialLinkByRealm", query="delete from SocialLinkEntity social where social.user IN (select u from UserEntity u where realm=:realm)")
 })
 @Entity
 public class SocialLinkEntity {
     @Id
-    @Column(length = 36)
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
-    private String id;
+    @GeneratedValue
+    protected long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private UserEntity user;
@@ -38,11 +38,11 @@ public class SocialLinkEntity {
     protected String socialUserId;
     protected String socialUsername;
 
-    public String getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 

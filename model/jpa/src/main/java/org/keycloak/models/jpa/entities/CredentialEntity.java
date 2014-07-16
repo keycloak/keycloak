@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -16,15 +17,15 @@ import org.hibernate.annotations.GenericGenerator;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="credentialByUserAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type")
+        @NamedQuery(name="credentialByUserAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type"),
+        @NamedQuery(name="deleteCredentialsByRealm", query="delete from CredentialEntity cred where cred.user IN (select u from UserEntity u where realm=:realm)")
+
 })
 @Entity
 public class CredentialEntity {
     @Id
-    @Column(length = 36)
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
-    protected String id;
+    @GeneratedValue
+    protected long id;
 
     protected String type;
     protected String value;
@@ -33,10 +34,16 @@ public class CredentialEntity {
     protected int hashIterations;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="userId")
     protected UserEntity user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    protected RealmEntity realm;
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public String getValue() {
         return value;
@@ -52,14 +59,6 @@ public class CredentialEntity {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getDevice() {

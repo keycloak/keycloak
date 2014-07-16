@@ -8,6 +8,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.SocialLinkEntity;
@@ -124,9 +125,18 @@ public class JpaUserProvider implements UserProvider {
     @Override
     public void preRemove(RealmModel realm) {
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        for (UserEntity u : em.createQuery("from UserEntity u where u.realm = :realm", UserEntity.class).setParameter("realm", realmEntity).getResultList()) {
-            removeUser(realm, u.getUsername());
-        }
+        int num = em.createNamedQuery("deleteUserRoleMappingsByRealm")
+                .setParameter("realm", realmEntity).executeUpdate();
+        num = em.createNamedQuery("deleteSocialLinkByRealm")
+                .setParameter("realm", realmEntity).executeUpdate();
+        num = em.createNamedQuery("deleteCredentialsByRealm")
+                .setParameter("realm", realmEntity).executeUpdate();
+        num = em.createNamedQuery("deleteUserAttributesByRealm")
+                .setParameter("realm", realmEntity).executeUpdate();
+        num = em.createNamedQuery("deleteAuthenticationLinksByRealm")
+                .setParameter("realm", realmEntity).executeUpdate();
+        num = em.createNamedQuery("deleteUsersByRealm")
+                .setParameter("realm", realmEntity).executeUpdate();
     }
 
     @Override
