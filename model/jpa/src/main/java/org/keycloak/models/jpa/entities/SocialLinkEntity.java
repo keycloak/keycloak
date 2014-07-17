@@ -17,7 +17,8 @@ import java.io.Serializable;
         @NamedQuery(name="findSocialLinkByUser", query="select link from SocialLinkEntity link where link.user = :user"),
         @NamedQuery(name="findSocialLinkByUserAndProvider", query="select link from SocialLinkEntity link where link.user = :user and link.socialProvider = :socialProvider"),
         @NamedQuery(name="findUserByLinkAndRealm", query="select link.user from SocialLinkEntity link where link.realm = :realm and link.socialProvider = :socialProvider and link.socialUserId = :socialUserId"),
-        @NamedQuery(name="deleteSocialLinkByRealm", query="delete from SocialLinkEntity social where social.user IN (select u from UserEntity u where realm=:realm)")
+        @NamedQuery(name="deleteSocialLinkByRealm", query="delete from SocialLinkEntity social where social.user IN (select u from UserEntity u where realm=:realm)"),
+        @NamedQuery(name="deleteSocialLinkByUser", query="delete from SocialLinkEntity social where social.user = :user")
 })
 @Entity
 @IdClass(SocialLinkEntity.Key.class)

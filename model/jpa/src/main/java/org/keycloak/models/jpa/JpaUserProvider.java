@@ -88,8 +88,8 @@ public class JpaUserProvider implements UserProvider {
     }
 
     private void removeUser(UserEntity user) {
-        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteSocialLinkByUser").setParameter("user", user).executeUpdate();
         if (user.getAuthenticationLink() != null) {
             for (AuthenticationLinkEntity l : user.getAuthenticationLink()) {
                 em.remove(l);
@@ -145,8 +145,7 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RoleModel role) {
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
-        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteUserRoleMappingsByRole").setParameter("roleId", role.getId()).executeUpdate();
     }
 
     @Override
@@ -214,7 +213,7 @@ public class JpaUserProvider implements UserProvider {
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
 
         // TODO: named query?
-        Object count = em.createQuery("select count(u) from UserEntity u where u.realm = :realm")
+        Object count = em.createNamedQuery("getRealmUserCount")
                 .setParameter("realm", realmEntity)
                 .getSingleResult();
         return ((Number)count).intValue();
@@ -222,7 +221,7 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm order by u.username", UserEntity.class);
+        TypedQuery<UserEntity> query = em.createNamedQuery("getAllUsersByRealm", UserEntity.class);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         query.setParameter("realm", realmEntity);
         if (firstResult != -1) {
@@ -244,7 +243,7 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username", UserEntity.class);
+        TypedQuery<UserEntity> query = em.createNamedQuery("searchForUser", UserEntity.class);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         query.setParameter("realm", realmEntity);
         query.setParameter("search", "%" + search.toLowerCase() + "%");

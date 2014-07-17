@@ -11,7 +11,6 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
@@ -305,8 +304,7 @@ public class UserAdapter implements UserModel {
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
         TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
         query.setParameter("user", getUser());
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
-        query.setParameter("role", roleEntity);
+        query.setParameter("roleId", role.getId());
         return query;
     }
 
@@ -315,8 +313,7 @@ public class UserAdapter implements UserModel {
         if (hasRole(role)) return;
         UserRoleMappingEntity entity = new UserRoleMappingEntity();
         entity.setUser(getUser());
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
-        entity.setRole(roleEntity);
+        entity.setRoleId(role.getId());
         em.persist(entity);
         em.flush();
         em.detach(entity);

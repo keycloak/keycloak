@@ -31,11 +31,14 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @NamedQueries({
+        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realm = :realm order by u.username"),
+        @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realm = :realm and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username"),
         @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realm = :realm"),
+        @NamedQuery(name="getRealmUserCount", query="select count(u) from UserEntity u where u.realm = :realm"),
         @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realm = :realm")
 })
 @Entity
