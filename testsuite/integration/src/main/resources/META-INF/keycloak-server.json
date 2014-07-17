@@ -4,7 +4,7 @@
     },
 
     "audit": {
-        "provider": "${keycloak.audit.provider,keycloak.model.provider:jpa}"
+        "provider": "${keycloak.audit.provider:jpa}"
     },
 
     "realm": {
@@ -58,10 +58,10 @@
 
     "connectionsMongo": {
         "default": {
-            "host": "${keycloak.model.mongo.host:127.0.0.1}",
-            "port": "${keycloak.model.mongo.port:27017}",
-            "db": "${keycloak.model.mongo.db:keycloak}",
-            "clearOnStartup": "${keycloak.model.mongo.clearOnStartup:false}"
+            "host": "${keycloak.connectionsMongo.host:127.0.0.1}",
+            "port": "${keycloak.connectionsMongo.port:27017}",
+            "db": "${keycloak.connectionsMongo.db:keycloak}",
+            "clearOnStartup": "${keycloak.connectionsMongo.clearOnStartup:false}"
         }
     }
 

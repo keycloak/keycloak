@@ -163,8 +163,9 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
                 @Override
                 public void run() {
                     try {
-                        new Socket(server.getConfig().getHost(), server.getConfig().getPort());
-                        throw new RuntimeException();
+                        Socket s = new Socket(server.getConfig().getHost(), server.getConfig().getPort());
+                        s.close();
+                        throw new IllegalStateException("Server still running");
                     } catch (IOException expected) {
                     }
                 }

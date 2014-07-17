@@ -18,6 +18,7 @@ import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -203,6 +204,17 @@ public class JpaUserProvider implements UserProvider {
     @Override
     public List<UserModel> getUsers(RealmModel realm) {
         return getUsers(realm, -1, -1);
+    }
+
+    @Override
+    public int getUsersCount(RealmModel realm) {
+        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
+
+        // TODO: named query?
+        Object count = em.createQuery("select count(u) from UserEntity u where u.realm = :realm")
+                .setParameter("realm", realmEntity)
+                .getSingleResult();
+        return ((Number)count).intValue();
     }
 
     @Override

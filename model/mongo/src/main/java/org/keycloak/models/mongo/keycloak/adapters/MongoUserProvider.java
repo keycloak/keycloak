@@ -117,6 +117,14 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
+    public int getUsersCount(RealmModel realm) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+        return getMongoStore().countEntities(MongoUserEntity.class, query, invocationContext);
+    }
+
+    @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(realm.getId())
