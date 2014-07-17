@@ -128,7 +128,7 @@ public class ExportImportTest {
             .around(mongoRule)
             .around(keycloakRule);
 
-    @Test
+    //@Test
     public void testDirFullExportImport() throws Throwable {
         ExportImportConfig.setProvider(DirExportProviderFactory.PROVIDER_ID);
         String targetDirPath = getExportImportTestDirectory() + File.separator + "dirExport";
