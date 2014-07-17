@@ -304,8 +304,10 @@ public class MongoStoreImpl implements MongoStore {
         context.beforeDBSearch(type);
 
         DBCollection dbCollection = getDBCollectionForType(type);
-        DBCursor cursor = dbCollection.find(query);
-        return cursor.size();
+        Long count = dbCollection.count(query);
+
+        // For now, assume that int is sufficient
+        return count.intValue();
     }
 
     @Override

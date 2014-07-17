@@ -56,8 +56,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
                 // Count total number of users
                 if (!exportUsersIntoSameFile) {
-                    // TODO: getUsersCount method on model
-                    usersHolder.totalCount = session.users().getUsers(realm).size();
+                    usersHolder.totalCount = session.users().getUsersCount(realm);
                 }
             }
 
@@ -82,13 +81,11 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
                     @Override
                     public void run(KeycloakSession session) throws IOException {
                         RealmModel realm = session.realms().getRealmByName(realmName);
-                        // TODO: pagination
-                        List<UserModel> users = session.users().getUsers(realm);
-                        usersHolder.users = users.subList(usersHolder.currentPageStart, usersHolder.currentPageEnd);
+                        usersHolder.users = session.users().getUsers(realm, usersHolder.currentPageStart, usersHolder.currentPageEnd - usersHolder.currentPageStart);
 
                         writeUsers(realmName + "-users-" + (usersHolder.currentPageStart / countPerPage) + ".json", session, realm, usersHolder.users);
 
-                        logger.info("Users " + usersHolder.currentPageStart + "-" + usersHolder.currentPageEnd + " exported");
+                        logger.info("Users " + usersHolder.currentPageStart + "-" + (usersHolder.currentPageEnd -1) + " exported");
                     }
 
                 });

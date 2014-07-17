@@ -185,6 +185,11 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
+    public int getUsersCount(RealmModel realm) {
+        return getDelegate().getUsersCount(realm);
+    }
+
+    @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
         return getDelegate().getUsers(realm, firstResult, maxResults);
     }
