@@ -72,9 +72,8 @@ public class UserEntity {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
-    @ManyToOne
-    @JoinColumn(name="link_id")
-    protected AuthenticationLinkEntity authenticationLink;
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    protected Collection<AuthenticationLinkEntity> authenticationLink;
 
     public String getId() {
         return id;
@@ -181,11 +180,11 @@ public class UserEntity {
         this.credentials = credentials;
     }
 
-    public AuthenticationLinkEntity getAuthenticationLink() {
+    public Collection<AuthenticationLinkEntity> getAuthenticationLink() {
         return authenticationLink;
     }
 
-    public void setAuthenticationLink(AuthenticationLinkEntity authenticationLink) {
+    public void setAuthenticationLink(Collection<AuthenticationLinkEntity> authenticationLink) {
         this.authenticationLink = authenticationLink;
     }
 

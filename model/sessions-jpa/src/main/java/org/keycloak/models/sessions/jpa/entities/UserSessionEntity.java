@@ -3,6 +3,7 @@ package org.keycloak.models.sessions.jpa.entities;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -28,8 +29,7 @@ import java.util.Collection;
 public class UserSessionEntity {
 
     @Id
-    @GenericGenerator(name="uuid_generator", strategy="org.keycloak.models.sessions.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "uuid_generator")
+    @Column(length = 36)
     protected String id;
 
     protected String userId;

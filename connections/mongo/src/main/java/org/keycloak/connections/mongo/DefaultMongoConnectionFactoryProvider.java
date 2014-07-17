@@ -10,7 +10,6 @@ import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.impl.MongoStoreImpl;
 import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocationContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.util.JpaUtils;
 
 import java.util.Collections;
 

@@ -21,9 +21,11 @@ import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -383,8 +385,12 @@ public class UserAdapter implements UserModel {
 
     @Override
     public AuthenticationLinkModel getAuthenticationLink() {
-        AuthenticationLinkEntity authLinkEntity = user.getAuthenticationLink();
-        return authLinkEntity == null ? null : new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
+        Collection<AuthenticationLinkEntity> col = user.getAuthenticationLink();
+        if (col == null || col.isEmpty()) {
+            return null;
+        }
+        AuthenticationLinkEntity authLinkEntity = col.iterator().next();
+        return new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
     }
 
     @Override
@@ -394,15 +400,16 @@ public class UserAdapter implements UserModel {
         entity.setAuthUserId(authenticationLink.getAuthUserId());
         entity.setUser(user);
 
-        if (user.getAuthenticationLink() != null) {
-            AuthenticationLinkEntity old = user.getAuthenticationLink();
-            old.setUser(null);
+        if (user.getAuthenticationLink() == null) {
+            user.setAuthenticationLink(new LinkedList<AuthenticationLinkEntity>());
+        } else if (!user.getAuthenticationLink().isEmpty()) {
+            AuthenticationLinkEntity old = user.getAuthenticationLink().iterator().next();
+            user.getAuthenticationLink().clear();
             em.remove(old);
-            user.setAuthenticationLink(null);
-            em.flush();
         }
+
+        user.getAuthenticationLink().add(entity);
         em.persist(entity);
-        user.setAuthenticationLink(entity);
         em.flush();
     }
 

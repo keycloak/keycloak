@@ -1,17 +1,15 @@
 package org.keycloak.models.jpa.entities;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToOne;
-
-import org.hibernate.annotations.GenericGenerator;
+import javax.persistence.OneToMany;
+import java.io.Serializable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -20,30 +18,20 @@ import org.hibernate.annotations.GenericGenerator;
         @NamedQuery(name="deleteAuthenticationLinksByRealm", query="delete from AuthenticationLinkEntity authLink where authLink.user IN (select u from UserEntity u where realm=:realm)")
 })
 @Entity
+@IdClass(AuthenticationLinkEntity.Key.class)
 public class AuthenticationLinkEntity {
 
     @Id
-    @GeneratedValue
-    protected long id;
-
     protected String authProvider;
     protected String authUserId;
 
     // NOTE: @OnetoOne creates a constraint race condition if the join column is on AuthenticationLinkEntity.
     // The race is that user gets loaded concurrently, creates link concurrently, and sets it.  Therefore, we have
     // a @ManyToOne on both sides.  Broken yes, but, I think we're going to replace AuthenticationLinkEntity anyways.
+    @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="userId")
     protected UserEntity user;
-
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
     public String getAuthProvider() {
         return authProvider;
@@ -68,4 +56,48 @@ public class AuthenticationLinkEntity {
     public void setUser(UserEntity user) {
         this.user = user;
     }
+
+    public static class Key implements Serializable {
+
+        protected UserEntity user;
+
+        protected String authProvider;
+
+        public Key() {
+        }
+
+        public Key(UserEntity user, String authProvider) {
+            this.user = user;
+            this.authProvider = authProvider;
+        }
+
+        public UserEntity getUser() {
+            return user;
+        }
+
+        public String getAuthProvider() {
+            return authProvider;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Key key = (Key) o;
+
+            if (authProvider != null ? !authProvider.equals(key.authProvider) : key.authProvider != null) return false;
+            if (user != null ? !user.getId().equals(key.user != null ? key.user.getId() : null) : key.user != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = user != null ? user.getId().hashCode() : 0;
+            result = 31 * result + (authProvider != null ? authProvider.hashCode() : 0);
+            return result;
+        }
+    }
+
 }
