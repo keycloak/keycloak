@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -8,6 +9,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 import java.io.Serializable;
 
 /**
@@ -19,21 +21,35 @@ import java.io.Serializable;
         @NamedQuery(name="deleteCredentialsByRealm", query="delete from CredentialEntity cred where cred.user IN (select u from UserEntity u where u.realmId=:realmId)")
 
 })
+@Table(name="CREDENTIAL")
 @Entity
-@IdClass(CredentialEntity.Key.class)
 public class CredentialEntity {
-
     @Id
+    @Column(length = 36)
+    protected String id;
+
+    @Column(name="TYPE")
     protected String type;
+    @Column(name="VALUE")
     protected String value;
+    @Column(name="DEVICE")
     protected String device;
+    @Column(name="SALT")
     protected byte[] salt;
+    @Column(name="HASH_ITERATIONS")
     protected int hashIterations;
 
-    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="userId")
+    @JoinColumn(name="USER_ID")
     protected UserEntity user;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getValue() {
         return value;
@@ -82,48 +98,4 @@ public class CredentialEntity {
     public void setHashIterations(int hashIterations) {
         this.hashIterations = hashIterations;
     }
-
-    public static class Key implements Serializable {
-
-        protected UserEntity user;
-
-        protected String type;
-
-        public Key() {
-        }
-
-        public Key(UserEntity user, String type) {
-            this.user = user;
-            this.type = type;
-        }
-
-        public UserEntity getUser() {
-            return user;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Key key = (Key) o;
-
-            if (type != null ? !type.equals(key.type) : key.type != null) return false;
-            if (user != null ? !user.getId().equals(key.user != null ? key.user.getId() : null) : key.user != null) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = user != null ? user.getId().hashCode() : 0;
-            result = 31 * result + (type != null ? type.hashCode() : 0);
-            return result;
-        }
-    }
-
 }

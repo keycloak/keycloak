@@ -18,23 +18,27 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @Entity
-@Table(name="AuthProviderEntity")
+@Table(name="AUTH_PROVIDER_ENTITY")
 @IdClass(AuthenticationProviderEntity.Key.class)
 public class AuthenticationProviderEntity {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "REALM_ID")
     protected RealmEntity realm;
 
     @Id
+    @Column(name="PROVIDER_NAME")
     private String providerName;
+    @Column(name="PASSWORD_UPDATE_SUPPORTED")
     private boolean passwordUpdateSupported;
+    @Column(name="PRIORITY")
     private int priority;
 
     @ElementCollection
     @MapKeyColumn(name="name")
     @Column(name="value")
-    @CollectionTable(name="AuthProviderEntity_cfg")
+    @CollectionTable(name="AUTH_PROVIDER_CONFIG")
     private Map<String, String> config;
 
     public RealmEntity getRealm() {

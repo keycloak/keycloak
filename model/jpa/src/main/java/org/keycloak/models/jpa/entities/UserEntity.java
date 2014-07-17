@@ -42,26 +42,35 @@ import java.util.Set;
         @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId")
 })
 @Entity
-@Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "realmId", "username" }),
-        @UniqueConstraint(columnNames = { "realmId", "emailConstraint" })
+@Table(name="USER", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "REALM_ID", "USERNAME" }),
+        @UniqueConstraint(columnNames = { "REALM_ID", "EMAIL_CONSTRAINT" })
 })
 public class UserEntity {
     @Id
-    @Column(length = 36)
+    @Column(name="ID", length = 36)
     protected String id;
 
+    @Column(name = "USERNAME")
     protected String username;
+    @Column(name = "FIRST_NAME")
     protected String firstName;
+    @Column(name = "LAST_NAME")
     protected String lastName;
+    @Column(name = "EMAIL")
     protected String email;
+    @Column(name = "ENABLED")
     protected boolean enabled;
+    @Column(name = "TOTP")
     protected boolean totp;
+    @Column(name = "EMAIL_VERIFIED")
     protected boolean emailVerified;
 
     // Hack just to workaround the fact that on MS-SQL you can't have unique constraint with multiple NULL values TODO: Find better solution (like unique index with 'where' but that's proprietary)
+    @Column(name = "EMAIL_CONSTRAINT")
     protected String emailConstraint = KeycloakModelUtils.generateId();
 
+    @Column(name = "REALM_ID")
     protected String realmId;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")

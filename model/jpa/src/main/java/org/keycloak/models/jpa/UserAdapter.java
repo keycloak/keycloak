@@ -15,6 +15,7 @@ import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
 import javax.persistence.EntityManager;
@@ -215,6 +216,7 @@ public class UserAdapter implements UserModel {
 
         if (credentialEntity == null) {
             credentialEntity = new CredentialEntity();
+            credentialEntity.setId(KeycloakModelUtils.generateId());
             credentialEntity.setType(cred.getType());
             credentialEntity.setDevice(cred.getDevice());
             credentialEntity.setUser(user);
@@ -276,6 +278,7 @@ public class UserAdapter implements UserModel {
 
         if (credentialEntity == null) {
             credentialEntity = new CredentialEntity();
+            credentialEntity.setId(KeycloakModelUtils.generateId());
             credentialEntity.setType(credModel.getType());
             credentialEntity.setUser(user);
             em.persist(credentialEntity);

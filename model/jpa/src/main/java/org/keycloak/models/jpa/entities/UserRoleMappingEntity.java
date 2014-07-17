@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -8,6 +9,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 import java.io.Serializable;
 
 /**
@@ -23,16 +25,18 @@ import java.io.Serializable;
         @NamedQuery(name="deleteUserRoleMappingsByUser", query="delete from UserRoleMappingEntity m where m.user = :user")
 
 })
+@Table(name="USER_ROLE_MAPPING")
 @Entity
 @IdClass(UserRoleMappingEntity.Key.class)
 public class UserRoleMappingEntity  {
 
     @Id
     @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="userId")
+    @JoinColumn(name="USER_ID")
     protected UserEntity user;
 
     @Id
+    @Column(name = "ROLE_ID")
     protected String roleId;
 
     public UserEntity getUser() {

@@ -21,28 +21,34 @@ import java.util.Set;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"realm", "name"})})
+@Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "NAME"})})
 public abstract class ClientEntity {
     @Id
-    @Column(length = 36)
+    @Column(name="ID", length = 36)
     private String id;
-    @Column(name = "name")
+    @Column(name = "NAME")
     private String name;
+    @Column(name="ENABLED")
     private boolean enabled;
+    @Column(name="SECRET")
     private String secret;
+    @Column(name="ALLOWED_CLAIMS_MASK")
     private long allowedClaimsMask;
+    @Column(name="NOT_BEFORE")
     private int notBefore;
+    @Column(name="PUBLIC_CLIENT")
     private boolean publicClient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "realm")
+    @JoinColumn(name = "REALM_ID")
     protected RealmEntity realm;
 
     @ElementCollection
-    @CollectionTable
+    @CollectionTable(name = "WEB_ORIGINS")
     protected Set<String> webOrigins = new HashSet<String>();
+
     @ElementCollection
-    @CollectionTable
+    @CollectionTable(name = "REDIRECT_URIS")
     protected Set<String> redirectUris = new HashSet<String>();
 
     public RealmEntity getRealm() {

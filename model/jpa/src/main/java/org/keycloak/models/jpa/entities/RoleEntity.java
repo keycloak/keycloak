@@ -20,8 +20,8 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @Entity
-@Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "name", "appRealmConstraint" })
+@Table(name="KEYCLOAK_ROLE", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "NAME", "APP_REALM_CONSTRAINT" })
 })
 @NamedQueries({
         @NamedQuery(name="getAppRoleByName", query="select role from RoleEntity role where role.name = :name and role.application = :application"),
@@ -33,29 +33,32 @@ public class RoleEntity {
     @Column(name="id", length = 36)
     private String id;
 
+    @Column(name = "NAME")
     private String name;
+    @Column(name = "DESCRIPTION")
     private String description;
 
     // hax! couldn't get constraint to work properly
+    @Column(name = "REALM_ID")
     private String realmId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "realm")
+    @JoinColumn(name = "REALM")
     private RealmEntity realm;
 
-    @Column(name="applicationRole")
+    @Column(name="APPLICATION_ROLE")
     private boolean applicationRole;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "application")
+    @JoinColumn(name = "APPLICATION")
     private ApplicationEntity application;
 
     // Hack to ensure that either name+application or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
-    @Column(length = 36)
+    @Column(name="APP_REALM_CONSTRAINT", length = 36)
     private String appRealmConstraint;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
-    @JoinTable(name = "CompositeRole", joinColumns = @JoinColumn(name = "composite"), inverseJoinColumns = @JoinColumn(name = "childRole"))
+    @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
     private Collection<RoleEntity> compositeRoles = new ArrayList<RoleEntity>();
 
     public String getId() {

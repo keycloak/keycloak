@@ -1,12 +1,15 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 import java.io.Serializable;
 
 /**
@@ -20,19 +23,25 @@ import java.io.Serializable;
         @NamedQuery(name="deleteSocialLinkByRealm", query="delete from SocialLinkEntity social where social.user IN (select u from UserEntity u where realmId=:realmId)"),
         @NamedQuery(name="deleteSocialLinkByUser", query="delete from SocialLinkEntity social where social.user = :user")
 })
+@Table(name="USER_SOCIAL_LINK")
 @Entity
 @IdClass(SocialLinkEntity.Key.class)
 public class SocialLinkEntity {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "USER_ID")
     private UserEntity user;
 
+    @Column(name = "REALM_ID")
     protected String realmId;
 
     @Id
+    @Column(name = "SOCIAL_PROVIDER")
     protected String socialProvider;
+    @Column(name = "SOCIAL_USER_ID")
     protected String socialUserId;
+    @Column(name = "SOCIAL_USERNAME")
     protected String socialUsername;
 
     public UserEntity getUser() {
