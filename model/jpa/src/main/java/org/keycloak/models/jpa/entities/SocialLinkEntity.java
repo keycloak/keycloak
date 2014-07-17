@@ -16,8 +16,8 @@ import java.io.Serializable;
 @NamedQueries({
         @NamedQuery(name="findSocialLinkByUser", query="select link from SocialLinkEntity link where link.user = :user"),
         @NamedQuery(name="findSocialLinkByUserAndProvider", query="select link from SocialLinkEntity link where link.user = :user and link.socialProvider = :socialProvider"),
-        @NamedQuery(name="findUserByLinkAndRealm", query="select link.user from SocialLinkEntity link where link.realm = :realm and link.socialProvider = :socialProvider and link.socialUserId = :socialUserId"),
-        @NamedQuery(name="deleteSocialLinkByRealm", query="delete from SocialLinkEntity social where social.user IN (select u from UserEntity u where realm=:realm)"),
+        @NamedQuery(name="findUserByLinkAndRealm", query="select link.user from SocialLinkEntity link where link.realmId = :realmId and link.socialProvider = :socialProvider and link.socialUserId = :socialUserId"),
+        @NamedQuery(name="deleteSocialLinkByRealm", query="delete from SocialLinkEntity social where social.user IN (select u from UserEntity u where realmId=:realmId)"),
         @NamedQuery(name="deleteSocialLinkByUser", query="delete from SocialLinkEntity social where social.user = :user")
 })
 @Entity
@@ -28,8 +28,7 @@ public class SocialLinkEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private UserEntity user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    protected RealmEntity realm;
+    protected String realmId;
 
     @Id
     protected String socialProvider;
@@ -68,12 +67,12 @@ public class SocialLinkEntity {
         this.socialUsername = socialUsername;
     }
 
-    public RealmEntity getRealm() {
-        return realm;
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     public static class Key implements Serializable {

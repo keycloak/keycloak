@@ -15,7 +15,7 @@ import java.io.Serializable;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="deleteAuthenticationLinksByRealm", query="delete from AuthenticationLinkEntity authLink where authLink.user IN (select u from UserEntity u where realm=:realm)")
+        @NamedQuery(name="deleteAuthenticationLinksByRealm", query="delete from AuthenticationLinkEntity authLink where authLink.user IN (select u from UserEntity u where u.realmId=:realmId)")
 })
 @Entity
 @IdClass(AuthenticationLinkEntity.Key.class)

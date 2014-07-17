@@ -31,20 +31,20 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realm = :realm order by u.username"),
-        @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realm = :realm and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username"),
-        @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserCount", query="select count(u) from UserEntity u where u.realm = :realm"),
-        @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realm = :realm")
+        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.username"),
+        @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realmId = :realmId and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username"),
+        @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserCount", query="select count(u) from UserEntity u where u.realmId = :realmId"),
+        @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId")
 })
 @Entity
 @Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "realm", "username" }),
-        @UniqueConstraint(columnNames = { "realm", "emailConstraint" })
+        @UniqueConstraint(columnNames = { "realmId", "username" }),
+        @UniqueConstraint(columnNames = { "realmId", "emailConstraint" })
 })
 public class UserEntity {
     @Id
@@ -62,9 +62,7 @@ public class UserEntity {
     // Hack just to workaround the fact that on MS-SQL you can't have unique constraint with multiple NULL values TODO: Find better solution (like unique index with 'where' but that's proprietary)
     protected String emailConstraint = KeycloakModelUtils.generateId();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "realm")
-    protected RealmEntity realm;
+    protected String realmId;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     protected Collection<UserAttributeEntity> attributes = new ArrayList<UserAttributeEntity>();
@@ -167,12 +165,12 @@ public class UserEntity {
         this.requiredActions = requiredActions;
     }
 
-    public RealmEntity getRealm() {
-        return realm;
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     public Collection<CredentialEntity> getCredentials() {
