@@ -79,7 +79,7 @@ public class ClientUserSessionAssociationEntity {
             Key key = (Key) o;
 
             if (clientId != null ? !clientId.equals(key.clientId) : key.clientId != null) return false;
-            if (session != null ? !session.equals(key.session) : key.session != null) return false;
+            if (session != null ? !session.getId().equals(key.session != null ? key.session.getId() : null) : key.session != null) return false;
 
             return true;
         }
@@ -87,7 +87,7 @@ public class ClientUserSessionAssociationEntity {
         @Override
         public int hashCode() {
             int result = clientId != null ? clientId.hashCode() : 0;
-            result = 31 * result + (session != null ? session.hashCode() : 0);
+            result = 31 * result + (session != null ? session.getId().hashCode() : 0);
             return result;
         }
     }

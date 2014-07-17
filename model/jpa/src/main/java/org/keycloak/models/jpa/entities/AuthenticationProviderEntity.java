@@ -1,16 +1,17 @@
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.GenericGenerator;
-
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -18,12 +19,14 @@ import java.util.Map;
  */
 @Entity
 @Table(name="AuthProviderEntity")
+@IdClass(AuthenticationProviderEntity.Key.class)
 public class AuthenticationProviderEntity {
 
     @Id
-    @GeneratedValue
-    protected long id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    protected RealmEntity realm;
 
+    @Id
     private String providerName;
     private boolean passwordUpdateSupported;
     private int priority;
@@ -31,17 +34,15 @@ public class AuthenticationProviderEntity {
     @ElementCollection
     @MapKeyColumn(name="name")
     @Column(name="value")
-    @CollectionTable(name="AuthProviderEntity_cfg", joinColumns = {
-            @JoinColumn(name = "AuthProviderEntity_id")
-    })
+    @CollectionTable(name="AuthProviderEntity_cfg")
     private Map<String, String> config;
 
-    public long getId() {
-        return id;
+    public RealmEntity getRealm() {
+        return realm;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setRealm(RealmEntity realm) {
+        this.realm = realm;
     }
 
     public String getProviderName() {
@@ -75,4 +76,48 @@ public class AuthenticationProviderEntity {
     public void setConfig(Map<String, String> config) {
         this.config = config;
     }
+
+    public static class Key implements Serializable {
+
+        protected RealmEntity realm;
+
+        protected String providerName;
+
+        public Key() {
+        }
+
+        public Key(RealmEntity realm, String providerName) {
+            this.realm = realm;
+            this.providerName = providerName;
+        }
+
+        public RealmEntity getRealm() {
+            return realm;
+        }
+
+        public String getProviderName() {
+            return providerName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Key key = (Key) o;
+
+            if (providerName != null ? !providerName.equals(key.providerName) : key.providerName != null) return false;
+            if (realm != null ? !realm.getId().equals(key.realm != null ? key.realm.getId() : null) : key.realm != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = realm != null ? realm.getId().hashCode() : 0;
+            result = 31 * result + (providerName != null ? providerName.hashCode() : 0);
+            return result;
+        }
+    }
+
 }

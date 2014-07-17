@@ -353,6 +353,7 @@ public class RealmAdapter implements RealmModel {
 
     public void addRequiredCredential(RequiredCredentialModel model) {
         RequiredCredentialEntity entity = new RequiredCredentialEntity();
+        entity.setRealm(realm);
         entity.setInput(model.isInput());
         entity.setSecret(model.isSecret());
         entity.setType(model.getType());
@@ -548,6 +549,7 @@ public class RealmAdapter implements RealmModel {
         }
         em.remove(applicationEntity);
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", applicationEntity).executeUpdate();
+        em.flush();
 
         return true;
     }
@@ -701,6 +703,7 @@ public class RealmAdapter implements RealmModel {
         int counter = 1;
         for (AuthenticationProviderModel model : authenticationProviders) {
             AuthenticationProviderEntity entity = new AuthenticationProviderEntity();
+            entity.setRealm(realm);
             entity.setProviderName(model.getProviderName());
             entity.setPasswordUpdateSupported(model.isPasswordUpdateSupported());
             entity.setConfig(model.getConfig());
@@ -715,6 +718,8 @@ public class RealmAdapter implements RealmModel {
             existing.remove(apToRemove);
             em.remove(apToRemove);
         }
+
+        em.flush();
 
         // Now create all new providers
         for (AuthenticationProviderEntity apToAdd : newEntities) {

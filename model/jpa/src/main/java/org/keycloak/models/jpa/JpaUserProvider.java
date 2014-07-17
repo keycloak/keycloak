@@ -8,6 +8,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
@@ -90,7 +91,9 @@ public class JpaUserProvider implements UserProvider {
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         if (user.getAuthenticationLink() != null) {
-            em.remove(user.getAuthenticationLink());
+            for (AuthenticationLinkEntity l : user.getAuthenticationLink()) {
+                em.remove(l);
+            }
         }
         em.remove(user);
     }

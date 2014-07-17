@@ -6,10 +6,7 @@ import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.EventType;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.util.JpaUtils;
 
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import java.util.HashSet;
 import java.util.Set;
 

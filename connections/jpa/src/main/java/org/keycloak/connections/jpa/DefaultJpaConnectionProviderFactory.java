@@ -2,11 +2,11 @@ package org.keycloak.connections.jpa;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.util.JpaUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -47,10 +47,22 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         if (emf == null) {
             synchronized (this) {
                 if (emf == null) {
-                    emf = Persistence.createEntityManagerFactory(unitName, JpaUtils.getHibernateProperties());
+                    emf = Persistence.createEntityManagerFactory(unitName, getHibernateProperties());
                 }
             }
         }
+    }
+
+    private Properties getHibernateProperties() {
+        Properties result = new Properties();
+
+        for (Object property : System.getProperties().keySet()) {
+            if (property.toString().startsWith("hibernate.")) {
+                String propValue = System.getProperty(property.toString());
+                result.put(property, propValue);
+            }
+        }
+        return result;
     }
 
 }

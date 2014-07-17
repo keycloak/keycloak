@@ -9,6 +9,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
@@ -64,6 +65,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     @Override
     public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
         UserSessionEntity entity = new UserSessionEntity();
+        entity.setId(KeycloakModelUtils.generateId());
         entity.setRealmId(realm.getId());
         entity.setUserId(user.getId());
         entity.setIpAddress(ipAddress);
