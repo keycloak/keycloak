@@ -4,8 +4,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.exportimport.ImportProvider;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ExportImportJob;
@@ -54,11 +60,21 @@ public class DirImportProvider implements ImportProvider {
             }
         });
 
+        List<String> realmNames = new ArrayList<String>();
         for (File file : realmFiles) {
             String fileName = file.getName();
-
             // Parse "foo" from "foo-realm.json"
             String realmName = fileName.substring(0, fileName.length() - 11);
+
+            // Ensure that master realm is imported first
+            if (Config.getAdminRealm().equals(realmName)) {
+                realmNames.add(0, realmName);
+            } else {
+                realmNames.add(realmName);
+            }
+        }
+
+        for (String realmName : realmNames) {
             importRealm(factory, realmName, strategy);
         }
     }

@@ -81,7 +81,7 @@ public class ExportImportTest {
         @Override
         protected void after() {
             if (previousMongoClearOnStartup != null) {
-                System.setProperty(MONGO_CLEAR_ON_STARTUP_PROP_NAME, "false");
+                System.setProperty(MONGO_CLEAR_ON_STARTUP_PROP_NAME, previousMongoClearOnStartup);
             } else {
                 System.getProperties().remove(MONGO_CLEAR_ON_STARTUP_PROP_NAME);
             }
@@ -128,7 +128,7 @@ public class ExportImportTest {
             .around(mongoRule)
             .around(keycloakRule);
 
-    //@Test
+    @Test
     public void testDirFullExportImport() throws Throwable {
         ExportImportConfig.setProvider(DirExportProviderFactory.PROVIDER_ID);
         String targetDirPath = getExportImportTestDirectory() + File.separator + "dirExport";

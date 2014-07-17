@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.DataFormatException;
 
 import de.idyl.winzipaes.AesZipFileDecrypter;
@@ -11,6 +13,7 @@ import de.idyl.winzipaes.impl.AESDecrypter;
 import de.idyl.winzipaes.impl.AESDecrypterBC;
 import de.idyl.winzipaes.impl.ExtZipEntry;
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.exportimport.ImportProvider;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ExportImportJob;
@@ -48,13 +51,24 @@ public class ZipImportProvider implements ImportProvider {
 
     @Override
     public void importModel(KeycloakSessionFactory factory, Strategy strategy) throws IOException {
+        List<String> realmNames = new ArrayList<String>();
         for (ExtZipEntry entry : this.decrypter.getEntryList()) {
             String entryName = entry.getName();
             if (entryName.endsWith("-realm.json")) {
                 // Parse "foo" from "foo-realm.json"
                 String realmName = entryName.substring(0, entryName.length() - 11);
-                importRealm(factory, realmName, strategy);
+
+                // Ensure that master realm is imported first
+                if (Config.getAdminRealm().equals(realmName)) {
+                    realmNames.add(0, realmName);
+                } else {
+                    realmNames.add(realmName);
+                }
             }
+        }
+
+        for (String realmName : realmNames) {
+            importRealm(factory, realmName, strategy);
         }
     }
 

@@ -118,10 +118,7 @@ public class RepresentationToModel {
                     }
                     for (RoleRepresentation roleRep : entry.getValue()) {
                         // Application role may already exists (for example if it is defaultRole)
-                        RoleModel role = app.getRole(roleRep.getName());
-                        if (role == null) {
-                            role = app.addRole(roleRep.getName());
-                        }
+                        RoleModel role = roleRep.getId()!=null ? app.addRole(roleRep.getId(), roleRep.getName()) : app.addRole(roleRep.getName());
                         role.setDescription(roleRep.getDescription());
                     }
                 }
@@ -147,10 +144,19 @@ public class RepresentationToModel {
             }
         }
 
-
+        // Setup realm default roles
         if (rep.getDefaultRoles() != null) {
             for (String roleString : rep.getDefaultRoles()) {
                 newRealm.addDefaultRole(roleString.trim());
+            }
+        }
+        // Setup application default roles
+        if (rep.getApplications() != null) {
+            for (ApplicationRepresentation resourceRep : rep.getApplications()) {
+                if (resourceRep.getDefaultRoles() != null) {
+                    ApplicationModel appModel = newRealm.getApplicationByName(resourceRep.getName());
+                    appModel.updateDefaultRoles(resourceRep.getDefaultRoles());
+                }
             }
         }
 
@@ -336,7 +342,7 @@ public class RepresentationToModel {
     private static Map<String, ApplicationModel> createApplications(RealmRepresentation rep, RealmModel realm) {
         Map<String, ApplicationModel> appMap = new HashMap<String, ApplicationModel>();
         for (ApplicationRepresentation resourceRep : rep.getApplications()) {
-            ApplicationModel app = createApplication(realm, resourceRep);
+            ApplicationModel app = createApplication(realm, resourceRep, false);
             appMap.put(app.getName(), app);
         }
         return appMap;
@@ -349,7 +355,7 @@ public class RepresentationToModel {
      * @param resourceRep
      * @return
      */
-    public static ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep) {
+    public static ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep, boolean addDefaultRoles) {
         logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
         ApplicationModel applicationModel = resourceRep.getId()!=null ? realm.addApplication(resourceRep.getId(), resourceRep.getName()) : realm.addApplication(resourceRep.getName());
         if (resourceRep.isEnabled() != null) applicationModel.setEnabled(resourceRep.isEnabled());
@@ -403,7 +409,7 @@ public class RepresentationToModel {
             }
         }
 
-        if (resourceRep.getDefaultRoles() != null) {
+        if (addDefaultRoles && resourceRep.getDefaultRoles() != null) {
             applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
         }
 

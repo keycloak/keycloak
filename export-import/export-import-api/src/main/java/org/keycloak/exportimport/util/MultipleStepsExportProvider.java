@@ -6,6 +6,7 @@ import java.util.List;
 import org.jboss.logging.Logger;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportProvider;
+import org.keycloak.exportimport.UsersExportStrategy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -23,7 +24,6 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
     public void exportModel(KeycloakSessionFactory factory) throws IOException {
         final RealmsHolder holder = new RealmsHolder();
 
-        // Import users into same file with realm
         ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
 
             @Override
@@ -41,33 +41,34 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
     @Override
     public void exportRealm(KeycloakSessionFactory factory, final String realmName) throws IOException {
+        final UsersExportStrategy usersExportStrategy = ExportImportConfig.getUsersExportStrategy();
         final int usersPerFile = ExportImportConfig.getUsersPerFile();
         final UsersHolder usersHolder = new UsersHolder();
-        final boolean exportUsersIntoSameFile = usersPerFile < 0;
+        final boolean exportUsersIntoRealmFile = usersExportStrategy == UsersExportStrategy.REALM_FILE;
 
         ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
 
             @Override
             public void run(KeycloakSession session) throws IOException {
                 RealmModel realm = session.realms().getRealmByName(realmName);
-                RealmRepresentation rep = ExportUtils.exportRealm(session, realm, exportUsersIntoSameFile);
+                RealmRepresentation rep = ExportUtils.exportRealm(session, realm, exportUsersIntoRealmFile);
                 writeRealm(realmName + "-realm.json", rep);
                 logger.info("Realm '" + realmName + "' - data exported");
 
                 // Count total number of users
-                if (!exportUsersIntoSameFile) {
+                if (!exportUsersIntoRealmFile) {
                     usersHolder.totalCount = session.users().getUsersCount(realm);
                 }
             }
 
         });
 
-        if (!exportUsersIntoSameFile) {
-
+        if (usersExportStrategy != UsersExportStrategy.SKIP && !exportUsersIntoRealmFile) {
+            // We need to export users now
             usersHolder.currentPageStart = 0;
 
-            // usersPerFile==0 means exporting all users into single file (but separate to realm)
-            final int countPerPage = usersPerFile == 0 ? usersHolder.totalCount : usersPerFile;
+            // usersExportStrategy==SAME_FILE  means exporting all users into single file (but separate to realm)
+            final int countPerPage = (usersExportStrategy == UsersExportStrategy.SAME_FILE) ? usersHolder.totalCount : usersPerFile;
 
             while (usersHolder.currentPageStart < usersHolder.totalCount) {
                 if (usersHolder.currentPageStart + countPerPage < usersHolder.totalCount) {

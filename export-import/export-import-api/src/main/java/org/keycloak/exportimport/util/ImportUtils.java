@@ -51,8 +51,12 @@ public class ImportUtils {
             } else {
                 logger.infof("Realm '%s' already exists. Removing it before import", realmName);
                 if (Config.getAdminRealm().equals(realm.getId())) {
-                    realm.setMasterAdminApp(null);
+                    // Delete all masterAdmin apps due to foreign key constraints
+                    for (RealmModel currRealm : model.getRealms()) {
+                        currRealm.setMasterAdminApp(null);
+                    }
                 }
+                // TODO: For migration between versions, it should be possible to delete just realm but keep it's users
                 model.removeRealm(realm.getId());
             }
         }
@@ -138,9 +142,21 @@ public class ImportUtils {
             if (parser.getCurrentToken() == JsonToken.START_ARRAY) {
                 // Case with more realms in stream
                 parser.nextToken();
+
+                List<RealmRepresentation> realmReps = new ArrayList<RealmRepresentation>();
                 while (parser.getCurrentToken() == JsonToken.START_OBJECT) {
                     RealmRepresentation realmRep = parser.readValueAs(RealmRepresentation.class);
                     parser.nextToken();
+
+                    // Ensure that master realm is imported first
+                    if (Config.getAdminRealm().equals(realmRep.getRealm())) {
+                        realmReps.add(0, realmRep);
+                    } else {
+                        realmReps.add(realmRep);
+                    }
+                }
+
+                for (RealmRepresentation realmRep : realmReps) {
                     importRealm(session, realmRep, strategy);
                 }
             } else if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
