@@ -87,7 +87,7 @@ public class ApplicationsResource {
         auth.requireManage();
 
         try {
-            ApplicationModel applicationModel = RepresentationToModel.createApplication(realm, rep);
+            ApplicationModel applicationModel = RepresentationToModel.createApplication(realm, rep, true);
             return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getName()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Application " + rep.getName() + " already exists");

@@ -24,7 +24,11 @@ public class ExportImportConfig {
     // used for "singleFile" provider
     public static final String FILE = PREFIX + "file";
 
-    // Number of users per file used in "dir" and "zip" providers. -1 means adding users to same file with realm. 0 means adding to separate file with unlimited page number
+    // How to export users when realm export is requested for "dir" and "zip" provider
+    public static final String USERS_EXPORT_STRATEGY = PREFIX + "usersExportStrategy";
+    public static final UsersExportStrategy DEFAULT_USERS_EXPORT_STRATEGY = UsersExportStrategy.DIFFERENT_FILES;
+
+    // Number of users per file used in "dir" and "zip" providers. Used if usersExportStrategy is DIFFERENT_FILES
     public static final String USERS_PER_FILE = PREFIX + "usersPerFile";
     public static final Integer DEFAULT_USERS_PER_FILE = 5000;
 
@@ -90,6 +94,15 @@ public class ExportImportConfig {
 
     public static void setFile(String file) {
         System.setProperty(FILE, file);
+    }
+
+    public static UsersExportStrategy getUsersExportStrategy() {
+        String usersExportStrategy = System.getProperty(USERS_EXPORT_STRATEGY, DEFAULT_USERS_EXPORT_STRATEGY.toString());
+        return Enum.valueOf(UsersExportStrategy.class, usersExportStrategy);
+    }
+
+    public static void setUsersExportStrategy(UsersExportStrategy usersExportStrategy) {
+        System.setProperty(USERS_EXPORT_STRATEGY, usersExportStrategy.toString());
     }
 
     public static Integer getUsersPerFile() {
