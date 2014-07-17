@@ -1,6 +1,8 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 
@@ -15,6 +17,7 @@ import javax.persistence.NamedQuery;
 })
 @Entity
 public class OAuthClientEntity extends ClientEntity {
+    @Column(name="DIRECT_GRANTS_ONLY")
     protected boolean directGrantsOnly;
 
     public boolean isDirectGrantsOnly() {

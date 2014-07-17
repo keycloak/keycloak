@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -9,20 +10,24 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import java.io.Serializable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="deleteAuthenticationLinksByRealm", query="delete from AuthenticationLinkEntity authLink where authLink.user IN (select u from UserEntity u where realm=:realm)")
+        @NamedQuery(name="deleteAuthenticationLinksByRealm", query="delete from AuthenticationLinkEntity authLink where authLink.user IN (select u from UserEntity u where u.realmId=:realmId)")
 })
+@Table(name="AUTHENTICATION_LINK")
 @Entity
 @IdClass(AuthenticationLinkEntity.Key.class)
 public class AuthenticationLinkEntity {
 
     @Id
+    @Column(name="AUTH_PROVIDER")
     protected String authProvider;
+    @Column(name="AUTH_USER_ID")
     protected String authUserId;
 
     // NOTE: @OnetoOne creates a constraint race condition if the join column is on AuthenticationLinkEntity.
@@ -30,7 +35,7 @@ public class AuthenticationLinkEntity {
     // a @ManyToOne on both sides.  Broken yes, but, I think we're going to replace AuthenticationLinkEntity anyways.
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="userId")
+    @JoinColumn(name="USER_ID")
     protected UserEntity user;
 
     public String getAuthProvider() {

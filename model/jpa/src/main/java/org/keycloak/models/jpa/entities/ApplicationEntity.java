@@ -1,10 +1,12 @@
 package org.keycloak.models.jpa.entities;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -15,16 +17,23 @@ import java.util.Collection;
 @Entity
 public class ApplicationEntity extends ClientEntity {
 
+    @Column(name="SURROGATE_AUTH_REQUIRED")
     private boolean surrogateAuthRequired;
+
+    @Column(name="BASE_URL")
     private String baseUrl;
+
+    @Column(name="MANAGEMENT_URL")
     private String managementUrl;
+
+    @Column(name="BEARER_ONLY")
     private boolean bearerOnly;
 
     @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "application")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="ApplicationDefaultRoles")
+    @JoinTable(name="APPLICATION_DEFAULT_ROLES")
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
     public boolean isSurrogateAuthRequired() {

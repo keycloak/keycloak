@@ -145,8 +145,8 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
         applicationEntity.getRoles().remove(role);
         applicationEntity.getDefaultRoles().remove(role);
-        em.createNativeQuery("delete from CompositeRole where childRole = :role").setParameter("role", role).executeUpdate();
-        em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createNativeQuery("delete from COMPOSITE_ROLE where CHILD_ROLE = :role").setParameter("role", role).executeUpdate();
+        em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", role).executeUpdate();
         role.setApplication(null);
         em.flush();
         em.remove(role);

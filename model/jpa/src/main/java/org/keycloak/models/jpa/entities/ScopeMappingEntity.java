@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -8,6 +9,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 import java.io.Serializable;
 
 /**
@@ -17,19 +19,23 @@ import java.io.Serializable;
 @NamedQueries({
         @NamedQuery(name="hasScope", query="select m from ScopeMappingEntity m where m.client = :client and m.role = :role"),
         @NamedQuery(name="clientScopeMappings", query="select m from ScopeMappingEntity m where m.client = :client"),
-        @NamedQuery(name="clientScopeMappingIds", query="select m.role.id from ScopeMappingEntity m where m.client = :client")
+        @NamedQuery(name="clientScopeMappingIds", query="select m.role.id from ScopeMappingEntity m where m.client = :client"),
+        @NamedQuery(name="deleteScopeMappingByRole", query="delete from ScopeMappingEntity where role = :role"),
+        @NamedQuery(name="deleteScopeMappingByClient", query="delete from ScopeMappingEntity where client = :client")
 })
+@Table(name="SCOPE_MAPPING")
 @Entity
 @IdClass(ScopeMappingEntity.Key.class)
 public class ScopeMappingEntity {
 
     @Id
     @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name = "CLIENT_ID")
     protected ClientEntity client;
 
     @Id
     @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="roleId")
+    @JoinColumn(name="ROLE_ID")
     protected RoleEntity role;
 
     public ClientEntity getClient() {

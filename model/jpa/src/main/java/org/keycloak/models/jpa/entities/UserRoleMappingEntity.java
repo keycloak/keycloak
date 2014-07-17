@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -8,6 +9,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 import java.io.Serializable;
 
 /**
@@ -15,25 +17,27 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="userHasRole", query="select m from UserRoleMappingEntity m where m.user = :user and m.role = :role"),
+        @NamedQuery(name="userHasRole", query="select m from UserRoleMappingEntity m where m.user = :user and m.roleId = :roleId"),
         @NamedQuery(name="userRoleMappings", query="select m from UserRoleMappingEntity m where m.user = :user"),
-        @NamedQuery(name="userRoleMappingIds", query="select m.role.id from UserRoleMappingEntity m where m.user = :user"),
-        @NamedQuery(name="deleteUserRoleMappingsByRealm", query="delete from  UserRoleMappingEntity mapping where mapping.user IN (select u from UserEntity u where realm=:realm)")
+        @NamedQuery(name="userRoleMappingIds", query="select m.roleId from UserRoleMappingEntity m where m.user = :user"),
+        @NamedQuery(name="deleteUserRoleMappingsByRealm", query="delete from  UserRoleMappingEntity mapping where mapping.user IN (select u from UserEntity u where u.realmId=:realmId)"),
+        @NamedQuery(name="deleteUserRoleMappingsByRole", query="delete from UserRoleMappingEntity m where m.roleId = :roleId"),
+        @NamedQuery(name="deleteUserRoleMappingsByUser", query="delete from UserRoleMappingEntity m where m.user = :user")
 
 })
+@Table(name="USER_ROLE_MAPPING")
 @Entity
 @IdClass(UserRoleMappingEntity.Key.class)
 public class UserRoleMappingEntity  {
 
     @Id
     @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="userId")
+    @JoinColumn(name="USER_ID")
     protected UserEntity user;
 
     @Id
-    @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="roleId")
-    protected RoleEntity role;
+    @Column(name = "ROLE_ID")
+    protected String roleId;
 
     public UserEntity getUser() {
         return user;
@@ -43,34 +47,35 @@ public class UserRoleMappingEntity  {
         this.user = user;
     }
 
-    public RoleEntity getRole() {
-        return role;
+    public String getRoleId() {
+        return roleId;
     }
 
-    public void setRole(RoleEntity role) {
-        this.role = role;
+    public void setRoleId(String roleId) {
+        this.roleId = roleId;
     }
+
 
     public static class Key implements Serializable {
 
         protected UserEntity user;
 
-        protected RoleEntity role;
+        protected String roleId;
 
         public Key() {
         }
 
-        public Key(UserEntity user, RoleEntity role) {
+        public Key(UserEntity user, String roleId) {
             this.user = user;
-            this.role = role;
+            this.roleId = roleId;
         }
 
         public UserEntity getUser() {
             return user;
         }
 
-        public RoleEntity getRole() {
-            return role;
+        public String getRoleId() {
+            return roleId;
         }
 
         @Override
@@ -80,18 +85,17 @@ public class UserRoleMappingEntity  {
 
             Key key = (Key) o;
 
-            if (role != null ? !role.getId().equals(key.role != null ? key.role.getId() : null) : key.role != null) return false;
-            if (user != null ? !user.getId().equals(key.user != null ? key.user.getId() : null) : key.user != null) return false;
+            if (!roleId.equals(key.roleId)) return false;
+            if (!user.equals(key.user)) return false;
 
             return true;
         }
 
         @Override
         public int hashCode() {
-            int result = user != null ? user.getId().hashCode() : 0;
-            result = 31 * result + (role != null ? role.getId().hashCode() : 0);
+            int result = user.hashCode();
+            result = 31 * result + roleId.hashCode();
             return result;
         }
     }
-
 }

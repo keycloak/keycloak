@@ -11,11 +11,11 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
 import javax.persistence.EntityManager;
@@ -216,6 +216,7 @@ public class UserAdapter implements UserModel {
 
         if (credentialEntity == null) {
             credentialEntity = new CredentialEntity();
+            credentialEntity.setId(KeycloakModelUtils.generateId());
             credentialEntity.setType(cred.getType());
             credentialEntity.setDevice(cred.getDevice());
             credentialEntity.setUser(user);
@@ -277,6 +278,7 @@ public class UserAdapter implements UserModel {
 
         if (credentialEntity == null) {
             credentialEntity = new CredentialEntity();
+            credentialEntity.setId(KeycloakModelUtils.generateId());
             credentialEntity.setType(credModel.getType());
             credentialEntity.setUser(user);
             em.persist(credentialEntity);
@@ -305,8 +307,7 @@ public class UserAdapter implements UserModel {
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
         TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
         query.setParameter("user", getUser());
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
-        query.setParameter("role", roleEntity);
+        query.setParameter("roleId", role.getId());
         return query;
     }
 
@@ -315,8 +316,7 @@ public class UserAdapter implements UserModel {
         if (hasRole(role)) return;
         UserRoleMappingEntity entity = new UserRoleMappingEntity();
         entity.setUser(getUser());
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
-        entity.setRole(roleEntity);
+        entity.setRoleId(role.getId());
         em.persist(entity);
         em.flush();
         em.detach(entity);

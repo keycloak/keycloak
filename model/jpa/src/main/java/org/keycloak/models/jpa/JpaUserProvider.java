@@ -9,12 +9,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
-import org.keycloak.models.jpa.entities.CredentialEntity;
-import org.keycloak.models.jpa.entities.RealmEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.SocialLinkEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
-import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -49,8 +45,7 @@ public class JpaUserProvider implements UserProvider {
         UserEntity entity = new UserEntity();
         entity.setId(id);
         entity.setUsername(username);
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        entity.setRealm(realmEntity);
+        entity.setRealmId(realm.getId());
         em.persist(entity);
         em.flush();
         UserModel userModel = new UserAdapter(realm, em, entity);
@@ -79,8 +74,7 @@ public class JpaUserProvider implements UserProvider {
     public boolean removeUser(RealmModel realm, String name) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
         query.setParameter("username", name);
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        query.setParameter("realm", realmEntity);
+        query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
         if (results.size() == 0) return false;
         removeUser(results.get(0));
@@ -88,8 +82,8 @@ public class JpaUserProvider implements UserProvider {
     }
 
     private void removeUser(UserEntity user) {
-        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteSocialLinkByUser").setParameter("user", user).executeUpdate();
         if (user.getAuthenticationLink() != null) {
             for (AuthenticationLinkEntity l : user.getAuthenticationLink()) {
                 em.remove(l);
@@ -101,8 +95,7 @@ public class JpaUserProvider implements UserProvider {
     @Override
     public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
         SocialLinkEntity entity = new SocialLinkEntity();
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        entity.setRealm(realmEntity);
+        entity.setRealmId(realm.getId());
         entity.setSocialProvider(socialLink.getSocialProvider());
         entity.setSocialUserId(socialLink.getSocialUserId());
         entity.setSocialUsername(socialLink.getSocialUsername());
@@ -128,57 +121,52 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm) {
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         int num = em.createNamedQuery("deleteUserRoleMappingsByRealm")
-                .setParameter("realm", realmEntity).executeUpdate();
+                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteSocialLinkByRealm")
-                .setParameter("realm", realmEntity).executeUpdate();
+                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteCredentialsByRealm")
-                .setParameter("realm", realmEntity).executeUpdate();
+                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserAttributesByRealm")
-                .setParameter("realm", realmEntity).executeUpdate();
+                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteAuthenticationLinksByRealm")
-                .setParameter("realm", realmEntity).executeUpdate();
+                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUsersByRealm")
-                .setParameter("realm", realmEntity).executeUpdate();
+                .setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
     public void preRemove(RoleModel role) {
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
-        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteUserRoleMappingsByRole").setParameter("roleId", role.getId()).executeUpdate();
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realmModel) {
+    public UserModel getUserById(String id, RealmModel realm) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserById", UserEntity.class);
         query.setParameter("id", id);
-        RealmEntity realm = em.getReference(RealmEntity.class, realmModel.getId());
-        query.setParameter("realm", realm);
+        query.setParameter("realmId", realm.getId());
         List<UserEntity> entities = query.getResultList();
         if (entities.size() == 0) return null;
-        return new UserAdapter(realmModel, em, entities.get(0));
+        return new UserAdapter(realm, em, entities.get(0));
     }
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realmModel) {
+    public UserModel getUserByUsername(String username, RealmModel realm) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
         query.setParameter("username", username);
-        RealmEntity realm = em.getReference(RealmEntity.class, realmModel.getId());
-        query.setParameter("realm", realm);
+        query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
         if (results.size() == 0) return null;
-        return new UserAdapter(realmModel, em, results.get(0));
+        return new UserAdapter(realm, em, results.get(0));
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realmModel) {
+    public UserModel getUserByEmail(String email, RealmModel realm) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByEmail", UserEntity.class);
         query.setParameter("email", email);
-        RealmEntity realm = em.getReference(RealmEntity.class, realmModel.getId());
-        query.setParameter("realm", realm);
+        query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
-        return results.isEmpty() ? null : new UserAdapter(realmModel, em, results.get(0));
+        return results.isEmpty() ? null : new UserAdapter(realm, em, results.get(0));
     }
 
      @Override
@@ -188,8 +176,7 @@ public class JpaUserProvider implements UserProvider {
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
         TypedQuery<UserEntity> query = em.createNamedQuery("findUserByLinkAndRealm", UserEntity.class);
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        query.setParameter("realm", realmEntity);
+        query.setParameter("realmId", realm.getId());
         query.setParameter("socialProvider", socialLink.getSocialProvider());
         query.setParameter("socialUserId", socialLink.getSocialUserId());
         List<UserEntity> results = query.getResultList();
@@ -211,20 +198,17 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public int getUsersCount(RealmModel realm) {
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-
         // TODO: named query?
-        Object count = em.createQuery("select count(u) from UserEntity u where u.realm = :realm")
-                .setParameter("realm", realmEntity)
+        Object count = em.createNamedQuery("getRealmUserCount")
+                .setParameter("realmId", realm.getId())
                 .getSingleResult();
         return ((Number)count).intValue();
     }
 
     @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm order by u.username", UserEntity.class);
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        query.setParameter("realm", realmEntity);
+        TypedQuery<UserEntity> query = em.createNamedQuery("getAllUsersByRealm", UserEntity.class);
+        query.setParameter("realmId", realm.getId());
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }
@@ -244,9 +228,8 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username", UserEntity.class);
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        query.setParameter("realm", realmEntity);
+        TypedQuery<UserEntity> query = em.createNamedQuery("searchForUser", UserEntity.class);
+        query.setParameter("realmId", realm.getId());
         query.setParameter("search", "%" + search.toLowerCase() + "%");
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
@@ -292,8 +275,7 @@ public class JpaUserProvider implements UserProvider {
         builder.append(" order by u.username");
         String q = builder.toString();
         TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        query.setParameter("realm", realmEntity);
+        query.setParameter("realmId", realm.getId());
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }

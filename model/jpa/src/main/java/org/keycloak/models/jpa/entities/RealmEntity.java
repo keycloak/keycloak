@@ -8,12 +8,14 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,6 +28,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Table(name="REALM")
 @Entity
 @NamedQueries({
         @NamedQuery(name="getAllRealms", query="select realm from RealmEntity realm"),
@@ -33,59 +36,85 @@ import java.util.Set;
 })
 public class RealmEntity {
     @Id
-    @Column(length = 36)
+    @Column(name="ID", length = 36)
     protected String id;
 
-    @Column(unique = true)
+    @Column(name="NAME", unique = true)
     protected String name;
 
+    @Column(name="ENABLED")
     protected boolean enabled;
+    @Column(name="SSL_NOT_REQUIRED")
     protected boolean sslNotRequired;
+    @Column(name="REGISTRATION_ALLOWED")
     protected boolean registrationAllowed;
+    @Column(name="PASSWORD_CRED_GRANT_ALLOWED")
     protected boolean passwordCredentialGrantAllowed;
+    @Column(name="VERIFY_EMAIL")
     protected boolean verifyEmail;
+    @Column(name="RESET_PASSWORD_ALLOWED")
     protected boolean resetPasswordAllowed;
+    @Column(name="SOCIAL")
     protected boolean social;
+    @Column(name="REMEMBER_ME")
     protected boolean rememberMe;
     //--- brute force settings
+    @Column(name="BRUTE_FORCE_PROTECTED")
     protected boolean bruteForceProtected;
+    @Column(name="MAX_FAILURE_WAIT")
     protected int maxFailureWaitSeconds;
+    @Column(name="MINIMUM_QUICK_LOGIN_WAIT")
     protected int minimumQuickLoginWaitSeconds;
+    @Column(name="WAIT_INCREMENT_SECONDS")
     protected int waitIncrementSeconds;
+    @Column(name="QUICK_LOGIN_CHECK")
     protected long quickLoginCheckMilliSeconds;
+    @Column(name="MAX_DELTA_TIME")
     protected int maxDeltaTimeSeconds;
+    @Column(name="FAILURE_FACTOR")
     protected int failureFactor;
     //--- end brute force settings
 
 
-    @Column(name="updateProfileOnInitSocLogin")
+    @Column(name="UPDATE_PROFILE_ON_SOC_LOGIN")
     protected boolean updateProfileOnInitialSocialLogin;
+    @Column(name="PASSWORD_POLICY")
     protected String passwordPolicy;
 
+    @Column(name="SSO_IDLE_TIMEOUT")
     private int ssoSessionIdleTimeout;
+    @Column(name="SSO_MAX_LIFESPAN")
     private int ssoSessionMaxLifespan;
+    @Column(name="ACCESS_TOKEN_LIFESPAN")
     protected int accessTokenLifespan;
+    @Column(name="ACCESS_CODE_LIFESPAN")
     protected int accessCodeLifespan;
+    @Column(name="USER_ACTION_LIFESPAN")
     protected int accessCodeLifespanUserAction;
+    @Column(name="NOT_BEFORE")
     protected int notBefore;
 
-    @Column(length = 2048)
+    @Column(name="PUBLIC_KEY", length = 2048)
     protected String publicKeyPem;
-    @Column(length = 2048)
+    @Column(name="PRIVATE_KEY", length = 2048)
     protected String privateKeyPem;
 
+    @Column(name="LOGIN_THEME")
     protected String loginTheme;
+    @Column(name="ACCOUNT_THEME")
     protected String accountTheme;
+    @Column(name="ADMIN_THEME")
     protected String adminTheme;
+    @Column(name="EMAIL_THEME")
     protected String emailTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="User_RequiredCreds")
+    @JoinTable(name="USER_REQUIRED_CREDS")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="AuthProviders")
+    @JoinTable(name="AUTH_PROVIDERS")
     List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
@@ -97,32 +126,36 @@ public class RealmEntity {
     @ElementCollection
     @MapKeyColumn(name="name")
     @Column(name="value")
-    @CollectionTable
+    @CollectionTable(name="REALM_SMTP_CONFIG")
     protected Map<String, String> smtpConfig = new HashMap<String, String>();
 
     @ElementCollection
     @MapKeyColumn(name="name")
     @Column(name="value")
-    @CollectionTable
+    @CollectionTable(name="REALM_SOCIAL_CONFIG")
     protected Map<String, String> socialConfig = new HashMap<String, String>();
 
     @ElementCollection
     @MapKeyColumn(name="name")
     @Column(name="value")
-    @CollectionTable
+    @CollectionTable(name="REALM_LDAP_CONFIG")
     protected Map<String, String> ldapServerConfig = new HashMap<String, String>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="RealmDefaultRoles")
+    @JoinTable(name="REALM_DEFAULT_ROLES")
     protected Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
+    @Column(name="AUDIT_ENABLED")
     protected boolean auditEnabled;
+    @Column(name="AUDIT_EXPIRATION")
     protected long auditExpiration;
 
     @ElementCollection
+    @CollectionTable(name="REALM_AUDIT_LISTENERS")
     protected Set<String> auditListeners= new HashSet<String>();
 
     @OneToOne
+    @JoinColumn(name="MASTER_ADMIN_APP")
     protected ApplicationEntity masterAdminApp;
 
     public String getId() {

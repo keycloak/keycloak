@@ -548,7 +548,7 @@ public class RealmAdapter implements RealmModel {
             return false;
         }
         em.remove(applicationEntity);
-        em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", applicationEntity).executeUpdate();
+        em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", applicationEntity).executeUpdate();
         em.flush();
 
         return true;
@@ -608,7 +608,7 @@ public class RealmAdapter implements RealmModel {
         OAuthClientModel oauth = getOAuthClientById(id);
         if (oauth == null) return false;
         OAuthClientEntity client = em.getReference(OAuthClientEntity.class, oauth.getId());
-        em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", client).executeUpdate();
+        em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", client).executeUpdate();
         em.remove(client);
         return true;
     }
@@ -769,8 +769,8 @@ public class RealmAdapter implements RealmModel {
         realm.getRoles().remove(role);
         realm.getDefaultRoles().remove(role);
 
-        em.createNativeQuery("delete from CompositeRole where childRole = :role").setParameter("role", roleEntity).executeUpdate();
-        em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
+        em.createNativeQuery("delete from COMPOSITE_ROLE where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
         em.remove(roleEntity);
 
