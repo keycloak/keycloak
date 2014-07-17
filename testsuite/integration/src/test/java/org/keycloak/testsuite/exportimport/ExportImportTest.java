@@ -69,7 +69,7 @@ public class ExportImportTest {
     // We want data to be persisted among server restarts
     private static ExternalResource mongoRule = new ExternalResource() {
 
-        private static final String MONGO_CLEAR_ON_STARTUP_PROP_NAME = "keycloak.model.mongo.clearOnStartup";
+        private static final String MONGO_CLEAR_ON_STARTUP_PROP_NAME = "keycloak.connectionsMongo.clearOnStartup";
         private String previousMongoClearOnStartup;
 
         @Override
