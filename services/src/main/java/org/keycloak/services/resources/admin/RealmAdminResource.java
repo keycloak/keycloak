@@ -13,6 +13,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.SessionStats;
@@ -114,7 +116,16 @@ public class RealmAdminResource {
     @Produces("application/json")
     public RealmRepresentation getRealm() {
         if (auth.hasView()) {
-            return ModelToRepresentation.toRepresentation(realm);
+            RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm);
+            if (session.realms() instanceof CacheRealmProvider) {
+                CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
+                rep.setRealmCacheEnabled(cacheRealmProvider.isEnabled());
+            }
+            if (session.users() instanceof CacheUserProvider) {
+                CacheUserProvider cache = (CacheUserProvider)session.users();
+                rep.setUserCacheEnabled(cache.isEnabled());
+            }
+            return rep;
         } else {
             auth.requireAny();
 
@@ -140,6 +151,15 @@ public class RealmAdminResource {
         logger.debug("updating realm: " + realm.getName());
         try {
             RepresentationToModel.updateRealm(rep, realm);
+            if (rep.isRealmCacheEnabled() != null && session.realms() instanceof CacheRealmProvider) {
+                CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
+                cacheRealmProvider.setEnabled(rep.isRealmCacheEnabled());
+            }
+            if (rep.isUserCacheEnabled() != null && session.users() instanceof CacheUserProvider) {
+                CacheUserProvider cache = (CacheUserProvider)session.users();
+                cache.setEnabled(rep.isUserCacheEnabled());
+            }
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");

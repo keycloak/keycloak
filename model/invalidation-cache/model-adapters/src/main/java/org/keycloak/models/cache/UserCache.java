@@ -22,4 +22,8 @@ public interface UserCache {
     void invalidateCachedUserById(String realmId, String id);
 
     void invalidateRealmUsers(String realmId);
+
+    boolean isEnabled();
+
+    void setEnabled(boolean enabled);
 }

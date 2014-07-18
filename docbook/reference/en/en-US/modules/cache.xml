@@ -1,0 +1,68 @@
+<chapter id="server_cache">
+    <title>Server Cache</title>
+    <para>
+        By default, Keycloak caches realm metadata and users.  There are two separate caches, one for realm metadata
+        (realm, application, client, roles, etc...) and one for users.  These caches greatly improves the performance of the server.
+    </para>
+
+    <section>
+        <title>Disabling Caches</title>
+        <para>
+            The realm and user caches can be disabled through configuration or through the management console.  To
+            manally disable the realm or user cache, you must edit the <literal>keycloak-server.json</literal> file
+            in your distribution.  Here's what the config looks like initially.
+        </para>
+        <para>
+            <programlisting><![CDATA[
+    "realmCache": {
+        "provider": "${keycloak.realm.cache.provider:mem}"
+    },
+
+    "userCache": {
+        "provider": "${keycloak.user.cache.provider:mem}",
+        "mem": {
+            "maxSize": 20000
+        }
+    },
+]]></programlisting>
+        </para>
+        <para>You must then change it to:
+            <programlisting><![CDATA[
+    "realmCache": {
+        "provider": "${keycloak.realm.cache.provider:none}"
+    },
+
+    "userCache": {
+        "provider": "${keycloak.user.cache.provider:none}"
+    },
+]]></programlisting>
+        </para>
+        <para>
+           You can also disable either of the caches at runtime through the Keycloak admin console Realm Settings page.
+           This will not permanently disable the cache.  If you reboot the server, the cache will be re-enabled unless
+            you manualy disable the cache in the <literal>keycloak-server.json</literal> file.
+        </para>
+    </section>
+    <section>
+        <title>Clear Caches</title>
+        <para>
+            To clear the realm or user cache, go to the Keycloak admin console Realm Settings page.  Disable the cache
+            you want.  Save the settings.  Then re-enable the cache.  This will cause the cache to be cleared.
+        </para>
+    </section>
+    <section>
+        <title>Cache Config</title>
+        <para>
+            Cache configuration is done within <literal>keycloak-server.json</literal>.  Changes to this file will not
+            be seen by the server until you reboot.  Currently you can only configure the max size of the user cache.
+            <programlisting><![CDATA[
+    "userCache": {
+        "provider": "${keycloak.user.cache.provider:mem}",
+        "mem": {
+            "maxSize": 20000
+        }
+    },
+]]></programlisting>
+        </para>
+    </section>
+</chapter>

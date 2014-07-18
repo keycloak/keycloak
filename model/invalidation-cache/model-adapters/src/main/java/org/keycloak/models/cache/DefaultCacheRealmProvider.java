@@ -41,7 +41,6 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     protected Map<String, ApplicationModel> managedApplications = new HashMap<String, ApplicationModel>();
     protected Map<String, OAuthClientModel> managedClients = new HashMap<String, OAuthClientModel>();
     protected Map<String, RoleModel> managedRoles = new HashMap<String, RoleModel>();
-    protected Map<String, UserModel> managedUsers = new HashMap<String, UserModel>();
 
     protected boolean clearAll;
 
@@ -50,6 +49,16 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
         this.session = session;
 
         session.getTransaction().enlistAfterCompletion(getTransaction());
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return cache.isEnabled();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        cache.setEnabled(enabled);
     }
 
     @Override
@@ -142,6 +151,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     @Override
     public RealmModel createRealm(String name) {
         RealmModel realm = getDelegate().createRealm(name);
+        if (!cache.isEnabled()) return realm;
         registerRealmInvalidation(realm.getId());
         return realm;
     }
@@ -149,12 +159,14 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     @Override
     public RealmModel createRealm(String id, String name) {
         RealmModel realm =  getDelegate().createRealm(id, name);
+        if (!cache.isEnabled()) return realm;
         registerRealmInvalidation(realm.getId());
         return realm;
     }
 
     @Override
     public RealmModel getRealm(String id) {
+        if (!cache.isEnabled()) return getDelegate().getRealm(id);
         CachedRealm cached = cache.getCachedRealm(id);
         if (cached == null) {
             RealmModel model = getDelegate().getRealm(id);
@@ -174,6 +186,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public RealmModel getRealmByName(String name) {
+        if (!cache.isEnabled()) return getDelegate().getRealmByName(name);
         CachedRealm cached = cache.getCachedRealmByName(name);
         if (cached == null) {
             RealmModel model = getDelegate().getRealmByName(name);
@@ -199,6 +212,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public boolean removeRealm(String id) {
+        if (!cache.isEnabled()) return getDelegate().removeRealm(id);
         cache.invalidateCachedRealmById(id);
 
         RealmModel realm = getDelegate().getRealm(id);
@@ -227,6 +241,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public RoleModel getRoleById(String id, RealmModel realm) {
+        if (!cache.isEnabled()) return getDelegate().getRoleById(id, realm);
         CachedRole cached = cache.getRole(id);
         if (cached == null) {
             RoleModel model = getDelegate().getRoleById(id, realm);
@@ -251,6 +266,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public ApplicationModel getApplicationById(String id, RealmModel realm) {
+        if (!cache.isEnabled()) return getDelegate().getApplicationById(id, realm);
         CachedApplication cached = cache.getApplication(id);
         if (cached == null) {
             ApplicationModel model = getDelegate().getApplicationById(id, realm);
@@ -270,6 +286,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
+        if (!cache.isEnabled()) return getDelegate().getOAuthClientById(id, realm);
         CachedOAuthClient cached = cache.getOAuthClient(id);
         if (cached == null) {
             OAuthClientModel model = getDelegate().getOAuthClientById(id, realm);

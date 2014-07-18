@@ -8,7 +8,7 @@ import org.keycloak.models.KeycloakSession;
  * @version $Revision: 1 $
  */
 public class MemoryCacheUserProviderFactory implements CacheUserProviderFactory {
-    protected UserCache cache = new MemoryUserCache();
+    protected MemoryUserCache cache;
 
     @Override
     public CacheUserProvider create(KeycloakSession session) {
@@ -18,7 +18,9 @@ public class MemoryCacheUserProviderFactory implements CacheUserProviderFactory 
     @Override
     public void init(Config.Scope config) {
         config.get("");
-
+        cache = new MemoryUserCache();
+        int size = config.getInt("maxSize", 10000);
+        cache.setMaxUserCacheSize(size);
     }
 
     @Override

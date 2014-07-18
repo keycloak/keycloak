@@ -49,4 +49,7 @@ public interface RealmCache {
 
     void invalidateRoleById(String id);
 
+    boolean isEnabled();
+
+    void setEnabled(boolean enabled);
 }

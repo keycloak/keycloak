@@ -41,6 +41,16 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
+    public boolean isEnabled() {
+        return cache.isEnabled();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        cache.setEnabled(enabled);
+    }
+
+    @Override
     public UserProvider getDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
@@ -103,6 +113,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
+        if (!cache.isEnabled()) return getDelegate().getUserById(id, realm);
         if (realmInvalidations.contains(realm.getId())) {
             return getDelegate().getUserById(id, realm);
         }
@@ -127,6 +138,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
+        if (!cache.isEnabled()) return getDelegate().getUserByUsername(username, realm);
         if (realmInvalidations.contains(realm.getId())) {
             return getDelegate().getUserByUsername(username, realm);
         }
@@ -149,6 +161,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
+        if (!cache.isEnabled()) return getDelegate().getUserByEmail(email, realm);
         if (realmInvalidations.contains(realm.getId())) {
             return getDelegate().getUserByEmail(email, realm);
         }
@@ -236,6 +249,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, String name) {
+        if (!cache.isEnabled()) return getDelegate().removeUser(realm, name);
         UserModel user = getUserByUsername(name, realm);
         if (user == null) return false;
         registerUserInvalidation(realm, user.getId());

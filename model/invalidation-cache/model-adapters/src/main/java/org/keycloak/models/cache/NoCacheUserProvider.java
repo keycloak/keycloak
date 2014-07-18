@@ -25,6 +25,15 @@ public class NoCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
+    public boolean isEnabled() {
+        return false;
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+    }
+
+    @Override
     public UserProvider getDelegate() {
         if (delegate != null) return delegate;
         delegate = session.getProvider(UserProvider.class);
@@ -33,7 +42,6 @@ public class NoCacheUserProvider implements CacheUserProvider {
 
     @Override
     public void registerUserInvalidation(RealmModel realm, String id) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
