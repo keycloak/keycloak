@@ -30,6 +30,7 @@
                 <!ENTITY Authentication SYSTEM "modules/authentication-spi.xml">
                 <!ENTITY Ldap SYSTEM "modules/ldap.xml">
                 <!ENTITY ExportImport SYSTEM "modules/export-import.xml">
+                <!ENTITY ServerCache SYSTEM "modules/cache.xml">
                 ]>
 
 <book>
@@ -117,6 +118,7 @@ This one is short
     &Authentication;
     &Ldap;
     &ExportImport;
+    &ServerCache;
     &Migration;
 
 </book>
