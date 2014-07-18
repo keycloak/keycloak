@@ -10,16 +10,27 @@
         }
     },
 
-    "model": {
+    "realm": {
         "provider": "jpa"
     },
 
-    "userSessions": {
-        "provider" : "mem"
+    "user": {
+        "provider": "${keycloak.user.provider:jpa}"
     },
 
-    "modelCache": {
-        "provider": "${keycloak.model.cache.provider:}"
+    "userSessions": {
+        "provider" : "${keycloak.userSessions.provider:mem}"
+    },
+
+    "realmCache": {
+        "provider": "${keycloak.realm.cache.provider:mem}"
+    },
+
+    "userCache": {
+        "provider": "${keycloak.user.cache.provider:mem}",
+        "mem": {
+            "maxSize": 20000
+        }
     },
 
     "timer": {

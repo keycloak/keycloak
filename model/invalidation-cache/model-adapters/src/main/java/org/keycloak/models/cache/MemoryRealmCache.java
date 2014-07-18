@@ -18,6 +18,7 @@ public class MemoryRealmCache implements RealmCache {
     protected ConcurrentHashMap<String, CachedApplication> applicationCache = new ConcurrentHashMap<String, CachedApplication>();
     protected ConcurrentHashMap<String, CachedOAuthClient> clientCache = new ConcurrentHashMap<String, CachedOAuthClient>();
     protected ConcurrentHashMap<String, CachedRole> roleCache = new ConcurrentHashMap<String, CachedRole>();
+    protected volatile boolean enabled = true;
 
     @Override
     public void clear() {
@@ -29,7 +30,20 @@ public class MemoryRealmCache implements RealmCache {
     }
 
     @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        clear();
+        this.enabled = enabled;
+        clear();
+    }
+
+    @Override
     public CachedRealm getCachedRealm(String id) {
+        if (!enabled) return null;
         return realmCache.get(id);
     }
 
@@ -48,6 +62,7 @@ public class MemoryRealmCache implements RealmCache {
 
     @Override
     public void addCachedRealm(CachedRealm realm) {
+        if (!enabled) return;
         realmCache.put(realm.getId(), realm);
         realmCacheByName.put(realm.getName(), realm);
 
@@ -55,11 +70,13 @@ public class MemoryRealmCache implements RealmCache {
 
     @Override
     public CachedRealm getCachedRealmByName(String name) {
+        if (!enabled) return null;
         return realmCacheByName.get(name);
     }
 
     @Override
     public CachedApplication getApplication(String id) {
+        if (!enabled) return null;
         return applicationCache.get(id);
     }
 
@@ -70,6 +87,7 @@ public class MemoryRealmCache implements RealmCache {
 
     @Override
     public void addCachedApplication(CachedApplication app) {
+        if (!enabled) return;
         applicationCache.put(app.getId(), app);
     }
 
@@ -80,6 +98,7 @@ public class MemoryRealmCache implements RealmCache {
 
     @Override
     public CachedOAuthClient getOAuthClient(String id) {
+        if (!enabled) return null;
         return clientCache.get(id);
     }
 
@@ -90,6 +109,7 @@ public class MemoryRealmCache implements RealmCache {
 
     @Override
     public void addCachedOAuthClient(CachedOAuthClient client) {
+        if (!enabled) return;
         clientCache.put(client.getId(), client);
     }
 
@@ -100,6 +120,7 @@ public class MemoryRealmCache implements RealmCache {
 
     @Override
     public CachedRole getRole(String id) {
+        if (!enabled) return null;
         return roleCache.get(id);
     }
 
@@ -115,6 +136,7 @@ public class MemoryRealmCache implements RealmCache {
 
     @Override
     public void addCachedRole(CachedRole role) {
+        if (!enabled) return;
         roleCache.put(role.getId(), role);
     }
 

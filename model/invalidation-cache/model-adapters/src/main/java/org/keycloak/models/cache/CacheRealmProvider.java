@@ -9,6 +9,9 @@ import org.keycloak.models.RealmProvider;
 public interface CacheRealmProvider extends RealmProvider {
     RealmProvider getDelegate();
 
+    boolean isEnabled();
+    void setEnabled(boolean enabled);
+
     void registerRealmInvalidation(String id);
 
     void registerApplicationInvalidation(String id);

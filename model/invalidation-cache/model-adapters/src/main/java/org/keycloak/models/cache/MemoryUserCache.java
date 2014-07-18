@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MemoryUserCache implements UserCache {
 
     protected int maxUserCacheSize = 10000;
+    protected volatile boolean enabled = true;
 
 
     protected class RealmUsers {
@@ -75,6 +76,18 @@ public class MemoryUserCache implements UserCache {
 
     public void setMaxUserCacheSize(int maxUserCacheSize) {
         this.maxUserCacheSize = maxUserCacheSize;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        clear();
+        this.enabled = enabled;
+        clear();
     }
 
     @Override

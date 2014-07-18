@@ -16,26 +16,25 @@ import java.util.List;
 public class NoCacheRealmProvider implements CacheRealmProvider {
     protected KeycloakSession session;
     protected RealmProvider delegate;
-//    protected KeycloakTransaction transactionDelegate;
-//    protected boolean transactionActive;
-//    protected boolean setRollbackOnly;
 
     public NoCacheRealmProvider(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
+    public boolean isEnabled() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
     public RealmProvider getDelegate() {
-//        if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
         delegate = session.getProvider(RealmProvider.class);
-//        transactionDelegate = delegate.getTransaction();
-//        if (!transactionDelegate.isActive()) {
-//            transactionDelegate.begin();
-//            if (setRollbackOnly) {
-//                transactionDelegate.setRollbackOnly();
-//            }
-//        }
         return delegate;
     }
 
