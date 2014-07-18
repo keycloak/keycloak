@@ -1,11 +1,14 @@
 package org.keycloak.connections.jpa;
 
+import org.hibernate.ejb.AvailableSettings;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -14,7 +17,8 @@ import java.util.Properties;
 public class DefaultJpaConnectionProviderFactory implements JpaConnectionProviderFactory {
 
     private volatile EntityManagerFactory emf;
-    private String unitName;
+
+    private Config.Scope config;
 
     @Override
     public JpaConnectionProvider create(KeycloakSession session) {
@@ -40,29 +44,54 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
     @Override
     public void init(Config.Scope config) {
-        unitName = config.get("unitName", "jpa-keycloak-identity-store");
+        this.config = config;
     }
 
     private void lazyInit() {
         if (emf == null) {
             synchronized (this) {
                 if (emf == null) {
-                    emf = Persistence.createEntityManagerFactory(unitName, getHibernateProperties());
+                    String unitName = config.get("unitName");
+                    Map<String, Object> properties = new HashMap<String, Object>();
+
+                    // Only load config from keycloak-server.json if unitName is not specified
+                    if (unitName == null) {
+                        unitName = "keycloak-default";
+
+                        String dataSource = config.get("dataSource");
+                        if (dataSource != null) {
+                            if (config.getBoolean("jta", false)) {
+                                properties.put(AvailableSettings.JTA_DATASOURCE, dataSource);
+                            } else {
+                                properties.put(AvailableSettings.NON_JTA_DATASOURCE, dataSource);
+                            }
+                        } else {
+                            properties.put(AvailableSettings.JDBC_URL, config.get("url"));
+                            properties.put(AvailableSettings.JDBC_DRIVER, config.get("driver"));
+
+                            String user = config.get("user");
+                            if (user != null) {
+                                properties.put(AvailableSettings.JDBC_USER, user);
+                            }
+                            String password = config.get("password");
+                            if (password != null) {
+                                properties.put(AvailableSettings.JDBC_PASSWORD, password);
+                            }
+                        }
+
+                        String databaseSchema = config.get("databaseSchema", "validate");
+                        if (databaseSchema != null) {
+                            properties.put("hibernate.hbm2ddl.auto", databaseSchema);
+                        }
+
+                        properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
+                        properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
+                    }
+
+                    emf = Persistence.createEntityManagerFactory(unitName, properties);
                 }
             }
         }
-    }
-
-    private Properties getHibernateProperties() {
-        Properties result = new Properties();
-
-        for (Object property : System.getProperties().keySet()) {
-            if (property.toString().startsWith("hibernate.")) {
-                String propValue = System.getProperty(property.toString());
-                result.put(property, propValue);
-            }
-        }
-        return result;
     }
 
 }

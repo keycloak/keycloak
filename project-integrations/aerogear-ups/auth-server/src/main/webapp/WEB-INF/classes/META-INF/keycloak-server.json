@@ -10,16 +10,24 @@
         }
     },
 
-    "model": {
+    "realm": {
         "provider": "jpa"
     },
 
-    "userSessions": {
-        "provider" : "mem"
+    "user": {
+        "provider": "${keycloak.user.provider:jpa}"
     },
 
-    "modelCache": {
-        "provider": "${keycloak.model.cache.provider:}"
+    "userSessions": {
+        "provider" : "${keycloak.userSessions.provider:mem}"
+    },
+
+    "realmCache": {
+        "provider": "${keycloak.realm.cache.provider:mem}"
+    },
+
+    "userCache": {
+        "provider": "${keycloak.user.cache.provider:mem}"
     },
 
     "timer": {
@@ -49,5 +57,12 @@
 
     "scheduled": {
         "interval": 900
+    },
+
+    "connectionsJpa": {
+        "default": {
+            "dataSource": "java:jboss/datasources/ExampleDS",
+            "databaseSchema": "update"
+        }
     }
 }

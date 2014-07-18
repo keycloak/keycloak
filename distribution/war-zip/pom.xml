@@ -62,7 +62,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <file>${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF/persistence.xml</file>
+                    <file>${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json</file>
                     <replacements>
                         <replacement>
                             <token>java:jboss/datasources/ExampleDS</token>

@@ -56,6 +56,16 @@
         "interval": 900
     },
 
+    "connectionsJpa": {
+        "default": {
+            "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test}",
+            "driver": "${keycloak.connectionsJpa.driver:org.h2.Driver}",
+            "user": "${keycloak.connectionsJpa.user:sa}",
+            "password": "${keycloak.connectionsJpa.password:}",
+            "databaseSchema": "${keycloak.connectionsJpa.databaseSchema:create-drop}"
+        }
+    },
+
     "connectionsMongo": {
         "default": {
             "host": "${keycloak.connectionsMongo.host:127.0.0.1}",
@@ -64,5 +74,4 @@
             "clearOnStartup": "${keycloak.connectionsMongo.clearOnStartup:false}"
         }
     }
-
 }
