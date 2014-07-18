@@ -1,7 +1,8 @@
 package org.keycloak.admin.client.resource;
 
 import org.keycloak.admin.client.Config;
-import org.keycloak.admin.client.service.ApplicationService;
+import org.keycloak.admin.client.service.interfaces.AdminRootFactory;
+import org.keycloak.admin.client.service.interfaces.ApplicationsService;
 import org.keycloak.admin.client.token.TokenManager;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 
@@ -12,30 +13,31 @@ import java.util.List;
  */
 public class KeycloakApplicationsResource {
 
-    private final ApplicationService applicationService;
+    private ApplicationsService applicationsService;
 
     public KeycloakApplicationsResource(Config config, TokenManager tokenManager){
-        applicationService = new ApplicationService(config, tokenManager);
+        applicationsService = AdminRootFactory.getAdminRoot(config, tokenManager).realm(config.getRealm()).applications();
     }
 
     public List<ApplicationRepresentation> findAll(){
-        return applicationService.findAll();
+        return applicationsService.findAll();
     }
 
     public void create(ApplicationRepresentation applicationRepresentation){
-        applicationService.create(applicationRepresentation);
+        applicationsService.create(applicationRepresentation);
     }
 
     public ApplicationRepresentation find(String appName){
-        return applicationService.find(appName);
+        return applicationsService.get(appName).getRepresentation();
     }
 
     public void update(ApplicationRepresentation applicationRepresentation){
-        applicationService.update(applicationRepresentation);
+        String appName = applicationRepresentation.getName();
+        applicationsService.get(appName).update(applicationRepresentation);
     }
 
     public void remove(String appName){
-        applicationService.remove(appName);
+        applicationsService.get(appName).remove();
     }
 
 }

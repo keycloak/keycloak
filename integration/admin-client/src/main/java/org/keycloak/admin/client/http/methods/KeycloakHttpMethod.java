@@ -1,9 +1,9 @@
 package org.keycloak.admin.client.http.methods;
 
-import org.keycloak.admin.client.token.TokenManager;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.keycloak.admin.client.token.TokenManager;
 
 import java.util.HashMap;
 import java.util.Map;

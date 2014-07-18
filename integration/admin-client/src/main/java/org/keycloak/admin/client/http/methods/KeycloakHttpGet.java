@@ -1,20 +1,18 @@
 package org.keycloak.admin.client.http.methods;
 
-import org.keycloak.admin.client.KeycloakException;
-import org.keycloak.admin.client.http.AuthorizationHeader;
-import org.keycloak.admin.client.json.JsonSerialization;
-import org.keycloak.admin.client.token.TokenManager;
-import org.keycloak.admin.client.utils.StringUtils;
-import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.type.CollectionType;
 import org.codehaus.jackson.type.TypeReference;
+import org.keycloak.admin.client.KeycloakException;
+import org.keycloak.admin.client.http.AuthorizationHeader;
+import org.keycloak.admin.client.json.JsonSerialization;
+import org.keycloak.admin.client.token.TokenManager;
+import org.keycloak.admin.client.utils.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.Map;
 
 /**

@@ -1,9 +1,9 @@
 package org.keycloak.admin.client.service;
 
+import org.codehaus.jackson.type.TypeReference;
 import org.keycloak.admin.client.Config;
 import org.keycloak.admin.client.URI;
 import org.keycloak.admin.client.token.TokenManager;
-import org.codehaus.jackson.type.TypeReference;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmRepresentation;
 

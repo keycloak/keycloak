@@ -1,20 +1,16 @@
 package org.keycloak.admin.client.token;
 
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.admin.client.Config;
-import org.keycloak.admin.client.KeycloakException;
-import org.keycloak.admin.client.URI;
-import org.keycloak.admin.client.http.AuthorizationHeader;
-import org.keycloak.admin.client.http.KeycloakHttp;
-import org.keycloak.admin.client.json.JsonSerialization;
-import org.apache.http.HttpEntity;
-import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.service.interfaces.BasicAuthFilter;
+import org.keycloak.admin.client.service.interfaces.TokenService;
 import org.keycloak.representations.AccessTokenResponse;
 
-import java.io.IOException;
+import javax.ws.rs.core.Form;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -23,11 +19,9 @@ public class TokenManager {
 
     private AccessTokenResponse currentToken;
     private Date expirationTime;
-    private KeycloakHttp http;
     private Config config;
 
     public TokenManager(Config config){
-        http = new KeycloakHttp(null);
         this.config = config;
     }
 
@@ -45,54 +39,44 @@ public class TokenManager {
     }
 
     public AccessTokenResponse grantToken(){
-        AccessTokenResponse response = null;
+        ResteasyClient client = new ResteasyClientBuilder().build();
+        ResteasyWebTarget target = client.target(config.getServerUrl());
 
-        String url = URI.TOKENS_DIRECT_GRANT.build(config.getServerUrl(), config.getRealm());
-        Map<String, String> headers = new HashMap<String, String>();
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("username", config.getUsername());
-        params.put("password", config.getPassword());
+        Form form = new Form()
+                .param("username", config.getUsername())
+                .param("password", config.getPassword());
 
         if(config.isPublicClient()){
-            params.put("client_id", config.getClientId());
+            form.param("client_id", config.getClientId());
         } else {
-            headers.put("Authorization", AuthorizationHeader.generateBasicHeader(config.getClientId(), config.getClientSecret()));
+            target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
         }
 
-        HttpEntity entity = http.post(url).withHeaders(headers).withBody(params).disableAutomaticAuthHeader().execute().getEntity();
+        TokenService tokenService = target.proxy(TokenService.class);
 
-        try {
-            response = JsonSerialization.readValue(entity.getContent(), AccessTokenResponse.class);
-        } catch (IOException e) {
-            throw new KeycloakException(e);
-        }
+        AccessTokenResponse response = tokenService.grantToken(config.getRealm(), form.asMap());
 
         defineCurrentToken(response);
         return response;
-
     }
 
     public AccessTokenResponse refreshToken(){
-        AccessTokenResponse response = null;
+        ResteasyClient client = new ResteasyClientBuilder().build();
+        ResteasyWebTarget target = client.target(config.getServerUrl());
 
-        String url = URI.TOKENS_REFRESH.build(config.getServerUrl(), config.getRealm());
-        Map<String, String> headers = new HashMap<String, String>();
-        Map<String, String> params = new HashMap<String, String>();
-        params.put(OAuth2Constants.REFRESH_TOKEN, currentToken.getRefreshToken());
+        Form form = new Form()
+                .param("username", config.getUsername())
+                .param("password", config.getPassword());
 
         if(config.isPublicClient()){
-            params.put("client_id", config.getClientId());
+            form.param("client_id", config.getClientId());
         } else {
-            headers.put("Authorization", AuthorizationHeader.generateBasicHeader(config.getClientId(), config.getClientSecret()));
+            target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
         }
 
-        HttpEntity entity = http.post(url).withHeaders(headers).withBody(params).disableAutomaticAuthHeader().execute().getEntity();
+        TokenService tokenService = target.proxy(TokenService.class);
 
-        try {
-            response = JsonSerialization.readValue(entity.getContent(), AccessTokenResponse.class);
-        } catch (IOException e) {
-            throw new KeycloakException(e);
-        }
+        AccessTokenResponse response = tokenService.refreshToken(config.getRealm(), form.asMap());
 
         defineCurrentToken(response);
         return response;

@@ -1,20 +1,18 @@
 package org.keycloak.admin.client.http.methods;
 
-import org.keycloak.admin.client.KeycloakException;
-import org.keycloak.admin.client.http.AuthorizationHeader;
-import org.keycloak.admin.client.token.TokenManager;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
+import org.keycloak.admin.client.KeycloakException;
+import org.keycloak.admin.client.http.AuthorizationHeader;
+import org.keycloak.admin.client.token.TokenManager;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

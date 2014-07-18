@@ -1,7 +1,8 @@
 package org.keycloak.admin.client.resource;
 
 import org.keycloak.admin.client.Config;
-import org.keycloak.admin.client.service.ApplicationService;
+import org.keycloak.admin.client.service.interfaces.AdminRootFactory;
+import org.keycloak.admin.client.service.interfaces.ApplicationService;
 import org.keycloak.admin.client.token.TokenManager;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
@@ -15,84 +16,78 @@ import java.util.Set;
  */
 public class KeycloakApplicationResource {
 
-    private final String appName;
-    private final ApplicationService applicationService;
-    private final Config config;
-    private final TokenManager tokenManager;
+    private ApplicationService applicationService;
     private KeycloakApplicationLevelRolesResource applicationLevelRoleService;
 
     public KeycloakApplicationResource(Config config, TokenManager tokenManager, String appName){
-        this.appName = appName;
-        this.config = config;
-        this.tokenManager = tokenManager;
-        this.applicationService = new ApplicationService(config, tokenManager);
+        applicationService = AdminRootFactory.getAdminRoot(config, tokenManager).realm(config.getRealm()).applications().get(appName);
     }
 
     public ApplicationRepresentation getRepresentation(){
-        return applicationService.find(appName);
+        return applicationService.getRepresentation();
     }
 
     public Set<String> getAllowedOrigins(){
-        return applicationService.getAllowedOrigins(appName);
+        return applicationService.getAllowedOrigins();
     }
 
     public void updateAllowedOrigins(Set<String> newAllowedOrigins){
-        applicationService.updateAllowedOrigins(appName, newAllowedOrigins);
+        applicationService.updateAllowedOrigins(newAllowedOrigins);
     }
 
-    public void removeAllowedOrigins(Set<String> originsToDelete){
-        applicationService.removeAllowedOrigins(appName, originsToDelete);
+    public void removeAllowedOrigins(Set<String> originsToRemove){
+        applicationService.removeAllowedOrigins(originsToRemove);
     }
 
     public ClaimRepresentation getClaims(){
-        return applicationService.getClaims(appName);
+        return applicationService.getClaims();
     }
 
     public void updateClaims(ClaimRepresentation claimRepresentation){
-        applicationService.updateClaims(appName, claimRepresentation);
+        applicationService.updateClaims(claimRepresentation);
     }
 
     public CredentialRepresentation generateNewSecret(){
-        return applicationService.generateNewSecret(appName);
+        return applicationService.generateNewSecret();
     }
 
     public CredentialRepresentation getSecret(){
-        return applicationService.getSecret(appName);
+        return applicationService.getSecret();
     }
 
     public String getInstallationJbossXml(){
-        return applicationService.getInstallationJbossXml(appName);
+        return applicationService.getInstallationJbossXml();
     }
 
     public String getInstallationJson(){
-        return applicationService.getInstallationJson(appName);
+        return applicationService.getInstallationJson();
     }
 
     public void logoutAllUsers(){
-        applicationService.logoutAllUsers(appName);
+        applicationService.logoutAllUsers();
     }
 
     public void logoutUser(String username){
-        applicationService.logoutUser(appName, username);
+        applicationService.logoutUser(username);
     }
 
     public void pushRevocation(){
-        applicationService.pushRevocation(appName);
+        applicationService.pushRevocation();
     }
 
     public MappingsRepresentation getScopeMappings(){
-        return applicationService.getScopeMappings(appName);
+        return applicationService.getScopeMappings();
     }
 
     public KeycloakApplicationLevelRolesResource roles(){
         if(applicationLevelRoleService == null){
-            applicationLevelRoleService = new KeycloakApplicationLevelRolesResource(config, tokenManager, appName);
+            applicationLevelRoleService = new KeycloakApplicationLevelRolesResource(applicationService);
         }
         return applicationLevelRoleService;
     }
 
-    public KeycloakRoleResource role(String roleName){
-        return new KeycloakRoleResource(config, tokenManager, roleName, appName);
-    }
+//    public KeycloakRoleResource role(String roleName){
+//        return new KeycloakRoleResource(config, tokenManager, roleName, appName);
+//    }
 
 }

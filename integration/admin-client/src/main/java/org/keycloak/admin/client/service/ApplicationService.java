@@ -1,11 +1,11 @@
 package org.keycloak.admin.client.service;
 
+import org.apache.http.HttpResponse;
 import org.keycloak.admin.client.Config;
 import org.keycloak.admin.client.KeycloakException;
 import org.keycloak.admin.client.URI;
 import org.keycloak.admin.client.json.JsonSerialization;
 import org.keycloak.admin.client.token.TokenManager;
-import org.apache.http.HttpResponse;
 import org.keycloak.representations.idm.*;
 
 import java.io.IOException;

@@ -6,9 +6,7 @@ import org.keycloak.admin.client.service.RoleService;
 import org.keycloak.admin.client.token.TokenManager;
 import org.keycloak.representations.idm.RoleRepresentation;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
