@@ -227,7 +227,7 @@ public class RequiredActionsService {
         // Password reset through email won't have an associated session
         if (accessCode.getSessionState() == null) {
             UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserById(accessCode.getUser().getId(), realm), clientConnection.getRemoteAddr());
-            accessCode.getToken().setSessionState(userSession.getId());
+            accessCode.setSessionState(userSession.getId());
             audit.session(userSession);
         }
 

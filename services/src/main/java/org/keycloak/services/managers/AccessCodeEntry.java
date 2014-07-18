@@ -1,9 +1,11 @@
 package org.keycloak.services.managers;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.AccessCode;
@@ -33,27 +35,43 @@ public class AccessCodeEntry {
     }
 
     public UserModel getUser() {
-        return keycloakSession.users().getUserById(accessCode.getAccessToken().getSubject(), realm);
+        return keycloakSession.users().getUserById(accessCode.getUserId(), realm);
     }
 
     public String getSessionState() {
-        return accessCode.getAccessToken().getSessionState();
+        return accessCode.getSessionState();
+    }
+
+    public void setSessionState(String state) {
+        accessCode.setSessionState(state);
     }
 
     public boolean isExpired() {
         return accessCode.getExpiration() != 0 && Time.currentTime() > accessCode.getExpiration();
     }
 
-    public AccessToken getToken() {
-        return accessCode.getAccessToken();
+    public Set<RoleModel> getRequestedRoles() {
+        Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
+        for (String roleId : accessCode.getRequestedRoles()) {
+            RoleModel role = realm.getRoleById(roleId);
+            if (role == null) {
+                new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid role " + roleId);
+            }
+            requestedRoles.add(realm.getRoleById(roleId));
+        }
+        return requestedRoles;
     }
 
     public ClientModel getClient() {
-        return realm.findClient(accessCode.getAccessToken().getIssuedFor());
+        return realm.findClient(accessCode.getClientId());
     }
 
     public String getState() {
         return accessCode.getState();
+    }
+
+    public void setState(String state) {
+        accessCode.setState(state);
     }
 
     public String getRedirectUri() {

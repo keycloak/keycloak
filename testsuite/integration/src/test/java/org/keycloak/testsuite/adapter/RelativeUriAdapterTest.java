@@ -88,7 +88,7 @@ public class RelativeUriAdapterTest {
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, null);
-            AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, userSession);
+            AccessToken token = tm.createClientAccessToken(tm.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession);
             adminToken = tm.encodeToken(adminRealm, token);
 
         }
