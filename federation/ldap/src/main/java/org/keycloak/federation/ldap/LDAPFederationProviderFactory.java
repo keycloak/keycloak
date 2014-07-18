@@ -5,10 +5,10 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.picketlink.PartitionManagerProvider;
 import org.picketlink.idm.PartitionManager;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -18,7 +18,6 @@ import java.util.Set;
  */
 public class LDAPFederationProviderFactory implements UserFederationProviderFactory {
     public static final String PROVIDER_NAME = "ldap";
-    PartitionManagerRegistry registry;
 
     @Override
     public UserFederationProvider create(KeycloakSession session) {
@@ -27,13 +26,13 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
 
     @Override
     public UserFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model) {
-        PartitionManager partition = registry.getPartitionManager(model);
+        PartitionManagerProvider idmProvider = session.getProvider(PartitionManagerProvider.class);
+        PartitionManager partition = idmProvider.getPartitionManager(model);
         return new LDAPFederationProvider(session, model, partition);
     }
 
     @Override
     public void init(Config.Scope config) {
-        registry = new PartitionManagerRegistry();
     }
 
     @Override

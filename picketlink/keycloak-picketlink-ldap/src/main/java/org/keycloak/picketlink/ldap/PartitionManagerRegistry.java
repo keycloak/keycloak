@@ -1,23 +1,26 @@
-package org.keycloak.federation.ldap;
+package org.keycloak.picketlink.ldap;
 
-import org.jboss.logging.Logger;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.LDAPConstants;
-import org.picketlink.idm.PartitionManager;
-import org.picketlink.idm.config.AbstractIdentityStoreConfiguration;
-import org.picketlink.idm.config.IdentityConfiguration;
-import org.picketlink.idm.config.IdentityConfigurationBuilder;
-import org.picketlink.idm.config.IdentityStoreConfiguration;
-import org.picketlink.idm.config.LDAPIdentityStoreConfiguration;
-import org.picketlink.idm.internal.DefaultPartitionManager;
-import org.picketlink.idm.model.basic.User;
-
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.picketlink.common.constants.LDAPConstants.*;
+import org.jboss.logging.Logger;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.picketlink.idm.KeycloakEventBridge;
+import org.keycloak.picketlink.idm.LDAPKeycloakCredentialHandler;
+import org.picketlink.idm.PartitionManager;
+import org.picketlink.idm.config.IdentityConfigurationBuilder;
+import org.picketlink.idm.config.LDAPMappingConfigurationBuilder;
+import org.picketlink.idm.config.LDAPStoreConfigurationBuilder;
+import org.picketlink.idm.internal.DefaultPartitionManager;
+import org.picketlink.idm.model.basic.User;
+
+import static org.picketlink.common.constants.LDAPConstants.CN;
+import static org.picketlink.common.constants.LDAPConstants.EMAIL;
+import static org.picketlink.common.constants.LDAPConstants.SN;
+import static org.picketlink.common.constants.LDAPConstants.UID;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -34,13 +37,20 @@ public class PartitionManagerRegistry {
         // Ldap config might have changed for the realm. In this case, we must re-initialize
         Map<String, String> config = model.getConfig();
         if (context == null || !config.equals(context.config)) {
-            logger.infof("Creating new partition manager for the federation provider: %s, LDAP Connection URL: %s, LDAP Base DN: %s, LDAP Vendor: %s", model.getId(),
-                    config.get(LDAPConstants.CONNECTION_URL), config.get(LDAPConstants.BASE_DN), config.get(LDAPConstants.VENDOR));
+            logLDAPConfig(model.getId(), config);
+
             PartitionManager manager = createPartitionManager(config);
             context = new PartitionManagerContext(config, manager);
             partitionManagers.put(model.getId(), context);
         }
         return context.partitionManager;
+    }
+
+    // Don't log LDAP password
+    private void logLDAPConfig(String fedProviderId, Map<String, String> ldapConfig) {
+        Map<String, String> copy = new HashMap<String, String>(ldapConfig);
+        copy.remove(LDAPConstants.BIND_CREDENTIAL);
+        logger.infof("Creating new LDAP based partition manager for the Federation provider: " + fedProviderId + ", LDAP Configuration: " + copy);
     }
 
     /**
@@ -55,18 +65,13 @@ public class PartitionManagerRegistry {
 
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.authentication", "none simple");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.initsize", "1");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.maxsize", "10");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.maxsize", "1000");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.prefsize", "5");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.timeout", "300000");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", "off");
 
         String vendor = ldapConfig.get(LDAPConstants.VENDOR);
-
-        // RHDS is using "nsuniqueid" as unique identifier instead of "entryUUID"
-        if (vendor != null && vendor.equals(LDAPConstants.VENDOR_RHDS)) {
-            checkSystemProperty(LDAPIdentityStoreConfiguration.ENTRY_IDENTIFIER_ATTRIBUTE_NAME, "nsuniqueid");
-        }
 
         boolean activeDirectory = vendor != null && vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
 
@@ -75,17 +80,11 @@ public class PartitionManagerRegistry {
             ldapLoginNameMapping = activeDirectory ? CN : UID;
         }
 
-        // Try to compute properties based on LDAP server type, but still allow to override them through System properties TODO: Should allow better way than overriding from System properties. Perhaps init from XML?
-        ldapLoginNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.loginName", ldapLoginNameMapping, ldapLoginNameMapping, activeDirectory);
-        String ldapFirstNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.firstName", CN, "givenName", activeDirectory);
-        String ldapLastNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.lastName", SN, SN, activeDirectory);
-        String ldapEmailMapping =  getNameOfLDAPAttribute("keycloak.ldap.idm.email", EMAIL, EMAIL, activeDirectory);
-
+        String ldapFirstNameMapping = activeDirectory ?  "givenName" : CN;
         String[] userObjectClasses = getUserObjectClasses(ldapConfig);
 
-        logger.infof("LDAP Attributes mapping: loginName: %s, firstName: %s, lastName: %s, email: %s", ldapLoginNameMapping, ldapFirstNameMapping, ldapLastNameMapping, ldapEmailMapping);
-
         // Use same mapping for User and Agent for now
+        LDAPStoreConfigurationBuilder ldapStoreBuilder =
         builder
             .named("SIMPLE_LDAP_STORE_CONFIG")
                 .stores()
@@ -97,37 +96,35 @@ public class PartitionManagerRegistry {
                         .bindCredential(ldapConfig.get(LDAPConstants.BIND_CREDENTIAL))
                         .url(ldapConfig.get(LDAPConstants.CONNECTION_URL))
                         .activeDirectory(activeDirectory)
-                        .supportAllFeatures()
-                        .mapping(User.class)
-                            .baseDN(ldapConfig.get(LDAPConstants.USER_DN_SUFFIX))
-                            .objectClasses(userObjectClasses)
-                            .attribute("loginName", ldapLoginNameMapping, true)
-                            .attribute("firstName", ldapFirstNameMapping)
-                            .attribute("lastName", ldapLastNameMapping)
-                            .attribute("email", ldapEmailMapping);
+                        .supportAllFeatures();
 
-        // Workaround to override the LDAPIdentityStore with our own :/
-        List<IdentityConfiguration> identityConfigs = builder.buildAll();
-        IdentityStoreConfiguration identityStoreConfig = identityConfigs.get(0).getStoreConfiguration().get(0);
-        ((AbstractIdentityStoreConfiguration)identityStoreConfig).setIdentityStoreType(KeycloakLDAPIdentityStore.class);
+        // RHDS is using "nsuniqueid" as unique identifier instead of "entryUUID"
+        if (vendor != null && vendor.equals(LDAPConstants.VENDOR_RHDS)) {
+            ldapStoreBuilder.uniqueIdentifierAttributeName("nsuniqueid");
+        }
 
-        return new DefaultPartitionManager(identityConfigs);
+        LDAPMappingConfigurationBuilder ldapUserMappingBuilder = ldapStoreBuilder
+            .mapping(User.class)
+                .baseDN(ldapConfig.get(LDAPConstants.USER_DN_SUFFIX))
+                .objectClasses(userObjectClasses)
+                .attribute("loginName", ldapLoginNameMapping, true)
+                .attribute("firstName", ldapFirstNameMapping)
+                .attribute("lastName", SN)
+                .attribute("email", EMAIL);
+
+        if (activeDirectory && ldapLoginNameMapping.equals("sAMAccountName")) {
+            ldapUserMappingBuilder.bindingAttribute("fullName", CN);
+            logger.infof("Using 'cn' attribute for DN of user and 'sAMAccountName' for username");
+        }
+
+        KeycloakEventBridge eventBridge = new KeycloakEventBridge(activeDirectory && "true".equals(ldapConfig.get(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE)));
+        return new DefaultPartitionManager(builder.buildAll(), eventBridge, null);
     }
 
     private static void checkSystemProperty(String name, String defaultValue) {
         if (System.getProperty(name) == null) {
             System.setProperty(name, defaultValue);
         }
-    }
-
-    private static String getNameOfLDAPAttribute(String systemPropertyName, String defaultAttrName, String defaultAttrNameInActiveDirectory, boolean activeDirectory) {
-        // System property has biggest priority if available
-        String sysProperty = System.getProperty(systemPropertyName);
-        if (sysProperty != null) {
-            return sysProperty;
-        }
-
-        return activeDirectory ? defaultAttrNameInActiveDirectory : defaultAttrName;
     }
 
     // Parse array of strings like [ "inetOrgPerson", "organizationalPerson" ] from the string like: "inetOrgPerson, organizationalPerson"

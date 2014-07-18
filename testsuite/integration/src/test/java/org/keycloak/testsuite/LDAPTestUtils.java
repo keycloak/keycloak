@@ -1,9 +1,6 @@
 package org.keycloak.testsuite;
 
-import org.keycloak.federation.ldap.PartitionManagerRegistry;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.picketlink.IdentityManagerProvider;
+import org.keycloak.picketlink.ldap.PartitionManagerRegistry;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.credential.Password;

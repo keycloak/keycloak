@@ -16,6 +16,7 @@ import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
+import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
 import org.picketlink.idm.query.IdentityQuery;
@@ -123,6 +124,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
             picketlinkUser.setFirstName(user.getFirstName());
             picketlinkUser.setLastName(user.getLastName());
             picketlinkUser.setEmail(user.getEmail());
+            picketlinkUser.setAttribute(new Attribute("fullName", getFullName(user)));
             identityManager.add(picketlinkUser);
             user.setAttribute(LDAP_ID, picketlinkUser.getId());
             return proxy(user);
@@ -320,5 +322,24 @@ public class LDAPFederationProvider implements UserFederationProvider {
     @Override
     public void close() {
         //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    // Needed for ActiveDirectory updates
+    protected String getFullName(UserModel user) {
+        String fullName;
+        if (user.getFirstName() != null && user.getLastName() != null) {
+            fullName = user.getFirstName() + " " + user.getLastName();
+        } else if (user.getFirstName() != null && user.getFirstName().trim().length() > 0) {
+            fullName = user.getFirstName();
+        } else {
+            fullName = user.getLastName();
+        }
+
+        // Fallback to loginName
+        if (fullName == null || fullName.trim().length() == 0) {
+            fullName = user.getUsername();
+        }
+
+        return fullName;
     }
 }

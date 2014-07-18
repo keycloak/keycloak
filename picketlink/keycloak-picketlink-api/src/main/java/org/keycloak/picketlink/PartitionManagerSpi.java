@@ -7,19 +7,19 @@ import org.keycloak.provider.Spi;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class IdentityManagerSpi implements Spi {
+public class PartitionManagerSpi implements Spi {
     @Override
     public String getName() {
-        return "picketlink-identity-manager";
+        return "picketlink-idm";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return IdentityManagerProvider.class;
+        return PartitionManagerProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return IdentityManagerProviderFactory.class;
+        return PartitionManagerProviderFactory.class;
     }
 }

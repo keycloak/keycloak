@@ -17,6 +17,7 @@
 
     <modules>
         <module>keycloak-picketlink-api</module>
+        <module>keycloak-picketlink-ldap</module>
     </modules>
 
 

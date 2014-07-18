@@ -10,8 +10,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-picketlink-realm</artifactId>
-    <name>Keycloak Picketlink Realm</name>
+    <artifactId>keycloak-picketlink-ldap</artifactId>
+    <name>Keycloak Picketlink LDAP</name>
     <description />
 
     <dependencies>
