@@ -41,8 +41,8 @@
         -->
     </security-constraint>
 
-        <login-config>
-        <auth-method>BASIC</auth-method>
+    <login-config>
+        <auth-method>KEYCLOAK</auth-method>
         <realm-name>demo</realm-name>
     </login-config>
 
