@@ -41,7 +41,7 @@ public class ExportImportTest {
 
         @Override
         protected void before() throws Throwable {
-            if (System.getProperty("hibernate.connection.url") == null) {
+            if (System.getProperty("keycloak.connectionsJpa.url") == null) {
                 String baseExportImportDir = getExportImportTestDirectory();
 
                 File oldDBFile = new File(baseExportImportDir, "keycloakDB.h2.db");
@@ -50,8 +50,8 @@ public class ExportImportTest {
                 }
 
                 String dbDir = baseExportImportDir + "/keycloakDB";
-                System.setProperty("hibernate.connection.url", "jdbc:h2:file:" + dbDir + ";DB_CLOSE_DELAY=-1");
-                System.setProperty("hibernate.hbm2ddl.auto", "update");
+                System.setProperty("keycloak.connectionsJpa.url", "jdbc:h2:file:" + dbDir + ";DB_CLOSE_DELAY=-1");
+                System.setProperty("keycloak.connectionsJpa.databaseSchema", "update");
                 setupDone = true;
             }
         }
@@ -60,8 +60,8 @@ public class ExportImportTest {
         protected void after() {
             if (setupDone) {
                 Properties sysProps = System.getProperties();
-                sysProps.remove("hibernate.connection.url");
-                sysProps.remove("hibernate.hbm2ddl.auto");
+                sysProps.remove("keycloak.connectionsJpa.url");
+                sysProps.remove("keycloak.connectionsJpa.databaseSchema");
             }
         }
     };

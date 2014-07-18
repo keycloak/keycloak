@@ -60,5 +60,12 @@
 
     "scheduled": {
         "interval": 900
+    },
+
+    "connectionsJpa": {
+        "default": {
+            "dataSource": "java:jboss/datasources/ExampleDS",
+            "databaseSchema": "update"
+        }
     }
 }
