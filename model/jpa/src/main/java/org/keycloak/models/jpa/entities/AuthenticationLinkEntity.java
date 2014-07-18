@@ -30,9 +30,6 @@ public class AuthenticationLinkEntity {
     @Column(name="AUTH_USER_ID")
     protected String authUserId;
 
-    // NOTE: @OnetoOne creates a constraint race condition if the join column is on AuthenticationLinkEntity.
-    // The race is that user gets loaded concurrently, creates link concurrently, and sets it.  Therefore, we have
-    // a @ManyToOne on both sides.  Broken yes, but, I think we're going to replace AuthenticationLinkEntity anyways.
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="USER_ID")
