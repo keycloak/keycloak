@@ -184,6 +184,9 @@ public class CompositeRoleTest {
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
 
@@ -207,9 +210,10 @@ public class CompositeRoleTest {
 
         Assert.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assert.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
-
-
 
     @Test
     public void testRealmOnlyWithUserCompositeAppComposite() throws Exception {
@@ -232,6 +236,9 @@ public class CompositeRoleTest {
         Assert.assertEquals(2, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_COMPOSITE_1"));
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
     @Test
@@ -254,6 +261,9 @@ public class CompositeRoleTest {
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
     @Test
@@ -276,6 +286,9 @@ public class CompositeRoleTest {
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
 }
