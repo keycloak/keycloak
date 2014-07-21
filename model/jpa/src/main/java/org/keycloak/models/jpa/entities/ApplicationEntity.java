@@ -4,6 +4,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -33,7 +34,7 @@ public class ApplicationEntity extends ClientEntity {
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="APPLICATION_DEFAULT_ROLES")
+    @JoinTable(name="APPLICATION_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="APPLICATION_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
     public boolean isSurrogateAuthRequired() {

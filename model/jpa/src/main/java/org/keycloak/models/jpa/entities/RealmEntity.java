@@ -108,41 +108,40 @@ public class RealmEntity {
     @Column(name="EMAIL_THEME")
     protected String emailTheme;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="USER_REQUIRED_CREDS")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="AUTH_PROVIDERS")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="APPLICATION_ID") }, inverseJoinColumns={ @JoinColumn(name="REALM_ID") })
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value")
-    @CollectionTable(name="REALM_SMTP_CONFIG")
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE")
+    @CollectionTable(name="REALM_SMTP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Map<String, String> smtpConfig = new HashMap<String, String>();
 
     @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value")
-    @CollectionTable(name="REALM_SOCIAL_CONFIG")
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE")
+    @CollectionTable(name="REALM_SOCIAL_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Map<String, String> socialConfig = new HashMap<String, String>();
 
     @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value")
-    @CollectionTable(name="REALM_LDAP_CONFIG")
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE")
+    @CollectionTable(name="REALM_LDAP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Map<String, String> ldapServerConfig = new HashMap<String, String>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_DEFAULT_ROLES")
+    @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     protected Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
     @Column(name="AUDIT_ENABLED")
@@ -151,7 +150,8 @@ public class RealmEntity {
     protected long auditExpiration;
 
     @ElementCollection
-    @CollectionTable(name="REALM_AUDIT_LISTENERS")
+    @Column(name="VALUE")
+    @CollectionTable(name="REALM_AUDIT_LISTENERS", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Set<String> auditListeners= new HashSet<String>();
 
     @OneToOne
