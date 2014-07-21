@@ -403,6 +403,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql.version}</version>
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>
@@ -560,5 +566,42 @@
             </build>
 
         </profile>
+
+        <!-- MySQL -->
+        <profile>
+            <activation>
+                <property>
+                    <name>keycloak.connectionsJpa.driver</name>
+                    <value>com.mysql.jdbc.Driver</value>
+                </property>
+            </activation>
+            <id>mysql</id>
+            <dependencies>
+                <dependency>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <version>${mysql.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- PostgreSQL -->
+        <profile>
+            <activation>
+                <property>
+                    <name>keycloak.connectionsJpa.driver</name>
+                    <value>org.postgresql.Driver</value>
+                </property>
+            </activation>
+            <id>postgresql</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${postgresql.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
     </profiles>
 </project>

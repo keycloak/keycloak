@@ -1,17 +1,21 @@
 package org.keycloak.testsuite.exportimport;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
+import org.junit.runners.MethodSorters;
 import org.keycloak.Config;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.dir.DirExportProvider;
@@ -33,15 +37,20 @@ import org.keycloak.testsuite.rule.KeycloakRule;
  */
 public class ExportImportTest {
 
+    private static SystemPropertiesHelper propsHelper = new SystemPropertiesHelper();
+
+    private static final String JPA_CONNECTION_URL = "keycloak.connectionsJpa.url";
+    private static final String JPA_DB_SCHEMA = "keycloak.connectionsJpa.databaseSchema";
+    private static final String MONGO_CLEAR_ON_STARTUP = "keycloak.connectionsMongo.clearOnStartup";
 
     // We want data to be persisted among server restarts
-    private static ExternalResource hibernateSetupRule = new ExternalResource() {
+    private static ExternalResource persistenceSetupRule = new ExternalResource() {
 
-        private boolean setupDone = false;
+        private boolean connectionURLSet = false;
 
         @Override
         protected void before() throws Throwable {
-            if (System.getProperty("keycloak.connectionsJpa.url") == null) {
+            if (System.getProperty(JPA_CONNECTION_URL) == null) {
                 String baseExportImportDir = getExportImportTestDirectory();
 
                 File oldDBFile = new File(baseExportImportDir, "keycloakDB.h2.db");
@@ -50,43 +59,33 @@ public class ExportImportTest {
                 }
 
                 String dbDir = baseExportImportDir + "/keycloakDB";
-                System.setProperty("keycloak.connectionsJpa.url", "jdbc:h2:file:" + dbDir + ";DB_CLOSE_DELAY=-1");
-                System.setProperty("keycloak.connectionsJpa.databaseSchema", "update");
-                setupDone = true;
+                propsHelper.pushProperty(JPA_CONNECTION_URL, "jdbc:h2:file:" + dbDir + ";DB_CLOSE_DELAY=-1");
+                connectionURLSet = true;
             }
+            propsHelper.pushProperty(JPA_DB_SCHEMA, "create");
         }
 
         @Override
         protected void after() {
-            if (setupDone) {
-                Properties sysProps = System.getProperties();
-                sysProps.remove("keycloak.connectionsJpa.url");
-                sysProps.remove("keycloak.connectionsJpa.databaseSchema");
+            if (connectionURLSet) {
+                propsHelper.pullProperty(JPA_CONNECTION_URL);
             }
         }
     };
 
-    // We want data to be persisted among server restarts
-    private static ExternalResource mongoRule = new ExternalResource() {
-
-        private static final String MONGO_CLEAR_ON_STARTUP_PROP_NAME = "keycloak.connectionsMongo.clearOnStartup";
-        private String previousMongoClearOnStartup;
+    private static ExternalResource outerPersistenceSetupRule = new ExternalResource() {
 
         @Override
         protected void before() throws Throwable {
-            previousMongoClearOnStartup = System.getProperty(MONGO_CLEAR_ON_STARTUP_PROP_NAME);
-            System.setProperty(MONGO_CLEAR_ON_STARTUP_PROP_NAME, "false");
+            System.setProperty(JPA_DB_SCHEMA, "update");
+            propsHelper.pushProperty(MONGO_CLEAR_ON_STARTUP, "false");
         }
 
         @Override
         protected void after() {
-            if (previousMongoClearOnStartup != null) {
-                System.setProperty(MONGO_CLEAR_ON_STARTUP_PROP_NAME, previousMongoClearOnStartup);
-            } else {
-                System.getProperties().remove(MONGO_CLEAR_ON_STARTUP_PROP_NAME);
-            }
+            propsHelper.pullProperty(JPA_DB_SCHEMA);
+            propsHelper.pullProperty(MONGO_CLEAR_ON_STARTUP);
         }
-
     };
 
     private static KeycloakRule keycloakRule = new KeycloakRule( new KeycloakRule.KeycloakSetup() {
@@ -124,9 +123,9 @@ public class ExportImportTest {
 
     @ClassRule
     public static TestRule chain = RuleChain
-            .outerRule(hibernateSetupRule)
-            .around(mongoRule)
-            .around(keycloakRule);
+            .outerRule(persistenceSetupRule)
+            .around(keycloakRule)
+            .around(outerPersistenceSetupRule);
 
     @Test
     public void testDirFullExportImport() throws Throwable {
@@ -355,6 +354,30 @@ public class ExportImportTest {
 
         String absolutePath = new File(dirPath).getAbsolutePath();
         return absolutePath;
+    }
+
+    private static class SystemPropertiesHelper {
+
+        private Map<String,String> previousValues = new HashMap<String,String>();
+
+        private void pushProperty(String name, String value) {
+            String currentValue = System.getProperty(name);
+            if (currentValue != null) {
+                previousValues.put(name, value);
+            }
+            System.setProperty(name, value);
+        }
+
+        private void pullProperty(String name) {
+            String prevValue = previousValues.get(name);
+
+            if (prevValue == null) {
+                System.getProperties().remove(name);
+            }  else {
+                System.setProperty(name, prevValue);
+            }
+        }
+
     }
 
 }
