@@ -363,7 +363,7 @@ public class ExportImportTest {
         private void pushProperty(String name, String value) {
             String currentValue = System.getProperty(name);
             if (currentValue != null) {
-                previousValues.put(name, value);
+                previousValues.put(name, currentValue);
             }
             System.setProperty(name, value);
         }

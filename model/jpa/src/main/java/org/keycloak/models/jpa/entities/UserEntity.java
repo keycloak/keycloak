@@ -42,7 +42,7 @@ import java.util.Set;
         @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId")
 })
 @Entity
-@Table(name="USER", uniqueConstraints = {
+@Table(name="USER_ENTITY", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "REALM_ID", "USERNAME" }),
         @UniqueConstraint(columnNames = { "REALM_ID", "EMAIL_CONSTRAINT" })
 })
