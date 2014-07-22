@@ -63,12 +63,15 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setRealmId(realm.getId());
         entity.setUserId(user.getId());
+        entity.setLoginUsername(loginUsername);
         entity.setIpAddress(ipAddress);
+        entity.setAuthMethod(authMethod);
+        entity.setRememberMe(rememberMe);
 
         int currentTime = Time.currentTime();
 

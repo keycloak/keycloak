@@ -9,7 +9,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.AccessCode;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.util.Time;
 
 import java.util.HashSet;
@@ -42,12 +41,9 @@ public class AccessCodeEntry {
         return accessCode.getSessionState();
     }
 
-    public void setSessionState(String state) {
-        accessCode.setSessionState(state);
-    }
-
     public boolean isExpired() {
-        return accessCode.getExpiration() != 0 && Time.currentTime() > accessCode.getExpiration();
+        int lifespan = accessCode.getAction() == null ? realm.getAccessCodeLifespan() : realm.getAccessCodeLifespanUserAction();
+        return accessCode.getTimestamp() + lifespan < Time.currentTime();
     }
 
     public Set<RoleModel> getRequestedRoles() {
@@ -78,61 +74,52 @@ public class AccessCodeEntry {
         return accessCode.getRedirectUri();
     }
 
-    public boolean isRememberMe() {
-        return accessCode.isRememberMe();
+    public AccessCode.Action getAction() {
+        return accessCode.getAction();
     }
 
-    public void setRememberMe(boolean remember) {
-        accessCode.setRememberMe(remember);
+    public void setAction(AccessCode.Action action) {
+        accessCode.setAction(action);
+        accessCode.setTimestamp(Time.currentTime());
     }
 
-    public String getAuthMethod() {
-        return accessCode.getAuthMethod();
-    }
-
-    public String getUsernameUsed() {
-        return accessCode.getUsernameUsed();
-    }
-
-    public void setUsernameUsed(String username) {
-        accessCode.setUsernameUsed(username);
-    }
-
-    public void resetExpiration() {
-        accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
-
-    }
-
-    public void setAuthMethod(String authMethod) {
-        accessCode.setAuthMethod(authMethod);
-    }
-
-    public Set<RequiredAction> getRequiredActions() {
-        Set<RequiredAction> set = new HashSet<RequiredAction>();
-        for (String action : accessCode.getRequiredActions()) {
-            set.add(RequiredAction.valueOf(action));
-
+    public RequiredAction getRequiredAction() {
+        AccessCode.Action action = accessCode.getAction();
+        if (action != null) {
+            switch (action) {
+                case CONFIGURE_TOTP:
+                    return RequiredAction.CONFIGURE_TOTP;
+                case UPDATE_PASSWORD:
+                    return RequiredAction.UPDATE_PASSWORD;
+                case UPDATE_PROFILE:
+                    return RequiredAction.UPDATE_PROFILE;
+                case VERIFY_EMAIL:
+                    return RequiredAction.VERIFY_EMAIL;
+            }
         }
-        return set;
+        return null;
     }
 
-    public boolean hasRequiredAction(RequiredAction action) {
-        return accessCode.getRequiredActions().contains(action.toString());
-    }
-
-    public void removeRequiredAction(RequiredAction action) {
-        accessCode.getRequiredActions().remove(action.toString());
-    }
-
-    public void setRequiredActions(Set<RequiredAction> set) {
-        Set<String> newSet = new HashSet<String>();
-        for (RequiredAction action : set) {
-            newSet.add(action.toString());
+    public void setRequiredAction(RequiredAction requiredAction) {
+        switch (requiredAction) {
+            case CONFIGURE_TOTP:
+                setAction(AccessCode.Action.CONFIGURE_TOTP);
+                break;
+            case UPDATE_PASSWORD:
+                setAction(AccessCode.Action.UPDATE_PASSWORD);
+                break;
+            case UPDATE_PROFILE:
+                setAction(AccessCode.Action.UPDATE_PROFILE);
+                break;
+            case VERIFY_EMAIL:
+                setAction(AccessCode.Action.VERIFY_EMAIL);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown required action " + requiredAction);
         }
-        accessCode.setRequiredActions(newSet);
     }
 
     public String getCode() {
-       return new JWSBuilder().jsonContent(accessCode).rsa256(realm.getPrivateKey());
+        return new JWSBuilder().jsonContent(accessCode).rsa256(realm.getPrivateKey());
     }
 }

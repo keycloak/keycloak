@@ -126,7 +126,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, username).session((String) null).detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, username).detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
 
         Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
@@ -143,16 +143,15 @@ public class ResetPasswordTest {
 
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).session((String) null).detail(Details.USERNAME, username).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).session(sessionId).detail(Details.USERNAME, username).assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, username).assertEvent();
-        String sessionId = loginEvent.getSessionId();
+        events.expectLogin().user(userId).detail(Details.USERNAME, username).session(sessionId).assertEvent();
 
         oauth.openLogout();
 
-        events.expectLogout(loginEvent.getSessionId()).user(userId).session(sessionId).assertEvent();
+        events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
         loginPage.open();
 
@@ -210,7 +209,7 @@ public class ResetPasswordTest {
         String body = (String) message.getContent();
         String changePasswordUrl = MailUtil.getLink(body);
 
-        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").session((String) null).assertEvent();
+        String sessionId = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
 
         driver.navigate().to(changePasswordUrl.trim());
 
@@ -222,16 +221,15 @@ public class ResetPasswordTest {
 
         updatePasswordPage.changePassword("resetPasswordWithPasswordPolicy", "resetPasswordWithPasswordPolicy");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).session((String) null).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).session(sessionId).detail(Details.USERNAME, "login-test").assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
-        String sessionId = loginEvent.getSessionId();
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").session(sessionId).assertEvent();
 
         oauth.openLogout();
 
-        events.expectLogout(loginEvent.getSessionId()).user(userId).session(sessionId).assertEvent();
+        events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
         loginPage.open();
 

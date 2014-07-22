@@ -81,7 +81,6 @@ public class TokenManager {
         code.setClientId(client.getClientId());
         code.setUserId(user.getId());
         code.setTimestamp(Time.currentTime());
-        code.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
         code.setSessionState(session != null ? session.getId() : null);
         code.setRedirectUri(redirect);
         code.setState(state);

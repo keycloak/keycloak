@@ -18,7 +18,13 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
 
     private String user;
 
+    private String loginUsername;
+
     private String ipAddress;
+
+    private String authMethod;
+
+    private boolean rememberMe;
 
     private int started;
 
@@ -42,12 +48,36 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
         this.user = user;
     }
 
+    public String getLoginUsername() {
+        return loginUsername;
+    }
+
+    public void setLoginUsername(String loginUsername) {
+        this.loginUsername = loginUsername;
+    }
+
     public String getIpAddress() {
         return ipAddress;
     }
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
+    }
+
+    public boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
     }
 
     public int getStarted() {

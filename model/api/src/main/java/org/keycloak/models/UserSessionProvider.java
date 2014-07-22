@@ -10,7 +10,7 @@ import java.util.List;
  */
 public interface UserSessionProvider extends Provider {
 
-    UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress);
+    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe);
     UserSessionModel getUserSession(RealmModel realm, String id);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);
