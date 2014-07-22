@@ -157,32 +157,22 @@ public class OAuthFlows {
 
         if (!isResource) {
             accessCode.resetExpiration();
-            List<RoleModel> realmRolesRequested = new LinkedList<RoleModel>();
-            MultivaluedMap<String, RoleModel> appRolesRequested = new MultivaluedMapImpl<String, RoleModel>();
-            if (accessCode.getToken().getRealmAccess() != null) {
-                if (accessCode.getToken().getRealmAccess().getRoles() != null) {
-                    for (String role : accessCode.getToken().getRealmAccess().getRoles()) {
-                        RoleModel roleModel = realm.getRole(role);
-                        if (roleModel != null) realmRolesRequested.add(roleModel);
-                    }
-                }
-            }
-            if (accessCode.getToken().getResourceAccess().size() > 0) {
-                for (Map.Entry<String, AccessToken.Access> entry : accessCode.getToken().getResourceAccess().entrySet()) {
-                    ApplicationModel app = realm.getApplicationByName(entry.getKey());
-                    if (app == null) continue;
-                    if (entry.getValue().getRoles() != null) {
-                        for (String role : entry.getValue().getRoles()) {
-                            RoleModel roleModel = app.getRole(role);
-                            if (roleModel != null) appRolesRequested.add(entry.getKey(), roleModel);
-                        }
 
-                    }
+            List<RoleModel> realmRoles = new LinkedList<RoleModel>();
+            MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
+            for (RoleModel r : accessCode.getRequestedRoles()) {
+                if (r.getContainer() instanceof RealmModel) {
+                    realmRoles.add(r);
+                } else {
+                    resourceRoles.add(((ApplicationModel) r.getContainer()).getName(), r);
                 }
             }
-            return Flows.forms(this.session, realm, uriInfo).setAccessCode(accessCode.getCode()).
-                    setAccessRequest(realmRolesRequested, appRolesRequested).
-                    setClient(client).createOAuthGrant();
+
+            return Flows.forms(this.session, realm, uriInfo)
+                    .setAccessCode(accessCode.getCode())
+                    .setAccessRequest(realmRoles, resourceRoles)
+                    .setClient(client)
+                    .createOAuthGrant();
         }
 
         if (redirect != null) {
