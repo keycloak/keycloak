@@ -5,8 +5,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import java.util.HashSet;

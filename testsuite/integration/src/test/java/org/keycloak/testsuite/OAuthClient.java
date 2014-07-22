@@ -21,7 +21,6 @@
  */
 package org.keycloak.testsuite;
 
-import net.iharder.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -32,21 +31,18 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.jboss.resteasy.security.PemUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
-import org.keycloak.audit.Details;
-import org.keycloak.audit.Event;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.PemUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 

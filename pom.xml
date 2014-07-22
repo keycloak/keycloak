@@ -100,6 +100,7 @@
         <module>core</module>
         <module>core-jaxrs</module>
         <module>connections</module>
+        <module>dependencies</module>
         <module>model</module>
         <module>integration</module>
         <module>picketlink</module>

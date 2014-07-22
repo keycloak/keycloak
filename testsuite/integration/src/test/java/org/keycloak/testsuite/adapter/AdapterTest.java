@@ -21,7 +21,7 @@
  */
 package org.keycloak.testsuite.adapter;
 
-import org.jboss.resteasy.util.BasicAuthHelper;
+import org.keycloak.util.BasicAuthHelper;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
