@@ -36,9 +36,11 @@ public class AuthenticationProviderEntity {
     private int priority;
 
     @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value")
-    @CollectionTable(name="AUTH_PROVIDER_CONFIG")
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE")
+    @CollectionTable(name="AUTH_PROVIDER_CONFIG", joinColumns = {
+            @JoinColumn(name="REALM_ID", referencedColumnName = "REALM_ID"),
+            @JoinColumn(name="AUTH_PROVIDER_NAME", referencedColumnName = "PROVIDER_NAME")})
     private Map<String, String> config;
 
     public RealmEntity getRealm() {

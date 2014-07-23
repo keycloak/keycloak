@@ -1,6 +1,5 @@
 package org.keycloak.representations;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -10,15 +9,18 @@ import java.util.Set;
  */
 public class AccessCode {
     protected String id;
+    protected String clientId;
+    protected String userId;
     protected String usernameUsed;
     protected String state;
+    protected String sessionState;
     protected String redirectUri;
     protected boolean rememberMe;
     protected String authMethod;
     protected int timestamp;
     protected int expiration;
-    protected AccessToken accessToken;
     protected Set<String> requiredActions;
+    protected Set<String> requestedRoles;
 
     public String getId() {
         return id;
@@ -28,12 +30,36 @@ public class AccessCode {
         this.id = id;
     }
 
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
     public String getState() {
         return state;
     }
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public String getSessionState() {
+        return sessionState;
+    }
+
+    public void setSessionState(String sessionState) {
+        this.sessionState = sessionState;
     }
 
     public String getRedirectUri() {
@@ -68,14 +94,6 @@ public class AccessCode {
         this.expiration = expiration;
     }
 
-    public AccessToken getAccessToken() {
-        return accessToken;
-    }
-
-    public void setAccessToken(AccessToken accessToken) {
-        this.accessToken = accessToken;
-    }
-
     public int getTimestamp() {
         return timestamp;
     }
@@ -98,5 +116,13 @@ public class AccessCode {
 
     public void setUsernameUsed(String usernameUsed) {
         this.usernameUsed = usernameUsed;
+    }
+
+    public Set<String> getRequestedRoles() {
+        return requestedRoles;
+    }
+
+    public void setRequestedRoles(Set<String> requestedRoles) {
+        this.requestedRoles = requestedRoles;
     }
 }

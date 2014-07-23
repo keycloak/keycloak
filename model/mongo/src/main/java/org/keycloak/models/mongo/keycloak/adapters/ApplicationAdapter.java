@@ -161,6 +161,20 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
     }
 
     @Override
+    public boolean hasScope(RoleModel role) {
+        if (super.hasScope(role)) {
+            return true;
+        }
+        Set<RoleModel> roles = getRoles();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    @Override
     public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
         Set<RoleModel> result = new HashSet<RoleModel>();
         List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
@@ -203,6 +217,7 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
         getMongoEntity().setDefaultRoles(roleNames);
         updateMongoEntity();
     }
+
 
     @Override
     public boolean equals(Object o) {

@@ -44,11 +44,13 @@ public abstract class ClientEntity {
     protected RealmEntity realm;
 
     @ElementCollection
-    @CollectionTable(name = "WEB_ORIGINS")
+    @Column(name="VALUE")
+    @CollectionTable(name = "WEB_ORIGINS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Set<String> webOrigins = new HashSet<String>();
 
     @ElementCollection
-    @CollectionTable(name = "REDIRECT_URIS")
+    @Column(name="VALUE")
+    @CollectionTable(name = "REDIRECT_URIS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Set<String> redirectUris = new HashSet<String>();
 
     public RealmEntity getRealm() {

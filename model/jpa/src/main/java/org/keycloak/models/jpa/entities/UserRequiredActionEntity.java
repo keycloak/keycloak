@@ -2,6 +2,7 @@ package org.keycloak.models.jpa.entities;
 
 import org.keycloak.models.UserModel;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -10,6 +11,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+
 import java.io.Serializable;
 
 /**
@@ -20,15 +23,17 @@ import java.io.Serializable;
         @NamedQuery(name="deleteUserRequiredActionsByRealm", query="delete from UserRequiredActionEntity action where action.user IN (select u from UserEntity u where realm=:realm)")
 })
 @Entity
+@Table(name="USER_REQUIRED_ACTION")
 @IdClass(UserRequiredActionEntity.Key.class)
 public class UserRequiredActionEntity {
 
     @Id
     @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="userId")
+    @JoinColumn(name="USER_ID")
     protected UserEntity user;
 
     @Id
+    @Column(name="ACTION")
     protected UserModel.RequiredAction action;
 
     public UserModel.RequiredAction getAction() {

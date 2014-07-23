@@ -66,7 +66,9 @@
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
             "user": "${keycloak.connectionsJpa.user:sa}",
             "password": "${keycloak.connectionsJpa.password:}",
-            "databaseSchema": "${keycloak.connectionsJpa.databaseSchema:create-drop}"
+            "databaseSchema": "${keycloak.connectionsJpa.databaseSchema:create-drop}",
+            "showSql": "${keycloak.connectionsJpa.showSql:false}",
+            "formatSql": "${keycloak.connectionsJpa.formatSql:true}"
         }
     },
 

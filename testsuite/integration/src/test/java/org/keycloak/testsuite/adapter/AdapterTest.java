@@ -21,7 +21,7 @@
  */
 package org.keycloak.testsuite.adapter;
 
-import org.jboss.resteasy.util.BasicAuthHelper;
+import org.keycloak.util.BasicAuthHelper;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -101,7 +101,7 @@ public class AdapterTest {
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, null);
-            AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, userSession);
+            AccessToken token = tm.createClientAccessToken(tm.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession);
             return tm.encodeToken(adminRealm, token);
         } finally {
             keycloakRule.stopSession(session, true);

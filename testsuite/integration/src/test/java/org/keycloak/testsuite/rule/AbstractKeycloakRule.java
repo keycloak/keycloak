@@ -10,9 +10,9 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testutils.KeycloakServer;
@@ -22,7 +22,6 @@ import javax.servlet.Servlet;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ConnectException;
 import java.net.Socket;
 
 /**
@@ -45,7 +44,9 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         try {
             RealmModel realmByName = session.realms().getRealmByName(realm);
             UserModel user = session.users().getUserByUsername(name, realmByName);
-            return user != null ? ModelToRepresentation.toRepresentation(user) : null;
+            UserRepresentation userRep = user != null ? ModelToRepresentation.toRepresentation(user) : null;
+            session.getTransaction().commit();
+            return userRep;
         } finally {
             session.close();
         }
@@ -56,7 +57,9 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         session.getTransaction().begin();
         try {
             RealmModel realmByName = session.realms().getRealmByName(realm);
-            return ModelToRepresentation.toRepresentation(session.users().getUserById(id, realmByName));
+            UserRepresentation userRep = ModelToRepresentation.toRepresentation(session.users().getUserById(id, realmByName));
+            session.getTransaction().commit();
+            return userRep;
         } finally {
             session.close();
         }

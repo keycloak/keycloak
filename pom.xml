@@ -100,6 +100,7 @@
         <module>core</module>
         <module>core-jaxrs</module>
         <module>connections</module>
+        <module>dependencies</module>
         <module>model</module>
         <module>integration</module>
         <module>picketlink</module>
@@ -628,42 +629,5 @@
                 <module>distribution</module>
             </modules>
         </profile>
-
-        <!-- MySQL -->
-        <profile>
-            <activation>
-                <property>
-                    <name>hibernate.connection.driver_class</name>
-                    <value>com.mysql.jdbc.Driver</value>
-                </property>
-            </activation>
-            <id>mysql</id>
-            <dependencies>
-                <dependency>
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                    <version>${mysql.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <!-- PostgreSQL -->
-        <profile>
-            <activation>
-                <property>
-                    <name>hibernate.connection.driver_class</name>
-                    <value>org.postgresql.Driver</value>
-                </property>
-            </activation>
-            <id>postgresql</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${postgresql.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
     </profiles>
 </project>

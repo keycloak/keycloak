@@ -1,16 +1,15 @@
 package org.keycloak.models.sessions.jpa.entities;
 
-import org.hibernate.annotations.GenericGenerator;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -18,6 +17,7 @@ import java.util.Collection;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @Entity
+@Table(name = "USER_SESSION")
 @NamedQueries({
         @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId order by s.started, s.id"),
         @NamedQuery(name = "getUserSessionByClient", query = "select s from UserSessionEntity s join s.clients c where s.realmId = :realmId and c.clientId = :clientId order by s.started, s.id"),
@@ -29,16 +29,22 @@ import java.util.Collection;
 public class UserSessionEntity {
 
     @Id
-    @Column(length = 36)
+    @Column(name="ID",length = 36)
     protected String id;
 
+    @Column(name="USER_ID")
     protected String userId;
+
+    @Column(name="REALM_ID")
     protected String realmId;
 
+    @Column(name="IP_ADDRESS")
     protected String ipAddress;
 
+    @Column(name="STARTED")
     protected int started;
 
+    @Column(name="LAST_SESSION_REFRESH")
     protected int lastSessionRefresh;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="session")

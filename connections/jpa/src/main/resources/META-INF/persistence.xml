@@ -28,5 +28,9 @@
         <class>org.keycloak.audit.jpa.EventEntity</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
+        
+        <properties>
+            <property name="jboss.as.jpa.managed" value="false"/>
+        </properties>
     </persistence-unit>
 </persistence>

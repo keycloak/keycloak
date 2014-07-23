@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -16,7 +17,7 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 @Entity
-@Table(name = "ClientUserSessionAscEntity")
+@Table(name = "CLIENT_USERSESSION")
 @NamedQueries({
         @NamedQuery(name = "removeClientUserSessionByRealm", query = "delete from ClientUserSessionAssociationEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId)"),
         @NamedQuery(name = "removeClientUserSessionByUser", query = "delete from ClientUserSessionAssociationEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId)"),
@@ -28,10 +29,11 @@ public class ClientUserSessionAssociationEntity {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SESSION_ID")
     protected UserSessionEntity session;
 
     @Id
-    @Column(length = 36)
+    @Column(name="CLIENT_ID",length = 36)
     protected String clientId;
 
     public UserSessionEntity getSession() {

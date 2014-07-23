@@ -6,6 +6,8 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+
 import java.io.Serializable;
 
 /**
@@ -13,6 +15,7 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 @Entity
+@Table(name="USERNAME_LOGIN_FAILURE")
 @NamedQueries({
         @NamedQuery(name="getAllFailures", query="select failure from UsernameLoginFailureEntity failure"),
         @NamedQuery(name = "removeLoginFailuresByRealm", query = "delete from UsernameLoginFailureEntity f where f.realmId = :realmId"),
@@ -22,16 +25,23 @@ import java.io.Serializable;
 public class UsernameLoginFailureEntity {
 
     @Id
-    @Column(length = 200)
+    @Column(name="USERNAME",length = 200)
     protected String username;
 
     @Id
-    @Column(length = 36)
+    @Column(name="REALM_ID",length = 36)
     protected String realmId;
 
+    @Column(name="FAILED_LOGIN_NOT_BEFORE")
     protected int failedLoginNotBefore;
+
+    @Column(name="NUM_FAILURES")
     protected int numFailures;
+
+    @Column(name="LAST_FAILURE")
     protected long lastFailure;
+
+    @Column(name="LAST_IP_FAILURE")
     protected String lastIPFailure;
 
     public String getUsername() {

@@ -25,7 +25,7 @@ import java.io.Serializable;
 @Entity
 public class CredentialEntity {
     @Id
-    @Column(length = 36)
+    @Column(name="ID", length = 36)
     protected String id;
 
     @Column(name="TYPE")

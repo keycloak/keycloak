@@ -23,6 +23,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -641,14 +642,6 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
-        if (!accessCode.getToken().isActive()) {
-            Map<String, String> res = new HashMap<String, String>();
-            res.put(OAuth2Constants.ERROR, "invalid_grant");
-            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Token expired");
-            audit.error(Errors.INVALID_CODE);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
-                    .build();
-        }
 
         audit.user(accessCode.getUser());
         audit.session(accessCode.getSessionState());
@@ -698,8 +691,20 @@ public class TokenService {
 
         userSession.associateClient(client);
 
+        AccessToken token = tokenManager.createClientAccessToken(accessCode.getRequestedRoles(), realm, client, user, userSession);
+
+        try {
+            tokenManager.verifyAccess(token, realm, client, user);
+        } catch (OAuthErrorException e) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put(OAuth2Constants.ERROR, e.getError());
+            if (e.getDescription() != null) error.put(OAuth2Constants.ERROR_DESCRIPTION, e.getDescription());
+            audit.error(Errors.INVALID_CODE);
+            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+        }
+
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
-                .accessToken(accessCode.getToken())
+                .accessToken(token)
                 .generateIDToken()
                 .generateRefreshToken().build();
 
