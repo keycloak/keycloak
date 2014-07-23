@@ -13,6 +13,10 @@ import java.util.Set;
 public class FederationManager implements UserProvider {
     protected KeycloakSession session;
 
+    public FederationManager(KeycloakSession session) {
+        this.session = session;
+    }
+
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
         UserModel user = session.userStorage().addUser(realm, id, username, addDefaultRoles);
