@@ -96,7 +96,7 @@ public class FederationManager implements UserProvider {
             return user;
         }
         for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = session.getProvider(FederationProvider.class, federation.getProviderName());
+            FederationProvider fed = getFederationProvider(federation);
             user = fed.getUserById(id, realm);
             if (user != null) return user;
         }
@@ -114,7 +114,7 @@ public class FederationManager implements UserProvider {
             return user;
         }
         for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = session.getProvider(FederationProvider.class, federation.getProviderName());
+            FederationProvider fed = getFederationProvider(federation);
             user = fed.getUserByUsername(username, realm);
             if (user != null) return user;
         }
@@ -132,7 +132,7 @@ public class FederationManager implements UserProvider {
             return user;
         }
         for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = session.getProvider(FederationProvider.class, federation.getProviderName());
+            FederationProvider fed = getFederationProvider(federation);
             user = fed.getUserByEmail(email, realm);
             if (user != null) return user;
         }
@@ -186,7 +186,7 @@ public class FederationManager implements UserProvider {
             return results;
         }
         List<FederationProviderModel> federationProviders = realm.getFederationProviders();
-        for (int i = federationProviders.size(); i >= 0; i--) {
+        for (int i = federationProviders.size() - 1; i >= 0; i--) {
             FederationProviderModel federation = federationProviders.get(i);
             FederationProvider fed = getFederationProvider(federation);
             query = fed.getUsers(realm, firstResult, maxResults);
@@ -220,7 +220,7 @@ public class FederationManager implements UserProvider {
             return results;
         }
         List<FederationProviderModel> federationProviders = realm.getFederationProviders();
-        for (int i = federationProviders.size(); i >= 0; i--) {
+        for (int i = federationProviders.size() - 1; i >= 0; i--) {
             FederationProviderModel federation = federationProviders.get(i);
             FederationProvider fed = getFederationProvider(federation);
             query = fed.searchForUser(search, realm, firstResult, maxResults);
@@ -254,7 +254,7 @@ public class FederationManager implements UserProvider {
             return results;
         }
         List<FederationProviderModel> federationProviders = realm.getFederationProviders();
-        for (int i = federationProviders.size(); i >= 0; i--) {
+        for (int i = federationProviders.size() - 1; i >= 0; i--) {
             FederationProviderModel federation = federationProviders.get(i);
             FederationProvider fed = getFederationProvider(federation);
             query = fed.searchForUserByAttributes(attributes, realm, firstResult, maxResults);
@@ -286,7 +286,7 @@ public class FederationManager implements UserProvider {
     @Override
     public void preRemove(RealmModel realm) {
         for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = session.getProvider(FederationProvider.class, federation.getProviderName());
+            FederationProvider fed = getFederationProvider(federation);
             fed.preRemove(realm);
         }
         session.userStorage().preRemove(realm);
@@ -295,7 +295,7 @@ public class FederationManager implements UserProvider {
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = session.getProvider(FederationProvider.class, federation.getProviderName());
+            FederationProvider fed = getFederationProvider(federation);
             fed.preRemove(realm, role);
         }
         session.userStorage().preRemove(realm, role);
@@ -328,11 +328,12 @@ public class FederationManager implements UserProvider {
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
         FederationProvider link = getFederationLink(realm, user);
         if (link != null) {
-            if (link.getSupportedCredentialTypes().size() > 0) {
+            Set<String> supportedCredentialTypes = link.getSupportedCredentialTypes();
+            if (supportedCredentialTypes.size() > 0) {
                 List<UserCredentialModel> fedCreds = new ArrayList<UserCredentialModel>();
                 List<UserCredentialModel> localCreds = new ArrayList<UserCredentialModel>();
                 for (UserCredentialModel cred : input) {
-                    if (fedCreds.contains(cred.getType())) {
+                    if (supportedCredentialTypes.contains(cred.getType())) {
                         fedCreds.add(cred);
                     } else {
                         localCreds.add(cred);

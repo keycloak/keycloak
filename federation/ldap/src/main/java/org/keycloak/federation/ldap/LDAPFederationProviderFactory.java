@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version $Revision: 1 $
  */
 public class LDAPFederationProviderFactory implements FederationProviderFactory {
+    public static final String PROVIDER_NAME = "ldap";
     PartitionManagerRegistry registry;
 
     @Override
@@ -41,6 +42,6 @@ public class LDAPFederationProviderFactory implements FederationProviderFactory 
 
     @Override
     public String getId() {
-        return "ldap";
+        return PROVIDER_NAME;
     }
 }

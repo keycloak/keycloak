@@ -255,6 +255,7 @@ public class AuthenticationManager {
 
     protected AuthenticationStatus authenticateInternal(KeycloakSession session, RealmModel realm, MultivaluedMap<String, String> formData, String username) {
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+
         if (user == null) {
             AuthUser authUser = AuthenticationProviderManager.getManager(realm, session).getUser(username);
             if (authUser != null) {

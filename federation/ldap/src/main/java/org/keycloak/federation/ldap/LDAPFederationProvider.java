@@ -1,5 +1,6 @@
 package org.keycloak.federation.ldap;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.FederationProvider;
 import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -14,6 +15,7 @@ import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
+import org.picketlink.idm.credential.TOTPCredential;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
@@ -31,6 +33,8 @@ import static org.picketlink.idm.IDMMessages.MESSAGES;
  * @version $Revision: 1 $
  */
 public class LDAPFederationProvider implements FederationProvider {
+    private static final Logger logger = Logger.getLogger(LDAPFederationProvider.class);
+
     protected KeycloakSession session;
     protected FederationProviderModel model;
     protected PartitionManager partitionManager;
@@ -73,7 +77,7 @@ public class LDAPFederationProvider implements FederationProvider {
     @Override
     public UserModel proxy(UserModel local) {
         // todo
-        return local;
+        return new LDAPUserModelDelegate(local, this);
     }
 
     @Override
@@ -177,11 +181,12 @@ public class LDAPFederationProvider implements FederationProvider {
     protected UserModel importUserFromPicketlink(RealmModel realm, User picketlinkUser) {
         String email = (picketlinkUser.getEmail() != null && picketlinkUser.getEmail().trim().length() > 0) ? picketlinkUser.getEmail() : null;
         UserModel imported = session.userStorage().addUser(realm, picketlinkUser.getLoginName());
+        imported.setEnabled(true);
         imported.setEmail(email);
         imported.setFirstName(picketlinkUser.getFirstName());
         imported.setLastName(picketlinkUser.getLastName());
         imported.setFederationLink(model.getId());
-        return imported;
+        return proxy(imported);
     }
 
     protected User queryByEmail(IdentityManager identityManager, String email) throws IdentityManagementException {
