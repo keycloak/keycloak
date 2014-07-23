@@ -1,4 +1,4 @@
-package org.keycloak.admin.client.service.interfaces;
+package org.keycloak.admin.client.resource;
 
 import org.jboss.resteasy.util.Base64;
 

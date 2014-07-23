@@ -1,11 +1,8 @@
 package org.keycloak.admin.client;
 
-import org.keycloak.admin.client.resource.*;
-import org.keycloak.admin.client.service.KeycloakServices;
+import org.keycloak.admin.client.resource.KeycloakAdminFactory;
+import org.keycloak.admin.client.resource.KeycloakRealm;
 import org.keycloak.admin.client.token.TokenManager;
-import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.OAuthClientRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -28,52 +25,12 @@ public class Keycloak {
         return new Keycloak(serverUrl, realm, username, password, clientId, null);
     }
 
-    public KeycloakApplicationsResource applications(){
-        return new KeycloakApplicationsResource(config, tokenManager);
-    }
-
-    public KeycloakApplicationResource application(ApplicationRepresentation applicationRep){
-        return application(applicationRep.getName());
-    }
-
-    public KeycloakApplicationResource application(String appName){
-        return new KeycloakApplicationResource(config, tokenManager, appName);
-    }
-
-    public KeycloakOAuthClientsResource oAuthClients(){
-        return new KeycloakOAuthClientsResource(config, tokenManager);
-    }
-
-    public KeycloakOAuthClientResource oAuthClient(OAuthClientRepresentation oAuthClientRep){
-        return oAuthClient(oAuthClientRep.getName());
-    }
-
-    public KeycloakOAuthClientResource oAuthClient(String oAuthClientName){
-        return new KeycloakOAuthClientResource(config, tokenManager, oAuthClientName);
-    }
-
-    public KeycloakRealmResource realm(){
-        return new KeycloakRealmResource(config, tokenManager);
-    }
-
-    public KeycloakUsersResource users(){
-        return new KeycloakUsersResource(config, tokenManager);
-    }
-
-    public KeycloakUserResource user(UserRepresentation userRep){
-        return user(userRep.getUsername());
-    }
-
-    public KeycloakUserResource user(String username){
-        return new KeycloakUserResource(config, tokenManager, username);
+    public KeycloakRealm realm(String realmName){
+        return KeycloakAdminFactory.getRealm(config, tokenManager, realmName);
     }
 
     public TokenManager tokenManager(){
         return tokenManager;
-    }
-
-    public KeycloakServices services(){
-        return new KeycloakServices(config, tokenManager);
     }
 
 }
