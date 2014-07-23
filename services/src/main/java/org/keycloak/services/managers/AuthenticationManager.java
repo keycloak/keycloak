@@ -94,7 +94,7 @@ public class AuthenticationManager {
         return token;
     }
 
-    public void createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, boolean rememberMe) {
+    public void createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo) {
         logger.info("createLoginCookie");
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         AccessToken identityToken = createIdentityToken(realm, user, session);
@@ -102,7 +102,7 @@ public class AuthenticationManager {
         boolean secureOnly = !realm.isSslNotRequired();
         logger.debugv("creatingLoginCookie - name: {0} path: {1}", KEYCLOAK_IDENTITY_COOKIE, cookiePath);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
-        if (rememberMe) {
+        if (session.isRememberMe()) {
             maxAge = realm.getSsoSessionIdleTimeout();
             logger.info("createLoginCookie maxAge: " + maxAge);
         }

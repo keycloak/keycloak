@@ -35,11 +35,20 @@ public class UserSessionEntity {
     @Column(name="USER_ID")
     protected String userId;
 
+    @Column(name="LOGIN_USERNAME")
+    protected String loginUsername;
+
     @Column(name="REALM_ID")
     protected String realmId;
 
     @Column(name="IP_ADDRESS")
     protected String ipAddress;
+
+    @Column(name="AUTH_METHOD")
+    protected String authMethod;
+
+    @Column(name="REMEMBER_ME")
+    protected boolean rememberMe;
 
     @Column(name="STARTED")
     protected int started;
@@ -66,6 +75,14 @@ public class UserSessionEntity {
         this.userId = userId;
     }
 
+    public String getLoginUsername() {
+        return loginUsername;
+    }
+
+    public void setLoginUsername(String loginUsername) {
+        this.loginUsername = loginUsername;
+    }
+
     public String getRealmId() {
         return realmId;
     }
@@ -80,6 +97,22 @@ public class UserSessionEntity {
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
+    }
+
+    public boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
     }
 
     public int getStarted() {

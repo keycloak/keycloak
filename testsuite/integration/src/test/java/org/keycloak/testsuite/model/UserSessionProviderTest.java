@@ -55,8 +55,8 @@ public class UserSessionProviderTest {
         int started = Time.currentTime();
         UserSessionModel[] sessions = createSessions();
 
-        assertSession(session.sessions().getUserSession(realm, sessions[0].getId()),  session.users().getUserByUsername("user1", realm), "127.0.0.1", started, started, "test-app", "third-party");
-        assertSession(session.sessions().getUserSession(realm, sessions[1].getId()),  session.users().getUserByUsername("user1", realm), "127.0.0.2", started, started, "test-app");
+        assertSession(session.sessions().getUserSession(realm, sessions[0].getId()), session.users().getUserByUsername("user1", realm), "127.0.0.1", started, started, "test-app", "third-party");
+        assertSession(session.sessions().getUserSession(realm, sessions[1].getId()), session.users().getUserByUsername("user1", realm), "127.0.0.2", started, started, "test-app");
         assertSession(session.sessions().getUserSession(realm, sessions[2].getId()), session.users().getUserByUsername("user2", realm), "127.0.0.3", started, started);
     }
 
@@ -116,7 +116,7 @@ public class UserSessionProviderTest {
     @Test
     public void testGetByClientPaginated() {
         for (int i = 0; i < 25; i++) {
-            UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "127.0.0." + i);
+            UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0." + i, "form", false);
             userSession.setStarted(Time.currentTime() + i);
             userSession.associateClient(realm.findClient("test-app"));
         }
@@ -157,14 +157,14 @@ public class UserSessionProviderTest {
 
     private UserSessionModel[] createSessions() {
         UserSessionModel[] sessions = new UserSessionModel[4];
-        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "127.0.0.1");
+        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true);
         sessions[0].associateClient(realm.findClient("test-app"));
         sessions[0].associateClient(realm.findClient("third-party"));
 
-        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "127.0.0.2");
+        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true);
         sessions[1].associateClient(realm.findClient("test-app"));
 
-        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "127.0.0.3");
+        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true);
 
         resetSession();
 
@@ -197,6 +197,9 @@ public class UserSessionProviderTest {
     public void assertSession(UserSessionModel session, UserModel user, String ipAddress, int started, int lastRefresh, String... clients) {
         assertEquals(user.getId(), session.getUser().getId());
         assertEquals(ipAddress, session.getIpAddress());
+        assertEquals(user.getUsername(), session.getLoginUsername());
+        assertEquals("form", session.getAuthMethod());
+        assertEquals(true, session.isRememberMe());
         assertTrue(session.getStarted() >= started - 1 && session.getStarted() <= started + 1);
         assertTrue(session.getLastSessionRefresh() >= lastRefresh - 1 && session.getLastSessionRefresh() <= lastRefresh + 1);
 

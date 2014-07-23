@@ -59,6 +59,17 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     }
 
     @Override
+    public String getLoginUsername() {
+        return entity.getLoginUsername();
+    }
+
+    @Override
+    public void setLoginUsername(String loginUsername) {
+        entity.setLoginUsername(loginUsername);
+        updateMongoEntity();
+    }
+
+    @Override
     public String getIpAddress() {
         return entity.getIpAddress();
     }
@@ -66,6 +77,28 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     @Override
     public void setIpAddress(String ipAddress) {
         entity.setIpAddress(ipAddress);
+        updateMongoEntity();
+    }
+
+    @Override
+    public String getAuthMethod() {
+        return entity.getAuthMethod();
+    }
+
+    @Override
+    public void setAuthMethod(String authMethod) {
+        entity.setAuthMethod(authMethod);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isRememberMe() {
+        return entity.isRememberMe();
+    }
+
+    @Override
+    public void setRememberMe(boolean rememberMe) {
+        entity.setRememberMe(rememberMe);
         updateMongoEntity();
     }
 

@@ -43,12 +43,42 @@ public class UserSessionAdapter implements UserSessionModel {
         entity.setUser(user.getId());
     }
 
+    @Override
+    public String getLoginUsername() {
+        return entity.getLoginUsername();
+    }
+
+    @Override
+    public void setLoginUsername(String loginUsername) {
+        entity.setLoginUsername(loginUsername);
+    }
+
     public String getIpAddress() {
         return entity.getIpAddress();
     }
 
     public void setIpAddress(String ipAddress) {
         entity.setIpAddress(ipAddress);
+    }
+
+    @Override
+    public String getAuthMethod() {
+        return entity.getAuthMethod();
+    }
+
+    @Override
+    public void setAuthMethod(String authMethod) {
+        entity.setAuthMethod(authMethod);
+    }
+
+    @Override
+    public boolean isRememberMe() {
+        return entity.isRememberMe();
+    }
+
+    @Override
+    public void setRememberMe(boolean rememberMe) {
+        entity.setRememberMe(rememberMe);
     }
 
     public int getStarted() {
