@@ -7,6 +7,8 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.FederationProviderModel;
+import org.keycloak.models.entities.FederationProviderEntity;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmProvider;
@@ -475,7 +477,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public boolean removeRoleById(String id) {
         RoleModel role = getRoleById(id);
         if (role == null) return false;
-        session.users().preRemove(role);
+        session.users().preRemove(this, role);
         return getMongoStore().removeEntity(MongoRoleEntity.class, id, invocationContext);
     }
 
@@ -791,6 +793,31 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
 
         realm.setAuthenticationProviders(entities);
+        updateRealm();
+    }
+    @Override
+    public List<FederationProviderModel> getFederationProviders() {
+        List<FederationProviderEntity> entities = realm.getFederationProviders();
+        List<FederationProviderModel> result = new ArrayList<FederationProviderModel>();
+        for (FederationProviderEntity entity : entities) {
+            result.add(new FederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig()));
+        }
+
+        return result;
+    }
+
+    @Override
+    public void setFederationProviders(List<FederationProviderModel> providers) {
+        List<FederationProviderEntity> entities = new ArrayList<FederationProviderEntity>();
+        for (FederationProviderModel model : providers) {
+            FederationProviderEntity entity = new FederationProviderEntity();
+            entity.setId(KeycloakModelUtils.generateId());
+            entity.setProviderName(model.getProviderName());
+            entity.setConfig(model.getConfig());
+            entities.add(entity);
+        }
+
+        realm.setFederationProviders(entities);
         updateRealm();
     }
 

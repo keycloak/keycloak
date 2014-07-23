@@ -51,6 +51,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     private List<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
     private List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
+    private List<FederationProviderEntity> federationProviders = new ArrayList<FederationProviderEntity>();
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
@@ -380,5 +381,13 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setAdminAppId(String adminAppId) {
         this.adminAppId = adminAppId;
+    }
+
+    public List<FederationProviderEntity> getFederationProviders() {
+        return federationProviders;
+    }
+
+    public void setFederationProviders(List<FederationProviderEntity> federationProviders) {
+        this.federationProviders = federationProviders;
     }
 }

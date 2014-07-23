@@ -138,7 +138,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
         }
         if (!roleModel.getContainer().equals(this)) return false;
 
-        session.users().preRemove(roleModel);
+        session.users().preRemove(getRealm(), roleModel);
         RoleEntity role = RoleAdapter.toRoleEntity(roleModel, em);
         if (!role.isApplicationRole()) return false;
 

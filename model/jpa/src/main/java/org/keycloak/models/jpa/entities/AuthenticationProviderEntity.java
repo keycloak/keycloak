@@ -18,7 +18,7 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @Entity
-@Table(name="AUTH_PROVIDER_ENTITY")
+@Table(name="AUTH_PROVIDER")
 @IdClass(AuthenticationProviderEntity.Key.class)
 public class AuthenticationProviderEntity {
 

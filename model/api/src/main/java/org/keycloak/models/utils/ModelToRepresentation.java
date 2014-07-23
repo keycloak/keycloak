@@ -5,6 +5,7 @@ import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -13,6 +14,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.FederationProviderRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
@@ -140,6 +142,18 @@ public class ModelToRepresentation {
                 authProviderReps.add(authProvRep);
             }
             rep.setAuthenticationProviders(authProviderReps);
+        }
+        List<FederationProviderModel> fedProviderModels = realm.getFederationProviders();
+        if (fedProviderModels.size() > 0) {
+            List<FederationProviderRepresentation> fedProviderReps = new ArrayList<FederationProviderRepresentation>();
+            for (FederationProviderModel model : fedProviderModels) {
+                FederationProviderRepresentation fedProvRep = new FederationProviderRepresentation();
+                fedProvRep.setId(model.getId());
+                fedProvRep.setProviderName(model.getProviderName());
+                fedProvRep.setConfig(model.getConfig());
+                fedProviderReps.add(fedProvRep);
+            }
+            rep.setFederationProviders(fedProviderReps);
         }
         return rep;
     }

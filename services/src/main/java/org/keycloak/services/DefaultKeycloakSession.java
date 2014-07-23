@@ -1,6 +1,7 @@
 package org.keycloak.services;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserProvider;
@@ -32,7 +33,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         this.transactionManager = new DefaultKeycloakTransactionManager();
     }
 
-    private RealmProvider getModelProvider() {
+    private RealmProvider getRealmProvider() {
         if (factory.getDefaultProvider(CacheRealmProvider.class) != null) {
             return getProvider(CacheRealmProvider.class);
         } else {
@@ -51,6 +52,16 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public KeycloakTransactionManager getTransaction() {
         return transactionManager;
+    }
+
+    @Override
+    public KeycloakSessionFactory getKeycloakSessionFactory() {
+        return factory;
+    }
+
+    @Override
+    public UserProvider userStorage() {
+        return null;
     }
 
     public <T extends Provider> T getProvider(Class<T> clazz) {
@@ -95,7 +106,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public RealmProvider realms() {
         if (model == null) {
-            model = getModelProvider();
+            model = getRealmProvider();
         }
         return model;
     }

@@ -308,6 +308,7 @@ public class ExportUtils {
             credReps.add(credRep);
         }
         userRep.setCredentials(credReps);
+        userRep.setFederationLink(user.getFederationLink());
 
         return userRep;
     }

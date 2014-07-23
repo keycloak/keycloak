@@ -141,7 +141,7 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
 
     @Override
     public boolean removeRole(RoleModel role) {
-        session.users().preRemove(role);
+        session.users().preRemove(getRealm(), role);
         return getMongoStore().removeEntity(MongoRoleEntity.class, role.getId(), invocationContext);
     }
 

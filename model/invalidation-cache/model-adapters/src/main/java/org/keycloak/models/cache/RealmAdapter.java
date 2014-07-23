@@ -3,6 +3,7 @@ package org.keycloak.models.cache;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -606,6 +607,18 @@ public class RealmAdapter implements RealmModel {
     public void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders) {
         getDelegateForUpdate();
         updated.setAuthenticationProviders(authenticationProviders);
+    }
+
+    @Override
+    public List<FederationProviderModel> getFederationProviders() {
+        if (updated != null) return updated.getFederationProviders();
+        return cached.getFederationProviders();
+    }
+
+    @Override
+    public void setFederationProviders(List<FederationProviderModel> providers) {
+        getDelegateForUpdate();
+        updated.setFederationProviders(providers);
     }
 
     @Override

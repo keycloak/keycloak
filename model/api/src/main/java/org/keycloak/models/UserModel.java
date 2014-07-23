@@ -77,6 +77,9 @@ public interface UserModel {
     Set<RoleModel> getRoleMappings();
     void deleteRoleMapping(RoleModel role);
 
+    String getFederationLink();
+    void setFederationLink(String link);
+
 
 
 

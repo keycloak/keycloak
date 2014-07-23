@@ -117,6 +117,10 @@ public class RealmEntity {
     @JoinTable(name="AUTH_PROVIDERS")
     List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
 
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="FED_PROVIDERS")
+    List<FederationProviderEntity> federationProviders = new ArrayList<FederationProviderEntity>();
+
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
 
@@ -509,5 +513,12 @@ public class RealmEntity {
         this.masterAdminApp = masterAdminApp;
     }
 
+    public List<FederationProviderEntity> getFederationProviders() {
+        return federationProviders;
+    }
+
+    public void setFederationProviders(List<FederationProviderEntity> federationProviders) {
+        this.federationProviders = federationProviders;
+    }
 }
 
