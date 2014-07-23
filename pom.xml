@@ -104,6 +104,7 @@
         <module>model</module>
         <module>integration</module>
         <module>picketlink</module>
+        <module>federation</module>
         <module>services</module>
         <module>social</module>
         <module>forms</module>

@@ -136,7 +136,7 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public void preRemove(RoleModel role) {
+    public void preRemove(RealmModel realm, RoleModel role) {
         em.createNamedQuery("deleteUserRoleMappingsByRole").setParameter("roleId", role.getId()).executeUpdate();
     }
 

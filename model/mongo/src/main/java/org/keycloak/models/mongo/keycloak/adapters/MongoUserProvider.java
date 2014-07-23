@@ -341,7 +341,7 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public void preRemove(RoleModel role) {
+    public void preRemove(RealmModel realm, RoleModel role) {
         // todo not sure what to do for this
     }
 

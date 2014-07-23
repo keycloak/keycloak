@@ -2,6 +2,7 @@ package org.keycloak.models.cache;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -202,6 +203,18 @@ public class UserAdapter implements UserModel {
         getDelegateForUpdate();
         updated.setAuthenticationLink(authenticationLink);
     }
+
+    @Override
+    public String getFederationLink() {
+        if (updated != null) return updated.getFederationLink();
+        return cached.getFederationLink();
+    }
+
+    @Override
+    public void setFederationLink(String link) {
+        getDelegateForUpdate();
+        updated.setFederationLink(link);
+   }
 
     @Override
     public Set<RoleModel> getRealmRoleMappings() {

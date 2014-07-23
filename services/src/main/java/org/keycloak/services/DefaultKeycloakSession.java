@@ -1,6 +1,8 @@
 package org.keycloak.services;
 
+import org.keycloak.models.FederationManager;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserProvider;
@@ -26,13 +28,15 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private RealmProvider model;
     private UserProvider userModel;
     private UserSessionProvider sessionProvider;
+    private FederationManager federationManager;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
         this.transactionManager = new DefaultKeycloakTransactionManager();
+        federationManager = new FederationManager(this);
     }
 
-    private RealmProvider getModelProvider() {
+    private RealmProvider getRealmProvider() {
         if (factory.getDefaultProvider(CacheRealmProvider.class) != null) {
             return getProvider(CacheRealmProvider.class);
         } else {
@@ -51,6 +55,20 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public KeycloakTransactionManager getTransaction() {
         return transactionManager;
+    }
+
+    @Override
+    public KeycloakSessionFactory getKeycloakSessionFactory() {
+        return factory;
+    }
+
+    @Override
+    public UserProvider userStorage() {
+        if (userModel == null) {
+            userModel = getUserProvider();
+        }
+        return userModel;
+
     }
 
     public <T extends Provider> T getProvider(Class<T> clazz) {
@@ -95,17 +113,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public RealmProvider realms() {
         if (model == null) {
-            model = getModelProvider();
+            model = getRealmProvider();
         }
         return model;
     }
 
     @Override
     public UserProvider users() {
-        if (userModel == null) {
-            userModel = getUserProvider();
-        }
-        return userModel;
+        return federationManager;
     }
 
     @Override

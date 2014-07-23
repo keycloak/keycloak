@@ -20,6 +20,8 @@ public interface KeycloakSession {
 
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
 
+    KeycloakSessionFactory getKeycloakSessionFactory();
+
     /**
      * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
      * transaction.
@@ -38,7 +40,19 @@ public interface KeycloakSession {
      */
     UserSessionProvider sessions();
 
+
+
     void close();
 
+    /**
+     * Possibly both cached and federated view of users depending on configuration.
+     *
+     * @return
+     */
     UserProvider users();
+
+    /**
+     *  Keycloak user storage.  Non-federated, but possibly cache (if it is on) view of users.
+     */
+    UserProvider userStorage();
 }

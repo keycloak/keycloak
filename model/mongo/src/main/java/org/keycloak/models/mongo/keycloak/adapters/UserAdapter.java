@@ -331,6 +331,17 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
+    public String getFederationLink() {
+        return user.getFederationLink();
+    }
+
+    @Override
+    public void setFederationLink(String link) {
+        user.setFederationLink(link);
+
+    }
+
+    @Override
     public AuthenticationLinkModel getAuthenticationLink() {
         AuthenticationLinkEntity authLinkEntity = user.getAuthenticationLink();
 

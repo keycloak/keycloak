@@ -28,6 +28,7 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private List<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
     private List<SocialLinkEntity> socialLinks;
     private AuthenticationLinkEntity authenticationLink;
+    private String federationLink;
 
     public String getUsername() {
         return username;
@@ -139,6 +140,14 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     public void setAuthenticationLink(AuthenticationLinkEntity authenticationLink) {
         this.authenticationLink = authenticationLink;
+    }
+
+    public String getFederationLink() {
+        return federationLink;
+    }
+
+    public void setFederationLink(String federationLink) {
+        this.federationLink = federationLink;
     }
 }
 

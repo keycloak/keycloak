@@ -21,6 +21,7 @@ public class UserRepresentation {
     protected String lastName;
     protected String email;
     protected AuthenticationLinkRepresentation authenticationLink;
+    protected String federationLink;
     protected Map<String, String> attributes;
     protected List<CredentialRepresentation> credentials;
     protected List<String> requiredActions;
@@ -169,5 +170,13 @@ public class UserRepresentation {
 
     public void setApplicationRoles(Map<String, List<String>> applicationRoles) {
         this.applicationRoles = applicationRoles;
+    }
+
+    public String getFederationLink() {
+        return federationLink;
+    }
+
+    public void setFederationLink(String federationLink) {
+        this.federationLink = federationLink;
     }
 }

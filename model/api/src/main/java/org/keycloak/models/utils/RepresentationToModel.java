@@ -7,6 +7,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -16,6 +17,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.FederationProviderRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationLinkRepresentation;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
@@ -213,6 +215,11 @@ public class RepresentationToModel {
             newRealm.setAuthenticationProviders(authProviderModels);
         }
 
+        if (rep.getFederationProviders() != null) {
+            List<FederationProviderModel> providerModels = convertFederationProviders(rep.getFederationProviders());
+            newRealm.setFederationProviders(providerModels);
+        }
+
         // create users and their role mappings and social mappings
 
         if (rep.getUsers() != null) {
@@ -280,6 +287,11 @@ public class RepresentationToModel {
             realm.setAuthenticationProviders(authProviderModels);
         }
 
+        if (rep.getFederationProviders() != null) {
+            List<FederationProviderModel> providerModels = convertFederationProviders(rep.getFederationProviders());
+            realm.setFederationProviders(providerModels);
+        }
+
         if ("GENERATE".equals(rep.getPublicKey())) {
             KeycloakModelUtils.generateRealmKeys(realm);
         }
@@ -298,6 +310,17 @@ public class RepresentationToModel {
         for (AuthenticationProviderRepresentation representation : authenticationProviders) {
             AuthenticationProviderModel model = new AuthenticationProviderModel(representation.getProviderName(),
                     representation.isPasswordUpdateSupported(), representation.getConfig());
+            result.add(model);
+        }
+        return result;
+    }
+
+    private static List<FederationProviderModel> convertFederationProviders(List<FederationProviderRepresentation> providers) {
+        List<FederationProviderModel> result = new ArrayList<FederationProviderModel>();
+
+        for (FederationProviderRepresentation representation : providers) {
+            FederationProviderModel model = new FederationProviderModel(representation.getId(), representation.getProviderName(),
+                    representation.getConfig());
             result.add(model);
         }
         return result;
@@ -584,6 +607,7 @@ public class RepresentationToModel {
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
+        user.setFederationLink(userRep.getFederationLink());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
                 user.setAttribute(entry.getKey(), entry.getValue());

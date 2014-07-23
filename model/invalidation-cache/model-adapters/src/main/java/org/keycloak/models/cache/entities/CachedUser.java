@@ -1,6 +1,7 @@
 package org.keycloak.models.cache.entities;
 
 import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -28,6 +29,7 @@ public class CachedUser {
     private boolean enabled;
     private boolean totp;
     private AuthenticationLinkModel authenticationLink;
+    private String federationLink;
     private Map<String, String> attributes = new HashMap<String, String>();
     private Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>();
     private Set<String> roleMappings = new HashSet<String>();
@@ -44,6 +46,7 @@ public class CachedUser {
         this.credentials.addAll(user.getCredentialsDirectly());
         this.enabled = user.isEnabled();
         this.totp = user.isTotp();
+        this.federationLink = user.getFederationLink();
         this.requiredActions.addAll(user.getRequiredActions());
         this.authenticationLink = user.getAuthenticationLink();
         for (RoleModel role : user.getRoleMappings()) {
@@ -101,5 +104,9 @@ public class CachedUser {
 
     public AuthenticationLinkModel getAuthenticationLink() {
         return authenticationLink;
+    }
+
+    public String getFederationLink() {
+        return federationLink;
     }
 }
