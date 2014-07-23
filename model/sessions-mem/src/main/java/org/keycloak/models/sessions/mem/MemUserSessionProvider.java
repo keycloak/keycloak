@@ -37,14 +37,17 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
         String id = KeycloakModelUtils.generateId();
 
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(id);
         entity.setRealm(realm.getId());
         entity.setUser(user.getId());
+        entity.setLoginUsername(loginUsername);
         entity.setIpAddress(ipAddress);
+        entity.setAuthMethod(authMethod);
+        entity.setRememberMe(rememberMe);
 
         int currentTime = Time.currentTime();
 

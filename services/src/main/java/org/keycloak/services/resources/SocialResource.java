@@ -116,6 +116,7 @@ public class SocialResource {
         SocialProvider provider = SocialLoader.load(initialRequest.getProvider());
 
         String realmName = initialRequest.getRealm();
+        String authMethod = "social@" + provider.getId();
 
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
@@ -123,7 +124,7 @@ public class SocialResource {
         Audit audit = new AuditManager(realm, session, clientConnection).createAudit()
                 .event(EventType.LOGIN)
                 .detail(Details.RESPONSE_TYPE, initialRequest.get(OAuth2Constants.RESPONSE_TYPE))
-                .detail(Details.AUTH_METHOD, "social@" + provider.getId());
+                .detail(Details.AUTH_METHOD, authMethod);
 
         AuthenticationManager authManager = new AuthenticationManager();
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager);
@@ -251,10 +252,12 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Your account is not enabled.");
         }
 
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, clientConnection.getRemoteAddr());
+        String username = socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider();
+
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), authMethod, false);
         audit.session(userSession);
 
-        return oauth.processAccessCode(scope, state, redirectUri, client, user, userSession, socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider(), false, "social@" + provider.getId(), audit);
+        return oauth.processAccessCode(scope, state, redirectUri, client, user, userSession, audit);
     }
 
     @GET

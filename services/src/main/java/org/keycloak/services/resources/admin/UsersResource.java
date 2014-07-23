@@ -820,13 +820,8 @@ public class UsersResource {
             return Flows.errors().error("AccountProvider management not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
-        Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>(user.getRequiredActions());
-        requiredActions.add(UserModel.RequiredAction.UPDATE_PASSWORD);
-
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scope, state, redirect, session, realm, client, user, null);
-        accessCode.setRequiredActions(requiredActions);
-        accessCode.setUsernameUsed(username);
-        accessCode.resetExpiration();
+        accessCode.setRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         try {
             UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());

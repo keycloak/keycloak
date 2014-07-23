@@ -21,11 +21,9 @@ public class AppAuthManager extends AuthenticationManager {
     public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         AuthResult authResult = super.authenticateIdentityCookie(session, realm, uriInfo, headers);
         if (authResult == null) return null;
-        Cookie remember = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
-        boolean rememberMe = remember != null;
         // refresh the cookies!
-        createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo, rememberMe);
-        if (rememberMe) createRememberMeCookie(realm, uriInfo);
+        createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo);
+        if (authResult.getSession().isRememberMe()) createRememberMeCookie(realm, uriInfo);
         return authResult;
     }
 

@@ -11,7 +11,10 @@ public class UserSessionEntity {
     private String id;
     private String realm;
     private String user;
+    private String loginUsername;
     private String ipAddress;
+    private String authMethod;
+    private boolean rememberMe;
     private int started;
     private int lastSessionRefresh;
     private List<String> clients = new LinkedList<String>();
@@ -40,12 +43,36 @@ public class UserSessionEntity {
         this.user = user;
     }
 
+    public String getLoginUsername() {
+        return loginUsername;
+    }
+
+    public void setLoginUsername(String loginUsername) {
+        this.loginUsername = loginUsername;
+    }
+
     public String getIpAddress() {
         return ipAddress;
     }
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
+    }
+
+    public boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
     }
 
     public int getStarted() {
