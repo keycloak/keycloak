@@ -1,5 +1,6 @@
 package org.keycloak.models.cache;
 
+import org.keycloak.Config;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
@@ -726,8 +727,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getMasterAdminApp() {
-        if (updated != null) return updated.getMasterAdminApp();
-        return getApplicationById(cached.getMasterAdminApp());
+        return cacheSession.getRealm(Config.getAdminRealm()).getApplicationById(cached.getMasterAdminApp());
     }
 
     @Override

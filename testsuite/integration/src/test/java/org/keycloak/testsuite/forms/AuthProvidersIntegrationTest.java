@@ -9,7 +9,7 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.model.test.LDAPTestUtils;
+import org.keycloak.testsuite.LDAPTestUtils;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;

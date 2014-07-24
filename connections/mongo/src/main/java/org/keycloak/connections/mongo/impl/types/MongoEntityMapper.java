@@ -1,6 +1,7 @@
 package org.keycloak.connections.mongo.impl.types;
 
 import com.mongodb.BasicDBObject;
+import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.types.Mapper;
 import org.keycloak.connections.mongo.api.types.MapperContext;
 import org.keycloak.connections.mongo.api.types.MapperRegistry;
@@ -38,7 +39,7 @@ public class MongoEntityMapper<T> implements Mapper<T, BasicDBObject> {
             String propName = property.getName();
 
             // Ignore "id" property
-            if (!"id".equals(propName)) {
+            if (!"id".equals(propName) || !(applicationObject instanceof MongoIdentifiableEntity)) {
                 Object propValue = property.getValue(applicationObject);
                 if (propValue != null) {
                     Object dbValue = propValue == null ? null : mapperRegistry.convertApplicationObjectToDBObject(propValue, Object.class);

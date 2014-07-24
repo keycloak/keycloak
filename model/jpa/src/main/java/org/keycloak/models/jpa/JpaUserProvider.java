@@ -123,6 +123,8 @@ public class JpaUserProvider implements UserProvider {
     public void preRemove(RealmModel realm) {
         int num = em.createNamedQuery("deleteUserRoleMappingsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteUserRequiredActionsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteSocialLinkByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteCredentialsByRealm")
