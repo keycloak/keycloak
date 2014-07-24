@@ -136,7 +136,7 @@ public class CachedRealm {
 
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());
-            CachedRole cachedRole = new CachedRealmRole(role);
+            CachedRole cachedRole = new CachedRealmRole(role, model);
             cache.addCachedRole(cachedRole);
         }
 

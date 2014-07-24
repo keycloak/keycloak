@@ -32,7 +32,7 @@ public class CachedApplication extends CachedClient {
         bearerOnly = model.isBearerOnly();
         for (RoleModel role : model.getRoles()) {
             roles.put(role.getName(), role.getId());
-            cache.addCachedRole(new CachedApplicationRole(id, role));
+            cache.addCachedRole(new CachedApplicationRole(id, role, realm));
         }
 
 

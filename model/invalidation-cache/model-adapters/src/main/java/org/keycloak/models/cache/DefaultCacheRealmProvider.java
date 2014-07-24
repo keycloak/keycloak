@@ -243,14 +243,18 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     public RoleModel getRoleById(String id, RealmModel realm) {
         if (!cache.isEnabled()) return getDelegate().getRoleById(id, realm);
         CachedRole cached = cache.getRole(id);
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+
         if (cached == null) {
             RoleModel model = getDelegate().getRoleById(id, realm);
             if (model == null) return null;
             if (roleInvalidations.contains(id)) return model;
             if (model.getContainer() instanceof ApplicationModel) {
-                cached = new CachedApplicationRole(((ApplicationModel) model.getContainer()).getId(), model);
+                cached = new CachedApplicationRole(((ApplicationModel) model.getContainer()).getId(), model, realm);
             } else {
-                cached = new CachedRealmRole(model);
+                cached = new CachedRealmRole(model, realm);
             }
             cache.addCachedRole(cached);
 
@@ -268,6 +272,10 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     public ApplicationModel getApplicationById(String id, RealmModel realm) {
         if (!cache.isEnabled()) return getDelegate().getApplicationById(id, realm);
         CachedApplication cached = cache.getApplication(id);
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+
         if (cached == null) {
             ApplicationModel model = getDelegate().getApplicationById(id, realm);
             if (model == null) return null;
@@ -288,6 +296,10 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
         if (!cache.isEnabled()) return getDelegate().getOAuthClientById(id, realm);
         CachedOAuthClient cached = cache.getOAuthClient(id);
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+
         if (cached == null) {
             OAuthClientModel model = getDelegate().getOAuthClientById(id, realm);
             if (model == null) return null;

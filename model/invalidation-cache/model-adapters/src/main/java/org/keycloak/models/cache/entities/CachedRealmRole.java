@@ -1,5 +1,6 @@
 package org.keycloak.models.cache.entities;
 
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
 /**
@@ -9,8 +10,8 @@ import org.keycloak.models.RoleModel;
 public class CachedRealmRole extends CachedRole {
 
 
-    public CachedRealmRole(RoleModel model) {
-        super(model);
+    public CachedRealmRole(RoleModel model, RealmModel realm) {
+        super(model, realm);
 
     }
 

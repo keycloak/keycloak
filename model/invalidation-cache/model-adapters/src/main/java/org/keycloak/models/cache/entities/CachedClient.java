@@ -16,6 +16,7 @@ import java.util.Set;
 public class CachedClient {
     protected String id;
     protected String name;
+    protected String realm;
     protected long allowedClaimsMask;
     protected Set<String> redirectUris = new HashSet<String>();
     protected boolean enabled;
@@ -30,6 +31,7 @@ public class CachedClient {
         id = model.getId();
         secret = model.getSecret();
         name = model.getClientId();
+        this.realm = realm.getId();
         enabled = model.isEnabled();
         notBefore = model.getNotBefore();
         directGrantsOnly = model.isDirectGrantsOnly();
@@ -49,6 +51,10 @@ public class CachedClient {
 
     public String getName() {
         return name;
+    }
+
+    public String getRealm() {
+        return realm;
     }
 
     public long getAllowedClaimsMask() {

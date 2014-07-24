@@ -301,16 +301,16 @@ public class AuthenticationManager {
                 if (!session.users().validCredentials(realm, user, UserCredentialModel.totp(token))) {
                     return AuthenticationStatus.INVALID_CREDENTIALS;
                 }
-            } else {
-                logger.debug("validating password for user: " + username);
+            }
 
-                AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm, session).validatePassword(user, password);
-                if (authStatus == AuthProviderStatus.INVALID_CREDENTIALS) {
-                    logger.debug("invalid password for user: " + username);
-                    return AuthenticationStatus.INVALID_CREDENTIALS;
-                } else if (authStatus == AuthProviderStatus.FAILED) {
-                    return AuthenticationStatus.FAILED;
-                }
+            logger.debug("validating password for user: " + username);
+
+            AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm, session).validatePassword(user, password);
+            if (authStatus == AuthProviderStatus.INVALID_CREDENTIALS) {
+                logger.debug("invalid password for user: " + username);
+                return AuthenticationStatus.INVALID_CREDENTIALS;
+            } else if (authStatus == AuthProviderStatus.FAILED) {
+                return AuthenticationStatus.FAILED;
             }
 
             if (!user.getRequiredActions().isEmpty()) {

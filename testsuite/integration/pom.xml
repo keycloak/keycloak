@@ -30,7 +30,19 @@
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
-
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
@@ -177,12 +189,16 @@
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-chrome-driver</artifactId>
         </dependency>
-
-        <!-- This adds couple of other dependencies (like picketlink) -->
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-tests</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.picketbox</groupId>
+            <artifactId>picketbox-ldap</artifactId>
+            <scope>compile</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.picketbox</groupId>
+            <artifactId>picketbox-ldap</artifactId>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
     <build>
@@ -257,13 +273,28 @@
         </profile>
 
         <profile>
+            <id>jpa</id>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.realm.provider>jpa</keycloak.realm.provider>
+                                <keycloak.user.provider>jpa</keycloak.user.provider>
+                                <keycloak.audit.provider>jpa</keycloak.audit.provider>
+                                <keycloak.userSessions.provider>jpa</keycloak.userSessions.provider>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>mongo</id>
-            <activation>
-                <property>
-                    <name>keycloak.realm.provider</name>
-                    <value>mongo</value>
-                </property>
-            </activation>
 
             <properties>
                 <keycloak.connectionsMongo.host>localhost</keycloak.connectionsMongo.host>
@@ -292,7 +323,7 @@
                                         <keycloak.realm.provider>mongo</keycloak.realm.provider>
                                         <keycloak.user.provider>mongo</keycloak.user.provider>
                                         <keycloak.audit.provider>mongo</keycloak.audit.provider>
-                                        <!--<keycloak.userSessions.provider>mongo</keycloak.userSessions.provider>-->
+                                        <keycloak.userSessions.provider>mongo</keycloak.userSessions.provider>
                                         <keycloak.connectionsMongo.host>${keycloak.connectionsMongo.host}</keycloak.connectionsMongo.host>
                                         <keycloak.connectionsMongo.port>${keycloak.connectionsMongo.port}</keycloak.connectionsMongo.port>
                                         <keycloak.connectionsMongo.db>${keycloak.connectionsMongo.db}</keycloak.connectionsMongo.db>

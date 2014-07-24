@@ -11,8 +11,8 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
-import org.keycloak.model.test.LDAPEmbeddedServer;
-import org.keycloak.model.test.LDAPTestUtils;
+import org.keycloak.testsuite.LDAPEmbeddedServer;
+import org.keycloak.testsuite.LDAPTestUtils;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -36,7 +36,6 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
