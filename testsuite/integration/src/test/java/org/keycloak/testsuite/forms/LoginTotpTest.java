@@ -128,4 +128,19 @@ public class LoginTotpTest {
         events.expectLogin().assertEvent();
     }
 
+    @Test
+    public void loginWithTotpInvalidPassword() throws Exception {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "invalid");
+
+        loginTotpPage.assertCurrent();
+
+        loginTotpPage.login(totp.generate("totpSecret"));
+
+        loginPage.assertCurrent();
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).session((String) null).assertEvent();
+    }
+
 }
