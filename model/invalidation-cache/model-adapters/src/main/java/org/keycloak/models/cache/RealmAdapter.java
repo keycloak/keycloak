@@ -4,19 +4,14 @@ import org.keycloak.Config;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.FederationProviderModel;
-import org.keycloak.models.utils.CredentialValidation;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.TimeBasedOTP;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -611,13 +606,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<FederationProviderModel> getFederationProviders() {
+    public List<UserFederationProviderModel> getFederationProviders() {
         if (updated != null) return updated.getFederationProviders();
         return cached.getFederationProviders();
     }
 
     @Override
-    public void setFederationProviders(List<FederationProviderModel> providers) {
+    public void setFederationProviders(List<UserFederationProviderModel> providers) {
         getDelegateForUpdate();
         updated.setFederationProviders(providers);
     }

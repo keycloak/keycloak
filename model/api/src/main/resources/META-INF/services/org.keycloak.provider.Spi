@@ -1,4 +1,4 @@
-org.keycloak.models.FederationSpi
+org.keycloak.models.UserFederationSpi
 org.keycloak.models.RealmSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserSpi

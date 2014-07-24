@@ -1,10 +1,8 @@
 package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.FederationProviderModel;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.AbstractIdentityStoreConfiguration;
 import org.picketlink.idm.config.IdentityConfiguration;
@@ -30,7 +28,7 @@ public class PartitionManagerRegistry {
 
     private Map<String, PartitionManagerContext> partitionManagers = new ConcurrentHashMap<String, PartitionManagerContext>();
 
-    public PartitionManager getPartitionManager(FederationProviderModel model) {
+    public PartitionManager getPartitionManager(UserFederationProviderModel model) {
         PartitionManagerContext context = partitionManagers.get(model.getId());
 
         // Ldap config might have changed for the realm. In this case, we must re-initialize

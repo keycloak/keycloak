@@ -10,25 +10,25 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FederationManager implements UserProvider {
+public class UserFederationManager implements UserProvider {
     protected KeycloakSession session;
 
-    public FederationManager(KeycloakSession session) {
+    public UserFederationManager(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
         UserModel user = session.userStorage().addUser(realm, id, username, addDefaultRoles);
-        for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = session.getProvider(FederationProvider.class, federation.getProviderName());
+        for (UserFederationProviderModel federation : realm.getFederationProviders()) {
+            UserFederationProvider fed = session.getProvider(UserFederationProvider.class, federation.getProviderName());
             return fed.addUser(realm, user);
         }
         return user;
     }
 
-    protected FederationProvider getFederationProvider(FederationProviderModel model) {
-        FederationProviderFactory factory = (FederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(FederationProvider.class, model.getProviderName());
+    protected UserFederationProvider getFederationProvider(UserFederationProviderModel model) {
+        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, model.getProviderName());
         return factory.getInstance(session, model);
 
     }
@@ -36,16 +36,16 @@ public class FederationManager implements UserProvider {
     @Override
     public UserModel addUser(RealmModel realm, String username) {
         UserModel user = session.userStorage().addUser(realm, username);
-        for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = getFederationProvider(federation);
+        for (UserFederationProviderModel federation : realm.getFederationProviders()) {
+            UserFederationProvider fed = getFederationProvider(federation);
             return fed.addUser(realm, user);
         }
         return user;
     }
 
-    protected FederationProvider getFederationLink(RealmModel realm, UserModel user) {
+    protected UserFederationProvider getFederationLink(RealmModel realm, UserModel user) {
         if (user.getFederationLink() == null) return null;
-        for (FederationProviderModel fed : realm.getFederationProviders()) {
+        for (UserFederationProviderModel fed : realm.getFederationProviders()) {
             if (fed.getId().equals(user.getFederationLink())) {
                 return getFederationProvider(fed);
             }
@@ -57,7 +57,7 @@ public class FederationManager implements UserProvider {
     public boolean removeUser(RealmModel realm, String name) {
         UserModel user = session.userStorage().getUserByUsername(name, realm);
         if (user == null) return false;
-        FederationProvider link = getFederationLink(realm, user);
+        UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             return link.removeUser(realm, user);
         }
@@ -67,7 +67,7 @@ public class FederationManager implements UserProvider {
 
     @Override
     public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
-        FederationProvider link = getFederationLink(realm, user);
+        UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             link.addSocialLink(realm, user, socialLink);
             return;
@@ -78,7 +78,7 @@ public class FederationManager implements UserProvider {
 
     @Override
     public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider) {
-        FederationProvider link = getFederationLink(realm, user);
+        UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             return link.removeSocialLink(realm, user, socialProvider);
         }
@@ -89,14 +89,14 @@ public class FederationManager implements UserProvider {
     public UserModel getUserById(String id, RealmModel realm) {
         UserModel user = session.userStorage().getUserById(id, realm);
         if (user != null) {
-            FederationProvider link = getFederationLink(realm, user);
+            UserFederationProvider link = getFederationLink(realm, user);
             if (link != null) {
                 return link.proxy(user);
             }
             return user;
         }
-        for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = getFederationProvider(federation);
+        for (UserFederationProviderModel federation : realm.getFederationProviders()) {
+            UserFederationProvider fed = getFederationProvider(federation);
             user = fed.getUserById(id, realm);
             if (user != null) return user;
         }
@@ -107,14 +107,14 @@ public class FederationManager implements UserProvider {
     public UserModel getUserByUsername(String username, RealmModel realm) {
         UserModel user = session.userStorage().getUserByUsername(username, realm);
         if (user != null) {
-            FederationProvider link = getFederationLink(realm, user);
+            UserFederationProvider link = getFederationLink(realm, user);
             if (link != null) {
                 return link.proxy(user);
             }
             return user;
         }
-        for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = getFederationProvider(federation);
+        for (UserFederationProviderModel federation : realm.getFederationProviders()) {
+            UserFederationProvider fed = getFederationProvider(federation);
             user = fed.getUserByUsername(username, realm);
             if (user != null) return user;
         }
@@ -125,14 +125,14 @@ public class FederationManager implements UserProvider {
     public UserModel getUserByEmail(String email, RealmModel realm) {
         UserModel user = session.userStorage().getUserByEmail(email, realm);
         if (user != null) {
-            FederationProvider link = getFederationLink(realm, user);
+            UserFederationProvider link = getFederationLink(realm, user);
             if (link != null) {
                 return link.proxy(user);
             }
             return user;
         }
-        for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = getFederationProvider(federation);
+        for (UserFederationProviderModel federation : realm.getFederationProviders()) {
+            UserFederationProvider fed = getFederationProvider(federation);
             user = fed.getUserByEmail(email, realm);
             if (user != null) return user;
         }
@@ -143,14 +143,14 @@ public class FederationManager implements UserProvider {
     public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
         UserModel user = session.userStorage().getUserBySocialLink(socialLink, realm);
         if (user != null) {
-            FederationProvider link = getFederationLink(realm, user);
+            UserFederationProvider link = getFederationLink(realm, user);
             if (link != null) {
                 return link.proxy(user);
             }
             return user;
         }
-        for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = getFederationProvider(federation);
+        for (UserFederationProviderModel federation : realm.getFederationProviders()) {
+            UserFederationProvider fed = getFederationProvider(federation);
             user = fed.getUserBySocialLink(socialLink, realm);
             if (user != null) return user;
         }
@@ -173,7 +173,7 @@ public class FederationManager implements UserProvider {
         Map<String, UserModel> users = new HashMap<String, UserModel>();
         List<UserModel> query = session.userStorage().getUsers(realm, firstResult, maxResults);
         for (UserModel user : query) {
-            FederationProvider link = getFederationLink(realm, user);
+            UserFederationProvider link = getFederationLink(realm, user);
             if (link != null) {
                 users.put(user.getUsername(), link.proxy(user));
             } else {
@@ -185,10 +185,10 @@ public class FederationManager implements UserProvider {
             results.addAll(users.values());
             return results;
         }
-        List<FederationProviderModel> federationProviders = realm.getFederationProviders();
+        List<UserFederationProviderModel> federationProviders = realm.getFederationProviders();
         for (int i = federationProviders.size() - 1; i >= 0; i--) {
-            FederationProviderModel federation = federationProviders.get(i);
-            FederationProvider fed = getFederationProvider(federation);
+            UserFederationProviderModel federation = federationProviders.get(i);
+            UserFederationProvider fed = getFederationProvider(federation);
             query = fed.getUsers(realm, firstResult, maxResults);
             for (UserModel user : query) users.put(user.getUsername(), user);
         }
@@ -207,7 +207,7 @@ public class FederationManager implements UserProvider {
         Map<String, UserModel> users = new HashMap<String, UserModel>();
         List<UserModel> query = session.userStorage().searchForUser(search, realm, firstResult, maxResults);
         for (UserModel user : query) {
-            FederationProvider link = getFederationLink(realm, user);
+            UserFederationProvider link = getFederationLink(realm, user);
             if (link != null) {
                 users.put(user.getUsername(), link.proxy(user));
             } else {
@@ -219,10 +219,10 @@ public class FederationManager implements UserProvider {
             results.addAll(users.values());
             return results;
         }
-        List<FederationProviderModel> federationProviders = realm.getFederationProviders();
+        List<UserFederationProviderModel> federationProviders = realm.getFederationProviders();
         for (int i = federationProviders.size() - 1; i >= 0; i--) {
-            FederationProviderModel federation = federationProviders.get(i);
-            FederationProvider fed = getFederationProvider(federation);
+            UserFederationProviderModel federation = federationProviders.get(i);
+            UserFederationProvider fed = getFederationProvider(federation);
             query = fed.searchForUser(search, realm, firstResult, maxResults);
             for (UserModel user : query) users.put(user.getUsername(), user);
         }
@@ -241,7 +241,7 @@ public class FederationManager implements UserProvider {
         Map<String, UserModel> users = new HashMap<String, UserModel>();
         List<UserModel> query = session.userStorage().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
         for (UserModel user : query) {
-            FederationProvider link = getFederationLink(realm, user);
+            UserFederationProvider link = getFederationLink(realm, user);
             if (link != null) {
                 users.put(user.getUsername(), link.proxy(user));
             } else {
@@ -253,10 +253,10 @@ public class FederationManager implements UserProvider {
             results.addAll(users.values());
             return results;
         }
-        List<FederationProviderModel> federationProviders = realm.getFederationProviders();
+        List<UserFederationProviderModel> federationProviders = realm.getFederationProviders();
         for (int i = federationProviders.size() - 1; i >= 0; i--) {
-            FederationProviderModel federation = federationProviders.get(i);
-            FederationProvider fed = getFederationProvider(federation);
+            UserFederationProviderModel federation = federationProviders.get(i);
+            UserFederationProvider fed = getFederationProvider(federation);
             query = fed.searchForUserByAttributes(attributes, realm, firstResult, maxResults);
             for (UserModel user : query) users.put(user.getUsername(), user);
         }
@@ -267,7 +267,7 @@ public class FederationManager implements UserProvider {
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
-        FederationProvider link = getFederationLink(realm, user);
+        UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             return link.getSocialLinks(user, realm);
         }
@@ -276,7 +276,7 @@ public class FederationManager implements UserProvider {
 
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        FederationProvider link = getFederationLink(realm, user);
+        UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             return link.getSocialLink(user, socialProvider, realm);
         }
@@ -285,8 +285,8 @@ public class FederationManager implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm) {
-        for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = getFederationProvider(federation);
+        for (UserFederationProviderModel federation : realm.getFederationProviders()) {
+            UserFederationProvider fed = getFederationProvider(federation);
             fed.preRemove(realm);
         }
         session.userStorage().preRemove(realm);
@@ -294,8 +294,8 @@ public class FederationManager implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-        for (FederationProviderModel federation : realm.getFederationProviders()) {
-            FederationProvider fed = getFederationProvider(federation);
+        for (UserFederationProviderModel federation : realm.getFederationProviders()) {
+            UserFederationProvider fed = getFederationProvider(federation);
             fed.preRemove(realm, role);
         }
         session.userStorage().preRemove(realm, role);
@@ -303,7 +303,7 @@ public class FederationManager implements UserProvider {
 
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        FederationProvider link = getFederationLink(realm, user);
+        UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             if (link.getSupportedCredentialTypes().size() > 0) {
                 List<UserCredentialModel> fedCreds = new ArrayList<UserCredentialModel>();
@@ -326,7 +326,7 @@ public class FederationManager implements UserProvider {
 
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        FederationProvider link = getFederationLink(realm, user);
+        UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             Set<String> supportedCredentialTypes = link.getSupportedCredentialTypes();
             if (supportedCredentialTypes.size() > 0) {

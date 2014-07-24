@@ -7,7 +7,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.FederationProviderModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -216,7 +216,7 @@ public class RepresentationToModel {
         }
 
         if (rep.getFederationProviders() != null) {
-            List<FederationProviderModel> providerModels = convertFederationProviders(rep.getFederationProviders());
+            List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getFederationProviders());
             newRealm.setFederationProviders(providerModels);
         }
 
@@ -288,7 +288,7 @@ public class RepresentationToModel {
         }
 
         if (rep.getFederationProviders() != null) {
-            List<FederationProviderModel> providerModels = convertFederationProviders(rep.getFederationProviders());
+            List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getFederationProviders());
             realm.setFederationProviders(providerModels);
         }
 
@@ -315,11 +315,11 @@ public class RepresentationToModel {
         return result;
     }
 
-    private static List<FederationProviderModel> convertFederationProviders(List<FederationProviderRepresentation> providers) {
-        List<FederationProviderModel> result = new ArrayList<FederationProviderModel>();
+    private static List<UserFederationProviderModel> convertFederationProviders(List<FederationProviderRepresentation> providers) {
+        List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
 
         for (FederationProviderRepresentation representation : providers) {
-            FederationProviderModel model = new FederationProviderModel(representation.getId(), representation.getProviderName(),
+            UserFederationProviderModel model = new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
                     representation.getConfig());
             result.add(model);
         }

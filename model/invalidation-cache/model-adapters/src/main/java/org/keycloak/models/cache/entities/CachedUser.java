@@ -1,7 +1,6 @@
 package org.keycloak.models.cache.entities;
 
 import org.keycloak.models.AuthenticationLinkModel;
-import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialValueModel;

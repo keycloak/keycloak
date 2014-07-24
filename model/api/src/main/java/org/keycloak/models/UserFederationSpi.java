@@ -7,21 +7,21 @@ import org.keycloak.provider.Spi;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FederationSpi implements Spi {
+public class UserFederationSpi implements Spi {
 
     @Override
     public String getName() {
-        return "federation";
+        return "userFederation";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return FederationProvider.class;
+        return UserFederationProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return FederationProviderFactory.class;
+        return UserFederationProviderFactory.class;
     }
 
 }

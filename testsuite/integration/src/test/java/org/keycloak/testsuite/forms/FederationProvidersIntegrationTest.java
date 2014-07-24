@@ -9,15 +9,12 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.testsuite.LDAPEmbeddedServer;
 import org.keycloak.testsuite.LDAPTestUtils;
-import org.keycloak.models.AuthenticationProviderModel;
-import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -64,7 +61,7 @@ public class FederationProvidersIntegrationTest {
             ldapConfig.put(LDAPConstants.VENDOR, ldapServer.getVendor());
 
 
-            FederationProviderModel ldapProvider = new FederationProviderModel(null, LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig);
+            UserFederationProviderModel ldapProvider = new UserFederationProviderModel(null, LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig);
             appRealm.setFederationProviders(Arrays.asList(ldapProvider));
 
             // Configure LDAP
