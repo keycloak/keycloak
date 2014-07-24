@@ -20,6 +20,8 @@ public interface KeycloakSession {
 
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
 
+    void enlistForClose(Provider provider);
+
     KeycloakSessionFactory getKeycloakSessionFactory();
 
     /**

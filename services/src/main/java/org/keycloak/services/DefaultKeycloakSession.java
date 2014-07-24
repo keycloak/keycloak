@@ -1,6 +1,6 @@
 package org.keycloak.services;
 
-import org.keycloak.models.FederationManager;
+import org.keycloak.models.UserFederationManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
@@ -14,6 +14,8 @@ import org.keycloak.provider.ProviderFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,16 +26,17 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     private final DefaultKeycloakSessionFactory factory;
     private final Map<Integer, Provider> providers = new HashMap<Integer, Provider>();
+    private final List<Provider> closable = new LinkedList<Provider>();
     private final DefaultKeycloakTransactionManager transactionManager;
     private RealmProvider model;
     private UserProvider userModel;
     private UserSessionProvider sessionProvider;
-    private FederationManager federationManager;
+    private UserFederationManager federationManager;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
         this.transactionManager = new DefaultKeycloakTransactionManager();
-        federationManager = new FederationManager(this);
+        federationManager = new UserFederationManager(this);
     }
 
     private RealmProvider getRealmProvider() {
@@ -50,6 +53,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
         } else {
             return getProvider(UserProvider.class);
         }
+    }
+
+    @Override
+    public void enlistForClose(Provider provider) {
+        closable.add(provider);
     }
 
     @Override
@@ -133,7 +141,16 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     public void close() {
         for (Provider p : providers.values()) {
-            p.close();
+            try {
+                p.close();
+            } catch (Exception e) {
+            }
+        }
+        for (Provider p : closable) {
+            try {
+                p.close();
+            } catch (Exception e) {
+            }
         }
     }
 

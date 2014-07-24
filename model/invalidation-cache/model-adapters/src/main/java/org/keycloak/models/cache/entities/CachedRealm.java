@@ -2,7 +2,7 @@ package org.keycloak.models.cache.entities;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
-import org.keycloak.models.FederationProviderModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -65,7 +65,7 @@ public class CachedRealm {
 
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<AuthenticationProviderModel> authenticationProviders = new ArrayList<AuthenticationProviderModel>();
-    private List<FederationProviderModel> federationProviders = new ArrayList<FederationProviderModel>();
+    private List<UserFederationProviderModel> federationProviders = new ArrayList<UserFederationProviderModel>();
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
@@ -331,7 +331,7 @@ public class CachedRealm {
         return auditListeners;
     }
 
-    public List<FederationProviderModel> getFederationProviders() {
+    public List<UserFederationProviderModel> getFederationProviders() {
         return federationProviders;
     }
 }

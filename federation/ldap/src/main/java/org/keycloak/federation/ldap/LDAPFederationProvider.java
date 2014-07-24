@@ -1,8 +1,8 @@
 package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.FederationProvider;
-import org.keycloak.models.FederationProviderModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -15,7 +15,6 @@ import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
-import org.picketlink.idm.credential.TOTPCredential;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
@@ -25,18 +24,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.picketlink.common.util.StringUtil.isNullOrEmpty;
-import static org.picketlink.idm.IDMMessages.MESSAGES;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class LDAPFederationProvider implements FederationProvider {
+public class LDAPFederationProvider implements UserFederationProvider {
     private static final Logger logger = Logger.getLogger(LDAPFederationProvider.class);
 
     protected KeycloakSession session;
-    protected FederationProviderModel model;
+    protected UserFederationProviderModel model;
     protected PartitionManager partitionManager;
 
     protected static final Set<String> supportedCredentialTypes = new HashSet<String>();
@@ -46,7 +42,7 @@ public class LDAPFederationProvider implements FederationProvider {
         supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
     }
 
-    public LDAPFederationProvider(KeycloakSession session, FederationProviderModel model, PartitionManager partitionManager) {
+    public LDAPFederationProvider(KeycloakSession session, UserFederationProviderModel model, PartitionManager partitionManager) {
         this.session = session;
         this.model = model;
         this.partitionManager = partitionManager;
@@ -66,7 +62,7 @@ public class LDAPFederationProvider implements FederationProvider {
         return session;
     }
 
-    public FederationProviderModel getModel() {
+    public UserFederationProviderModel getModel() {
         return model;
     }
 

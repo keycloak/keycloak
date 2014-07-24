@@ -3,7 +3,6 @@ package org.keycloak.federation.ldap;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
-import org.keycloak.models.FederationProviderModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;

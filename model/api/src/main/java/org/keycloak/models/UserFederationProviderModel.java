@@ -7,15 +7,15 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-public class FederationProviderModel {
+public class UserFederationProviderModel {
 
     private String id;
     private String providerName;
     private Map<String, String> config = new HashMap<String, String>();
 
-    public FederationProviderModel() {};
+    public UserFederationProviderModel() {};
 
-    public FederationProviderModel(String id, String providerName, Map<String, String> config) {
+    public UserFederationProviderModel(String id, String providerName, Map<String, String> config) {
         this.id = id;
         this.providerName = providerName;
         if (config != null) {

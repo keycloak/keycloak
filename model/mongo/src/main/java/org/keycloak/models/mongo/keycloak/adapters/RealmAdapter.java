@@ -7,9 +7,8 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.FederationProviderModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.entities.FederationProviderEntity;
-import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
@@ -17,9 +16,6 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.AuthenticationProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
@@ -27,7 +23,6 @@ import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.TimeBasedOTP;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -796,20 +791,20 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
     @Override
-    public List<FederationProviderModel> getFederationProviders() {
+    public List<UserFederationProviderModel> getFederationProviders() {
         List<FederationProviderEntity> entities = realm.getFederationProviders();
-        List<FederationProviderModel> result = new ArrayList<FederationProviderModel>();
+        List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
         for (FederationProviderEntity entity : entities) {
-            result.add(new FederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig()));
+            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig()));
         }
 
         return result;
     }
 
     @Override
-    public void setFederationProviders(List<FederationProviderModel> providers) {
+    public void setFederationProviders(List<UserFederationProviderModel> providers) {
         List<FederationProviderEntity> entities = new ArrayList<FederationProviderEntity>();
-        for (FederationProviderModel model : providers) {
+        for (UserFederationProviderModel model : providers) {
             FederationProviderEntity entity = new FederationProviderEntity();
             entity.setId(KeycloakModelUtils.generateId());
             entity.setProviderName(model.getProviderName());
