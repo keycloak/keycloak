@@ -267,12 +267,12 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public void preRemove(RealmModel realm) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // complete Don't think we have to do anything
     }
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // complete I don't think we have to do anything here
     }
 
     public boolean validPassword(String username, String password) {

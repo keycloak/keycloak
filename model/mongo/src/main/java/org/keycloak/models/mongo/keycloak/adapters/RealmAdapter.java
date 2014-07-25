@@ -791,7 +791,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
     @Override
-    public List<UserFederationProviderModel> getFederationProviders() {
+    public List<UserFederationProviderModel> getUserFederationProviders() {
         List<FederationProviderEntity> entities = realm.getFederationProviders();
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
         for (FederationProviderEntity entity : entities) {
@@ -802,7 +802,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public void setFederationProviders(List<UserFederationProviderModel> providers) {
+    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
         List<FederationProviderEntity> entities = new ArrayList<FederationProviderEntity>();
         for (UserFederationProviderModel model : providers) {
             FederationProviderEntity entity = new FederationProviderEntity();

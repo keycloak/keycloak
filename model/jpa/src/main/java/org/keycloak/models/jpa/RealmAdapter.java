@@ -727,7 +727,7 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<UserFederationProviderModel> getFederationProviders() {
+    public List<UserFederationProviderModel> getUserFederationProviders() {
         List<FederationProviderEntity> entities = realm.getFederationProviders();
         List<FederationProviderEntity> copy = new ArrayList<FederationProviderEntity>();
         for (FederationProviderEntity entity : entities) {
@@ -751,7 +751,7 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void setFederationProviders(List<UserFederationProviderModel> providers) {
+    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
         List<FederationProviderEntity> newEntities = new ArrayList<FederationProviderEntity>();
         int counter = 1;
         for (UserFederationProviderModel model : providers) {

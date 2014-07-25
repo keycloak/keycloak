@@ -122,7 +122,7 @@ public class CachedRealm {
 
         requiredCredentials = model.getRequiredCredentials();
         authenticationProviders = model.getAuthenticationProviders();
-        federationProviders = model.getFederationProviders();
+        federationProviders = model.getUserFederationProviders();
 
         smtpConfig.putAll(model.getSmtpConfig());
         socialConfig.putAll(model.getSocialConfig());

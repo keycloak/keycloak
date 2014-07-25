@@ -17,7 +17,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.FederationProviderRepresentation;
+import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationLinkRepresentation;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
@@ -215,9 +215,9 @@ public class RepresentationToModel {
             newRealm.setAuthenticationProviders(authProviderModels);
         }
 
-        if (rep.getFederationProviders() != null) {
-            List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getFederationProviders());
-            newRealm.setFederationProviders(providerModels);
+        if (rep.getUserFederationProviders() != null) {
+            List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
+            newRealm.setUserFederationProviders(providerModels);
         }
 
         // create users and their role mappings and social mappings
@@ -287,9 +287,9 @@ public class RepresentationToModel {
             realm.setAuthenticationProviders(authProviderModels);
         }
 
-        if (rep.getFederationProviders() != null) {
-            List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getFederationProviders());
-            realm.setFederationProviders(providerModels);
+        if (rep.getUserFederationProviders() != null) {
+            List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
+            realm.setUserFederationProviders(providerModels);
         }
 
         if ("GENERATE".equals(rep.getPublicKey())) {
@@ -315,10 +315,10 @@ public class RepresentationToModel {
         return result;
     }
 
-    private static List<UserFederationProviderModel> convertFederationProviders(List<FederationProviderRepresentation> providers) {
+    private static List<UserFederationProviderModel> convertFederationProviders(List<UserFederationProviderRepresentation> providers) {
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
 
-        for (FederationProviderRepresentation representation : providers) {
+        for (UserFederationProviderRepresentation representation : providers) {
             UserFederationProviderModel model = new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
                     representation.getConfig());
             result.add(model);
