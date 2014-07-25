@@ -146,6 +146,9 @@ public class ApplicationManager {
         if (!applicationModel.isBearerOnly() && !applicationModel.isPublicClient()) {
             buffer.append("    <credential name=\"secret\">").append(cred).append("</credential>\n");
         }
+        if (applicationModel.getRoles().size() > 0) {
+            buffer.append("    <use-resource-role-mappings>true</use-resource-role-mappings>\n");
+        }
         buffer.append("</secure-deployment>\n");
         return buffer.toString();
     }
