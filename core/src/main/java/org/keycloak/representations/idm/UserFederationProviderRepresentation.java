@@ -1,11 +1,11 @@
-package org.keycloak.representations;
+package org.keycloak.representations.idm;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class FederationProviderRepresentation {
+public class UserFederationProviderRepresentation {
 
     private String id;
     private String providerName;
@@ -41,7 +41,7 @@ public class FederationProviderRepresentation {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        FederationProviderRepresentation that = (FederationProviderRepresentation) o;
+        UserFederationProviderRepresentation that = (UserFederationProviderRepresentation) o;
 
         if (!id.equals(that.id)) return false;
 

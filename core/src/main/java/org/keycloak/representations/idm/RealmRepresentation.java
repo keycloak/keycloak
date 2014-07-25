@@ -1,7 +1,5 @@
 package org.keycloak.representations.idm;
 
-import org.keycloak.representations.FederationProviderRepresentation;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +56,7 @@ public class RealmRepresentation {
     protected Map<String, String> smtpServer;
     protected Map<String, String> ldapServer;
     protected List<AuthenticationProviderRepresentation> authenticationProviders;
-    protected List<FederationProviderRepresentation> federationProviders;
+    protected List<UserFederationProviderRepresentation> userFederationProviders;
     protected String loginTheme;
     protected String accountTheme;
     protected String adminTheme;
@@ -471,11 +469,11 @@ public class RealmRepresentation {
         this.auditListeners = auditListeners;
     }
 
-    public List<FederationProviderRepresentation> getFederationProviders() {
-        return federationProviders;
+    public List<UserFederationProviderRepresentation> getUserFederationProviders() {
+        return userFederationProviders;
     }
 
-    public void setFederationProviders(List<FederationProviderRepresentation> federationProviders) {
-        this.federationProviders = federationProviders;
+    public void setUserFederationProviders(List<UserFederationProviderRepresentation> userFederationProviders) {
+        this.userFederationProviders = userFederationProviders;
     }
 }

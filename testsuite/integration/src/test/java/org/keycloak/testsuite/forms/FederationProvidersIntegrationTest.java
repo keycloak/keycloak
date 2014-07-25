@@ -62,7 +62,7 @@ public class FederationProvidersIntegrationTest {
 
 
             UserFederationProviderModel ldapProvider = new UserFederationProviderModel(null, LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig);
-            appRealm.setFederationProviders(Arrays.asList(ldapProvider));
+            appRealm.setUserFederationProviders(Arrays.asList(ldapProvider));
 
             // Configure LDAP
             ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);

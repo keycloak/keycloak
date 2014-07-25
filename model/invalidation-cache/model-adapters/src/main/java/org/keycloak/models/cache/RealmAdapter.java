@@ -606,15 +606,15 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<UserFederationProviderModel> getFederationProviders() {
-        if (updated != null) return updated.getFederationProviders();
+    public List<UserFederationProviderModel> getUserFederationProviders() {
+        if (updated != null) return updated.getUserFederationProviders();
         return cached.getFederationProviders();
     }
 
     @Override
-    public void setFederationProviders(List<UserFederationProviderModel> providers) {
+    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
         getDelegateForUpdate();
-        updated.setFederationProviders(providers);
+        updated.setUserFederationProviders(providers);
     }
 
     @Override
