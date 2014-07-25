@@ -1,12 +1,15 @@
 package org.keycloak.models.sessions.jpa;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
+import org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -17,6 +20,7 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -30,6 +34,46 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     public JpaUserSessionProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
         this.em = em;
+    }
+
+    @Override
+    public ClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, String redirectUri, String state, Set<String> roles) {
+        UserSessionEntity userSessionEntity = em.find(UserSessionEntity.class, userSession.getId());
+
+        ClientSessionEntity entity = new ClientSessionEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setTimestamp(Time.currentTime());
+        entity.setClientId(client.getId());
+        entity.setSession(userSessionEntity);
+        entity.setRedirectUri(redirectUri);
+        entity.setState(state);
+        em.persist(entity);
+
+        if (roles != null) {
+            List<ClientSessionRoleEntity> roleEntities = new LinkedList<ClientSessionRoleEntity>();
+            for (String r : roles) {
+                ClientSessionRoleEntity roleEntity = new ClientSessionRoleEntity();
+                roleEntity.setClientSession(entity);
+                roleEntity.setRoleId(r);
+                em.persist(roleEntity);
+
+                roleEntities.add(roleEntity);
+            }
+            entity.setRoles(roleEntities);
+        }
+
+        userSessionEntity.getClientSessions().add(entity);
+
+        return new ClientSessionAdapter(session, em, realm, entity);
+    }
+
+    @Override
+    public ClientSessionModel getClientSession(RealmModel realm, String id) {
+        ClientSessionEntity clientSession = em.find(ClientSessionEntity.class, id);
+        if (clientSession != null && clientSession.getSession().getRealmId().equals(realm.getId())) {
+            return new ClientSessionAdapter(session, em, realm, clientSession);
+        }
+        return null;
     }
 
     @Override
@@ -109,7 +153,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
         List<UserSessionModel> list = new LinkedList<UserSessionModel>();
         TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionByClient", UserSessionEntity.class)
                 .setParameter("realmId", realm.getId())
-                .setParameter("clientId", client.getClientId());
+                .setParameter("clientId", client.getId());
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }
@@ -126,7 +170,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     public int getActiveUserSessions(RealmModel realm, ClientModel client) {
         Object count = em.createNamedQuery("getActiveUserSessionByClient")
                 .setParameter("realmId", realm.getId())
-                .setParameter("clientId", client.getClientId())
+                .setParameter("clientId", client.getId())
                 .getSingleResult();
         return ((Number)count).intValue();
     }
@@ -141,7 +185,11 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
-        em.createNamedQuery("removeClientUserSessionByUser")
+        em.createNamedQuery("removeClientSessionRoleByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .executeUpdate();
+        em.createNamedQuery("removeClientSessionByUser")
                 .setParameter("realmId", realm.getId())
                 .setParameter("userId", user.getId())
                 .executeUpdate();
@@ -156,7 +204,12 @@ public class JpaUserSessionProvider implements UserSessionProvider {
         int maxTime = Time.currentTime() - realm.getSsoSessionMaxLifespan();
         int idleTime = Time.currentTime() - realm.getSsoSessionIdleTimeout();
 
-        em.createNamedQuery("removeClientUserSessionByExpired")
+        em.createNamedQuery("removeClientSessionRoleByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", maxTime)
+                .setParameter("idleTime", idleTime)
+                .executeUpdate();
+        em.createNamedQuery("removeClientSessionByExpired")
                 .setParameter("realmId", realm.getId())
                 .setParameter("maxTime", maxTime)
                 .setParameter("idleTime", idleTime)
@@ -170,7 +223,8 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm) {
-        em.createNamedQuery("removeClientUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("removeClientSessionRoleByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("removeClientSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
@@ -182,7 +236,8 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
-        em.createNamedQuery("removeClientUserSessionByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getClientId()).executeUpdate();
+        em.createNamedQuery("removeClientSessionRoleByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getId()).executeUpdate();
+        em.createNamedQuery("removeClientSessionByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getId()).executeUpdate();
     }
 
     @Override

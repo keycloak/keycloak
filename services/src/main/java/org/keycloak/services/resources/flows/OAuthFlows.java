@@ -30,6 +30,7 @@ import org.keycloak.audit.Details;
 import org.keycloak.audit.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -37,9 +38,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.AccessCode;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.AccessCodeEntry;
+import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
 
@@ -82,7 +82,7 @@ public class OAuthFlows {
         this.tokenManager = tokenManager;
     }
 
-    public Response redirectAccessCode(AccessCodeEntry accessCode, UserSessionModel userSession, String state, String redirect) {
+    public Response redirectAccessCode(AccessCode accessCode, UserSessionModel userSession, String state, String redirect) {
         String code = accessCode.getCode();
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
         log.debugv("redirectAccessCode: state: {0}", state);
@@ -122,7 +122,7 @@ public class OAuthFlows {
         isEmailVerificationRequired(user);
 
         boolean isResource = client instanceof ApplicationModel;
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, this.session, realm, client, user, session);
+        AccessCode accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, this.session, realm, client, user, session);
 
         log.debugv("processAccessCode: isResource: {0}", isResource);
         log.debugv("processAccessCode: go to oauth page?: {0}",
@@ -144,7 +144,7 @@ public class OAuthFlows {
         }
 
         if (!isResource) {
-            accessCode.setAction(AccessCode.Action.OAUTH_GRANT);
+            accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
 
             List<RoleModel> realmRoles = new LinkedList<RoleModel>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
@@ -165,6 +165,8 @@ public class OAuthFlows {
 
         if (redirect != null) {
             audit.success();
+
+            accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
             return redirectAccessCode(accessCode, session, state, redirect);
         } else {
             return null;

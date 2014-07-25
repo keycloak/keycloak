@@ -22,6 +22,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.util.Time;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -328,17 +329,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     public static Matcher<String> isCodeId() {
-        return new TypeSafeMatcher<String>() {
-            @Override
-            protected boolean matchesSafely(String item) {
-                return (UUID.randomUUID().toString() + System.currentTimeMillis()).length() == item.length();
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("Not an Code ID");
-            }
-        };
+        return isUUID();
     }
 
     public static Matcher<String> isUUID() {

@@ -23,6 +23,7 @@ package org.keycloak.testsuite.oauth;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -30,7 +31,7 @@ import org.keycloak.audit.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.AccessCode;
+import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -43,6 +44,8 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -75,14 +78,13 @@ public class AuthorizationCodeTest {
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate", response.getState());
+        assertEquals("mystate", response.getState());
         Assert.assertNull(response.getError());
 
-        oauth.verifyCode(response.getCode());
+        keycloakRule.verifyCode(response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        AccessCode accessCode = new JWSInput(response.getCode()).readJsonContent(AccessCode.class);
-        Assert.assertEquals(codeId,accessCode.getId());
+        assertCode(codeId, response.getCode());
     }
 
     @Test
@@ -101,11 +103,10 @@ public class AuthorizationCodeTest {
         Assert.assertTrue(title.startsWith("Success code="));
 
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getText();
-        oauth.verifyCode(code);
+        keycloakRule.verifyCode(code);
 
         String codeId = events.expectLogin().detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
-        AccessCode accessCode = new JWSInput(code).readJsonContent(AccessCode.class);
-        Assert.assertEquals(codeId,accessCode.getId());
+        assertCode(codeId, code);
 
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
@@ -132,7 +133,7 @@ public class AuthorizationCodeTest {
         Assert.assertTrue(title.equals("Error error=access_denied"));
 
         String error = driver.findElement(By.id(OAuth2Constants.ERROR)).getText();
-        Assert.assertEquals("access_denied", error);
+        assertEquals("access_denied", error);
 
         events.expectLogin().error("rejected_by_user").user((String) null).session((String) null).removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
 
@@ -160,11 +161,10 @@ public class AuthorizationCodeTest {
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
 
-        oauth.verifyCode(response.getCode());
+        keycloakRule.verifyCode(response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        AccessCode accessCode = new JWSInput(response.getCode()).readJsonContent(AccessCode.class);
-        Assert.assertEquals(codeId,accessCode.getId());
+        assertCode(codeId, response.getCode());
     }
 
     @Test
@@ -176,11 +176,15 @@ public class AuthorizationCodeTest {
         Assert.assertNull(response.getState());
         Assert.assertNull(response.getError());
 
-        oauth.verifyCode(response.getCode());
+        keycloakRule.verifyCode(response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        AccessCode accessCode = new JWSInput(response.getCode()).readJsonContent(AccessCode.class);
-        Assert.assertEquals(codeId,accessCode.getId());
+        assertCode(codeId, response.getCode());
+    }
+
+    private void assertCode(String expectedCodeId, String actualCode) {
+        AccessCode code = keycloakRule.verifyCode(actualCode);
+        assertEquals(expectedCodeId, code.getCodeId());
     }
 
 }

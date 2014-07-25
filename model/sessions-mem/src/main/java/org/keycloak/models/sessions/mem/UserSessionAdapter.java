@@ -1,10 +1,12 @@
 package org.keycloak.models.sessions.mem;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.mem.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
 
 import java.util.LinkedList;
@@ -17,12 +19,14 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private final KeycloakSession session;
 
+    private MemUserSessionProvider provider;
     private final RealmModel realm;
 
     private final UserSessionEntity entity;
 
-    public UserSessionAdapter(KeycloakSession session, RealmModel realm, UserSessionEntity entity) {
+    public UserSessionAdapter(KeycloakSession session, MemUserSessionProvider provider, RealmModel realm, UserSessionEntity entity) {
         this.session = session;
+        this.provider = provider;
         this.realm = realm;
         this.entity = entity;
     }
@@ -98,24 +102,14 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public void associateClient(ClientModel client) {
-        if (!entity.getClients().contains(client.getClientId())) {
-            entity.getClients().add(client.getClientId());
+    public List<ClientSessionModel> getClientSessions() {
+        List<ClientSessionModel> clientSessionModels = new LinkedList<ClientSessionModel>();
+        if (entity.getClientSessions() != null) {
+            for (ClientSessionEntity e : entity.getClientSessions()) {
+                clientSessionModels.add(new ClientSessionAdapter(session, provider, realm, e));
+            }
         }
-    }
-
-    @Override
-    public List<ClientModel> getClientAssociations() {
-        List<ClientModel> models = new LinkedList<ClientModel>();
-        for (String clientId : entity.getClients()) {
-            models.add(realm.findClient(clientId));
-        }
-        return models;
-    }
-
-    @Override
-    public void removeAssociatedClient(ClientModel client) {
-        entity.getClients().remove(client.getClientId());
+        return clientSessionModels;
     }
 
     @Override

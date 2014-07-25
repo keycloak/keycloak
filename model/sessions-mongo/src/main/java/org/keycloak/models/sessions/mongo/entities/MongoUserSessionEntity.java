@@ -6,6 +6,7 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.entities.AbstractIdentifiableEntity;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -30,7 +31,7 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
 
     private int lastSessionRefresh;
 
-    private List<String> associatedClientIds = new ArrayList<String>();
+    private List<MongoClientSessionEntity> clientSessions;
 
     public String getRealmId() {
         return realmId;
@@ -96,12 +97,12 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
-    public List<String> getAssociatedClientIds() {
-        return associatedClientIds;
+    public List<MongoClientSessionEntity> getClientSessions() {
+        return clientSessions;
     }
 
-    public void setAssociatedClientIds(List<String> associatedClientIds) {
-        this.associatedClientIds = associatedClientIds;
+    public void setClientSessions(List<MongoClientSessionEntity> clientSessions) {
+        this.clientSessions = clientSessions;
     }
 
     @Override

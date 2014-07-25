@@ -1,14 +1,15 @@
 package org.keycloak.models.sessions.mem;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.sessions.mem.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
-import org.keycloak.models.sessions.mem.entities.UserSessionKey;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureKey;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -19,6 +20,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -27,13 +29,40 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MemUserSessionProvider implements UserSessionProvider {
 
     private final KeycloakSession session;
-    private final ConcurrentHashMap<UserSessionKey, UserSessionEntity> sessions;
+    private final ConcurrentHashMap<String, UserSessionEntity> userSessions;
+    private final ConcurrentHashMap<String, ClientSessionEntity> clientSessions;
     private final ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures;
 
-    public MemUserSessionProvider(KeycloakSession session, ConcurrentHashMap<UserSessionKey, UserSessionEntity> sessions, ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures) {
+    public MemUserSessionProvider(KeycloakSession session, ConcurrentHashMap<String, UserSessionEntity> userSessions, ConcurrentHashMap<String, ClientSessionEntity> clientSessions, ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures) {
         this.session = session;
-        this.sessions = sessions;
+        this.userSessions = userSessions;
+        this.clientSessions = clientSessions;
         this.loginFailures = loginFailures;
+    }
+
+    @Override
+    public ClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, String redirectUri, String state, Set<String> roles) {
+        UserSessionEntity userSessionEntity = getUserSessionEntity(realm, userSession.getId());
+
+        ClientSessionEntity entity = new ClientSessionEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setTimestamp(Time.currentTime());
+        entity.setClientId(client.getId());
+        entity.setSession(userSessionEntity);
+        entity.setRedirectUri(redirectUri);
+        entity.setState(state);
+        entity.setRoles(roles);
+
+        userSessionEntity.addClientSession(entity);
+
+        clientSessions.put(entity.getId(), entity);
+        return new ClientSessionAdapter(session, this, realm, entity);
+    }
+
+    @Override
+    public ClientSessionModel getClientSession(RealmModel realm, String id) {
+        ClientSessionEntity entity = clientSessions.get(id);
+        return entity != null ? new ClientSessionAdapter(session, this, realm, entity) : null;
     }
 
     @Override
@@ -54,23 +83,31 @@ public class MemUserSessionProvider implements UserSessionProvider {
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
 
-        sessions.put(new UserSessionKey(realm.getId(), id), entity);
+        userSessions.put(id, entity);
 
-        return new UserSessionAdapter(session, realm, entity);
+        return new UserSessionAdapter(session, this, realm, entity);
     }
 
     @Override
     public UserSessionModel getUserSession(RealmModel realm, String id) {
-        UserSessionEntity entity = sessions.get(new UserSessionKey(realm.getId(), id));
-        return entity != null ? new UserSessionAdapter(session, realm, entity) : null;
+        UserSessionEntity entity = getUserSessionEntity(realm, id);
+        return entity != null ? new UserSessionAdapter(session, this, realm, entity) : null;
+    }
+
+    UserSessionEntity getUserSessionEntity(RealmModel realm, String id) {
+        UserSessionEntity entity = userSessions.get(id);
+        if (entity != null && entity.getRealm().equals(realm.getId())) {
+            return entity;
+        }
+        return null;
     }
 
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user) {
         List<UserSessionModel> userSessions = new LinkedList<UserSessionModel>();
-        for (UserSessionEntity s : sessions.values()) {
+        for (UserSessionEntity s : this.userSessions.values()) {
             if (s.getRealm().equals(realm.getId()) && s.getUser().equals(user.getId())) {
-                userSessions.add(new UserSessionAdapter(session, realm, s));
+                userSessions.add(new UserSessionAdapter(session, this, realm, s));
             }
         }
         return userSessions;
@@ -78,14 +115,21 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
-        List<UserSessionModel> clientSessions = new LinkedList<UserSessionModel>();
-        for (UserSessionEntity s : sessions.values()) {
-            if (s.getRealm().equals(realm.getId()) && s.getClients().contains(client.getClientId())) {
-                clientSessions.add(new UserSessionAdapter(session, realm, s));
+        List<UserSessionEntity> userSessionEntities = new LinkedList<UserSessionEntity>();
+        for (ClientSessionEntity s : clientSessions.values()) {
+            if (s.getSession().getRealm().equals(realm.getId()) && s.getClientId().equals(client.getId())) {
+                if (!userSessionEntities.contains(s.getSession())) {
+                    userSessionEntities.add(s.getSession());
+                }
             }
         }
-        Collections.sort(clientSessions, new UserSessionSort());
-        return clientSessions;
+
+        List<UserSessionModel> userSessions = new LinkedList<UserSessionModel>();
+        for (UserSessionEntity e : userSessionEntities) {
+            userSessions.add(new UserSessionAdapter(session, this, realm, e));
+        }
+        Collections.sort(userSessions, new UserSessionSort());
+        return userSessions;
     }
 
     @Override
@@ -101,49 +145,61 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        int count = 0;
-        for (UserSessionEntity s : sessions.values()) {
-            if (s.getRealm().equals(realm.getId()) && s.getClients().contains(client.getClientId())) {
-                count++;
-            }
-        }
-        return count;
+        return getUserSessions(realm, client).size();
     }
 
     @Override
     public void removeUserSession(RealmModel realm, UserSessionModel session) {
-        sessions.remove(new UserSessionKey(realm.getId(), session.getId()));
+        UserSessionEntity entity = getUserSessionEntity(realm, session.getId());
+        if (entity != null) {
+            userSessions.remove(entity.getId());
+            for (ClientSessionEntity clientSession : entity.getClientSessions()) {
+                clientSessions.remove(clientSession.getId());
+            }
+        }
     }
 
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
-        Iterator<UserSessionEntity> itr = sessions.values().iterator();
+        Iterator<UserSessionEntity> itr = userSessions.values().iterator();
         while (itr.hasNext()) {
             UserSessionEntity s = itr.next();
             if (s.getRealm().equals(realm.getId()) && s.getUser().equals(user.getId())) {
                 itr.remove();
+
+                for (ClientSessionEntity clientSession : s.getClientSessions()) {
+                    clientSessions.remove(clientSession.getId());
+                }
             }
         }
     }
 
     @Override
     public void removeExpiredUserSessions(RealmModel realm) {
-        Iterator<UserSessionEntity> itr = sessions.values().iterator();
+        Iterator<UserSessionEntity> itr = userSessions.values().iterator();
         while (itr.hasNext()) {
             UserSessionEntity s = itr.next();
             if (s.getRealm().equals(realm.getId()) && (s.getLastSessionRefresh() < Time.currentTime() - realm.getSsoSessionIdleTimeout() || s.getStarted() < Time.currentTime() - realm.getSsoSessionMaxLifespan())) {
                 itr.remove();
+
+                for (ClientSessionEntity clientSession : s.getClientSessions()) {
+                    clientSessions.remove(clientSession.getId());
+                }
             }
         }
     }
 
     @Override
     public void removeUserSessions(RealmModel realm) {
-        Iterator<UserSessionEntity> itr = sessions.values().iterator();
+        Iterator<UserSessionEntity> itr = userSessions.values().iterator();
         while (itr.hasNext()) {
             UserSessionEntity s = itr.next();
             if (s.getRealm().equals(realm.getId())) {
                 itr.remove();
+
+                for (ClientSessionEntity clientSession : s.getClientSessions()) {
+                    clientSessions.remove(clientSession.getId());
+                }
             }
         }
     }
@@ -185,17 +241,10 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
-        Iterator<UserSessionEntity> itr = sessions.values().iterator();
-        while (itr.hasNext()) {
-            UserSessionEntity s = itr.next();
-            if (s.getRealm().equals(realm.getId())) {
-                itr.remove();
-            }
-        }
-
-        for (UserSessionEntity s : sessions.values()) {
-            if (s.getRealm().equals(realm.getId())) {
-                s.getClients().remove(client.getClientId());
+        for (ClientSessionEntity e : clientSessions.values()) {
+            if (e.getSession().getRealm().equals(realm.getId()) && e.getClientId().equals(client.getId())) {
+                clientSessions.remove(e.getId());
+                e.getSession().removeClientSession(e);
             }
         }
     }

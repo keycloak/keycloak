@@ -10,13 +10,13 @@ import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.AccessCode;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Stateful object that creates tokens and manages oauth access codes
@@ -38,22 +37,6 @@ import java.util.UUID;
  */
 public class TokenManager {
     protected static final Logger logger = Logger.getLogger(TokenManager.class);
-
-    public AccessCodeEntry parseCode(String code, KeycloakSession session, RealmModel realm) {
-        try {
-            JWSInput input = new JWSInput(code);
-            if (!RSAProvider.verify(input, realm.getPublicKey())) {
-                logger.error("Could not verify access code");
-                return null;
-            }
-            AccessCode accessCode = input.readJsonContent(AccessCode.class);
-            return new AccessCodeEntry(session, realm, accessCode);
-        } catch (Exception e) {
-            logger.error("error parsing access code", e);
-            return null;
-        }
-
-    }
 
     public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
         if (visited.contains(scope)) return;
@@ -69,30 +52,14 @@ public class TokenManager {
         }
     }
 
-
-
-    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, KeycloakSession keycloakSession, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
-        return createAccessCodeEntry(scopeParam, state, redirect, keycloakSession, realm, client, user, session);
-    }
-
-    private AccessCodeEntry createAccessCodeEntry(String scopeParam, String state, String redirect, KeycloakSession keycloakSession, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
-        AccessCode code = new AccessCode();
-        code.setId(UUID.randomUUID().toString() + System.currentTimeMillis());
-        code.setClientId(client.getClientId());
-        code.setUserId(user.getId());
-        code.setTimestamp(Time.currentTime());
-        code.setSessionState(session != null ? session.getId() : null);
-        code.setRedirectUri(redirect);
-        code.setState(state);
-
+    public AccessCode createAccessCode(String scopeParam, String state, String redirect, KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession) {
         Set<String> requestedRoles = new HashSet<String>();
         for (RoleModel r : getAccess(scopeParam, client, user)) {
             requestedRoles.add(r.getId());
         }
-        code.setRequestedRoles(requestedRoles);
 
-        AccessCodeEntry entry = new AccessCodeEntry(keycloakSession, realm, code);
-        return entry;
+        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client, userSession, redirect, state, requestedRoles);
+        return new AccessCode(realm, clientSession);
     }
 
     public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {

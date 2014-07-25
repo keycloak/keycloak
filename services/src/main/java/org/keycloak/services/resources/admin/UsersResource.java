@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.services.managers.AccessCodeEntry;
+import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
@@ -820,7 +820,7 @@ public class UsersResource {
             return Flows.errors().error("AccountProvider management not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scope, state, redirect, session, realm, client, user, null);
+        AccessCode accessCode = tokenManager.createAccessCode(scope, state, redirect, session, realm, client, user, null);
         accessCode.setRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         try {

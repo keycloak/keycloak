@@ -38,8 +38,11 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.PemUtils;
@@ -214,12 +217,6 @@ public class OAuthClient {
             return RSATokenVerifier.verifyToken(token, realmPublicKey, realm);
         } catch (VerificationException e) {
             throw new RuntimeException("Failed to verify token", e);
-        }
-    }
-
-    public void verifyCode(String code) {
-        if (!RSAProvider.verify(new JWSInput(code), realmPublicKey)) {
-            throw new RuntimeException("Failed to verify code");
         }
     }
 

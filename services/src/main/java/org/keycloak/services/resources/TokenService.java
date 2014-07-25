@@ -19,21 +19,20 @@ import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.AccessCode;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ClientConnection;
-import org.keycloak.services.managers.AccessCodeEntry;
+import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -43,6 +42,7 @@ import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.util.Base64Url;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.Consumes;
@@ -281,7 +281,6 @@ public class TokenService {
         String scope = form.getFirst(OAuth2Constants.SCOPE);
 
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "oauth_credentials", false);
-        userSession.associateClient(client);
         audit.session(userSession);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
@@ -623,10 +622,15 @@ public class TokenService {
             throw new BadRequestException("Code not specified", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
-
-
-        AccessCodeEntry accessCode = tokenManager.parseCode(code, session, realm);
+        AccessCode accessCode = AccessCode.parse(code, session, realm);
         if (accessCode == null) {
+            String[] parts = code.split("\\.");
+            if (parts.length == 2) {
+                try {
+                    audit.detail(Details.CODE_ID, new String(Base64Url.decode(parts[1])));
+                } catch (Throwable t) {
+                }
+            }
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Code not found");
@@ -635,7 +639,7 @@ public class TokenService {
                     .build();
         }
         audit.detail(Details.CODE_ID, accessCode.getCodeId());
-        if (accessCode.isExpired()) {
+        if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN)) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Code is expired");
@@ -643,14 +647,8 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
-        if (accessCode.getAction() != null) {
-            Map<String, String> res = new HashMap<String, String>();
-            res.put(OAuth2Constants.ERROR, "invalid_grant");
-            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Code is not active");
-            audit.error(Errors.INVALID_CODE);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
-                    .build();
-        }
+
+        accessCode.setAction(null);
 
         audit.user(accessCode.getUser());
         audit.session(accessCode.getSessionState());
@@ -697,8 +695,6 @@ public class TokenService {
         }
 
         logger.debug("accessRequest SUCCESS");
-
-        userSession.associateClient(client);
 
         AccessToken token = tokenManager.createClientAccessToken(accessCode.getRequestedRoles(), realm, client, user, userSession);
 
@@ -982,22 +978,22 @@ public class TokenService {
 
         String code = formData.getFirst(OAuth2Constants.CODE);
 
-        AccessCodeEntry accessCodeEntry = tokenManager.parseCode(code, session, realm);
-        if (accessCodeEntry == null || !AccessCode.Action.OAUTH_GRANT.equals(accessCodeEntry.getAction())) {
+        AccessCode accessCode = AccessCode.parse(code, session, realm);
+        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT)) {
             audit.error(Errors.INVALID_CODE);
-            return oauth.forwardToSecurityFailure("Unknown access code.");
+            return oauth.forwardToSecurityFailure("Invalid access code.");
         }
-        audit.detail(Details.CODE_ID, accessCodeEntry.getCodeId());
+        audit.detail(Details.CODE_ID, accessCode.getCodeId());
 
-        String redirect = accessCodeEntry.getRedirectUri();
-        String state = accessCodeEntry.getState();
+        String redirect = accessCode.getRedirectUri();
+        String state = accessCode.getState();
 
-        audit.client(accessCodeEntry.getClient())
-                .user(accessCodeEntry.getUser())
+        audit.client(accessCode.getClient())
+                .user(accessCode.getUser())
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.REDIRECT_URI, redirect);
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, accessCodeEntry.getSessionState());
+        UserSessionModel userSession = session.sessions().getUserSession(realm, accessCode.getSessionState());
         if (userSession != null) {
             audit.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
             audit.detail(Details.USERNAME, userSession.getLoginUsername());
@@ -1020,8 +1016,8 @@ public class TokenService {
 
         audit.success();
 
-        accessCodeEntry.setAction(null);
-        return oauth.redirectAccessCode(accessCodeEntry, userSession, state, redirect);
+        accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
+        return oauth.redirectAccessCode(accessCode, userSession, state, redirect);
     }
 
     @Path("oauth/oob")

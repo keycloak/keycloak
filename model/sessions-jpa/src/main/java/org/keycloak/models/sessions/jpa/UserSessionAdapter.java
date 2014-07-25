@@ -1,15 +1,15 @@
 package org.keycloak.models.sessions.jpa;
 
-import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.jpa.entities.ClientUserSessionAssociationEntity;
+import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 
 import javax.persistence.EntityManager;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -114,30 +114,12 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public void associateClient(ClientModel client) {
-        for (ClientUserSessionAssociationEntity ass : entity.getClients()) {
-            if (ass.getClientId().equals(client.getClientId())) return;
+    public List<ClientSessionModel> getClientSessions() {
+        List<ClientSessionModel> clientSessions = new LinkedList<ClientSessionModel>();
+        for (ClientSessionEntity e : entity.getClientSessions()) {
+            clientSessions.add(new ClientSessionAdapter(session, em, realm, e));
         }
-
-        ClientUserSessionAssociationEntity association = new ClientUserSessionAssociationEntity();
-        association.setClientId(client.getClientId());
-        association.setSession(entity);
-        em.persist(association);
-        entity.getClients().add(association);
-    }
-
-    @Override
-    public void removeAssociatedClient(ClientModel client) {
-        em.createNamedQuery("removeClientUserSessionByClient").setParameter("clientId", client.getClientId()).executeUpdate();
-    }
-
-    @Override
-    public List<ClientModel> getClientAssociations() {
-        List<ClientModel> clients = new ArrayList<ClientModel>();
-        for (ClientUserSessionAssociationEntity association : entity.getClients()) {
-            clients.add(realm.findClient(association.getClientId()));
-        }
-        return clients;
+        return clientSessions;
     }
 
     @Override

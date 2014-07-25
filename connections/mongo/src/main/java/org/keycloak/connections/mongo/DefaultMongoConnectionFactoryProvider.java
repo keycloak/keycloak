@@ -32,6 +32,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity",
             "org.keycloak.models.sessions.mongo.entities.MongoUsernameLoginFailureEntity",
             "org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity",
+            "org.keycloak.models.sessions.mongo.entities.MongoClientSessionEntity",
             "org.keycloak.models.entities.FederationProviderEntity"
     };
 

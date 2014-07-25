@@ -20,7 +20,8 @@
         <class>org.keycloak.models.jpa.entities.ScopeMappingEntity</class>
 
         <!-- JpaUserSessionProvider -->
-        <class>org.keycloak.models.sessions.jpa.entities.ClientUserSessionAssociationEntity</class>
+        <class>org.keycloak.models.sessions.jpa.entities.ClientSessionEntity</class>
+        <class>org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.UserSessionEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity</class>
 
