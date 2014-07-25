@@ -115,7 +115,10 @@ public class CustomerCli {
     }
 
     public static void customers() throws Exception {
-        String customersUrl = "http://localhost:8080/database/customers";
+        String baseUrl = keycloak.getDeployment().getAuthServerBaseUrl();
+        baseUrl = baseUrl.substring(0, baseUrl.indexOf('/', 8));
+
+        String customersUrl = baseUrl + "/database/customers";
         HttpGet get = new HttpGet(customersUrl);
         get.setHeader("Accept", "application/json");
         get.setHeader("Authorization", "Bearer " + keycloak.getTokenString(10, TimeUnit.SECONDS));

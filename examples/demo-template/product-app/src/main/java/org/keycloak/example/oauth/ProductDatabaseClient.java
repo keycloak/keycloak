@@ -39,7 +39,7 @@ public class ProductDatabaseClient
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet("http://localhost:8080/database/products");
+            HttpGet get = new HttpGet(getBaseUrl(req) + "/database/products");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);
@@ -59,6 +59,11 @@ public class ProductDatabaseClient
         } finally {
             client.getConnectionManager().shutdown();
         }
+    }
+
+    public static String getBaseUrl(HttpServletRequest request) {
+        String url = request.getRequestURL().toString();
+        return url.substring(0, url.indexOf('/', 8));
     }
 
 }

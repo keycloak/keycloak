@@ -78,7 +78,7 @@ public class ProductDatabaseClient {
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
         HttpClient client = oAuthClient.getClient();
 
-        HttpGet get = new HttpGet("http://localhost:8080/database/products");
+        HttpGet get = new HttpGet(getBaseUrl(request) + "/database/products");
         get.addHeader("Authorization", "Bearer " + accessToken);
         try {
             HttpResponse response = client.execute(get);
@@ -96,4 +96,10 @@ public class ProductDatabaseClient {
             throw new RuntimeException(e);
         }
     }
+
+    public static String getBaseUrl(HttpServletRequest request) {
+        String url = request.getRequestURL().toString();
+        return url.substring(0, url.indexOf('/', 8));
+    }
+
 }

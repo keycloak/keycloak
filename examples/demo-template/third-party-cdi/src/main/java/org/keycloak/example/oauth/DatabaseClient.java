@@ -58,12 +58,12 @@ public class DatabaseClient {
     static class TypedList extends ArrayList<String> {}
 
     public void sendCustomersRequest() {
-        List<String> customers = sendRequestToDBApplication("http://localhost:8080/database/customers");
+        List<String> customers = sendRequestToDBApplication(getBaseUrl() + "/database/customers");
         userData.setCustomers(customers);
     }
 
     public void sendProductsRequest() {
-        List<String> products = sendRequestToDBApplication("http://localhost:8080/database/products");
+        List<String> products = sendRequestToDBApplication(getBaseUrl() + "/database/products");
         userData.setProducts(products);
     }
 
@@ -100,4 +100,11 @@ public class DatabaseClient {
             return null;
         }
     }
+
+    public String getBaseUrl() {
+        String url = request.getRequestURL().toString();
+        return url.substring(0, url.indexOf('/', 8));
+    }
+
+
 }

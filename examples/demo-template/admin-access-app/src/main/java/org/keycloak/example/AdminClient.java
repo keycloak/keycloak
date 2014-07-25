@@ -16,6 +16,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,14 +44,14 @@ public class AdminClient {
         }
     }
 
-    public static AccessTokenResponse getToken() throws IOException {
+    public static AccessTokenResponse getToken(HttpServletRequest request) throws IOException {
 
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
 
 
         try {
-            HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri("http://localhost:8080/auth")
+            HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri(getBaseUrl(request) + "/auth")
                     .path(ServiceUrlConstants.TOKEN_SERVICE_DIRECT_GRANT_PATH).build("demo"));
             List <NameValuePair> formparams = new ArrayList <NameValuePair>();
             formparams.add(new BasicNameValuePair("username", "admin"));
@@ -94,14 +95,14 @@ public class AdminClient {
         }
     }
 
-    public static void logout(AccessTokenResponse res) throws IOException {
+    public static void logout(HttpServletRequest request, AccessTokenResponse res) throws IOException {
 
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
 
 
         try {
-            HttpGet get = new HttpGet(KeycloakUriBuilder.fromUri("http://localhost:8080/auth")
+            HttpGet get = new HttpGet(KeycloakUriBuilder.fromUri(getBaseUrl(request) + "/auth")
                     .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
                     .queryParam("session_state", res.getSessionState())
                     .build("demo"));
@@ -117,12 +118,12 @@ public class AdminClient {
         }
     }
 
-    public static List<RoleRepresentation> getRealmRoles(AccessTokenResponse res) throws Failure {
+    public static List<RoleRepresentation> getRealmRoles(HttpServletRequest request, AccessTokenResponse res) throws Failure {
 
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet("http://localhost:8080/auth/admin/realms/demo/roles");
+            HttpGet get = new HttpGet(getBaseUrl(request) + "/auth/admin/realms/demo/roles");
             get.addHeader("Authorization", "Bearer " + res.getToken());
             try {
                 HttpResponse response = client.execute(get);
@@ -143,4 +144,10 @@ public class AdminClient {
             client.getConnectionManager().shutdown();
         }
     }
+
+    public static String getBaseUrl(HttpServletRequest request) {
+        String url = request.getRequestURL().toString();
+        return url.substring(0, url.indexOf('/', 8));
+    }
+
 }

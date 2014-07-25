@@ -10,13 +10,13 @@
 </head>
 <body bgcolor="#E3F6CE">
 <%
-    String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-            .queryParam("redirect_uri", "http://localhost:8080/customer-portal").build("demo").toString();
-    String acctUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
+    String logoutUri = KeycloakUriBuilder.fromUri("/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
+            .queryParam("redirect_uri", "/customer-portal").build("demo").toString();
+    String acctUri = KeycloakUriBuilder.fromUri("/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
             .queryParam("referrer", "customer-portal").build("demo").toString();
     IDToken idToken = CustomerDatabaseClient.getIDToken(request);
 %>
-<p>Goto: <a href="http://localhost:8080/product-portal">products</a> | <a href="<%=logoutUri%>">logout</a> | <a
+<p>Goto: <a href="/product-portal">products</a> | <a href="<%=logoutUri%>">logout</a> | <a
         href="<%=acctUri%>">manage acct</a></p>
 Servlet User Principal <b><%=request.getUserPrincipal().getName()%>
 </b> made this request.

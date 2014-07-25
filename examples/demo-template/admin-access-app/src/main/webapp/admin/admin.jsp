@@ -12,9 +12,9 @@
 <%
     java.util.List<RoleRepresentation> list = null;
     try {
-        AccessTokenResponse res = AdminClient.getToken();
-        list = AdminClient.getRealmRoles(res);
-        AdminClient.logout(res);
+        AccessTokenResponse res = AdminClient.getToken(request);
+        list = AdminClient.getRealmRoles(request, res);
+        AdminClient.logout(request, res);
     } catch (AdminClient.Failure failure) {
         out.println("There was a failure processing request.  You either didn't configure Keycloak properly");
         out.println("Status from database service invocation was: " + failure.getStatus());
