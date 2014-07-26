@@ -54,7 +54,8 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
 
     @Override
     protected void completeOAuthAuthentication(KeycloakPrincipal skp, RefreshableKeycloakSecurityContext securityContext) {
-        Set<String> roles = getRolesFromToken(securityContext);
+        request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
+    	Set<String> roles = getRolesFromToken(securityContext);
         GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skp, roles, securityContext);
         Session session = request.getSessionInternal(true);
         session.setPrincipal(principal);
