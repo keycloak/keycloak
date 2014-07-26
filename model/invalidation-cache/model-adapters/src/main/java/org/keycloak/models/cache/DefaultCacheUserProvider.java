@@ -248,12 +248,10 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public boolean removeUser(RealmModel realm, String name) {
-        if (!cache.isEnabled()) return getDelegate().removeUser(realm, name);
-        UserModel user = getUserByUsername(name, realm);
-        if (user == null) return false;
+    public boolean removeUser(RealmModel realm, UserModel user) {
+        if (!cache.isEnabled()) return getDelegate().removeUser(realm, user);
         registerUserInvalidation(realm, user.getId());
-        return getDelegate().removeUser(realm, name);
+        return getDelegate().removeUser(realm, user);
     }
 
     @Override

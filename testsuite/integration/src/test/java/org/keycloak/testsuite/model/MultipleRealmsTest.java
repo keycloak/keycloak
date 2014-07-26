@@ -52,8 +52,9 @@ public class MultipleRealmsTest extends AbstractModelTest {
         realm1 = model.getRealm("id1");
         realm2 = model.getRealm("id2");
 
-        session.users().removeUser(realm1, "user1");
-        session.users().removeUser(realm1, "user2");
+        session.users().removeUser(realm1, r1user1);
+        UserModel user2 = session.users().getUserByUsername("user2", realm1);
+        session.users().removeUser(realm1, user2);
         Assert.assertEquals(0, session.users().searchForUser("user", realm1).size());
         Assert.assertEquals(2, session.users().searchForUser("user", realm2).size());
     }

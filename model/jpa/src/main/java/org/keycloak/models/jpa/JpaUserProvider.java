@@ -15,7 +15,6 @@ import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -71,13 +70,10 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public boolean removeUser(RealmModel realm, String name) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
-        query.setParameter("username", name);
-        query.setParameter("realmId", realm.getId());
-        List<UserEntity> results = query.getResultList();
-        if (results.size() == 0) return false;
-        removeUser(results.get(0));
+    public boolean removeUser(RealmModel realm, UserModel user) {
+        UserEntity userEntity = em.find(UserEntity.class, user.getId());
+        if (userEntity == null) return false;
+        removeUser(userEntity);
         return true;
     }
 
@@ -256,7 +252,7 @@ public class JpaUserProvider implements UserProvider {
         boolean first = true;
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String attribute = null;
-            if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
+            if (entry.getKey().equals(UserModel.USERNAME)) {
                 attribute = "lower(username)";
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
                 attribute = "lower(firstName)";

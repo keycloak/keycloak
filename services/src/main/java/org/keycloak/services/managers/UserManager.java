@@ -17,7 +17,7 @@ public class UserManager {
     }
 
     public boolean removeUser(RealmModel realm, UserModel user) {
-        if (session.users().removeUser(realm, user.getUsername())) {
+        if (session.users().removeUser(realm, user)) {
             UserSessionProvider sessions = session.sessions();
             if (sessions != null) {
                 sessions.onUserRemoved(realm, user);

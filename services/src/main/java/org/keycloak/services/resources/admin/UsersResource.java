@@ -341,7 +341,7 @@ public class UsersResource {
                 attributes.put(UserModel.EMAIL, email);
             }
             if (username != null) {
-                attributes.put(UserModel.LOGIN_NAME, username);
+                attributes.put(UserModel.USERNAME, username);
             }
             userModels = session.users().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
             for (UserModel user : userModels) {

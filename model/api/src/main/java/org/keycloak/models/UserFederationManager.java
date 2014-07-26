@@ -2,6 +2,7 @@ package org.keycloak.models;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,7 +23,9 @@ public class UserFederationManager implements UserProvider {
         UserModel user = session.userStorage().addUser(realm, id, username, addDefaultRoles);
         for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
             UserFederationProvider fed = session.getProvider(UserFederationProvider.class, federation.getProviderName());
-            return fed.addUser(realm, user);
+            if (fed.isRegistrationSupported()) {
+                return fed.register(realm, user);
+            }
         }
         return user;
     }
@@ -38,7 +41,9 @@ public class UserFederationManager implements UserProvider {
         UserModel user = session.userStorage().addUser(realm, username);
         for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
             UserFederationProvider fed = getFederationProvider(federation);
-            return fed.addUser(realm, user);
+            if (fed.isRegistrationSupported()) {
+                return fed.register(realm, user);
+            }
         }
         return user;
     }
@@ -54,34 +59,67 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public boolean removeUser(RealmModel realm, String name) {
-        UserModel user = session.userStorage().getUserByUsername(name, realm);
-        if (user == null) return false;
+    public boolean removeUser(RealmModel realm, UserModel user) {
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             return link.removeUser(realm, user);
         }
-        return session.userStorage().removeUser(realm, name);
+        return session.userStorage().removeUser(realm, user);
 
+    }
+
+    protected void validateUser(RealmModel realm, UserModel user) {
+        UserFederationProvider link = getFederationLink(realm, user);
+        if (link != null  && !link.isValid(user)) {
+            deleteInvalidUser(realm, user);
+            throw new IllegalStateException("Federated user no longer valid");
+        }
+
+    }
+
+    protected void deleteInvalidUser(RealmModel realm, UserModel user) {
+        KeycloakSession tx = session.getKeycloakSessionFactory().create();
+        try {
+            tx.getTransaction().begin();
+            RealmModel realmModel = tx.realms().getRealm(realm.getId());
+            UserModel deletedUser = tx.userStorage().getUserById(user.getId(), realmModel);
+            tx.userStorage().removeUser(realmModel, deletedUser);
+            tx.getTransaction().commit();
+        } finally {
+            tx.close();
+        }
+    }
+
+    protected boolean isValid(RealmModel realm, UserModel user) {
+        UserFederationProvider link = getFederationLink(realm, user);
+        if (link != null) return link.isValid(user);
+        return true;
+    }
+
+
+    protected UserModel validateAndProxyUser(RealmModel realm, UserModel user) {
+        UserFederationProvider link = getFederationLink(realm, user);
+        if (link != null) {
+            if (isValid(realm, user)) {
+                return link.proxy(user);
+            } else {
+                deleteInvalidUser(realm, user);
+                return null;
+            }
+        }
+        return user;
     }
 
     @Override
     public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
-        UserFederationProvider link = getFederationLink(realm, user);
-        if (link != null) {
-            link.addSocialLink(realm, user, socialLink);
-            return;
-        }
+        validateUser(realm, user);
         session.userStorage().addSocialLink(realm, user, socialLink);
-
     }
 
     @Override
     public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider) {
-        UserFederationProvider link = getFederationLink(realm, user);
-        if (link != null) {
-            return link.removeSocialLink(realm, user, socialProvider);
-        }
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
         return session.userStorage().removeSocialLink(realm, user, socialProvider);
     }
 
@@ -89,16 +127,7 @@ public class UserFederationManager implements UserProvider {
     public UserModel getUserById(String id, RealmModel realm) {
         UserModel user = session.userStorage().getUserById(id, realm);
         if (user != null) {
-            UserFederationProvider link = getFederationLink(realm, user);
-            if (link != null) {
-                return link.proxy(user);
-            }
-            return user;
-        }
-        for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
-            UserFederationProvider fed = getFederationProvider(federation);
-            user = fed.getUserById(id, realm);
-            if (user != null) return user;
+            user = validateAndProxyUser(realm, user);
         }
         return user;
     }
@@ -107,15 +136,12 @@ public class UserFederationManager implements UserProvider {
     public UserModel getUserByUsername(String username, RealmModel realm) {
         UserModel user = session.userStorage().getUserByUsername(username, realm);
         if (user != null) {
-            UserFederationProvider link = getFederationLink(realm, user);
-            if (link != null) {
-                return link.proxy(user);
-            }
-            return user;
+            user = validateAndProxyUser(realm, user);
+            if (user != null) return user;
         }
         for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
             UserFederationProvider fed = getFederationProvider(federation);
-            user = fed.getUserByUsername(username, realm);
+            user = fed.getUserByUsername(realm, username);
             if (user != null) return user;
         }
         return user;
@@ -125,15 +151,12 @@ public class UserFederationManager implements UserProvider {
     public UserModel getUserByEmail(String email, RealmModel realm) {
         UserModel user = session.userStorage().getUserByEmail(email, realm);
         if (user != null) {
-            UserFederationProvider link = getFederationLink(realm, user);
-            if (link != null) {
-                return link.proxy(user);
-            }
-            return user;
+            user = validateAndProxyUser(realm, user);
+            if (user != null) return user;
         }
         for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
             UserFederationProvider fed = getFederationProvider(federation);
-            user = fed.getUserByEmail(email, realm);
+            user = fed.getUserByEmail(realm, email);
             if (user != null) return user;
         }
         return user;
@@ -143,16 +166,7 @@ public class UserFederationManager implements UserProvider {
     public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
         UserModel user = session.userStorage().getUserBySocialLink(socialLink, realm);
         if (user != null) {
-            UserFederationProvider link = getFederationLink(realm, user);
-            if (link != null) {
-                return link.proxy(user);
-            }
-            return user;
-        }
-        for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
-            UserFederationProvider fed = getFederationProvider(federation);
-            user = fed.getUserBySocialLink(socialLink, realm);
-            if (user != null) return user;
+            user = validateAndProxyUser(realm, user);
         }
         return user;
     }
@@ -168,33 +182,40 @@ public class UserFederationManager implements UserProvider {
         return session.userStorage().getUsersCount(realm);
     }
 
+    interface PaginatedQuery {
+        List<UserModel> query(RealmModel realm, int first, int max);
+    }
+
+    protected List<UserModel> query(PaginatedQuery pagedQuery, RealmModel realm, int firstResult, int maxResults) {
+        List<UserModel> results = new LinkedList<UserModel>();
+        if (maxResults <= 0) return results;
+        int first = firstResult;
+        int max = maxResults;
+        do {
+            List<UserModel> query = pagedQuery.query(realm, first, max);
+            if (query == null || query.size() == 0) return results;
+            int added = 0;
+            for (UserModel user : query) {
+                user = validateAndProxyUser(realm, user);
+                if (user == null) continue;
+                results.add(user);
+                added++;
+            }
+            if (results.size() == maxResults) return results;
+            if (query.size() < max) return results;
+            first = query.size();
+            max -= added;
+        } while (true);
+    }
+
     @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        Map<String, UserModel> users = new HashMap<String, UserModel>();
-        List<UserModel> query = session.userStorage().getUsers(realm, firstResult, maxResults);
-        for (UserModel user : query) {
-            UserFederationProvider link = getFederationLink(realm, user);
-            if (link != null) {
-                users.put(user.getUsername(), link.proxy(user));
-            } else {
-                users.put(user.getUsername(), user);
+        return query(new PaginatedQuery() {
+            @Override
+            public List<UserModel> query(RealmModel realm, int first, int max) {
+                return session.userStorage().getUsers(realm, first, max);
             }
-        }
-        if (users.size() >= maxResults) {
-            List<UserModel> results = new ArrayList<UserModel>(users.size());
-            results.addAll(users.values());
-            return results;
-        }
-        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
-        for (int i = federationProviders.size() - 1; i >= 0; i--) {
-            UserFederationProviderModel federation = federationProviders.get(i);
-            UserFederationProvider fed = getFederationProvider(federation);
-            query = fed.getUsers(realm, firstResult, maxResults);
-            for (UserModel user : query) users.put(user.getUsername(), user);
-        }
-        List<UserModel> results = new ArrayList<UserModel>(users.size());
-        results.addAll(users.values());
-        return results;
+        }, realm, firstResult, maxResults);
     }
 
     @Override
@@ -202,33 +223,36 @@ public class UserFederationManager implements UserProvider {
         return searchForUser(search, realm, 0, Integer.MAX_VALUE);
     }
 
-    @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        Map<String, UserModel> users = new HashMap<String, UserModel>();
-        List<UserModel> query = session.userStorage().searchForUser(search, realm, firstResult, maxResults);
-        for (UserModel user : query) {
-            UserFederationProvider link = getFederationLink(realm, user);
-            if (link != null) {
-                users.put(user.getUsername(), link.proxy(user));
-            } else {
-                users.put(user.getUsername(), user);
-            }
-        }
-        if (users.size() >= maxResults) {
-            List<UserModel> results = new ArrayList<UserModel>(users.size());
-            results.addAll(users.values());
-            return results;
-        }
-        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
-        for (int i = federationProviders.size() - 1; i >= 0; i--) {
-            UserFederationProviderModel federation = federationProviders.get(i);
+    void federationLoad(RealmModel realm, Map<String, String> attributes) {
+        for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
             UserFederationProvider fed = getFederationProvider(federation);
-            query = fed.searchForUser(search, realm, firstResult, maxResults);
-            for (UserModel user : query) users.put(user.getUsername(), user);
+            fed.searchByAttributes(attributes, realm);
         }
-        List<UserModel> results = new ArrayList<UserModel>(users.size());
-        results.addAll(users.values());
-        return results;
+    }
+
+    @Override
+    public List<UserModel> searchForUser(final String search, RealmModel realm, int firstResult, int maxResults) {
+        Map<String, String> attributes = new HashMap<String, String>();
+        int spaceIndex = search.lastIndexOf(' ');
+        if (spaceIndex > -1) {
+            String firstName = search.substring(0, spaceIndex).trim();
+            String lastName = search.substring(spaceIndex).trim();
+            attributes.put(UserModel.FIRST_NAME, firstName);
+            attributes.put(UserModel.LAST_NAME, lastName);
+        } else if (search.indexOf('@') > -1) {
+            attributes.put(UserModel.USERNAME, search.trim());
+            attributes.put(UserModel.EMAIL, search.trim());
+        } else {
+            attributes.put(UserModel.LAST_NAME, search.trim());
+            attributes.put(UserModel.USERNAME, search.trim());
+        }
+        federationLoad(realm, attributes);
+        return query(new PaginatedQuery() {
+            @Override
+            public List<UserModel> query(RealmModel realm, int first, int max) {
+                return session.userStorage().searchForUser(search, realm, first, max);
+            }
+        }, realm, firstResult, maxResults);
     }
 
     @Override
@@ -237,49 +261,27 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
-        Map<String, UserModel> users = new HashMap<String, UserModel>();
-        List<UserModel> query = session.userStorage().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
-        for (UserModel user : query) {
-            UserFederationProvider link = getFederationLink(realm, user);
-            if (link != null) {
-                users.put(user.getUsername(), link.proxy(user));
-            } else {
-                users.put(user.getUsername(), user);
+    public List<UserModel> searchForUserByAttributes(final Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+        federationLoad(realm, attributes);
+        return query(new PaginatedQuery() {
+            @Override
+            public List<UserModel> query(RealmModel realm, int first, int max) {
+                return session.userStorage().searchForUserByAttributes(attributes, realm, first, max);
             }
-        }
-        if (users.size() >= maxResults) {
-            List<UserModel> results = new ArrayList<UserModel>(users.size());
-            results.addAll(users.values());
-            return results;
-        }
-        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
-        for (int i = federationProviders.size() - 1; i >= 0; i--) {
-            UserFederationProviderModel federation = federationProviders.get(i);
-            UserFederationProvider fed = getFederationProvider(federation);
-            query = fed.searchForUserByAttributes(attributes, realm, firstResult, maxResults);
-            for (UserModel user : query) users.put(user.getUsername(), user);
-        }
-        List<UserModel> results = new ArrayList<UserModel>(users.size());
-        results.addAll(users.values());
-        return results;
+        }, realm, firstResult, maxResults);
     }
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
-        UserFederationProvider link = getFederationLink(realm, user);
-        if (link != null) {
-            return link.getSocialLinks(user, realm);
-        }
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
         return session.userStorage().getSocialLinks(user, realm);
     }
 
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        UserFederationProvider link = getFederationLink(realm, user);
-        if (link != null) {
-            return link.getSocialLink(user, socialProvider, realm);
-        }
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
         return session.userStorage().getSocialLink(user, socialProvider, realm);
     }
 
@@ -305,6 +307,7 @@ public class UserFederationManager implements UserProvider {
     public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
+            validateUser(realm, user);
             if (link.getSupportedCredentialTypes().size() > 0) {
                 List<UserCredentialModel> fedCreds = new ArrayList<UserCredentialModel>();
                 List<UserCredentialModel> localCreds = new ArrayList<UserCredentialModel>();
@@ -328,6 +331,7 @@ public class UserFederationManager implements UserProvider {
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
+            validateUser(realm, user);
             Set<String> supportedCredentialTypes = link.getSupportedCredentialTypes();
             if (supportedCredentialTypes.size() > 0) {
                 List<UserCredentialModel> fedCreds = new ArrayList<UserCredentialModel>();
