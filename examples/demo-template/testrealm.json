@@ -24,7 +24,11 @@
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
-            ]
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "account": [ "manage-account" ]
+            }
         },
         {
             "username" : "admin",
@@ -35,7 +39,11 @@
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
-            ]
+            ],
+            "realmRoles": [ "user","admin" ],
+            "applicationRoles": {
+                "realm-management": [ "realm-admin" ]
+            }
         }
     ],
     "roles" : {
@@ -50,16 +58,6 @@
             }
         ]
     },
-    "roleMappings": [
-        {
-            "username": "bburke@redhat.com",
-            "roles": ["user"]
-        },
-        {
-            "username": "admin",
-            "roles": ["user","admin"]
-        }
-    ],
     "scopeMappings": [
         {
             "client": "third-party",
@@ -154,20 +152,6 @@
 
         }
     ],
-    "applicationRoleMappings": {
-        "account": [
-            {
-                "username": "bburke@redhat.com",
-                "roles": ["manage-account"]
-            }
-        ],
-        "realm-management": [
-            {
-                "username": "admin",
-                "roles": ["realm-admin"]
-            }
-        ]
-    },
     "applicationScopeMappings": {
         "realm-management": [
             {

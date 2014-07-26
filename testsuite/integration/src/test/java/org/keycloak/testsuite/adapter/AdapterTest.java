@@ -21,7 +21,7 @@
  */
 package org.keycloak.testsuite.adapter;
 
-import org.jboss.resteasy.util.BasicAuthHelper;
+import org.keycloak.util.BasicAuthHelper;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -75,7 +75,7 @@ public class AdapterTest {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
-        protected void configure(RealmManager manager, RealmModel adminRealm) {
+        protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
             RealmModel realm = manager.importRealm(representation);
 
@@ -99,9 +99,9 @@ public class AdapterTest {
             RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
             ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
-            UserModel admin = adminRealm.getUser("admin");
-            UserSessionModel userSession = adminRealm.createUserSession(admin, null);
-            AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, userSession);
+            UserModel admin = session.users().getUserByUsername("admin", adminRealm);
+            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", false);
+            AccessToken token = tm.createClientAccessToken(tm.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession);
             return tm.encodeToken(adminRealm, token);
         } finally {
             keycloakRule.stopSession(session, true);
@@ -231,7 +231,7 @@ public class AdapterTest {
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         KeycloakSession session = keycloakRule.startSession();
-        RealmModel realm = session.getRealmByName("demo");
+        RealmModel realm = session.realms().getRealmByName("demo");
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
         session.getTransaction().commit();
@@ -245,7 +245,7 @@ public class AdapterTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("demo");
+        realm = session.realms().getRealmByName("demo");
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();
@@ -265,7 +265,7 @@ public class AdapterTest {
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         KeycloakSession session = keycloakRule.startSession();
-        RealmModel realm = session.getRealmByName("demo");
+        RealmModel realm = session.realms().getRealmByName("demo");
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
         session.getTransaction().commit();
@@ -274,8 +274,8 @@ public class AdapterTest {
         Thread.sleep(2000);
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("demo");
-        realm.removeExpiredUserSessions();
+        realm = session.realms().getRealmByName("demo");
+        session.sessions().removeExpiredUserSessions(realm);
         session.getTransaction().commit();
         session.close();
 
@@ -284,7 +284,7 @@ public class AdapterTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("demo");
+        realm = session.realms().getRealmByName("demo");
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();
@@ -304,7 +304,7 @@ public class AdapterTest {
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         KeycloakSession session = keycloakRule.startSession();
-        RealmModel realm = session.getRealmByName("demo");
+        RealmModel realm = session.realms().getRealmByName("demo");
         int original = realm.getSsoSessionMaxLifespan();
         realm.setSsoSessionMaxLifespan(1);
         session.getTransaction().commit();
@@ -318,7 +318,7 @@ public class AdapterTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("demo");
+        realm = session.realms().getRealmByName("demo");
         realm.setSsoSessionMaxLifespan(original);
         session.getTransaction().commit();
         session.close();

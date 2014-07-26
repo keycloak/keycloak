@@ -37,6 +37,11 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-connections-jpa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-invalidation-cache-model</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -51,6 +56,13 @@
             <artifactId>hibernate-entitymanager</artifactId>
             <version>${hibernate.entitymanager.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-sessions-mem</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
@@ -71,26 +83,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-tests</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-tests</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
     <build>
         <plugins>
@@ -102,37 +94,6 @@
                     <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
-
-            <!-- Test jar used in export-import -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>package-tests-jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-test</id>
-                        <configuration>
-                            <dependenciesToScan>
-                                <dependency>org.keycloak:keycloak-model-tests</dependency>
-                            </dependenciesToScan>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
     </build>
 

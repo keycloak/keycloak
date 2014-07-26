@@ -11,6 +11,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -45,37 +46,34 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_SESSION_COOKIE = "KEYCLOAK_SESSION";
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
 
-    protected KeycloakSession session;
     protected BruteForceProtector protector;
 
-    public AuthenticationManager(KeycloakSession session) {
-        this.session = session;
+    public AuthenticationManager() {
     }
 
-    public AuthenticationManager(KeycloakSession session, BruteForceProtector protector) {
-        this.session = session;
+    public AuthenticationManager(BruteForceProtector protector) {
         this.protector = protector;
     }
 
-    public static boolean isSessionValid(RealmModel realm, UserSessionModel session) {
-        if (session == null) return false;
+    public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession) {
+        if (userSession == null) return false;
         int currentTime = Time.currentTime();
-        int max = session.getStarted() + realm.getSsoSessionMaxLifespan();
-        boolean valid = session != null && session.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
+        int max = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
+        boolean valid = userSession != null && userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
         return valid;
     }
 
-    public static void logout(RealmModel realm, UserSessionModel session, UriInfo uriInfo) {
-        if (session == null) return;
-        UserModel user = session.getUser();
+    public static void logout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo) {
+        if (userSession == null) return;
+        UserModel user = userSession.getUser();
 
-        logger.infov("Logging out: {0} ({1})", user.getLoginName(), session.getId());
+        logger.infov("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
 
-        realm.removeUserSession(session);
+        session.sessions().removeUserSession(realm, userSession);
         expireIdentityCookie(realm, uriInfo);
         expireRememberMeCookie(realm, uriInfo);
 
-        new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), session.getId());
+        new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), userSession.getId());
 
     }
 
@@ -96,7 +94,7 @@ public class AuthenticationManager {
         return token;
     }
 
-    public void createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, boolean rememberMe) {
+    public void createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo) {
         logger.info("createLoginCookie");
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         AccessToken identityToken = createIdentityToken(realm, user, session);
@@ -104,7 +102,7 @@ public class AuthenticationManager {
         boolean secureOnly = !realm.isSslNotRequired();
         logger.debugv("creatingLoginCookie - name: {0} path: {1}", KEYCLOAK_IDENTITY_COOKIE, cookiePath);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
-        if (rememberMe) {
+        if (session.isRememberMe()) {
             maxAge = realm.getSsoSessionIdleTimeout();
             logger.info("createLoginCookie maxAge: " + maxAge);
         }
@@ -161,11 +159,11 @@ public class AuthenticationManager {
         CookieHelper.addCookie(cookieName, "", path, null, "Expiring cookie", 0, secureOnly, httpOnly);
     }
 
-    public AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        return authenticateIdentityCookie(realm, uriInfo, headers, true);
+    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+        return authenticateIdentityCookie(session, realm, uriInfo, headers, true);
     }
 
-    public AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, boolean checkActive) {
+    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, boolean checkActive) {
         logger.info("authenticateIdentityCookie");
         Cookie cookie = headers.getCookies().get(KEYCLOAK_IDENTITY_COOKIE);
         if (cookie == null) {
@@ -174,7 +172,7 @@ public class AuthenticationManager {
         }
 
         String tokenString = cookie.getValue();
-        AuthResult authResult = verifyIdentityToken(realm, uriInfo, checkActive, tokenString);
+        AuthResult authResult = verifyIdentityToken(session, realm, uriInfo, checkActive, tokenString);
         if (authResult == null) {
             expireIdentityCookie(realm, uriInfo);
             return null;
@@ -183,7 +181,7 @@ public class AuthenticationManager {
         return authResult;
     }
 
-    protected AuthResult verifyIdentityToken(RealmModel realm, UriInfo uriInfo, boolean checkActive, String tokenString) {
+    protected AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, boolean checkActive, String tokenString) {
         try {
             AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName(), checkActive);
             logger.info("identity token verified");
@@ -199,32 +197,27 @@ public class AuthenticationManager {
                 }
             }
 
-            UserModel user = realm.getUserById(token.getSubject());
+            UserModel user = session.users().getUserById(token.getSubject(), realm);
             if (user == null || !user.isEnabled() ) {
                 logger.info("Unknown user in identity token");
                 return null;
             }
 
-            if (token.getIssuedAt() < user.getNotBefore()) {
-                logger.info("Stale cookie");
-                return null;
-            }
-
-            UserSessionModel session = realm.getUserSession(token.getSessionState());
-            if (!isSessionValid(realm, session)) {
-                if (session != null) logout(realm, session, uriInfo);
+            UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
+            if (!isSessionValid(realm, userSession)) {
+                if (userSession != null) logout(session, realm, userSession, uriInfo);
                 logger.info("User session not active");
                 return null;
             }
 
-            return new AuthResult(user, session, token);
+            return new AuthResult(user, userSession, token);
         } catch (VerificationException e) {
             logger.info("Failed to verify identity token", e);
         }
         return null;
     }
 
-    public AuthenticationStatus authenticateForm(ClientConnection clientConnection, RealmModel realm, MultivaluedMap<String, String> formData) {
+    public AuthenticationStatus authenticateForm(KeycloakSession session, ClientConnection clientConnection, RealmModel realm, MultivaluedMap<String, String> formData) {
         String username = formData.getFirst(FORM_USERNAME);
         if (username == null) {
             logger.warn("Username not provided");
@@ -232,12 +225,12 @@ public class AuthenticationManager {
         }
 
         if (realm.isBruteForceProtected()) {
-            if (protector.isTemporarilyDisabled(realm, username)) {
+            if (protector.isTemporarilyDisabled(session, realm, username)) {
                 return AuthenticationStatus.ACCOUNT_TEMPORARILY_DISABLED;
             }
         }
 
-        AuthenticationStatus status = authenticateInternal(realm, formData, username);
+        AuthenticationStatus status = authenticateInternal(session, realm, formData, username);
         if (realm.isBruteForceProtected()) {
             switch (status) {
                 case SUCCESS:
@@ -260,13 +253,14 @@ public class AuthenticationManager {
         return status;
     }
 
-    protected AuthenticationStatus authenticateInternal(RealmModel realm, MultivaluedMap<String, String> formData, String username) {
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+    protected AuthenticationStatus authenticateInternal(KeycloakSession session, RealmModel realm, MultivaluedMap<String, String> formData, String username) {
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+
         if (user == null) {
             AuthUser authUser = AuthenticationProviderManager.getManager(realm, session).getUser(username);
             if (authUser != null) {
                 // Create new user and link him with authentication provider
-                user = realm.addUser(authUser.getUsername());
+                user = session.users().addUser(realm, authUser.getUsername());
                 user.setEnabled(true);
                 user.setFirstName(authUser.getFirstName());
                 user.setLastName(authUser.getLastName());
@@ -304,19 +298,19 @@ public class AuthenticationManager {
                 }
 
                 logger.debug("validating TOTP");
-                if (!realm.validateTOTP(user, password, token)) {
+                if (!session.users().validCredentials(realm, user, UserCredentialModel.totp(token))) {
                     return AuthenticationStatus.INVALID_CREDENTIALS;
                 }
-            } else {
-                logger.debug("validating password for user: " + username);
+            }
 
-                AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm, session).validatePassword(user, password);
-                if (authStatus == AuthProviderStatus.INVALID_CREDENTIALS) {
-                    logger.debug("invalid password for user: " + username);
-                    return AuthenticationStatus.INVALID_CREDENTIALS;
-                } else if (authStatus == AuthProviderStatus.FAILED) {
-                    return AuthenticationStatus.FAILED;
-                }
+            logger.debug("validating password for user: " + username);
+
+            AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm, session).validatePassword(user, password);
+            if (authStatus == AuthProviderStatus.INVALID_CREDENTIALS) {
+                logger.debug("invalid password for user: " + username);
+                return AuthenticationStatus.INVALID_CREDENTIALS;
+            } else if (authStatus == AuthProviderStatus.FAILED) {
+                return AuthenticationStatus.FAILED;
             }
 
             if (!user.getRequiredActions().isEmpty()) {
@@ -343,7 +337,7 @@ public class AuthenticationManager {
 
     private boolean checkEnabled(UserModel user) {
         if (!user.isEnabled()) {
-            logger.warn("AccountProvider is disabled, contact admin. " + user.getLoginName());
+            logger.warn("AccountProvider is disabled, contact admin. " + user.getUsername());
             return false;
         } else {
             return true;

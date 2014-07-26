@@ -2,14 +2,12 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
@@ -143,6 +141,7 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
 
     @Override
     public boolean removeRole(RoleModel role) {
+        session.users().preRemove(getRealm(), role);
         return getMongoStore().removeEntity(MongoRoleEntity.class, role.getId(), invocationContext);
     }
 
@@ -159,6 +158,20 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
         }
 
         return result;
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (super.hasScope(role)) {
+            return true;
+        }
+        Set<RoleModel> roles = getRoles();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
     }
 
     @Override
@@ -204,6 +217,7 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
         getMongoEntity().setDefaultRoles(roleNames);
         updateMongoEntity();
     }
+
 
     @Override
     public boolean equals(Object o) {

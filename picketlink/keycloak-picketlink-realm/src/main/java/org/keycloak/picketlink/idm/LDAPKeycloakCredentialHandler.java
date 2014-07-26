@@ -37,7 +37,7 @@ public class LDAPKeycloakCredentialHandler extends LDAPPlainTextPasswordCredenti
 
     @Override
     public void setup(LDAPIdentityStore store) {
-        // TODO: Don't setup it here once PLIDM-508 is fixed
+        // TODO: Don't setup it here once PLINK-508 is fixed
         if (store.getConfig().isActiveDirectory() || Boolean.getBoolean("keycloak.ldap.ad.skipUserAccountControlAfterPasswordUpdate")) {
             String userAccountControlProp = System.getProperty("keycloak.ldap.ad.userAccountControlAfterPasswordUpdate");
             this.userAccountControlAfterPasswordUpdate = userAccountControlProp!=null ? userAccountControlProp : "512";

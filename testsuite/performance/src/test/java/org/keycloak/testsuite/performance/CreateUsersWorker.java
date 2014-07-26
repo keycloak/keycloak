@@ -5,7 +5,6 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -59,7 +58,7 @@ public class CreateUsersWorker implements Worker {
     @Override
     public void run(SampleResult result, KeycloakSession session) {
         // We need to obtain realm first
-        RealmModel realm = session.getRealm(realmId);
+        RealmModel realm = session.realms().getRealm(realmId);
         if (realm == null) {
             throw new IllegalStateException("Realm '" + realmId + "' not found");
         }
@@ -69,7 +68,7 @@ public class CreateUsersWorker implements Worker {
 
         String username = PerfTestUtils.getUsername(userNumber);
 
-        UserModel user = realm.addUser(username);
+        UserModel user = session.users().addUser(realm, username);
 
         // Add basic user attributes (NOTE: Actually backend is automatically upgraded during each setter call)
         if (addBasicUserAttributes) {
@@ -98,7 +97,7 @@ public class CreateUsersWorker implements Worker {
             }
 
             SocialLinkModel socialLink = new SocialLinkModel(socialProvider, username, username);
-            realm.addSocialLink(user, socialLink);
+            session.users().addSocialLink(realm, user, socialLink);
         }
 
         log.info("Finished creation of user " + username + " in realm: " + realm.getId());

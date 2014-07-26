@@ -74,11 +74,13 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
         return provider.get(clazz);
     }
 
-    <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz) {
+    @Override
+    public <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz) {
          return getProviderFactory(clazz, provider.get(clazz));
     }
 
-    <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String id) {
+    @Override
+    public <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String id) {
          return factoriesMap.get(clazz).get(id);
     }
 

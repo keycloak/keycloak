@@ -2,14 +2,14 @@ package org.keycloak.models.cache.entities;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.KeycloakCache;
+import org.keycloak.models.cache.RealmCache;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,6 +65,7 @@ public class CachedRealm {
 
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<AuthenticationProviderModel> authenticationProviders = new ArrayList<AuthenticationProviderModel>();
+    private List<UserFederationProviderModel> federationProviders = new ArrayList<UserFederationProviderModel>();
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
@@ -81,7 +82,7 @@ public class CachedRealm {
     public CachedRealm() {
     }
 
-    public CachedRealm(KeycloakCache cache, ModelProvider delegate, RealmModel model) {
+    public CachedRealm(RealmCache cache, RealmProvider delegate, RealmModel model) {
         id = model.getId();
         name = model.getName();
         enabled = model.isEnabled();
@@ -121,6 +122,7 @@ public class CachedRealm {
 
         requiredCredentials = model.getRequiredCredentials();
         authenticationProviders = model.getAuthenticationProviders();
+        federationProviders = model.getUserFederationProviders();
 
         smtpConfig.putAll(model.getSmtpConfig());
         socialConfig.putAll(model.getSocialConfig());
@@ -134,7 +136,7 @@ public class CachedRealm {
 
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());
-            CachedRole cachedRole = new CachedRealmRole(role);
+            CachedRole cachedRole = new CachedRealmRole(role, model);
             cache.addCachedRole(cachedRole);
         }
 
@@ -329,4 +331,7 @@ public class CachedRealm {
         return auditListeners;
     }
 
+    public List<UserFederationProviderModel> getFederationProviders() {
+        return federationProviders;
+    }
 }

@@ -3,10 +3,10 @@ package org.keycloak.testsuite.performance;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,7 +68,7 @@ public class ReadUsersWorker implements Worker {
     @Override
     public void run(SampleResult result, KeycloakSession session) {
         // We need to obtain realm first
-        RealmModel realm = session.getRealm(realmId);
+        RealmModel realm = session.realms().getRealm(realmId);
         if (realm == null) {
             throw new IllegalStateException("Realm '" + realmId + "' not found");
         }
@@ -87,7 +87,7 @@ public class ReadUsersWorker implements Worker {
             String username = PerfTestUtils.getUsername(userCounterInRealm);
             lastUsername = username;
 
-            UserModel user = realm.getUser(username);
+            UserModel user = session.users().getUserByUsername(username, realm);
 
             // Read roles of user in realm
             if (readRoles) {
@@ -102,18 +102,18 @@ public class ReadUsersWorker implements Worker {
 
             // Validate password (shoould be same as username)
             if (readPassword) {
-                realm.validatePassword(user, username);
+                session.users().validCredentials(realm, user, UserCredentialModel.password(username));
             }
 
             // Read socialLinks of user
             if (readSocialLinks) {
-                realm.getSocialLinks(user);
+                session.users().getSocialLinks(user, realm);
             }
 
             // Try to search by social links
             if (searchBySocialLinks) {
                 SocialLinkModel socialLink = new SocialLinkModel("facebook", username, username);
-                realm.getUserBySocialLink(socialLink);
+                session.users().getUserBySocialLink(socialLink, realm);
             }
         }
 

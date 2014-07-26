@@ -78,7 +78,7 @@ public class AdminConsole {
 
     public AdminConsole(RealmModel realm) {
         this.realm = realm;
-        this.authManager = new AppAuthManager(session);
+        this.authManager = new AppAuthManager();
     }
 
     public static class WhoAmI {
@@ -173,7 +173,7 @@ public class AdminConsole {
     @NoCache
     public Response whoAmI(final @Context HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
-        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(realm, uriInfo, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, headers);
         if (authResult == null) {
             return Response.status(401).build();
         }
@@ -185,7 +185,7 @@ public class AdminConsole {
                 displayName = displayName != null ? displayName + " " + user.getLastName() : user.getLastName();
             }
         } else {
-            displayName = user.getLoginName();
+            displayName = user.getUsername();
         }
 
         RealmModel masterRealm = getAdminstrationRealm(realmManager);
@@ -224,7 +224,7 @@ public class AdminConsole {
     }
 
     private void addMasterRealmAccess(RealmModel masterRealm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        List<RealmModel> realms = session.getRealms();
+        List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
             ApplicationModel realmAdminApp = realm.getMasterAdminApp();
             Set<RoleModel> roles = realmAdminApp.getRoles();

@@ -31,4 +31,16 @@ public class JsResource {
         }
     }
 
+    @GET
+    @Path("/keycloak.min.js")
+    @Produces("text/javascript")
+    public Response getMinJs() {
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("keycloak.min.js");
+        if (inputStream != null) {
+            return Response.ok(inputStream).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+    }
+
 }

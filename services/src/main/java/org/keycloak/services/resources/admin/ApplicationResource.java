@@ -10,13 +10,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
-import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -97,7 +99,7 @@ public class ApplicationResource {
 
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
         try {
-            applicationManager.updateApplication(rep, application);
+            RepresentationToModel.updateApplication(rep, application);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Application " + rep.getName() + " already exists");
@@ -116,8 +118,7 @@ public class ApplicationResource {
     public ApplicationRepresentation getApplication() {
         auth.requireView();
 
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
-        return applicationManager.toRepresentation(application);
+        return ModelToRepresentation.toRepresentation(application);
     }
 
 
@@ -167,7 +168,7 @@ public class ApplicationResource {
     public void deleteApplication() {
         auth.requireManage();
 
-        realm.removeApplication(application.getId());
+        new ApplicationManager(new RealmManager(session)).removeApplication(realm, application);
     }
 
 
@@ -184,7 +185,7 @@ public class ApplicationResource {
         auth.requireManage();
 
         logger.debug("regenerateSecret");
-        UserCredentialModel cred = new ApplicationManager().generateSecret(application);
+        UserCredentialModel cred = KeycloakModelUtils.generateSecret(application);
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
         return rep;
     }
@@ -301,7 +302,7 @@ public class ApplicationResource {
             if (users) stats.setUsers(new HashMap<String, UserStats>());
             return stats;
         }
-        SessionStats stats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), realm, application, users);
+        SessionStats stats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), session, realm, application, users);
         if (stats == null) {
             logger.info("app returned null stats");
         } else {
@@ -327,7 +328,7 @@ public class ApplicationResource {
     public Map<String, Integer> getApplicationSessionCount() {
         auth.requireView();
         Map<String, Integer> map = new HashMap<String, Integer>();
-        map.put("count", application.getActiveUserSessions());
+        map.put("count", session.sessions().getActiveUserSessions(application.getRealm(), application));
         return map;
     }
 
@@ -340,11 +341,13 @@ public class ApplicationResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserSessionRepresentation> getUserSessions() {
+    public List<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
         auth.requireView();
+        firstResult = firstResult != null ? firstResult : -1;
+        maxResults = maxResults != null ? maxResults : -1;
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
-        for (UserSessionModel session : application.getUserSessions()) {
-            UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
+        for (UserSessionModel userSession : session.sessions().getUserSessions(application.getRealm(), application, firstResult, maxResults)) {
+            UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
             sessions.add(rep);
         }
         return sessions;
@@ -369,7 +372,7 @@ public class ApplicationResource {
     @POST
     public void logout(final @PathParam("username") String username) {
         auth.requireManage();
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }

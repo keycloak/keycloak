@@ -2,6 +2,7 @@ package org.keycloak.models.cache;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -22,21 +23,21 @@ import java.util.Set;
 public class UserAdapter implements UserModel {
     protected UserModel updated;
     protected CachedUser cached;
-    protected KeycloakCache cache;
-    protected CacheModelProvider cacheSession;
+    protected CacheUserProvider userProviderCache;
+    protected KeycloakSession keycloakSession;
     protected RealmModel realm;
 
-    public UserAdapter(CachedUser cached, KeycloakCache cache, CacheModelProvider session, RealmModel realm) {
+    public UserAdapter(CachedUser cached, CacheUserProvider userProvider, KeycloakSession keycloakSession, RealmModel realm) {
         this.cached = cached;
-        this.cache = cache;
-        this.cacheSession = session;
+        this.userProviderCache = userProvider;
+        this.keycloakSession = keycloakSession;
         this.realm = realm;
     }
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerUserInvalidation(getId());
-            updated = cacheSession.getDelegate().getUserById(getId(), realm);
+            userProviderCache.registerUserInvalidation(realm, getId());
+            updated = userProviderCache.getDelegate().getUserById(getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -47,15 +48,15 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public String getLoginName() {
-        if (updated != null) return updated.getLoginName();
-        return cached.getLoginName();
+    public String getUsername() {
+        if (updated != null) return updated.getUsername();
+        return cached.getUsername();
     }
 
     @Override
-    public void setLoginName(String loginName) {
+    public void setUsername(String username) {
         getDelegateForUpdate();
-        updated.setLoginName(loginName);
+        updated.setUsername(username);
     }
 
     @Override
@@ -173,18 +174,6 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public int getNotBefore() {
-        if (updated != null) return updated.getNotBefore();
-        return cached.getNotBefore();
-    }
-
-    @Override
-    public void setNotBefore(int notBefore) {
-        getDelegateForUpdate();
-        updated.setNotBefore(notBefore);
-    }
-
-    @Override
     public void updateCredential(UserCredentialModel cred) {
         getDelegateForUpdate();
         updated.updateCredential(cred);
@@ -213,6 +202,18 @@ public class UserAdapter implements UserModel {
         getDelegateForUpdate();
         updated.setAuthenticationLink(authenticationLink);
     }
+
+    @Override
+    public String getFederationLink() {
+        if (updated != null) return updated.getFederationLink();
+        return cached.getFederationLink();
+    }
+
+    @Override
+    public void setFederationLink(String link) {
+        getDelegateForUpdate();
+        updated.setFederationLink(link);
+   }
 
     @Override
     public Set<RoleModel> getRealmRoleMappings() {
@@ -269,7 +270,13 @@ public class UserAdapter implements UserModel {
         if (updated != null) return updated.getRoleMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String id : cached.getRoleMappings()) {
-            roles.add(cacheSession.getRoleById(id, realm));
+            RoleModel roleById = keycloakSession.realms().getRoleById(id, realm);
+            if (roleById == null) {
+                // chance that role was removed, so just delete to persistence and get user invalidated
+                getDelegateForUpdate();
+                return updated.getRoleMappings();
+            }
+            roles.add(roleById);
 
         }
         return roles;

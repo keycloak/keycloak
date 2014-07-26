@@ -37,22 +37,19 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessCode;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.util.CookieHelper;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -85,12 +82,7 @@ public class OAuthFlows {
         this.tokenManager = tokenManager;
     }
 
-    public Response redirectAccessCode(AccessCodeEntry accessCode, UserSessionModel session, String state, String redirect) {
-        return redirectAccessCode(accessCode, session, state, redirect, false);
-    }
-
-
-    public Response redirectAccessCode(AccessCodeEntry accessCode, UserSessionModel session, String state, String redirect, boolean rememberMe) {
+    public Response redirectAccessCode(AccessCodeEntry accessCode, UserSessionModel userSession, String state, String redirect) {
         String code = accessCode.getCode();
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
         log.debugv("redirectAccessCode: state: {0}", state);
@@ -98,23 +90,22 @@ public class OAuthFlows {
             redirectUri.queryParam(OAuth2Constants.STATE, state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
-        rememberMe = rememberMe || remember != null;
 
         Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
         if (sessionCookie != null) {
             String oldSessionId = sessionCookie.getValue().split("/")[2];
-            if (!oldSessionId.equals(session.getId())) {
-                UserSessionModel oldSession = realm.getUserSession(oldSessionId);
+            if (!oldSessionId.equals(userSession.getId())) {
+                UserSessionModel oldSession = session.sessions().getUserSession(realm, oldSessionId);
                 if (oldSession != null) {
                     log.debugv("Removing old user session: session: {0}", oldSessionId);
-                    realm.removeUserSession(oldSession);
+                    session.sessions().removeUserSession(realm, oldSession);
                 }
             }
         }
 
         // refresh the cookies!
-        authManager.createLoginCookie(realm, accessCode.getUser(), session, uriInfo, rememberMe);
-        if (rememberMe) authManager.createRememberMeCookie(realm, uriInfo);
+        authManager.createLoginCookie(realm, accessCode.getUser(), userSession, uriInfo);
+        if (userSession.isRememberMe()) authManager.createRememberMeCookie(realm, uriInfo);
         return location.build();
     }
 
@@ -126,15 +117,12 @@ public class OAuthFlows {
         return Response.status(302).location(redirectUri.build()).build();
     }
 
-    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, UserSessionModel session, String username, boolean rememberMe, String authMethod, Audit audit) {
+    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, UserSessionModel session, Audit audit) {
         isTotpConfigurationRequired(user);
         isEmailVerificationRequired(user);
 
         boolean isResource = client instanceof ApplicationModel;
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user, session);
-        accessCode.setRememberMe(rememberMe);
-        accessCode.setAuthMethod(authMethod);
-        accessCode.setUsernameUsed(username);
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, this.session, realm, client, user, session);
 
         log.debugv("processAccessCode: isResource: {0}", isResource);
         log.debugv("processAccessCode: go to oauth page?: {0}",
@@ -144,10 +132,9 @@ public class OAuthFlows {
 
         Set<RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
-            accessCode.setRequiredActions(new HashSet<UserModel.RequiredAction>(requiredActions));
-            accessCode.resetExpiration();
-
             RequiredAction action = user.getRequiredActions().iterator().next();
+            accessCode.setRequiredAction(action);
+
             if (action.equals(RequiredAction.VERIFY_EMAIL)) {
                 audit.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
             }
@@ -157,38 +144,28 @@ public class OAuthFlows {
         }
 
         if (!isResource) {
-            accessCode.resetExpiration();
-            List<RoleModel> realmRolesRequested = new LinkedList<RoleModel>();
-            MultivaluedMap<String, RoleModel> appRolesRequested = new MultivaluedMapImpl<String, RoleModel>();
-            if (accessCode.getToken().getRealmAccess() != null) {
-                if (accessCode.getToken().getRealmAccess().getRoles() != null) {
-                    for (String role : accessCode.getToken().getRealmAccess().getRoles()) {
-                        RoleModel roleModel = realm.getRole(role);
-                        if (roleModel != null) realmRolesRequested.add(roleModel);
-                    }
-                }
-            }
-            if (accessCode.getToken().getResourceAccess().size() > 0) {
-                for (Map.Entry<String, AccessToken.Access> entry : accessCode.getToken().getResourceAccess().entrySet()) {
-                    ApplicationModel app = realm.getApplicationByName(entry.getKey());
-                    if (app == null) continue;
-                    if (entry.getValue().getRoles() != null) {
-                        for (String role : entry.getValue().getRoles()) {
-                            RoleModel roleModel = app.getRole(role);
-                            if (roleModel != null) appRolesRequested.add(entry.getKey(), roleModel);
-                        }
+            accessCode.setAction(AccessCode.Action.OAUTH_GRANT);
 
-                    }
+            List<RoleModel> realmRoles = new LinkedList<RoleModel>();
+            MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
+            for (RoleModel r : accessCode.getRequestedRoles()) {
+                if (r.getContainer() instanceof RealmModel) {
+                    realmRoles.add(r);
+                } else {
+                    resourceRoles.add(((ApplicationModel) r.getContainer()).getName(), r);
                 }
             }
-            return Flows.forms(this.session, realm, uriInfo).setAccessCode(accessCode.getCode()).
-                    setAccessRequest(realmRolesRequested, appRolesRequested).
-                    setClient(client).createOAuthGrant();
+
+            return Flows.forms(this.session, realm, uriInfo)
+                    .setAccessCode(accessCode.getCode())
+                    .setAccessRequest(realmRoles, resourceRoles)
+                    .setClient(client)
+                    .createOAuthGrant();
         }
 
         if (redirect != null) {
             audit.success();
-            return redirectAccessCode(accessCode, session, state, redirect, rememberMe);
+            return redirectAccessCode(accessCode, session, state, redirect);
         } else {
             return null;
         }

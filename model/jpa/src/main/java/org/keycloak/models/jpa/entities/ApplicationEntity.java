@@ -1,25 +1,15 @@
 package org.keycloak.models.jpa.entities;
 
 import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.ElementCollection;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
-import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.hibernate.annotations.GenericGenerator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -28,16 +18,23 @@ import org.hibernate.annotations.GenericGenerator;
 @Entity
 public class ApplicationEntity extends ClientEntity {
 
+    @Column(name="SURROGATE_AUTH_REQUIRED")
     private boolean surrogateAuthRequired;
+
+    @Column(name="BASE_URL")
     private String baseUrl;
+
+    @Column(name="MANAGEMENT_URL")
     private String managementUrl;
+
+    @Column(name="BEARER_ONLY")
     private boolean bearerOnly;
 
     @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "application")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="ApplicationDefaultRoles")
+    @JoinTable(name="APPLICATION_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="APPLICATION_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
     public boolean isSurrogateAuthRequired() {

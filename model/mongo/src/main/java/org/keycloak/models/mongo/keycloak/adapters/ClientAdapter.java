@@ -1,23 +1,20 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.entities.ClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
+import org.keycloak.models.mongo.utils.MongoModelUtils;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.entities.ClientEntity;
-import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
-import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
-import org.keycloak.models.mongo.utils.MongoModelUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -27,12 +24,14 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     protected final T clientEntity;
     private final RealmModel realm;
     protected  KeycloakSession session;
+    private final RealmProvider model;
 
     public ClientAdapter(KeycloakSession session, RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.clientEntity = clientEntity;
         this.realm = realm;
         this.session = session;
+        this.model = session.realms();
     }
 
     @Override
@@ -172,16 +171,6 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     public void setNotBefore(int notBefore) {
         getMongoEntityAsClient().setNotBefore(notBefore);
         updateMongoEntity();
-    }
-
-    @Override
-    public Set<UserSessionModel> getUserSessions() {
-        return session.getUserSessions(realm, this);
-    }
-
-    @Override
-    public int getActiveUserSessions() {
-        return session.getActiveUserSessions(realm, this);
     }
 
     @Override

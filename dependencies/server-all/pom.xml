@@ -1,0 +1,159 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<parent>
+		<artifactId>keycloak-parent</artifactId>
+		<groupId>org.keycloak</groupId>
+		<version>1.0-beta-4-SNAPSHOT</version>
+		<relativePath>../../pom.xml</relativePath>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>keycloak-dependencies-server-all</artifactId>
+    <packaging>pom</packaging>
+    <name>Keycloak Dependencies Server All</name>
+	<description />
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-dependencies-server-min</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-connections-jpa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-jpa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-sessions-mem</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-sessions-jpa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-sessions-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-jpa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-jboss-logging</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-email</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- social -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-social-github</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-social-google</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-social-twitter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.twitter4j</groupId>
+            <artifactId>twitter4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-social-facebook</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- authentication api -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authentication-picketlink</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-idm-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-idm-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-idm-simple-schema</artifactId>
+        </dependency>
+
+        <!-- picketlink -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-picketlink-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-picketlink-realm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- mongo -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-connections-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+        </dependency>
+
+        <!-- export/import -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-export-import-zip</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.idyl</groupId>
+            <artifactId>winzipaes</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

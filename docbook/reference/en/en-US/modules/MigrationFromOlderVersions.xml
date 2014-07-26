@@ -1,6 +1,14 @@
 <chapter id="Migration_from_older_versions">
     <title>Migration from older versions</title>
     <sect1>
+        <title>Migrating from 1.0 Beta 1 to Beta 4</title>
+        <itemizedlist>
+            <listitem>
+                DB Schema has changed again.
+            </listitem>
+        </itemizedlist>
+    </sect1>
+    <sect1>
         <title>Migrating from 1.0 Alpha 4 to Beta 1</title>
         <itemizedlist>
             <listitem>

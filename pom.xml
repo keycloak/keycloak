@@ -99,9 +99,12 @@
         <module>authentication</module>
         <module>core</module>
         <module>core-jaxrs</module>
+        <module>connections</module>
+        <module>dependencies</module>
         <module>model</module>
         <module>integration</module>
         <module>picketlink</module>
+        <module>federation</module>
         <module>services</module>
         <module>social</module>
         <module>forms</module>
@@ -266,6 +269,12 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>1.3</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.easymock</groupId>
+                <artifactId>easymock</artifactId>
+                <version>3.2</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -550,6 +559,11 @@
                         <skip>true</skip>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>com.samaxes.maven</groupId>
+                    <artifactId>minify-maven-plugin</artifactId>
+                    <version>1.7.2</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -615,42 +629,5 @@
                 <module>distribution</module>
             </modules>
         </profile>
-
-        <!-- MySQL -->
-        <profile>
-            <activation>
-                <property>
-                    <name>hibernate.connection.driver_class</name>
-                    <value>com.mysql.jdbc.Driver</value>
-                </property>
-            </activation>
-            <id>mysql</id>
-            <dependencies>
-                <dependency>
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                    <version>${mysql.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <!-- PostgreSQL -->
-        <profile>
-            <activation>
-                <property>
-                    <name>hibernate.connection.driver_class</name>
-                    <value>org.postgresql.Driver</value>
-                </property>
-            </activation>
-            <id>postgresql</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${postgresql.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
     </profiles>
 </project>

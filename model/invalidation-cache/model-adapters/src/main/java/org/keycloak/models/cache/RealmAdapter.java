@@ -1,23 +1,17 @@
 package org.keycloak.models.cache;
 
+import org.keycloak.Config;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
-import org.keycloak.models.utils.TimeBasedOTP;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -34,13 +28,13 @@ import java.util.Set;
  */
 public class RealmAdapter implements RealmModel {
     protected CachedRealm cached;
-    protected CacheModelProvider cacheSession;
+    protected CacheRealmProvider cacheSession;
     protected RealmModel updated;
-    protected KeycloakCache cache;
+    protected RealmCache cache;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
 
-    public RealmAdapter(CachedRealm cached, CacheModelProvider cacheSession) {
+    public RealmAdapter(CachedRealm cached, CacheRealmProvider cacheSession) {
         this.cached = cached;
         this.cacheSession = cacheSession;
     }
@@ -379,61 +373,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean validatePassword(UserModel user, String password) {
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue());
-
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean validateTOTP(UserModel user, String password, String token) {
-        if (!validatePassword(user, password)) return false;
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.TOTP)) {
-                return new TimeBasedOTP().validate(token, cred.getValue().getBytes());
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public UserModel getUser(String name) {
-        return cacheSession.getUserByUsername(name, this);
-    }
-
-    @Override
-    public UserModel getUserByEmail(String email) {
-        return cacheSession.getUserByEmail(email, this);
-    }
-
-    @Override
-    public UserModel getUserById(String id) {
-        return cacheSession.getUserById(id, this);
-    }
-
-    @Override
-    public UserModel addUser(String id, String username) {
-        getDelegateForUpdate();
-        return updated.addUser(id, username);
-    }
-
-    @Override
-    public UserModel addUser(String username) {
-        getDelegateForUpdate();
-        return updated.addUser(username);
-    }
-
-    @Override
-    public boolean removeUser(String name) {
-        getDelegateForUpdate();
-        return updated.removeUser(name);
-    }
-
-    @Override
     public RoleModel getRoleById(String id) {
         if (updated != null) return updated.getRoleById(id);
         return cacheSession.getRoleById(id, this);
@@ -544,36 +483,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        if (updated != null) return updated.getUserBySocialLink(socialLink);
-        return cacheSession.getUserBySocialLink(socialLink, this);
-    }
-
-    @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        if (updated != null) return updated.getSocialLinks(user);
-        return cacheSession.getSocialLinks(user, this);
-    }
-
-    @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
-        if (updated != null) return updated.getSocialLink(user, socialProvider);
-        return cacheSession.getSocialLink(user, socialProvider, this);
-    }
-
-    @Override
-    public void addSocialLink(UserModel user, SocialLinkModel socialLink) {
-        getDelegateForUpdate();
-        updated.addSocialLink(user, socialLink);
-    }
-
-    @Override
-    public boolean removeSocialLink(UserModel user, String socialProvider) {
-        getDelegateForUpdate();
-        return updated.removeSocialLink(user, socialProvider);
-    }
-
-    @Override
     public boolean isSocial() {
         if (updated != null) return updated.isSocial();
         return cached.isSocial();
@@ -595,24 +504,6 @@ public class RealmAdapter implements RealmModel {
     public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
         getDelegateForUpdate();
         updated.setUpdateProfileOnInitialSocialLogin(updateProfileOnInitialSocialLogin);
-    }
-
-    @Override
-    public List<UserModel> getUsers() {
-        if (updated != null) return updated.getUsers();
-        return cacheSession.getUsers(this);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search) {
-        if (updated != null) return updated.searchForUser(search);
-        return cacheSession.searchForUser(search, this);
-    }
-
-    @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        if (updated != null) return updated.searchForUserByAttributes(attributes);
-        return cacheSession.searchForUserByAttributes(attributes, this);
     }
 
     @Override
@@ -712,6 +603,18 @@ public class RealmAdapter implements RealmModel {
     public void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders) {
         getDelegateForUpdate();
         updated.setAuthenticationProviders(authenticationProviders);
+    }
+
+    @Override
+    public List<UserFederationProviderModel> getUserFederationProviders() {
+        if (updated != null) return updated.getUserFederationProviders();
+        return cached.getFederationProviders();
+    }
+
+    @Override
+    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
+        getDelegateForUpdate();
+        updated.setUserFederationProviders(providers);
     }
 
     @Override
@@ -819,8 +722,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getMasterAdminApp() {
-        if (updated != null) return updated.getMasterAdminApp();
-        return getApplicationById(cached.getMasterAdminApp());
+        return cacheSession.getRealm(Config.getAdminRealm()).getApplicationById(cached.getMasterAdminApp());
     }
 
     @Override
@@ -878,83 +780,6 @@ public class RealmAdapter implements RealmModel {
         ClientModel model = getApplicationById(id);
         if (model != null) return model;
         return getOAuthClientById(id);
-    }
-
-
-    @Override
-    public UsernameLoginFailureModel getUserLoginFailure(String username) {
-        if (updated != null) return updated.getUserLoginFailure(username);
-        return cacheSession.getUserLoginFailure(username, this);
-    }
-
-    @Override
-    public UsernameLoginFailureModel addUserLoginFailure(String username) {
-        if (updated != null) return updated.addUserLoginFailure(username);
-        return cacheSession.addUserLoginFailure(username, this);
-    }
-
-    @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
-        if (updated != null) return updated.getAllUserLoginFailures();
-        return cacheSession.getAllUserLoginFailures(this);
-    }
-
-    @Override
-    public UserSessionModel createUserSession(UserModel user, String ipAddress) {
-        if (updated != null) return updated.createUserSession(user, ipAddress);
-        return cacheSession.createUserSession(this, user, ipAddress);
-    }
-
-    @Override
-    public UserSessionModel getUserSession(String id) {
-        if (updated != null) return updated.getUserSession(id);
-        return cacheSession.getUserSession(id, this);
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(UserModel user) {
-        if (updated != null) return updated.getUserSessions(user);
-        return cacheSession.getUserSessions(user, this);
-    }
-
-    @Override
-    public void removeUserSession(UserSessionModel session) {
-        if (updated != null) {
-            updated.removeUserSession(session);
-        } else {
-            cacheSession.removeUserSession(session);
-
-        }
-    }
-
-    @Override
-    public void removeUserSessions(UserModel user) {
-        if (updated != null) {
-            updated.removeUserSessions(user);
-        } else {
-            cacheSession.removeUserSessions(this, user);
-
-        }
-    }
-
-    @Override
-    public void removeExpiredUserSessions() {
-        if (updated != null) {
-            updated.removeExpiredUserSessions();
-        } else {
-            cacheSession.removeExpiredUserSessions(this);
-
-        }
-    }
-
-    @Override
-    public void removeUserSessions() {
-        if (updated != null) {
-            updated.removeUserSessions();
-        } else {
-            cacheSession.removeUserSessions(this);
-
-        }
     }
 
     @Override

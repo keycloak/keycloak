@@ -27,6 +27,10 @@ public class RealmRepresentation {
     protected Boolean resetPasswordAllowed;
     protected Boolean social;
     protected Boolean updateProfileOnInitialSocialLogin;
+
+    protected Boolean userCacheEnabled;
+    protected Boolean realmCacheEnabled;
+
     //--- brute force settings
     protected Boolean bruteForceProtected;
     protected Integer maxFailureWaitSeconds;
@@ -44,17 +48,15 @@ public class RealmRepresentation {
     protected Set<String> requiredCredentials;
     protected String passwordPolicy;
     protected List<UserRepresentation> users;
-    protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
-    protected Map<String, List<UserRoleMappingRepresentation>> applicationRoleMappings;
     protected Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings;
-    protected List<SocialMappingRepresentation> socialMappings;
     protected List<ApplicationRepresentation> applications;
     protected List<OAuthClientRepresentation> oauthClients;
     protected Map<String, String> socialProviders;
     protected Map<String, String> smtpServer;
     protected Map<String, String> ldapServer;
     protected List<AuthenticationProviderRepresentation> authenticationProviders;
+    protected List<UserFederationProviderRepresentation> userFederationProviders;
     protected String loginTheme;
     protected String accountTheme;
     protected String adminTheme;
@@ -151,18 +153,6 @@ public class RealmRepresentation {
         this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
     }
 
-    public List<UserRoleMappingRepresentation> getRoleMappings() {
-        return roleMappings;
-    }
-
-    public UserRoleMappingRepresentation roleMapping(String username) {
-        UserRoleMappingRepresentation mapping = new UserRoleMappingRepresentation();
-        mapping.setUsername(username);
-        if (roleMappings == null) roleMappings = new ArrayList<UserRoleMappingRepresentation>();
-        roleMappings.add(mapping);
-        return mapping;
-    }
-
     public List<ScopeMappingRepresentation> getScopeMappings() {
         return scopeMappings;
     }
@@ -172,18 +162,6 @@ public class RealmRepresentation {
         mapping.setClient(username);
         if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
         scopeMappings.add(mapping);
-        return mapping;
-    }
-
-    public List<SocialMappingRepresentation> getSocialMappings() {
-        return socialMappings;
-    }
-
-    public SocialMappingRepresentation socialMapping(String username) {
-        SocialMappingRepresentation mapping = new SocialMappingRepresentation();
-        mapping.setUsername(username);
-        if (socialMappings == null) socialMappings = new ArrayList<SocialMappingRepresentation>();
-        socialMappings.add(mapping);
         return mapping;
     }
 
@@ -267,6 +245,22 @@ public class RealmRepresentation {
         this.rememberMe = rememberMe;
     }
 
+    public Boolean isRealmCacheEnabled() {
+        return realmCacheEnabled;
+    }
+
+    public void setRealmCacheEnabled(Boolean realmCacheEnabled) {
+        this.realmCacheEnabled = realmCacheEnabled;
+    }
+
+    public Boolean isUserCacheEnabled() {
+        return userCacheEnabled;
+    }
+
+    public void setUserCacheEnabled(Boolean userCacheEnabled) {
+        this.userCacheEnabled = userCacheEnabled;
+    }
+
     public Boolean isVerifyEmail() {
         return verifyEmail;
     }
@@ -337,14 +331,6 @@ public class RealmRepresentation {
 
     public void setOauthClients(List<OAuthClientRepresentation> oauthClients) {
         this.oauthClients = oauthClients;
-    }
-
-    public Map<String, List<UserRoleMappingRepresentation>> getApplicationRoleMappings() {
-        return applicationRoleMappings;
-    }
-
-    public void setApplicationRoleMappings(Map<String, List<UserRoleMappingRepresentation>> applicationRoleMappings) {
-        this.applicationRoleMappings = applicationRoleMappings;
     }
 
     public Map<String, List<ScopeMappingRepresentation>> getApplicationScopeMappings() {
@@ -457,5 +443,37 @@ public class RealmRepresentation {
 
     public void setFailureFactor(Integer failureFactor) {
         this.failureFactor = failureFactor;
+    }
+
+    public boolean isAuditEnabled() {
+        return auditEnabled;
+    }
+
+    public void setAuditEnabled(boolean auditEnabled) {
+        this.auditEnabled = auditEnabled;
+    }
+
+    public long getAuditExpiration() {
+        return auditExpiration;
+    }
+
+    public void setAuditExpiration(long auditExpiration) {
+        this.auditExpiration = auditExpiration;
+    }
+
+    public List<String> getAuditListeners() {
+        return auditListeners;
+    }
+
+    public void setAuditListeners(List<String> auditListeners) {
+        this.auditListeners = auditListeners;
+    }
+
+    public List<UserFederationProviderRepresentation> getUserFederationProviders() {
+        return userFederationProviders;
+    }
+
+    public void setUserFederationProviders(List<UserFederationProviderRepresentation> userFederationProviders) {
+        this.userFederationProviders = userFederationProviders;
     }
 }

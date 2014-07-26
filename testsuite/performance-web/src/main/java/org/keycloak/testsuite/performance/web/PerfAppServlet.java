@@ -25,6 +25,8 @@ import org.keycloak.util.Time;
  */
 public class PerfAppServlet extends HttpServlet {
 
+    public static final String BASE_URL_INIT_PARAM = "baseUrl";
+
     private Template indexTemplate;
     private OAuthClient oauthClient;
 
@@ -35,7 +37,8 @@ public class PerfAppServlet extends HttpServlet {
             cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/"));
             indexTemplate = cfg.getTemplate("perf-app-resources/index.ftl");
 
-            oauthClient = new OAuthClient();
+            String baseUrl = getInitParameter(BASE_URL_INIT_PARAM);
+            oauthClient = new OAuthClient(baseUrl);
         } catch (IOException ioe) {
             throw new ServletException(ioe);
         }

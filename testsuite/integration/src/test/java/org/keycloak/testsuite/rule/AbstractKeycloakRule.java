@@ -8,12 +8,14 @@ import io.undertow.servlet.api.WebResourceCollection;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.Retry;
 import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 
@@ -21,6 +23,7 @@ import javax.servlet.Servlet;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Socket;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,8 +43,11 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
         try {
-            UserModel user = session.getRealmByName(realm).getUser(name);
-            return user != null ? ModelToRepresentation.toRepresentation(user) : null;
+            RealmModel realmByName = session.realms().getRealmByName(realm);
+            UserModel user = session.users().getUserByUsername(name, realmByName);
+            UserRepresentation userRep = user != null ? ModelToRepresentation.toRepresentation(user) : null;
+            session.getTransaction().commit();
+            return userRep;
         } finally {
             session.close();
         }
@@ -51,7 +57,10 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
         try {
-            return ModelToRepresentation.toRepresentation(session.getRealmByName(realm).getUserById(id));
+            RealmModel realmByName = session.realms().getRealmByName(realm);
+            UserRepresentation userRep = ModelToRepresentation.toRepresentation(session.users().getUserById(id, realmByName));
+            session.getTransaction().commit();
+            return userRep;
         } finally {
             session.close();
         }
@@ -66,7 +75,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
             RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
 
-            configure(manager, adminstrationRealm);
+            configure(session, manager, adminstrationRealm);
 
             session.getTransaction().commit();
         } finally {
@@ -74,7 +83,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         }
     }
 
-    protected void configure(RealmManager manager, RealmModel adminRealm) {
+    protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
 
     }
 
@@ -112,15 +121,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     @Override
     protected void after() {
-        server.stop();
-
-        // Add some variable delay (Some windows envs have issues as server is not stopped immediately after server.stop)
-        try {
-            int sleepInterval = Integer.parseInt(System.getProperty("testsuite.delay", "0"));
-            Thread.sleep(sleepInterval);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-        }
+        stopServer();
     }
 
     public RealmRepresentation loadJson(String path) throws IOException {
@@ -145,5 +146,37 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
             session.getTransaction().commit();
         }
         session.close();
+    }
+
+    public void restartServer() {
+        try {
+            stopServer();
+            server.start();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    private void stopServer() {
+        server.stop();
+
+        // Add some variable delay (Some windows envs have issues as server is not stopped immediately after server.stop)
+        try {
+            Retry.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        Socket s = new Socket(server.getConfig().getHost(), server.getConfig().getPort());
+                        s.close();
+                        throw new IllegalStateException("Server still running");
+                    } catch (IOException expected) {
+                    }
+                }
+
+            }, 10, 500);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

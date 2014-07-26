@@ -116,6 +116,7 @@ public class SocialResource {
         SocialProvider provider = SocialLoader.load(initialRequest.getProvider());
 
         String realmName = initialRequest.getRealm();
+        String authMethod = "social@" + provider.getId();
 
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
@@ -123,9 +124,9 @@ public class SocialResource {
         Audit audit = new AuditManager(realm, session, clientConnection).createAudit()
                 .event(EventType.LOGIN)
                 .detail(Details.RESPONSE_TYPE, initialRequest.get(OAuth2Constants.RESPONSE_TYPE))
-                .detail(Details.AUTH_METHOD, "social@" + provider.getId());
+                .detail(Details.AUTH_METHOD, authMethod);
 
-        AuthenticationManager authManager = new AuthenticationManager(session);
+        AuthenticationManager authManager = new AuthenticationManager();
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
@@ -182,12 +183,12 @@ public class SocialResource {
         audit.detail(Details.USERNAME, socialUser.getId() + "@" + provider.getId());
 
         SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getId(), socialUser.getUsername());
-        UserModel user = realm.getUserBySocialLink(socialLink);
+        UserModel user = session.users().getUserBySocialLink(socialLink, realm);
 
         // Check if user is already authenticated (this means linking social into existing user account)
         String userId = initialRequest.getUser();
         if (userId != null) {
-            UserModel authenticatedUser = realm.getUserById(userId);
+            UserModel authenticatedUser = session.users().getUserById(userId, realm);
 
             audit.event(EventType.SOCIAL_LINK).user(userId);
 
@@ -211,8 +212,8 @@ public class SocialResource {
                 return oauth.forwardToSecurityFailure("Unknown redirectUri");
             }
 
-            realm.addSocialLink(authenticatedUser, socialLink);
-            logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getLoginName());
+            session.users().addSocialLink(realm, authenticatedUser, socialLink);
+            logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getUsername());
 
             audit.success();
             return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
@@ -225,7 +226,7 @@ public class SocialResource {
                 return oauth.forwardToSecurityFailure("Registration not allowed");
             }
 
-            user = realm.addUser(KeycloakModelUtils.generateId());
+            user = session.users().addUser(realm, KeycloakModelUtils.generateId());
             user.setEnabled(true);
             user.setFirstName(socialUser.getFirstName());
             user.setLastName(socialUser.getLastName());
@@ -235,7 +236,7 @@ public class SocialResource {
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
             }
 
-            realm.addSocialLink(user, socialLink);
+            session.users().addSocialLink(realm, user, socialLink);
 
             audit.clone().user(user).event(EventType.REGISTER)
                     .detail(Details.REGISTER_METHOD, "social@" + provider.getId())
@@ -251,10 +252,12 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Your account is not enabled.");
         }
 
-        UserSessionModel session = realm.createUserSession(user, clientConnection.getRemoteAddr());
-        audit.session(session);
+        String username = socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider();
 
-        return oauth.processAccessCode(scope, state, redirectUri, client, user, session, socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider(), false, "social@" + provider.getId(), audit);
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), authMethod, false);
+        audit.session(userSession);
+
+        return oauth.processAccessCode(scope, state, redirectUri, client, user, userSession, audit);
     }
 
     @GET

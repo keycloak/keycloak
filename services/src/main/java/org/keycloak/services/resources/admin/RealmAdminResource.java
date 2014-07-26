@@ -13,11 +13,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.CacheUserProvider;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
-import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
@@ -113,7 +116,16 @@ public class RealmAdminResource {
     @Produces("application/json")
     public RealmRepresentation getRealm() {
         if (auth.hasView()) {
-            return ModelToRepresentation.toRepresentation(realm);
+            RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm);
+            if (session.realms() instanceof CacheRealmProvider) {
+                CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
+                rep.setRealmCacheEnabled(cacheRealmProvider.isEnabled());
+            }
+            if (session.users() instanceof CacheUserProvider) {
+                CacheUserProvider cache = (CacheUserProvider)session.users();
+                rep.setUserCacheEnabled(cache.isEnabled());
+            }
+            return rep;
         } else {
             auth.requireAny();
 
@@ -138,7 +150,16 @@ public class RealmAdminResource {
 
         logger.debug("updating realm: " + realm.getName());
         try {
-            new RealmManager(session).updateRealm(rep, realm);
+            RepresentationToModel.updateRealm(rep, realm);
+            if (rep.isRealmCacheEnabled() != null && session.realms() instanceof CacheRealmProvider) {
+                CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
+                cacheRealmProvider.setEnabled(rep.isRealmCacheEnabled());
+            }
+            if (rep.isUserCacheEnabled() != null && session.users() instanceof CacheUserProvider) {
+                CacheUserProvider cache = (CacheUserProvider)session.users();
+                cache.setEnabled(rep.isUserCacheEnabled());
+            }
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
@@ -204,7 +225,7 @@ public class RealmAdminResource {
     @POST
     public void logoutAll() {
         auth.requireManage();
-        realm.removeUserSessions();
+        session.sessions().removeUserSessions(realm);
         new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
     }
 
@@ -217,10 +238,10 @@ public class RealmAdminResource {
     @Path("sessions/{session}")
     @DELETE
     public void deleteSession(@PathParam("session") String sessionId) {
-        UserSessionModel session = realm.getUserSession(sessionId);
-        if (session == null) throw new NotFoundException("Sesssion not found");
-        realm.removeUserSession(session);
-        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, session.getId());
+        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+        if (userSession == null) throw new NotFoundException("Sesssion not found");
+        session.sessions().removeUserSession(realm, userSession);
+        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, userSession.getId());
     }
 
     /**
@@ -236,10 +257,10 @@ public class RealmAdminResource {
     public Map<String, Integer> getApplicationSessionStats() {
         auth.requireView();
         Map<String, Integer> stats = new HashMap<String, Integer>();
-        for (ApplicationModel applicationModel : realm.getApplications()) {
-            int size = applicationModel.getActiveUserSessions();
+        for (ApplicationModel application : realm.getApplications()) {
+            int size = session.sessions().getActiveUserSessions(application.getRealm(), application);
             if (size == 0) continue;
-            stats.put(applicationModel.getName(), size);
+            stats.put(application.getName(), size);
         }
         return stats;
     }
@@ -260,7 +281,7 @@ public class RealmAdminResource {
         Map<String, SessionStats> stats = new HashMap<String, SessionStats>();
         for (ApplicationModel applicationModel : realm.getApplications()) {
             if (applicationModel.getManagementUrl() == null) continue;
-            SessionStats appStats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), realm, applicationModel, false);
+            SessionStats appStats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), this.session, realm, applicationModel, false);
             stats.put(applicationModel.getName(), appStats);
         }
         return stats;

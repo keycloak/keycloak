@@ -76,11 +76,11 @@ public class AccountTest {
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            UserModel user = appRealm.getUser("test-user@localhost");
+            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
 
             ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
 
-            UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
+            UserModel user2 = manager.getSession().users().addUser(appRealm, "test-user-no-access@localhost");
             user2.setEnabled(true);
             for (String r : accountApp.getDefaultRoles()) {
                 user2.deleteRoleMapping(accountApp.getRole(r));
@@ -148,7 +148,7 @@ public class AccountTest {
         keycloakRule.update(new KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-                UserModel user = appRealm.getUser("test-user@localhost");
+                UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
 
                 UserCredentialModel cred = new UserCredentialModel();
                 cred.setType(CredentialRepresentation.PASSWORD);

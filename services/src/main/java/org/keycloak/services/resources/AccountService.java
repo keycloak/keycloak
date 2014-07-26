@@ -46,13 +46,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
@@ -131,7 +132,7 @@ public class AccountService {
         this.realm = realm;
         this.application = application;
         this.audit = audit;
-        this.authManager = new AppAuthManager(session);
+        this.authManager = new AppAuthManager();
     }
 
     public void init() {
@@ -140,11 +141,11 @@ public class AccountService {
         account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
 
         boolean passwordUpdateSupported = false;
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, headers);
         if (authResult != null) {
             auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, true);
         } else {
-            authResult = authManager.authenticateBearerToken(realm, uriInfo, headers);
+            authResult = authManager.authenticateBearerToken(session, realm, uriInfo, headers);
             if (authResult != null) {
                 auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, false);
             }
@@ -220,7 +221,15 @@ public class AccountService {
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
             requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
-            return Cors.add(request, Response.ok(ModelToRepresentation.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getToken()).build();
+            UserRepresentation rep = ModelToRepresentation.toRepresentation(auth.getUser());
+            Iterator<String> itr = rep.getAttributes().keySet().iterator();
+            while (itr.hasNext()) {
+                if (itr.next().startsWith("keycloak.")) {
+                    itr.remove();
+                }
+            }
+
+            return Cors.add(request, Response.ok(rep)).auth().allowedOrigins(auth.getToken()).build();
         } else {
             return Response.notAcceptable(Variant.VariantListBuilder.newInstance().mediaTypes(MediaType.TEXT_HTML_TYPE, MediaType.APPLICATION_JSON_TYPE).build()).build();
         }
@@ -279,7 +288,7 @@ public class AccountService {
     @GET
     public Response sessionsPage() {
         if (auth != null) {
-            account.setSessions(realm.getUserSessions(auth.getUser()));
+            account.setSessions(session.sessions().getUserSessions(realm, auth.getUser()));
         }
         return forwardToPage("sessions", AccountPages.SESSIONS);
     }
@@ -360,7 +369,7 @@ public class AccountService {
         require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
-        realm.removeUserSessions(user);
+        session.sessions().removeUserSessions(realm, user);
 
         return Response.seeOther(Urls.accountSessionsPage(uriInfo.getBaseUri(), realm.getName())).build();
     }
@@ -507,14 +516,14 @@ public class AccountService {
                     return account.setError(Messages.SOCIAL_REDIRECT_ERROR).createResponse(AccountPages.SOCIAL);
                 }
             case REMOVE:
-                SocialLinkModel link = realm.getSocialLink(user, providerId);
+                SocialLinkModel link = session.users().getSocialLink(user, providerId, realm);
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (realm.getSocialLinks(user).size() > 1 || user.getAuthenticationLink() != null) {
-                        realm.removeSocialLink(user, providerId);
+                    if (session.users().getSocialLinks(user, realm).size() > 1 || user.getAuthenticationLink() != null) {
+                        session.users().removeSocialLink(realm, user, providerId);
 
-                        logger.debug("Social provider " + providerId + " removed successfully from user " + user.getLoginName());
+                        logger.debug("Social provider " + providerId + " removed successfully from user " + user.getUsername());
 
                         audit.event(EventType.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
                                 .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())

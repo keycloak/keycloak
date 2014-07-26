@@ -4,16 +4,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
-import org.keycloak.models.jpa.entities.ClientUserSessionAssociationEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -151,31 +147,6 @@ public abstract class ClientAdapter implements ClientModel {
     @Override
     public void setNotBefore(int notBefore) {
         entity.setNotBefore(notBefore);
-    }
-
-    @Override
-    public int getActiveUserSessions() {
-        Query query = em.createNamedQuery("getActiveClientSessions");
-        query.setParameter("clientId", getId());
-        Object count = query.getSingleResult();
-        return ((Number)count).intValue();
-    }
-
-    @Override
-    public Set<UserSessionModel> getUserSessions() {
-        Set<UserSessionModel> list = new HashSet<UserSessionModel>();
-        TypedQuery<ClientUserSessionAssociationEntity> query = em.createNamedQuery("getClientUserSessionByClient", ClientUserSessionAssociationEntity.class);
-        String id = getId();
-        query.setParameter("clientId", id);
-        List<ClientUserSessionAssociationEntity> results = query.getResultList();
-        for (ClientUserSessionAssociationEntity entity : results) {
-            list.add(new UserSessionAdapter(em, realm, entity.getSession()));
-        }
-        return list;
-    }
-
-    public void deleteUserSessionAssociation() {
-        em.createNamedQuery("removeClientUserSessionByClient").setParameter("clientId", getId()).executeUpdate();
     }
 
     @Override

@@ -3,33 +3,44 @@ package org.keycloak.audit.jpa;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @Entity
+@Table(name="EVENT_ENTITY")
 public class EventEntity {
 
     @Id
+    @Column(name="ID", length = 36)
     private String id;
 
+    @Column(name="TIME")
     private long time;
 
+    @Column(name="EVENT")
     private String event;
 
+    @Column(name="REALM_ID")
     private String realmId;
 
+    @Column(name="CLIENT_ID")
     private String clientId;
 
+    @Column(name="USER_ID")
     private String userId;
 
+    @Column(name="SESSION_ID")
     private String sessionId;
 
+    @Column(name="IP_ADDRESS")
     private String ipAddress;
 
+    @Column(name="ERROR")
     private String error;
 
-    @Column(length = 2550)
+    @Column(name="DETAILS_JSON", length = 2550)
     private String detailsJson;
 
     public String getId() {

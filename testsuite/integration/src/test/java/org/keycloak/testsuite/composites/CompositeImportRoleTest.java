@@ -26,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -51,7 +52,7 @@ public class CompositeImportRoleTest {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
-        protected void configure(RealmManager manager, RealmModel adminRealm) {
+        protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             RealmModel realm = manager.createRealm("Test");
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/testcomposite.json"), RealmRepresentation.class);
             manager.importRealm(representation, realm);

@@ -9,16 +9,16 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface UserModel {
-    public static final String LOGIN_NAME = "username";
+    public static final String USERNAME = "username";
     public static final String LAST_NAME = "lastName";
     public static final String FIRST_NAME = "firstName";
     public static final String EMAIL = "email";
 
     String getId();
 
-    String getLoginName();
+    String getUsername();
 
-    void setLoginName(String loginName);
+    void setUsername(String username);
 
     boolean isEnabled();
 
@@ -58,9 +58,6 @@ public interface UserModel {
 
     void setTotp(boolean totp);
 
-    int getNotBefore();
-    void setNotBefore(int notBefore);
-
     void updateCredential(UserCredentialModel cred);
 
     List<UserCredentialValueModel> getCredentialsDirectly();
@@ -79,6 +76,9 @@ public interface UserModel {
     void grantRole(RoleModel role);
     Set<RoleModel> getRoleMappings();
     void deleteRoleMapping(RoleModel role);
+
+    String getFederationLink();
+    void setFederationLink(String link);
 
 
 

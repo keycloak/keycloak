@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.authentication.AuthProviderConstants;
 
@@ -13,6 +14,10 @@ import org.keycloak.authentication.AuthProviderConstants;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ModelAuthenticationProvider extends AbstractModelAuthenticationProvider {
+
+    public ModelAuthenticationProvider(KeycloakSession keycloakSession) {
+        super(keycloakSession);
+    }
 
     @Override
     public String getName() {

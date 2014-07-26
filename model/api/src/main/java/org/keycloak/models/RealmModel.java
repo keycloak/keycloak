@@ -106,22 +106,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void setPasswordPolicy(PasswordPolicy policy);
 
-    boolean validatePassword(UserModel user, String password);
-
-    boolean validateTOTP(UserModel user, String password, String token);
-
-    UserModel getUser(String name);
-
-    UserModel getUserByEmail(String email);
-
-    UserModel getUserById(String name);
-
-    UserModel addUser(String id, String username);
-
-    UserModel addUser(String username);
-
-    boolean removeUser(String name);
-
     RoleModel getRoleById(String id);
 
     List<String> getDefaultRoles();
@@ -147,16 +131,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void updateRequiredCredentials(Set<String> creds);
 
-    UserModel getUserBySocialLink(SocialLinkModel socialLink);
-
-    Set<SocialLinkModel> getSocialLinks(UserModel user);
-
-    SocialLinkModel getSocialLink(UserModel user, String socialProvider);
-
-    void addSocialLink(UserModel user, SocialLinkModel socialLink);
-
-    boolean removeSocialLink(UserModel user, String socialProvider);
-
     boolean isSocial();
 
     void setSocial(boolean social);
@@ -164,16 +138,6 @@ public interface RealmModel extends RoleContainerModel {
     boolean isUpdateProfileOnInitialSocialLogin();
 
     void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin);
-
-    UsernameLoginFailureModel getUserLoginFailure(String username);
-    UsernameLoginFailureModel addUserLoginFailure(String username);
-    List<UsernameLoginFailureModel> getAllUserLoginFailures();
-
-    List<UserModel> getUsers();
-
-    List<UserModel> searchForUser(String search);
-
-    List<UserModel> searchForUserByAttributes(Map<String, String> attributes);
 
     OAuthClientModel addOAuthClient(String name);
 
@@ -200,6 +164,10 @@ public interface RealmModel extends RoleContainerModel {
     List<AuthenticationProviderModel> getAuthenticationProviders();
 
     void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders);
+
+    List<UserFederationProviderModel> getUserFederationProviders();
+
+    void setUserFederationProviders(List<UserFederationProviderModel> providers);
 
     String getLoginTheme();
 
@@ -245,19 +213,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void setMasterAdminApp(ApplicationModel app);
 
-    UserSessionModel createUserSession(UserModel user, String ipAddress);
-
-    UserSessionModel getUserSession(String id);
-
-    List<UserSessionModel> getUserSessions(UserModel user);
-
-    void removeUserSession(UserSessionModel session);
-
-    void removeUserSessions(UserModel user);
-
-    void removeExpiredUserSessions();
-
     ClientModel findClientById(String id);
 
-    void removeUserSessions();
 }

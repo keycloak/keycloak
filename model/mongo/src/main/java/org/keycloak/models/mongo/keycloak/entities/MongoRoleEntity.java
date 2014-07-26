@@ -3,13 +3,13 @@ package org.keycloak.models.mongo.keycloak.entities;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.jboss.logging.Logger;
+import org.keycloak.connections.mongo.api.MongoCollection;
+import org.keycloak.connections.mongo.api.MongoField;
+import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
+import org.keycloak.connections.mongo.api.MongoIndex;
+import org.keycloak.connections.mongo.api.MongoStore;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.entities.RoleEntity;
-import org.keycloak.models.mongo.api.MongoCollection;
-import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
-import org.keycloak.models.mongo.api.MongoIndex;
-import org.keycloak.models.mongo.api.MongoStore;
-import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 import java.util.List;
 
@@ -50,7 +50,7 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
 
         List<MongoUserEntity> users = mongoStore.loadEntities(MongoUserEntity.class, query, invContext);
         for (MongoUserEntity user : users) {
-            logger.info("Removing role " + getName() + " from user " + user.getLoginName());
+            logger.info("Removing role " + getName() + " from user " + user.getUsername());
             mongoStore.pullItemFromList(user, "roleIds", getId(), invContext);
         }
 
@@ -61,7 +61,7 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
 
         users = mongoStore.loadEntities(MongoUserEntity.class, query, invContext);
         for (MongoUserEntity user : users) {
-            logger.info("Removing scope " + getName() + " from user " + user.getLoginName());
+            logger.info("Removing scope " + getName() + " from user " + user.getUsername());
             mongoStore.pullItemFromList(user, "scopeIds", getId(), invContext);
         }
 

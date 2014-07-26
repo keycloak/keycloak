@@ -14,21 +14,16 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AppAuthManager extends AuthenticationManager {
+
     protected static Logger logger = Logger.getLogger(AppAuthManager.class);
 
-    public AppAuthManager(KeycloakSession session) {
-        super(session);
-    }
-
     @Override
-    public AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        AuthResult authResult = super.authenticateIdentityCookie(realm, uriInfo, headers);
+    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+        AuthResult authResult = super.authenticateIdentityCookie(session, realm, uriInfo, headers);
         if (authResult == null) return null;
-        Cookie remember = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
-        boolean rememberMe = remember != null;
         // refresh the cookies!
-        createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo, rememberMe);
-        if (rememberMe) createRememberMeCookie(realm, uriInfo);
+        createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo);
+        if (authResult.getSession().isRememberMe()) createRememberMeCookie(realm, uriInfo);
         return authResult;
     }
 
@@ -44,10 +39,10 @@ public class AppAuthManager extends AuthenticationManager {
         return tokenString;
     }
 
-    public AuthResult authenticateBearerToken(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+    public AuthResult authenticateBearerToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         String tokenString = extractAuthorizationHeaderToken(headers);
         if (tokenString == null) return null;
-        AuthResult authResult = verifyIdentityToken(realm, uriInfo, true, tokenString);
+        AuthResult authResult = verifyIdentityToken(session, realm, uriInfo, true, tokenString);
         return authResult;
     }
 

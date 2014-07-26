@@ -7,7 +7,6 @@ import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.services.resources.admin.AdminRoot;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;

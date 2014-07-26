@@ -15,8 +15,12 @@
             "lastName": "User",
             "credentials" : [
                 { "type" : "password",
-                    "value" : "password" }
-            ]
+                  "value" : "password" }
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "account": ["view-profile", "manage-account"]
+            }
         }
     ],
     "roles" : {

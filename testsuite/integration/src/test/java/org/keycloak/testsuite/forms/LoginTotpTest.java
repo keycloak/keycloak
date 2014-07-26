@@ -58,7 +58,7 @@ public class LoginTotpTest {
 
         @Override
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            UserModel user = appRealm.getUser("test-user@localhost");
+            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
 
             UserCredentialModel credentials = new UserCredentialModel();
             credentials.setType(CredentialRepresentation.TOTP);
@@ -126,6 +126,21 @@ public class LoginTotpTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
+    }
+
+    @Test
+    public void loginWithTotpInvalidPassword() throws Exception {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "invalid");
+
+        loginTotpPage.assertCurrent();
+
+        loginTotpPage.login(totp.generate("totpSecret"));
+
+        loginPage.assertCurrent();
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).session((String) null).assertEvent();
     }
 
 }

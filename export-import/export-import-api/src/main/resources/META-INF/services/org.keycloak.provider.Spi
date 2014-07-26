@@ -1,0 +1,2 @@
+org.keycloak.exportimport.ExportSpi
+org.keycloak.exportimport.ImportSpi

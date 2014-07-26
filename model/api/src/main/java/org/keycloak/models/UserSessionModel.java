@@ -1,7 +1,6 @@
 package org.keycloak.models;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -16,9 +15,21 @@ public interface UserSessionModel {
 
     void setUser(UserModel user);
 
+    String getLoginUsername();
+
+    void setLoginUsername(String loginUsername);
+
     String getIpAddress();
 
     void setIpAddress(String ipAddress);
+
+    String getAuthMethod();
+
+    void setAuthMethod(String authMethod);
+
+    boolean isRememberMe();
+
+    void setRememberMe(boolean rememberMe);
 
     int getStarted();
 
@@ -33,4 +44,5 @@ public interface UserSessionModel {
     List<ClientModel> getClientAssociations();
 
     void removeAssociatedClient(ClientModel client);
+
 }

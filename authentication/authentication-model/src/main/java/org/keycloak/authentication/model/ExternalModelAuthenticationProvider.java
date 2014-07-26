@@ -1,6 +1,5 @@
 package org.keycloak.authentication.model;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.models.KeycloakSession;
@@ -17,7 +16,9 @@ import java.util.Map;
  */
 public class ExternalModelAuthenticationProvider extends AbstractModelAuthenticationProvider {
 
-    public ExternalModelAuthenticationProvider() {
+
+    public ExternalModelAuthenticationProvider(KeycloakSession session) {
+        super(session);
     }
 
     @Override
@@ -37,13 +38,7 @@ public class ExternalModelAuthenticationProvider extends AbstractModelAuthentica
             throw new AuthenticationProviderException("Option '" + AuthProviderConstants.EXTERNAL_REALM_ID + "' not specified in configuration");
         }
 
-        // TODO: This won't be needed when KeycloakSession is available from ProviderSession
-        KeycloakSession session = ResteasyProviderFactory.getContextData(KeycloakSession.class);
-        if (session == null) {
-            throw new AuthenticationProviderException("KeycloakSession not available");
-        }
-
-        RealmModel realm = session.getRealm(realmId);
+        RealmModel realm = keycloakSession.realms().getRealm(realmId);
         if (realm == null) {
             throw new AuthenticationProviderException("Realm with id '" + realmId + "' doesn't exists");
         }

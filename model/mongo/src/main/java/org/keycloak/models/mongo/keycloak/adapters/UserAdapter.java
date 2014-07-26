@@ -1,9 +1,10 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -11,7 +12,6 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.AuthenticationLinkEntity;
 import org.keycloak.models.entities.CredentialEntity;
-import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
@@ -49,13 +49,13 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public String getLoginName() {
-        return user.getLoginName();
+    public String getUsername() {
+        return user.getUsername();
     }
 
     @Override
-    public void setLoginName(String loginName) {
-        user.setLoginName(loginName);
+    public void setUsername(String username) {
+        user.setUsername(username);
         updateUser();
     }
 
@@ -68,16 +68,6 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     public void setEnabled(boolean enabled) {
         user.setEnabled(enabled);
         updateUser();
-    }
-
-    @Override
-    public int getNotBefore() {
-        return user.getNotBefore();
-    }
-
-    @Override
-    public void setNotBefore(int notBefore) {
-        user.setNotBefore(notBefore);
     }
 
     @Override
@@ -199,8 +189,15 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         }
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
             byte[] salt = Pbkdf2PasswordEncoder.getSalt();
-            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
+            int hashIterations = 1;
+            PasswordPolicy policy = realm.getPasswordPolicy();
+            if (policy != null) {
+                hashIterations = policy.getHashIterations();
+                if (hashIterations == -1) hashIterations = 1;
+            }
+            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
             credentialEntity.setSalt(salt);
+            credentialEntity.setHashIterations(hashIterations);
         } else {
             credentialEntity.setValue(cred.getValue());
         }
@@ -229,6 +226,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             credModel.setDevice(credEntity.getDevice());
             credModel.setValue(credEntity.getValue());
             credModel.setSalt(credEntity.getSalt());
+            credModel.setHashIterations(credEntity.getHashIterations());
 
             result.add(credModel);
         }
@@ -249,6 +247,8 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         credentialEntity.setValue(credModel.getValue());
         credentialEntity.setSalt(credModel.getSalt());
         credentialEntity.setDevice(credModel.getDevice());
+        credentialEntity.setHashIterations(credModel.getHashIterations());
+
 
         getMongoStore().updateEntity(user, invocationContext);
     }
@@ -328,6 +328,17 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             }
         }
         return result;
+    }
+
+    @Override
+    public String getFederationLink() {
+        return user.getFederationLink();
+    }
+
+    @Override
+    public void setFederationLink(String link) {
+        user.setFederationLink(link);
+
     }
 
     @Override

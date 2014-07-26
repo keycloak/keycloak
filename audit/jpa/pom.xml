@@ -27,13 +27,13 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-audit-api</artifactId>
+            <artifactId>keycloak-connections-jpa</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-audit-tests</artifactId>
+            <artifactId>keycloak-audit-api</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -58,16 +58,5 @@
             <artifactId>jackson-core-asl</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
    </dependencies>
-
 </project>

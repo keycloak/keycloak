@@ -53,10 +53,20 @@ http://localhost:8081/keycloak-tools/perf/perf-realm/get-users-count?prefix=user
 
 For adding 10000 new users into your database (will start from last added user, so you don't need to explicitly check how many users to create are needed:
 ```shell 
-http://localhost:8081/keycloak-tools/perf/perf-realm/create-available-users?prefix=user&count=10000&batch=100&roles=user
+http://localhost:8081/keycloak-tools/perf/perf-realm/create-available-users?prefix=user&count=10000&batch=100&async=true&roles=role-0,role-1
 ````
 
-Seeing progress of job for creating users
+For update role mappings of all users:
+```shell 
+http://localhost:8081/keycloak-tools/perf/perf-realm/update-all-users?prefix=user&async=true&roles=role-3,perf-app:approle-3,perf-app:approle-4
+````
+
+For deleting all users:
+```shell 
+http://localhost:8081/keycloak-tools/perf/perf-realm/delete-all-users?prefix=user
+````
+
+Seeing progress of job for creating/updating/deleting users
 ```shell 
 http://localhost:8081/keycloak-tools/perf/jobs
 ````

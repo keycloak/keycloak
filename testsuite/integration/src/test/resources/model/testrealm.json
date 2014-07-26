@@ -1,0 +1,172 @@
+{
+    "realm": "test-realm",
+    "enabled": true,
+    "accessTokenLifespan": 6000,
+    "accessCodeLifespan": 30,
+    "accessCodeLifespanUserAction": 600,
+    "requiredCredentials": [ "password" ],
+    "defaultRoles": [ "foo", "bar" ],
+    "verifyEmail" : "true",
+    "smtpServer": {
+        "from": "auto@keycloak.org",
+        "host": "localhost",
+        "port":"3025"
+    },
+    "ldapServer": {
+        "connectionUrl": "ldap://localhost:10389",
+        "baseDn": "dc=keycloak,dc=org",
+        "userDnSuffix": "ou=People,dc=keycloak,dc=org",
+        "bindDn": "uid=admin,ou=system",
+        "bindCredential": "secret",
+        "vendor": "other"
+    },
+    "socialProviders": {
+        "google.key": "abc",
+        "google.secret": "def"
+    },
+    "authenticationProviders": [
+        {
+            "providerName": "model"
+        },
+        {
+            "providerName": "externalModel",
+            "passwordUpdateSupported": false,
+            "config": {
+                "externalRealmId": "trustedRealm"
+            }
+        },
+        {
+            "providerName": "picketlink",
+            "passwordUpdateSupported": true
+        }
+    ],
+    "users": [
+        {
+            "username": "wburke",
+            "enabled": true,
+            "attributes": {
+                "email": "bburke@redhat.com"
+            },
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "userpassword"
+                }
+            ],
+            "applicationRoles": {
+                "Application": [ "app-user" ],
+                "OtherApp": [  "otherapp-user" ]
+            }
+        },
+        {
+            "username": "loginclient",
+            "enabled": true,
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "clientpassword"
+                }
+            ]
+        },
+        {
+            "username": "admin",
+            "enabled": true,
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "adminpassword"
+                }
+            ],
+            "realmRoles": [ "admin" ],
+            "applicationRoles": {
+                "Application": [ "app-admin" ],
+                "OtherApp": [  "otherapp-admin" ]
+            }
+        },
+        {
+            "username": "mySocialUser",
+            "enabled": true,
+            "authenticationLink": {
+                "authProvider": "picketlink",
+                "authUserId": "myUser1"
+            },
+            "socialLinks": [
+                {
+                    "socialProvider": "facebook",
+                    "socialUserId": "facebook1",
+                    "socialUsername": "fbuser1"
+                },
+                {
+                    "socialProvider": "twitter",
+                    "socialUserId": "twitter1",
+                    "socialUsername": "twuser1"
+                },
+                {
+                    "socialProvider": "google",
+                    "socialUserId": "google1",
+                    "socialUsername": "mySocialUser@gmail.com"
+                }
+            ]
+        }
+    ],
+    "applications": [
+        {
+            "name": "Application",
+            "enabled": true
+        },
+        {
+            "name": "OtherApp",
+            "enabled": true
+        }
+
+    ],
+    "oauthClients" : [
+        {
+            "name" : "oauthclient",
+            "enabled": true,
+            "secret": "clientpassword"
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "admin"
+            }
+        ],
+        "application" : {
+            "Application" : [
+                {
+                    "name": "app-admin"
+                },
+                {
+                    "name": "app-user"
+                }
+            ],
+            "OtherApp" : [
+                {
+                    "name": "otherapp-admin"
+                },
+                {
+                    "name": "otherapp-user"
+                }
+            ]
+        }
+    },
+    "scopeMappings": [
+        {
+            "client": "oauthclient",
+            "roles": ["admin"]
+        }
+    ],
+    "applicationScopeMappings": {
+        "Application": [
+            {
+                "client": "oauthclient",
+                "roles": ["app-user"]
+            }
+        ]
+
+    }
+
+
+}

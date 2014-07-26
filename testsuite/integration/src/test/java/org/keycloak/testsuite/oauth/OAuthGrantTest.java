@@ -91,7 +91,9 @@ public class OAuthGrantTest {
 
         OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
 
-        AccessToken token = oauth.verifyToken(accessToken.getAccessToken());
+        String tokenString = accessToken.getAccessToken();
+        Assert.assertNotNull(tokenString);
+        AccessToken token = oauth.verifyToken(tokenString);
         assertEquals(sessionId, token.getSessionState());
 
         AccessToken.Access realmAccess = token.getRealmAccess();

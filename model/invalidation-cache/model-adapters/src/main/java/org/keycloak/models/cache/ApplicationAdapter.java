@@ -19,7 +19,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     protected ApplicationModel updated;
     protected CachedApplication cached;
 
-    public ApplicationAdapter(RealmModel cachedRealm, CachedApplication cached, CacheModelProvider cacheSession, KeycloakCache cache) {
+    public ApplicationAdapter(RealmModel cachedRealm, CachedApplication cached, CacheRealmProvider cacheSession, RealmCache cache) {
         super(cachedRealm, cached, cache, cacheSession);
         this.cached = cached;
     }
@@ -182,6 +182,20 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
             roles.add(roleById);
         }
         return roles;
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (super.hasScope(role)) {
+            return true;
+        }
+        Set<RoleModel> roles = getRoles();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
     }
 
     @Override

@@ -1,6 +1,5 @@
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.GenericGenerator;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -10,7 +9,6 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -21,7 +19,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,52 +31,62 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByLoginName", query="select u from UserEntity u where u.loginName = :loginName and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realm = :realm")
+        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.username"),
+        @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realmId = :realmId and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username"),
+        @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserCount", query="select count(u) from UserEntity u where u.realmId = :realmId"),
+        @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId")
 })
 @Entity
-@Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "realm", "loginName" }),
-        @UniqueConstraint(columnNames = { "realm", "emailConstraint" })
+@Table(name="USER_ENTITY", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "REALM_ID", "USERNAME" }),
+        @UniqueConstraint(columnNames = { "REALM_ID", "EMAIL_CONSTRAINT" })
 })
 public class UserEntity {
     @Id
+    @Column(name="ID", length = 36)
     protected String id;
 
-    protected String loginName;
+    @Column(name = "USERNAME")
+    protected String username;
+    @Column(name = "FIRST_NAME")
     protected String firstName;
+    @Column(name = "LAST_NAME")
     protected String lastName;
+    @Column(name = "EMAIL")
     protected String email;
+    @Column(name = "ENABLED")
     protected boolean enabled;
+    @Column(name = "TOTP")
     protected boolean totp;
+    @Column(name = "EMAIL_VERIFIED")
     protected boolean emailVerified;
-    protected int notBefore;
 
     // Hack just to workaround the fact that on MS-SQL you can't have unique constraint with multiple NULL values TODO: Find better solution (like unique index with 'where' but that's proprietary)
+    @Column(name = "EMAIL_CONSTRAINT")
     protected String emailConstraint = KeycloakModelUtils.generateId();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "realm")
-    protected RealmEntity realm;
+    @Column(name = "REALM_ID")
+    protected String realmId;
 
-    @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value")
-    @CollectionTable
-    protected Map<String, String> attributes = new HashMap<String, String>();
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    protected Collection<UserAttributeEntity> attributes = new ArrayList<UserAttributeEntity>();
 
-    @ElementCollection
-    @CollectionTable
-    protected Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>();
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    protected Collection<UserRequiredActionEntity> requiredActions = new ArrayList<UserRequiredActionEntity>();
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
-    @OneToOne(cascade = CascadeType.REMOVE, orphanRemoval = true)
-    protected AuthenticationLinkEntity authenticationLink;
+    @Column(name="federation_link")
+    protected String federationLink;
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    protected Collection<AuthenticationLinkEntity> authenticationLink;
 
     public String getId() {
         return id;
@@ -89,12 +96,12 @@ public class UserEntity {
         this.id = id;
     }
 
-    public String getLoginName() {
-        return loginName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setLoginName(String loginName) {
-        this.loginName = loginName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getFirstName() {
@@ -154,28 +161,28 @@ public class UserEntity {
         this.emailVerified = emailVerified;
     }
 
-    public Map<String, String> getAttributes() {
+    public Collection<UserAttributeEntity> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, String> attributes) {
+    public void setAttributes(Collection<UserAttributeEntity> attributes) {
         this.attributes = attributes;
     }
 
-    public Set<UserModel.RequiredAction> getRequiredActions() {
+    public Collection<UserRequiredActionEntity> getRequiredActions() {
         return requiredActions;
     }
 
-    public void setRequiredActions(Set<UserModel.RequiredAction> requiredActions) {
+    public void setRequiredActions(Collection<UserRequiredActionEntity> requiredActions) {
         this.requiredActions = requiredActions;
     }
 
-    public RealmEntity getRealm() {
-        return realm;
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     public Collection<CredentialEntity> getCredentials() {
@@ -186,19 +193,19 @@ public class UserEntity {
         this.credentials = credentials;
     }
 
-    public AuthenticationLinkEntity getAuthenticationLink() {
+    public Collection<AuthenticationLinkEntity> getAuthenticationLink() {
         return authenticationLink;
     }
 
-    public void setAuthenticationLink(AuthenticationLinkEntity authenticationLink) {
+    public void setAuthenticationLink(Collection<AuthenticationLinkEntity> authenticationLink) {
         this.authenticationLink = authenticationLink;
     }
 
-    public int getNotBefore() {
-        return notBefore;
+    public String getFederationLink() {
+        return federationLink;
     }
 
-    public void setNotBefore(int notBefore) {
-        this.notBefore = notBefore;
+    public void setFederationLink(String federationLink) {
+        this.federationLink = federationLink;
     }
 }

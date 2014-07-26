@@ -1,8 +1,8 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
-import org.keycloak.models.mongo.api.MongoStore;
-import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
+import org.keycloak.connections.mongo.api.MongoStore;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

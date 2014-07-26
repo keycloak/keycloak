@@ -1,6 +1,5 @@
 package org.keycloak.representations;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -10,15 +9,14 @@ import java.util.Set;
  */
 public class AccessCode {
     protected String id;
-    protected String usernameUsed;
+    protected String clientId;
+    protected String userId;
     protected String state;
+    protected String sessionState;
     protected String redirectUri;
-    protected boolean rememberMe;
-    protected String authMethod;
     protected int timestamp;
-    protected int expiration;
-    protected AccessToken accessToken;
-    protected Set<String> requiredActions;
+    protected Action action;
+    protected Set<String> requestedRoles;
 
     public String getId() {
         return id;
@@ -26,6 +24,22 @@ public class AccessCode {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getState() {
@@ -36,44 +50,20 @@ public class AccessCode {
         this.state = state;
     }
 
+    public String getSessionState() {
+        return sessionState;
+    }
+
+    public void setSessionState(String sessionState) {
+        this.sessionState = sessionState;
+    }
+
     public String getRedirectUri() {
         return redirectUri;
     }
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
-    }
-
-    public boolean isRememberMe() {
-        return rememberMe;
-    }
-
-    public void setRememberMe(boolean rememberMe) {
-        this.rememberMe = rememberMe;
-    }
-
-    public String getAuthMethod() {
-        return authMethod;
-    }
-
-    public void setAuthMethod(String authMethod) {
-        this.authMethod = authMethod;
-    }
-
-    public int getExpiration() {
-        return expiration;
-    }
-
-    public void setExpiration(int expiration) {
-        this.expiration = expiration;
-    }
-
-    public AccessToken getAccessToken() {
-        return accessToken;
-    }
-
-    public void setAccessToken(AccessToken accessToken) {
-        this.accessToken = accessToken;
     }
 
     public int getTimestamp() {
@@ -84,19 +74,28 @@ public class AccessCode {
         this.timestamp = timestamp;
     }
 
-    public Set<String> getRequiredActions() {
-        return requiredActions;
+    public Action getAction() {
+        return action;
     }
 
-    public void setRequiredActions(Set<String> requiredActions) {
-        this.requiredActions = requiredActions;
+    public void setAction(Action action) {
+        this.action = action;
     }
 
-    public String getUsernameUsed() {
-        return usernameUsed;
+    public Set<String> getRequestedRoles() {
+        return requestedRoles;
     }
 
-    public void setUsernameUsed(String usernameUsed) {
-        this.usernameUsed = usernameUsed;
+    public void setRequestedRoles(Set<String> requestedRoles) {
+        this.requestedRoles = requestedRoles;
     }
+
+    public static enum Action {
+        OAUTH_GRANT,
+        VERIFY_EMAIL,
+        UPDATE_PROFILE,
+        CONFIGURE_TOTP,
+        UPDATE_PASSWORD
+    }
+
 }

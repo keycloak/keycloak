@@ -28,10 +28,12 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -56,9 +58,9 @@ public class CompositeRoleTest {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
-        protected void configure(RealmManager manager, RealmModel adminRealm) {
+        protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             RealmModel realm = manager.createRealm("Test");
-            manager.generateRealmKeys(realm);
+            KeycloakModelUtils.generateRealmKeys(realm);
             realmPublicKey = realm.getPublicKey();
             realm.setSsoSessionIdleTimeout(3000);
             realm.setAccessTokenLifespan(10000);
@@ -75,12 +77,12 @@ public class CompositeRoleTest {
             final RoleModel realmComposite1 = realm.addRole("REALM_COMPOSITE_1");
             realmComposite1.addCompositeRole(realmRole1);
 
-            final UserModel realmComposite1User = realm.addUser("REALM_COMPOSITE_1_USER");
+            final UserModel realmComposite1User = session.users().addUser(realm, "REALM_COMPOSITE_1_USER");
             realmComposite1User.setEnabled(true);
             realmComposite1User.updateCredential(UserCredentialModel.password("password"));
             realmComposite1User.grantRole(realmComposite1);
 
-            final UserModel realmRole1User = realm.addUser("REALM_ROLE_1_USER");
+            final UserModel realmRole1User = session.users().addUser(realm, "REALM_ROLE_1_USER");
             realmRole1User.setEnabled(true);
             realmRole1User.updateCredential(UserCredentialModel.password("password"));
             realmRole1User.grantRole(realmRole1);
@@ -114,12 +116,12 @@ public class CompositeRoleTest {
             final RoleModel realmAppCompositeRole = realm.addRole("REALM_APP_COMPOSITE_ROLE");
             realmAppCompositeRole.addCompositeRole(appRole1);
 
-            final UserModel realmAppCompositeUser = realm.addUser("REALM_APP_COMPOSITE_USER");
+            final UserModel realmAppCompositeUser = session.users().addUser(realm, "REALM_APP_COMPOSITE_USER");
             realmAppCompositeUser.setEnabled(true);
             realmAppCompositeUser.updateCredential(UserCredentialModel.password("password"));
             realmAppCompositeUser.grantRole(realmAppCompositeRole);
 
-            final UserModel realmAppRoleUser = realm.addUser("REALM_APP_ROLE_USER");
+            final UserModel realmAppRoleUser = session.users().addUser(realm, "REALM_APP_ROLE_USER");
             realmAppRoleUser.setEnabled(true);
             realmAppRoleUser.updateCredential(UserCredentialModel.password("password"));
             realmAppRoleUser.grantRole(appRole2);
@@ -137,7 +139,7 @@ public class CompositeRoleTest {
             appCompositeRole.addCompositeRole(realmRole3);
             appCompositeRole.addCompositeRole(appRole1);
 
-            final UserModel appCompositeUser = realm.addUser("APP_COMPOSITE_USER");
+            final UserModel appCompositeUser = session.users().addUser(realm, "APP_COMPOSITE_USER");
             appCompositeUser.setEnabled(true);
             appCompositeUser.updateCredential(UserCredentialModel.password("password"));
             appCompositeUser.grantRole(realmAppCompositeRole);
@@ -182,6 +184,9 @@ public class CompositeRoleTest {
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
 
@@ -205,9 +210,10 @@ public class CompositeRoleTest {
 
         Assert.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assert.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
-
-
 
     @Test
     public void testRealmOnlyWithUserCompositeAppComposite() throws Exception {
@@ -230,6 +236,9 @@ public class CompositeRoleTest {
         Assert.assertEquals(2, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_COMPOSITE_1"));
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
     @Test
@@ -252,6 +261,9 @@ public class CompositeRoleTest {
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
     @Test
@@ -274,6 +286,9 @@ public class CompositeRoleTest {
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
 }

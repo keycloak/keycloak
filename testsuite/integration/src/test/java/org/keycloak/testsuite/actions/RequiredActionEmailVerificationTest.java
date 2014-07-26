@@ -94,7 +94,7 @@ public class RequiredActionEmailVerificationTest {
             public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
                 appRealm.setVerifyEmail(true);
 
-                UserModel user = appRealm.getUser("test-user@localhost");
+                UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
                 user.setEmailVerified(false);
             }
 

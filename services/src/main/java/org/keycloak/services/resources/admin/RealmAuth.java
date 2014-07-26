@@ -3,9 +3,6 @@ package org.keycloak.services.resources.admin;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.managers.Auth;
-
-import javax.ws.rs.WebApplicationException;
 
 
 /**

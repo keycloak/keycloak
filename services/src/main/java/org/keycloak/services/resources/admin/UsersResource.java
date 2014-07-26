@@ -17,6 +17,8 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -26,13 +28,12 @@ import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.managers.UserManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
-import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -99,7 +100,7 @@ public class UsersResource {
         auth.requireManage();
 
         try {
-            UserModel user = realm.getUser(username);
+            UserModel user = session.users().getUserByUsername(username, realm);
             if (user == null) {
                 throw new NotFoundException("User not found");
             }
@@ -124,10 +125,10 @@ public class UsersResource {
         auth.requireManage();
 
         try {
-            UserModel user = realm.addUser(rep.getUsername());
+            UserModel user = session.users().addUser(realm, rep.getUsername());
             updateUserFromRep(user, rep);
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getLoginName()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getUsername()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("User exists with same username or email");
         }
@@ -174,7 +175,7 @@ public class UsersResource {
     public UserRepresentation getUser(final @PathParam("username") String username) {
         auth.requireView();
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -197,7 +198,7 @@ public class UsersResource {
     public Map<String, UserStats> getSessionStats(final @PathParam("username") String username) {
         logger.info("session-stats");
         auth.requireView();
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -224,11 +225,11 @@ public class UsersResource {
     public List<UserSessionRepresentation> getSessions(final @PathParam("username") String username) {
         logger.info("sessions");
         auth.requireView();
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        List<UserSessionModel> sessions = realm.getUserSessions(user);
+        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
         List<UserSessionRepresentation> reps = new ArrayList<UserSessionRepresentation>();
         for (UserSessionModel session : sessions) {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
@@ -249,11 +250,11 @@ public class UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<SocialLinkRepresentation> getSocialLinks(final @PathParam("username") String username) {
         auth.requireView();
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        Set<SocialLinkModel> socialLinks = realm.getSocialLinks(user);
+        Set<SocialLinkModel> socialLinks = session.users().getSocialLinks(user, realm);
         List<SocialLinkRepresentation> result = new ArrayList<SocialLinkRepresentation>();
         for (SocialLinkModel socialLink : socialLinks) {
             SocialLinkRepresentation rep = ModelToRepresentation.toRepresentation(socialLink);
@@ -272,13 +273,11 @@ public class UsersResource {
     @POST
     public void logout(final @PathParam("username") String username) {
         auth.requireManage();
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        realm.removeUserSessions(user);
-        // set notBefore so that user will be forced to log in.
-        user.setNotBefore(Time.currentTime());
+        session.sessions().removeUserSessions(realm, user);
         new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), null);
     }
 
@@ -293,7 +292,12 @@ public class UsersResource {
     public void deleteUser(final @PathParam("username") String username) {
         auth.requireManage();
 
-        realm.removeUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        new UserManager(session).removeUser(realm, user);
     }
 
     /**
@@ -313,14 +317,18 @@ public class UsersResource {
                                              @QueryParam("lastName") String last,
                                              @QueryParam("firstName") String first,
                                              @QueryParam("email") String email,
-                                             @QueryParam("username") String username) {
+                                             @QueryParam("username") String username,
+                                             @QueryParam("first") Integer firstResult,
+                                             @QueryParam("max") Integer maxResults) {
         auth.requireView();
 
-        RealmManager manager = new RealmManager(session);
+        firstResult = firstResult != null ? firstResult : -1;
+        maxResults = maxResults != null ? maxResults : -1;
+
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels;
         if (search != null) {
-            userModels = manager.searchUsers(search, realm);
+            userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
         } else if (last != null || first != null || email != null || username != null) {
             Map<String, String> attributes = new HashMap<String, String>();
             if (last != null) {
@@ -333,14 +341,14 @@ public class UsersResource {
                 attributes.put(UserModel.EMAIL, email);
             }
             if (username != null) {
-                attributes.put(UserModel.LOGIN_NAME, username);
+                attributes.put(UserModel.USERNAME, username);
             }
-            userModels = realm.searchForUserByAttributes(attributes);
+            userModels = session.users().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
             for (UserModel user : userModels) {
                 results.add(ModelToRepresentation.toRepresentation(user));
             }
         } else {
-            userModels = realm.getUsers();
+            userModels = session.users().getUsers(realm, firstResult, maxResults);
         }
 
         for (UserModel user : userModels) {
@@ -362,7 +370,7 @@ public class UsersResource {
     public MappingsRepresentation getRoleMappings(@PathParam("username") String username) {
         auth.requireView();
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -413,7 +421,7 @@ public class UsersResource {
     public List<RoleRepresentation> getRealmRoleMappings(@PathParam("username") String username) {
         auth.requireView();
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -439,7 +447,7 @@ public class UsersResource {
     public List<RoleRepresentation> getCompositeRealmRoleMappings(@PathParam("username") String username) {
         auth.requireView();
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -467,7 +475,7 @@ public class UsersResource {
     public List<RoleRepresentation> getAvailableRealmRoleMappings(@PathParam("username") String username) {
         auth.requireView();
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -489,7 +497,7 @@ public class UsersResource {
         auth.requireManage();
 
         logger.debugv("** addRealmRoleMappings: {0}", roles);
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -518,7 +526,7 @@ public class UsersResource {
         auth.requireManage();
 
         logger.debug("deleteRealmRoleMappings");
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -556,7 +564,7 @@ public class UsersResource {
 
         logger.debug("getApplicationRoleMappings");
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -592,7 +600,7 @@ public class UsersResource {
 
         logger.debug("getCompositeApplicationRoleMappings");
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -628,7 +636,7 @@ public class UsersResource {
 
         logger.debug("getApplicationRoleMappings");
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -670,7 +678,7 @@ public class UsersResource {
         auth.requireManage();
 
         logger.debug("addApplicationRoleMapping");
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -704,7 +712,7 @@ public class UsersResource {
     public void deleteApplicationRoleMapping(@PathParam("username") String username, @PathParam("app") String appName, List<RoleRepresentation> roles) {
         auth.requireManage();
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -749,7 +757,7 @@ public class UsersResource {
     public void resetPassword(@PathParam("username") String username, CredentialRepresentation pass) {
         auth.requireManage();
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -757,7 +765,7 @@ public class UsersResource {
             throw new BadRequestException("No password provided");
         }
 
-        UserCredentialModel cred = RealmManager.fromRepresentation(pass);
+        UserCredentialModel cred = RepresentationToModel.convertCredential(pass);
         user.updateCredential(cred);
         user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
     }
@@ -773,7 +781,7 @@ public class UsersResource {
     public void removeTotp(@PathParam("username") String username) {
         auth.requireManage();
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -793,7 +801,7 @@ public class UsersResource {
     public Response resetPasswordEmail(@PathParam("username") String username) {
         auth.requireManage();
 
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -812,13 +820,8 @@ public class UsersResource {
             return Flows.errors().error("AccountProvider management not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
-        Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>(user.getRequiredActions());
-        requiredActions.add(UserModel.RequiredAction.UPDATE_PASSWORD);
-
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scope, state, redirect, realm, client, user, null);
-        accessCode.setRequiredActions(requiredActions);
-        accessCode.setUsernameUsed(username);
-        accessCode.resetExpiration();
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scope, state, redirect, session, realm, client, user, null);
+        accessCode.setRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         try {
             UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());

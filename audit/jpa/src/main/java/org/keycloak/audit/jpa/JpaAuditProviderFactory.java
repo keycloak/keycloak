@@ -4,11 +4,9 @@ import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.EventType;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.util.JpaUtils;
 
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,19 +16,17 @@ import java.util.Set;
 public class JpaAuditProviderFactory implements AuditProviderFactory {
 
     public static final String ID = "jpa";
-    private EntityManagerFactory emf;
 
     private Set<EventType> includedEvents = new HashSet<EventType>();
 
     @Override
     public AuditProvider create(KeycloakSession session) {
-        return new JpaAuditProvider(emf.createEntityManager(), includedEvents);
+        JpaConnectionProvider connection = session.getProvider(JpaConnectionProvider.class);
+        return new JpaAuditProvider(connection.getEntityManager(), includedEvents);
     }
 
     @Override
     public void init(Config.Scope config) {
-        emf = Persistence.createEntityManagerFactory("jpa-keycloak-audit-store", JpaUtils.getHibernateProperties());
-
         String[] include = config.getArray("include-events");
         if (include != null) {
             for (String i : include) {
@@ -52,7 +48,6 @@ public class JpaAuditProviderFactory implements AuditProviderFactory {
 
     @Override
     public void close() {
-        emf.close();
     }
 
     @Override

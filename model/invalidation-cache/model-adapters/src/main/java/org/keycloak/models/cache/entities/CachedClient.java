@@ -1,12 +1,10 @@
 package org.keycloak.models.cache.entities;
 
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.KeycloakCache;
+import org.keycloak.models.cache.RealmCache;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,6 +16,7 @@ import java.util.Set;
 public class CachedClient {
     protected String id;
     protected String name;
+    protected String realm;
     protected long allowedClaimsMask;
     protected Set<String> redirectUris = new HashSet<String>();
     protected boolean enabled;
@@ -28,10 +27,11 @@ public class CachedClient {
     protected Set<String> scope = new HashSet<String>();
     protected Set<String> webOrigins = new HashSet<String>();
 
-    public CachedClient(KeycloakCache cache, ModelProvider delegate, RealmModel realm, ClientModel model) {
+    public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
         secret = model.getSecret();
         name = model.getClientId();
+        this.realm = realm.getId();
         enabled = model.isEnabled();
         notBefore = model.getNotBefore();
         directGrantsOnly = model.isDirectGrantsOnly();
@@ -51,6 +51,10 @@ public class CachedClient {
 
     public String getName() {
         return name;
+    }
+
+    public String getRealm() {
+        return realm;
     }
 
     public long getAllowedClaimsMask() {

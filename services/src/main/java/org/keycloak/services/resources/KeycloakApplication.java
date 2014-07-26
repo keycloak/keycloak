@@ -7,7 +7,7 @@ import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.SkeletonKeyContextResolver;
-import org.keycloak.exportimport.ExportImportProvider;
+import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -24,7 +24,6 @@ import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.ProviderLoader;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
@@ -38,7 +37,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -81,7 +79,7 @@ public class KeycloakApplication extends Application {
         classes.add(JsResource.class);
         classes.add(WelcomeResource.class);
 
-        checkExportImportProvider();
+        new ExportImportManager().checkExportImport(this.sessionFactory);
 
         setupDefaultRealm(context.getContextPath());
 
@@ -234,17 +232,5 @@ public class KeycloakApplication extends Application {
             throw new RuntimeException("Failed to parse json", e);
         }
     }
-
-    protected void checkExportImportProvider() {
-        Iterator<ExportImportProvider> providers = ProviderLoader.load(ExportImportProvider.class).iterator();
-
-        if (providers.hasNext()) {
-            ExportImportProvider exportImport = providers.next();
-            exportImport.checkExportImport(sessionFactory);
-        } else {
-            log.warn("No ExportImportProvider found!");
-        }
-    }
-
 
 }

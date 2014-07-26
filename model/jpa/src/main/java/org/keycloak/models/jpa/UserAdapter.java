@@ -2,7 +2,7 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -11,16 +11,21 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,13 +58,13 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public String getLoginName() {
-        return user.getLoginName();
+    public String getUsername() {
+        return user.getUsername();
     }
 
     @Override
-    public void setLoginName(String loginName) {
-        user.setLoginName(loginName);
+    public void setUsername(String username) {
+        user.setUsername(username);
     }
 
     @Override
@@ -79,52 +84,84 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void setAttribute(String name, String value) {
-        Map<String, String> attributes = user.getAttributes();
-        if (attributes == null) {
-            attributes = new HashMap<String, String>();
+        for (UserAttributeEntity attr : user.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                attr.setValue(value);
+                return;
+            }
         }
-        attributes.put(name, value);
-        user.setAttributes(attributes);
+        UserAttributeEntity attr = new UserAttributeEntity();
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setUser(user);
+        em.persist(attr);
+        user.getAttributes().add(attr);
     }
 
     @Override
     public void removeAttribute(String name) {
-        Map<String, String> attributes = user.getAttributes();
-        if (attributes == null) {
-            attributes = new HashMap<String, String>();
+        Iterator<UserAttributeEntity> it = user.getAttributes().iterator();
+        while (it.hasNext()) {
+            UserAttributeEntity attr = it.next();
+            if (attr.getName().equals(name)) {
+                it.remove();
+                em.remove(attr);
+            }
         }
-        attributes.remove(name);
-        user.setAttributes(attributes);
     }
 
     @Override
     public String getAttribute(String name) {
-        if (user.getAttributes() == null) return null;
-        return user.getAttributes().get(name);
+        for (UserAttributeEntity attr : user.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                return attr.getValue();
+            }
+        }
+        return null;
     }
 
     @Override
     public Map<String, String> getAttributes() {
         Map<String, String> result = new HashMap<String, String>();
-        result.putAll(user.getAttributes());
+        for (UserAttributeEntity attr : user.getAttributes()) {
+            result.put(attr.getName(), attr.getValue());
+        }
         return result;
     }
 
     @Override
     public Set<RequiredAction> getRequiredActions() {
         Set<RequiredAction> result = new HashSet<RequiredAction>();
-        result.addAll(user.getRequiredActions());
+        for (UserRequiredActionEntity attr : user.getRequiredActions()) {
+            result.add(attr.getAction());
+        }
         return result;
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        user.getRequiredActions().add(action);
+        for (UserRequiredActionEntity attr : user.getRequiredActions()) {
+            if (attr.getAction().equals(action)) {
+                return;
+            }
+        }
+        UserRequiredActionEntity attr = new UserRequiredActionEntity();
+        attr.setAction(action);
+        attr.setUser(user);
+        em.persist(attr);
+        user.getRequiredActions().add(attr);
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        user.getRequiredActions().remove(action);
+        Iterator<UserRequiredActionEntity> it = user.getRequiredActions().iterator();
+        while (it.hasNext()) {
+            UserRequiredActionEntity attr = it.next();
+            if (attr.getAction().equals(action)) {
+                it.remove();
+                em.remove(attr);
+            }
+        }
     }
 
 
@@ -174,21 +211,12 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public int getNotBefore() {
-        return user.getNotBefore();
-    }
-
-    @Override
-    public void setNotBefore(int notBefore) {
-        user.setNotBefore(notBefore);
-    }
-
-    @Override
     public void updateCredential(UserCredentialModel cred) {
         CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
 
         if (credentialEntity == null) {
             credentialEntity = new CredentialEntity();
+            credentialEntity.setId(KeycloakModelUtils.generateId());
             credentialEntity.setType(cred.getType());
             credentialEntity.setDevice(cred.getDevice());
             credentialEntity.setUser(user);
@@ -197,8 +225,15 @@ public class UserAdapter implements UserModel {
         }
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
             byte[] salt = getSalt();
-            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
+            int hashIterations = 1;
+            PasswordPolicy policy = realm.getPasswordPolicy();
+            if (policy != null) {
+                hashIterations = policy.getHashIterations();
+                if (hashIterations == -1) hashIterations = 1;
+            }
+            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
             credentialEntity.setSalt(salt);
+            credentialEntity.setHashIterations(hashIterations);
         } else {
             credentialEntity.setValue(cred.getValue());
         }
@@ -228,6 +263,7 @@ public class UserAdapter implements UserModel {
                 credModel.setDevice(credEntity.getDevice());
                 credModel.setValue(credEntity.getValue());
                 credModel.setSalt(credEntity.getSalt());
+                credModel.setHashIterations(credEntity.getHashIterations());
 
                 result.add(credModel);
             }
@@ -242,6 +278,7 @@ public class UserAdapter implements UserModel {
 
         if (credentialEntity == null) {
             credentialEntity = new CredentialEntity();
+            credentialEntity.setId(KeycloakModelUtils.generateId());
             credentialEntity.setType(credModel.getType());
             credentialEntity.setUser(user);
             em.persist(credentialEntity);
@@ -251,6 +288,7 @@ public class UserAdapter implements UserModel {
         credentialEntity.setValue(credModel.getValue());
         credentialEntity.setSalt(credModel.getSalt());
         credentialEntity.setDevice(credModel.getDevice());
+        credentialEntity.setHashIterations(credModel.getHashIterations());
 
         em.flush();
     }
@@ -269,8 +307,7 @@ public class UserAdapter implements UserModel {
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
         TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
         query.setParameter("user", getUser());
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
-        query.setParameter("role", roleEntity);
+        query.setParameter("roleId", role.getId());
         return query;
     }
 
@@ -279,8 +316,7 @@ public class UserAdapter implements UserModel {
         if (hasRole(role)) return;
         UserRoleMappingEntity entity = new UserRoleMappingEntity();
         entity.setUser(getUser());
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
-        entity.setRole(roleEntity);
+        entity.setRoleId(role.getId());
         em.persist(entity);
         em.flush();
         em.detach(entity);
@@ -349,8 +385,12 @@ public class UserAdapter implements UserModel {
 
     @Override
     public AuthenticationLinkModel getAuthenticationLink() {
-        AuthenticationLinkEntity authLinkEntity = user.getAuthenticationLink();
-        return authLinkEntity == null ? null : new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
+        Collection<AuthenticationLinkEntity> col = user.getAuthenticationLink();
+        if (col == null || col.isEmpty()) {
+            return null;
+        }
+        AuthenticationLinkEntity authLinkEntity = col.iterator().next();
+        return new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
     }
 
     @Override
@@ -358,11 +398,29 @@ public class UserAdapter implements UserModel {
         AuthenticationLinkEntity entity = new AuthenticationLinkEntity();
         entity.setAuthProvider(authenticationLink.getAuthProvider());
         entity.setAuthUserId(authenticationLink.getAuthUserId());
+        entity.setUser(user);
 
-        user.setAuthenticationLink(entity);
+        if (user.getAuthenticationLink() == null) {
+            user.setAuthenticationLink(new LinkedList<AuthenticationLinkEntity>());
+        } else if (!user.getAuthenticationLink().isEmpty()) {
+            AuthenticationLinkEntity old = user.getAuthenticationLink().iterator().next();
+            user.getAuthenticationLink().clear();
+            em.remove(old);
+        }
+
+        user.getAuthenticationLink().add(entity);
         em.persist(entity);
-        em.persist(user);
         em.flush();
+    }
+
+    @Override
+    public String getFederationLink() {
+        return user.getFederationLink();
+    }
+
+    @Override
+    public void setFederationLink(String link) {
+        user.setFederationLink(link);
     }
 
     @Override

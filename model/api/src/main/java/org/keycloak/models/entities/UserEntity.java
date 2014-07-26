@@ -1,24 +1,23 @@
 package org.keycloak.models.entities;
 
+import org.keycloak.models.UserModel;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class UserEntity extends AbstractIdentifiableEntity {
 
-    private String loginName;
+    private String username;
     private String firstName;
     private String lastName;
     private String email;
     private boolean emailVerified;
     private boolean totp;
     private boolean enabled;
-    private int notBefore;
 
     private String realmId;
 
@@ -29,13 +28,14 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private List<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
     private List<SocialLinkEntity> socialLinks;
     private AuthenticationLinkEntity authenticationLink;
+    private String federationLink;
 
-    public String getLoginName() {
-        return loginName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setLoginName(String loginName) {
-        this.loginName = loginName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getFirstName() {
@@ -84,14 +84,6 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public int getNotBefore() {
-        return notBefore;
-    }
-
-    public void setNotBefore(int notBefore) {
-        this.notBefore = notBefore;
     }
 
     public String getRealmId() {
@@ -148,6 +140,14 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     public void setAuthenticationLink(AuthenticationLinkEntity authenticationLink) {
         this.authenticationLink = authenticationLink;
+    }
+
+    public String getFederationLink() {
+        return federationLink;
+    }
+
+    public void setFederationLink(String federationLink) {
+        this.federationLink = federationLink;
     }
 }
 

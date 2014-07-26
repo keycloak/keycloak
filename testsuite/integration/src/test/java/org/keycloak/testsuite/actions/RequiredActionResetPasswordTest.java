@@ -56,7 +56,7 @@ public class RequiredActionResetPasswordTest {
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
             appRealm.setResetPasswordAllowed(true);
 
-            UserModel user = appRealm.getUser("test-user@localhost");
+            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
             user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
         }
 

@@ -1,49 +1,54 @@
 package org.keycloak.models.jpa.entities;
 
-import java.util.Map;
-
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
-
-import org.hibernate.annotations.GenericGenerator;
+import java.io.Serializable;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @Entity
-@Table(name="AuthProviderEntity")
+@Table(name="AUTH_PROVIDER")
+@IdClass(AuthenticationProviderEntity.Key.class)
 public class AuthenticationProviderEntity {
 
     @Id
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
-    protected String id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "REALM_ID")
+    protected RealmEntity realm;
 
+    @Id
+    @Column(name="PROVIDER_NAME")
     private String providerName;
+    @Column(name="PASSWORD_UPDATE_SUPPORTED")
     private boolean passwordUpdateSupported;
+    @Column(name="PRIORITY")
     private int priority;
 
     @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value")
-    @CollectionTable(name="AuthProviderEntity_cfg", joinColumns = {
-            @JoinColumn(name = "AuthProviderEntity_id")
-    })
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE")
+    @CollectionTable(name="AUTH_PROVIDER_CONFIG", joinColumns = {
+            @JoinColumn(name="REALM_ID", referencedColumnName = "REALM_ID"),
+            @JoinColumn(name="AUTH_PROVIDER_NAME", referencedColumnName = "PROVIDER_NAME")})
     private Map<String, String> config;
 
-    public String getId() {
-        return id;
+    public RealmEntity getRealm() {
+        return realm;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setRealm(RealmEntity realm) {
+        this.realm = realm;
     }
 
     public String getProviderName() {
@@ -77,4 +82,48 @@ public class AuthenticationProviderEntity {
     public void setConfig(Map<String, String> config) {
         this.config = config;
     }
+
+    public static class Key implements Serializable {
+
+        protected RealmEntity realm;
+
+        protected String providerName;
+
+        public Key() {
+        }
+
+        public Key(RealmEntity realm, String providerName) {
+            this.realm = realm;
+            this.providerName = providerName;
+        }
+
+        public RealmEntity getRealm() {
+            return realm;
+        }
+
+        public String getProviderName() {
+            return providerName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Key key = (Key) o;
+
+            if (providerName != null ? !providerName.equals(key.providerName) : key.providerName != null) return false;
+            if (realm != null ? !realm.getId().equals(key.realm != null ? key.realm.getId() : null) : key.realm != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = realm != null ? realm.getId().hashCode() : 0;
+            result = 31 * result + (providerName != null ? providerName.hashCode() : 0);
+            return result;
+        }
+    }
+
 }

@@ -20,8 +20,12 @@
             "lastName": "Burke",
             "credentials" : [
                 { "type" : "password",
-                    "value" : "password" }
-            ]
+                  "value" : "password" }
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "realm-management": [ "realm-admin" ]
+            }
         }
     ],
     "roles" : {
@@ -32,12 +36,6 @@
             }
         ]
     },
-    "roleMappings": [
-        {
-            "username": "bburke@redhat.com",
-            "roles": ["user"]
-        }
-    ],
     "scopeMappings": [
         {
             "client": "angular-product",
@@ -58,14 +56,6 @@
             ]
         }
     ],
-    "applicationRoleMappings": {
-        "realm-management": [
-            {
-                "username": "bburke@redhat.com",
-                "roles": ["realm-admin"]
-            }
-        ]
-    },
     "applicationScopeMappings": {
         "realm-management": [
             {

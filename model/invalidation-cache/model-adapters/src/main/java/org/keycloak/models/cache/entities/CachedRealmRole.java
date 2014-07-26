@@ -1,9 +1,7 @@
 package org.keycloak.models.cache.entities;
 
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -12,8 +10,8 @@ import java.util.Set;
 public class CachedRealmRole extends CachedRole {
 
 
-    public CachedRealmRole(RoleModel model) {
-        super(model);
+    public CachedRealmRole(RoleModel model, RealmModel realm) {
+        super(model, realm);
 
     }
 

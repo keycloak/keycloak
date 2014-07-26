@@ -19,18 +19,16 @@ import java.util.Set;
  */
 public class CachedUser {
     private String id;
-    private String loginName;
-    private String usernameKey;
+    private String username;
     private String firstName;
     private String lastName;
     private String email;
-    private String emailKey;
     private boolean emailVerified;
-    private int notBefore;
     private List<UserCredentialValueModel> credentials = new LinkedList<UserCredentialValueModel>();
     private boolean enabled;
     private boolean totp;
     private AuthenticationLinkModel authenticationLink;
+    private String federationLink;
     private Map<String, String> attributes = new HashMap<String, String>();
     private Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>();
     private Set<String> roleMappings = new HashSet<String>();
@@ -38,20 +36,16 @@ public class CachedUser {
 
     public CachedUser(RealmModel realm, UserModel user) {
         this.id = user.getId();
-        this.loginName = user.getLoginName();
-        this.usernameKey = realm.getId() + "." + this.loginName;
+        this.username = user.getUsername();
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.attributes.putAll(user.getAttributes());
         this.email = user.getEmail();
-        if (this.email != null) {
-            this.emailKey = realm.getId() + "." + this.email;
-        }
         this.emailVerified = user.isEmailVerified();
-        this.notBefore = user.getNotBefore();
         this.credentials.addAll(user.getCredentialsDirectly());
         this.enabled = user.isEnabled();
         this.totp = user.isTotp();
+        this.federationLink = user.getFederationLink();
         this.requiredActions.addAll(user.getRequiredActions());
         this.authenticationLink = user.getAuthenticationLink();
         for (RoleModel role : user.getRoleMappings()) {
@@ -63,16 +57,8 @@ public class CachedUser {
         return id;
     }
 
-    public String getLoginName() {
-        return loginName;
-    }
-
-    public String getUsernameKey() {
-        return usernameKey;
-    }
-
-    public String getEmailKey() {
-        return emailKey;
+    public String getUsername() {
+        return username;
     }
 
     public String getFirstName() {
@@ -89,10 +75,6 @@ public class CachedUser {
 
     public boolean isEmailVerified() {
         return emailVerified;
-    }
-
-    public int getNotBefore() {
-        return notBefore;
     }
 
     public List<UserCredentialValueModel> getCredentials() {
@@ -121,5 +103,9 @@ public class CachedUser {
 
     public AuthenticationLinkModel getAuthenticationLink() {
         return authenticationLink;
+    }
+
+    public String getFederationLink() {
+        return federationLink;
     }
 }

@@ -8,6 +8,7 @@ import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.adapters.action.LogoutAction;
@@ -34,11 +35,11 @@ import java.util.Map;
 public class ResourceAdminManager {
     protected static Logger logger = Logger.getLogger(ResourceAdminManager.class);
 
-    public SessionStats getSessionStats(URI requestUri, RealmModel realm, ApplicationModel application, boolean users) {
+    public SessionStats getSessionStats(URI requestUri, KeycloakSession session, RealmModel realm, ApplicationModel application, boolean users) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            return getSessionStats(requestUri, realm, application, users, executor);
+            return getSessionStats(requestUri, session, realm, application, users, executor);
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
@@ -52,7 +53,7 @@ public class ResourceAdminManager {
         return new ApacheHttpClient4Executor(client);
     }
 
-    public SessionStats getSessionStats(URI requestUri, RealmModel realm, ApplicationModel application, boolean users, ApacheHttpClient4Executor client) {
+    public SessionStats getSessionStats(URI requestUri, KeycloakSession session, RealmModel realm, ApplicationModel application, boolean users, ApacheHttpClient4Executor client) {
         String managementUrl = getManagementUrl(requestUri, application);
         if (managementUrl != null) {
             SessionStatsAction adminAction = new SessionStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName());
@@ -77,9 +78,9 @@ public class ResourceAdminManager {
                 if (users && stats.getUsers() != null) {
                     Map<String, UserStats> newUsers = new HashMap<String, UserStats>();
                     for (Map.Entry<String, UserStats> entry : stats.getUsers().entrySet()) {
-                        UserModel user = realm.getUserById(entry.getKey());
+                        UserModel user = session.users().getUserById(entry.getKey(), realm);
                         if (user == null) continue;
-                        newUsers.put(user.getLoginName(), entry.getValue());
+                        newUsers.put(user.getUsername(), entry.getValue());
 
                     }
                     stats.setUsers(newUsers);

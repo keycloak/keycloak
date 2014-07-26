@@ -1,20 +1,15 @@
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.GenericGenerator;
-
-import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import java.util.HashSet;
@@ -26,27 +21,36 @@ import java.util.Set;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"realm", "name"})})
+@Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "NAME"})})
 public abstract class ClientEntity {
     @Id
+    @Column(name="ID", length = 36)
     private String id;
-    @Column(name = "name")
+    @Column(name = "NAME")
     private String name;
+    @Column(name="ENABLED")
     private boolean enabled;
+    @Column(name="SECRET")
     private String secret;
+    @Column(name="ALLOWED_CLAIMS_MASK")
     private long allowedClaimsMask;
+    @Column(name="NOT_BEFORE")
     private int notBefore;
+    @Column(name="PUBLIC_CLIENT")
     private boolean publicClient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "realm")
+    @JoinColumn(name = "REALM_ID")
     protected RealmEntity realm;
 
     @ElementCollection
-    @CollectionTable
+    @Column(name="VALUE")
+    @CollectionTable(name = "WEB_ORIGINS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Set<String> webOrigins = new HashSet<String>();
+
     @ElementCollection
-    @CollectionTable
+    @Column(name="VALUE")
+    @CollectionTable(name = "REDIRECT_URIS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Set<String> redirectUris = new HashSet<String>();
 
     public RealmEntity getRealm() {

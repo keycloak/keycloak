@@ -7,12 +7,10 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.managers.ModelToRepresentation;
-import org.keycloak.services.managers.RealmManager;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;

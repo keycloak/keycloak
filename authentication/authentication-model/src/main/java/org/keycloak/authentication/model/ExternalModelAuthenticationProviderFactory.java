@@ -13,7 +13,7 @@ public class ExternalModelAuthenticationProviderFactory implements Authenticatio
 
     @Override
     public AuthenticationProvider create(KeycloakSession session) {
-        return new ExternalModelAuthenticationProvider();
+        return new ExternalModelAuthenticationProvider(session);
     }
 
     @Override

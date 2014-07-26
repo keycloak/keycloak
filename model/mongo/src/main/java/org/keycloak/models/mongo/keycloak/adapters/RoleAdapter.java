@@ -1,21 +1,21 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Wrapper around RoleData object, which will persist wrapped object after each set operation (compatibility with picketlink based idm)

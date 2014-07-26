@@ -95,4 +95,40 @@ public class ClaimRepresentation {
     public void setPhone(boolean phone) {
         this.phone = phone;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ClaimRepresentation that = (ClaimRepresentation) o;
+
+        if (address != that.address) return false;
+        if (email != that.email) return false;
+        if (gender != that.gender) return false;
+        if (locale != that.locale) return false;
+        if (name != that.name) return false;
+        if (phone != that.phone) return false;
+        if (picture != that.picture) return false;
+        if (profile != that.profile) return false;
+        if (username != that.username) return false;
+        if (website != that.website) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (name ? 1 : 0);
+        result = 31 * result + (username ? 1 : 0);
+        result = 31 * result + (profile ? 1 : 0);
+        result = 31 * result + (picture ? 1 : 0);
+        result = 31 * result + (website ? 1 : 0);
+        result = 31 * result + (email ? 1 : 0);
+        result = 31 * result + (gender ? 1 : 0);
+        result = 31 * result + (locale ? 1 : 0);
+        result = 31 * result + (address ? 1 : 0);
+        result = 31 * result + (phone ? 1 : 0);
+        return result;
+    }
 }

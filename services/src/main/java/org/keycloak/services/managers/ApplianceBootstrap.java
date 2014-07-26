@@ -12,6 +12,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
 import java.util.Arrays;
@@ -39,7 +40,7 @@ public class ApplianceBootstrap {
 
     public void bootstrap(KeycloakSession session, String contextPath) {
         String adminRealmName = Config.getAdminRealm();
-        if (session.getRealm(adminRealmName) != null) {
+        if (session.realms().getRealm(adminRealmName) != null) {
             return;
         }
 
@@ -58,12 +59,12 @@ public class ApplianceBootstrap {
         realm.setAccessCodeLifespanUserAction(300);
         realm.setSslNotRequired(true);
         realm.setRegistrationAllowed(false);
-        manager.generateRealmKeys(realm);
+        KeycloakModelUtils.generateRealmKeys(realm);
         realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
 
         realm.setAuditListeners(Collections.singleton("jboss-logging"));
 
-        UserModel adminUser = realm.addUser("admin");
+        UserModel adminUser = session.users().addUser(realm, "admin");
         adminUser.setEnabled(true);
         UserCredentialModel password = new UserCredentialModel();
         password.setType(UserCredentialModel.PASSWORD);
