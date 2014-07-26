@@ -213,7 +213,8 @@ public class ExportImportTest {
             Assert.assertEquals(1, realmProvider.getRealms().size());
 
             RealmModel master = realmProvider.getRealmByName(Config.getAdminRealm());
-            session.users().removeUser(master, "admin2");
+            UserModel admin2 = session.users().getUserByUsername("admin2", master);
+            session.users().removeUser(master, admin2);
             assertNotAuthenticated(userProvider, realmProvider, Config.getAdminRealm(), "admin2", "admin2");
             assertNotAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");
             assertNotAuthenticated(userProvider, realmProvider, "test", "user1", "password");
@@ -263,7 +264,8 @@ public class ExportImportTest {
             Assert.assertEquals(1, realmProvider.getRealms().size());
 
             RealmModel master = realmProvider.getRealmByName(Config.getAdminRealm());
-            session.users().removeUser(master, "admin2");
+            UserModel admin2 = session.users().getUserByUsername("admin2", master);
+            session.users().removeUser(master, admin2);
 
             assertNotAuthenticated(userProvider, realmProvider, Config.getAdminRealm(), "admin2", "admin2");
             assertNotAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");

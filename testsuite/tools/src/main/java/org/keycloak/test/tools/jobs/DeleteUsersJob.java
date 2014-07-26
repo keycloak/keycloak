@@ -32,7 +32,6 @@ public class DeleteUsersJob extends UsersJob {
 
     @Override
     protected void runIteration(KeycloakSession session, RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter) {
-        String username = users.next().getUsername();
-        session.users().removeUser(realm, username);
+        session.users().removeUser(realm, users.next());
     }
 }

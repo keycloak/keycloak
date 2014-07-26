@@ -181,8 +181,7 @@ public class AdapterTest extends AbstractModelTest {
         commit();
 
         realmModel = model.getRealm("JUGGLER");
-        Assert.assertTrue(realmManager.getSession().users().removeUser(realmModel, "bburke"));
-        Assert.assertFalse(realmManager.getSession().users().removeUser(realmModel, "bburke"));
+        Assert.assertTrue(realmManager.getSession().users().removeUser(realmModel, user));
         assertNull(realmManager.getSession().users().getUserByUsername("bburke", realmModel));
     }
 

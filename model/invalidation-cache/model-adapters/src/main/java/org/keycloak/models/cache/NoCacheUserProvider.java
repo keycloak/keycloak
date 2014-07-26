@@ -125,8 +125,8 @@ public class NoCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public boolean removeUser(RealmModel realm, String name) {
-        return getDelegate().removeUser(realm, name);
+    public boolean removeUser(RealmModel realm, UserModel user) {
+        return getDelegate().removeUser(realm, user);
     }
 
     @Override

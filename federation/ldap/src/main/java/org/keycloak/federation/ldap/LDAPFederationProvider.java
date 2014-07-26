@@ -18,8 +18,11 @@ import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
+import org.picketlink.idm.query.IdentityQuery;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +33,7 @@ import java.util.Set;
  */
 public class LDAPFederationProvider implements UserFederationProvider {
     private static final Logger logger = Logger.getLogger(LDAPFederationProvider.class);
+    public static final String LDAP_ID = "LDAP_ID";
 
     protected KeycloakSession session;
     protected UserFederationProviderModel model;
@@ -82,7 +86,12 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public UserModel addUser(RealmModel realm, UserModel user) {
+    public boolean isRegistrationSupported() {
+        return true;
+    }
+
+    @Override
+    public UserModel register(RealmModel realm, UserModel user) {
         IdentityManager identityManager = getIdentityManager();
 
         try {
@@ -95,6 +104,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);
         }
+
     }
 
     @Override
@@ -114,48 +124,59 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public String getAdminPage() {
-        return null;
+    public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm) {
+        IdentityManager identityManager = getIdentityManager();
+        List<UserModel> searchResults =new LinkedList<UserModel>();
+        try {
+            Map<String, User> results = new HashMap<String, User>();
+            if (attributes.containsKey(USERNAME)) {
+                User user = BasicModel.getUser(identityManager, attributes.get(USERNAME));
+                if (user != null) results.put(user.getLoginName(), user);
+            } else if (attributes.containsKey(EMAIL)) {
+                User user = queryByEmail(identityManager, attributes.get(EMAIL));
+                if (user != null) results.put(user.getLoginName(), user);
+            } else if (attributes.containsKey(FIRST_NAME) || attributes.containsKey(LAST_NAME)) {
+                IdentityQuery<User> query = identityManager.createIdentityQuery(User.class);
+                if (attributes.containsKey(FIRST_NAME)) {
+                    query.setParameter(User.FIRST_NAME, attributes.get(FIRST_NAME));
+                }
+                if (attributes.containsKey(LAST_NAME)) {
+                    query.setParameter(User.LAST_NAME, attributes.get(LAST_NAME));
+                }
+                List<User> agents = query.getResultList();
+                for (User user : agents) {
+                    results.put(user.getLoginName(), user);
+                }
+            }
+            for (User user : results.values()) {
+                if (session.userStorage().getUserByUsername(user.getLoginName(), realm) == null) {
+                    UserModel imported = importUserFromPicketlink(realm, user);
+                    searchResults.add(imported);
+                }
+            }
+        } catch (IdentityManagementException ie) {
+            throw convertIDMException(ie);
+        }
+        return searchResults;
     }
 
     @Override
-    public Class getAdminClass() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public boolean isValid(UserModel local) {
+        IdentityManager identityManager = getIdentityManager();
+
+        try {
+            User picketlinkUser = BasicModel.getUser(identityManager, local.getUsername());
+            if (picketlinkUser == null) {
+                return false;
+            }
+            return picketlinkUser.getId().equals(local.getAttribute(LDAP_ID));
+        } catch (IdentityManagementException ie) {
+            throw convertIDMException(ie);
+        }
     }
 
     @Override
-    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
-        throw new IllegalAccessError("Not allowed to call this");
-    }
-
-    @Override
-    public UserModel addUser(RealmModel realm, String username) {
-        throw new IllegalAccessError("Not allowed to call this");
-    }
-
-    @Override
-    public boolean removeUser(RealmModel realm, String name) {
-        throw new IllegalAccessError("Not allowed to call this");
-    }
-
-    @Override
-    public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
-        session.userStorage().addSocialLink(realm, user, socialLink);
-    }
-
-    @Override
-    public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider) {
-        return session.userStorage().removeSocialLink(realm, user, socialProvider);
-    }
-
-    @Override
-    public UserModel getUserById(String id, RealmModel realm) {
-        return null;
-    }
-
-
-    @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
         IdentityManager identityManager = getIdentityManager();
 
         try {
@@ -182,6 +203,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         imported.setFirstName(picketlinkUser.getFirstName());
         imported.setLastName(picketlinkUser.getLastName());
         imported.setFederationLink(model.getId());
+        imported.setAttribute(LDAP_ID, picketlinkUser.getId());
         return proxy(imported);
     }
 
@@ -200,7 +222,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         IdentityManager identityManager = getIdentityManager();
 
         try {
@@ -208,61 +230,10 @@ public class LDAPFederationProvider implements UserFederationProvider {
             if (picketlinkUser == null) {
                 return null;
             }
-
             return importUserFromPicketlink(realm, picketlinkUser);
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);
         }
-    }
-
-    @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
-        return null;
-    }
-
-    @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public int getUsersCount(RealmModel realm) {
-        return -1;
-    }
-
-    @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override

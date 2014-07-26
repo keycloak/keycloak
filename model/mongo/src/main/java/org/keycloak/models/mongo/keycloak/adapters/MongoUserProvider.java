@@ -192,7 +192,7 @@ public class MongoUserProvider implements UserProvider {
                 .and("realmId").is(realm.getId());
 
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
+            if (entry.getKey().equals(UserModel.USERNAME)) {
                 queryBuilder.and("username").regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
                 queryBuilder.and(UserModel.FIRST_NAME).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
@@ -285,9 +285,9 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public boolean removeUser(RealmModel realm, String name) {
+    public boolean removeUser(RealmModel realm, UserModel user) {
         DBObject query = new QueryBuilder()
-                .and("username").is(name)
+                .and("id").is(user.getId())
                 .and("realmId").is(realm.getId())
                 .get();
         return getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);

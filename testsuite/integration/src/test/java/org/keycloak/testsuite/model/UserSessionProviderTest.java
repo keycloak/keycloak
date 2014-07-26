@@ -45,8 +45,10 @@ public class UserSessionProviderTest {
     public void after() {
         resetSession();
         session.sessions().removeUserSessions(realm);
-        session.users().removeUser(realm, "user1");
-        session.users().removeUser(realm, "user2");
+        UserModel user1 = session.users().getUserByUsername("user1", realm);
+        UserModel user2 = session.users().getUserByUsername("user2", realm);
+        session.users().removeUser(realm, user1);
+        session.users().removeUser(realm, user2);
         kc.stopSession(session, true);
     }
 
