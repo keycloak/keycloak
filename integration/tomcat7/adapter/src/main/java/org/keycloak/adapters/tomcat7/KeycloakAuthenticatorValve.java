@@ -50,15 +50,15 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
-        if (event.getType() == Lifecycle.START_EVENT) {
+        if (Lifecycle.START_EVENT.equals(event.getType())) {
             try {
                 startDeployment();
             } catch (LifecycleException e) {
             	log.severe("Error starting deployment. " + e.getMessage());
             }
+        } else if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
+        	initInternal();
         }
-        
-        if (event.getType() == Lifecycle.AFTER_START_EVENT) initInternal();
     }
     
     @Override
