@@ -19,6 +19,7 @@ public class AbstractOAuthClient {
     protected String authUrl;
     protected String codeUrl;
     protected String refreshUrl;
+    protected boolean relativeUrls;
     protected String scope;
     protected String stateCookieName = OAUTH_TOKEN_REQUEST_STATE;
     protected String stateCookiePath;
@@ -98,6 +99,14 @@ public class AbstractOAuthClient {
 
     public void setPublicClient(boolean publicClient) {
         this.publicClient = publicClient;
+    }
+
+    public boolean isRelativeUrls() {
+        return relativeUrls;
+    }
+
+    public void setRelativeUrls(boolean relativeUrls) {
+        this.relativeUrls = relativeUrls;
     }
 
     protected String stripOauthParametersFromRedirect(String uri) {

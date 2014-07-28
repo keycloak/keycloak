@@ -222,10 +222,12 @@ public class AccountService {
             requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
             UserRepresentation rep = ModelToRepresentation.toRepresentation(auth.getUser());
-            Iterator<String> itr = rep.getAttributes().keySet().iterator();
-            while (itr.hasNext()) {
-                if (itr.next().startsWith("keycloak.")) {
-                    itr.remove();
+            if (rep.getAttributes() != null) {
+                Iterator<String> itr = rep.getAttributes().keySet().iterator();
+                while (itr.hasNext()) {
+                    if (itr.next().startsWith("keycloak.")) {
+                        itr.remove();
+                    }
                 }
             }
 

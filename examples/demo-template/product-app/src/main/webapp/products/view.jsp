@@ -9,13 +9,13 @@
 </head>
 <body bgcolor="#F5F6CE">
 <%
-    String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-            .queryParam("redirect_uri", "http://localhost:8080/customer-portal").build("demo").toString();
-    String acctUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
+    String logoutUri = KeycloakUriBuilder.fromUri("/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
+            .queryParam("redirect_uri", "/customer-portal").build("demo").toString();
+    String acctUri = KeycloakUriBuilder.fromUri("/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
             .queryParam("referrer", "product-portal").build("demo").toString();
 %>
 
-<p>Goto: <a href="http://localhost:8080/customer-portal">customers</a> | <a href="<%=logoutUri%>">logout</a> | <a href="<%=acctUri%>">manage acct</a></p>
+<p>Goto: <a href="/customer-portal">customers</a> | <a href="<%=logoutUri%>">logout</a> | <a href="<%=acctUri%>">manage acct</a></p>
 User <b><%=request.getUserPrincipal().getName()%></b> made this request.
 <h2>Product Listing</h2>
 <%

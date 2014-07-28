@@ -52,9 +52,7 @@
             "name": "cordova",
             "enabled": true,
             "publicClient": true,
-            "redirectUris": [
-                "http://localhost"
-            ]
+            "redirectUris": []
         }
     ],
     "applicationRoleMappings": {

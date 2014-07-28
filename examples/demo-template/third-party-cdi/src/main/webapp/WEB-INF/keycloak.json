@@ -1,7 +1,7 @@
 {
   "realm" : "demo",
   "resource" : "third-party",
-  "auth-server-url" : "http://localhost:8080/auth",
+  "auth-server-url" : "/auth",
   "ssl-not-required" : true,
    "credentials" : {
        "secret": "password"

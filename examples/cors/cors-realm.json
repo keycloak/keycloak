@@ -47,9 +47,9 @@
             "name": "angular-product",
             "enabled": true,
             "publicClient": true,
-            "baseUrl": "http://localhost:8080/angular-product/index.html",
+            "baseUrl": "/angular-product/index.html",
             "redirectUris": [
-                "http://localhost:8080/angular-product/*"
+                "/angular-product/*"
             ],
             "webOrigins": [
                 "http://localhost:8080"

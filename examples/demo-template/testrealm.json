@@ -89,10 +89,10 @@
         {
             "name": "customer-portal",
             "enabled": true,
-            "adminUrl": "http://localhost:8080/customer-portal",
-            "baseUrl": "http://localhost:8080/customer-portal",
+            "adminUrl": "/customer-portal",
+            "baseUrl": "/customer-portal",
             "redirectUris": [
-                "http://localhost:8080/customer-portal/*"
+                "/customer-portal/*"
             ],
             "secret": "password"
         },
@@ -100,18 +100,18 @@
             "name": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
-            "baseUrl": "http://localhost:8080/customer-portal-js",
+            "baseUrl": "/customer-portal-js",
             "redirectUris": [
-                "http://localhost:8080/customer-portal-js/*"
+                "/customer-portal-js/*"
             ]
         },
         {
             "name": "angular-product",
             "enabled": true,
             "publicClient": true,
-            "baseUrl": "http://localhost:8080/angular-product/index.html",
+            "baseUrl": "/angular-product/index.html",
             "redirectUris": [
-                "http://localhost:8080/angular-product/*"
+                "/angular-product/*"
             ]
         },
         {
@@ -126,10 +126,10 @@
         {
             "name": "product-portal",
             "enabled": true,
-            "adminUrl": "http://localhost:8080/product-portal",
-            "baseUrl": "http://localhost:8080/product-portal",
+            "adminUrl": "/product-portal",
+            "baseUrl": "/product-portal",
             "redirectUris": [
-                "http://localhost:8080/product-portal/*"
+                "/product-portal/*"
             ],
             "secret": "password"
         }
@@ -139,8 +139,8 @@
             "name": "third-party",
             "enabled": true,
             "redirectUris": [
-                "http://localhost:8080/oauth-client/*",
-                "http://localhost:8080/oauth-client-cdi/*"
+                "/oauth-client/*",
+                "/oauth-client-cdi/*"
             ],
             "secret": "password"
         },
