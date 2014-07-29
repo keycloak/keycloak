@@ -20,8 +20,8 @@ import java.util.Collection;
 @Table(name = "USER_SESSION")
 @NamedQueries({
         @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId order by s.started, s.id"),
-        @NamedQuery(name = "getUserSessionByClient", query = "select s from UserSessionEntity s join s.clients c where s.realmId = :realmId and c.clientId = :clientId order by s.started, s.id"),
-        @NamedQuery(name = "getActiveUserSessionByClient", query = "select count(s) from UserSessionEntity s join s.clients c where s.realmId = :realmId and c.clientId = :clientId"),
+        @NamedQuery(name = "getUserSessionByClient", query = "select s from UserSessionEntity s join s.clientSessions c where s.realmId = :realmId and c.clientId = :clientId order by s.started, s.id"),
+        @NamedQuery(name = "getActiveUserSessionByClient", query = "select count(s) from UserSessionEntity s join s.clientSessions c where s.realmId = :realmId and c.clientId = :clientId"),
         @NamedQuery(name = "removeUserSessionByRealm", query = "delete from UserSessionEntity s where s.realmId = :realmId"),
         @NamedQuery(name = "removeUserSessionByUser", query = "delete from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId"),
         @NamedQuery(name = "removeUserSessionByExpired", query = "delete from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime)")
@@ -56,8 +56,8 @@ public class UserSessionEntity {
     @Column(name="LAST_SESSION_REFRESH")
     protected int lastSessionRefresh;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="session")
-    protected Collection<ClientUserSessionAssociationEntity> clients = new ArrayList<ClientUserSessionAssociationEntity>();
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="session")
+    protected Collection<ClientSessionEntity> clientSessions = new ArrayList<ClientSessionEntity>();
 
     public String getId() {
         return id;
@@ -131,8 +131,8 @@ public class UserSessionEntity {
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
-    public Collection<ClientUserSessionAssociationEntity> getClients() {
-        return clients;
+    public Collection<ClientSessionEntity> getClientSessions() {
+        return clientSessions;
     }
 
 }

@@ -4,6 +4,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.OAuthClientModel;
@@ -209,7 +210,8 @@ public class ModelToRepresentation {
         rep.setLastAccess(((long)session.getLastSessionRefresh())* 1000L);
         rep.setUser(session.getUser().getUsername());
         rep.setIpAddress(session.getIpAddress());
-        for (ClientModel client : session.getClientAssociations()) {
+        for (ClientSessionModel clientSession : session.getClientSessions()) {
+            ClientModel client = clientSession.getClient();
             if (client instanceof ApplicationModel) {
                 rep.getApplications().add(client.getClientId());
             } else if (client instanceof OAuthClientModel) {

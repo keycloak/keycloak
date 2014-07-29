@@ -3,12 +3,16 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface UserSessionProvider extends Provider {
+
+    ClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, String redirectUri, String state, Set<String> roles);
+    ClientSessionModel getClientSession(RealmModel realm, String id);
 
     UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe);
     UserSessionModel getUserSession(RealmModel realm, String id);

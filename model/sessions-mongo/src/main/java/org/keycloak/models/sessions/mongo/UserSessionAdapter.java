@@ -2,14 +2,15 @@ package org.keycloak.models.sessions.mongo;
 
 import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.mongo.entities.MongoClientSessionEntity;
 import org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -19,16 +20,19 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
 
     private static final Logger logger = Logger.getLogger(UserSessionAdapter.class);
 
+    private final MongoUserSessionProvider provider;
     private MongoUserSessionEntity entity;
     private RealmModel realm;
     private KeycloakSession keycloakSession;
+    private final MongoStoreInvocationContext invContext;
 
-    public UserSessionAdapter(KeycloakSession keycloakSession, MongoUserSessionEntity entity, RealmModel realm, MongoStoreInvocationContext invContext)
-    {
+    public UserSessionAdapter(KeycloakSession keycloakSession, MongoUserSessionProvider provider, MongoUserSessionEntity entity, RealmModel realm, MongoStoreInvocationContext invContext) {
         super(invContext);
+        this.provider = provider;
         this.entity = entity;
         this.realm = realm;
         this.keycloakSession = keycloakSession;
+        this.invContext = invContext;
     }
 
     @Override
@@ -125,36 +129,12 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     }
 
     @Override
-    public void associateClient(ClientModel client) {
-        getMongoStore().pushItemToList(entity, "associatedClientIds", client.getId(), true, invocationContext);
-    }
-
-    @Override
-    public List<ClientModel> getClientAssociations() {
-        List<String> associatedClientIds = getMongoEntity().getAssociatedClientIds();
-
-        List<ClientModel> clients = new ArrayList<ClientModel>();
-        for (String clientId : associatedClientIds) {
-            // Try application first
-            ClientModel client = realm.getApplicationById(clientId);
-
-            // And then OAuthClient
-            if (client == null) {
-                client = realm.getOAuthClientById(clientId);
-            }
-
-            if (client != null) {
-                clients.add(client);
-            } else {
-                logger.warnf("Not found associated client with Id: %s", clientId);
-            }
+    public List<ClientSessionModel> getClientSessions() {
+        List<ClientSessionModel> sessions = new LinkedList<ClientSessionModel>();
+        for (MongoClientSessionEntity e : entity.getClientSessions()) {
+            sessions.add(new ClientSessionAdapter(keycloakSession, provider, realm, e, entity, invocationContext));
         }
-        return clients;
-    }
-
-    @Override
-    public void removeAssociatedClient(ClientModel client) {
-        getMongoStore().pullItemFromList(entity, "associatedClientIds", client.getId(), invocationContext);
+        return sessions;
     }
 
     @Override

@@ -21,10 +21,12 @@
  */
 package org.keycloak.testsuite.rule;
 
+import org.junit.Assert;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
 
@@ -105,6 +107,24 @@ public class KeycloakRule extends AbstractKeycloakRule {
         assertNotNull(userSession);
         session.sessions().removeUserSession(realm, userSession);
         stopSession(session, true);
+    }
+
+    public AccessCode verifyCode(String code) {
+        KeycloakSession session = startSession();
+        try {
+            RealmModel realm = session.realms().getRealm("test");
+            try {
+                AccessCode accessCode = AccessCode.parse(code, session, realm);
+                if (accessCode == null) {
+                    Assert.fail("Invalid code");
+                }
+                return accessCode;
+            } catch (Throwable t) {
+                throw new AssertionError("Failed to parse code", t);
+            }
+        } finally {
+            stopSession(session, false);
+        }
     }
 
     public abstract static class KeycloakSetup {

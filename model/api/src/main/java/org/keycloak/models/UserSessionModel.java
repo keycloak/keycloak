@@ -39,10 +39,6 @@ public interface UserSessionModel {
 
     void setLastSessionRefresh(int seconds);
 
-    void associateClient(ClientModel client);
-
-    List<ClientModel> getClientAssociations();
-
-    void removeAssociatedClient(ClientModel client);
+    List<ClientSessionModel> getClientSessions();
 
 }

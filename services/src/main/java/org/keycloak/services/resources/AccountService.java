@@ -40,12 +40,14 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -151,9 +153,20 @@ public class AccountService {
             }
         }
         if (authResult != null) {
-            if (authResult.getSession() != null) {
-                authResult.getSession().associateClient(application);
+            UserSessionModel userSession = authResult.getSession();
+            if (userSession != null) {
+                boolean associated = false;
+                for (ClientSessionModel c : userSession.getClientSessions()) {
+                    if (c.getClient().equals(application)) {
+                        associated = true;
+                        break;
+                    }
+                }
+                if (!associated) {
+                    session.sessions().createClientSession(realm, application, userSession, null, null, null);
+                }
             }
+
             account.setUser(auth.getUser());
 
             AuthenticationLinkModel authLinkModel = auth.getUser().getAuthenticationLink();

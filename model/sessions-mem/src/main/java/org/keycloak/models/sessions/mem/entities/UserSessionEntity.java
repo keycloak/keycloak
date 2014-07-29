@@ -1,5 +1,6 @@
 package org.keycloak.models.sessions.mem.entities;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class UserSessionEntity {
     private boolean rememberMe;
     private int started;
     private int lastSessionRefresh;
-    private List<String> clients = new LinkedList<String>();
+    private List<ClientSessionEntity> clientSessions = Collections.synchronizedList(new LinkedList<ClientSessionEntity>());
 
     public String getId() {
         return id;
@@ -91,12 +92,21 @@ public class UserSessionEntity {
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
-    public List<String> getClients() {
-        return clients;
+    public void addClientSession(ClientSessionEntity clientSession) {
+        if (clientSessions == null) {
+            clientSessions = new LinkedList<ClientSessionEntity>();
+        }
+        clientSessions.add(clientSession);
     }
 
-    public void setClients(List<String> clients) {
-        this.clients = clients;
+    public void removeClientSession(ClientSessionEntity clientSession) {
+        if (clientSessions != null) {
+            clientSessions.remove(clientSession);
+        }
+    }
+
+    public List<ClientSessionEntity> getClientSessions() {
+        return clientSessions;
     }
 
 }

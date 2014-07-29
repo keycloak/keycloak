@@ -4,8 +4,8 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+import org.keycloak.models.sessions.mem.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
-import org.keycloak.models.sessions.mem.entities.UserSessionKey;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureKey;
 
@@ -18,13 +18,15 @@ public class MemUserSessionProviderFactory implements UserSessionProviderFactory
 
     public static final String ID = "mem";
 
-    private ConcurrentHashMap<UserSessionKey, UserSessionEntity> sessions = new ConcurrentHashMap<UserSessionKey, UserSessionEntity>();
+    private ConcurrentHashMap<String, UserSessionEntity> userSessions = new ConcurrentHashMap<String, UserSessionEntity>();
+
+    private ConcurrentHashMap<String, ClientSessionEntity> clientSessions = new ConcurrentHashMap<String, ClientSessionEntity>();
 
     private ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures = new ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity>();
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
-        return new MemUserSessionProvider(session, sessions, loginFailures);
+        return new MemUserSessionProvider(session, userSessions, clientSessions, loginFailures);
     }
 
     @Override
@@ -33,7 +35,7 @@ public class MemUserSessionProviderFactory implements UserSessionProviderFactory
 
     @Override
     public void close() {
-        sessions.clear();
+        userSessions.clear();
         loginFailures.clear();
     }
 
