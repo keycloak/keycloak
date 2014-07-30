@@ -8,6 +8,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 
+import java.util.Arrays;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -117,7 +119,13 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.getUsername(), actual.getUsername());
         Assert.assertEquals(expected.getFirstName(), actual.getFirstName());
         Assert.assertEquals(expected.getLastName(), actual.getLastName());
-        Assert.assertArrayEquals(expected.getRequiredActions().toArray(), actual.getRequiredActions().toArray());
+
+        RequiredAction[] expectedRequiredActions = expected.getRequiredActions().toArray(new RequiredAction[expected.getRequiredActions().size()]);
+        Arrays.sort(expectedRequiredActions);
+        RequiredAction[] actualRequiredActions = actual.getRequiredActions().toArray(new RequiredAction[actual.getRequiredActions().size()]);
+        Arrays.sort(actualRequiredActions);
+
+        Assert.assertArrayEquals(expectedRequiredActions, actualRequiredActions);
     }
 
 }
