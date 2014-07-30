@@ -10,6 +10,7 @@ public interface Errors {
     String CLIENT_NOT_FOUND = "client_not_found";
     String CLIENT_DISABLED = "client_disabled";
     String INVALID_CLIENT_CREDENTIALS = "invalid_client_credentials";
+    String INVALID_CLIENT = "invalid_client";
 
     String USER_NOT_FOUND = "user_not_found";
     String USER_DISABLED = "user_disabled";
