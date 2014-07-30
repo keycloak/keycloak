@@ -222,7 +222,7 @@ module.factory('OAuthClientLoader', function(Loader, OAuthClient, $route, $q) {
     return Loader.get(OAuthClient, function() {
         return {
             realm : $route.current.params.realm,
-            id : $route.current.params.oauth
+            oauth : $route.current.params.oauth
         }
     });
 });

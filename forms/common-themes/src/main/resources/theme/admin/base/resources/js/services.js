@@ -727,9 +727,9 @@ module.factory('ApplicationOrigins', function($resource) {
 });
 
 module.factory('OAuthClient', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:id', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth', {
         realm : '@realm',
-        id : '@id'
+        oauth : '@oauth'
     },  {
         update : {
             method : 'PUT'
