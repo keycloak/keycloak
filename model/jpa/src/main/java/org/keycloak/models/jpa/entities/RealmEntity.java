@@ -117,7 +117,7 @@ public class RealmEntity {
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="FED_PROVIDERS")
-    List<FederationProviderEntity> federationProviders = new ArrayList<FederationProviderEntity>();
+    List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="APPLICATION_ID") }, inverseJoinColumns={ @JoinColumn(name="REALM_ID") })
@@ -513,12 +513,12 @@ public class RealmEntity {
         this.masterAdminApp = masterAdminApp;
     }
 
-    public List<FederationProviderEntity> getFederationProviders() {
-        return federationProviders;
+    public List<UserFederationProviderEntity> getUserFederationProviders() {
+        return userFederationProviders;
     }
 
-    public void setFederationProviders(List<FederationProviderEntity> federationProviders) {
-        this.federationProviders = federationProviders;
+    public void setUserFederationProviders(List<UserFederationProviderEntity> userFederationProviders) {
+        this.userFederationProviders = userFederationProviders;
     }
 }
 

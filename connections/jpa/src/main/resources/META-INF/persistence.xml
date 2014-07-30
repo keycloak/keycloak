@@ -9,7 +9,7 @@
         <class>org.keycloak.models.jpa.entities.RealmEntity</class>
         <class>org.keycloak.models.jpa.entities.RequiredCredentialEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationProviderEntity</class>
-        <class>org.keycloak.models.jpa.entities.FederationProviderEntity</class>
+        <class>org.keycloak.models.jpa.entities.UserFederationProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.RoleEntity</class>
         <class>org.keycloak.models.jpa.entities.SocialLinkEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationLinkEntity</class>

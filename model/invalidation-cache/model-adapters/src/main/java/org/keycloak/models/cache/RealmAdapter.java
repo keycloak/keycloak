@@ -608,13 +608,26 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<UserFederationProviderModel> getUserFederationProviders() {
         if (updated != null) return updated.getUserFederationProviders();
-        return cached.getFederationProviders();
+        return cached.getUserFederationProviders();
     }
 
     @Override
     public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
         getDelegateForUpdate();
         updated.setUserFederationProviders(providers);
+    }
+
+    @Override
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority) {
+        getDelegateForUpdate();
+        return updated.addUserFederationProvider(providerName, config, priority);
+    }
+
+    @Override
+    public void removeUserFederationProvider(UserFederationProviderModel provider) {
+        getDelegateForUpdate();
+        updated.removeUserFederationProvider(provider);
+
     }
 
     @Override

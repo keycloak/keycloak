@@ -6,10 +6,12 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FederationProviderEntity {
+public class UserFederationProviderEntity {
     protected String id;
     protected String providerName;
-    private Map<String, String> config;
+    protected Map<String, String> config;
+    protected int priority;
+
 
     public String getId() {
         return id;
@@ -33,5 +35,13 @@ public class FederationProviderEntity {
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 }

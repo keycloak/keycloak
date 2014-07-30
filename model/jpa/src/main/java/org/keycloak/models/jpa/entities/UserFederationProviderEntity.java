@@ -19,8 +19,8 @@ import java.util.Map;
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
 @Entity
-@Table(name="FEDERATION_PROVIDER")
-public class FederationProviderEntity {
+@Table(name="USER_FEDERATION_PROVIDER")
+public class UserFederationProviderEntity {
 
     @Id
     @Column(name="ID", length = 36)
@@ -38,7 +38,7 @@ public class FederationProviderEntity {
     @ElementCollection
     @MapKeyColumn(name="name")
     @Column(name="value")
-    @CollectionTable(name="FEDERATION_PROVIDER_CONFIG")
+    @CollectionTable(name="USER_FEDERATION_CONFIG")
     private Map<String, String> config;
 
     public String getId() {

@@ -320,7 +320,7 @@ public class RepresentationToModel {
 
         for (UserFederationProviderRepresentation representation : providers) {
             UserFederationProviderModel model = new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
-                    representation.getConfig());
+                    representation.getConfig(), representation.getPriority());
             result.add(model);
         }
         return result;
