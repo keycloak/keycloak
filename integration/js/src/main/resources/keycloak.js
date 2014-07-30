@@ -136,6 +136,10 @@
                 url += '&prompt=' + options.prompt;
             }
 
+            if (options && options.loginHint) {
+                url += '&login_hint=' + options.loginHint;
+            }
+
             return url;
         }
 
