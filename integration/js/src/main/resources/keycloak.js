@@ -279,6 +279,14 @@
             return kc.authServerUrl + '/realms/' + encodeURIComponent(kc.realm);
         }
 
+        function getOrigin() {
+            if (!window.location.origin) {
+                return window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            } else {
+                return window.location.origin;
+            }
+        }
+
         function processCallback(oauth, promise) {
             var code = oauth.code;
             var error = oauth.error;
@@ -556,7 +564,7 @@
             iframe.onload = function() {
                 var realmUrl = getRealmUrl();
                 if (realmUrl.charAt(0) === '/') {
-                    loginIframe.iframeOrigin = window.location.origin;
+                    loginIframe.iframeOrigin = getOrigin();
                 } else {
                     loginIframe.iframeOrigin = realmUrl.substring(0, realmUrl.indexOf('/', 8));
                 }
@@ -564,7 +572,7 @@
                 promise.setSuccess();
             }
 
-            var src = getRealmUrl() + '/login-status-iframe.html?client_id=' + encodeURIComponent(kc.clientId) + '&origin=' + window.location.origin;
+            var src = getRealmUrl() + '/login-status-iframe.html?client_id=' + encodeURIComponent(kc.clientId) + '&origin=' + getOrigin();
             iframe.setAttribute('src', src );
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
