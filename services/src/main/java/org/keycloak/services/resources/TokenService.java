@@ -761,8 +761,16 @@ public class TokenService {
             throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
+        if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put(OAuth2Constants.ERROR, "invalid_client");
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Bearer-only not allowed");
+            audit.error(Errors.INVALID_CLIENT);
+            throw new BadRequestException("Bearer-only not allowed", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+        }
+
         if (!client.isPublicClient()) {
-            if (!client.validateSecret(clientSecret)) {
+            if (clientSecret == null || !client.validateSecret(clientSecret)) {
                 Map<String, String> error = new HashMap<String, String>();
                 error.put(OAuth2Constants.ERROR, "unauthorized_client");
                 audit.error(Errors.INVALID_CLIENT_CREDENTIALS);
