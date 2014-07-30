@@ -2,6 +2,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -789,7 +790,8 @@ public class TokenService {
     @GET
     public Response loginPage(final @QueryParam("response_type") String responseType,
                               @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
-                              final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt) {
+                              final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt,
+                              final @QueryParam("login_hint") String loginHint) {
         logger.info("TokenService.loginPage");
 
         audit.event(EventType.LOGIN).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
@@ -845,8 +847,17 @@ public class TokenService {
         if (prompt != null && prompt.equals("none")) {
             return oauth.redirectError(client, "access_denied", state, redirect);
         }
-        logger.info("createLogin() now...");
-        return Flows.forms(session, realm, uriInfo).createLogin();
+
+        LoginFormsProvider forms = Flows.forms(session, realm, uriInfo);
+
+        if (loginHint != null) {
+            MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
+            formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
+
+            forms.setFormData(formData);
+        }
+
+        return forms.createLogin();
     }
 
     /**

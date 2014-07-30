@@ -121,6 +121,20 @@ public class LoginTest {
     }
 
     @Test
+    public void loginLoginHint() {
+        String loginFormUrl = oauth.getLoginFormUrl() + "&login_hint=login-test";
+        driver.navigate().to(loginFormUrl);
+
+        Assert.assertEquals("login-test", loginPage.getUsername());
+        loginPage.login("password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+    }
+
+    @Test
     public void loginWithEmailSuccess() {
         loginPage.open();
         loginPage.login("login@test.com", "password");
