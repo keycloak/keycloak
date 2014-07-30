@@ -28,8 +28,6 @@ public class OAuthClientTest extends AbstractClientTest {
     }
 
     @Test
-    @Ignore
-    // TODO For some reason clients are retrieved using id, not client-id
     public void removeOAuthClient() {
         createOAuthClient();
 
@@ -37,8 +35,6 @@ public class OAuthClientTest extends AbstractClientTest {
     }
 
     @Test
-    @Ignore
-    // TODO For some reason clients are retrieved using id, not client-id
     public void getOAuthClientRepresentation() {
         createOAuthClient();
 

@@ -90,7 +90,7 @@ public class OAuthClientsResource {
 
         try {
             OAuthClientModel oauth = RepresentationToModel.createOAuthClient(rep, realm);
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(oauth.getId()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(oauth.getClientId()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Client " + rep.getName() + " already exists");
         }
@@ -99,14 +99,14 @@ public class OAuthClientsResource {
     /**
      * Base path to manage one specific oauth client
      *
-     * @param id oauth client's id (not clientId!)
+     * @param clientId oauth client's clientId
      * @return
      */
-    @Path("{id}")
-    public OAuthClientResource getOAuthClient(final @PathParam("id") String id) {
+    @Path("{clientId}")
+    public OAuthClientResource getOAuthClient(final @PathParam("clientId") String clientId) {
         auth.requireView();
 
-        OAuthClientModel oauth = realm.getOAuthClientById(id);
+        OAuthClientModel oauth = realm.getOAuthClient(clientId);
         if (oauth == null) {
             throw new NotFoundException("OAuth Client not found");
         }
