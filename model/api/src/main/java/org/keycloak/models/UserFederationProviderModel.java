@@ -12,10 +12,11 @@ public class UserFederationProviderModel {
     private String id;
     private String providerName;
     private Map<String, String> config = new HashMap<String, String>();
+    private int priority;
 
     public UserFederationProviderModel() {};
 
-    public UserFederationProviderModel(String id, String providerName, Map<String, String> config) {
+    public UserFederationProviderModel(String id, String providerName, Map<String, String> config, int priority) {
         this.id = id;
         this.providerName = providerName;
         if (config != null) {
@@ -41,5 +42,13 @@ public class UserFederationProviderModel {
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 }

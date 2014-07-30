@@ -10,6 +10,7 @@ public class UserFederationProviderRepresentation {
     private String id;
     private String providerName;
     private Map<String, String> config;
+    private int priority;
 
     public String getId() {
         return id;
@@ -34,6 +35,14 @@ public class UserFederationProviderRepresentation {
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     @Override

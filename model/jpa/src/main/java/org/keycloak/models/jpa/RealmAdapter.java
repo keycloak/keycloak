@@ -3,8 +3,9 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.jpa.entities.FederationProviderEntity;
+import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -30,6 +31,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -728,61 +730,104 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<UserFederationProviderModel> getUserFederationProviders() {
-        List<FederationProviderEntity> entities = realm.getFederationProviders();
-        List<FederationProviderEntity> copy = new ArrayList<FederationProviderEntity>();
-        for (FederationProviderEntity entity : entities) {
+        List<UserFederationProviderEntity> entities = realm.getUserFederationProviders();
+        List<UserFederationProviderEntity> copy = new ArrayList<UserFederationProviderEntity>();
+        for (UserFederationProviderEntity entity : entities) {
             copy.add(entity);
 
         }
-        Collections.sort(copy, new Comparator<FederationProviderEntity>() {
+        Collections.sort(copy, new Comparator<UserFederationProviderEntity>() {
 
             @Override
-            public int compare(FederationProviderEntity o1, FederationProviderEntity o2) {
+            public int compare(UserFederationProviderEntity o1, UserFederationProviderEntity o2) {
                 return o1.getPriority() - o2.getPriority();
             }
 
         });
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
-        for (FederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig()));
+        for (UserFederationProviderEntity entity : copy) {
+            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority()));
         }
 
         return result;
     }
 
     @Override
-    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
-        List<FederationProviderEntity> newEntities = new ArrayList<FederationProviderEntity>();
-        int counter = 1;
-        for (UserFederationProviderModel model : providers) {
-            FederationProviderEntity entity = new FederationProviderEntity();
-            entity.setId(KeycloakModelUtils.generateId());
-            entity.setRealm(realm);
-            entity.setProviderName(model.getProviderName());
-            entity.setConfig(model.getConfig());
-            entity.setPriority(counter++);
-            newEntities.add(entity);
-        }
-
-        // Remove all existing first
-        Collection<FederationProviderEntity> existing = realm.getFederationProviders();
-        Collection<FederationProviderEntity> copy = new ArrayList<FederationProviderEntity>(existing);
-        for (FederationProviderEntity apToRemove : copy) {
-            existing.remove(apToRemove);
-            em.remove(apToRemove);
-        }
-
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority) {
+        String id = KeycloakModelUtils.generateId();
+        UserFederationProviderEntity entity = new UserFederationProviderEntity();
+        entity.setId(id);
+        entity.setRealm(realm);
+        entity.setProviderName(providerName);
+        entity.setConfig(config);
+        entity.setPriority(priority);
+        em.persist(entity);
+        realm.getUserFederationProviders().add(entity);
         em.flush();
-
-        // Now create all new providers
-        for (FederationProviderEntity apToAdd : newEntities) {
-            existing.add(apToAdd);
-            em.persist(apToAdd);
-        }
-
-        em.flush();
+        return new UserFederationProviderModel(entity.getId(), providerName, config, priority);
     }
 
+    @Override
+    public void removeUserFederationProvider(UserFederationProviderModel provider) {
+        UserFederationProviderEntity entity = null;
+        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
+        while (it.hasNext()) {
+            if (entity.getId().equals(provider.getId())) {
+                it.remove();
+                em.remove(entity);
+                return;
+            }
+        }
+    }
+
+    @Override
+    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
+
+        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
+        while (it.hasNext()) {
+            UserFederationProviderEntity entity = it.next();
+            boolean found = false;
+            for (UserFederationProviderModel model : providers) {
+                if (entity.getId().equals(model.getId())) {
+                    entity.setConfig(model.getConfig());
+                    entity.setPriority(model.getPriority());
+                    entity.setProviderName(model.getProviderName());
+                    entity.setPriority(model.getPriority());
+                    found = true;
+                    break;
+                }
+
+            }
+            if (found) continue;
+            it.remove();
+            em.remove(entity);
+        }
+
+        List<UserFederationProviderModel> add = new LinkedList<UserFederationProviderModel>();
+        for (UserFederationProviderModel model : providers) {
+            boolean found = false;
+            for (UserFederationProviderEntity entity : realm.getUserFederationProviders()) {
+                if (entity.getId().equals(model.getId())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) add.add(model);
+        }
+
+        for (UserFederationProviderModel model : providers) {
+            UserFederationProviderEntity entity = new UserFederationProviderEntity();
+            if (model.getId() != null) entity.setId(model.getId());
+            else entity.setId(KeycloakModelUtils.generateId());
+            entity.setConfig(model.getConfig());
+            entity.setPriority(model.getPriority());
+            entity.setProviderName(model.getProviderName());
+            entity.setPriority(model.getPriority());
+            em.persist(entity);
+            realm.getUserFederationProviders().add(entity);
+
+        }
+    }
 
     @Override
     public RoleModel getRole(String name) {

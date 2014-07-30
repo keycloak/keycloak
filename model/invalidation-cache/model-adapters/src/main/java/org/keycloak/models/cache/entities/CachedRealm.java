@@ -65,7 +65,7 @@ public class CachedRealm {
 
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<AuthenticationProviderModel> authenticationProviders = new ArrayList<AuthenticationProviderModel>();
-    private List<UserFederationProviderModel> federationProviders = new ArrayList<UserFederationProviderModel>();
+    private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
@@ -122,7 +122,7 @@ public class CachedRealm {
 
         requiredCredentials = model.getRequiredCredentials();
         authenticationProviders = model.getAuthenticationProviders();
-        federationProviders = model.getUserFederationProviders();
+        userFederationProviders = model.getUserFederationProviders();
 
         smtpConfig.putAll(model.getSmtpConfig());
         socialConfig.putAll(model.getSocialConfig());
@@ -331,7 +331,7 @@ public class CachedRealm {
         return auditListeners;
     }
 
-    public List<UserFederationProviderModel> getFederationProviders() {
-        return federationProviders;
+    public List<UserFederationProviderModel> getUserFederationProviders() {
+        return userFederationProviders;
     }
 }
