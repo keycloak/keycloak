@@ -75,6 +75,17 @@ public class LoginPage extends AbstractPage {
         submitButton.click();
     }
 
+    public void login(String password) {
+        passwordInput.clear();
+        passwordInput.sendKeys(password);
+
+        submitButton.click();
+    }
+
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
+    }
+
     public void cancel() {
         cancelButton.click();
     }
