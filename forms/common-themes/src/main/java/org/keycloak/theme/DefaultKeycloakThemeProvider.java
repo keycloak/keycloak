@@ -37,7 +37,7 @@ public class DefaultKeycloakThemeProvider implements ThemeProvider {
     }
 
     @Override
-    public Theme createTheme(String name, Theme.Type type) throws IOException {
+    public Theme getTheme(String name, Theme.Type type) throws IOException {
         if (hasTheme(name, type)) {
             return new ClassLoaderTheme(name, type, getClass().getClassLoader());
         } else {

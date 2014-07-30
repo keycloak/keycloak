@@ -5,9 +5,9 @@ import org.keycloak.audit.Event;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.email.freemarker.beans.EventBean;
-import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
+import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -79,8 +79,8 @@ public class FreeMarkerEmailProvider implements EmailProvider {
 
     private void send(String subjectKey, String template, Map<String, Object> attributes) throws EmailException {
         try {
-            ExtendingThemeManager themeManager = new ExtendingThemeManager(session);
-            Theme theme = themeManager.createTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
+            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+            Theme theme = themeProvider.getTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
 
             String subject =  theme.getMessages().getProperty(subjectKey);
             String body = freeMarker.processTemplate(attributes, template, theme);

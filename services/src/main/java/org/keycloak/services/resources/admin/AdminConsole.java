@@ -6,8 +6,9 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.freemarker.ExtendingThemeManager;
+import org.keycloak.Config;
 import org.keycloak.freemarker.Theme;
+import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
@@ -310,15 +311,15 @@ public class AdminConsole {
         }
 
         try {
-            ExtendingThemeManager themeManager = new ExtendingThemeManager(session);
-            Theme theme = themeManager.createTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
+            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+            Theme theme = themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
                 String contentType = mimeTypes.getContentType(path);
 
                 CacheControl cacheControl = new CacheControl();
                 cacheControl.setNoTransform(false);
-                cacheControl.setMaxAge(themeManager.getStaticMaxAge());
+                cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
 
                 return Response.ok(resource).type(contentType).cacheControl(cacheControl).build();
             } else {

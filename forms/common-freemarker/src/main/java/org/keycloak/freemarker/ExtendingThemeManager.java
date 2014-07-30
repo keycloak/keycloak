@@ -14,34 +14,47 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ExtendingThemeManager implements ThemeProvider {
 
+    private final KeycloakSession session;
+    private final ConcurrentHashMap<ExtendingThemeManagerFactory.ThemeKey, Theme> themeCache;
     private List<ThemeProvider> providers;
     private String defaultTheme;
     private int staticMaxAge;
 
-    public ExtendingThemeManager(KeycloakSession session) {
-        providers = new LinkedList();
-
-        for (ThemeProvider p : session.getAllProviders(ThemeProvider.class)) {
-            if (!p.getClass().equals(ExtendingThemeManager.class)) {
-                providers.add(p);
-            }
-        }
-
-        Collections.sort(providers, new Comparator<ThemeProvider>() {
-            @Override
-            public int compare(ThemeProvider o1, ThemeProvider o2) {
-                return o2.getProviderPriority() - o1.getProviderPriority();
-            }
-        });
-
+    public ExtendingThemeManager(KeycloakSession session, ConcurrentHashMap<ExtendingThemeManagerFactory.ThemeKey, Theme> themeCache) {
+        this.session = session;
+        this.themeCache = themeCache;
         this.defaultTheme = Config.scope("theme").get("default", "keycloak");
         this.staticMaxAge = Config.scope("theme").getInt("staticMaxAge", -1);
+    }
+
+    private List<ThemeProvider> getProviders() {
+        if (providers == null) {
+            providers = new LinkedList();
+
+            for (ThemeProvider p : session.getAllProviders(ThemeProvider.class)) {
+                if (!(p instanceof ExtendingThemeManager)) {
+                    if (!p.getClass().equals(ExtendingThemeManager.class)) {
+                        providers.add(p);
+                    }
+                }
+            }
+
+            Collections.sort(providers, new Comparator<ThemeProvider>() {
+                @Override
+                public int compare(ThemeProvider o1, ThemeProvider o2) {
+                    return o2.getProviderPriority() - o1.getProviderPriority();
+                }
+            });
+        }
+
+        return providers;
     }
 
     public int getStaticMaxAge() {
@@ -54,11 +67,27 @@ public class ExtendingThemeManager implements ThemeProvider {
     }
 
     @Override
-    public Theme createTheme(String name, Theme.Type type) throws IOException {
+    public Theme getTheme(String name, Theme.Type type) throws IOException {
         if (name == null) {
             name = defaultTheme;
         }
 
+        if (themeCache != null) {
+            ExtendingThemeManagerFactory.ThemeKey key = ExtendingThemeManagerFactory.ThemeKey.get(name, type);
+            Theme theme = themeCache.get(key);
+            if (theme == null) {
+                theme = loadTheme(name, type);
+                if (themeCache.putIfAbsent(key, theme) != null) {
+                    theme = themeCache.get(key);
+                }
+            }
+            return theme;
+        } else {
+            return loadTheme(name, type);
+        }
+    }
+
+    private Theme loadTheme(String name, Theme.Type type) throws IOException {
         Theme theme = findTheme(name, type);
         if (theme.getParentName() != null) {
             List<Theme> themes = new LinkedList<Theme>();
@@ -88,7 +117,7 @@ public class ExtendingThemeManager implements ThemeProvider {
     @Override
     public Set<String> nameSet(Theme.Type type) {
         Set<String> themes = new HashSet<String>();
-        for (ThemeProvider p : providers) {
+        for (ThemeProvider p : getProviders()) {
             themes.addAll(p.nameSet(type));
         }
         return themes;
@@ -96,7 +125,7 @@ public class ExtendingThemeManager implements ThemeProvider {
 
     @Override
     public boolean hasTheme(String name, Theme.Type type) {
-        for (ThemeProvider p : providers) {
+        for (ThemeProvider p : getProviders()) {
             if (p.hasTheme(name, type)) {
                 return true;
             }
@@ -110,10 +139,10 @@ public class ExtendingThemeManager implements ThemeProvider {
     }
 
     private Theme findTheme(String name, Theme.Type type) {
-        for (ThemeProvider p : providers) {
+        for (ThemeProvider p : getProviders()) {
             if (p.hasTheme(name, type)) {
                 try {
-                    return p.createTheme(name, type);
+                    return p.getTheme(name, type);
                 } catch (IOException e) {
                     throw new RuntimeException("Failed to create " + type.toString().toLowerCase() + " theme", e);
                 }

@@ -1,8 +1,9 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.keycloak.freemarker.ExtendingThemeManager;
+import org.keycloak.Config;
 import org.keycloak.freemarker.Theme;
+import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 
 import javax.activation.FileTypeMap;
@@ -42,13 +43,13 @@ public class ThemeResource {
     @Path("/{themeType}/{themeName}/{path:.*}")
     public Response getResource(@PathParam("themeType") String themType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
         try {
-            ExtendingThemeManager themeManager = new ExtendingThemeManager(session);
-            Theme theme = themeManager.createTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
+            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+            Theme theme = themeProvider.getTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
                 CacheControl cacheControl = new CacheControl();
                 cacheControl.setNoTransform(false);
-                cacheControl.setMaxAge(themeManager.getStaticMaxAge());
+                cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
 
                 return Response.ok(resource).type(mimeTypes.getContentType(path)).cacheControl(cacheControl).build();
             } else {

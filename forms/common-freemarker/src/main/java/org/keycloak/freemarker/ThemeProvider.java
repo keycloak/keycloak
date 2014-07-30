@@ -12,7 +12,7 @@ public interface ThemeProvider extends Provider {
 
     public int getProviderPriority();
 
-    public Theme createTheme(String name, Theme.Type type) throws IOException;
+    public Theme getTheme(String name, Theme.Type type) throws IOException;
 
     public Set<String> nameSet(Theme.Type type);
 

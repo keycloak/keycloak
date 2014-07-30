@@ -13,10 +13,10 @@ import org.keycloak.account.freemarker.model.SessionsBean;
 import org.keycloak.account.freemarker.model.TotpBean;
 import org.keycloak.account.freemarker.model.UrlBean;
 import org.keycloak.audit.Event;
-import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
+import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -73,10 +73,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     public Response createResponse(AccountPages page) {
         Map<String, Object> attributes = new HashMap<String, Object>();
 
-        ExtendingThemeManager themeManager = new ExtendingThemeManager(session);
+        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         Theme theme;
         try {
-            theme = themeManager.createTheme(realm.getAccountTheme(), Theme.Type.ACCOUNT);
+            theme = themeProvider.getTheme(realm.getAccountTheme(), Theme.Type.ACCOUNT);
         } catch (IOException e) {
             logger.error("Failed to create theme", e);
             return Response.serverError().build();
