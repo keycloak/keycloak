@@ -12,17 +12,18 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class FreeMarkerUtil {
 
-    private Map<String, Template> cache;
+    private ConcurrentHashMap<String, Template> cache;
 
     public FreeMarkerUtil() {
-        if (Config.scope("theme").getBoolean("cacheTemplates", false)) {
-            cache = Collections.synchronizedMap(new HashMap<String, Template>());
+        if (Config.scope("theme").getBoolean("cacheTemplates", true)) {
+            cache = new ConcurrentHashMap<String, Template>();
         }
     }
 
@@ -34,7 +35,9 @@ public class FreeMarkerUtil {
                 template = cache.get(key);
                 if (template == null) {
                     template = getTemplate(templateName, theme);
-                    cache.put(key, template);
+                    if (cache.putIfAbsent(key, template) != null) {
+                        template = cache.get(key);
+                    }
                 }
             } else {
                 template = getTemplate(templateName, theme);

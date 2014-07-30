@@ -3,6 +3,7 @@ package org.keycloak.models.sessions.mem;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -213,7 +214,11 @@ public class MemUserSessionProvider implements UserSessionProvider {
     @Override
     public UsernameLoginFailureModel addUserLoginFailure(RealmModel realm, String username) {
         UsernameLoginFailureKey key = new UsernameLoginFailureKey(username, realm.getId());
-        return new UsernameLoginFailureAdapter(loginFailures.putIfAbsent(key, new UsernameLoginFailureEntity(username, realm.getId())));
+        UsernameLoginFailureEntity entity = new UsernameLoginFailureEntity(username, realm.getId());
+        if (loginFailures.putIfAbsent(key, entity) != null) {
+            throw new ModelDuplicateException();
+        }
+        return new UsernameLoginFailureAdapter(entity);
     }
 
     @Override

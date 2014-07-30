@@ -4,6 +4,7 @@ import org.keycloak.audit.AuditListener;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.Theme;
+import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.util.ProviderLoader;
@@ -41,11 +42,11 @@ public class ServerInfoAdminResource {
     }
 
     private void setThemes(ServerInfoRepresentation info) {
-        ExtendingThemeManager themeManager = new ExtendingThemeManager(session);
+        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         info.themes = new HashMap<String, List<String>>();
 
         for (Theme.Type type : Theme.Type.values()) {
-            List<String> themes = new LinkedList<String>(themeManager.nameSet(type));
+            List<String> themes = new LinkedList<String>(themeProvider.nameSet(type));
             Collections.sort(themes);
 
             info.themes.put(type.toString().toLowerCase(), themes);

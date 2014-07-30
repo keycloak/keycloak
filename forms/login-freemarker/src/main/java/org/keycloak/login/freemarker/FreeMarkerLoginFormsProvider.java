@@ -4,10 +4,10 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
-import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
+import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.freemarker.model.CodeBean;
@@ -150,10 +150,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Map<String, Object> attributes = new HashMap<String, Object>();
 
-        ExtendingThemeManager themeManager = new ExtendingThemeManager(session);
+        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         Theme theme;
         try {
-            theme = themeManager.createTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
+            theme = themeProvider.getTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
         } catch (IOException e) {
             logger.error("Failed to create theme", e);
             return Response.serverError().build();
