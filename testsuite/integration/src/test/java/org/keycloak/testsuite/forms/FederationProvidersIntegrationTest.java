@@ -12,6 +12,8 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
+import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.keycloak.testsuite.LDAPTestUtils;
@@ -66,10 +68,11 @@ public class FederationProvidersIntegrationTest {
             String vendor = ldapServer.getVendor();
             ldapConfig.put(LDAPConstants.VENDOR, vendor);
             ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "true");
+            ldapConfig.put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.WRITABLE.toString());
 
 
 
-            ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, null);
+            ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap");
 
             // Configure LDAP
             ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);
@@ -201,4 +204,76 @@ public class FederationProvidersIntegrationTest {
         Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
         keycloakRule.stopSession(session, false);
     }
+
+    @Test
+    public void testReadonly() {
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel appRealm = session.realms().getRealmByName("test");
+
+        UserFederationProviderModel model = new UserFederationProviderModel(ldapModel.getId(), ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(), ldapModel.getDisplayName());
+        model.getConfig().put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.READ_ONLY.toString());
+        appRealm.updateUserFederationProvider(model);
+        UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
+        Assert.assertNotNull(user);
+        Assert.assertNotNull(user.getFederationLink());
+        Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
+        try {
+            user.setEmail("error@error.com");
+            Assert.fail("should fail");
+        } catch (Exception e) {
+
+        }
+        try {
+            user.setLastName("Berk");
+            Assert.fail("should fail");
+        } catch (Exception e) {
+
+        }
+        try {
+            user.setFirstName("Bilbo");
+            Assert.fail("should fail");
+        } catch (Exception e) {
+
+        }
+        try {
+            UserCredentialModel cred = UserCredentialModel.password("poop");
+            user.updateCredential(cred);
+            Assert.fail("should fail");
+        } catch (Exception e) {
+
+        }
+        session.getTransaction().rollback();
+        session.close();
+        session = keycloakRule.startSession();
+        appRealm = session.realms().getRealmByName("test");
+        Assert.assertEquals(UserFederationProvider.EditMode.WRITABLE.toString(), appRealm.getUserFederationProviders().get(0).getConfig().get(LDAPFederationProvider.EDIT_MODE));
+        keycloakRule.stopSession(session, false);
+    }
+
+    @Test
+    public void testUnsynced() {
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel appRealm = session.realms().getRealmByName("test");
+
+        UserFederationProviderModel model = new UserFederationProviderModel(ldapModel.getId(), ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(), ldapModel.getDisplayName());
+        model.getConfig().put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.UNSYNCED.toString());
+        appRealm.updateUserFederationProvider(model);
+        UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
+        Assert.assertNotNull(user);
+        Assert.assertNotNull(user.getFederationLink());
+        Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
+
+        UserCredentialModel cred = UserCredentialModel.password("candy");
+        user.updateCredential(cred);
+        UserCredentialValueModel userCredentialValueModel = user.getCredentialsDirectly().get(0);
+        Assert.assertEquals(UserCredentialModel.PASSWORD, userCredentialValueModel.getType());
+        Assert.assertTrue(session.users().validCredentials(appRealm, user, cred));
+        session.getTransaction().rollback();
+        session.close();
+        session = keycloakRule.startSession();
+        appRealm = session.realms().getRealmByName("test");
+        Assert.assertEquals(UserFederationProvider.EditMode.WRITABLE.toString(), appRealm.getUserFederationProviders().get(0).getConfig().get(LDAPFederationProvider.EDIT_MODE));
+        keycloakRule.stopSession(session, false);
+    }
+
 }

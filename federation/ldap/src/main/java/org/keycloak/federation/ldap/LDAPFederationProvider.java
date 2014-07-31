@@ -1,6 +1,7 @@
 package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -19,6 +20,7 @@ import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
 import org.picketlink.idm.query.IdentityQuery;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -35,10 +37,12 @@ public class LDAPFederationProvider implements UserFederationProvider {
     private static final Logger logger = Logger.getLogger(LDAPFederationProvider.class);
     public static final String LDAP_ID = "LDAP_ID";
     public static final String SYNC_REGISTRATIONS = "syncRegistrations";
+    public static final String EDIT_MODE = "editMode";
 
     protected KeycloakSession session;
     protected UserFederationProviderModel model;
     protected PartitionManager partitionManager;
+    protected EditMode editMode;
 
     protected static final Set<String> supportedCredentialTypes = new HashSet<String>();
 
@@ -51,6 +55,9 @@ public class LDAPFederationProvider implements UserFederationProvider {
         this.session = session;
         this.model = model;
         this.partitionManager = partitionManager;
+        String editModeString = model.getConfig().get(EDIT_MODE);
+        if (editModeString == null) editMode = EditMode.READ_ONLY;
+        editMode = EditMode.valueOf(editModeString);
     }
 
     private ModelException convertIDMException(IdentityManagementException ie) {
@@ -77,22 +84,37 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public UserModel proxy(UserModel local) {
-        // todo
-        return new LDAPUserModelDelegate(local, this);
+         switch (editMode) {
+             case READ_ONLY:
+                return new ReadonlyLDAPUserModelDelegate(local, this);
+             case WRITABLE:
+                return new WritableLDAPUserModelDelegate(local, this);
+             case UNSYNCED:
+                return new UnsyncedLDAPUserModelDelegate(local, this);
+         }
+        return local;
     }
 
     @Override
-    public Set<String> getSupportedCredentialTypes() {
+    public Set<String> getSupportedCredentialTypes(UserModel local) {
+        if (editMode == EditMode.UNSYNCED ) {
+            for (UserCredentialValueModel cred : local.getCredentialsDirectly()) {
+                if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+                    return Collections.emptySet();
+                }
+            }
+        }
         return supportedCredentialTypes;
     }
 
     @Override
     public boolean synchronizeRegistrations() {
-        return "true".equalsIgnoreCase(model.getConfig().get(SYNC_REGISTRATIONS));
+        return "true".equalsIgnoreCase(model.getConfig().get(SYNC_REGISTRATIONS)) && editMode == EditMode.WRITABLE;
     }
 
     @Override
     public UserModel register(RealmModel realm, UserModel user) {
+        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) throw new IllegalStateException("Registration is not supported by this ldap server");;
         if (!synchronizeRegistrations()) throw new IllegalStateException("Registration is not supported by this ldap server");
         IdentityManager identityManager = getIdentityManager();
 
@@ -112,6 +134,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
+        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) return false;
+
         IdentityManager identityManager = getIdentityManager();
 
         try {

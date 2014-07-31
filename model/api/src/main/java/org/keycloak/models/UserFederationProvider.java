@@ -20,6 +20,28 @@ public interface UserFederationProvider extends Provider {
     public static final String LAST_NAME = UserModel.LAST_NAME;
 
     /**
+     * Optional type that can be by implementations to describe edit mode of federation storage
+     *
+     */
+    enum EditMode {
+        /**
+         * federation storage is read-only
+         */
+        READ_ONLY,
+        /**
+         * federation storage is writable
+         *
+         */
+        WRITABLE,
+        /**
+         * updates to user are stored locally and not synced with federation storage.
+         *
+         */
+        UNSYNCED
+    }
+
+
+    /**
      * Gives the provider an option to proxy UserModels loaded from local storage.
      * This method is called whenever a UserModel is pulled from local storage.
      * For example, the LDAP provider proxies the UserModel and does on-demand synchronization with
@@ -81,12 +103,12 @@ public interface UserFederationProvider extends Provider {
     boolean isValid(UserModel local);
 
     /**
-     * What UserCredentialModel types are supported by this provider.  Keycloak will only call
+     * What UserCredentialModel types should be handled by this provider for this user?  Keycloak will only call
      * validCredentials() with the credential types specified in this method.
      *
      * @return
      */
-    Set<String> getSupportedCredentialTypes();
+    Set<String> getSupportedCredentialTypes(UserModel user);
 
     /**
      * Validate credentials for this user.
@@ -98,4 +120,6 @@ public interface UserFederationProvider extends Provider {
      */
     boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input);
     boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input);
-    void close();}
+    void close();
+
+}
