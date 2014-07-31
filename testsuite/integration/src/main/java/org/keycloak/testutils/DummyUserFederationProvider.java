@@ -22,7 +22,7 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public boolean isRegistrationSupported() {
+    public boolean synchronizeRegistrations() {
         return false;
     }
 

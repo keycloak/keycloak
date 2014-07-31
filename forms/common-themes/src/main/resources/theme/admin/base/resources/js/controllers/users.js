@@ -434,7 +434,6 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
 });
 
 
-
 module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog, realm, instance, UserFederationInstances, RealmLDAPConnectionTester) {
     console.log('LDAPCtrl');
 
@@ -445,6 +444,9 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
         $scope.instance.providerName = "ldap";
         $scope.instance.config = {};
         $scope.instance.priority = 0;
+        $scope.syncRegistrations = false;
+    } else {
+        $scope.syncRegistrations = instance.config.syncRegistrations && instance.config.syncRegistrations == "true";
     }
 
     $scope.ldapVendors = [
@@ -463,6 +465,14 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     $scope.changed = false;
 
     $scope.lastVendor = $scope.instance.config.vendor;
+
+    $scope.$watch('syncRegistrations', function() {
+        if ($scope.syncRegistrations) {
+            $scope.instance.config.syncRegistrations = "true";
+        } else {
+            $scope.instance.config.syncRegistrations = "false";
+        }
+    })
 
     $scope.$watch('instance', function() {
         if (!angular.equals($scope.instance, instance)) {
@@ -510,6 +520,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
             $scope.instance.providerName = "ldap";
             $scope.instance.config = {};
             $scope.instance.priority = 0;
+            $scope.syncRegistrations = false;
         }
         $scope.changed = false;
         $scope.lastVendor = $scope.instance.config.vendor;

@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
