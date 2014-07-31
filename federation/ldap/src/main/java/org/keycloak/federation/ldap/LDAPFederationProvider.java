@@ -7,7 +7,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.picketlink.idm.IdentityManagementException;
@@ -28,12 +27,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class LDAPFederationProvider implements UserFederationProvider {
     private static final Logger logger = Logger.getLogger(LDAPFederationProvider.class);
     public static final String LDAP_ID = "LDAP_ID";
+    public static final String SYNC_REGISTRATIONS = "syncRegistrations";
 
     protected KeycloakSession session;
     protected UserFederationProviderModel model;
@@ -86,12 +87,13 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public boolean isRegistrationSupported() {
-        return true;
+    public boolean synchronizeRegistrations() {
+        return "true".equalsIgnoreCase(model.getConfig().get(SYNC_REGISTRATIONS));
     }
 
     @Override
     public UserModel register(RealmModel realm, UserModel user) {
+        if (!synchronizeRegistrations()) throw new IllegalStateException("Registration is not supported by this ldap server");
         IdentityManager identityManager = getIdentityManager();
 
         try {
@@ -100,6 +102,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
             picketlinkUser.setLastName(user.getLastName());
             picketlinkUser.setEmail(user.getEmail());
             identityManager.add(picketlinkUser);
+            user.setAttribute(LDAP_ID, picketlinkUser.getId());
             return proxy(user);
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);

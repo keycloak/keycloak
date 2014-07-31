@@ -21,13 +21,7 @@ public class UserFederationManager implements UserProvider {
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
         UserModel user = session.userStorage().addUser(realm, id, username, addDefaultRoles);
-        for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
-            UserFederationProvider fed = session.getProvider(UserFederationProvider.class, federation.getProviderName());
-            if (fed.isRegistrationSupported()) {
-                return fed.register(realm, user);
-            }
-        }
-        return user;
+        return registerWithFederation(realm, user);
     }
 
     protected UserFederationProvider getFederationProvider(UserFederationProviderModel model) {
@@ -39,9 +33,14 @@ public class UserFederationManager implements UserProvider {
     @Override
     public UserModel addUser(RealmModel realm, String username) {
         UserModel user = session.userStorage().addUser(realm, username);
+        return registerWithFederation(realm, user);
+    }
+
+    protected UserModel registerWithFederation(RealmModel realm, UserModel user) {
         for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
             UserFederationProvider fed = getFederationProvider(federation);
-            if (fed.isRegistrationSupported()) {
+            if (fed.synchronizeRegistrations()) {
+                user.setFederationLink(federation.getId());
                 return fed.register(realm, user);
             }
         }

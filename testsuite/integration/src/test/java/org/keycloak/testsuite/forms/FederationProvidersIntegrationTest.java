@@ -10,7 +10,9 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.keycloak.testsuite.LDAPTestUtils;
 import org.keycloak.models.KeycloakSession;
@@ -45,6 +47,8 @@ public class FederationProvidersIntegrationTest {
 
     private static Map<String,String> ldapConfig = null;
 
+    private static UserFederationProviderModel ldapModel = null;
+
     private static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
         @Override
@@ -61,10 +65,11 @@ public class FederationProvidersIntegrationTest {
             ldapConfig.put(LDAPConstants.USER_DN_SUFFIX, ldapServer.getUserDnSuffix());
             String vendor = ldapServer.getVendor();
             ldapConfig.put(LDAPConstants.VENDOR, vendor);
+            ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "true");
 
 
 
-            appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, null);
+            ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, null);
 
             // Configure LDAP
             ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);
@@ -187,5 +192,13 @@ public class FederationProvidersIntegrationTest {
 
         registerPage.register("firstName", "lastName", "email2", "registerUserSuccess2", "password", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel appRealm = session.realms().getRealmByName("test");
+        UserModel user = session.users().getUserByUsername("registerUserSuccess2", appRealm);
+        Assert.assertNotNull(user);
+        Assert.assertNotNull(user.getFederationLink());
+        Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
+        keycloakRule.stopSession(session, false);
     }
 }
