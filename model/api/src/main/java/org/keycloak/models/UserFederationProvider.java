@@ -89,7 +89,7 @@ public interface UserFederationProvider extends Provider {
      * @param realm
      * @return
      */
-    List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm);
+    List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults);
 
     void preRemove(RealmModel realm);
     void preRemove(RealmModel realm, RoleModel role);

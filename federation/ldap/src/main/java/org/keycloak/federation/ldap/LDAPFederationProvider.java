@@ -151,7 +151,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm) {
+    public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
         IdentityManager identityManager = getIdentityManager();
         List<UserModel> searchResults =new LinkedList<UserModel>();
         try {
@@ -170,6 +170,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                 if (attributes.containsKey(LAST_NAME)) {
                     query.setParameter(User.LAST_NAME, attributes.get(LAST_NAME));
                 }
+                query.setLimit(maxResults);
                 List<User> agents = query.getResultList();
                 for (User user : agents) {
                     results.put(user.getLoginName(), user);

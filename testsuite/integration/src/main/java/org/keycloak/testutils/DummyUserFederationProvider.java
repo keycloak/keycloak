@@ -47,7 +47,7 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm) {
+    public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
         return Collections.emptyList();
     }
 
