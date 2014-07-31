@@ -10,7 +10,7 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.authentication.AuthenticationProviderManager;
-import org.keycloak.testsuite.LDAPEmbeddedServer;
+import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.keycloak.testsuite.LDAPTestUtils;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;

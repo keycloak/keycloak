@@ -702,6 +702,53 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSessionStatsCtrl'
         })
+        .when('/realms/:realm/user-federation', {
+            templateUrl : 'partials/user-federation.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'UserFederationCtrl'
+        })
+        .when('/realms/:realm/user-federation/providers/ldap/:provider', {
+            templateUrl : 'partials/federated-ldap.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                provider : function(UserFederationInstanceLoader) {
+                    return UserFederationInstanceLoader();
+                }
+            },
+            controller : 'LDAPCtrl'
+        })
+        .when('/create/user-federation/:realm/providers/ldap', {
+            templateUrl : 'partials/federated-ldap.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                provider : function() {
+                    return {};
+                }
+            },
+            controller : 'LDAPCtrl'
+        })
+        .when('/create/user-federation/:realm/providers/:provider', {
+            templateUrl : 'partials/federated-ldap.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                provider : function() {
+                    return {
+                        providerName: "@provider"
+                    };
+                }
+            },
+            controller : 'GenericUserFederationCtrl'
+        })
         .when('/logout', {
             templateUrl : 'partials/home.html',
             controller : 'LogoutCtrl'

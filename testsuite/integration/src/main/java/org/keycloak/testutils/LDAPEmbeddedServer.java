@@ -1,4 +1,4 @@
-package org.keycloak.testsuite;
+package org.keycloak.testutils;
 
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;

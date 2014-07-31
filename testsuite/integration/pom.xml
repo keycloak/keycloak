@@ -197,13 +197,11 @@
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox-ldap</artifactId>
-            <scope>compile</scope>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox-ldap</artifactId>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
     <build>

@@ -88,6 +88,16 @@ module.factory('UserLoader', function(Loader, User, $route, $q) {
     });
 });
 
+module.factory('UserFederationInstanceLoader', function(Loader, UserFederationInstances, $route, $q) {
+    return Loader.get(UserFederationInstances, function() {
+        return {
+            realm : $route.current.params.realm,
+            provider: $route.current.params.provider
+        }
+    });
+});
+
+
 module.factory('UserSessionStatsLoader', function(Loader, UserSessionStats, $route, $q) {
     return Loader.get(UserSessionStats, function() {
         return {
@@ -114,6 +124,9 @@ module.factory('UserSocialLinksLoader', function(Loader, UserSocialLinks, $route
         }
     });
 });
+
+
+
 
 module.factory('RoleLoader', function(Loader, Role, $route, $q) {
     return Loader.get(Role, function() {

@@ -769,13 +769,27 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void removeUserFederationProvider(UserFederationProviderModel provider) {
-        UserFederationProviderEntity entity = null;
         Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
         while (it.hasNext()) {
+            UserFederationProviderEntity entity = it.next();
             if (entity.getId().equals(provider.getId())) {
                 it.remove();
                 em.remove(entity);
                 return;
+            }
+        }
+    }
+    @Override
+    public void updateUserFederationProvider(UserFederationProviderModel model) {
+        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
+        while (it.hasNext()) {
+            UserFederationProviderEntity entity = it.next();
+            if (entity.getId().equals(model.getId())) {
+                entity.setConfig(model.getConfig());
+                entity.setPriority(model.getPriority());
+                entity.setProviderName(model.getProviderName());
+                entity.setPriority(model.getPriority());
+                break;
             }
         }
     }

@@ -192,6 +192,14 @@ public class RealmAdminResource {
         return users;
     }
 
+    @Path("user-federation")
+    public UserFederationResource userFederation() {
+        UserFederationResource fed = new UserFederationResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(fed);
+        //resourceContext.initResource(fed);
+        return fed;
+    }
+
     /**
      * Path for managing all realm-level or application-level roles defined in this realm by it's id.
      *

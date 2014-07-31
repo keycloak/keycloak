@@ -269,4 +269,13 @@ public class ModelToRepresentation {
         rep.setNotBefore(model.getNotBefore());
         return rep;
     }
+
+    public static UserFederationProviderRepresentation toRepresentation(UserFederationProviderModel model) {
+        UserFederationProviderRepresentation rep = new UserFederationProviderRepresentation();
+        rep.setId(model.getId());
+        rep.setConfig(model.getConfig());
+        rep.setProviderName(model.getProviderName());
+        rep.setPriority(model.getPriority());
+        return rep;
+    }
 }

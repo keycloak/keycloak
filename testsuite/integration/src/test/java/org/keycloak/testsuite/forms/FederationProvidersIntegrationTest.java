@@ -3,6 +3,7 @@ package org.keycloak.testsuite.forms;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -10,8 +11,7 @@ import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.testsuite.LDAPEmbeddedServer;
+import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.keycloak.testsuite.LDAPTestUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -32,7 +32,6 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,6 +43,8 @@ public class FederationProvidersIntegrationTest {
 
     private static LDAPRule ldapRule = new LDAPRule();
 
+    private static Map<String,String> ldapConfig = null;
+
     private static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
         @Override
@@ -52,13 +53,15 @@ public class FederationProvidersIntegrationTest {
             addUser(manager.getSession(), adminstrationRealm, "mary-admin", "mary@admin.com", "password-admin");
 
             LDAPEmbeddedServer ldapServer = ldapRule.getEmbeddedServer();
-            Map<String,String> ldapConfig = new HashMap<String,String>();
+            ldapConfig = new HashMap<String,String>();
             ldapConfig.put(LDAPConstants.CONNECTION_URL, ldapServer.getConnectionUrl());
             ldapConfig.put(LDAPConstants.BASE_DN, ldapServer.getBaseDn());
             ldapConfig.put(LDAPConstants.BIND_DN, ldapServer.getBindDn());
             ldapConfig.put(LDAPConstants.BIND_CREDENTIAL, ldapServer.getBindCredential());
             ldapConfig.put(LDAPConstants.USER_DN_SUFFIX, ldapServer.getUserDnSuffix());
-            ldapConfig.put(LDAPConstants.VENDOR, ldapServer.getVendor());
+            String vendor = ldapServer.getVendor();
+            ldapConfig.put(LDAPConstants.VENDOR, vendor);
+
 
 
             appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0);
@@ -109,6 +112,16 @@ public class FederationProvidersIntegrationTest {
 
         user.updateCredential(creds);
         return user;
+    }
+
+    @Test
+    @Ignore
+    public void runit() throws Exception {
+        System.out.println("*** ldap config ***");
+        for (Map.Entry<String, String> entry : ldapConfig.entrySet()) {
+            System.out.println("key: " + entry.getKey() + " value: " + entry.getValue());
+        }
+        Thread.sleep(10000000);
     }
 
     @Test

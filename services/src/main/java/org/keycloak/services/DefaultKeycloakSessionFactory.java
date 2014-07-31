@@ -10,6 +10,8 @@ import org.keycloak.provider.Spi;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -82,6 +84,16 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
     @Override
     public <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String id) {
          return factoriesMap.get(clazz).get(id);
+    }
+
+    @Override
+    public List<ProviderFactory> getProviderFactories(Class<? extends Provider> clazz) {
+        List<ProviderFactory> list = new LinkedList<ProviderFactory>();
+        if (factoriesMap == null) return list;
+        Map<String, ProviderFactory> providerFactoryMap = factoriesMap.get(clazz);
+        if (providerFactoryMap == null) return list;
+        list.addAll(providerFactoryMap.values());
+        return list;
     }
 
     <T extends Provider> Set<String> getAllProviderIds(Class<T> clazz) {

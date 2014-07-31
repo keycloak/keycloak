@@ -1,0 +1,16 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}/users">User List</a></li>
+        <li><a href="#/realms/{{realm.realm}}/user-federation">Federation</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}/user-federation">Federation</a></li>
+            <li class="active">User Federation Provider Configuration</li>
+        </ol>
+        <h2 class="pull-left"><span>{{realm.realm}}</span> Provider Settings</h2>
+        <p class="subtitle"><span class="required">*</span> Required fields</p>
+
+    </div>
+</div>
