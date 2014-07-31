@@ -225,7 +225,7 @@ public class UserFederationManager implements UserProvider {
     void federationLoad(RealmModel realm, Map<String, String> attributes) {
         for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
             UserFederationProvider fed = getFederationProvider(federation);
-            fed.searchByAttributes(attributes, realm);
+            fed.searchByAttributes(attributes, realm, 30);
         }
     }
 
