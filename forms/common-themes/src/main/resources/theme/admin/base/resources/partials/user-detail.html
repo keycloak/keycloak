@@ -75,6 +75,12 @@
                         <input ng-model="user.enabled" name="userEnabled" id="userEnabled" onoffswitch />
                     </div>
                 </div>
+                <div class="form-group clearfix block" data-ng-show="!create && user.federationLink">
+                    <label class="col-sm-2 control-label" for="userEnabled">Federation Link</label>
+                    <div class="col-sm-4">
+                        <a href="{{federationLink}}">{{federationLinkName}}</a>
+                    </div>
+                </div>
                 <div class="form-group clearfix block">
                     <label class="col-sm-2 control-label" for="emailVerified">Email verified</label>
                     <div class="col-sm-4">

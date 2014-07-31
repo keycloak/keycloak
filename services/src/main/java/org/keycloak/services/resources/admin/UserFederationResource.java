@@ -16,8 +16,10 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProviderFactory;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -28,6 +30,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
+import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -96,17 +99,41 @@ public class UserFederationResource {
     @GET
     @Path("providers")
     @Produces("application/json")
-    public List<Map<String, String>> getProviders() {
+    public List<UserFederationProviderFactoryRepresentation> getProviders() {
         logger.info("get provider list");
         auth.requireView();
-        List<Map<String, String>> providers = new LinkedList<Map<String, String>>();
+        List<UserFederationProviderFactoryRepresentation> providers = new LinkedList<UserFederationProviderFactoryRepresentation>();
         for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(UserFederationProvider.class)) {
-            Map<String, String> provider = new HashMap<String, String>();
-            provider.put("name", factory.getId());
-            providers.add(provider);
+            UserFederationProviderFactoryRepresentation rep = new UserFederationProviderFactoryRepresentation();
+            rep.setId(factory.getId());
+            rep.setOptions(((UserFederationProviderFactory)factory).getConfigurationOptions());
+            providers.add(rep);
         }
         logger.info("provider list.size() " + providers.size());
         return providers;
+    }
+
+    /**
+     * Get List of available provider factories
+     *
+     * @return
+     */
+    @GET
+    @Path("providers/{id}")
+    @Produces("application/json")
+    public UserFederationProviderFactoryRepresentation getProvider(@PathParam("id") String id) {
+        logger.info("get provider list");
+        auth.requireView();
+        for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(UserFederationProvider.class)) {
+            if (!factory.getId().equals(id)) {
+                continue;
+            }
+            UserFederationProviderFactoryRepresentation rep = new UserFederationProviderFactoryRepresentation();
+            rep.setId(factory.getId());
+            rep.setOptions(((UserFederationProviderFactory)factory).getConfigurationOptions());
+            return rep;
+        }
+        throw new NotFoundException("Could not find provider");
     }
 
     /**
@@ -118,7 +145,7 @@ public class UserFederationResource {
     @POST
     @Path("instances")
     @Consumes("application/json")
-    public Response createProvider(UserFederationProviderRepresentation rep) {
+    public Response createProviderInstance(UserFederationProviderRepresentation rep) {
         logger.info("createProvider");
         auth.requireManage();
         String displayName = rep.getDisplayName();
@@ -138,7 +165,7 @@ public class UserFederationResource {
     @PUT
     @Path("instances/{id}")
     @Consumes("application/json")
-    public void updateProvider(@PathParam("id") String id, UserFederationProviderRepresentation rep) {
+    public void updateProviderInstance(@PathParam("id") String id, UserFederationProviderRepresentation rep) {
         logger.info("updateProvider");
         auth.requireManage();
         String displayName = rep.getDisplayName();
@@ -157,7 +184,7 @@ public class UserFederationResource {
     @GET
     @Path("instances/{id}")
     @Consumes("application/json")
-    public UserFederationProviderRepresentation getProvider(@PathParam("id") String id) {
+    public UserFederationProviderRepresentation getProviderInstance(@PathParam("id") String id) {
         logger.info("getProvider");
         auth.requireView();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
@@ -175,7 +202,7 @@ public class UserFederationResource {
      */
     @DELETE
     @Path("instances/{id}")
-    public void deleteProvider(@PathParam("id") String id) {
+    public void deleteProviderInstance(@PathParam("id") String id) {
         logger.info("deleteProvider");
         auth.requireManage();
         UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1, null);
@@ -192,8 +219,8 @@ public class UserFederationResource {
     @GET
     @Path("instances")
     @Produces("application/json")
-    public List<UserFederationProviderRepresentation> getUserFederationProviders() {
-        logger.info("getUserFederationProviders");
+    public List<UserFederationProviderRepresentation> getUserFederationInstances() {
+        logger.info("getUserFederationInstances");
         auth.requireManage();
         List<UserFederationProviderRepresentation> reps = new LinkedList<UserFederationProviderRepresentation>();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {

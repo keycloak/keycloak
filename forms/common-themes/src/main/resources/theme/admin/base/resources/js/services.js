@@ -200,9 +200,9 @@ module.factory('User', function($resource) {
 });
 
 module.factory('UserFederationInstances', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:provider', {
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:instance', {
         realm : '@realm',
-        provider : '@provider'
+        instance : '@instance'
     },  {
         update : {
             method : 'PUT'
@@ -211,8 +211,9 @@ module.factory('UserFederationInstances', function($resource) {
 });
 
 module.factory('UserFederationProviders', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/user-federation/providers', {
-        realm : '@realm'
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/providers/:provider', {
+        realm : '@realm',
+        provider : "@provider"
     });
 });
 

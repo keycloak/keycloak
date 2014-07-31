@@ -711,13 +711,13 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserFederationCtrl'
         })
-        .when('/realms/:realm/user-federation/providers/ldap/:provider', {
+        .when('/realms/:realm/user-federation/providers/ldap/:instance', {
             templateUrl : 'partials/federated-ldap.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                provider : function(UserFederationInstanceLoader) {
+                instance : function(UserFederationInstanceLoader) {
                     return UserFederationInstanceLoader();
                 }
             },
@@ -729,22 +729,40 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                provider : function() {
+                instance : function() {
                     return {};
                 }
             },
             controller : 'LDAPCtrl'
         })
         .when('/create/user-federation/:realm/providers/:provider', {
-            templateUrl : 'partials/federated-ldap.html',
+            templateUrl : 'partials/federated-generic.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                provider : function() {
+                instance : function() {
                     return {
-                        providerName: "@provider"
+
                     };
+                },
+                providerFactory : function(UserFederationFactoryLoader) {
+                    return UserFederationFactoryLoader();
+                }
+            },
+            controller : 'GenericUserFederationCtrl'
+        })
+        .when('/realms/:realm/user-federation/providers/:provider/:instance', {
+            templateUrl : 'partials/federated-generic.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(UserFederationInstanceLoader) {
+                    return UserFederationInstanceLoader();
+                },
+                providerFactory : function(UserFederationFactoryLoader) {
+                    return UserFederationFactoryLoader();
                 }
             },
             controller : 'GenericUserFederationCtrl'

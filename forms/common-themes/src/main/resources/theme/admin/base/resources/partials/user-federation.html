@@ -18,7 +18,7 @@
                     <div class="pull-right">
                         <div class="select-kc">
                             <select ng-model="selectedProvider"
-                                    ng-options="p.name for p in providers"
+                                    ng-options="p.id for p in providers"
                                     data-ng-change="addProvider(selectedProvider); selectedProvider = null">
                                 <option value="" disabled selected>Add provider...</option>
                             </select>
