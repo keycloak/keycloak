@@ -346,12 +346,80 @@ module.controller('UserFederationCtrl', function($scope, $location, realm, UserF
 
 });
 
-module.controller('GenericUserFederationCtrl', function($scope, realm, provider, UserFederationProviders, UserFederationInstances, Notifications, Dialog) {
+module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, Dialog, realm, provider, providerFactory, UserFederationInstances) {
     console.log('GenericUserFederationCtrl');
 
-    console.log("provider: " + provider.providerName);
+    $scope.provider = angular.copy(provider);
+    $scope.create = !provider.providerName;
+
+    if ($scope.create) {
+        $scope.provider.providerName = providerFactory.id;
+        $scope.provider.config = {};
+        $scope.provider.priority = 0;
+    }
+
+    $scope.realm = realm;
+
+
+    $scope.changed = false;
+
+    $scope.$watch('provider', function() {
+        if (!angular.equals($scope.provider, provider)) {
+            $scope.changed = true;
+        }
+
+    }, true);
+
+    $scope.save = function() {
+        $scope.changed = false;
+        if ($scope.create) {
+            UserFederationInstances.save({realm: realm.realm}, $scope.provider,  function () {
+                $scope.changed = false;
+                $location.url("/realms/" + realm.realm + "/user-federation");
+                Notifications.success("The provider has been created.");
+            });
+        } else {
+            UserFederationInstances.update({realm: realm.realm,
+                    provider: provider.id
+                },
+                $scope.provider,  function () {
+                    $scope.changed = false;
+                    $location.url("/realms/" + realm.realm + "/user-federation");
+                    Notifications.success("The provider has been updated.");
+                });
+
+        }
+    };
+
+    $scope.reset = function() {
+        $scope.provider = angular.copy(provider);
+        if ($scope.create) {
+            $scope.provider.providerName = providerFactory.id;
+            $scope.provider.config = {};
+            $scope.provider.priority = 0;
+        }
+        $scope.changed = false;
+    };
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/user-federation");
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.provider.id, 'provider', function() {
+            $scope.provider.$remove({
+                realm : realm.realm,
+                provider : $scope.provider.id
+            }, function() {
+                $location.url("/realms/" + realm.realm + "/user-federation");
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+
 
 });
+
 
 
 module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog, realm, provider, UserFederationInstances, RealmLDAPConnectionTester) {
@@ -363,6 +431,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     if ($scope.create) {
         $scope.provider.providerName = "ldap";
         $scope.provider.config = {};
+        $scope.provider.priority = 0;
     }
 
     $scope.ldapVendors = [
@@ -382,7 +451,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
 
     $scope.lastVendor = $scope.provider.config.vendor;
 
-    $scope.$watch('realm', function() {
+    $scope.$watch('provider', function() {
         if (!angular.equals($scope.provider, provider)) {
             $scope.changed = true;
         }
@@ -427,6 +496,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
         if ($scope.create) {
             $scope.provider.providerName = "ldap";
             $scope.provider.config = {};
+            $scope.provider.priority = 0;
         }
         $scope.changed = false;
         $scope.lastVendor = $scope.provider.config.vendor;

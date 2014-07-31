@@ -276,6 +276,7 @@ public class ModelToRepresentation {
         rep.setConfig(model.getConfig());
         rep.setProviderName(model.getProviderName());
         rep.setPriority(model.getPriority());
+        rep.setDisplayName(model.getDisplayName());
         return rep;
     }
 }

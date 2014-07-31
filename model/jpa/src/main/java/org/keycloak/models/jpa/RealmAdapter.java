@@ -746,14 +746,14 @@ public class RealmAdapter implements RealmModel {
         });
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
         for (UserFederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority()));
+            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
         }
 
         return result;
     }
 
     @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority) {
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName) {
         String id = KeycloakModelUtils.generateId();
         UserFederationProviderEntity entity = new UserFederationProviderEntity();
         entity.setId(id);
@@ -761,10 +761,14 @@ public class RealmAdapter implements RealmModel {
         entity.setProviderName(providerName);
         entity.setConfig(config);
         entity.setPriority(priority);
+        if (displayName == null) {
+            displayName = id;
+        }
+        entity.setDisplayName(displayName);
         em.persist(entity);
         realm.getUserFederationProviders().add(entity);
         em.flush();
-        return new UserFederationProviderModel(entity.getId(), providerName, config, priority);
+        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName);
     }
 
     @Override
@@ -785,6 +789,10 @@ public class RealmAdapter implements RealmModel {
         while (it.hasNext()) {
             UserFederationProviderEntity entity = it.next();
             if (entity.getId().equals(model.getId())) {
+                String displayName = model.getDisplayName();
+                if (displayName != null) {
+                    entity.setDisplayName(model.getDisplayName());
+                }
                 entity.setConfig(model.getConfig());
                 entity.setPriority(model.getPriority());
                 entity.setProviderName(model.getProviderName());
@@ -807,6 +815,10 @@ public class RealmAdapter implements RealmModel {
                     entity.setPriority(model.getPriority());
                     entity.setProviderName(model.getProviderName());
                     entity.setPriority(model.getPriority());
+                    String displayName = model.getDisplayName();
+                    if (displayName != null) {
+                        entity.setDisplayName(model.getDisplayName());
+                    }
                     found = true;
                     break;
                 }
@@ -829,7 +841,7 @@ public class RealmAdapter implements RealmModel {
             if (!found) add.add(model);
         }
 
-        for (UserFederationProviderModel model : providers) {
+        for (UserFederationProviderModel model : add) {
             UserFederationProviderEntity entity = new UserFederationProviderEntity();
             if (model.getId() != null) entity.setId(model.getId());
             else entity.setId(KeycloakModelUtils.generateId());
@@ -837,6 +849,10 @@ public class RealmAdapter implements RealmModel {
             entity.setPriority(model.getPriority());
             entity.setProviderName(model.getProviderName());
             entity.setPriority(model.getPriority());
+            String displayName = model.getDisplayName();
+            if (displayName == null) {
+                entity.setDisplayName(entity.getId());
+            }
             em.persist(entity);
             realm.getUserFederationProviders().add(entity);
 

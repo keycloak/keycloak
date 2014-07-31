@@ -16,6 +16,18 @@
             <fieldset>
                 <legend><span class="text">Required Settings</span></legend>
                 <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="consoleDisplayName">Console display name </label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="consoleDisplayName" type="text" ng-model="provider.displayName" placeholder="defaults to id">
+                    </div>
+                </div>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="priority">Priority </label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="priority" type="text" ng-model="provider.priority">
+                    </div>
+                </div>
+                <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="vendor">Vendor</label>
                     <div class="col-sm-4">
                         <div class="select-kc">

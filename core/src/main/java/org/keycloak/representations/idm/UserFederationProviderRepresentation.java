@@ -8,6 +8,7 @@ import java.util.Map;
 public class UserFederationProviderRepresentation {
 
     private String id;
+    private String displayName;
     private String providerName;
     private Map<String, String> config;
     private int priority;
@@ -18,6 +19,14 @@ public class UserFederationProviderRepresentation {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public String getProviderName() {

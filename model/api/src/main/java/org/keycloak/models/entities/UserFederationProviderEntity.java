@@ -11,6 +11,7 @@ public class UserFederationProviderEntity {
     protected String providerName;
     protected Map<String, String> config;
     protected int priority;
+    protected String displayName;
 
 
     public String getId() {
@@ -43,5 +44,13 @@ public class UserFederationProviderEntity {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 }

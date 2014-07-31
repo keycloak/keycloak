@@ -41,6 +41,9 @@ public class UserFederationProviderEntity {
     @CollectionTable(name="USER_FEDERATION_CONFIG")
     private Map<String, String> config;
 
+    @Column(name="DISPLAY_NAME")
+    private String displayName;
+
     public String getId() {
         return id;
     }
@@ -81,5 +84,11 @@ public class UserFederationProviderEntity {
         this.config = config;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
 
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
 }

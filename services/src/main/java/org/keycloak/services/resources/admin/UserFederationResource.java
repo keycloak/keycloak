@@ -121,7 +121,11 @@ public class UserFederationResource {
     public Response createProvider(UserFederationProviderRepresentation rep) {
         logger.info("createProvider");
         auth.requireManage();
-        UserFederationProviderModel model = realm.addUserFederationProvider(rep.getProviderName(), rep.getConfig(), rep.getPriority());
+        String displayName = rep.getDisplayName();
+        if (displayName != null && displayName.trim().equals("")) {
+            displayName = null;
+        }
+        UserFederationProviderModel model = realm.addUserFederationProvider(rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
 
@@ -137,7 +141,11 @@ public class UserFederationResource {
     public void updateProvider(@PathParam("id") String id, UserFederationProviderRepresentation rep) {
         logger.info("updateProvider");
         auth.requireManage();
-        UserFederationProviderModel model = new UserFederationProviderModel(id, rep.getProviderName(), rep.getConfig(), rep.getPriority());
+        String displayName = rep.getDisplayName();
+        if (displayName != null && displayName.trim().equals("")) {
+            displayName = null;
+        }
+        UserFederationProviderModel model = new UserFederationProviderModel(id, rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName);
         realm.updateUserFederationProvider(model);
     }
 
@@ -170,7 +178,7 @@ public class UserFederationResource {
     public void deleteProvider(@PathParam("id") String id) {
         logger.info("deleteProvider");
         auth.requireManage();
-        UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1);
+        UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1, null);
         realm.removeUserFederationProvider(model);
 
     }
