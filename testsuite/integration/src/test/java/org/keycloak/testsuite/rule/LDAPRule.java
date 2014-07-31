@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.rule;
 
 import org.junit.rules.ExternalResource;
-import org.keycloak.testsuite.LDAPEmbeddedServer;
+import org.keycloak.testutils.LDAPEmbeddedServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -331,3 +331,150 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
         $scope.userChange = false;
     };
 });
+
+module.controller('UserFederationCtrl', function($scope, $location, realm, UserFederationProviders, UserFederationInstances, Notifications, Dialog) {
+    console.log('UserFederationCtrl ++++****');
+    $scope.realm = realm;
+    $scope.providers = UserFederationProviders.query({realm: realm.realm});
+
+    $scope.addProvider = function(provider) {
+        console.log('Add provider: ' + provider.name);
+        $location.url("/create/user-federation/" + realm.realm + "/providers/" + provider.name);
+    };
+
+    $scope.instances = UserFederationInstances.query({realm: realm.realm});
+
+});
+
+module.controller('GenericUserFederationCtrl', function($scope, realm, provider, UserFederationProviders, UserFederationInstances, Notifications, Dialog) {
+    console.log('GenericUserFederationCtrl');
+
+    console.log("provider: " + provider.providerName);
+
+});
+
+
+module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog, realm, provider, UserFederationInstances, RealmLDAPConnectionTester) {
+    console.log('LDAPCtrl');
+
+    $scope.provider = angular.copy(provider);
+    $scope.create = !provider.providerName;
+
+    if ($scope.create) {
+        $scope.provider.providerName = "ldap";
+        $scope.provider.config = {};
+    }
+
+    $scope.ldapVendors = [
+        { "id": "ad", "name": "Active Directory" },
+        { "id": "rhds", "name": "Red Hat Directory Server" },
+        { "id": "other", "name": "Other" }
+    ];
+
+    $scope.usernameLDAPAttributes = [
+        "uid", "cn", "sAMAccountName"
+    ];
+
+    $scope.realm = realm;
+
+
+    $scope.changed = false;
+
+    $scope.lastVendor = $scope.provider.config.vendor;
+
+    $scope.$watch('realm', function() {
+        if (!angular.equals($scope.provider, provider)) {
+            $scope.changed = true;
+        }
+
+        if (!angular.equals($scope.provider.config.vendor, $scope.lastVendor)) {
+            console.log("LDAP vendor changed");
+            $scope.lastVendor = $scope.provider.config.vendor;
+
+            if ($scope.lastVendor === "ad") {
+                $scope.provider.config.usernameLDAPAttribute = "cn";
+                $scope.provider.config.userObjectClasses = "person, organizationalPerson";
+            } else {
+                $scope.provider.config.usernameLDAPAttribute = "uid";
+                $scope.provider.config.userObjectClasses = "inetOrgPerson, organizationalPerson";
+            }
+        }
+    }, true);
+
+    $scope.save = function() {
+        $scope.changed = false;
+        if ($scope.create) {
+            UserFederationInstances.save({realm: realm.realm}, $scope.provider,  function () {
+                $scope.changed = false;
+                $location.url("/realms/" + realm.realm + "/user-federation");
+                Notifications.success("The provider has been created.");
+            });
+        } else {
+            UserFederationInstances.update({realm: realm.realm,
+                                          provider: provider.id
+                },
+                $scope.provider,  function () {
+                $scope.changed = false;
+                $location.url("/realms/" + realm.realm + "/user-federation");
+                Notifications.success("The provider has been updated.");
+            });
+
+        }
+    };
+
+    $scope.reset = function() {
+        $scope.provider = angular.copy(provider);
+        if ($scope.create) {
+            $scope.provider.providerName = "ldap";
+            $scope.provider.config = {};
+        }
+        $scope.changed = false;
+        $scope.lastVendor = $scope.provider.config.vendor;
+    };
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/user-federation");
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.provider.id, 'provider', function() {
+            $scope.provider.$remove({
+                realm : realm.realm,
+                provider : $scope.provider.id
+            }, function() {
+                $location.url("/realms/" + realm.realm + "/user-federation");
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+
+
+    var initConnectionTest = function(testAction, ldapConfig) {
+        return {
+            action: testAction,
+            realm: $scope.realm.realm,
+            connectionUrl: ldapConfig.connectionUrl,
+            bindDn: ldapConfig.bindDn,
+            bindCredential: ldapConfig.bindCredential
+        };
+    };
+
+    $scope.testConnection = function() {
+        console.log('LDAPCtrl: testConnection');
+        RealmLDAPConnectionTester.get(initConnectionTest("testConnection", $scope.provider.config), function() {
+            Notifications.success("LDAP connection successful.");
+        }, function() {
+            Notifications.error("Error when trying to connect to LDAP. See server.log for details.");
+        });
+    }
+
+    $scope.testAuthentication = function() {
+        console.log('LDAPCtrl: testAuthentication');
+        RealmLDAPConnectionTester.get(initConnectionTest("testAuthentication", $scope.realm.ldapServer), function() {
+            Notifications.success("LDAP authentication successful.");
+        }, function() {
+            Notifications.error("LDAP authentication failed. See server.log for details");
+        });
+    }
+});
+

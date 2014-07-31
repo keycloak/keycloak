@@ -820,6 +820,20 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public void updateUserFederationProvider(UserFederationProviderModel model) {
+        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
+        while (it.hasNext()) {
+            UserFederationProviderEntity entity = it.next();
+            if (entity.getId().equals(model.getId())) {
+                entity.setProviderName(model.getProviderName());
+                entity.setConfig(model.getConfig());
+                entity.setPriority(model.getPriority());
+            }
+        }
+        updateRealm();
+    }
+
+    @Override
     public List<UserFederationProviderModel> getUserFederationProviders() {
         List<UserFederationProviderEntity> entities = realm.getUserFederationProviders();
         List<UserFederationProviderEntity> copy = new LinkedList<UserFederationProviderEntity>();

@@ -199,6 +199,24 @@ module.factory('User', function($resource) {
     });
 });
 
+module.factory('UserFederationInstances', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:provider', {
+        realm : '@realm',
+        provider : '@provider'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('UserFederationProviders', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/providers', {
+        realm : '@realm'
+    });
+});
+
+
 module.factory('UserSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/session-stats', {
         realm : '@realm',

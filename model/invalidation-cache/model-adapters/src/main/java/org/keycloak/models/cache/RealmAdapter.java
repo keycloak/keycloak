@@ -631,6 +631,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public void updateUserFederationProvider(UserFederationProviderModel provider) {
+        getDelegateForUpdate();
+        updated.updateUserFederationProvider(provider);
+
+    }
+
+    @Override
     public String getLoginTheme() {
         if (updated != null) return updated.getLoginTheme();
         return cached.getLoginTheme();
