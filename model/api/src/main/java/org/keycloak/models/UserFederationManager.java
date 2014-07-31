@@ -307,7 +307,7 @@ public class UserFederationManager implements UserProvider {
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             validateUser(realm, user);
-            if (link.getSupportedCredentialTypes().size() > 0) {
+            if (link.getSupportedCredentialTypes(user).size() > 0) {
                 List<UserCredentialModel> fedCreds = new ArrayList<UserCredentialModel>();
                 List<UserCredentialModel> localCreds = new ArrayList<UserCredentialModel>();
                 for (UserCredentialModel cred : input) {
@@ -331,7 +331,7 @@ public class UserFederationManager implements UserProvider {
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             validateUser(realm, user);
-            Set<String> supportedCredentialTypes = link.getSupportedCredentialTypes();
+            Set<String> supportedCredentialTypes = link.getSupportedCredentialTypes(user);
             if (supportedCredentialTypes.size() > 0) {
                 List<UserCredentialModel> fedCreds = new ArrayList<UserCredentialModel>();
                 List<UserCredentialModel> localCreds = new ArrayList<UserCredentialModel>();

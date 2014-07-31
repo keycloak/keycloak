@@ -67,7 +67,7 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public Set<String> getSupportedCredentialTypes() {
+    public Set<String> getSupportedCredentialTypes(UserModel user) {
         return Collections.emptySet();
     }
 
