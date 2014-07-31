@@ -121,8 +121,8 @@ public class RealmAdminResource {
                 CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
                 rep.setRealmCacheEnabled(cacheRealmProvider.isEnabled());
             }
-            if (session.users() instanceof CacheUserProvider) {
-                CacheUserProvider cache = (CacheUserProvider)session.users();
+            if (session.userStorage() instanceof CacheUserProvider) {
+                CacheUserProvider cache = (CacheUserProvider)session.userStorage();
                 rep.setUserCacheEnabled(cache.isEnabled());
             }
             return rep;
@@ -155,8 +155,8 @@ public class RealmAdminResource {
                 CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
                 cacheRealmProvider.setEnabled(rep.isRealmCacheEnabled());
             }
-            if (rep.isUserCacheEnabled() != null && session.users() instanceof CacheUserProvider) {
-                CacheUserProvider cache = (CacheUserProvider)session.users();
+            if (rep.isUserCacheEnabled() != null && session.userStorage() instanceof CacheUserProvider) {
+                CacheUserProvider cache = (CacheUserProvider)session.userStorage();
                 cache.setEnabled(rep.isUserCacheEnabled());
             }
 
