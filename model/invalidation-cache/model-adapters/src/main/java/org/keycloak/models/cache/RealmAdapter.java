@@ -618,9 +618,9 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority) {
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName) {
         getDelegateForUpdate();
-        return updated.addUserFederationProvider(providerName, config, priority);
+        return updated.addUserFederationProvider(providerName, config, priority, displayName);
     }
 
     @Override

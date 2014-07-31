@@ -7,6 +7,9 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.picketlink.idm.PartitionManager;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -39,5 +42,10 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
     @Override
     public String getId() {
         return PROVIDER_NAME;
+    }
+
+    @Override
+    public List<String> getConfigurationOptions() {
+        return Collections.emptyList();
     }
 }

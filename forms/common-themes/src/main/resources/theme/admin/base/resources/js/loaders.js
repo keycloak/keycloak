@@ -92,6 +92,15 @@ module.factory('UserFederationInstanceLoader', function(Loader, UserFederationIn
     return Loader.get(UserFederationInstances, function() {
         return {
             realm : $route.current.params.realm,
+            instance: $route.current.params.instance
+        }
+    });
+});
+
+module.factory('UserFederationFactoryLoader', function(Loader, UserFederationProviders, $route, $q) {
+    return Loader.get(UserFederationProviders, function() {
+        return {
+            realm : $route.current.params.realm,
             provider: $route.current.params.provider
         }
     });

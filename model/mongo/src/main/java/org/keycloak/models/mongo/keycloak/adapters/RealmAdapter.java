@@ -795,16 +795,19 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority) {
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName) {
         UserFederationProviderEntity entity = new UserFederationProviderEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setPriority(priority);
         entity.setProviderName(providerName);
         entity.setConfig(config);
+        if (displayName == null) {
+            displayName = entity.getId();
+        }
         realm.getUserFederationProviders().add(entity);
         updateRealm();
 
-        return new UserFederationProviderModel(entity.getId(), providerName, config, priority);
+        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName);
     }
 
     @Override
@@ -828,6 +831,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 entity.setProviderName(model.getProviderName());
                 entity.setConfig(model.getConfig());
                 entity.setPriority(model.getPriority());
+                String displayName = model.getDisplayName();
+                if (displayName != null) {
+                    entity.setDisplayName(model.getDisplayName());
+                }
             }
         }
         updateRealm();
@@ -851,7 +858,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         });
         List<UserFederationProviderModel> result = new LinkedList<UserFederationProviderModel>();
         for (UserFederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority()));
+            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
         }
 
         return result;
@@ -867,6 +874,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.setProviderName(model.getProviderName());
             entity.setConfig(model.getConfig());
             entity.setPriority(model.getPriority());
+            String displayName = model.getDisplayName();
+            if (displayName == null) {
+                entity.setDisplayName(entity.getId());
+            }
             entities.add(entity);
         }
 

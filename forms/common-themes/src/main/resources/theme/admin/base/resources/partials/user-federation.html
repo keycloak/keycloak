@@ -18,7 +18,7 @@
                     <div class="pull-right">
                         <div class="select-kc">
                             <select ng-model="selectedProvider"
-                                    ng-options="p.name for p in providers"
+                                    ng-options="p.id for p in providers"
                                     data-ng-change="addProvider(selectedProvider); selectedProvider = null">
                                 <option value="" disabled selected>Add provider...</option>
                             </select>
@@ -34,7 +34,7 @@
             </thead>
             <tbody>
             <tr ng-repeat="instance in instances">
-                <td><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{instance.id}}</a></td>
+                <td><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{instance.displayName}}</a></td>
                 <td>{{instance.providerName|capitalize}}</td>
                 <td>{{instance.priority}}</td>
              </tr>

@@ -51,6 +51,7 @@ public class ModelToRepresentation {
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
         rep.setTotp(user.isTotp());
+        rep.setFederationLink(user.getFederationLink());
 
         List<String> reqActions = new ArrayList<String>();
         for (UserModel.RequiredAction ra : user.getRequiredActions()){
@@ -276,6 +277,7 @@ public class ModelToRepresentation {
         rep.setConfig(model.getConfig());
         rep.setProviderName(model.getProviderName());
         rep.setPriority(model.getPriority());
+        rep.setDisplayName(model.getDisplayName());
         return rep;
     }
 }
