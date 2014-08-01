@@ -34,7 +34,7 @@ public enum SslRequired {
     private boolean isLocal(String remoteAddress) {
         try {
             InetAddress inetAddress = InetAddress.getByName(remoteAddress);
-            return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress();
+            return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress();
         } catch (UnknownHostException e) {
             return false;
         }
