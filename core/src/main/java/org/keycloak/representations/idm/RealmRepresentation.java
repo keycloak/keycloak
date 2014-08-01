@@ -54,8 +54,6 @@ public class RealmRepresentation {
     protected List<OAuthClientRepresentation> oauthClients;
     protected Map<String, String> socialProviders;
     protected Map<String, String> smtpServer;
-    protected Map<String, String> ldapServer;
-    protected List<AuthenticationProviderRepresentation> authenticationProviders;
     protected List<UserFederationProviderRepresentation> userFederationProviders;
     protected String loginTheme;
     protected String accountTheme;
@@ -307,22 +305,6 @@ public class RealmRepresentation {
 
     public void setSmtpServer(Map<String, String> smtpServer) {
         this.smtpServer = smtpServer;
-    }
-
-    public Map<String, String> getLdapServer() {
-        return ldapServer;
-    }
-
-    public void setLdapServer(Map<String, String> ldapServer) {
-        this.ldapServer = ldapServer;
-    }
-
-    public List<AuthenticationProviderRepresentation> getAuthenticationProviders() {
-        return authenticationProviders;
-    }
-
-    public void setAuthenticationProviders(List<AuthenticationProviderRepresentation> authenticationProviders) {
-        this.authenticationProviders = authenticationProviders;
     }
 
     public List<OAuthClientRepresentation> getOauthClients() {

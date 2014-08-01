@@ -17,7 +17,6 @@
 
     <modules>
         <module>keycloak-picketlink-api</module>
-        <module>keycloak-picketlink-realm</module>
     </modules>
 
 

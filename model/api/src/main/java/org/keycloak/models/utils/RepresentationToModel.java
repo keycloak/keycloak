@@ -3,8 +3,6 @@ package org.keycloak.models.utils;
 import net.iharder.Base64;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserFederationProviderModel;
@@ -20,8 +18,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.AuthenticationLinkRepresentation;
-import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
@@ -34,7 +30,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -204,18 +199,6 @@ public class RepresentationToModel {
         if (rep.getSocialProviders() != null) {
             newRealm.setSocialConfig(new HashMap(rep.getSocialProviders()));
         }
-        if (rep.getLdapServer() != null) {
-            newRealm.setLdapServerConfig(new HashMap(rep.getLdapServer()));
-        }
-
-        if (rep.getAuthenticationProviders() != null) {
-            List<AuthenticationProviderModel> authProviderModels = convertAuthenticationProviders(rep.getAuthenticationProviders());
-            newRealm.setAuthenticationProviders(authProviderModels);
-        }  else {
-            List<AuthenticationProviderModel> authProviderModels = Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER);
-            newRealm.setAuthenticationProviders(authProviderModels);
-        }
-
         if (rep.getUserFederationProviders() != null) {
             List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
             newRealm.setUserFederationProviders(providerModels);
@@ -280,14 +263,6 @@ public class RepresentationToModel {
             realm.setSocialConfig(new HashMap(rep.getSocialProviders()));
         }
 
-        if (rep.getLdapServer() != null) {
-            realm.setLdapServerConfig(new HashMap(rep.getLdapServer()));
-        }
-        if (rep.getAuthenticationProviders() != null) {
-            List<AuthenticationProviderModel> authProviderModels = convertAuthenticationProviders(rep.getAuthenticationProviders());
-            realm.setAuthenticationProviders(authProviderModels);
-        }
-
         if (rep.getUserFederationProviders() != null) {
             List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
             realm.setUserFederationProviders(providerModels);
@@ -304,17 +279,6 @@ public class RepresentationToModel {
         newRealm.addRequiredCredential(requiredCred);
     }
 
-
-    private static List<AuthenticationProviderModel> convertAuthenticationProviders(List<AuthenticationProviderRepresentation> authenticationProviders) {
-        List<AuthenticationProviderModel> result = new ArrayList<AuthenticationProviderModel>();
-
-        for (AuthenticationProviderRepresentation representation : authenticationProviders) {
-            AuthenticationProviderModel model = new AuthenticationProviderModel(representation.getProviderName(),
-                    representation.isPasswordUpdateSupported(), representation.getConfig());
-            result.add(model);
-        }
-        return result;
-    }
 
     private static List<UserFederationProviderModel> convertFederationProviders(List<UserFederationProviderRepresentation> providers) {
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
@@ -623,11 +587,6 @@ public class RepresentationToModel {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
                 updateCredential(user, cred);
             }
-        }
-        if (userRep.getAuthenticationLink() != null) {
-            AuthenticationLinkRepresentation link = userRep.getAuthenticationLink();
-            AuthenticationLinkModel authLink = new AuthenticationLinkModel(link.getAuthProvider(), link.getAuthUserId());
-            user.setAuthenticationLink(authLink);
         }
         if (userRep.getSocialLinks() != null) {
             for (SocialLinkRepresentation socialLink : userRep.getSocialLinks()) {

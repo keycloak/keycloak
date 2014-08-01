@@ -75,12 +75,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authentication-api</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-social-core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

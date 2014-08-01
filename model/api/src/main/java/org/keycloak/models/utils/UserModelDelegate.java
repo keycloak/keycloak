@@ -1,7 +1,6 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -145,16 +144,6 @@ public class UserModelDelegate implements UserModel {
     @Override
     public void updateCredentialDirectly(UserCredentialValueModel cred) {
         delegate.updateCredentialDirectly(cred);
-    }
-
-    @Override
-    public AuthenticationLinkModel getAuthenticationLink() {
-        return delegate.getAuthenticationLink();
-    }
-
-    @Override
-    public void setAuthenticationLink(AuthenticationLinkModel authenticationLink) {
-        delegate.setAuthenticationLink(authenticationLink);
     }
 
     @Override

@@ -96,7 +96,6 @@
 
     <modules>
         <module>audit</module>
-        <module>authentication</module>
         <module>core</module>
         <module>core-jaxrs</module>
         <module>connections</module>

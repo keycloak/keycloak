@@ -33,13 +33,8 @@ import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventType;
-import org.keycloak.authentication.AuthProviderStatus;
-import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -146,7 +141,6 @@ public class AccountService {
 
         account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
 
-        boolean passwordUpdateSupported = false;
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {
             auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, true);
@@ -173,16 +167,12 @@ public class AccountService {
 
             account.setUser(auth.getUser());
 
-            AuthenticationLinkModel authLinkModel = auth.getUser().getAuthenticationLink();
-            if (authLinkModel != null) {
-                AuthenticationProviderModel authProviderModel = AuthenticationProviderManager.getConfiguredProviderModel(realm, authLinkModel.getAuthProvider());
-                passwordUpdateSupported = authProviderModel.isPasswordUpdateSupported();
-            }
         }
 
         boolean auditEnabled = auditProvider != null && realm.isAuditEnabled();
 
-        account.setFeatures(realm.isSocial(), auditEnabled, passwordUpdateSupported);
+        // todo find out from federation if password is updatable
+        account.setFeatures(realm.isSocial(), auditEnabled, true);
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
@@ -428,7 +418,7 @@ public class AccountService {
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(CredentialRepresentation.TOTP);
         credentials.setValue(totpSecret);
-        user.updateCredential(credentials);
+        session.users().updateCredential(realm, user, credentials);
 
         user.setTotp(true);
 
@@ -471,19 +461,18 @@ public class AccountService {
             return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
-        AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, session);
+        UserCredentialModel cred = UserCredentialModel.password(password);
         if (Validation.isEmpty(password)) {
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
-        } else if (authProviderManager.validatePassword(user, password) != AuthProviderStatus.SUCCESS) {
-            return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
+        } else {
+            if (!session.users().validCredentials(realm, user, cred)) {
+                return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
+            }
         }
 
         try {
-            boolean passwordUpdateSuccess = authProviderManager.updatePassword(user, passwordNew);
-            if (!passwordUpdateSuccess) {
-                return account.setError("Password update failed").createResponse(AccountPages.PASSWORD);
-            }
-        } catch (AuthenticationProviderException ape) {
+            session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
+         } catch (Exception ape) {
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
 
@@ -539,7 +528,7 @@ public class AccountService {
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (session.users().getSocialLinks(user, realm).size() > 1 || user.getAuthenticationLink() != null) {
+                    if (session.users().getSocialLinks(user, realm).size() > 1 || user.getFederationLink() != null) {
                         session.users().removeSocialLink(realm, user, providerId);
 
                         logger.debug("Social provider " + providerId + " removed successfully from user " + user.getUsername());

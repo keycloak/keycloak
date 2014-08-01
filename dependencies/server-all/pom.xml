@@ -90,11 +90,6 @@
 
         <!-- authentication api -->
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authentication-picketlink</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-common</artifactId>
         </dependency>
@@ -115,11 +110,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-picketlink-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-picketlink-realm</artifactId>
             <version>${project.version}</version>
         </dependency>
 

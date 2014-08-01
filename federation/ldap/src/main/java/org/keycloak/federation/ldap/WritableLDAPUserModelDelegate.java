@@ -1,12 +1,8 @@
 package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.picketlink.idm.IdentityManagementException;
@@ -15,10 +11,6 @@ import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.TOTPCredential;
 import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

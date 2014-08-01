@@ -1,7 +1,6 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.enums.SslRequired;
@@ -13,7 +12,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
-import org.keycloak.models.jpa.entities.AuthenticationProviderEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
@@ -657,74 +655,6 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setSocialConfig(Map<String, String> socialConfig) {
         realm.setSocialConfig(socialConfig);
-        em.flush();
-    }
-
-    @Override
-    public Map<String, String> getLdapServerConfig() {
-        return realm.getLdapServerConfig();
-    }
-
-    @Override
-    public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
-        realm.setLdapServerConfig(ldapServerConfig);
-        em.flush();
-    }
-
-    @Override
-    public List<AuthenticationProviderModel> getAuthenticationProviders() {
-        List<AuthenticationProviderEntity> entities = realm.getAuthenticationProviders();
-        List<AuthenticationProviderEntity> copy = new ArrayList<AuthenticationProviderEntity>();
-        for (AuthenticationProviderEntity entity : entities) {
-            copy.add(entity);
-
-        }
-        Collections.sort(copy, new Comparator<AuthenticationProviderEntity>() {
-
-            @Override
-            public int compare(AuthenticationProviderEntity o1, AuthenticationProviderEntity o2) {
-                return o1.getPriority() - o2.getPriority();
-            }
-
-        });
-        List<AuthenticationProviderModel> result = new ArrayList<AuthenticationProviderModel>();
-        for (AuthenticationProviderEntity entity : copy) {
-            result.add(new AuthenticationProviderModel(entity.getProviderName(), entity.isPasswordUpdateSupported(), entity.getConfig()));
-        }
-
-        return result;
-    }
-
-    @Override
-    public void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders) {
-        List<AuthenticationProviderEntity> newEntities = new ArrayList<AuthenticationProviderEntity>();
-        int counter = 1;
-        for (AuthenticationProviderModel model : authenticationProviders) {
-            AuthenticationProviderEntity entity = new AuthenticationProviderEntity();
-            entity.setRealm(realm);
-            entity.setProviderName(model.getProviderName());
-            entity.setPasswordUpdateSupported(model.isPasswordUpdateSupported());
-            entity.setConfig(model.getConfig());
-            entity.setPriority(counter++);
-            newEntities.add(entity);
-        }
-
-        // Remove all existing first
-        Collection<AuthenticationProviderEntity> existing = realm.getAuthenticationProviders();
-        Collection<AuthenticationProviderEntity> copy = new ArrayList<AuthenticationProviderEntity>(existing);
-        for (AuthenticationProviderEntity apToRemove : copy) {
-            existing.remove(apToRemove);
-            em.remove(apToRemove);
-        }
-
-        em.flush();
-
-        // Now create all new providers
-        for (AuthenticationProviderEntity apToAdd : newEntities) {
-            existing.add(apToAdd);
-            em.persist(apToAdd);
-        }
-
         em.flush();
     }
 

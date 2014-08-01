@@ -85,9 +85,6 @@ public class UserEntity {
     @Column(name="federation_link")
     protected String federationLink;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
-    protected Collection<AuthenticationLinkEntity> authenticationLink;
-
     public String getId() {
         return id;
     }
@@ -191,14 +188,6 @@ public class UserEntity {
 
     public void setCredentials(Collection<CredentialEntity> credentials) {
         this.credentials = credentials;
-    }
-
-    public Collection<AuthenticationLinkEntity> getAuthenticationLink() {
-        return authenticationLink;
-    }
-
-    public void setAuthenticationLink(Collection<AuthenticationLinkEntity> authenticationLink) {
-        this.authenticationLink = authenticationLink;
     }
 
     public String getFederationLink() {

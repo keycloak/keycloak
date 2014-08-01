@@ -17,8 +17,6 @@ import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.EventType;
-import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -639,10 +637,8 @@ public class TokenService {
             return Flows.forms(session, realm, uriInfo).setError(error).setFormData(formData).createRegistration();
         }
 
-        AuthenticationProviderManager authenticationProviderManager = AuthenticationProviderManager.getManager(realm, session);
-
         // Validate that user with this username doesn't exist in realm or any authentication provider
-        if (session.users().getUserByUsername(username, realm) != null || authenticationProviderManager.getUser(username) != null) {
+        if (session.users().getUserByUsername(username, realm) != null) {
             audit.error(Errors.USERNAME_IN_USE);
             return Flows.forms(session, realm, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
         }
@@ -660,11 +656,11 @@ public class TokenService {
             credentials.setValue(formData.getFirst("password"));
 
             boolean passwordUpdateSuccessful;
-            String passwordUpdateError;
+            String passwordUpdateError = null;
             try {
-                passwordUpdateSuccessful = AuthenticationProviderManager.getManager(realm, session).updatePassword(user, formData.getFirst("password"));
-                passwordUpdateError = "Password update failed";
-            } catch (AuthenticationProviderException ape) {
+                session.users().updateCredential(realm, user, UserCredentialModel.password(formData.getFirst("password")));
+                passwordUpdateSuccessful = true;
+            } catch (Exception ape) {
                 passwordUpdateSuccessful = false;
                 passwordUpdateError = ape.getMessage();
             }

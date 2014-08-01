@@ -5,7 +5,6 @@ import com.mongodb.QueryBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.entities.UserFederationProviderEntity;
@@ -16,7 +15,6 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.entities.AuthenticationProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
@@ -755,43 +753,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setSocialConfig(Map<String, String> socialConfig) {
         realm.setSocialConfig(socialConfig);
-        updateRealm();
-    }
-
-    @Override
-    public Map<String, String> getLdapServerConfig() {
-        return realm.getLdapServerConfig();
-    }
-
-    @Override
-    public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
-        realm.setLdapServerConfig(ldapServerConfig);
-        updateRealm();
-    }
-
-    @Override
-    public List<AuthenticationProviderModel> getAuthenticationProviders() {
-        List<AuthenticationProviderEntity> entities = realm.getAuthenticationProviders();
-        List<AuthenticationProviderModel> result = new ArrayList<AuthenticationProviderModel>();
-        for (AuthenticationProviderEntity entity : entities) {
-            result.add(new AuthenticationProviderModel(entity.getProviderName(), entity.isPasswordUpdateSupported(), entity.getConfig()));
-        }
-
-        return result;
-    }
-
-    @Override
-    public void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders) {
-        List<AuthenticationProviderEntity> entities = new ArrayList<AuthenticationProviderEntity>();
-        for (AuthenticationProviderModel model : authenticationProviders) {
-            AuthenticationProviderEntity entity = new AuthenticationProviderEntity();
-            entity.setProviderName(model.getProviderName());
-            entity.setPasswordUpdateSupported(model.isPasswordUpdateSupported());
-            entity.setConfig(model.getConfig());
-            entities.add(entity);
-        }
-
-        realm.setAuthenticationProviders(entities);
         updateRealm();
     }
 

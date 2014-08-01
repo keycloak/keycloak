@@ -1,7 +1,6 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -17,7 +16,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
@@ -107,7 +105,6 @@ public class ModelToRepresentation {
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setSmtpServer(realm.getSmtpConfig());
         rep.setSocialProviders(realm.getSocialConfig());
-        rep.setLdapServer(realm.getLdapServerConfig());
         rep.setAccountTheme(realm.getAccountTheme());
         rep.setLoginTheme(realm.getLoginTheme());
         rep.setAdminTheme(realm.getAdminTheme());
@@ -133,18 +130,6 @@ public class ModelToRepresentation {
             }
         }
 
-        List<AuthenticationProviderModel> authProviderModels = realm.getAuthenticationProviders();
-        if (authProviderModels.size() > 0) {
-            List<AuthenticationProviderRepresentation> authProviderReps = new ArrayList<AuthenticationProviderRepresentation>();
-            for (AuthenticationProviderModel model : authProviderModels) {
-                AuthenticationProviderRepresentation authProvRep = new AuthenticationProviderRepresentation();
-                authProvRep.setProviderName(model.getProviderName());
-                authProvRep.setPasswordUpdateSupported(model.isPasswordUpdateSupported());
-                authProvRep.setConfig(model.getConfig());
-                authProviderReps.add(authProvRep);
-            }
-            rep.setAuthenticationProviders(authProviderReps);
-        }
         List<UserFederationProviderModel> fedProviderModels = realm.getUserFederationProviders();
         if (fedProviderModels.size() > 0) {
             List<UserFederationProviderRepresentation> fedProviderReps = new ArrayList<UserFederationProviderRepresentation>();

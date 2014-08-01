@@ -3,11 +3,7 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
-import org.keycloak.authentication.AuthProviderStatus;
-import org.keycloak.authentication.AuthUser;
-import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -29,6 +25,8 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -257,20 +255,8 @@ public class AuthenticationManager {
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
 
         if (user == null) {
-            AuthUser authUser = AuthenticationProviderManager.getManager(realm, session).getUser(username);
-            if (authUser != null) {
-                // Create new user and link him with authentication provider
-                user = session.users().addUser(realm, authUser.getUsername());
-                user.setEnabled(true);
-                user.setFirstName(authUser.getFirstName());
-                user.setLastName(authUser.getLastName());
-                user.setEmail(authUser.getEmail());
-                user.setAuthenticationLink(new AuthenticationLinkModel(authUser.getProviderName(), authUser.getId()));
-                logger.info("User " + authUser.getUsername() + " created in Keycloak and linked with provider " + authUser.getProviderName());
-            } else {
-                logger.warn("User " + username + " not found");
-                return AuthenticationStatus.INVALID_USER;
-            }
+            logger.warn("User " + username + " not found");
+            return AuthenticationStatus.INVALID_USER;
         }
 
         if (!checkEnabled(user)) {
@@ -284,11 +270,13 @@ public class AuthenticationManager {
         }
 
         if (types.contains(CredentialRepresentation.PASSWORD)) {
+            List<UserCredentialModel> credentials = new LinkedList<UserCredentialModel>();
             String password = formData.getFirst(CredentialRepresentation.PASSWORD);
             if (password == null) {
                 logger.warn("Password not provided");
                 return AuthenticationStatus.MISSING_PASSWORD;
             }
+            credentials.add(UserCredentialModel.password(password));
 
             if (user.isTotp()) {
                 String token = formData.getFirst(CredentialRepresentation.TOTP);
@@ -296,21 +284,14 @@ public class AuthenticationManager {
                     logger.warn("TOTP token not provided");
                     return AuthenticationStatus.MISSING_TOTP;
                 }
+                credentials.add(UserCredentialModel.totp(token));
 
-                logger.debug("validating TOTP");
-                if (!session.users().validCredentials(realm, user, UserCredentialModel.totp(token))) {
-                    return AuthenticationStatus.INVALID_CREDENTIALS;
-                }
-            }
+             }
 
             logger.debug("validating password for user: " + username);
 
-            AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm, session).validatePassword(user, password);
-            if (authStatus == AuthProviderStatus.INVALID_CREDENTIALS) {
-                logger.debug("invalid password for user: " + username);
+            if (!session.users().validCredentials(realm, user, credentials)) {
                 return AuthenticationStatus.INVALID_CREDENTIALS;
-            } else if (authStatus == AuthProviderStatus.FAILED) {
-                return AuthenticationStatus.FAILED;
             }
 
             if (!user.getRequiredActions().isEmpty()) {
@@ -323,6 +304,9 @@ public class AuthenticationManager {
             if (secret == null) {
                 logger.warn("Secret not provided");
                 return AuthenticationStatus.MISSING_PASSWORD;
+            }
+            if (!session.users().validCredentials(realm, user, UserCredentialModel.secret(secret))) {
+                return AuthenticationStatus.INVALID_CREDENTIALS;
             }
             if (!user.getRequiredActions().isEmpty()) {
                 return AuthenticationStatus.ACTIONS_REQUIRED;

@@ -2,7 +2,6 @@ package org.keycloak.models.cache;
 
 import org.keycloak.Config;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.OAuthClientModel;
@@ -580,30 +579,6 @@ public class RealmAdapter implements RealmModel {
     public void setSocialConfig(Map<String, String> socialConfig) {
         getDelegateForUpdate();
         updated.setSocialConfig(socialConfig);
-    }
-
-    @Override
-    public Map<String, String> getLdapServerConfig() {
-        if (updated != null) return updated.getLdapServerConfig();
-        return cached.getLdapServerConfig();
-    }
-
-    @Override
-    public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
-        getDelegateForUpdate();
-        updated.setLdapServerConfig(ldapServerConfig);
-    }
-
-    @Override
-    public List<AuthenticationProviderModel> getAuthenticationProviders() {
-        if (updated != null) return updated.getAuthenticationProviders();
-        return cached.getAuthenticationProviders();
-    }
-
-    @Override
-    public void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders) {
-        getDelegateForUpdate();
-        updated.setAuthenticationProviders(authenticationProviders);
     }
 
     @Override

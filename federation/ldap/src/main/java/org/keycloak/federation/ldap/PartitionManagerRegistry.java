@@ -47,7 +47,7 @@ public class PartitionManagerRegistry {
      * @param ldapConfig from realm
      * @return PartitionManager instance based on LDAP store
      */
-    protected PartitionManager createPartitionManager(Map<String,String> ldapConfig) {
+    public static PartitionManager createPartitionManager(Map<String,String> ldapConfig) {
         IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
 
         Properties connectionProps = new Properties();
@@ -114,13 +114,13 @@ public class PartitionManagerRegistry {
         return new DefaultPartitionManager(identityConfigs);
     }
 
-    private void checkSystemProperty(String name, String defaultValue) {
+    private static void checkSystemProperty(String name, String defaultValue) {
         if (System.getProperty(name) == null) {
             System.setProperty(name, defaultValue);
         }
     }
 
-    private String getNameOfLDAPAttribute(String systemPropertyName, String defaultAttrName, String defaultAttrNameInActiveDirectory, boolean activeDirectory) {
+    private static String getNameOfLDAPAttribute(String systemPropertyName, String defaultAttrName, String defaultAttrNameInActiveDirectory, boolean activeDirectory) {
         // System property has biggest priority if available
         String sysProperty = System.getProperty(systemPropertyName);
         if (sysProperty != null) {
@@ -131,7 +131,7 @@ public class PartitionManagerRegistry {
     }
 
     // Parse array of strings like [ "inetOrgPerson", "organizationalPerson" ] from the string like: "inetOrgPerson, organizationalPerson"
-    private String[] getUserObjectClasses(Map<String,String> ldapConfig) {
+    private static String[] getUserObjectClasses(Map<String,String> ldapConfig) {
         String objClassesCfg = ldapConfig.get(LDAPConstants.USER_OBJECT_CLASSES);
         String objClassesStr = (objClassesCfg != null && objClassesCfg.length() > 0) ? objClassesCfg.trim() : "inetOrgPerson, organizationalPerson";
 

@@ -8,7 +8,6 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
 import org.keycloak.models.jpa.entities.SocialLinkEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.CredentialValidation;
@@ -80,11 +79,6 @@ public class JpaUserProvider implements UserProvider {
     private void removeUser(UserEntity user) {
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteSocialLinkByUser").setParameter("user", user).executeUpdate();
-        if (user.getAuthenticationLink() != null) {
-            for (AuthenticationLinkEntity l : user.getAuthenticationLink()) {
-                em.remove(l);
-            }
-        }
         em.remove(user);
     }
 
@@ -126,8 +120,6 @@ public class JpaUserProvider implements UserProvider {
         num = em.createNamedQuery("deleteCredentialsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserAttributesByRealm")
-                .setParameter("realmId", realm.getId()).executeUpdate();
-        num = em.createNamedQuery("deleteAuthenticationLinksByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUsersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
