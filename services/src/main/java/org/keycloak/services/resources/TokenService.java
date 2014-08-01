@@ -11,6 +11,8 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.RSATokenVerifier;
+import org.keycloak.VerificationException;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
@@ -45,6 +47,7 @@ import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -135,6 +138,11 @@ public class TokenService {
     public static UriBuilder accessCodeToTokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(TokenService.class, "accessCodeToToken");
+    }
+
+    public static UriBuilder validateAccessTokenUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "validateAccessToken");
     }
 
     public static UriBuilder grantAccessTokenUrl(UriInfo uriInfo) {
@@ -293,6 +301,105 @@ public class TokenService {
         audit.success();
 
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    /**
+     * Validate encoded access token.
+     *
+     * @param tokenString
+     * @return Unmarshalled token
+     */
+    @Path("validate")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response validateAccessToken(@QueryParam("access_token") String tokenString) {
+        audit.event(EventType.VALIDATE_ACCESS_TOKEN);
+        AccessToken token = null;
+        try {
+            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
+        } catch (Exception e) {
+            Map<String, String> err = new HashMap<String, String>();
+            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
+            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Token invalid");
+            audit.error(Errors.INVALID_TOKEN);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                    .build();
+        }
+        audit.user(token.getSubject()).session(token.getSessionState()).detail(Details.VALIDATE_ACCESS_TOKEN, token.getId());
+
+        if (token.isExpired()
+                || token.getIssuedAt() < realm.getNotBefore()
+                ) {
+            Map<String, String> err = new HashMap<String, String>();
+            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
+            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Token expired");
+            audit.error(Errors.INVALID_TOKEN);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                    .build();
+        }
+
+
+        UserModel user = session.users().getUserById(token.getSubject(), realm);
+        if (user == null) {
+            Map<String, String> err = new HashMap<String, String>();
+            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
+            err.put(OAuth2Constants.ERROR_DESCRIPTION, "User does not exist");
+            audit.error(Errors.USER_NOT_FOUND);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                    .build();
+        }
+
+        if (!user.isEnabled()) {
+            Map<String, String> err = new HashMap<String, String>();
+            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
+            err.put(OAuth2Constants.ERROR_DESCRIPTION, "User disabled");
+            audit.error(Errors.USER_DISABLED);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                    .build();
+        }
+
+        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
+        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+            Map<String, String> err = new HashMap<String, String>();
+            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
+            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Expired session");
+            audit.error(Errors.USER_SESSION_NOT_FOUND);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                    .build();
+        }
+
+        ClientModel client = realm.findClient(token.getIssuedFor());
+        if (client == null) {
+            Map<String, String> err = new HashMap<String, String>();
+            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_CLIENT);
+            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Issued for client no longer exists");
+            audit.error(Errors.CLIENT_NOT_FOUND);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                    .build();
+
+        }
+
+        if (token.getIssuedAt() < client.getNotBefore()) {
+            Map<String, String> err = new HashMap<String, String>();
+            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_CLIENT);
+            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Issued for client no longer exists");
+            audit.error(Errors.INVALID_TOKEN);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                    .build();
+        }
+
+        try {
+            tokenManager.verifyAccess(token, realm, client, user);
+        } catch (OAuthErrorException e) {
+            Map<String, String> err = new HashMap<String, String>();
+            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_SCOPE);
+            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Role mappings have changed");
+            audit.error(Errors.INVALID_TOKEN);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                    .build();
+
+        }
+        return Response.ok(token, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     /**
