@@ -39,7 +39,7 @@ public class OAuthClientManager {
         }
     }
 
-    @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-not-required",
+    @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-required",
             "resource", "public-client", "credentials"})
     public static class InstallationAdapterConfig extends BaseRealmConfig {
         @JsonProperty("public-client")
@@ -79,7 +79,7 @@ public class OAuthClientManager {
         InstallationAdapterConfig rep = new InstallationAdapterConfig();
         rep.setRealm(realmModel.getName());
         rep.setRealmKey(realmModel.getPublicKeyPem());
-        rep.setSslNotRequired(realmModel.isSslNotRequired());
+        rep.setSslRequired(realmModel.getSslRequired().name().toLowerCase());
         rep.setAuthServerUrl(baseUri.toString());
         if (model.isPublicClient()) rep.setPublicClient(true);
 

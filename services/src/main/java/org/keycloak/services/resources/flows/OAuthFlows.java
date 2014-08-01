@@ -24,6 +24,7 @@ package org.keycloak.services.resources.flows;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
@@ -68,16 +69,18 @@ public class OAuthFlows {
 
     private final UriInfo uriInfo;
 
+    private ClientConnection clientConnection;
     private final AuthenticationManager authManager;
 
     private final TokenManager tokenManager;
 
-    OAuthFlows(KeycloakSession session, RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
+    OAuthFlows(KeycloakSession session, RealmModel realm, HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection, AuthenticationManager authManager,
             TokenManager tokenManager) {
         this.session = session;
         this.realm = realm;
         this.request = request;
         this.uriInfo = uriInfo;
+        this.clientConnection = clientConnection;
         this.authManager = authManager;
         this.tokenManager = tokenManager;
     }
@@ -104,8 +107,8 @@ public class OAuthFlows {
         }
 
         // refresh the cookies!
-        authManager.createLoginCookie(realm, accessCode.getUser(), userSession, uriInfo);
-        if (userSession.isRememberMe()) authManager.createRememberMeCookie(realm, uriInfo);
+        authManager.createLoginCookie(realm, accessCode.getUser(), userSession, uriInfo, clientConnection);
+        if (userSession.isRememberMe()) authManager.createRememberMeCookie(realm, uriInfo, clientConnection);
         return location.build();
     }
 

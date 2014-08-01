@@ -243,7 +243,7 @@ public class AdminAPITest {
         if (rep.isResetPasswordAllowed() != null) Assert.assertEquals(rep.isResetPasswordAllowed(), storedRealm.isResetPasswordAllowed());
         if (rep.isUpdateProfileOnInitialSocialLogin() != null)
             Assert.assertEquals(rep.isUpdateProfileOnInitialSocialLogin(), storedRealm.isUpdateProfileOnInitialSocialLogin());
-        if (rep.isSslNotRequired() != null) Assert.assertEquals(rep.isSslNotRequired(), storedRealm.isSslNotRequired());
+        if (rep.getSslRequired() != null) Assert.assertEquals(rep.getSslRequired(), storedRealm.getSslRequired());
         if (rep.getAccessCodeLifespan() != null) Assert.assertEquals(rep.getAccessCodeLifespan(), storedRealm.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
             Assert.assertEquals(rep.getAccessCodeLifespanUserAction(), storedRealm.getAccessCodeLifespanUserAction());

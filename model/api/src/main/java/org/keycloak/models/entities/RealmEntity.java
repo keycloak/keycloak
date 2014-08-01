@@ -12,7 +12,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     private String name;
     private boolean enabled;
-    private boolean sslNotRequired;
+    private String sslRequired;
     private boolean registrationAllowed;
     private boolean rememberMe;
     private boolean verifyEmail;
@@ -79,12 +79,12 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.enabled = enabled;
     }
 
-    public boolean isSslNotRequired() {
-        return sslNotRequired;
+    public String getSslRequired() {
+        return sslRequired;
     }
 
-    public void setSslNotRequired(boolean sslNotRequired) {
-        this.sslNotRequired = sslNotRequired;
+    public void setSslRequired(String sslRequired) {
+        this.sslRequired = sslRequired;
     }
 
     public boolean isPasswordCredentialGrantAllowed() {

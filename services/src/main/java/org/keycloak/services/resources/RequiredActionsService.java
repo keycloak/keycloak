@@ -43,7 +43,7 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.ClientConnection;
+import org.keycloak.ClientConnection;
 import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
@@ -291,11 +291,11 @@ public class RequiredActionsService {
 
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
-            return Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
+            return Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager).forwardToSecurityFailure(
                     "Unknown login requester.");
         }
         if (!client.isEnabled()) {
-            return Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
+            return Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager).forwardToSecurityFailure(
                     "Login requester not enabled.");
         }
 
@@ -383,14 +383,14 @@ public class RequiredActionsService {
 
             UserSessionModel userSession = session.sessions().getUserSession(realm, accessCode.getSessionState());
             if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-                AuthenticationManager.logout(session, realm, userSession, uriInfo);
-                return Flows.oauth(this.session, realm, request, uriInfo, authManager, tokenManager).redirectError(accessCode.getClient(), "access_denied", accessCode.getState(), accessCode.getRedirectUri());
+                AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
+                return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager).redirectError(accessCode.getClient(), "access_denied", accessCode.getState(), accessCode.getRedirectUri());
             }
             audit.session(userSession);
 
             audit.success();
 
-            return Flows.oauth(this.session, realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
+            return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager).redirectAccessCode(accessCode,
                     userSession, accessCode.getState(), accessCode.getRedirectUri());
         }
     }

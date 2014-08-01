@@ -56,7 +56,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
         node.get("realm-public-key").set("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB");
         node.get("auth-url").set("http://localhost:8080/auth-server/rest/realms/demo/tokens/login");
         node.get("code-url").set("http://localhost:8080/auth-server/rest/realms/demo/tokens/access/codes");
-        node.get("ssl-not-required").set(true);
+        node.get("ssl-required").set("external");
         node.get("expose-token").set(true);
         ModelNode credential = new ModelNode();
         credential.get("password").set("password");

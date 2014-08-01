@@ -11,6 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.entities.CachedRealm;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.PrivateKey;
@@ -78,15 +79,15 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isSslNotRequired() {
-        if (updated != null) return updated.isSslNotRequired();
-        return cached.isSslNotRequired();
+    public SslRequired getSslRequired() {
+        if (updated != null) return updated.getSslRequired();
+        return cached.getSslRequired();
     }
 
     @Override
-    public void setSslNotRequired(boolean sslNotRequired) {
+    public void setSslRequired(SslRequired sslRequired) {
         getDelegateForUpdate();
-        updated.setSslNotRequired(sslNotRequired);
+        updated.setSslRequired(sslRequired);
     }
 
     @Override

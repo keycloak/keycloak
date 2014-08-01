@@ -39,7 +39,7 @@
             <xs:element name="auth-server-url" type="xs:string" minOccurs="1" maxOccurs="1"/>
             <xs:element name="expose-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="disable-trust-manager" type="xs:boolean" minOccurs="0" maxOccurs="1" />
-            <xs:element name="ssl-not-required" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+            <xs:element name="ssl-required" type="xs:string" minOccurs="0" maxOccurs="1" />
             <xs:element name="cors-allowed-methods" type="xs:string" minOccurs="1" maxOccurs="1"/>
             <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1"/>
         </xs:all>
@@ -71,7 +71,7 @@
             <xs:element name="public-client" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="connection-pool-size" type="xs:integer" minOccurs="0" maxOccurs="1"/>
             <xs:element name="expose-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="ssl-not-required" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+            <xs:element name="ssl-required" type="xs:string" minOccurs="0" maxOccurs="1" />
             <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1"/>
             <xs:element name="credential" type="credential-type" minOccurs="1" maxOccurs="1"/>
         </xs:all>

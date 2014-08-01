@@ -1,5 +1,7 @@
 package org.keycloak.models;
 
+import org.keycloak.enums.SslRequired;
+
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.List;
@@ -22,9 +24,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setEnabled(boolean enabled);
 
-    boolean isSslNotRequired();
+    SslRequired getSslRequired();
 
-    void setSslNotRequired(boolean sslNotRequired);
+    void setSslRequired(SslRequired sslRequired);
 
     boolean isRegistrationAllowed();
 

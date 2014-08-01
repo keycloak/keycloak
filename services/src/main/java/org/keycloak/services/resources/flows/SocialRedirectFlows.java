@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.flows;
 
+import org.keycloak.ClientConnection;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -20,12 +21,14 @@ public class SocialRedirectFlows {
 
     private final RealmModel realm;
     private final UriInfo uriInfo;
+    private ClientConnection clientConnection;
     private final SocialProvider socialProvider;
     private final SocialResource.State state;
 
-    SocialRedirectFlows(RealmModel realm, UriInfo uriInfo, SocialProvider provider) {
+    SocialRedirectFlows(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, SocialProvider provider) {
         this.realm = realm;
         this.uriInfo = uriInfo;
+        this.clientConnection = clientConnection;
         this.socialProvider = provider;
 
         state = new SocialResource.State();
@@ -62,7 +65,7 @@ public class SocialRedirectFlows {
                     .jsonContent(authRequest.getAttributes())
                     .rsa256(realm.getPrivateKey());
 
-            CookieHelper.addCookie("KEYCLOAK_SOCIAL", encoded, cookiePath, null, null, -1, !realm.isSslNotRequired(), true);
+            CookieHelper.addCookie("KEYCLOAK_SOCIAL", encoded, cookiePath, null, null, -1, realm.getSslRequired().isRequired(clientConnection), true);
         }
 
         return Response.status(302).location(authRequest.getAuthUri()).build();

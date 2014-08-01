@@ -4,6 +4,7 @@ import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.ServiceUrlConstants;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import java.net.URI;
@@ -37,7 +38,7 @@ public class KeycloakDeployment {
     protected HttpClient client;
 
     protected String scope;
-    protected boolean sslRequired = true;
+    protected SslRequired sslRequired = SslRequired.ALL;
     protected String stateCookieName = "OAuth_Token_Request_State";
     protected boolean useResourceRoleMappings;
     protected boolean cors;
@@ -168,11 +169,11 @@ public class KeycloakDeployment {
         this.scope = scope;
     }
 
-    public boolean isSslRequired() {
+    public SslRequired getSslRequired() {
         return sslRequired;
     }
 
-    public void setSslRequired(boolean sslRequired) {
+    public void setSslRequired(SslRequired sslRequired) {
         this.sslRequired = sslRequired;
     }
 

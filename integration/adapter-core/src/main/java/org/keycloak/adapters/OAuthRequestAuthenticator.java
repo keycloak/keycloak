@@ -110,7 +110,7 @@ public abstract class OAuthRequestAuthenticator {
     protected String getRedirectUri(String state) {
         String url = getRequestUrl();
         log.infof("callback uri: %s", url);
-        if (!isRequestSecure() && deployment.isSslRequired()) {
+        if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             int port = sslRedirectPort();
             if (port < 0) {
                 // disabled?
@@ -150,7 +150,7 @@ public abstract class OAuthRequestAuthenticator {
                 }
                 log.info("Sending redirect to login page: " + redirect);
                 exchange.getResponse().setStatus(302);
-                exchange.getResponse().setCookie(deployment.getStateCookieName(), state, /* need to set path? */ null, null, -1, deployment.isSslRequired(), false);
+                exchange.getResponse().setCookie(deployment.getStateCookieName(), state, /* need to set path? */ null, null, -1, deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr()), false);
                 exchange.getResponse().setHeader("Location", redirect);
                 return true;
             }
@@ -241,8 +241,7 @@ public abstract class OAuthRequestAuthenticator {
      */
     protected AuthChallenge resolveCode(String code) {
         // abort if not HTTPS
-        if (deployment.isSslRequired() && !isRequestSecure()) {
-
+        if (!isRequestSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             log.error("Adapter requires SSL. Request: " + facade.getRequest().getURI());
             return challenge(403);
         }

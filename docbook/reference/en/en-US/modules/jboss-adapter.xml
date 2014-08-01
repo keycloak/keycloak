@@ -224,7 +224,7 @@ public class CustomerService {
           <realm>demo</realm>
           <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA</realm-public-key>
           <auth-server-url>http://localhost:8081/auth</auth-server-url>
-          <ssl-not-required>true</ssl-not-required>
+          <ssl-required>external</ssl-required>
           <resource>customer-portal</resource>
           <credential name="secret">password</credential>
        </secure-deployment>
@@ -255,7 +255,7 @@ public class CustomerService {
     <realm name="demo">
         <realm-public-key>MIGfMA0GCSqGSIb3DQEBA</realm-public-key>
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
-        <ssl-not-required>true</ssl-not-required>
+        <ssl-required>external</ssl-required>
     </realm>
     <secure-deployment name="customer-portal.war">
         <realm>demo</realm>

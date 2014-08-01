@@ -26,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -67,7 +68,7 @@ public class CompositeRoleTest {
             realm.setSsoSessionMaxLifespan(10000);
             realm.setAccessCodeLifespanUserAction(1000);
             realm.setAccessCodeLifespan(1000);
-            realm.setSslNotRequired(true);
+            realm.setSslRequired(SslRequired.EXTERNAL);
             realm.setEnabled(true);
             realm.addRequiredCredential(UserCredentialModel.PASSWORD);
             realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));

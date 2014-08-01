@@ -83,7 +83,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
 
         if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(addRealm)) {
             //TODO: externalize the message
-            throw new XMLStreamException("truststore and truststore-password must be set if both ssl-not-required and disable-trust-maanger are false.");
+            throw new XMLStreamException("truststore and truststore-password must be set if ssl-required is not none and disable-trust-maanger is false.");
         }
 
         list.add(addRealm);
@@ -114,7 +114,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
          * TODO need to check realm-ref first.
         if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(addSecureDeployment)) {
             //TODO: externalize the message
-            throw new XMLStreamException("truststore and truststore-password must be set if both ssl-not-required and disable-trust-maanger are false.");
+            throw new XMLStreamException("truststore and truststore-password must be set if ssl-required is not none and disable-trust-maanger is false.");
         }
          */
 

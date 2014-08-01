@@ -1,4 +1,4 @@
-package org.keycloak.services;
+package org.keycloak;
 
 /**
  * Information about the client connection

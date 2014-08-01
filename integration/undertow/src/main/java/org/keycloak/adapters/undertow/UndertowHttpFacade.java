@@ -102,6 +102,11 @@ public class UndertowHttpFacade implements HttpFacade {
         public InputStream getInputStream() {
             return exchange.getInputStream();
         }
+
+        @Override
+        public String getRemoteAddr() {
+            return exchange.getSourceAddress().getAddress().getHostAddress();
+        }
     }
 
     protected class ResponseFacade implements Response {

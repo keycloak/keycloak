@@ -10,7 +10,7 @@
   "resource" : "customer-portal",
   "realm-public-key" : "MIGfMA0GCSqGSIb3D...31LwIDAQAB",
   "auth-server-url" : "https://localhost:8443/auth",
-  "ssl-not-required" : false,
+  "ssl-required" : "external",
   "user-resource-role-mappings" : false,
   "enable-cors" : true,
   "cors-max-age" : 1000,
@@ -89,14 +89,14 @@
                 </listitem>
             </varlistentry>
             <varlistentry>
-                <term>ssl-not-required</term>
+                <term>ssl-required</term>
                 <listitem>
                     <para>
                         Ensures that all communication to and from the Keycloak server from the adapter is over HTTPS.
                         This is <emphasis>OPTIONAL</emphasis>. The default value is
-                        <emphasis>false</emphasis>
-                        meaning
-                        that HTTPS is required by default.
+                        <emphasis>external</emphasis>
+                        meaning that HTTPS is required by default for external requests. Valid values are 'all', 'external'
+                        and 'none'.
                     </para>
                 </listitem>
             </varlistentry>
@@ -228,9 +228,9 @@
                         This is
                         <emphasis>OPTIONAL</emphasis>
                         if
-                        <literal>ssl-not-required</literal>
+                        <literal>ssl-required</literal>
                         is
-                        <literal>false</literal>
+                        <literal>none</literal>
                         or
                         <literal>disable-trust-manager</literal>
                         is <literal>true</literal>. The default value is<emphasis>false</emphasis>.

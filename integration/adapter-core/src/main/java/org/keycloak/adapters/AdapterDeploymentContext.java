@@ -5,6 +5,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -187,12 +188,12 @@ public class AdapterDeploymentContext {
         }
 
         @Override
-        public boolean isSslRequired() {
-            return delegate.isSslRequired();
+        public SslRequired getSslRequired() {
+            return delegate.getSslRequired();
         }
 
         @Override
-        public void setSslRequired(boolean sslRequired) {
+        public void setSslRequired(SslRequired sslRequired) {
             delegate.setSslRequired(sslRequired);
         }
 
@@ -281,10 +282,10 @@ public class AdapterDeploymentContext {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(base);
         URI request = URI.create(facade.getRequest().getURI());
         String scheme = request.getScheme();
-        if (deployment.isSslRequired()) {
+        if (deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             scheme = "https";
             if (!request.getScheme().equals(scheme) && request.getPort() != -1) {
-                log.error("request scheme: " + request.getScheme() + " ssl required: " + deployment.isSslRequired());
+                log.error("request scheme: " + request.getScheme() + " ssl required");
                 throw new RuntimeException("Can't resolve relative url from adapter config.");
             }
         }

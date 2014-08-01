@@ -7,7 +7,7 @@
     "ssoSessionIdleTimeout": 600,
     "ssoSessionMaxLifespan": 36000,
     "passwordCredentialGrantAllowed": true,
-    "sslNotRequired": true,
+    "sslRequired": "external",
     "registrationAllowed": false,
     "social": false,
     "updateProfileOnInitialSocialLogin": false,
@@ -21,6 +21,36 @@
             "email" : "bburke@redhat.com",
             "firstName": "Bill",
             "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "account": [ "manage-account" ]
+            }
+        },
+        {
+            "username" : "stian",
+            "enabled": true,
+            "email" : "stian@redhat.com",
+            "firstName": "Stian",
+            "lastName": "Thorgersen",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "account": [ "manage-account" ]
+            }
+        },
+        {
+            "username" : "mposolda@redhat.com",
+            "enabled": true,
+            "email" : "mposolda@redhat.com",
+            "firstName": "Marek",
+            "lastName": "Posolda",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
