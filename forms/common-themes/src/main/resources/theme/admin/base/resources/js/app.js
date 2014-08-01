@@ -161,15 +161,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSMTPSettingsCtrl'
         })
-        .when('/realms/:realm/ldap-settings', {
-            templateUrl : 'partials/realm-ldap.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                }
-            },
-            controller : 'RealmLDAPSettingsCtrl'
-        })
         .when('/realms/:realm/audit', {
             templateUrl : 'partials/realm-audit.html',
             resolve : {
@@ -193,39 +184,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmAuditCtrl'
-        })
-        .when('/realms/:realm/auth-settings', {
-            templateUrl : 'partials/realm-auth-list.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                }
-            },
-            controller : 'RealmAuthSettingsCtrl'
-        })
-        .when('/realms/:realm/auth-settings/create', {
-            templateUrl : 'partials/realm-auth-detail.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                },
-                serverInfo : function(ServerInfoLoader) {
-                    return ServerInfoLoader();
-                }
-            },
-            controller : 'RealmAuthSettingsDetailCtrl'
-        })
-        .when('/realms/:realm/auth-settings/:index', {
-            templateUrl : 'partials/realm-auth-detail.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                },
-                serverInfo : function(ServerInfoLoader) {
-                    return ServerInfoLoader();
-                }
-            },
-            controller : 'RealmAuthSettingsDetailCtrl'
         })
         .when('/create/user/:realm', {
             templateUrl : 'partials/user-detail.html',

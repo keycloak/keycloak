@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -16,7 +15,6 @@ import org.keycloak.enums.SslRequired;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -61,7 +59,6 @@ public class ApplianceBootstrap {
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setRegistrationAllowed(false);
         KeycloakModelUtils.generateRealmKeys(realm);
-        realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
 
         realm.setAuditListeners(Collections.singleton("jboss-logging"));
 
@@ -70,7 +67,7 @@ public class ApplianceBootstrap {
         UserCredentialModel password = new UserCredentialModel();
         password.setType(UserCredentialModel.PASSWORD);
         password.setValue("admin");
-        adminUser.updateCredential(password);
+        session.users().updateCredential(realm, adminUser, password);
         adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);

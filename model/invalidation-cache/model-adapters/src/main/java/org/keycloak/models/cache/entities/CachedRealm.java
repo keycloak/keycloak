@@ -1,7 +1,6 @@
 package org.keycloak.models.cache.entities;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
@@ -65,12 +64,10 @@ public class CachedRealm {
     private String masterAdminApp;
 
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
-    private List<AuthenticationProviderModel> authenticationProviders = new ArrayList<AuthenticationProviderModel>();
     private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
-    private Map<String, String> ldapServerConfig = new HashMap<String, String>();
 
     private boolean auditEnabled;
     private long auditExpiration;
@@ -122,12 +119,10 @@ public class CachedRealm {
         emailTheme = model.getEmailTheme();
 
         requiredCredentials = model.getRequiredCredentials();
-        authenticationProviders = model.getAuthenticationProviders();
         userFederationProviders = model.getUserFederationProviders();
 
         smtpConfig.putAll(model.getSmtpConfig());
         socialConfig.putAll(model.getSocialConfig());
-        ldapServerConfig.putAll(model.getLdapServerConfig());
 
         auditEnabled = model.isAuditEnabled();
         auditExpiration = model.getAuditExpiration();
@@ -290,14 +285,6 @@ public class CachedRealm {
 
     public Map<String, String> getSocialConfig() {
         return socialConfig;
-    }
-
-    public Map<String, String> getLdapServerConfig() {
-        return ldapServerConfig;
-    }
-
-    public List<AuthenticationProviderModel> getAuthenticationProviders() {
-        return authenticationProviders;
     }
 
     public String getLoginTheme() {

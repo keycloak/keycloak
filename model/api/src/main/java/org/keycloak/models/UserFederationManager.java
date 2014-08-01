@@ -302,16 +302,27 @@ public class UserFederationManager implements UserProvider {
         session.userStorage().preRemove(realm, role);
     }
 
+    public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {
+        if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
+            if (realm.getPasswordPolicy() != null) {
+                String error = realm.getPasswordPolicy().validate(credential.getValue());
+                if (error != null) throw new ModelException(error);
+            }
+        }
+        user.updateCredential(credential);
+    }
+
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             validateUser(realm, user);
-            if (link.getSupportedCredentialTypes(user).size() > 0) {
+            Set<String> supportedCredentialTypes = link.getSupportedCredentialTypes(user);
+            if (supportedCredentialTypes.size() > 0) {
                 List<UserCredentialModel> fedCreds = new ArrayList<UserCredentialModel>();
                 List<UserCredentialModel> localCreds = new ArrayList<UserCredentialModel>();
                 for (UserCredentialModel cred : input) {
-                    if (fedCreds.contains(cred.getType())) {
+                    if (supportedCredentialTypes.contains(cred.getType())) {
                         fedCreds.add(cred);
                     } else {
                         localCreds.add(cred);

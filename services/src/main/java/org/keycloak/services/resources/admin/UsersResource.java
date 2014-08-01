@@ -766,7 +766,7 @@ public class UsersResource {
         }
 
         UserCredentialModel cred = RepresentationToModel.convertCredential(pass);
-        user.updateCredential(cred);
+        session.users().updateCredential(realm, user, cred);
         user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
     }
 

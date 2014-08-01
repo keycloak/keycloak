@@ -2,7 +2,6 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -10,7 +9,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.entities.AuthenticationLinkEntity;
 import org.keycloak.models.entities.CredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
@@ -339,27 +337,6 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     public void setFederationLink(String link) {
         user.setFederationLink(link);
 
-    }
-
-    @Override
-    public AuthenticationLinkModel getAuthenticationLink() {
-        AuthenticationLinkEntity authLinkEntity = user.getAuthenticationLink();
-
-        if (authLinkEntity == null) {
-            return null;
-        } else {
-            return new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
-        }
-    }
-
-    @Override
-    public void setAuthenticationLink(AuthenticationLinkModel authenticationLink) {
-        AuthenticationLinkEntity authLinkEntity = new AuthenticationLinkEntity();
-        authLinkEntity.setAuthProvider(authenticationLink.getAuthProvider());
-        authLinkEntity.setAuthUserId(authenticationLink.getAuthUserId());
-        user.setAuthenticationLink(authLinkEntity);
-
-        getMongoStore().updateEntity(user, invocationContext);
     }
 
     @Override

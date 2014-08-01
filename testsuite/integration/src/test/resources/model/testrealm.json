@@ -12,34 +12,10 @@
         "host": "localhost",
         "port":"3025"
     },
-    "ldapServer": {
-        "connectionUrl": "ldap://localhost:10389",
-        "baseDn": "dc=keycloak,dc=org",
-        "userDnSuffix": "ou=People,dc=keycloak,dc=org",
-        "bindDn": "uid=admin,ou=system",
-        "bindCredential": "secret",
-        "vendor": "other"
-    },
     "socialProviders": {
         "google.key": "abc",
         "google.secret": "def"
     },
-    "authenticationProviders": [
-        {
-            "providerName": "model"
-        },
-        {
-            "providerName": "externalModel",
-            "passwordUpdateSupported": false,
-            "config": {
-                "externalRealmId": "trustedRealm"
-            }
-        },
-        {
-            "providerName": "picketlink",
-            "passwordUpdateSupported": true
-        }
-    ],
     "users": [
         {
             "username": "wburke",
@@ -86,10 +62,6 @@
         {
             "username": "mySocialUser",
             "enabled": true,
-            "authenticationLink": {
-                "authProvider": "picketlink",
-                "authUserId": "myUser1"
-            },
             "socialLinks": [
                 {
                     "socialProvider": "facebook",

@@ -1,7 +1,6 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -189,18 +188,6 @@ public class UserAdapter implements UserModel {
     public void updateCredentialDirectly(UserCredentialValueModel cred) {
         getDelegateForUpdate();
         updated.updateCredentialDirectly(cred);
-    }
-
-    @Override
-    public AuthenticationLinkModel getAuthenticationLink() {
-        if (updated != null) return updated.getAuthenticationLink();
-        return cached.getAuthenticationLink();
-    }
-
-    @Override
-    public void setAuthenticationLink(AuthenticationLinkModel authenticationLink) {
-        getDelegateForUpdate();
-        updated.setAuthenticationLink(authenticationLink);
     }
 
     @Override

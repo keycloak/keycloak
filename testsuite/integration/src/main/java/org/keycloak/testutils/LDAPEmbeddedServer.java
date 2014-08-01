@@ -135,7 +135,6 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         ldapConfig.put(LDAPConstants.BIND_CREDENTIAL, getBindCredential());
         ldapConfig.put(LDAPConstants.USER_DN_SUFFIX, getUserDnSuffix());
         ldapConfig.put(LDAPConstants.VENDOR, getVendor());
-        realm.setLdapServerConfig(ldapConfig);
     }
 
 

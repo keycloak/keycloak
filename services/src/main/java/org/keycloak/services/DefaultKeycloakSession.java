@@ -127,7 +127,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public UserProvider users() {
+    public UserFederationManager users() {
         return federationManager;
     }
 

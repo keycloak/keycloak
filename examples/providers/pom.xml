@@ -27,6 +27,5 @@
     <modules>
         <module>audit-listener-sysout</module>
         <module>audit-provider-mem</module>
-        <module>authentication-properties</module>
     </modules>
 </project>

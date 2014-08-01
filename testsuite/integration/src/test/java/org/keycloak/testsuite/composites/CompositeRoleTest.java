@@ -28,7 +28,6 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -48,7 +47,6 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import java.security.PublicKey;
-import java.util.Arrays;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -71,7 +69,6 @@ public class CompositeRoleTest {
             realm.setSslRequired(SslRequired.EXTERNAL);
             realm.setEnabled(true);
             realm.addRequiredCredential(UserCredentialModel.PASSWORD);
-            realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
             final RoleModel realmRole1 = realm.addRole("REALM_ROLE_1");
             final RoleModel realmRole2 = realm.addRole("REALM_ROLE_2");
             final RoleModel realmRole3 = realm.addRole("REALM_ROLE_3");

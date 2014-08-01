@@ -2,7 +2,6 @@ package org.keycloak.exportimport.util;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,9 +17,7 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
-import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
@@ -32,7 +29,6 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.AuthenticationLinkRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
@@ -255,13 +251,6 @@ public class ExportUtils {
     public static UserRepresentation exportUser(KeycloakSession session, RealmModel realm, UserModel user) {
         UserRepresentation userRep = ModelToRepresentation.toRepresentation(user);
 
-        // AuthenticationLink
-        AuthenticationLinkModel authLink = user.getAuthenticationLink();
-        if (authLink != null) {
-            AuthenticationLinkRepresentation authLinkRepresentation = exportAuthLink(authLink);
-            userRep.setAuthenticationLink(authLinkRepresentation);
-        }
-
         // Social links
         Set<SocialLinkModel> socialLinks = session.users().getSocialLinks(user, realm);
         List<SocialLinkRepresentation> socialLinkReps = new ArrayList<SocialLinkRepresentation>();
@@ -311,13 +300,6 @@ public class ExportUtils {
         userRep.setFederationLink(user.getFederationLink());
 
         return userRep;
-    }
-
-    public static AuthenticationLinkRepresentation exportAuthLink(AuthenticationLinkModel authLinkModel) {
-        AuthenticationLinkRepresentation authLinkRep = new AuthenticationLinkRepresentation();
-        authLinkRep.setAuthProvider(authLinkModel.getAuthProvider());
-        authLinkRep.setAuthUserId(authLinkModel.getAuthUserId());
-        return authLinkRep;
     }
 
     public static SocialLinkRepresentation exportSocialLink(SocialLinkModel socialLink) {

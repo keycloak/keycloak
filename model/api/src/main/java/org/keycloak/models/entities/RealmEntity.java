@@ -50,12 +50,10 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private List<String> defaultRoles = new ArrayList<String>();
 
     private List<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
-    private List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
     private List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
-    private Map<String, String> ldapServerConfig = new HashMap<String, String>();
 
     private boolean auditEnabled;
     private long auditExpiration;
@@ -319,14 +317,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public List<AuthenticationProviderEntity> getAuthenticationProviders() {
-        return authenticationProviders;
-    }
-
-    public void setAuthenticationProviders(List<AuthenticationProviderEntity> authenticationProviders) {
-        this.authenticationProviders = authenticationProviders;
-    }
-
     public Map<String, String> getSmtpConfig() {
         return smtpConfig;
     }
@@ -341,14 +331,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setSocialConfig(Map<String, String> socialConfig) {
         this.socialConfig = socialConfig;
-    }
-
-    public Map<String, String> getLdapServerConfig() {
-        return ldapServerConfig;
-    }
-
-    public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
-        this.ldapServerConfig = ldapServerConfig;
     }
 
     public boolean isAuditEnabled() {

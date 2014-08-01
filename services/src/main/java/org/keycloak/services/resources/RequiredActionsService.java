@@ -28,8 +28,6 @@ import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.EventType;
-import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.login.LoginFormsProvider;
@@ -167,7 +165,7 @@ public class RequiredActionsService {
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(CredentialRepresentation.TOTP);
         credentials.setValue(totpSecret);
-        user.updateCredential(credentials);
+        session.users().updateCredential(realm, user, credentials);
 
         user.setTotp(true);
 
@@ -205,11 +203,8 @@ public class RequiredActionsService {
         }
 
         try {
-            boolean updateSuccessful = AuthenticationProviderManager.getManager(realm, session).updatePassword(user, passwordNew);
-            if (!updateSuccessful) {
-                return loginForms.setError("Password update failed").createResponse(RequiredAction.UPDATE_PASSWORD);
-            }
-        } catch (AuthenticationProviderException ape) {
+            session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
+        } catch (Exception ape) {
             return loginForms.setError(ape.getMessage()).createResponse(RequiredAction.UPDATE_PASSWORD);
         }
 

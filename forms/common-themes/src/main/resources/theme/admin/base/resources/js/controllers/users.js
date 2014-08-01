@@ -564,7 +564,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
 
     $scope.testAuthentication = function() {
         console.log('LDAPCtrl: testAuthentication');
-        RealmLDAPConnectionTester.get(initConnectionTest("testAuthentication", $scope.realm.ldapServer), function() {
+        RealmLDAPConnectionTester.get(initConnectionTest("testAuthentication", $scope.instance.config), function() {
             Notifications.success("LDAP authentication successful.");
         }, function() {
             Notifications.error("LDAP authentication failed. See server.log for details");

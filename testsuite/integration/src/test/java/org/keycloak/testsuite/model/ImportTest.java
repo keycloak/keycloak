@@ -4,10 +4,7 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -197,32 +194,6 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("abc", socialConfig.get("google.key"));
         Assert.assertEquals("def", socialConfig.get("google.secret"));
 
-        // Test ldap config
-        Map<String, String> ldapConfig = realm.getLdapServerConfig();
-        Assert.assertTrue(ldapConfig.size() == 6);
-        Assert.assertEquals("ldap://localhost:10389", ldapConfig.get("connectionUrl"));
-        Assert.assertEquals("dc=keycloak,dc=org", ldapConfig.get("baseDn"));
-        Assert.assertEquals("ou=People,dc=keycloak,dc=org", ldapConfig.get("userDnSuffix"));
-        Assert.assertEquals("other", ldapConfig.get("vendor"));
-
-        // Test authentication providers
-        List<AuthenticationProviderModel> authProviderModels = realm.getAuthenticationProviders();
-        Assert.assertTrue(authProviderModels.size() == 3);
-        AuthenticationProviderModel authProv1 = authProviderModels.get(0);
-        AuthenticationProviderModel authProv2 = authProviderModels.get(1);
-        AuthenticationProviderModel authProv3 = authProviderModels.get(2);
-        Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_MODEL, authProv1.getProviderName());
-        Assert.assertTrue(authProv1.isPasswordUpdateSupported());
-        Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, authProv2.getProviderName());
-        Assert.assertFalse(authProv2.isPasswordUpdateSupported());
-        Assert.assertEquals("trustedRealm", authProv2.getConfig().get("externalRealmId"));
-        Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, authProv3.getProviderName());
-        Assert.assertTrue(authProv3.isPasswordUpdateSupported());
-
-        // Test authentication linking
-        AuthenticationLinkModel authLink = socialUser.getAuthenticationLink();
-        Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, authLink.getAuthProvider());
-        Assert.assertEquals("myUser1", authLink.getAuthUserId());
     }
 
     @Test

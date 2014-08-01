@@ -1,7 +1,6 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -9,7 +8,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
@@ -21,11 +19,9 @@ import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -381,36 +377,6 @@ public class UserAdapter implements UserModel {
             }
         }
         return roles;
-    }
-
-    @Override
-    public AuthenticationLinkModel getAuthenticationLink() {
-        Collection<AuthenticationLinkEntity> col = user.getAuthenticationLink();
-        if (col == null || col.isEmpty()) {
-            return null;
-        }
-        AuthenticationLinkEntity authLinkEntity = col.iterator().next();
-        return new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
-    }
-
-    @Override
-    public void setAuthenticationLink(AuthenticationLinkModel authenticationLink) {
-        AuthenticationLinkEntity entity = new AuthenticationLinkEntity();
-        entity.setAuthProvider(authenticationLink.getAuthProvider());
-        entity.setAuthUserId(authenticationLink.getAuthUserId());
-        entity.setUser(user);
-
-        if (user.getAuthenticationLink() == null) {
-            user.setAuthenticationLink(new LinkedList<AuthenticationLinkEntity>());
-        } else if (!user.getAuthenticationLink().isEmpty()) {
-            AuthenticationLinkEntity old = user.getAuthenticationLink().iterator().next();
-            user.getAuthenticationLink().clear();
-            em.remove(old);
-        }
-
-        user.getAuthenticationLink().add(entity);
-        em.persist(entity);
-        em.flush();
     }
 
     @Override

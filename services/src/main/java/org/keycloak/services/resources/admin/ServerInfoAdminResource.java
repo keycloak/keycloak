@@ -1,8 +1,6 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.audit.AuditListener;
-import org.keycloak.authentication.AuthenticationProvider;
-import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
@@ -36,7 +34,6 @@ public class ServerInfoAdminResource {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         setSocialProviders(info);
         setThemes(info);
-        setAuthProviders(info);
         setAuditListeners(info);
         return info;
     }
@@ -61,14 +58,6 @@ public class ServerInfoAdminResource {
         Collections.sort(info.socialProviders);
     }
 
-    private void setAuthProviders(ServerInfoRepresentation info) {
-        info.authProviders = new HashMap<String, List<String>>();
-        Iterable<AuthenticationProvider> authProviders = session.getAllProviders(AuthenticationProvider.class);
-        for (AuthenticationProvider authProvider : authProviders) {
-            info.authProviders.put(authProvider.getName(), authProvider.getAvailableOptions());
-        }
-    }
-
     private void setAuditListeners(ServerInfoRepresentation info) {
         info.auditListeners = new LinkedList<String>();
 
@@ -84,7 +73,6 @@ public class ServerInfoAdminResource {
 
         private List<String> socialProviders;
 
-        private Map<String, List<String>> authProviders;
 
         private List<String> auditListeners;
 
@@ -97,10 +85,6 @@ public class ServerInfoAdminResource {
 
         public List<String> getSocialProviders() {
             return socialProviders;
-        }
-
-        public Map<String, List<String>> getAuthProviders() {
-            return authProviders;
         }
 
         public List<String> getAuditListeners() {

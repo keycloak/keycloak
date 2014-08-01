@@ -51,7 +51,7 @@ public interface KeycloakSession {
      *
      * @return
      */
-    UserProvider users();
+    UserFederationManager users();
 
     /**
      *  Keycloak user storage.  Non-federated, but possibly cache (if it is on) view of users.

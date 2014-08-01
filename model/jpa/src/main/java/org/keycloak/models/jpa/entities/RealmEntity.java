@@ -112,9 +112,6 @@ public class RealmEntity {
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
-
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="FED_PROVIDERS")
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
@@ -137,12 +134,6 @@ public class RealmEntity {
     @Column(name="VALUE")
     @CollectionTable(name="REALM_SOCIAL_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Map<String, String> socialConfig = new HashMap<String, String>();
-
-    @ElementCollection
-    @MapKeyColumn(name="NAME")
-    @Column(name="VALUE")
-    @CollectionTable(name="REALM_LDAP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
-    protected Map<String, String> ldapServerConfig = new HashMap<String, String>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
@@ -314,14 +305,6 @@ public class RealmEntity {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public List<AuthenticationProviderEntity> getAuthenticationProviders() {
-        return authenticationProviders;
-    }
-
-    public void setAuthenticationProviders(List<AuthenticationProviderEntity> authenticationProviders) {
-        this.authenticationProviders = authenticationProviders;
-    }
-
     public Collection<ApplicationEntity> getApplications() {
         return applications;
     }
@@ -359,14 +342,6 @@ public class RealmEntity {
 
     public void setSocialConfig(Map<String, String> socialConfig) {
         this.socialConfig = socialConfig;
-    }
-
-    public Map<String, String> getLdapServerConfig() {
-        return ldapServerConfig;
-    }
-
-    public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
-        this.ldapServerConfig = ldapServerConfig;
     }
 
     public Collection<RoleEntity> getDefaultRoles() {

@@ -159,14 +159,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void setSocialConfig(Map<String, String> socialConfig);
 
-    Map<String, String> getLdapServerConfig();
-
-    void setLdapServerConfig(Map<String, String> ldapServerConfig);
-
-    List<AuthenticationProviderModel> getAuthenticationProviders();
-
-    void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders);
-
     List<UserFederationProviderModel> getUserFederationProviders();
 
     UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName);

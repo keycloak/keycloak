@@ -33,7 +33,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -279,22 +278,6 @@ public class AdminAPITest {
             Assert.assertEquals(rep.getSocialProviders(), storedRealm.getSocialProviders());
         }
 
-        if (rep.getLdapServer() != null) {
-            Assert.assertEquals(rep.getLdapServer(), storedRealm.getLdapServer());
-        }
-        if (rep.getAuthenticationProviders() != null) {
-            Set<AuthenticationProviderRepresentation> set = new HashSet<AuthenticationProviderRepresentation>();
-            for (AuthenticationProviderRepresentation authRep : rep.getAuthenticationProviders()) {
-                set.add(authRep);
-            }
-            Set<AuthenticationProviderRepresentation> storedSet = new HashSet<AuthenticationProviderRepresentation>();
-            if (storedRealm.getAuthenticationProviders() != null) {
-                for (AuthenticationProviderRepresentation authRep : storedRealm.getAuthenticationProviders()) {
-                    storedSet.add(authRep);
-                }
-            }
-            Assert.assertEquals(set, storedSet);
-         }
     }
 
     protected void testCreateRealm(String path) {

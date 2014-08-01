@@ -76,7 +76,7 @@ public class FederationProvidersIntegrationTest {
 
             // Configure LDAP
             ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);
-            LDAPTestUtils.setLdapPassword(session, appRealm, "johnkeycloak", "password");
+            LDAPTestUtils.setLdapPassword(ldapConfig, "johnkeycloak", "password");
         }
     });
 
