@@ -274,7 +274,7 @@ public class AccessTokenTest {
         WebTarget validateTarget = client.target(validateUri);
 
         {
-            Response response = validateTarget.request().post(Entity.text("bad token"));
+            Response response = validateTarget.queryParam("access_token", "bad token").request().get();
             Assert.assertEquals(400, response.getStatus());
             HashMap<String, String> error = response.readEntity(new GenericType <HashMap<String, String>>() {});
             Assert.assertNotNull(error.get("error"));
@@ -296,7 +296,7 @@ public class AccessTokenTest {
         }
 
         {
-            Response response = validateTarget.request().post(Entity.text(tokenResponse.getToken()));
+            Response response = validateTarget.queryParam("access_token", tokenResponse.getToken()).request().get();
             Assert.assertEquals(200, response.getStatus());
             AccessToken token = response.readEntity(AccessToken.class);
             Assert.assertNotNull(token);
@@ -310,7 +310,7 @@ public class AccessTokenTest {
             response.close();
         }
         {
-            Response response = validateTarget.request().post(Entity.text(tokenResponse.getToken()));
+            Response response = validateTarget.queryParam("access_token", tokenResponse.getToken()).request().get();
             Assert.assertEquals(400, response.getStatus());
             HashMap<String, String> error = response.readEntity(new GenericType <HashMap<String, String>>() {});
             Assert.assertNotNull(error.get("error"));

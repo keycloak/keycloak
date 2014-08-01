@@ -310,14 +310,14 @@ public class TokenService {
      * @return Unmarshalled token
      */
     @Path("validate")
-    @POST
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response validateAccessToken(String tokenString) {
+    public Response validateAccessToken(@QueryParam("access_token") String tokenString) {
         audit.event(EventType.VALIDATE_ACCESS_TOKEN);
         AccessToken token = null;
         try {
             token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
-        } catch (VerificationException e) {
+        } catch (Exception e) {
             Map<String, String> err = new HashMap<String, String>();
             err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
             err.put(OAuth2Constants.ERROR_DESCRIPTION, "Token invalid");
