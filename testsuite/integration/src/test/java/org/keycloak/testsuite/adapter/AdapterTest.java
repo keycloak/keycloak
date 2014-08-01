@@ -83,6 +83,8 @@ public class AdapterTest {
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak.json");
             deployApplication("customer-portal", "/customer-portal", CustomerServlet.class, url.getPath(), "user");
+            url = getClass().getResource("/adapter-test/secure-portal-keycloak.json");
+            deployApplication("secure-portal", "/secure-portal", CallAuthenticatedServlet.class, url.getPath(), "user", false);
             url = getClass().getResource("/adapter-test/customer-db-keycloak.json");
             deployApplication("customer-db", "/customer-db", CustomerDatabaseServlet.class, url.getPath(), "user");
             url = getClass().getResource("/adapter-test/product-keycloak.json");
@@ -363,6 +365,29 @@ public class AdapterTest {
         response.close();
         client.close();
 
+    }
+
+    @Test
+    public void testAuthenticated() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to("http://localhost:8081/secure-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/secure-portal");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        // test logout
+
+        String logoutUri = TokenService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
+                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8081/secure-portal").build("demo").toString();
+        driver.navigate().to(logoutUri);
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to("http://localhost:8081/secure-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
     }
 
 
