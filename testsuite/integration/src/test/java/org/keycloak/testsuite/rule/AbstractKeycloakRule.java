@@ -104,16 +104,23 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         deploymentInfo.addServlet(servlet);
         return deploymentInfo;
     }
-
     public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role) {
+        deployApplication(name, contextPath, servletClass, adapterConfigPath, role, true);
+
+    }
+
+    public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role, boolean isConstrained) {
+        String constraintUrl = "/*";
         DeploymentInfo di = createDeploymentInfo(name, contextPath, servletClass);
         di.addInitParameter("keycloak.config.file", adapterConfigPath);
-        SecurityConstraint constraint = new SecurityConstraint();
-        WebResourceCollection collection = new WebResourceCollection();
-        collection.addUrlPattern("/*");
-        constraint.addWebResourceCollection(collection);
-        constraint.addRoleAllowed(role);
-        di.addSecurityConstraint(constraint);
+        if (isConstrained) {
+            SecurityConstraint constraint = new SecurityConstraint();
+            WebResourceCollection collection = new WebResourceCollection();
+            collection.addUrlPattern(constraintUrl);
+            constraint.addWebResourceCollection(collection);
+            constraint.addRoleAllowed(role);
+            di.addSecurityConstraint(constraint);
+        }
         LoginConfig loginConfig = new LoginConfig("KEYCLOAK", "demo");
         di.setLoginConfig(loginConfig);
         server.getServer().deploy(di);

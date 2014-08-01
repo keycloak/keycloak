@@ -95,6 +95,16 @@
                 "http://localhost:8081/product-portal/*"
             ],
             "secret": "password"
+        },
+        {
+            "name": "secure-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8081/secure-portal",
+            "baseUrl": "http://localhost:8081/secure-portal",
+            "redirectUris": [
+                "http://localhost:8081/secure-portal/*"
+            ],
+            "secret": "password"
         }
     ],
     "oauthClients": [
