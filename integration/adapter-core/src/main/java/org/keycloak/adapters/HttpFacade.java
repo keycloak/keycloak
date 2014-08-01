@@ -73,6 +73,8 @@ public interface HttpFacade {
         String getHeader(String name);
         List<String> getHeaders(String name);
         InputStream getInputStream();
+
+        String getRemoteAddr();
     }
 
     interface Response {

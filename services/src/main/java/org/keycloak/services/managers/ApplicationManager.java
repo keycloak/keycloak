@@ -46,7 +46,7 @@ public class ApplicationManager {
         }
     }
 
-    @JsonPropertyOrder({"realm", "realm-public-key", "bearer-only", "auth-server-url", "ssl-not-required",
+    @JsonPropertyOrder({"realm", "realm-public-key", "bearer-only", "auth-server-url", "ssl-required",
             "resource", "public-client", "credentials",
             "use-resource-role-mappings"})
     public static class InstallationAdapterConfig extends BaseRealmConfig {
@@ -107,7 +107,7 @@ public class ApplicationManager {
         InstallationAdapterConfig rep = new InstallationAdapterConfig();
         rep.setRealm(realmModel.getName());
         rep.setRealmKey(realmModel.getPublicKeyPem());
-        rep.setSslNotRequired(realmModel.isSslNotRequired());
+        rep.setSslRequired(realmModel.getSslRequired().name().toLowerCase());
 
         if (applicationModel.isPublicClient() && !applicationModel.isBearerOnly()) rep.setPublicClient(true);
         if (applicationModel.isBearerOnly()) rep.setBearerOnly(true);
@@ -140,7 +140,7 @@ public class ApplicationManager {
                 buffer.append("    <public-client>true</public-client>\n");
             }
         }
-        buffer.append("    <ssl-not-required>").append(realmModel.isSslNotRequired()).append("</ssl-not-required>\n");
+        buffer.append("    <ssl-required>").append(realmModel.getSslRequired().name()).append("</ssl-required>\n");
         buffer.append("    <resource>").append(applicationModel.getName()).append("</resource>\n");
         String cred = applicationModel.getSecret();
         if (!applicationModel.isBearerOnly() && !applicationModel.isPublicClient()) {

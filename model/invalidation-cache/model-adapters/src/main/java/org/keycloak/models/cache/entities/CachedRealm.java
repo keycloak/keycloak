@@ -10,6 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.RealmCache;
+import org.keycloak.enums.SslRequired;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public class CachedRealm {
     private String id;
     private String name;
     private boolean enabled;
-    private boolean sslNotRequired;
+    private SslRequired sslRequired;
     private boolean registrationAllowed;
     private boolean rememberMe;
     private boolean verifyEmail;
@@ -86,7 +87,7 @@ public class CachedRealm {
         id = model.getId();
         name = model.getName();
         enabled = model.isEnabled();
-        sslNotRequired = model.isSslNotRequired();
+        sslRequired = model.getSslRequired();
         registrationAllowed = model.isRegistrationAllowed();
         rememberMe = model.isRememberMe();
         verifyEmail = model.isVerifyEmail();
@@ -187,8 +188,8 @@ public class CachedRealm {
         return enabled;
     }
 
-    public boolean isSslNotRequired() {
-        return sslNotRequired;
+    public SslRequired getSslRequired() {
+        return sslRequired;
     }
 
     public boolean isRegistrationAllowed() {

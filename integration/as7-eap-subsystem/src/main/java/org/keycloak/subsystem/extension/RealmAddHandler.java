@@ -54,7 +54,7 @@ public final class RealmAddHandler extends AbstractAddStepHandler {
 
         if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(model.clone())) {
             //TODO: externalize message
-            throw new OperationFailedException("truststore and truststore-password must be set if both ssl-not-required and disable-trust-maanger are false.");
+            throw new OperationFailedException("truststore and truststore-password must be set if ssl-required is not none and disable-trust-maanger is false.");
         }
     }
 

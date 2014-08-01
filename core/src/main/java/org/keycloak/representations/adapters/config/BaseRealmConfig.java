@@ -9,7 +9,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-not-required"})
+@JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-required"})
 public class BaseRealmConfig {
     @JsonProperty("realm")
     protected String realm;
@@ -17,15 +17,15 @@ public class BaseRealmConfig {
     protected String realmKey;
     @JsonProperty("auth-server-url")
     protected String authServerUrl;
-    @JsonProperty("ssl-not-required")
-    protected boolean sslNotRequired;
+    @JsonProperty("ssl-required")
+    protected String sslRequired;
 
-    public boolean isSslNotRequired() {
-        return sslNotRequired;
+    public String getSslRequired() {
+        return sslRequired;
     }
 
-    public void setSslNotRequired(boolean sslNotRequired) {
-        this.sslNotRequired = sslNotRequired;
+    public void setSslRequired(String sslRequired) {
+        this.sslRequired = sslRequired;
     }
 
     public String getRealm() {

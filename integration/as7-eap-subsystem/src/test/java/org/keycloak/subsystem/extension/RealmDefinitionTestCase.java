@@ -47,28 +47,38 @@ public class RealmDefinitionTestCase {
 
     @Test
     public void testIsTruststoreSetIfRequired() throws Exception {
-        model.get("ssl-not-required").set(true);
+        model.get("ssl-required").set("none");
         model.get("disable-trust-manager").set(true);
         Assert.assertTrue(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
-        model.get("ssl-not-required").set(true);
+        model.get("ssl-required").set("none");
         model.get("disable-trust-manager").set(false);
         Assert.assertTrue(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
-        model.get("ssl-not-required").set(false);
+        model.get("ssl-required").set("all");
         model.get("disable-trust-manager").set(true);
         Assert.assertTrue(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
-        model.get("ssl-not-required").set(false);
+        model.get("ssl-required").set("all");
         model.get("disable-trust-manager").set(false);
         Assert.assertFalse(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
-        model.get("ssl-not-required").set(false);
+        model.get("ssl-required").set("external");
+        model.get("disable-trust-manager").set(false);
+        Assert.assertFalse(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
+
+        model.get("ssl-required").set("all");
         model.get("disable-trust-manager").set(false);
         model.get("truststore").set("foo");
         Assert.assertFalse(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
-        model.get("ssl-not-required").set(false);
+        model.get("ssl-required").set("all");
+        model.get("disable-trust-manager").set(false);
+        model.get("truststore").set("foo");
+        model.get("truststore-password").set("password");
+        Assert.assertTrue(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
+
+        model.get("ssl-required").set("external");
         model.get("disable-trust-manager").set(false);
         model.get("truststore").set("foo");
         model.get("truststore-password").set("password");

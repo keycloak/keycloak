@@ -32,7 +32,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.ClientConnection;
+import org.keycloak.ClientConnection;
 import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
@@ -326,7 +326,7 @@ public class TokenService {
         String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         AccessToken accessToken;
         try {
-            accessToken = tokenManager.refreshAccessToken(session, uriInfo, realm, client, refreshToken, audit);
+            accessToken = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, audit);
         } catch (OAuthErrorException e) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, e.getError());
@@ -380,7 +380,7 @@ public class TokenService {
             audit.detail(Details.REMEMBER_ME, "true");
         }
 
-        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!checkSsl()) {
             return oauth.forwardToSecurityFailure("HTTPS required");
@@ -414,9 +414,9 @@ public class TokenService {
         AuthenticationStatus status = authManager.authenticateForm(session, clientConnection, realm, formData);
 
         if (remember) {
-            authManager.createRememberMeCookie(realm, uriInfo);
+            authManager.createRememberMeCookie(realm, uriInfo, clientConnection);
         } else {
-            authManager.expireRememberMeCookie(realm, uriInfo);
+            authManager.expireRememberMeCookie(realm, uriInfo, clientConnection);
         }
 
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
@@ -484,7 +484,7 @@ public class TokenService {
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form");
 
-        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
             logger.warn("Realm not enabled");
@@ -686,7 +686,7 @@ public class TokenService {
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, accessCode.getSessionState());
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.logout(session, realm, userSession, uriInfo);
+            AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Session not active");
@@ -804,7 +804,7 @@ public class TokenService {
 
         audit.event(EventType.LOGIN).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
 
-        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!checkSsl()) {
             return oauth.forwardToSecurityFailure("HTTPS required");
@@ -842,7 +842,7 @@ public class TokenService {
         }
 
         logger.info("Checking cookie...");
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {
             UserModel user = authResult.getUser();
             UserSessionModel session = authResult.getSession();
@@ -887,7 +887,7 @@ public class TokenService {
 
         audit.event(EventType.REGISTER).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
 
-        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!checkSsl()) {
             return oauth.forwardToSecurityFailure("HTTPS required");
@@ -923,7 +923,7 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Registration not allowed");
         }
 
-        authManager.expireIdentityCookie(realm, uriInfo);
+        authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
         return Flows.forms(session, realm, uriInfo).createRegistration();
     }
@@ -950,7 +950,7 @@ public class TokenService {
         }
 
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, headers, false);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
         if (authResult != null) {
             logout(authResult.getSession());
         } else if (sessionState != null) {
@@ -973,7 +973,7 @@ public class TokenService {
     }
 
     private void logout(UserSessionModel userSession) {
-        authManager.logout(session, realm, userSession, uriInfo);
+        authManager.logout(session, realm, userSession, uriInfo, clientConnection);
         audit.user(userSession.getUser()).session(userSession).success();
     }
 
@@ -989,7 +989,7 @@ public class TokenService {
     public Response processOAuth(final MultivaluedMap<String, String> formData) {
         audit.event(EventType.LOGIN).detail(Details.RESPONSE_TYPE, "code");
 
-        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!checkSsl()) {
             return oauth.forwardToSecurityFailure("HTTPS required");
@@ -1022,7 +1022,7 @@ public class TokenService {
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.logout(session, realm, userSession, uriInfo);
+            AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
             audit.error(Errors.INVALID_CODE);
             return oauth.forwardToSecurityFailure("Session not active");
         }
@@ -1138,7 +1138,11 @@ public class TokenService {
     }
 
     private boolean checkSsl() {
-        return realm.isSslNotRequired() || uriInfo.getBaseUri().getScheme().equals("https");
+        if (uriInfo.getBaseUri().getScheme().equals("https")) {
+            return true;
+        } else {
+            return !realm.getSslRequired().isRequired(clientConnection);
+        }
     }
 
     private Response createError(String error, String errorDescription, Response.Status status) {

@@ -6,7 +6,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UsernameLoginFailureModel;
-import org.keycloak.services.ClientConnection;
+import org.keycloak.ClientConnection;
 
 import java.util.ArrayList;
 import java.util.Collections;

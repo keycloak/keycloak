@@ -6,6 +6,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
+import org.keycloak.ClientConnection;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -40,6 +41,9 @@ public class AdminRoot {
 
     @Context
     protected UriInfo uriInfo;
+
+    @Context
+    protected ClientConnection clientConnection;
 
     @Context
     protected HttpRequest request;
@@ -142,7 +146,7 @@ public class AdminRoot {
         if (realm == null) {
             throw new UnauthorizedException("Unknown realm in token");
         }
-        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
         if (authResult == null) {
             logger.debug("Token not valid");
             throw new UnauthorizedException("Bearer");

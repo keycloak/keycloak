@@ -69,7 +69,7 @@
         <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
         <xs:element name="auth-url" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
         <xs:element name="code-url" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
-        <xs:element name="ssl-not-required" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+        <xs:element name="ssl-required" type="xs:string" minOccurs="0" maxOccurs="1" />
         <xs:element name="allow-any-hostname" type="xs:boolean" minOccurs="0" maxOccurs="1" />
         <xs:element name="disable-trust-manager" type="xs:boolean" minOccurs="0" maxOccurs="1" />
         <xs:element name="truststore" type="xs:string" minOccurs="0" maxOccurs="1"/>

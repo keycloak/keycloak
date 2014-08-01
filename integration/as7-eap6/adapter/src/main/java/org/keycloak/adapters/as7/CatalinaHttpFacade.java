@@ -87,6 +87,11 @@ public class CatalinaHttpFacade implements HttpFacade {
         public String getHeader(String name) {
             return request.getHeader(name);
         }
+
+        @Override
+        public String getRemoteAddr() {
+            return request.getRemoteAddr();
+        }
     }
 
     protected class ResponseFacade implements Response {

@@ -2,6 +2,7 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
@@ -121,6 +122,7 @@ public class RealmManager {
         realm.setQuickLoginCheckMilliSeconds(1000);
         realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
         realm.setFailureFactor(30);
+        realm.setSslRequired(SslRequired.EXTERNAL);
     }
 
     public boolean removeRealm(RealmModel realm) {

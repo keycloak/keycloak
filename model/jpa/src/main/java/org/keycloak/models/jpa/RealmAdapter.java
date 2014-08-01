@@ -3,8 +3,8 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
@@ -86,13 +86,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isSslNotRequired() {
-        return realm.isSslNotRequired();
+    public SslRequired getSslRequired() {
+        return realm.getSslRequired() != null ? SslRequired.valueOf(realm.getSslRequired()) : null;
     }
 
     @Override
-    public void setSslNotRequired(boolean sslNotRequired) {
-        realm.setSslNotRequired(sslNotRequired);
+    public void setSslRequired(SslRequired sslRequired) {
+        realm.setSslRequired(sslRequired.name());
         em.flush();
     }
 

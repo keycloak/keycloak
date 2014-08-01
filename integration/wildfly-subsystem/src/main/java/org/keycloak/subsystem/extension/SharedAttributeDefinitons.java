@@ -44,11 +44,11 @@ public class SharedAttributeDefinitons {
                     .setAllowExpression(true)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
                     .build();
-    protected static final SimpleAttributeDefinition SSL_NOT_REQUIRED =
-            new SimpleAttributeDefinitionBuilder("ssl-not-required", ModelType.BOOLEAN, true)
-                    .setXmlName("ssl-not-required")
+    protected static final SimpleAttributeDefinition SSL_REQUIRED =
+            new SimpleAttributeDefinitionBuilder("ssl-required", ModelType.STRING, true)
+                    .setXmlName("ssl-required")
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode(false))
+                    .setDefaultValue(new ModelNode("external"))
                     .build();
     protected static final SimpleAttributeDefinition ALLOW_ANY_HOSTNAME =
             new SimpleAttributeDefinitionBuilder("allow-any-hostname", ModelType.BOOLEAN, true)
@@ -137,7 +137,7 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(AUTH_SERVER_URL);
         ATTRIBUTES.add(TRUSTSTORE);
         ATTRIBUTES.add(TRUSTSTORE_PASSWORD);
-        ATTRIBUTES.add(SSL_NOT_REQUIRED);
+        ATTRIBUTES.add(SSL_REQUIRED);
         ATTRIBUTES.add(ALLOW_ANY_HOSTNAME);
         ATTRIBUTES.add(DISABLE_TRUST_MANAGER);
         ATTRIBUTES.add(CONNECTION_POOL_SIZE);
@@ -152,20 +152,22 @@ public class SharedAttributeDefinitons {
     }
 
     /**
-     * truststore and truststore-password must be set if ssl-not-required and disable-trust-manager are both false.
+     * truststore and truststore-password must be set if ssl-required is not none and disable-trust-manager is false.
      *
      * @param attributes The full set of attributes.
      *
      * @return <code>true</code> if the attributes are valid, <code>false</code> otherwise.
      */
     public static boolean validateTruststoreSetIfRequired(ModelNode attributes) {
-        if (!isSet(attributes, SSL_NOT_REQUIRED) && !isSet(attributes, DISABLE_TRUST_MANAGER)) {
-            if (!(isSet(attributes, TRUSTSTORE) && isSet(attributes, TRUSTSTORE_PASSWORD))) {
-                return false;
-            }
+        if (isSet(attributes, DISABLE_TRUST_MANAGER)) {
+            return true;
         }
 
-        return true;
+        if (isSet(attributes, SSL_REQUIRED) && attributes.get(SSL_REQUIRED.getName()).asString().equals("none")) {
+            return true;
+        }
+
+        return isSet(attributes, TRUSTSTORE) && isSet(attributes, TRUSTSTORE_PASSWORD);
     }
 
     private static boolean isSet(ModelNode attributes, SimpleAttributeDefinition def) {

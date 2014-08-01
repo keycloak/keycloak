@@ -24,6 +24,7 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
@@ -121,6 +122,9 @@ public class AccountService {
     private UriInfo uriInfo;
 
     @Context
+    private ClientConnection clientConnection;
+
+    @Context
     private KeycloakSession session;
 
     private final AppAuthManager authManager;
@@ -143,11 +147,11 @@ public class AccountService {
         account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
 
         boolean passwordUpdateSupported = false;
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {
             auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, true);
         } else {
-            authResult = authManager.authenticateBearerToken(session, realm, uriInfo, headers);
+            authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
             if (authResult != null) {
                 auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, false);
             }
@@ -521,7 +525,7 @@ public class AccountService {
                 String redirectUri = UriBuilder.fromUri(Urls.accountSocialPage(uriInfo.getBaseUri(), realm.getName())).build().toString();
 
                 try {
-                    return Flows.social(realm, uriInfo, provider)
+                    return Flows.social(realm, uriInfo, clientConnection, provider)
                             .user(user)
                             .putClientAttribute(OAuth2Constants.CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_APP)
                             .putClientAttribute(OAuth2Constants.STATE, UUID.randomUUID().toString())

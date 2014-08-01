@@ -6,6 +6,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.ClientConnection;
 import org.keycloak.Config;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
@@ -53,6 +54,9 @@ public class AdminConsole {
 
     @Context
     protected UriInfo uriInfo;
+
+    @Context
+    protected ClientConnection clientConnection;
 
     @Context
     protected HttpRequest request;
@@ -174,7 +178,7 @@ public class AdminConsole {
     @NoCache
     public Response whoAmI(final @Context HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
-        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
         if (authResult == null) {
             return Response.status(401).build();
         }
