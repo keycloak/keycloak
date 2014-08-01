@@ -73,9 +73,15 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="requireSsl" class="col-sm-2 control-label">Require SSL</label>
+                        <label for="sslRequired" class="col-sm-2 control-label">Require SSL</label>
                         <div class="col-sm-4">
-                            <input ng-model="realm.requireSsl" name="requireSsl" id="requireSsl" onoffswitch />
+                            <div class="select-kc">
+                                <select id="sslRequired" ng-model="realm.sslRequired">
+                                    <option value="all">all requests</option>
+                                    <option value="external">external requests</option>
+                                    <option value="none">none</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </fieldset>

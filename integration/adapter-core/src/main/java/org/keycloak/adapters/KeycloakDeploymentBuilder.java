@@ -4,6 +4,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.ServiceUrlConstants;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.PemUtils;
@@ -40,7 +41,11 @@ public class KeycloakDeploymentBuilder {
             }
             deployment.setRealmKey(realmKey);
         }
-        deployment.setSslRequired(!adapterConfig.isSslNotRequired());
+        if (adapterConfig.getSslRequired() != null) {
+            deployment.setSslRequired(SslRequired.valueOf(adapterConfig.getSslRequired().toUpperCase()));
+        } else {
+            deployment.setSslRequired(SslRequired.EXTERNAL);
+        }
         deployment.setResourceCredentials(adapterConfig.getCredentials());
         deployment.setPublicClient(adapterConfig.isPublicClient());
         deployment.setUseResourceRoleMappings(adapterConfig.isUseResourceRoleMappings());

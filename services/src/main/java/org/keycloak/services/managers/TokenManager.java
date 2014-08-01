@@ -1,6 +1,7 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.ClientConnection;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
@@ -62,7 +63,7 @@ public class TokenManager {
         return new AccessCode(realm, clientSession);
     }
 
-    public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
+    public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
         RefreshToken refreshToken = null;
         try {
@@ -95,7 +96,7 @@ public class TokenManager {
         UserSessionModel userSession = session.sessions().getUserSession(realm, refreshToken.getSessionState());
         int currentTime = Time.currentTime();
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.logout(session, realm, userSession, uriInfo);
+            AuthenticationManager.logout(session, realm, userSession, uriInfo, connection);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
 

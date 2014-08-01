@@ -5,7 +5,7 @@
     "accessTokenLifespan": 600,
     "accessCodeLifespan": 600,
     "accessCodeLifespanUserAction": 600,
-    "sslNotRequired": true,
+    "sslRequired": "external",
     "registrationAllowed": true,
     "resetPasswordAllowed": true,
     "requiredCredentials": [ "password" ],

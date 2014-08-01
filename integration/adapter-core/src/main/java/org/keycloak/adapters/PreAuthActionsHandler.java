@@ -153,7 +153,7 @@ public class PreAuthActionsHandler {
     }
 
     protected JWSInput verifyAdminRequest() throws Exception {
-        if (deployment.isSslRequired() && !facade.getRequest().isSecure()) {
+        if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             log.warn("SSL is required for adapter admin action");
             facade.getResponse().sendError(403, "ssl required");
 

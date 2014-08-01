@@ -4,7 +4,7 @@
     "accessTokenLifespan": 3000,
     "accessCodeLifespan": 10,
     "accessCodeLifespanUserAction": 6000,
-    "sslNotRequired": true,
+    "sslRequired": "external",
     "registrationAllowed": false,
     "social": false,
     "adminTheme": "aerogear",

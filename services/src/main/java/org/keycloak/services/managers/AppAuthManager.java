@@ -2,6 +2,7 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.UnauthorizedException;
+import org.keycloak.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
@@ -18,12 +19,12 @@ public class AppAuthManager extends AuthenticationManager {
     protected static Logger logger = Logger.getLogger(AppAuthManager.class);
 
     @Override
-    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        AuthResult authResult = super.authenticateIdentityCookie(session, realm, uriInfo, headers);
+    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
+        AuthResult authResult = super.authenticateIdentityCookie(session, realm, uriInfo, connection, headers);
         if (authResult == null) return null;
         // refresh the cookies!
-        createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo);
-        if (authResult.getSession().isRememberMe()) createRememberMeCookie(realm, uriInfo);
+        createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo, connection);
+        if (authResult.getSession().isRememberMe()) createRememberMeCookie(realm, uriInfo, connection);
         return authResult;
     }
 
@@ -39,10 +40,10 @@ public class AppAuthManager extends AuthenticationManager {
         return tokenString;
     }
 
-    public AuthResult authenticateBearerToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+    public AuthResult authenticateBearerToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         String tokenString = extractAuthorizationHeaderToken(headers);
         if (tokenString == null) return null;
-        AuthResult authResult = verifyIdentityToken(session, realm, uriInfo, true, tokenString);
+        AuthResult authResult = verifyIdentityToken(session, realm, uriInfo, connection, true, tokenString);
         return authResult;
     }
 

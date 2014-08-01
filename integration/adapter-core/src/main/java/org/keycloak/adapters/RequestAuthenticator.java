@@ -82,7 +82,7 @@ public abstract class RequestAuthenticator {
     }
 
     protected boolean verifySSL() {
-        if (!facade.getRequest().isSecure() && deployment.isSslRequired()) {
+        if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             log.warn("SSL is required to authenticate");
             return true;
         }

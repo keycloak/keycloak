@@ -19,7 +19,7 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Boolean enabled;
-    protected Boolean sslNotRequired;
+    protected String sslRequired;
     protected Boolean passwordCredentialGrantAllowed;
     protected Boolean registrationAllowed;
     protected Boolean rememberMe;
@@ -121,12 +121,12 @@ public class RealmRepresentation {
         this.enabled = enabled;
     }
 
-    public Boolean isSslNotRequired() {
-        return sslNotRequired;
+    public String getSslRequired() {
+        return sslRequired;
     }
 
-    public void setSslNotRequired(Boolean sslNotRequired) {
-        this.sslNotRequired = sslNotRequired;
+    public void setSslRequired(String sslRequired) {
+        this.sslRequired = sslRequired;
     }
 
     public Integer getAccessTokenLifespan() {

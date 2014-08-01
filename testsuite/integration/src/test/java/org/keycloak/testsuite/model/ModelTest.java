@@ -2,6 +2,7 @@ package org.keycloak.testsuite.model;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -17,7 +18,7 @@ public class ModelTest extends AbstractModelTest {
         realm.setRegistrationAllowed(true);
         realm.setResetPasswordAllowed(true);
         realm.setSocial(true);
-        realm.setSslNotRequired(true);
+        realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setVerifyEmail(true);
         realm.setAccessTokenLifespan(1000);
         realm.setPasswordPolicy(new PasswordPolicy("length"));
@@ -50,7 +51,7 @@ public class ModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.isRegistrationAllowed(), actual.isRegistrationAllowed());
         Assert.assertEquals(expected.isResetPasswordAllowed(), actual.isResetPasswordAllowed());
         Assert.assertEquals(expected.isSocial(), actual.isSocial());
-        Assert.assertEquals(expected.isSslNotRequired(), actual.isSslNotRequired());
+        Assert.assertEquals(expected.getSslRequired(), actual.getSslRequired());
         Assert.assertEquals(expected.isVerifyEmail(), actual.isVerifyEmail());
         Assert.assertEquals(expected.getAccessTokenLifespan(), actual.getAccessTokenLifespan());
 

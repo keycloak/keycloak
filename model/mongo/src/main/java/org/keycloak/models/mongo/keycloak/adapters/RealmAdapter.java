@@ -18,6 +18,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.entities.AuthenticationProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
@@ -89,13 +90,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public boolean isSslNotRequired() {
-        return realm.isSslNotRequired();
+    public SslRequired getSslRequired() {
+        return SslRequired.valueOf(realm.getSslRequired());
     }
 
     @Override
-    public void setSslNotRequired(boolean sslNotRequired) {
-        realm.setSslNotRequired(sslNotRequired);
+    public void setSslRequired(SslRequired sslRequired) {
+        realm.setSslRequired(sslRequired.name());
         updateRealm();
     }
 

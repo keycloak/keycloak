@@ -17,6 +17,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationLinkRepresentation;
@@ -73,7 +74,7 @@ public class RepresentationToModel {
             newRealm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         else newRealm.setAccessCodeLifespanUserAction(300);
 
-        if (rep.isSslNotRequired() != null) newRealm.setSslNotRequired(rep.isSslNotRequired());
+        if (rep.getSslRequired() != null) newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.isPasswordCredentialGrantAllowed() != null) newRealm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRememberMe() != null) newRealm.setRememberMe(rep.isRememberMe());
@@ -249,7 +250,7 @@ public class RepresentationToModel {
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isUpdateProfileOnInitialSocialLogin() != null)
             realm.setUpdateProfileOnInitialSocialLogin(rep.isUpdateProfileOnInitialSocialLogin());
-        if (rep.isSslNotRequired() != null) realm.setSslNotRequired((rep.isSslNotRequired()));
+        if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
             realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());

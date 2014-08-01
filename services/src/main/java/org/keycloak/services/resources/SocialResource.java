@@ -39,7 +39,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.ClientConnection;
+import org.keycloak.ClientConnection;
 import org.keycloak.services.managers.AuditManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -127,7 +127,7 @@ public class SocialResource {
                 .detail(Details.AUTH_METHOD, authMethod);
 
         AuthenticationManager authManager = new AuthenticationManager();
-        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
             audit.error(Errors.REALM_DISABLED);
@@ -300,7 +300,7 @@ public class SocialResource {
         }
 
         try {
-            return Flows.social(realm, uriInfo, provider)
+            return Flows.social(realm, uriInfo, clientConnection, provider)
                     .putClientAttribute(OAuth2Constants.CLIENT_ID, clientId)
                     .putClientAttribute(OAuth2Constants.SCOPE, scope)
                     .putClientAttribute(OAuth2Constants.STATE, state)

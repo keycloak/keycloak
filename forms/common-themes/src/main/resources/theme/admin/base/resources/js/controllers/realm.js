@@ -197,8 +197,6 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
-        var ssl = window.location.protocol == 'https:';
-        realmCopy.sslNotRequired = !ssl;
         console.log('creating new realm **');
         Realm.create(realmCopy, function() {
             Realm.query(function(data) {
@@ -230,7 +228,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
     if ($scope.createRealm) {
         $scope.realm = {
             enabled: true,
-            requireSsl: true
+            sslRequired: 'external'
         };
     } else {
         if (Current.realm == null || Current.realm.realm != realm.realm) {
@@ -256,7 +254,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
         }
         */
         $scope.realm = angular.copy(realm);
-        $scope.realm.requireSsl = !realm.sslNotRequired;
     }
 
     $scope.social = $scope.realm.social;
@@ -276,8 +273,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
-        realmCopy.sslNotRequired = !realmCopy.requireSsl;
-        delete realmCopy["requireSsl"];
         if ($scope.createRealm) {
             Realm.save(realmCopy, function(data, headers) {
                 console.log('creating new realm');

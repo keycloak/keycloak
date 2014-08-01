@@ -2,7 +2,7 @@
   "realm" : "demo",
   "resource" : "third-party",
   "auth-server-url" : "/auth",
-  "ssl-not-required" : true,
+  "ssl-required" : "external",
    "credentials" : {
        "secret": "password"
    }

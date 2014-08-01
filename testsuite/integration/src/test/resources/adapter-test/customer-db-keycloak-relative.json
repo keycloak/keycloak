@@ -2,7 +2,7 @@
   "realm" : "demo",
   "resource" : "customer-db",
   "auth-server-url": "/auth",
-  "ssl-not-required": true,
+  "ssl-required" : "external",
   "bearer-only" : true,
   "enable-cors" : true
 

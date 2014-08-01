@@ -6,6 +6,11 @@
             <listitem>
                 DB Schema has changed again.
             </listitem>
+            <listitem>
+                <literal>ssl-not-required</literal> property in adapter config has been removed. Replaced with
+                <literal>ssl-required</literal>, valid values are <literal>all</literal> (require SSL for all requests), <literal>external</literal>
+                (require SSL only for external request) and <literal>none</literal> (SSL not required).
+            </listitem>
         </itemizedlist>
     </sect1>
     <sect1>

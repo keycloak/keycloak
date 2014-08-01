@@ -2,7 +2,7 @@
     "id": "test",
     "realm": "test",
     "enabled": true,
-    "sslNotRequired": true,
+    "sslRequired": "external",
     "registrationAllowed": true,
     "resetPasswordAllowed": true,
     "passwordCredentialGrantAllowed": true,
