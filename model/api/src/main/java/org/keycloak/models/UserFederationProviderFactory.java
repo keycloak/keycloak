@@ -10,5 +10,11 @@ import java.util.List;
  */
 public interface UserFederationProviderFactory extends ProviderFactory<UserFederationProvider> {
     UserFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model);
+
+    /**
+     * Config options to display in generic admin console page for federation
+     *
+     * @return
+     */
     List<String> getConfigurationOptions();
 }

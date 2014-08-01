@@ -34,6 +34,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.TokenService;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -41,7 +42,21 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -108,6 +123,7 @@ public class AccessTokenTest {
         Assert.assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         Assert.assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         Assert.assertEquals(sessionId, token.getSessionState());
+
     }
 
     @Test
@@ -246,5 +262,64 @@ public class AccessTokenTest {
             }
         });
     }
+
+    @Test
+    public void testValidateAccessToken() throws Exception {
+        Client client = ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        URI grantUri = TokenService.grantAccessTokenUrl(builder).build("test");
+        WebTarget grantTarget = client.target(grantUri);
+        builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        URI validateUri = TokenService.validateAccessTokenUrl(builder).build("test");
+        WebTarget validateTarget = client.target(validateUri);
+
+        {
+            Response response = validateTarget.request().post(Entity.text("bad token"));
+            Assert.assertEquals(400, response.getStatus());
+            HashMap<String, String> error = response.readEntity(new GenericType <HashMap<String, String>>() {});
+            Assert.assertNotNull(error.get("error"));
+        }
+
+
+        org.keycloak.representations.AccessTokenResponse tokenResponse = null;
+        {
+            String header = BasicAuthHelper.createHeader("test-app", "password");
+            Form form = new Form();
+            form.param("username", "test-user@localhost")
+                    .param("password", "password");
+            Response response = grantTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, header)
+                    .post(Entity.form(form));
+            Assert.assertEquals(200, response.getStatus());
+            tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            response.close();
+        }
+
+        {
+            Response response = validateTarget.request().post(Entity.text(tokenResponse.getToken()));
+            Assert.assertEquals(200, response.getStatus());
+            AccessToken token = response.readEntity(AccessToken.class);
+            Assert.assertNotNull(token);
+            response.close();
+        }
+        {
+            builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            URI logoutUri = TokenService.logoutUrl(builder).build("test");
+            Response response = client.target(logoutUri).queryParam("session_state", tokenResponse.getSessionState()).request().get();
+            Assert.assertEquals(200, response.getStatus());
+            response.close();
+        }
+        {
+            Response response = validateTarget.request().post(Entity.text(tokenResponse.getToken()));
+            Assert.assertEquals(400, response.getStatus());
+            HashMap<String, String> error = response.readEntity(new GenericType <HashMap<String, String>>() {});
+            Assert.assertNotNull(error.get("error"));
+        }
+
+        client.close();
+        events.clear();
+
+    }
+
 
 }
