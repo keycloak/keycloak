@@ -3,6 +3,9 @@ package org.keycloak.examples.federation.properties;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserFederationProviderModel;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -15,6 +18,15 @@ public class FilePropertiesFederationFactory extends BasePropertiesFederationFac
     protected BasePropertiesFederationProvider createProvider(KeycloakSession session, UserFederationProviderModel model, Properties props) {
         return new FilePropertiesFederationProvider(session, props, model);
     }
+    protected InputStream getPropertiesFileStream(String path) {
+        try {
+            return new FileInputStream(path);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 
 
     @Override

@@ -473,6 +473,7 @@ public class AccountService {
         try {
             session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
          } catch (Exception ape) {
+            logger.error("Failed to update password", ape);
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
 
