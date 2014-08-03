@@ -3,6 +3,7 @@ package org.keycloak.models;
 import org.keycloak.provider.ProviderFactory;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -16,5 +17,5 @@ public interface UserFederationProviderFactory extends ProviderFactory<UserFeder
      *
      * @return
      */
-    List<String> getConfigurationOptions();
+    Set<String> getConfigurationOptions();
 }

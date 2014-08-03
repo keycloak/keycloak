@@ -27,5 +27,6 @@
     <modules>
         <module>audit-listener-sysout</module>
         <module>audit-provider-mem</module>
+        <module>federation-provider</module>
     </modules>
 </project>

@@ -1,0 +1,2 @@
+org.keycloak.examples.federation.properties.ClasspathPropertiesFederationFactory
+org.keycloak.examples.federation.properties.FilePropertiesFederationFactory
