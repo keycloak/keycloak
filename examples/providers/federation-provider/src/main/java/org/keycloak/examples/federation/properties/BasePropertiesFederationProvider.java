@@ -59,7 +59,8 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
         String password = properties.getProperty(username);
         if (password != null) {
             UserModel userModel = session.userStorage().addUser(realm, username);
-            userModel.updateCredential(UserCredentialModel.password(password));
+            userModel.setEnabled(true);
+            userModel.setFederationLink(model.getId());
             return userModel;
         }
         return null;
@@ -72,12 +73,16 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
 
     @Override
     public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
-        if (attributes.containsKey(USERNAME)) {
-            UserModel user = getUserByUsername(realm, attributes.get(USERNAME));
-            if (user != null) {
-                List<UserModel> list = new ArrayList<UserModel>(1);
-                list.add(user);
-                return list;
+        String username = attributes.get(USERNAME);
+        if (username != null) {
+            // make sure user isn't already in storage
+            if (session.userStorage().getUserByUsername(username, realm) == null) {
+                UserModel user = getUserByUsername(realm, username);
+                if (user != null) {
+                    List<UserModel> list = new ArrayList<UserModel>(1);
+                    list.add(user);
+                    return list;
+                }
             }
         }
         return Collections.emptyList();

@@ -164,8 +164,8 @@ module.controller('UserListCtrl', function($scope, realm, User) {
     }
 
     $scope.searchQuery = function() {
+        console.log("query.search: " + $scope.query.search);
         $scope.searchLoaded = false;
-        $scope.currentSearch = $scope.search;
 
         $scope.users = User.query($scope.query, function() {
             $scope.searchLoaded = true;

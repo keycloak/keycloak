@@ -26,6 +26,16 @@ public class ClasspathPropertiesFederationFactory extends BasePropertiesFederati
         return new ClasspathPropertiesFederationProvider(session, model, props);
     }
 
+    protected InputStream getPropertiesFileStream(String path) {
+        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
+        if (is == null) {
+            throw new IllegalStateException("Path not found for properties file");
+
+        }
+        return is;
+    }
+
+
 
     @Override
     public String getId() {

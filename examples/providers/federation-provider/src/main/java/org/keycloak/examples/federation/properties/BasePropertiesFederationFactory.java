@@ -36,20 +36,18 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
 
 
         props = new Properties();
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
-        if (is == null) {
-            throw new IllegalStateException("Path attribute not configured for provider");
-
-        }
+        InputStream is = getPropertiesFileStream(path);
         try {
             props.load(is);
             is.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        props.put(path, props);
+        files.put(path, props);
         return createProvider(session, model, props);
     }
+
+    protected abstract InputStream getPropertiesFileStream(String path);
 
     protected abstract BasePropertiesFederationProvider createProvider(KeycloakSession session, UserFederationProviderModel model, Properties props);
 

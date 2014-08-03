@@ -51,16 +51,15 @@ public class WritableUserModelProxy extends UserModelDelegate {
     @Override
     public void updateCredential(UserCredentialModel cred) {
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-
-        } else {
-            super.updateCredential(cred);
             synchronized (provider.getProperties()) {
                 if (!provider.getProperties().containsKey(delegate.getUsername())) {
                     throw new IllegalStateException("no user of that in properties file");
                 }
-                provider.getProperties().put(delegate.getUsername(), cred.getValue());
+                provider.getProperties().setProperty(delegate.getUsername(), cred.getValue());
                 provider.save();
             }
+        } else {
+            super.updateCredential(cred);
         }
     }
 }
