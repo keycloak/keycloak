@@ -9,6 +9,7 @@ import org.picketlink.idm.PartitionManager;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -46,7 +47,7 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
     }
 
     @Override
-    public List<String> getConfigurationOptions() {
-        return Collections.emptyList();
+    public Set<String> getConfigurationOptions() {
+        return Collections.emptySet();
     }
 }

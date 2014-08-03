@@ -7,7 +7,9 @@ import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -20,8 +22,8 @@ public class DummyUserFederationProviderFactory implements UserFederationProvide
     }
 
     @Override
-    public List<String> getConfigurationOptions() {
-        List<String> list = new ArrayList<String>();
+    public Set<String> getConfigurationOptions() {
+        Set<String> list = new HashSet<String>();
         list.add("important.config");
         return list;
     }

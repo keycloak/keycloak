@@ -2,6 +2,7 @@ package org.keycloak.representations.idm;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
@@ -9,7 +10,7 @@ import java.util.Map;
 public class UserFederationProviderFactoryRepresentation {
 
     private String id;
-    private List<String> options;
+    private Set<String> options;
 
     public String getId() {
         return id;
@@ -19,11 +20,11 @@ public class UserFederationProviderFactoryRepresentation {
         this.id = id;
     }
 
-    public List<String> getOptions() {
+    public Set<String> getOptions() {
         return options;
     }
 
-    public void setOptions(List<String> options) {
+    public void setOptions(Set<String> options) {
         this.options = options;
     }
 
