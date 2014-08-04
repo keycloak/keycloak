@@ -16,6 +16,16 @@
         "google.key": "abc",
         "google.secret": "def"
     },
+    "userFederationProviders": [
+        {
+            "displayName": "MyLDAPProvider",
+            "providerName": "dummy",
+            "priority": 1,
+            "config": {
+                "important.config": "ldap://foo"
+            }
+        }
+    ],
     "users": [
         {
             "username": "wburke",

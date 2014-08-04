@@ -781,8 +781,9 @@ public class RealmAdapter implements RealmModel {
             entity.setPriority(model.getPriority());
             String displayName = model.getDisplayName();
             if (displayName == null) {
-                entity.setDisplayName(entity.getId());
+                displayName = entity.getId();
             }
+            entity.setDisplayName(displayName);
             em.persist(entity);
             realm.getUserFederationProviders().add(entity);
 

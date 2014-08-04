@@ -485,7 +485,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
 
             if ($scope.lastVendor === "ad") {
                 $scope.instance.config.usernameLDAPAttribute = "cn";
-                $scope.instance.config.userObjectClasses = "person, organizationalPerson";
+                $scope.instance.config.userObjectClasses = "person, organizationalPerson, user";
             } else {
                 $scope.instance.config.usernameLDAPAttribute = "uid";
                 $scope.instance.config.userObjectClasses = "inetOrgPerson, organizationalPerson";
