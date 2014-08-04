@@ -78,7 +78,7 @@
             "host": "${keycloak.connectionsMongo.host:127.0.0.1}",
             "port": "${keycloak.connectionsMongo.port:27017}",
             "db": "${keycloak.connectionsMongo.db:keycloak}",
-            "clearOnStartup": "${keycloak.connectionsMongo.clearOnStartup:true}"
+            "clearOnStartup": "${keycloak.connectionsMongo.clearOnStartup:false}"
         }
     }
 }

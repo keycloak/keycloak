@@ -18,7 +18,7 @@
         <resteasy.version>2.3.7.Final</resteasy.version>
         <resteasy.version.latest>3.0.8.Final</resteasy.version.latest>
         <undertow.version>1.0.15.Final</undertow.version>
-        <picketlink.version>2.6.0.CR5</picketlink.version>
+        <picketlink.version>2.7.0.Beta1-20140731</picketlink.version>
         <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>

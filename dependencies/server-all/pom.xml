@@ -112,6 +112,11 @@
             <artifactId>keycloak-picketlink-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-picketlink-ldap</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- mongo -->
         <dependency>

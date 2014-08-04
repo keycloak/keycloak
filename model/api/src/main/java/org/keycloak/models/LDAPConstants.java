@@ -18,4 +18,6 @@ public class LDAPConstants {
     public static final String USER_DN_SUFFIX = "userDnSuffix";
     public static final String BIND_DN = "bindDn";
     public static final String BIND_CREDENTIAL = "bindCredential";
+
+    public static final String USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE = "userAccountControlsAfterPasswordUpdate";
 }
