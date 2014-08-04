@@ -348,11 +348,12 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
 });
 
 module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, application, applications,
+                                                          Application,
                                                           ApplicationRealmScopeMapping, ApplicationApplicationScopeMapping, ApplicationRole,
                                                           ApplicationAvailableRealmScopeMapping, ApplicationAvailableApplicationScopeMapping,
                                                           ApplicationCompositeRealmScopeMapping, ApplicationCompositeApplicationScopeMapping) {
     $scope.realm = realm;
-    $scope.application = application;
+    $scope.application = angular.copy(application);
     $scope.selectedRealmRoles = [];
     $scope.selectedRealmMappings = [];
     $scope.realmMappings = [];
@@ -363,6 +364,21 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     $scope.selectedApplicationMappings = [];
     $scope.applicationMappings = [];
     $scope.dummymodel = [];
+
+
+    $scope.changeFullScopeAllowed = function() {
+        console.log('change full scope');
+        Application.update({
+            realm : realm.realm,
+            application : application.name
+        }, $scope.application, function() {
+            $scope.changed = false;
+            application = angular.copy($scope.application);
+            updateRealmRoles();
+        });
+    }
+
+
 
     function updateRealmRoles() {
         $scope.realmRoles = ApplicationAvailableRealmScopeMapping.query({realm : realm.realm, application : application.name});

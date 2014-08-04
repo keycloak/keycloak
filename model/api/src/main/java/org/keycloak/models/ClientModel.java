@@ -50,6 +50,9 @@ public interface ClientModel {
     String getSecret();
     public void setSecret(String secret);
 
+    boolean isFullScopeAllowed();
+    void setFullScopeAllowed(boolean value);
+
     boolean isPublicClient();
     void setPublicClient(boolean flag);
 

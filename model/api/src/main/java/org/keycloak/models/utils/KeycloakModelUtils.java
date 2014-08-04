@@ -91,6 +91,7 @@ public final class KeycloakModelUtils {
     public static ApplicationModel createApplication(RealmModel realm, String name) {
         ApplicationModel app = realm.addApplication(name);
         generateSecret(app);
+        app.setFullScopeAllowed(true);
 
         return app;
     }

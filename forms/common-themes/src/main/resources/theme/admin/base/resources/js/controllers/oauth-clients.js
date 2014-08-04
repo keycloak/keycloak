@@ -183,11 +183,12 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
 });
 
 module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, oauth, applications,
+                                                          OAuthClient,
                                                           OAuthClientRealmScopeMapping, OAuthClientApplicationScopeMapping, ApplicationRole,
                                                           OAuthClientAvailableRealmScopeMapping, OAuthClientAvailableApplicationScopeMapping,
                                                           OAuthClientCompositeRealmScopeMapping, OAuthClientCompositeApplicationScopeMapping) {
     $scope.realm = realm;
-    $scope.oauth = oauth;
+    $scope.oauth = angular.copy(oauth);
     $scope.selectedRealmRoles = [];
     $scope.selectedRealmMappings = [];
     $scope.realmMappings = [];
@@ -198,6 +199,19 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     $scope.selectedApplicationMappings = [];
     $scope.applicationMappings = [];
     $scope.dummymodel = [];
+
+    $scope.changeFullScopeAllowed = function() {
+        console.log('change full scope');
+        OAuthClient.update({
+            realm : realm.realm,
+            oauth : oauth.name
+        }, $scope.oauth, function() {
+            $scope.changed = false;
+            oauth = angular.copy($scope.oauth);
+        });
+
+    }
+
 
     function updateRealmRoles() {
         $scope.realmRoles = OAuthClientAvailableRealmScopeMapping.query({realm : realm.realm, oauth : oauth.name});

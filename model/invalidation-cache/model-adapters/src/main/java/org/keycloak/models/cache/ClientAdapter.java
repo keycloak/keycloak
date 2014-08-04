@@ -123,6 +123,19 @@ public abstract class ClientAdapter implements ClientModel {
         updatedClient.setPublicClient(flag);
     }
 
+    @Override
+    public boolean isFullScopeAllowed() {
+        if (updatedClient != null) return updatedClient.isFullScopeAllowed();
+        return cachedClient.isFullScopeAllowed();
+    }
+
+    @Override
+    public void setFullScopeAllowed(boolean value) {
+        getDelegateForUpdate();
+        updatedClient.setFullScopeAllowed(value);
+
+    }
+
     public boolean isDirectGrantsOnly() {
         if (updatedClient != null) return updatedClient.isDirectGrantsOnly();
         return cachedClient.isDirectGrantsOnly();
@@ -171,7 +184,7 @@ public abstract class ClientAdapter implements ClientModel {
 
     public boolean hasScope(RoleModel role) {
         if (updatedClient != null) return updatedClient.hasScope(role);
-        if (cachedClient.getScope().contains(role.getId())) return true;
+        if (cachedClient.isFullScopeAllowed() || cachedClient.getScope().contains(role.getId())) return true;
 
         Set<RoleModel> roles = getScopeMappings();
 

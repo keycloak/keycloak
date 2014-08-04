@@ -79,6 +79,16 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isFullScopeAllowed() {
+        return entity.isFullScopeAllowed();
+    }
+
+    @Override
+    public void setFullScopeAllowed(boolean value) {
+        entity.setFullScopeAllowed(value);
+    }
+
+    @Override
     public Set<String> getWebOrigins() {
         Set<String> result = new HashSet<String>();
         result.addAll(entity.getWebOrigins());
@@ -214,6 +224,7 @@ public abstract class ClientAdapter implements ClientModel {
 
     @Override
     public boolean hasScope(RoleModel role) {
+        if (isFullScopeAllowed()) return true;
         Set<RoleModel> roles = getScopeMappings();
         if (roles.contains(role)) return true;
 

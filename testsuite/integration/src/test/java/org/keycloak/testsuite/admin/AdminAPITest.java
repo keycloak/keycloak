@@ -166,6 +166,7 @@ public class AdminAPITest {
         if (appRep.isEnabled() != null) Assert.assertEquals(appRep.isEnabled(), storedApp.isEnabled());
         if (appRep.isBearerOnly() != null) Assert.assertEquals(appRep.isBearerOnly(), storedApp.isBearerOnly());
         if (appRep.isPublicClient() != null) Assert.assertEquals(appRep.isPublicClient(), storedApp.isPublicClient());
+        if (appRep.isFullScopeAllowed() != null) Assert.assertEquals(appRep.isFullScopeAllowed(), storedApp.isFullScopeAllowed());
         if (appRep.getAdminUrl() != null) Assert.assertEquals(appRep.getAdminUrl(), storedApp.getAdminUrl());
         if (appRep.getBaseUrl() != null) Assert.assertEquals(appRep.getBaseUrl(), storedApp.getBaseUrl());
         if (appRep.isSurrogateAuthRequired() != null) Assert.assertEquals(appRep.isSurrogateAuthRequired(), storedApp.isSurrogateAuthRequired());
