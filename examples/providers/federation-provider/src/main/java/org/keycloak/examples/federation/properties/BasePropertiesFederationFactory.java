@@ -27,10 +27,12 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
 
     @Override
     public UserFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model) {
+        // first get the path to our properties file from the stored configuration of this provider instance.
         String path = model.getConfig().get("path");
         if (path == null) {
             throw new IllegalStateException("Path attribute not configured for provider");
         }
+        // see if we already loaded the config file
         Properties props = files.get(path);
         if (props != null) return createProvider(session, model, props);
 
@@ -43,6 +45,7 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        // remember the properties file for next time
         files.put(path, props);
         return createProvider(session, model, props);
     }
@@ -51,7 +54,12 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
 
     protected abstract BasePropertiesFederationProvider createProvider(KeycloakSession session, UserFederationProviderModel model, Properties props);
 
-
+    /**
+     * List the configuration options to render and display in the admin console's generic management page for this
+     * plugin
+     *
+     * @return
+     */
     @Override
     public Set<String> getConfigurationOptions() {
         return configOptions;
@@ -62,6 +70,11 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
         return null;
     }
 
+    /**
+     * You can import additional plugin configuration from keycloak-server.json here.
+     *
+     * @param config
+     */
     @Override
     public void init(Config.Scope config) {
 

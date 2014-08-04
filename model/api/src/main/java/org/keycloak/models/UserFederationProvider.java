@@ -60,6 +60,14 @@ public interface UserFederationProvider extends Provider {
      * @return
      */
     boolean synchronizeRegistrations();
+
+    /**
+     * Called if this federation provider has priority and supports synchronized registrations.
+     *
+     * @param realm
+     * @param user
+     * @return
+     */
     UserModel register(RealmModel realm, UserModel user);
     boolean removeUser(RealmModel realm, UserModel user);
 
@@ -91,7 +99,19 @@ public interface UserFederationProvider extends Provider {
      */
     List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults);
 
+    /**
+     * called whenever a Realm is removed
+     *
+     * @param realm
+     */
     void preRemove(RealmModel realm);
+
+    /**
+     * called before a role is removed.
+     *
+     * @param realm
+     * @param role
+     */
     void preRemove(RealmModel realm, RoleModel role);
 
     /**
@@ -111,7 +131,8 @@ public interface UserFederationProvider extends Provider {
     Set<String> getSupportedCredentialTypes(UserModel user);
 
     /**
-     * Validate credentials for this user.
+     * Validate credentials for this user.  This method will only be called with credential parameters supported
+     * by this provider
      *
      * @param realm
      * @param user

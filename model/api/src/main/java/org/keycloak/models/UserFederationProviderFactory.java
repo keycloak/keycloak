@@ -10,6 +10,13 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface UserFederationProviderFactory extends ProviderFactory<UserFederationProvider> {
+    /**
+     * called per Keycloak transaction.
+     *
+     * @param session
+     * @param model
+     * @return
+     */
     UserFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model);
 
     /**
@@ -18,4 +25,12 @@ public interface UserFederationProviderFactory extends ProviderFactory<UserFeder
      * @return
      */
     Set<String> getConfigurationOptions();
+
+    /**
+     * This is the name of the provider and will be showed in the admin console as an option.
+     *
+     * @return
+     */
+    @Override
+    String getId();
 }

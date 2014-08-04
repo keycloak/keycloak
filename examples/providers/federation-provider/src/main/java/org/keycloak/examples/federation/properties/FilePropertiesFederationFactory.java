@@ -27,8 +27,12 @@ public class FilePropertiesFederationFactory extends BasePropertiesFederationFac
     }
 
 
-
-
+    /**
+     * Name of the provider.  This will show up under the "Add Provider" select box on the Federation page in the
+     * admin console
+     *
+     * @return
+     */
     @Override
     public String getId() {
         return "file-properties";

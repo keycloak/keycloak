@@ -32,10 +32,6 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
         this.properties = properties;
     }
 
-    public static Set<String> getSupportedCredentialTypes() {
-        return supportedCredentialTypes;
-    }
-
     static
     {
         supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
@@ -71,12 +67,22 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
         return null;
     }
 
+    /**
+     * We only search for Usernames as that is all that is stored in the properties file.  Not that if the user
+     * does exist in the properties file, we only import it if the user hasn't been imported already.
+     *
+     * @param attributes
+     * @param realm
+     * @param maxResults
+     * @return
+     */
     @Override
     public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
         String username = attributes.get(USERNAME);
         if (username != null) {
             // make sure user isn't already in storage
             if (session.userStorage().getUserByUsername(username, realm) == null) {
+                // user is not already imported, so let's import it until local storage.
                 UserModel user = getUserByUsername(realm, username);
                 if (user != null) {
                     List<UserModel> list = new ArrayList<UserModel>(1);
@@ -90,19 +96,32 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
 
     @Override
     public void preRemove(RealmModel realm) {
-
+       // complete  We don't care about the realm being removed
     }
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
+        // complete we dont'care if a role is removed
 
     }
 
+    /**
+     * See if the user is still in the properties file
+     *
+     * @param local
+     * @return
+     */
     @Override
     public boolean isValid(UserModel local) {
         return properties.containsKey(local.getUsername());
     }
 
+    /**
+     * hardcoded to only return PASSWORD
+     *
+     * @param user
+     * @return
+     */
     @Override
     public Set<String> getSupportedCredentialTypes(UserModel user) {
         return supportedCredentialTypes;
