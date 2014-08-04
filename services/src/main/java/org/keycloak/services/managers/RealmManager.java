@@ -95,6 +95,7 @@ public class RealmManager {
         adminConsole.setEnabled(true);
         adminConsole.setPublicClient(true);
         adminConsole.addRedirectUri(baseUrl + "/*");
+        adminConsole.setFullScopeAllowed(false);
 
         RoleModel adminRole;
         if (realm.getName().equals(Config.getAdminRealm())) {
@@ -163,6 +164,7 @@ public class RealmManager {
         }
         RoleModel adminRole = realmAdminApp.addRole(AdminRoles.REALM_ADMIN);
         realmAdminApp.setBearerOnly(true);
+        realmAdminApp.setFullScopeAllowed(false);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.addRole(r);
@@ -176,6 +178,7 @@ public class RealmManager {
         if (application == null) {
             application = new ApplicationManager(this).createApplication(realm, Constants.ACCOUNT_MANAGEMENT_APP);
             application.setEnabled(true);
+            application.setFullScopeAllowed(false);
             String base = contextPath + "/realms/" + realm.getName() + "/account";
             String redirectUri = base + "/*";
             application.addRedirectUri(redirectUri);

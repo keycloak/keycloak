@@ -214,6 +214,7 @@ public class ModelToRepresentation {
         rep.setEnabled(applicationModel.isEnabled());
         rep.setAdminUrl(applicationModel.getManagementUrl());
         rep.setPublicClient(applicationModel.isPublicClient());
+        rep.setFullScopeAllowed(applicationModel.isFullScopeAllowed());
         rep.setBearerOnly(applicationModel.isBearerOnly());
         rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
         rep.setBaseUrl(applicationModel.getBaseUrl());
@@ -242,6 +243,7 @@ public class ModelToRepresentation {
         rep.setName(model.getClientId());
         rep.setEnabled(model.isEnabled());
         rep.setPublicClient(model.isPublicClient());
+        rep.setFullScopeAllowed(model.isFullScopeAllowed());
         rep.setDirectGrantsOnly(model.isDirectGrantsOnly());
         Set<String> redirectUris = model.getRedirectUris();
         if (redirectUris != null) {

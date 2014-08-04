@@ -19,7 +19,17 @@
         </ol>
         <h2><span>{{oauth.name}}</span> Scope Mappings</h2>
         <p class="subtitle"></p>
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
+        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageClients">
+            <fieldset class="border-top">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="fullScopeAllowed">Full Scope Allowed</label>
+                    <div class="col-sm-4">
+                        <input ng-model="oauth.fullScopeAllowed" ng-click="changeFullScopeAllowed()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch />
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients"  data-ng-show="!oauth.fullScopeAllowed">
             <fieldset>
                 <legend><span class="text">Realm Roles</span></legend>
                 <div class="form-group col-sm-10">

@@ -353,6 +353,8 @@ public class RepresentationToModel {
         applicationModel.setBaseUrl(resourceRep.getBaseUrl());
         if (resourceRep.isBearerOnly() != null) applicationModel.setBearerOnly(resourceRep.isBearerOnly());
         if (resourceRep.isPublicClient() != null) applicationModel.setPublicClient(resourceRep.isPublicClient());
+        if (resourceRep.isFullScopeAllowed() != null) applicationModel.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
+        else applicationModel.setFullScopeAllowed(true);
         applicationModel.updateApplication();
 
         if (resourceRep.getNotBefore() != null) {
@@ -415,6 +417,7 @@ public class RepresentationToModel {
         if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
         if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
         if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
+        if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
         if (rep.getAdminUrl() != null) resource.setManagementUrl(rep.getAdminUrl());
         if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
@@ -521,6 +524,7 @@ public class RepresentationToModel {
         if (rep.getName() != null) model.setClientId(rep.getName());
         if (rep.isEnabled() != null) model.setEnabled(rep.isEnabled());
         if (rep.isPublicClient() != null) model.setPublicClient(rep.isPublicClient());
+        if (rep.isFullScopeAllowed() != null) model.setFullScopeAllowed(rep.isFullScopeAllowed());
         if (rep.isDirectGrantsOnly() != null) model.setDirectGrantsOnly(rep.isDirectGrantsOnly());
         if (rep.getClaims() != null) {
             setClaims(model, rep.getClaims());

@@ -17,6 +17,7 @@ public class OAuthClientRepresentation {
     protected Integer notBefore;
     protected Boolean publicClient;
     protected Boolean directGrantsOnly;
+    protected Boolean fullScopeAllowed;
 
 
     public String getId() {
@@ -98,4 +99,13 @@ public class OAuthClientRepresentation {
     public void setDirectGrantsOnly(Boolean directGrantsOnly) {
         this.directGrantsOnly = directGrantsOnly;
     }
+
+    public Boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
+    }
+
+    public void setFullScopeAllowed(Boolean fullScopeAllowed) {
+        this.fullScopeAllowed = fullScopeAllowed;
+    }
+
 }

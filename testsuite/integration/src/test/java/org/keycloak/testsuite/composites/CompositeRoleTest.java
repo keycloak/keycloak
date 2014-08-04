@@ -86,6 +86,7 @@ public class CompositeRoleTest {
             realmRole1User.grantRole(realmRole1);
 
             final ApplicationModel realmComposite1Application = new ApplicationManager(manager).createApplication(realm, "REALM_COMPOSITE_1_APPLICATION");
+            realmComposite1Application.setFullScopeAllowed(false);
             realmComposite1Application.setEnabled(true);
             realmComposite1Application.addScopeMapping(realmComposite1);
             realmComposite1Application.addRedirectUri("http://localhost:8081/app/*");
@@ -94,6 +95,7 @@ public class CompositeRoleTest {
             realmComposite1Application.setSecret("password");
 
             final ApplicationModel realmRole1Application = new ApplicationManager(manager).createApplication(realm, "REALM_ROLE_1_APPLICATION");
+            realmRole1Application.setFullScopeAllowed(false);
             realmRole1Application.setEnabled(true);
             realmRole1Application.addScopeMapping(realmRole1);
             realmRole1Application.addRedirectUri("http://localhost:8081/app/*");
@@ -103,6 +105,7 @@ public class CompositeRoleTest {
 
 
             final ApplicationModel appRoleApplication = new ApplicationManager(manager).createApplication(realm, "APP_ROLE_APPLICATION");
+            appRoleApplication.setFullScopeAllowed(false);
             appRoleApplication.setEnabled(true);
             appRoleApplication.addRedirectUri("http://localhost:8081/app/*");
             appRoleApplication.setBaseUrl("http://localhost:8081/app");
@@ -125,6 +128,7 @@ public class CompositeRoleTest {
             realmAppRoleUser.grantRole(appRole2);
 
             final ApplicationModel appCompositeApplication = new ApplicationManager(manager).createApplication(realm, "APP_COMPOSITE_APPLICATION");
+            appCompositeApplication.setFullScopeAllowed(false);
             appCompositeApplication.setEnabled(true);
             appCompositeApplication.addRedirectUri("http://localhost:8081/app/*");
             appCompositeApplication.setBaseUrl("http://localhost:8081/app");

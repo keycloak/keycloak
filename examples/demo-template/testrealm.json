@@ -92,28 +92,7 @@
         {
             "client": "third-party",
             "roles": ["user"]
-        },
-        {
-            "client": "customer-portal",
-            "roles": ["user", "admin" ]
-        },
-        {
-            "client": "customer-portal-js",
-            "roles": ["user"]
-        },
-        {
-            "client": "customer-portal-cli",
-            "roles": ["user"]
-        },
-        {
-            "client": "angular-product",
-            "roles": ["user"]
-        },
-        {
-            "client": "product-portal",
-            "roles": ["user", "admin" ]
         }
-
     ],
     "applications": [
         {

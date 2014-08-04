@@ -38,6 +38,8 @@ public abstract class ClientEntity {
     private int notBefore;
     @Column(name="PUBLIC_CLIENT")
     private boolean publicClient;
+    @Column(name="FULL_SCOPE_ALLOWED")
+    private boolean fullScopeAllowed;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "REALM_ID")
@@ -131,5 +133,13 @@ public abstract class ClientEntity {
 
     public void setPublicClient(boolean publicClient) {
         this.publicClient = publicClient;
+    }
+
+    public boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
+    }
+
+    public void setFullScopeAllowed(boolean fullScopeAllowed) {
+        this.fullScopeAllowed = fullScopeAllowed;
     }
 }

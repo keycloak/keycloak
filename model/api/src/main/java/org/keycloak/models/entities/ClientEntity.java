@@ -14,6 +14,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private long allowedClaimsMask;
     private int notBefore;
     private boolean publicClient;
+    private boolean fullScopeAllowed;
 
     private String realmId;
 
@@ -99,5 +100,13 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setScopeIds(List<String> scopeIds) {
         this.scopeIds = scopeIds;
+    }
+
+    public boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
+    }
+
+    public void setFullScopeAllowed(boolean fullScopeAllowed) {
+        this.fullScopeAllowed = fullScopeAllowed;
     }
 }

@@ -88,6 +88,7 @@
     "applications": [
         {
             "name": "REALM_COMPOSITE_1_APPLICATION",
+            "fullScopeAllowed": false,
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
@@ -95,6 +96,7 @@
          },
         {
             "name": "REALM_ROLE_1_APPLICATION",
+            "fullScopeAllowed": false,
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
@@ -102,6 +104,7 @@
         },
         {
             "name": "APP_ROLE_APPLICATION",
+            "fullScopeAllowed": false,
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
@@ -109,6 +112,7 @@
         },
         {
             "name": "APP_COMPOSITE_APPLICATION",
+            "fullScopeAllowed": false,
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",

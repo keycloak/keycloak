@@ -21,6 +21,7 @@ public class ApplicationRepresentation {
     protected Integer notBefore;
     protected Boolean bearerOnly;
     protected Boolean publicClient;
+    protected Boolean fullScopeAllowed;
 
 
     public String getId() {
@@ -133,5 +134,13 @@ public class ApplicationRepresentation {
 
     public void setPublicClient(Boolean publicClient) {
         this.publicClient = publicClient;
+    }
+
+    public Boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
+    }
+
+    public void setFullScopeAllowed(Boolean fullScopeAllowed) {
+        this.fullScopeAllowed = fullScopeAllowed;
     }
 }

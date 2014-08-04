@@ -21,7 +21,18 @@
         </ol>
         <h2><span>{{application.name}}</span> Scope Mappings</h2>
         <p class="subtitle"></p>
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageApplications">
+        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageApplications">
+            <fieldset class="border-top">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="fullScopeAllowed">Full Scope Allowed</label>
+                    <div class="col-sm-4">
+                        <input ng-model="application.fullScopeAllowed" ng-click="changeFullScopeAllowed()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch />
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageApplications" data-ng-show="!application.fullScopeAllowed">
             <fieldset>
                 <legend><span class="text">Realm Roles</span></legend>
                 <div class="form-group col-sm-10">

@@ -158,6 +158,18 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     }
 
     @Override
+    public boolean isFullScopeAllowed() {
+        return getMongoEntityAsClient().isFullScopeAllowed();
+    }
+
+    @Override
+    public void setFullScopeAllowed(boolean value) {
+        getMongoEntityAsClient().setFullScopeAllowed(value);
+        updateMongoEntity();
+
+    }
+
+    @Override
     public RealmModel getRealm() {
         return realm;
     }
@@ -207,6 +219,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     @Override
     public boolean hasScope(RoleModel role) {
+        if (isFullScopeAllowed()) return true;
         Set<RoleModel> roles = getScopeMappings();
         if (roles.contains(role)) return true;
 

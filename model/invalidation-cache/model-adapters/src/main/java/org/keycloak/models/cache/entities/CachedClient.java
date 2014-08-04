@@ -22,6 +22,7 @@ public class CachedClient {
     protected boolean enabled;
     protected String secret;
     protected boolean publicClient;
+    protected boolean fullScopeAllowed;
     protected boolean directGrantsOnly;
     protected int notBefore;
     protected Set<String> scope = new HashSet<String>();
@@ -37,6 +38,7 @@ public class CachedClient {
         directGrantsOnly = model.isDirectGrantsOnly();
         publicClient = model.isPublicClient();
         allowedClaimsMask = model.getAllowedClaimsMask();
+        fullScopeAllowed = model.isFullScopeAllowed();
         redirectUris.addAll(model.getRedirectUris());
         webOrigins.addAll(model.getWebOrigins());
         for (RoleModel role : model.getScopeMappings())  {
@@ -91,5 +93,9 @@ public class CachedClient {
 
     public Set<String> getWebOrigins() {
         return webOrigins;
+    }
+
+    public boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
     }
 }

@@ -135,6 +135,8 @@ public class TokenManager {
         Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
 
         Set<RoleModel> roleMappings = user.getRoleMappings();
+        if (client.isFullScopeAllowed()) return roleMappings;
+
         Set<RoleModel> scopeMappings = client.getScopeMappings();
         if (client instanceof ApplicationModel) {
             scopeMappings.addAll(((ApplicationModel) client).getRoles());
