@@ -1069,6 +1069,11 @@ public class TokenService {
 
         if (redirectUri != null) {
             // todo manage legal redirects
+            if (redirectUri.startsWith("/")) { // handle relative uri
+                UriBuilder builder = uriInfo.getAbsolutePathBuilder();
+                builder.replacePath(redirectUri);
+                return Response.status(302).location(builder.build()).build();
+            }
             return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
         } else {
             return Response.ok().build();
