@@ -766,6 +766,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         if (displayName == null) {
             displayName = entity.getId();
         }
+        entity.setDisplayName(displayName);
         realm.getUserFederationProviders().add(entity);
         updateRealm();
 
@@ -840,6 +841,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             if (displayName == null) {
                 entity.setDisplayName(entity.getId());
             }
+            entity.setDisplayName(displayName);
             entities.add(entity);
         }
 

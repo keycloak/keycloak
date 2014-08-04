@@ -43,7 +43,7 @@ public class LDAPConnectionTestManager {
 
             ldapContext = new InitialLdapContext(env, null);
             return true;
-        } catch (NamingException ne) {
+        } catch (Exception ne) {
             String errorMessage = (TEST_AUTHENTICATION.equals(action)) ? "Error when authenticating to LDAP: " : "Error when connecting to LDAP: ";
             logger.error(errorMessage + ne.getMessage(), ne);
             return false;

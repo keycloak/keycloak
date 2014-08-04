@@ -12,6 +12,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -194,6 +195,14 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("abc", socialConfig.get("google.key"));
         Assert.assertEquals("def", socialConfig.get("google.secret"));
 
+        // Test federation providers
+        List<UserFederationProviderModel> fedProviders = realm.getUserFederationProviders();
+        Assert.assertTrue(fedProviders.size() == 1);
+        UserFederationProviderModel ldap = fedProviders.get(0);
+        Assert.assertEquals("MyLDAPProvider", ldap.getDisplayName());
+        Assert.assertEquals("dummy", ldap.getProviderName());
+        Assert.assertEquals(1, ldap.getPriority());
+        Assert.assertEquals("ldap://foo", ldap.getConfig().get("important.config"));
     }
 
     @Test
