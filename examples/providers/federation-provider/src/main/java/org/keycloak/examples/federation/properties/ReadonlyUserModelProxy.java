@@ -6,6 +6,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 
 /**
+ * Readonly proxy for a UserModel that prevents passwords from being updated.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

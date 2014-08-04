@@ -1,0 +1,140 @@
+<chapter id="user_federation">
+    <title>User Federation SPI and LDAP/AD Integration</title>
+    <para>
+        Keycloak can federate external user databases.  Out of the box we have support for LDAP and Active Directory.
+        Before you dive into this, you should understand how Keycloak does federation.
+    </para>
+    <para>
+        Keycloak performs federation a bit differently than other products/projects.  The vision of Keycloak is that it
+        is an out of the box solution that should provide a core set of feature irregardless of the backend user storage you
+        want to use.  Because of this requirement/vision, Keycloak has a set data model that all of its services use.
+        Most of the time when you want to federate an external user store, much of the metadata that would be needed to
+        provide this complete feature set does not exist in that external store.  For example your LDAP server may only
+        provide password validation, but not support TOTP or user role mappings.  The Keycloak User Federation SPI was
+        written to support these completely variable locations
+    </para>
+    <para>
+        The way user federation works is that Keycloak will import your federated users on demand to its local storage.  How
+        much metadata that is imported depends on the underlying federation plugin and how that plugin is configured.  Some
+        federation plugins may only import the username into Keycloak storage, others might import everything from name,
+        address, and phone number, to user role mappings.  Some plugins might want to import credentials directly into
+        Keycloak storage and let Keycloak handle credential validation.  Others might want to handle credential validation
+        themselves.  Thegoal of the Federation SPI is to support all of these scenarios.
+    </para>
+    <section>
+        <title>LDAP and Active Directory Plugin</title>
+        <para>
+            Keycloak comes with a built-in LDAP/AD plugin.  Currently it is set up only to import username, email, first and last name.
+            It supports password validation via LDAP/AD protocols and different user metadata synchronization modes.  To configure
+            a federated LDAP store go to the admin console.  Click on the <literal>Users</literal> menu option to get you
+            to the user management page.  Then click on the <literal>Federation</literal> submenu option.  When
+            you get to this page there is an "Add Provider" select box.  You should see "ldap" within this list.  Selecting
+            "ldap" will bring you to the ldap configuration page.
+        </para>
+        <section>
+            <title>Edit Mode</title>
+            <para>
+                Edit mode defines various synchronization options with your LDAP store depending on what privileges
+                you have.
+                <variablelist>
+                    <varlistentry>
+                        <term>READONLY</term>
+                        <listitem>
+                            <para>
+                                Username, email, first and last name will be unchangable.  Keycloak will show an error
+                                anytime anybody tries to update these fields.  Also, password updates will not be supported.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>WRITABLE</term>
+                        <listitem>
+                            <para>
+                                Username, email, first and last name, and passwords can all be updated and will
+                                be synchronized automatically with your LDAP store.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>UNSYNCED</term>
+                        <listitem>
+                            <para>
+                                Any changes to username, email, first and last name, and passwords will be stored
+                                in Keycloak local storage. It is up to you to figure out how to synchronize back to
+                                LDAP.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </para>
+        </section>
+        <section>
+            <title>Other config options</title>
+            <para>
+                <variablelist>
+                    <varlistentry>
+                        <term>Display Name</term>
+                        <listitem>
+                            <para>
+                                Name used when this provider is referenced in the admin consle
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>Priority</term>
+                        <listitem>
+                            <para>
+                                The priority of this provider when looking up users or for adding registrations.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>Sync Registrations</term>
+                        <listitem>
+                            <para>
+                                If a new user is added through a registration page or admin console, should the user
+                                be eligible to be synchronized to this provider.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>Other options</term>
+                        <listitem>
+                            <para>
+                                The rest of the configuration options should be self explanatory.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </para>
+        </section>
+    </section>
+    <section>
+        <title>Writing your own User Federation Provider</title>
+        <para>
+            The keycloak examples directory contains an example of a simple User Federation Provider backed by
+            a simple properties file.  See <literal>examples/providers/federation-provider</literal>.  Most of how
+            to create a federation provider is explain directly within the example code, but some information is here too.
+        </para>
+        <para>
+            Writing a User Federation Provider starts by implementing the <literal>UserFederationProvider</literal>
+            and <literal>UserFederationProviderFactory</literal> interfaces.  Please see the Javadoc and example
+            for complete details on on how to do this.  Some important methods of note:
+            getUserByUsername() and getUserByEmail() require that you query your federated storage and if the user exists
+            create and import the user into Keycloak storage.  How much metadata you import is fully up to you.  This
+            import is done by invoking methods on the object returned <literal>KeycloakSession.userStorage()</literal>
+            to add and import user information.  The proxy() method will be called whenever Keycloak has found an imported
+            UserModel.  This allows the federation provider to proxy the UserModel which is useful if you want to support
+            external storage updates on demand.
+        </para>
+        <para>
+            After your code is written you must package up all your classes within a JAR file.  This jar file must
+            contain a file called <literal>org.keycloak.models.UserFederationProviderFactory</literal>
+            within the <literal>META-INF/services</literal> directory of the JAR.  This file is a list
+            of fully qualified classnames of all implementations of <literal>UserFederationProviderFactory</literal>.
+            This is how Keycloak discovers which providers have been deployment.  Place the JAR in the
+            keycloak WAR deployment in the <literal>WEB-INF/lib</literal> directory.
+        </para>
+    </section>
+
+</chapter>

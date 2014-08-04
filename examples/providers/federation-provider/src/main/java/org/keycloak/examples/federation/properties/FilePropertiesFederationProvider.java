@@ -28,11 +28,23 @@ public class FilePropertiesFederationProvider extends BasePropertiesFederationPr
         super(session, model, properties);
     }
 
+    /**
+     * Keycloak will call this method if it finds an imported UserModel.  Here we proxy the UserModel with
+     * a Writable proxy which will synchronize updates to username and password back to the properties file
+     *
+     * @param local
+     * @return
+     */
     @Override
     public UserModel proxy(UserModel local) {
         return new WritableUserModelProxy(local, this);
     }
 
+    /**
+     * Adding new users is supported
+     *
+     * @return
+     */
     @Override
     public boolean synchronizeRegistrations() {
         return true;
@@ -49,6 +61,13 @@ public class FilePropertiesFederationProvider extends BasePropertiesFederationPr
         }
     }
 
+    /**
+     * Update the properties file with the new user.
+     *
+     * @param realm
+     * @param user
+     * @return
+     */
     @Override
     public UserModel register(RealmModel realm, UserModel user) {
         synchronized (properties) {

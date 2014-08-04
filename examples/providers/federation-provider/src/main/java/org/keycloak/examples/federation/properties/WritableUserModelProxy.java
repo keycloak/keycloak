@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
+ * Proxy that will synchronize password updates to the properties file.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -21,6 +23,13 @@ public class WritableUserModelProxy extends UserModelDelegate {
         this.provider = provider;
     }
 
+
+    /**
+     * Updates the properties file if the username changes.  If you have a more complex user storage, you can
+     * override other methods on UserModel to synchronize updates back to your external storage.
+     *
+     * @param username
+     */
     @Override
     public void setUsername(String username) {
         if (delegate.getUsername().equals(username)) return;

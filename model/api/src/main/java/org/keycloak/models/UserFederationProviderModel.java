@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Stored configuration of a User Federation provider instance.
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
