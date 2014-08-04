@@ -12,12 +12,16 @@
                 more flexible.
             </listitem>
             <listitem>
-                DB Schema has changed again.
-            </listitem>
-            <listitem>
                 <literal>ssl-not-required</literal> property in adapter config has been removed. Replaced with
                 <literal>ssl-required</literal>, valid values are <literal>all</literal> (require SSL for all requests), <literal>external</literal>
                 (require SSL only for external request) and <literal>none</literal> (SSL not required).
+            </listitem>
+            <listitem>
+                DB Schema has changed again.
+            </listitem>
+            <listitem>
+                Created applications now have a full scope by default.  This means that you don't have to configure
+                the scope of an application if you don't want to.
             </listitem>
         </itemizedlist>
     </sect1>
