@@ -26,6 +26,9 @@ public class KeycloakEventBridge implements EventBridge {
 
     public KeycloakEventBridge(boolean updateUserAccountAfterPasswordUpdate) {
         this.updateUserAccountAfterPasswordUpdate = updateUserAccountAfterPasswordUpdate;
+        if (updateUserAccountAfterPasswordUpdate) {
+            logger.info("userAccountControl attribute will be updated in Active Directory after user registration");
+        }
     }
 
     @Override

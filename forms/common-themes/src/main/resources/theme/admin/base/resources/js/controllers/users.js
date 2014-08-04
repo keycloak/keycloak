@@ -445,8 +445,11 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
         $scope.instance.config = {};
         $scope.instance.priority = 0;
         $scope.syncRegistrations = false;
+        $scope.userAccountControlsAfterPasswordUpdate = true;
+        $scope.instance.config.userAccountControlsAfterPasswordUpdate = true;
     } else {
         $scope.syncRegistrations = instance.config.syncRegistrations && instance.config.syncRegistrations == "true";
+        $scope.userAccountControlsAfterPasswordUpdate = instance.config.userAccountControlsAfterPasswordUpdate && instance.config.userAccountControlsAfterPasswordUpdate == "true";
     }
 
     $scope.ldapVendors = [
@@ -471,6 +474,14 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
             $scope.instance.config.syncRegistrations = "true";
         } else {
             $scope.instance.config.syncRegistrations = "false";
+        }
+    })
+
+    $scope.$watch('userAccountControlsAfterPasswordUpdate', function() {
+        if ($scope.userAccountControlsAfterPasswordUpdate) {
+            $scope.instance.config.userAccountControlsAfterPasswordUpdate = "true";
+        } else {
+            $scope.instance.config.userAccountControlsAfterPasswordUpdate = "false";
         }
     })
 
