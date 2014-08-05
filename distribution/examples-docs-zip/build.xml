@@ -61,7 +61,7 @@
                 <exclude name="**/*.wildfly"/>
                 <exclude name="**/*.as7"/>
                 <exclude name="**/WEB-INF/jboss-web.xml"/>
-                <exclude name="**/WEB-INF/keycloak.json"/>
+                <exclude name="**/keycloak.json"/>
                 <exclude name="**/target/**"/>
                 <exclude name="**/*.iml"/>
                 <exclude name="**/README.md"/>
