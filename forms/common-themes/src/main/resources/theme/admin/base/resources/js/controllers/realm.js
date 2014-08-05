@@ -694,7 +694,7 @@ module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $
     };
 });
 
-module.controller('RealmSessionStatsCtrl', function($scope, realm, stats, RealmSessionStats, RealmLogoutAll, Notifications) {
+module.controller('RealmSessionStatsCtrl', function($scope, realm, stats, RealmApplicationSessionStats, RealmLogoutAll, Notifications) {
     $scope.realm = realm;
     $scope.stats = stats;
 
@@ -703,7 +703,7 @@ module.controller('RealmSessionStatsCtrl', function($scope, realm, stats, RealmS
     $scope.logoutAll = function() {
         RealmLogoutAll.save({realm : realm.realm}, function () {
             Notifications.success('Logged out all users');
-            RealmSessionStats.get({realm: realm.realm}, function(updated) {
+            RealmApplicationSessionStats.get({realm: realm.realm}, function(updated) {
                 Notifications.success('Logged out all users');
                 $scope.stats = updated;
             })
