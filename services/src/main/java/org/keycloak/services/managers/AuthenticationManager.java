@@ -54,10 +54,19 @@ public class AuthenticationManager {
     }
 
     public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession) {
-        if (userSession == null) return false;
+        if (userSession == null) {
+            logger.info("userSession was null");
+            return false;
+        }
         int currentTime = Time.currentTime();
         int max = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
         boolean valid = userSession != null && userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
+        if (!valid) {
+            logger.info("userSession.getLastSessionRefresh(): " + userSession.getLastSessionRefresh());
+            logger.info("realm.getSsoSessionIdleTimeout(): " + realm.getSsoSessionIdleTimeout());
+            logger.info("currentTime: " + currentTime);
+            logger.info("max: " + max);
+        }
         return valid;
     }
 
