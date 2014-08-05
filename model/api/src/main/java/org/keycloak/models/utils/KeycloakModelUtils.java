@@ -2,6 +2,7 @@ package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -92,6 +93,7 @@ public final class KeycloakModelUtils {
         ApplicationModel app = realm.addApplication(name);
         generateSecret(app);
         app.setFullScopeAllowed(true);
+        app.setAllowedClaimsMask(ClaimMask.ALL);
 
         return app;
     }

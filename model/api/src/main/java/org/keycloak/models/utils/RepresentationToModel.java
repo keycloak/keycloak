@@ -409,7 +409,7 @@ public class RepresentationToModel {
         if (resourceRep.getClaims() != null) {
             setClaims(applicationModel, resourceRep.getClaims());
         } else {
-            applicationModel.setAllowedClaimsMask(ClaimMask.USERNAME);
+            applicationModel.setAllowedClaimsMask(ClaimMask.ALL);
         }
 
         return applicationModel;
