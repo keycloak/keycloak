@@ -38,7 +38,7 @@ public class UserFederationProviderEntity {
     @ElementCollection
     @MapKeyColumn(name="name")
     @Column(name="value")
-    @CollectionTable(name="USER_FEDERATION_CONFIG")
+    @CollectionTable(name="USER_FEDERATION_CONFIG", joinColumns={ @JoinColumn(name="USER_FEDERATION_PROVIDER_ID") })
     private Map<String, String> config;
 
     @Column(name="DISPLAY_NAME")
