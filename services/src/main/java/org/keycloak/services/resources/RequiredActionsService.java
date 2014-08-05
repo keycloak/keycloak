@@ -116,7 +116,7 @@ public class RequiredActionsService {
 
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
-            return Flows.forms(session, realm, uriInfo).setUser(user).setError(error).createResponse(RequiredAction.UPDATE_PROFILE);
+            return Flows.forms(session, realm, null, uriInfo).setUser(user).setError(error).createResponse(RequiredAction.UPDATE_PROFILE);
         }
 
         user.setFirstName(formData.getFirst("firstName"));
@@ -155,7 +155,7 @@ public class RequiredActionsService {
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
 
-        LoginFormsProvider loginForms = Flows.forms(session, realm, uriInfo).setUser(user);
+        LoginFormsProvider loginForms = Flows.forms(session, realm, null, uriInfo).setUser(user);
         if (Validation.isEmpty(totp)) {
             return loginForms.setError(Messages.MISSING_TOTP).createResponse(RequiredAction.CONFIGURE_TOTP);
         } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
@@ -195,7 +195,7 @@ public class RequiredActionsService {
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
-        LoginFormsProvider loginForms = Flows.forms(session, realm, uriInfo).setUser(user);
+        LoginFormsProvider loginForms = Flows.forms(session, realm, null, uriInfo).setUser(user);
         if (Validation.isEmpty(passwordNew)) {
             return loginForms.setError(Messages.MISSING_PASSWORD).createResponse(RequiredAction.UPDATE_PASSWORD);
         } else if (!passwordNew.equals(passwordConfirm)) {
@@ -251,7 +251,7 @@ public class RequiredActionsService {
 
             initAudit(accessCode);
 
-            return Flows.forms(session, realm, uriInfo).setAccessCode(accessCode.getCode()).setUser(accessCode.getUser())
+            return Flows.forms(session, realm, null, uriInfo).setAccessCode(accessCode.getCode()).setUser(accessCode.getUser())
                     .createResponse(RequiredAction.VERIFY_EMAIL);
         }
     }
@@ -265,9 +265,9 @@ public class RequiredActionsService {
                 return unauthorized();
             }
 
-            return Flows.forms(session, realm, uriInfo).setAccessCode(accessCode.getCode()).createResponse(RequiredAction.UPDATE_PASSWORD);
+            return Flows.forms(session, realm, null, uriInfo).setAccessCode(accessCode.getCode()).createResponse(RequiredAction.UPDATE_PASSWORD);
         } else {
-            return Flows.forms(session, realm, uriInfo).createPasswordReset();
+            return Flows.forms(session, realm, null, uriInfo).createPasswordReset();
         }
     }
 
@@ -327,11 +327,11 @@ public class RequiredActionsService {
                 audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
             } catch (EmailException e) {
                 logger.error("Failed to send password reset email", e);
-                return Flows.forms(this.session, realm, uriInfo).setError("emailSendError").createErrorPage();
+                return Flows.forms(this.session, realm, client, uriInfo).setError("emailSendError").createErrorPage();
             }
         }
 
-        return Flows.forms(session, realm, uriInfo).setSuccess("emailSent").createPasswordReset();
+        return Flows.forms(session, realm, client,  uriInfo).setSuccess("emailSent").createPasswordReset();
     }
 
     private AccessCode getAccessCodeEntry(RequiredAction requiredAction) {
@@ -368,7 +368,7 @@ public class RequiredActionsService {
         Set<RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
             accessCode.setRequiredAction(requiredActions.iterator().next());
-            return Flows.forms(session, realm, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
+            return Flows.forms(session, realm, null, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
                     .createResponse(requiredActions.iterator().next());
         } else {
             logger.debugv("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
@@ -410,7 +410,7 @@ public class RequiredActionsService {
     }
 
     private Response unauthorized() {
-        return Flows.forms(session, realm, uriInfo).setError("Unauthorized request").createErrorPage();
+        return Flows.forms(session, realm, null, uriInfo).setError("Unauthorized request").createErrorPage();
     }
 
 }

@@ -4,10 +4,10 @@
     <#if section = "title">
         ${rb.oauthGrantTitle}
     <#elseif section = "header">
-        ${rb.oauthGrantTitleHtml}
+        Temporary access for <strong>${(realm.name)!''}</strong> requested by <strong>${(client.clientId)!''}</strong>.
     <#elseif section = "form">
         <div id="kc-oauth" class="content-area">
-            <h3><strong>${oauth.client}</strong> ${rb.oauthGrantRequest}</h3>
+            <h3>${rb.oauthGrantRequest}</h3>
             <ul>
                 <#if oauth.claimsRequested??>
                     <li>
@@ -45,8 +45,8 @@
 
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                         <div class="${properties.kcFormButtonsWrapperClass!}">
-                            <input class="btn btn-primary btn-lg" name="accept" id="kc-login" type="submit" value="${rb.accept}"/>
-                            <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.cancel}"/>
+                            <input class="btn btn-primary btn-lg" name="accept" id="kc-login" type="submit" value="${rb.yes}"/>
+                            <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.no}"/>
                         </div>
                     </div>
                 </div>

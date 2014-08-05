@@ -142,7 +142,7 @@ public class OAuthFlows {
                 audit.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
             }
 
-            return Flows.forms(this.session, realm, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
+            return Flows.forms(this.session, realm, client, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
                     .createResponse(action);
         }
 
@@ -159,7 +159,7 @@ public class OAuthFlows {
                 }
             }
 
-            return Flows.forms(this.session, realm, uriInfo)
+            return Flows.forms(this.session, realm, client, uriInfo)
                     .setAccessCode(accessCode.getCode())
                     .setAccessRequest(realmRoles, resourceRoles)
                     .setClient(client)
@@ -177,7 +177,7 @@ public class OAuthFlows {
     }
 
     public Response forwardToSecurityFailure(String message) {
-        return Flows.forms(session, realm, uriInfo).setError(message).createErrorPage();
+        return Flows.forms(session, realm, null, uriInfo).setError(message).createErrorPage();
     }
 
     private void isTotpConfigurationRequired(UserModel user) {
