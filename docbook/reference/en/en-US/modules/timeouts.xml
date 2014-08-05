@@ -18,7 +18,7 @@
     <section id="session-timeouts">
         <title>Session Timeouts</title>
         <para>
-            If you go to the Sesions and Tokens->Token Settings page of the Keycloak adminstration console there is a bunch of fine tuning
+            If you go to the Sesions and Tokens->Timeout Settings page of the Keycloak adminstration console there is a bunch of fine tuning
             you can do as far as login session timeouts go.
         </para>
         <para>
