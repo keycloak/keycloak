@@ -23,6 +23,10 @@
                 Created applications now have a full scope by default.  This means that you don't have to configure
                 the scope of an application if you don't want to.
             </listitem>
+            <listitem>
+                Format of JSON file for importing realm data was changed. Now role mappings is available under the JSON record of particular
+                user.
+            </listitem>
         </itemizedlist>
     </sect1>
     <sect1>
