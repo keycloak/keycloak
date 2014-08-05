@@ -15,7 +15,7 @@
     <description/>
 
     <build>
-        <finalName>angular-product</finalName>
+        <finalName>angular-cors-product</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>

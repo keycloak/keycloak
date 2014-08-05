@@ -55,7 +55,7 @@
     </dependencies>
 
     <build>
-        <finalName>database</finalName>
+        <finalName>cors-database</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>

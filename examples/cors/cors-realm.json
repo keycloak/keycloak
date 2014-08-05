@@ -38,18 +38,18 @@
     },
     "scopeMappings": [
         {
-            "client": "angular-product",
+            "client": "angular-cors-product",
             "roles": ["user"]
         }
     ],
     "applications": [
         {
-            "name": "angular-product",
+            "name": "angular-cors-product",
             "enabled": true,
             "publicClient": true,
-            "baseUrl": "/angular-product/index.html",
+            "baseUrl": "http://localhost:8080/angular-cors-product/index.html",
             "redirectUris": [
-                "/angular-product/*"
+                "http://localhost:8080/angular-cors-product/*"
             ],
             "webOrigins": [
                 "http://localhost:8080"
@@ -59,7 +59,7 @@
     "applicationScopeMappings": {
         "realm-management": [
             {
-                "client": "angular-product",
+                "client": "angular-cors-product",
                 "roles": ["realm-admin"]
             }
         ]

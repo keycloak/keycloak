@@ -18,7 +18,7 @@ angular.element(document).ready(function ($http) {
         console.log('here login');
         auth.loggedIn = true;
         auth.authz = keycloakAuth;
-        auth.logoutUrl = keycloakAuth.authServerUrl + "/realms/" + keycloakAuth.realm + "/tokens/logout?redirect_uri=/angular-product/index.html";
+        auth.logoutUrl = keycloakAuth.authServerUrl + "/realms/" + keycloakAuth.realm + "/tokens/logout?redirect_uri=http://localhost:8080/angular-cors-product/index.html";
         module.factory('Auth', function() {
             return auth;
         });
@@ -33,7 +33,7 @@ module.controller('GlobalCtrl', function($scope, $http) {
     $scope.products = [];
     $scope.roles = [];
     $scope.reloadData = function() {
-        $http.get("http://localhost-db:8080/database/products").success(function(data) {
+        $http.get("http://localhost-db:8080/cors-database/products").success(function(data) {
             $scope.products = angular.fromJson(data);
 
         });
