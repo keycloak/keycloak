@@ -287,7 +287,7 @@ public class MongoUserProvider implements UserProvider {
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
         DBObject query = new QueryBuilder()
-                .and("id").is(user.getId())
+                .and("_id").is(user.getId())
                 .and("realmId").is(realm.getId())
                 .get();
         return getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);
