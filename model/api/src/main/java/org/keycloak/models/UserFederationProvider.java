@@ -16,7 +16,7 @@ public interface UserFederationProvider extends Provider {
 
     public static final String USERNAME = UserModel.USERNAME;
     public static final String EMAIL = UserModel.EMAIL;
-    public static final String FIRST_NAME = UserModel.EMAIL;
+    public static final String FIRST_NAME = UserModel.FIRST_NAME;
     public static final String LAST_NAME = UserModel.LAST_NAME;
 
     /**
