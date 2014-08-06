@@ -1,5 +1,6 @@
 package org.keycloak.adapters;
 
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
@@ -10,6 +11,7 @@ import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
@@ -31,6 +33,9 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -78,6 +83,7 @@ public class HttpClientBuilder {
     protected KeyStore clientKeyStore;
     protected String clientPrivateKeyPassword;
     protected boolean disableTrustManager;
+    protected boolean disableCookieCache = true;
     protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.WILDCARD;
     protected SSLContext sslContext;
     protected int connectionPoolSize = 100;
@@ -142,6 +148,11 @@ public class HttpClientBuilder {
      */
     public HttpClientBuilder disableTrustManager() {
         this.disableTrustManager = true;
+        return this;
+    }
+
+    public HttpClientBuilder disableCookieCache() {
+        this.disableCookieCache = true;
         return this;
     }
 
@@ -268,13 +279,40 @@ public class HttpClientBuilder {
             {
                 HttpConnectionParams.setConnectionTimeout(params, (int)establishConnectionTimeoutUnits.toMillis(establishConnectionTimeout));
             }
-            return new DefaultHttpClient(cm, params);
+            DefaultHttpClient client = new DefaultHttpClient(cm, params);
+            if (disableCookieCache) {
+                client.setCookieStore(new CookieStore() {
+                    @Override
+                    public void addCookie(Cookie cookie) {
+                        //To change body of implemented methods use File | Settings | File Templates.
+                    }
+
+                    @Override
+                    public List<Cookie> getCookies() {
+                        return Collections.emptyList();
+                    }
+
+                    @Override
+                    public boolean clearExpired(Date date) {
+                        return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    }
+
+                    @Override
+                    public void clear() {
+                        //To change body of implemented methods use File | Settings | File Templates.
+                    }
+                });
+
+            }
+            return client;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public HttpClient build(AdapterConfig adapterConfig) {
+        disableCookieCache(); // disable cookie cache as we don't want sticky sessions for load balancing
+
         String truststorePath = adapterConfig.getTruststore();
         if (truststorePath != null) {
             truststorePath = EnvUtil.replace(truststorePath);
