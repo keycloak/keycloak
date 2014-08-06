@@ -26,6 +26,7 @@
 
     <artifactId>keycloak-wildfly-subsystem</artifactId>
     <name>Keycloak Wildfly Subsystem</name>
+    <description/>
     <packaging>jar</packaging>
 
     <build>

@@ -11,6 +11,7 @@
 
     <artifactId>keycloak-testsuite-performance-web</artifactId>
     <name>Keycloak TestSuite for Web Performance</name>
+    <description/>
 
     <dependencies>
         <dependency>
