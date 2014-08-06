@@ -1,6 +1,7 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Version;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.adapters.action.AdminAction;
@@ -63,9 +64,12 @@ public class PreAuthActionsHandler {
             if (!resolveDeployment()) return true;
             handleGetSessionStats();
             return true;
-        }else if (requestUri.endsWith(AdapterConstants.K_GET_USER_STATS)) {
+        } else if (requestUri.endsWith(AdapterConstants.K_GET_USER_STATS)) {
             if (!resolveDeployment()) return true;
             handleGetUserStats();
+            return true;
+        } else if (requestUri.endsWith(AdapterConstants.K_VERSION)) {
+            handleVersion();
             return true;
         }
         return false;
@@ -236,6 +240,15 @@ public class PreAuthActionsHandler {
             facade.getResponse().setStatus(200);
             facade.getResponse().setHeader("Content-Type", "application/json");
             JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), stats);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    protected void handleVersion()  {
+        try {
+            facade.getResponse().setStatus(200);
+            facade.getResponse().setHeader("Content-Type", "application/json");
+            JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), Version.SINGLETON);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

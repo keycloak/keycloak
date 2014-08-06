@@ -8,6 +8,7 @@ public interface AdapterConstants {
 
     // URL endpoints
     public static final String K_LOGOUT = "k_logout";
+    public static final String K_VERSION = "k_version";
     public static final String K_PUSH_NOT_BEFORE = "k_push_not_before";
     public static final String K_GET_USER_STATS = "k_get_user_stats";
     public static final String K_GET_SESSION_STATS = "k_get_session_stats";
