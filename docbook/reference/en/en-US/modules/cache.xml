@@ -46,7 +46,7 @@
     <section>
         <title>Clear Caches</title>
         <para>
-            To clear the realm or user cache, go to the Keycloak admin console Realm Settings page.  Disable the cache
+            To clear the realm or user cache, go to the Keycloak admin console Realm Settings->Cache Config page.  Disable the cache
             you want.  Save the settings.  Then re-enable the cache.  This will cause the cache to be cleared.
         </para>
     </section>
