@@ -21,6 +21,8 @@
  */
 package org.keycloak.testsuite.adapter;
 
+import org.keycloak.Version;
+import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.util.BasicAuthHelper;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -366,6 +368,29 @@ public class AdapterTest {
         client.close();
 
     }
+
+    @Test
+    public void testVersion() throws Exception {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT).path("version");
+        Version version = target.request().get(Version.class);
+        Assert.assertNotNull(version);
+        Assert.assertNotNull(version.getVersion());
+        Assert.assertNotNull(version.getBuildTime());
+        Assert.assertNotEquals(version.getVersion(), Version.UNKNOWN);
+        Assert.assertNotEquals(version.getBuildTime(), Version.UNKNOWN);
+
+        Version version2 = client.target("http://localhost:8081/secure-portal").path(AdapterConstants.K_VERSION).request().get(Version.class);
+        Assert.assertNotNull(version2);
+        Assert.assertNotNull(version2.getVersion());
+        Assert.assertNotNull(version2.getBuildTime());
+        Assert.assertEquals(version.getVersion(), version2.getVersion());
+        Assert.assertEquals(version.getBuildTime(), version2.getBuildTime());
+        client.close();
+
+    }
+
+
 
     @Test
     public void testAuthenticated() throws Exception {

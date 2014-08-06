@@ -70,6 +70,7 @@ public class KeycloakApplication extends Application {
 
         TokenManager tokenManager = new TokenManager();
 
+        singletons.add(new ServerVersionResource());
         singletons.add(new RealmsResource(tokenManager));
         singletons.add(new SocialResource(tokenManager));
         singletons.add(new AdminRoot(tokenManager));
