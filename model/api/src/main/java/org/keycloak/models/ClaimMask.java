@@ -16,6 +16,8 @@ public class ClaimMask {
     public static final long ADDRESS = 0x100l;
     public static final long PHONE = 0x200l;
 
+    public static final long ALL = NAME | USERNAME | PROFILE | PICTURE | WEBSITE | EMAIL | GENDER | LOCALE | ADDRESS | PHONE;
+
     public static boolean hasName(long mask) {
         return (mask & NAME) > 0;
     }

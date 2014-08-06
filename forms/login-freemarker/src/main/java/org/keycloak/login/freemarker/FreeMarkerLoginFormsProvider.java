@@ -10,6 +10,7 @@ import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.login.freemarker.model.ClientBean;
 import org.keycloak.login.freemarker.model.CodeBean;
 import org.keycloak.login.freemarker.model.LoginBean;
 import org.keycloak.login.freemarker.model.MessageBean;
@@ -187,6 +188,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("realm", new RealmBean(realm));
             attributes.put("social", new SocialBean(realm, baseUri));
             attributes.put("url", new UrlBean(realm, theme, baseUri));
+        }
+
+        if (client != null) {
+            attributes.put("client", new ClientBean(client));
         }
 
         attributes.put("login", new LoginBean(formData));

@@ -1,9 +1,17 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayInfo=social.displayInfo; section>
     <#if section = "title">
-        ${rb.loginTitle} ${realm.name}
+        <#if client.application>
+             ${rb.loginTitle} ${realm.name}
+        <#elseif client.oauthClient>
+             ${realm.name} ${rb.loginOauthTitle}
+        </#if>
     <#elseif section = "header">
-        ${rb.loginTitle} <strong>${(realm.name)!''}</strong>
+        <#if client.application>
+             ${rb.loginTitle} <strong>${(realm.name)!''}</strong>
+        <#elseif client.oauthClient>
+             Temporary access for <strong>${(realm.name)!''}</strong> requested by <strong>${(client.clientId)!''}</strong>.
+        </#if>
     <#elseif section = "form">
         <#if realm.password>
             <form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">

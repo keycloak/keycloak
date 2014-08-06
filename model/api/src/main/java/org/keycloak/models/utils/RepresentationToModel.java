@@ -181,6 +181,9 @@ public class RepresentationToModel {
         if (rep.getScopeMappings() != null) {
             for (ScopeMappingRepresentation scope : rep.getScopeMappings()) {
                 ClientModel client = newRealm.findClient(scope.getClient());
+                if (client == null) {
+                    throw new RuntimeException("Unknown client specification in realm scope mappings");
+                }
                 for (String roleString : scope.getRoles()) {
                     RoleModel role = newRealm.getRole(roleString.trim());
                     if (role == null) {
@@ -406,7 +409,7 @@ public class RepresentationToModel {
         if (resourceRep.getClaims() != null) {
             setClaims(applicationModel, resourceRep.getClaims());
         } else {
-            applicationModel.setAllowedClaimsMask(ClaimMask.USERNAME);
+            applicationModel.setAllowedClaimsMask(ClaimMask.ALL);
         }
 
         return applicationModel;
@@ -558,6 +561,9 @@ public class RepresentationToModel {
     public static void createApplicationScopeMappings(RealmModel realm, ApplicationModel applicationModel, List<ScopeMappingRepresentation> mappings) {
         for (ScopeMappingRepresentation mapping : mappings) {
             ClientModel client = realm.findClient(mapping.getClient());
+            if (client == null) {
+                throw new RuntimeException("Unknown client specified in application scope mappings");
+            }
             for (String roleString : mapping.getRoles()) {
                 RoleModel role = applicationModel.getRole(roleString.trim());
                 if (role == null) {

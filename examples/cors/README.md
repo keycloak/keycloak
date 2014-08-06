@@ -59,7 +59,7 @@ Step 5: Login and Observe Apps
 ---------------------------------------
 Try going to the customer app and view customer data:
 
-[http://localhost:8080/angular-product/index.html](http://localhost:8080/angular-product/index.html)
+[http://localhost:8080/angular-cors-product/index.html](http://localhost:8080/angular-cors-product/index.html)
 
 This should take you to the auth-server login screen.  Enter username: bburke@redhat.com and password: password.  You
 should be brought back to a simple and boring HTML page.  Click the Reload button to show the product listing.  Reload

@@ -41,8 +41,6 @@ public class OAuthGrantBean {
     private String code;
     private ClientModel client;
     private List<String> claimsRequested;
-    private String oAuthCode;
-    private String action;
 
     public OAuthGrantBean(String code, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
         this.code = code;

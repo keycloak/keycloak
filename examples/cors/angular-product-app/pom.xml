@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.0-beta-4-SNAPSHOT</version>
+        <version>1.0-beta-4</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -15,7 +15,7 @@
     <description/>
 
     <build>
-        <finalName>angular-product</finalName>
+        <finalName>angular-cors-product</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>

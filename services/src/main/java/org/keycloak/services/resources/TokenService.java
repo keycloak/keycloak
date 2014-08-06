@@ -538,18 +538,18 @@ public class TokenService {
                 return oauth.processAccessCode(scopeParam, state, redirect, client, user, userSession, audit);
             case ACCOUNT_TEMPORARILY_DISABLED:
                 audit.error(Errors.USER_TEMPORARILY_DISABLED);
-                return Flows.forms(this.session, realm, uriInfo).setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).setFormData(formData).createLogin();
+                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).setFormData(formData).createLogin();
             case ACCOUNT_DISABLED:
                 audit.error(Errors.USER_DISABLED);
-                return Flows.forms(this.session, realm, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
+                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
             case MISSING_TOTP:
-                return Flows.forms(this.session, realm, uriInfo).setFormData(formData).createLoginTotp();
+                return Flows.forms(this.session, realm, client, uriInfo).setFormData(formData).createLoginTotp();
             case INVALID_USER:
                 audit.error(Errors.USER_NOT_FOUND);
-                return Flows.forms(this.session, realm, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
+                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
             default:
                 audit.error(Errors.INVALID_USER_CREDENTIALS);
-                return Flows.forms(this.session, realm, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
+                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
         }
     }
 
@@ -634,13 +634,13 @@ public class TokenService {
 
         if (error != null) {
             audit.error(Errors.INVALID_REGISTRATION);
-            return Flows.forms(session, realm, uriInfo).setError(error).setFormData(formData).createRegistration();
+            return Flows.forms(session, realm, client, uriInfo).setError(error).setFormData(formData).createRegistration();
         }
 
         // Validate that user with this username doesn't exist in realm or any authentication provider
         if (session.users().getUserByUsername(username, realm) != null) {
             audit.error(Errors.USERNAME_IN_USE);
-            return Flows.forms(session, realm, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
+            return Flows.forms(session, realm, client, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
         }
 
         UserModel user = session.users().addUser(realm, username);
@@ -668,7 +668,7 @@ public class TokenService {
             // User already registered, but force him to update password
             if (!passwordUpdateSuccessful) {
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                return Flows.forms(session, realm, uriInfo).setError(passwordUpdateError).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+                return Flows.forms(session, realm, client, uriInfo).setError(passwordUpdateError).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
         }
 
@@ -959,7 +959,7 @@ public class TokenService {
             return oauth.redirectError(client, "access_denied", state, redirect);
         }
 
-        LoginFormsProvider forms = Flows.forms(session, realm, uriInfo);
+        LoginFormsProvider forms = Flows.forms(session, realm, client, uriInfo);
 
         if (loginHint != null) {
             MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
@@ -1028,7 +1028,7 @@ public class TokenService {
 
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return Flows.forms(session, realm, uriInfo).createRegistration();
+        return Flows.forms(session, realm, client, uriInfo).createRegistration();
     }
 
     /**
@@ -1150,7 +1150,7 @@ public class TokenService {
     @Path("oauth/oob")
     @GET
     public Response installedAppUrnCallback(final @QueryParam("code") String code, final @QueryParam("error") String error, final @QueryParam("error_description") String errorDescription) {
-        LoginFormsProvider forms = Flows.forms(session, realm, uriInfo);
+        LoginFormsProvider forms = Flows.forms(session, realm, null, uriInfo);
         if (code != null) {
             return forms.setAccessCode(code).createCode();
         } else {

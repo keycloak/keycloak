@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.0-beta-4-SNAPSHOT</version>
+        <version>1.0-beta-4</version>
     </parent>
     <name>Connections Parent</name>
     <description/>

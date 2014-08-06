@@ -24,6 +24,7 @@ package org.keycloak.services.resources.flows;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -40,8 +41,8 @@ public class Flows {
     private Flows() {
     }
 
-    public static LoginFormsProvider forms(KeycloakSession session, RealmModel realm, UriInfo uriInfo) {
-        return session.getProvider(LoginFormsProvider.class).setRealm(realm).setUriInfo(uriInfo);
+    public static LoginFormsProvider forms(KeycloakSession session, RealmModel realm, ClientModel client, UriInfo uriInfo) {
+        return session.getProvider(LoginFormsProvider.class).setRealm(realm).setUriInfo(uriInfo).setClient(client);
     }
 
     public static OAuthFlows oauth(KeycloakSession session, RealmModel realm, HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection, AuthenticationManager authManager,
