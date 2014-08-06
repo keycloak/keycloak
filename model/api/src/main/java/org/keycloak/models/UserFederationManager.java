@@ -172,7 +172,7 @@ public class UserFederationManager implements UserProvider {
 
     @Override
     public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, 0, Integer.MAX_VALUE);
+        return getUsers(realm, 0, Integer.MAX_VALUE - 1);
 
     }
 
@@ -219,7 +219,7 @@ public class UserFederationManager implements UserProvider {
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, 0, Integer.MAX_VALUE);
+        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     void federationLoad(RealmModel realm, Map<String, String> attributes) {
@@ -256,7 +256,7 @@ public class UserFederationManager implements UserProvider {
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return searchForUserByAttributes(attributes, realm, 0, Integer.MAX_VALUE);
+        return searchForUserByAttributes(attributes, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override

@@ -6,9 +6,23 @@
         and edit Keycloak database on the fly when export or import is in progress. Otherwise it could lead to inconsistent results.
     </para>
     <para>
-        You can export/import your database either to directory on local filesystem (useful just for testing purposes or if your filesystem is properly protected)
-        or to encrypted ZIP file on local filesystem. Encrypted ZIP is recommended as export contains many sensitive informations like passwords of your users (even if they are hashed),
-        but also their email addresses, and especially private keys of the realms.
+        You can export/import your database either to:
+        <itemizedlist>
+            <listitem>Encrypted ZIP file on local filesystem</listitem>
+            <listitem>Directory on local filesystem</listitem>
+            <listitem>Single JSON file on your filesystem</listitem>
+        </itemizedlist>
+    </para>
+    <para>
+        Encrypted ZIP is recommended as export contains many sensitive informations like passwords of your users (even if they are hashed),
+        but also their email addresses, and especially private keys of the realms. Directory and Single JSON file are useful especially
+        for testing as data in the files are not protected. On the other hand, it's useful if you want to look at all your data in JSON
+        files directly.
+    </para>
+    <para>
+        If you import to ZIP or Directory, you can specify also the number of users to be stored in each JSON file. So if you have
+        very large amount of users in your database, you likely don't want to import them into single file as the file might be very big.
+        Processing of each file is done in separate transaction as exporting/importing all users at once could also lead to memory issues.
     </para>
     <para>
         So to export the content of your Keycloak database into encrypted ZIP, you can execute Keycloak server with the System properties like:
@@ -28,4 +42,66 @@ bin/standalone.sh -Dkeycloak.migration.action=export
 ]]></programlisting>
         And similarly for import just use <literal>-Dkeycloak.migration.action=import</literal> instead of <literal>export</literal> .
     </para>
+    <para>
+        To export into single JSON file you can use:
+        <programlisting><![CDATA[
+bin/standalone.sh -Dkeycloak.migration.action=export
+-Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=<FILE TO EXPORT TO>
+]]></programlisting>
+    </para>
+    <para>
+        Other available options are:
+        <variablelist>
+            <varlistentry>
+                <term>-Dkeycloak.migration.realmName</term>
+                <listitem>
+                    <para>
+                        can be used if you want to export just one specified realm instead of all.
+                        If not specified, then all realms will be exported.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>-Dkeycloak.migration.usersExportStrategy</term>
+                <listitem>
+                    <para>
+                        can be used to specify for ZIP or Directory providers to specify where to import users.
+                        Possible values are:
+                        <itemizedlist>
+                            <listitem>DIFFERENT_FILES - Users will be exported into more different files according to maximum number of users per file. This is default value</listitem>
+                            <listitem>SKIP - exporting of users will be skipped completely</listitem>
+                            <listitem>REALM_FILE - All users will be exported to same file with realm (So file like "foo-realm.json" with both realm data and users)</listitem>
+                            <listitem>SAME_FILE - All users will be exported to same file but different than realm (So file like "foo-realm.json" with realm data and "foo-users.json" with users)</listitem>
+                        </itemizedlist>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>-Dkeycloak.migration.usersPerFile</term>
+                <listitem>
+                    <para>
+                        can be used to specify number of users per file (and also per DB transaction).
+                        It's 5000 by default. It's used only if usersExportStrategy is DIFFERENT_FILES
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>-Dkeycloak.migration.strategy</term>
+                <listitem>
+                    <para>
+                        is used during import. It can be used to specify how to proceed if realm with same name
+                        already exists in the database where you are going to import data. Possible values are:
+                        <itemizedlist>
+                            <listitem>IGNORE_EXISTING - Ignore exporting if realm of this name already exists</listitem>
+                            <listitem>OVERWRITE_EXISTING - Remove existing realm and import it again with new data from JSON file.
+                                If you want to fully migrate one environment to another and ensure that the new environment will contain same data
+                                like the old one, you can specify this.
+                            </listitem>
+                        </itemizedlist>
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </para>
+
 </chapter>
