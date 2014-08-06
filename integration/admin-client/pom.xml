@@ -12,6 +12,7 @@
 
     <artifactId>keycloak-admin-client</artifactId>
     <name>Keycloak Admin REST Client</name>
+    <description/>
 
     <dependencies>
         <dependency>
