@@ -8,11 +8,11 @@
         <itemizedlist>
 
             <listitem>
-                keycloak-appliance-dist-all-1.0-beta-4.zip
+                keycloak-appliance-dist-all-1.0-rc-1-SNAPSHOT.zip
             </listitem>
 
             <listitem>
-                keycloak-war-dist-all-1.0-beta-4.zip
+                keycloak-war-dist-all-1.0-rc-1-SNAPSHOT.zip
             </listitem>
 
         </itemizedlist>
@@ -31,7 +31,7 @@
 
         <para>
 <programlisting>
-keycloak-appliance-dist-all-1.0-beta-4/
+keycloak-appliance-dist-all-1.0-rc-1-SNAPSHOT/
     keycloak/
         bin/
             standalone.sh
@@ -42,9 +42,9 @@ keycloak-appliance-dist-all-1.0-beta-4/
                 keycloak-server.json
                 themes/
     adapters/
-        keycloak-as7-adapter-dist-1.0-beta-4.zip
-        keycloak-eap6-adapter-dist-1.0-beta-4.zip
-        keycloak-wildfly-adapter-dist-1.0-beta-4.zip
+        keycloak-as7-adapter-dist-1.0-rc-1-SNAPSHOT.zip
+        keycloak-eap6-adapter-dist-1.0-rc-1-SNAPSHOT.zip
+        keycloak-wildfly-adapter-dist-1.0-rc-1-SNAPSHOT.zip
     examples/
     docs/
 </programlisting>
@@ -79,7 +79,7 @@ keycloak-appliance-dist-all-1.0-beta-4/
         </para>
         <para>
 <programlisting>
-keycloak-war-dist-all-1.0-beta-4/
+keycloak-war-dist-all-1.0-rc-1-SNAPSHOT/
     deployments/
         auth-server.war/
         keycloak-ds.xml
@@ -87,9 +87,9 @@ keycloak-war-dist-all-1.0-beta-4/
         keycloak-server.json
         themes/
     adapters/
-        keycloak-as7-adapter-dist-1.0-beta-4.zip
-        keycloak-eap6-adapter-dist-1.0-beta-4.zip
-        keycloak-wildfly-adapter-dist-1.0-beta-4.zip
+        keycloak-as7-adapter-dist-1.0-rc-1-SNAPSHOT.zip
+        keycloak-eap6-adapter-dist-1.0-rc-1-SNAPSHOT.zip
+        keycloak-wildfly-adapter-dist-1.0-rc-1-SNAPSHOT.zip
     examples/
     docs/
 </programlisting>
@@ -101,7 +101,7 @@ keycloak-war-dist-all-1.0-beta-4/
         </para>
         <para>
 <programlisting>
-    $ cd keycloak-war-dist-all-1.0-beta-4
+    $ cd keycloak-war-dist-all-1.0-rc-1-SNAPSHOT
     $ cp -r deployments $JBOSS_HOME/standalone
 </programlisting>
         </para>
