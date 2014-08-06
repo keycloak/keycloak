@@ -12,8 +12,7 @@
             <h2 data-ng-hide="createRealm"><span>{{realm.realm}}</span> General Settings</h2>
             <p class="subtitle" data-ng-show="createRealm"><span class="required">*</span> Required fields</p>
             <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
-                <fieldset>
-                    <legend class="aj-collapse open"><span class="text">Required Settings</span></legend>
+                <fieldset class="border-top">
                     <div class="form-group">
                         <label class="col-sm-2 control-label" for="name">Name <span class="required" data-ng-show="createRealm">*</span></label>
 
@@ -25,129 +24,6 @@
                         <label class="col-sm-2 control-label" for="enabled">Enabled</label>
                         <div class="col-sm-4">
                             <input ng-model="realm.enabled" name="enabled" id="enabled" onoffswitch />
-                        </div>
-                    </div>
-                </fieldset>
-                <fieldset>
-                    <legend><span class="text">Login Options</span></legend>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="social">Social login</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.social" name="social" id="social" onoffswitch />
-                        </div>
-                    </div>
-                    <div class="form-group" data-ng-show="realm.social">
-                        <label class="col-sm-2 control-label" for="updateProfileOnInitialSocialLogin">Update profile on first social login</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.updateProfileOnInitialSocialLogin" name="updateProfileOnInitialSocialLogin" id="updateProfileOnInitialSocialLogin" onoffswitch />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="registrationAllowed" class="col-sm-2 control-label">User registration</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.registrationAllowed" name="registrationAllowed" id="registrationAllowed" onoffswitch />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="resetPasswordAllowed" class="col-sm-2 control-label">Forget password</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.resetPasswordAllowed" name="resetPasswordAllowed" id="resetPasswordAllowed" onoffswitch />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="rememberMe">Remember Me</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.rememberMe" name="rememberMe" id="rememberMe" onoffswitch />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="verifyEmail" class="col-sm-2 control-label">Verify email</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.verifyEmail" name="verifyEmail" id="verifyEmail" onoffswitch />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="passwordCredentialGrantAllowed" class="col-sm-2 control-label">Direct Grant API</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.passwordCredentialGrantAllowed" name="passwordCredentialGrantAllowed" id="passwordCredentialGrantAllowed" onoffswitch />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="sslRequired" class="col-sm-2 control-label">Require SSL</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="sslRequired" ng-model="realm.sslRequired">
-                                    <option value="all">all requests</option>
-                                    <option value="external">external requests</option>
-                                    <option value="none">none</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-                <fieldset>
-                    <legend><span class="text">Theme Settings</span></legend>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="loginTheme">Login Theme</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="loginTheme"
-                                        ng-model="realm.loginTheme"
-                                        ng-options="o as o for o in serverInfo.themes.login">
-                                    <option value="" disabled selected>Select one...</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="accountTheme">Account Theme</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="accountTheme"
-                                        ng-model="realm.accountTheme"
-                                        ng-options="o as o for o in serverInfo.themes.account">
-                                    <option value="" disabled selected>Select one...</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="adminTheme">Admin Console Theme</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="adminTheme"
-                                        ng-model="realm.adminTheme"
-                                        ng-options="o as o for o in serverInfo.themes.admin">
-                                    <option value="" disabled selected>Select one...</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="emailTheme">Email Theme</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="emailTheme"
-                                        ng-model="realm.emailTheme"
-                                        ng-options="o as o for o in serverInfo.themes.email">
-                                    <option value="" disabled selected>Select one...</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-                <fieldset>
-                    <legend><span class="text">Cache Settings</span></legend>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="enabled">Realm Cache Enabled</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.realmCacheEnabled" name="realmCacheEnabled" id="realmCacheEnabled" onoffswitch />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="enabled">User Cache Enabled</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.userCacheEnabled" name="userCacheEnabled" id="userCacheEnabled" onoffswitch />
                         </div>
                     </div>
                 </fieldset>

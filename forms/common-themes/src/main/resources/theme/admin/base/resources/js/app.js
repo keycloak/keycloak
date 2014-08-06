@@ -94,6 +94,42 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmDetailCtrl'
         })
+        .when('/realms/:realm/login-settings', {
+            templateUrl : 'partials/realm-login-settings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmLoginSettingsCtrl'
+        })
+        .when('/realms/:realm/theme-settings', {
+            templateUrl : 'partials/realm-theme-settings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmThemeCtrl'
+        })
+        .when('/realms/:realm/cache-settings', {
+            templateUrl : 'partials/realm-cache-settings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmCacheCtrl'
+        })
         .when('/realms', {
             templateUrl : 'partials/realm-list.html',
             controller : 'RealmListCtrl'
