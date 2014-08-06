@@ -429,6 +429,14 @@ public class TokenService {
 
         ClientModel client = authorizeClient(authorizationHeader, form, audit);
         String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
+        if (refreshToken == null) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_REQUEST);
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "No refresh token");
+            audit.error(Errors.INVALID_TOKEN);
+            logger.error("OAuth Error: no refresh token");
+            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+        }
         AccessToken accessToken;
         try {
             accessToken = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, audit);
