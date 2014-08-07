@@ -5,6 +5,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 
@@ -152,6 +153,11 @@ public class NoCacheUserProvider implements CacheUserProvider {
     @Override
     public void preRemove(RealmModel realm) {
         getDelegate().preRemove(realm);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, UserFederationProviderModel link) {
+        getDelegate().preRemove(realm, link);
     }
 
     @Override

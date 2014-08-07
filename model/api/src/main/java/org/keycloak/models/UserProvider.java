@@ -35,6 +35,9 @@ public interface UserProvider extends Provider {
     SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm);
 
     void preRemove(RealmModel realm);
+
+    void preRemove(RealmModel realm, UserFederationProviderModel link);
+
     void preRemove(RealmModel realm, RoleModel role);
 
     boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input);

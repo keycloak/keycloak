@@ -11,6 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.entities.SocialLinkEntity;
@@ -337,7 +338,20 @@ public class MongoUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm) {
-        // todo not sure what to do for this
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+        getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, UserFederationProviderModel link) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .and("federationLink").is(link.getId())
+                .get();
+        getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);
+
     }
 
     @Override
