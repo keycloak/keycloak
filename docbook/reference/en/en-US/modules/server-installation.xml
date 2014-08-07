@@ -103,6 +103,7 @@ keycloak-war-dist-all-1.0-rc-1-SNAPSHOT/
 <programlisting>
     $ cd keycloak-war-dist-all-1.0-rc-1-SNAPSHOT
     $ cp -r deployments $JBOSS_HOME/standalone
+    $ cp -r configuration $JBOSS_HOME/standalone
 </programlisting>
         </para>
         <para>
