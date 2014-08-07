@@ -189,22 +189,87 @@ keycloak-war-dist-all-1.0-rc-1-SNAPSHOT/
             </para>
             <para>
                 Keycloak also runs on a Hibernate/JPA backend which is configured in the
-                <literal>.../standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/persistence.xml</literal>.
-                Please see the <ulink url="http://hibernate.org/orm/documentation/">Hibernate and JPA documentation</ulink> for more information on tweaking the backend datamodel.
+                <literal>standalone/configuration/keycloak-server.json</literal>.
+                By default the setting is like this:
+                <programlisting><![CDATA[
+"connectionsJpa": {
+    "default": {
+        "dataSource": "java:jboss/datasources/KeycloakDS",
+        "databaseSchema": "update"
+    }
+},
+]]></programlisting>
+                Possible configuration options are:
+                <variablelist>
+                    <varlistentry>
+                        <term>unitName</term>
+                        <listitem>
+                            <para>
+                                Allow you to specify name of persistence unit if you want to provide your own persistence.xml file for JPA configuration.
+                                If this option is used, then all other configuration options are ignored as you are expected to configure
+                                all JPA/DB properties in your own persistence.xml file. Hence you can remove properties "dataSource" and "databaseSchema" in this case.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>dataSource</term>
+                        <listitem>
+                            <para>
+                                JNDI name of the dataSource
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>jta</term>
+                        <listitem>
+                            <para>
+                                boolean property to specify if datasource is JTA capable
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>driverDialect</term>
+                        <listitem>
+                            <para>
+                                Value of Hibernate dialect. In most cases you don't need to specify this property as dialect will be
+                                autodetected by Hibernate.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>databaseSchema</term>
+                        <listitem>
+                            <para>
+                                Value of database schema (Hibernate property "hibernate.hbm2ddl.auto" ).
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>showSql</term>
+                        <listitem>
+                            <para>
+                                Specify whether Hibernate should show all SQL commands in the console (false by default)
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>formatSql</term>
+                        <listitem>
+                            <para>
+                                Specify whether Hibernate should format SQL commands (true by default)
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+                For more info about Hibernate properties, see <ulink url="http://hibernate.org/orm/documentation/">Hibernate and JPA documentation</ulink> .
             </para>
             <section>
                 <title>Tested databases</title>
                 <para>
                     Here is list of RDBMS databases and corresponding JDBC drivers, which were tested with Keycloak. Note that Hibernate dialect
                     is usually set automatically according to your database, but in some cases, you must manually set the proper dialect,
-                    as the default dialect may not work correctly. You can setup dialect either by adding property <literal>hibernate.dialect</literal>
-                    to the <literal>persistence.xml</literal> file mentioned above or simply by adding system property <literal>hibernate.dialect</literal>
-                    with corresponding value. For example, if you are using MS-SQL you can start keycloak with command:
-<programlisting><![CDATA[
-./standalone.sh -Dhibernate.dialect=org.hibernate.dialect.SQLServer2008Dialect
-]]></programlisting>
-                    This command will set system property <literal>hibernate.dialect</literal> to value <literal>org.hibernate.dialect.SQLServer2008Dialect</literal>
-                    and this one will take precedence over the value from <literal>persistence.xml</literal> file.
+                    as the default dialect may not work correctly. You can setup dialect by adding property <literal>driverDialect</literal>
+                    to the <literal>keycloak-server.json</literal> into <literal>connectionsJpa</literal> section (see above).
                     <table frame='all'><title>Tested databases</title>
                         <tgroup cols='3' align='left' colsep='1' rowsep='1'>
                             <thead>
@@ -260,14 +325,18 @@ keycloak-war-dist-all-1.0-rc-1-SNAPSHOT/
 
 <programlisting><![CDATA[
 "audit": {
-  "provider": "jpa",
-  "jpa": {
-    "exclude-events": [ "REFRESH_TOKEN" ]
-  }
+    "provider": "jpa",
+    "jpa": {
+        "exclude-events": [ "REFRESH_TOKEN" ]
+    }
 },
 
-"model": {
-  "provider": "jpa"
+"realm": {
+    "provider": "jpa"
+},
+
+"user": {
+    "provider": "${keycloak.user.provider:jpa}"
 },
 ]]></programlisting>
 
@@ -275,39 +344,33 @@ keycloak-war-dist-all-1.0-rc-1-SNAPSHOT/
 
                 <programlisting><![CDATA[
 "audit": {
-  "provider": "mongo",
-  "mongo": {
-    "exclude-events": [ "REFRESH_TOKEN" ],
-    "host": "<hostname>",
-    "port": <port>,
-    "user": "<user>",
-    "password": "<password>",
-    "db": "<db name>"
-  }
+    "provider": "mongo",
 },
 
-"model": {
-  "provider": "mongo",
-  "mongo": {
-    "host": "<hostname>",
-    "port": <port>,
-    "user": "<user>",
-    "password": "<password>",
-    "db": "<db name>"
-  }
+"realm": {
+    "provider": "mongo"
 },
+
+"user": {
+    "provider": "mongo"
+}
 ]]></programlisting>
 
-                All configuration options are optional. Default values for host and port are localhost and 27017. If
-                user and password are not specified Keycloak will connect unauthenticated to your MongoDB. Finally, default
-                values for db are keycloak for the model, and keycloak-audit for audit.
+                And at the end of the file add the snippet like this where you can configure details about your Mongo database:
+                <programlisting><![CDATA[
+"connectionsMongo": {
+    "default": {
+        "host": "127.0.0.1",
+        "port": "27017",
+        "db": "keycloak"
+    }
+}
+]]></programlisting>
 
-                If you switch to Mongo model, it could be a good idea to remove RDBMS related stuff from your distribution to reduce startup time and memory footprint.
-                To do it, you need to:
-                <itemizedlist>
-                    <listitem>Comment/remove datasource <literal>KeycloakDS</literal> from <literal>standalone/configuration/standalone.xml</literal> or <literal>standalone/deployments/keycloak-ds.xml</literal></listitem>
-                    <listitem>Remove file <literal>standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/persistence.xml</literal></listitem>
-                </itemizedlist>
+                All configuration options are optional. Default values for host and port are localhost and 27017. Default name of database
+                is <literal>keycloak</literal> . You can also specify properties <literal>user</literal> and <literal>password</literal>
+                if you want authenticate against your MongoDB. If user and password are not specified, Keycloak will connect
+                unauthenticated to your MongoDB.
             </para>
         </section>
 
