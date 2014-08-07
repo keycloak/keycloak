@@ -419,7 +419,7 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.instance.id, 'provider', function() {
+        Dialog.confirm('Delete', 'Are you sure you want to permanently delete this provider?  All imported users will also be deleted.', function() {
             $scope.instance.$remove({
                 realm : realm.realm,
                 instance : $scope.instance.id
@@ -542,7 +542,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.instance.id, 'provider', function() {
+        Dialog.confirm('Delete', 'Are you sure you want to permanently delete this provider?  All imported users will also be deleted.', function() {
             $scope.instance.$remove({
                 realm : realm.realm,
                 instance : $scope.instance.id

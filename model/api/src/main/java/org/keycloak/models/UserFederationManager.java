@@ -294,6 +294,11 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
+    public void preRemove(RealmModel realm, UserFederationProviderModel model) {
+        session.userStorage().preRemove(realm, model);
+    }
+
+    @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
             UserFederationProvider fed = getFederationProvider(federation);

@@ -9,12 +9,18 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.services.managers.TokenManager;
 import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.keycloak.testsuite.LDAPTestUtils;
 import org.keycloak.models.KeycloakSession;
@@ -154,6 +160,42 @@ public class FederationProvidersIntegrationTest {
         Assert.assertEquals("John", profilePage.getFirstName());
         Assert.assertEquals("Doe", profilePage.getLastName());
         Assert.assertEquals("john@email.org", profilePage.getEmail());
+    }
+
+    @Test
+    public void XdeleteLink() { // make sure this happens after loginLdap()
+        loginLdap();
+        {
+            KeycloakSession session = keycloakRule.startSession();
+            try {
+                RealmManager manager = new RealmManager(session);
+
+                RealmModel appRealm = manager.getRealm("test");
+                appRealm.removeUserFederationProvider(ldapModel);
+                Assert.assertEquals(0, appRealm.getUserFederationProviders().size());
+            } finally {
+                keycloakRule.stopSession(session, true);
+            }
+        }
+        loginPage.open();
+        loginPage.login("johnkeycloak", "password");
+        loginPage.assertCurrent();
+
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        {
+            KeycloakSession session = keycloakRule.startSession();
+            try {
+                RealmManager manager = new RealmManager(session);
+
+                RealmModel appRealm = manager.getRealm("test");
+                ldapModel = appRealm.addUserFederationProvider(ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(), ldapModel.getDisplayName());
+            } finally {
+                keycloakRule.stopSession(session, true);
+            }
+        }
+        loginLdap();
+
     }
 
     @Test

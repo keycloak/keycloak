@@ -707,6 +707,7 @@ public class RealmAdapter implements RealmModel {
         while (it.hasNext()) {
             UserFederationProviderEntity entity = it.next();
             if (entity.getId().equals(provider.getId())) {
+                session.users().preRemove(this, provider);
                 it.remove();
                 em.remove(entity);
                 return;
@@ -755,6 +756,7 @@ public class RealmAdapter implements RealmModel {
 
             }
             if (found) continue;
+            session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
             it.remove();
             em.remove(entity);
         }

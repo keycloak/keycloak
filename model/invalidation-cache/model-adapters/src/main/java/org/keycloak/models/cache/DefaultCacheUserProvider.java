@@ -6,6 +6,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.entities.CachedUser;
@@ -283,5 +284,11 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         getDelegate().preRemove(realm, role);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, UserFederationProviderModel link) {
+        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
+        getDelegate().preRemove(realm, link);
     }
 }

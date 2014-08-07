@@ -779,6 +779,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         while (it.hasNext()) {
             UserFederationProviderEntity entity = it.next();
             if (entity.getId().equals(provider.getId())) {
+                session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
                 it.remove();
             }
         }
