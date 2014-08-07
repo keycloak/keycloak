@@ -2,7 +2,6 @@
     <deployment>
         <dependencies>
             <module name="org.apache.httpcomponents"/>
-            <module name="org.bouncycastle"/>
             <module name="org.jboss.resteasy.resteasy-jackson-provider" services="import"/>
             <module name="org.codehaus.jackson.jackson-core-asl"/>
             <module name="org.codehaus.jackson.jackson-mapper-asl"/>
