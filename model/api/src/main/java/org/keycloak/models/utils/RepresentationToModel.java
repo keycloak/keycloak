@@ -577,7 +577,8 @@ public class RepresentationToModel {
     // Users
 
     public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ApplicationModel> appMap) {
-        UserModel user = session.users().addUser(newRealm, userRep.getId(), userRep.getUsername(), false);
+        // Import users just to user storage. Don't federate
+        UserModel user = session.userStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false);
         user.setEnabled(userRep.isEnabled());
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());

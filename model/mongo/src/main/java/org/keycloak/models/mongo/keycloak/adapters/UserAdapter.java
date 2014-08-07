@@ -336,7 +336,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     @Override
     public void setFederationLink(String link) {
         user.setFederationLink(link);
-
+        updateUser();
     }
 
     @Override

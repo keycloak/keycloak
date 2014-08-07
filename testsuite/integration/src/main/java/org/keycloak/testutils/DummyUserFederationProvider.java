@@ -7,6 +7,7 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,9 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class DummyUserFederationProvider implements UserFederationProvider {
+
+    private static Map<String, UserModel> users = new HashMap<String, UserModel>();
+
     @Override
     public UserModel proxy(UserModel local) {
         return local;
@@ -23,11 +27,12 @@ public class DummyUserFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean synchronizeRegistrations() {
-        return false;
+        return true;
     }
 
     @Override
     public UserModel register(RealmModel realm, UserModel user) {
+        users.put(user.getUsername(), user);
         return user;
     }
 
@@ -38,7 +43,7 @@ public class DummyUserFederationProvider implements UserFederationProvider {
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        return null;
+        return users.get(username);
     }
 
     @Override

@@ -12,10 +12,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testutils.DummyUserFederationProvider;
+import org.keycloak.testutils.DummyUserFederationProviderFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -203,6 +207,10 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("dummy", ldap.getProviderName());
         Assert.assertEquals(1, ldap.getPriority());
         Assert.assertEquals("ldap://foo", ldap.getConfig().get("important.config"));
+
+        // Assert that federation link wasn't created during import
+        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");
+        Assert.assertNull(factory.getInstance(session, null).getUserByUsername(realm, "wburke"));
     }
 
     @Test

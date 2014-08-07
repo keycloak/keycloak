@@ -69,11 +69,6 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             properties.put(AvailableSettings.JDBC_URL, config.get("url"));
                             properties.put(AvailableSettings.JDBC_DRIVER, config.get("driver"));
 
-                            String driverDialect = config.get("driverDialect");
-                            if (driverDialect != null && driverDialect.length() > 0) {
-                                properties.put("hibernate.dialect", driverDialect);
-                            }
-
                             String user = config.get("user");
                             if (user != null) {
                                 properties.put(AvailableSettings.JDBC_USER, user);
@@ -82,6 +77,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             if (password != null) {
                                 properties.put(AvailableSettings.JDBC_PASSWORD, password);
                             }
+                        }
+
+                        String driverDialect = config.get("driverDialect");
+                        if (driverDialect != null && driverDialect.length() > 0) {
+                            properties.put("hibernate.dialect", driverDialect);
                         }
 
                         String databaseSchema = config.get("databaseSchema", "validate");
