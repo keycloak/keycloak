@@ -9,6 +9,7 @@ import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -149,8 +150,11 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
     }
 
     public void stopSession(KeycloakSession session, boolean commit) {
+        KeycloakTransaction transaction = session.getTransaction();
         if (commit) {
-            session.getTransaction().commit();
+            transaction.commit();
+        } else {
+            transaction.rollback();
         }
         session.close();
     }
