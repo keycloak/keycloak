@@ -185,6 +185,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(session.users().removeSocialLink(realm, socialUser, "facebook"));
         Assert.assertNull(session.users().getSocialLink(socialUser, "facebook", realm));
         Assert.assertFalse(session.users().removeSocialLink(realm, socialUser, "facebook"));
+        session.users().addSocialLink(realm, socialUser, new SocialLinkModel("facebook", "facebook1", "fbuser1"));
 
         // Test smtp config
         Map<String, String> smtpConfig = realm.getSmtpConfig();

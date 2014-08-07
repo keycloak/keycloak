@@ -5,9 +5,6 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import org.jboss.logging.Logger;
@@ -86,7 +83,7 @@ public class DirImportProvider implements ImportProvider {
 
             @Override
             public boolean accept(File dir, String name) {
-                return (name.startsWith(realmName)) && (name.endsWith(".json")) && (name.substring(realmName.length()).contains("-users-") );
+                return name.matches(realmName + "-users-[0-9]+\\.json");
             }
         });
 

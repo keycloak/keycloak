@@ -134,10 +134,7 @@ public class ModelToRepresentation {
         if (fedProviderModels.size() > 0) {
             List<UserFederationProviderRepresentation> fedProviderReps = new ArrayList<UserFederationProviderRepresentation>();
             for (UserFederationProviderModel model : fedProviderModels) {
-                UserFederationProviderRepresentation fedProvRep = new UserFederationProviderRepresentation();
-                fedProvRep.setId(model.getId());
-                fedProvRep.setProviderName(model.getProviderName());
-                fedProvRep.setConfig(model.getConfig());
+                UserFederationProviderRepresentation fedProvRep = toRepresentation(model);
                 fedProviderReps.add(fedProvRep);
             }
             rep.setUserFederationProviders(fedProviderReps);

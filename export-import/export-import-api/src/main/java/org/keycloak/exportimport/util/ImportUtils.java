@@ -182,7 +182,7 @@ public class ImportUtils {
                     parser.nextToken();
                     String currRealmName = parser.getText();
                     if (!currRealmName.equals(realmName)) {
-                        throw new IllegalStateException("Trying to import users into invalid realm. Realm name: " + realmName + ", Expected realm name: " + realmName);
+                        throw new IllegalStateException("Trying to import users into invalid realm. Realm name: " + realmName + ", Expected realm name: " + currRealmName);
                     }
                 } else if ("users".equals(parser.getText())) {
                     parser.nextToken();

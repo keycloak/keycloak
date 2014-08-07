@@ -94,7 +94,7 @@ public class ZipImportProvider implements ImportProvider {
             // Import users
             for (ExtZipEntry entry : this.decrypter.getEntryList()) {
                 String name = entry.getName();
-                if ( (name.startsWith(realmName)) && (name.endsWith(".json")) && (name.substring(realmName.length()).contains("-users-")) ) {
+                if (name.matches(realmName + "-users-[0-9]+\\.json")) {
                     bos = new ByteArrayOutputStream();
                     this.decrypter.extractEntry(entry, bos, this.password);
                     final ByteArrayInputStream bis2 = new ByteArrayInputStream(bos.toByteArray());

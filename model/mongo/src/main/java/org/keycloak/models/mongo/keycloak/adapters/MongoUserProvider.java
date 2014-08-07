@@ -297,6 +297,7 @@ public class MongoUserProvider implements UserProvider {
 
     @Override
     public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
+        user = getUserById(user.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
         SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
         socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
