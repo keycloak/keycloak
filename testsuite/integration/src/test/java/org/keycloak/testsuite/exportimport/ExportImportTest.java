@@ -1,8 +1,10 @@
 package org.keycloak.testsuite.exportimport;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -26,10 +28,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.model.AbstractModelTest;
+import org.keycloak.testsuite.model.ImportTest;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
 /**
@@ -92,13 +98,21 @@ public class ExportImportTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            // Create some users in "test" and "master" realms
             addUser(manager.getSession().users(), appRealm, "user1", "password");
             addUser(manager.getSession().users(), appRealm, "user2", "password");
             addUser(manager.getSession().users(), appRealm, "user3", "password");
             addUser(manager.getSession().users(), adminstrationRealm, "admin2", "admin2");
+
+            // Import "test-realm" realm
+            try {
+                RealmRepresentation rep = AbstractModelTest.loadJson("model/testrealm.json");
+                RealmModel demoRealm = manager.createRealm("test-realm", rep.getRealm());
+                manager.importRealm(rep, demoRealm);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
         }
-
-
 
     }) {
         @Override
@@ -137,8 +151,8 @@ public class ExportImportTest {
 
         testFullExportImport();
 
-        // There should be 4 files in target directory (2 realm, 2 user)
-        Assert.assertEquals(4, new File(targetDirPath).listFiles().length);
+        // There should be 6 files in target directory (3 realm, 3 user)
+        Assert.assertEquals(6, new File(targetDirPath).listFiles().length);
     }
 
     @Test
@@ -210,7 +224,7 @@ public class ExportImportTest {
             RealmProvider realmProvider = session.realms();
             UserProvider userProvider = session.users();
             new RealmManager(session).removeRealm(realmProvider.getRealmByName("test"));
-            Assert.assertEquals(1, realmProvider.getRealms().size());
+            Assert.assertEquals(2, realmProvider.getRealms().size());
 
             RealmModel master = realmProvider.getRealmByName(Config.getAdminRealm());
             UserModel admin2 = session.users().getUserByUsername("admin2", master);
@@ -235,7 +249,7 @@ public class ExportImportTest {
         try {
             RealmProvider model = session.realms();
             UserProvider userProvider = session.users();
-            Assert.assertEquals(2, model.getRealms().size());
+            Assert.assertEquals(3, model.getRealms().size());
 
             assertAuthenticated(userProvider, model, Config.getAdminRealm(), "admin2", "admin2");
             assertAuthenticated(userProvider, model, "test", "test-user@localhost", "password");
@@ -243,6 +257,8 @@ public class ExportImportTest {
             assertAuthenticated(userProvider, model, "test", "user2", "password");
             assertAuthenticated(userProvider, model, "test", "user3", "password");
 
+            RealmModel testRealmRealm = model.getRealm("test-realm");
+            ImportTest.assertDataImportedInRealm(session, testRealmRealm);
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -261,7 +277,7 @@ public class ExportImportTest {
             RealmProvider realmProvider = session.realms();
             UserProvider userProvider = session.users();
             new RealmManager(session).removeRealm(realmProvider.getRealmByName("test"));
-            Assert.assertEquals(1, realmProvider.getRealms().size());
+            Assert.assertEquals(2, realmProvider.getRealms().size());
 
             RealmModel master = realmProvider.getRealmByName(Config.getAdminRealm());
             UserModel admin2 = session.users().getUserByUsername("admin2", master);
@@ -287,7 +303,7 @@ public class ExportImportTest {
         try {
             RealmProvider realmProvider = session.realms();
             UserProvider userProvider = session.users();
-            Assert.assertEquals(2, realmProvider.getRealms().size());
+            Assert.assertEquals(3, realmProvider.getRealms().size());
 
             assertNotAuthenticated(userProvider, realmProvider, Config.getAdminRealm(), "admin2", "admin2");
             assertAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");

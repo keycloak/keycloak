@@ -71,6 +71,7 @@ public class ExportUtils {
         List<OAuthClientRepresentation> oauthClientReps = new ArrayList<OAuthClientRepresentation>();
         for (OAuthClientModel oauthClient : oauthClients) {
             OAuthClientRepresentation clientRep = ModelToRepresentation.toRepresentation(oauthClient);
+            clientRep.setSecret(oauthClient.getSecret());
             oauthClientReps.add(clientRep);
         }
         rep.setOauthClients(oauthClientReps);
