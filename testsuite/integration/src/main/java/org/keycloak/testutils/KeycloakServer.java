@@ -107,7 +107,7 @@ public class KeycloakServer {
         //bootstrapLdap();  Can't seem to get this to work.
         bootstrapKeycloakServer(args);
     }
-    private static LDAPEmbeddedServer embeddedServer;
+    /*private static LDAPEmbeddedServer embeddedServer;
     public static void bootstrapLdap() throws Exception {
         embeddedServer = new LDAPEmbeddedServer();
         embeddedServer.setup();
@@ -124,7 +124,7 @@ public class KeycloakServer {
         });
 
 
-    }
+    } */
 
     public static KeycloakServer bootstrapKeycloakServer(String[] args) throws Throwable {
         KeycloakServerConfig config = new KeycloakServerConfig();

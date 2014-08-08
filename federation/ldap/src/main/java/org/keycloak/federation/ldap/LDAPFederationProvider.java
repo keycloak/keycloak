@@ -117,15 +117,9 @@ public class LDAPFederationProvider implements UserFederationProvider {
     public UserModel register(RealmModel realm, UserModel user) {
         if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) throw new IllegalStateException("Registration is not supported by this ldap server");;
         if (!synchronizeRegistrations()) throw new IllegalStateException("Registration is not supported by this ldap server");
-        IdentityManager identityManager = getIdentityManager();
 
         try {
-            User picketlinkUser = new User(user.getUsername());
-            picketlinkUser.setFirstName(user.getFirstName());
-            picketlinkUser.setLastName(user.getLastName());
-            picketlinkUser.setEmail(user.getEmail());
-            picketlinkUser.setAttribute(new Attribute("fullName", getFullName(user)));
-            identityManager.add(picketlinkUser);
+            User picketlinkUser = LDAPUtils.addUser(this.partitionManager, user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmail());
             user.setAttribute(LDAP_ID, picketlinkUser.getId());
             return proxy(user);
         } catch (IdentityManagementException ie) {
@@ -138,15 +132,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
     public boolean removeUser(RealmModel realm, UserModel user) {
         if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) return false;
 
-        IdentityManager identityManager = getIdentityManager();
-
         try {
-            User picketlinkUser = BasicModel.getUser(identityManager, user.getUsername());
-            if (picketlinkUser == null) {
-                return false;
-            }
-            identityManager.remove(picketlinkUser);
-            return true;
+            return LDAPUtils.removeUser(partitionManager, user.getUsername());
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);
         }
@@ -192,10 +179,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean isValid(UserModel local) {
-        IdentityManager identityManager = getIdentityManager();
-
         try {
-            User picketlinkUser = BasicModel.getUser(identityManager, local.getUsername());
+            User picketlinkUser = LDAPUtils.getUser(partitionManager, local.getUsername());
             if (picketlinkUser == null) {
                 return false;
             }
@@ -207,10 +192,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        IdentityManager identityManager = getIdentityManager();
-
         try {
-            User picketlinkUser = BasicModel.getUser(identityManager, username);
+            User picketlinkUser = LDAPUtils.getUser(partitionManager, username);
             if (picketlinkUser == null) {
                 return null;
             }
@@ -277,18 +260,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     public boolean validPassword(String username, String password) {
-        IdentityManager identityManager = getIdentityManager();
-
         try {
-            UsernamePasswordCredentials credential = new UsernamePasswordCredentials();
-            credential.setUsername(username);
-            credential.setPassword(new Password(password.toCharArray()));
-            identityManager.validateCredentials(credential);
-            if (credential.getStatus() == Credentials.Status.VALID) {
-                return true;
-            } else {
-                return false;
-            }
+            return LDAPUtils.validatePassword(partitionManager, username, password);
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);
         }
@@ -322,24 +295,5 @@ public class LDAPFederationProvider implements UserFederationProvider {
     @Override
     public void close() {
         //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    // Needed for ActiveDirectory updates
-    protected String getFullName(UserModel user) {
-        String fullName;
-        if (user.getFirstName() != null && user.getLastName() != null) {
-            fullName = user.getFirstName() + " " + user.getLastName();
-        } else if (user.getFirstName() != null && user.getFirstName().trim().length() > 0) {
-            fullName = user.getFirstName();
-        } else {
-            fullName = user.getLastName();
-        }
-
-        // Fallback to loginName
-        if (fullName == null || fullName.trim().length() == 0) {
-            fullName = user.getUsername();
-        }
-
-        return fullName;
     }
 }
