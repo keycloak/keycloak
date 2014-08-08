@@ -29,26 +29,20 @@ import java.util.Properties;
  */
 public class LDAPEmbeddedServer extends AbstractLDAPTest {
 
-    public static final String BASE_DN = "dc=keycloak,dc=org";
-    public static final String LDAP_URL = "ldap://localhost:10389";
-    public static final String ROLES_DN_SUFFIX = "ou=Roles,dc=keycloak,dc=org";
-    public static final String GROUP_DN_SUFFIX = "ou=Groups,dc=keycloak,dc=org";
-    public static final String USER_DN_SUFFIX = "ou=People,dc=keycloak,dc=org";
-    public static final String AGENT_DN_SUFFIX = "ou=Agent,dc=keycloak,dc=org";
-    public static final String CUSTOM_ACCOUNT_DN_SUFFIX = "ou=CustomAccount,dc=keycloak,dc=org";
-
     public static final String CONNECTION_PROPERTIES = "ldap/ldap-connection.properties";
 
-    protected String connectionUrl = LDAP_URL;
-    protected String baseDn = BASE_DN;
-    protected String userDnSuffix = USER_DN_SUFFIX;
-    protected String rolesDnSuffix = ROLES_DN_SUFFIX;
-    protected String groupDnSuffix = GROUP_DN_SUFFIX;
-    protected String agentDnSuffix = AGENT_DN_SUFFIX;
+    protected String connectionUrl = "ldap://localhost:10389";
+    protected String baseDn =  "dc=keycloak,dc=org";
+    protected String userDnSuffix = "ou=People,dc=keycloak,dc=org";
+    protected String rolesDnSuffix = "ou=Roles,dc=keycloak,dc=org";
+    protected String groupDnSuffix = "ou=Groups,dc=keycloak,dc=org";
+    protected String agentDnSuffix = "ou=Agent,dc=keycloak,dc=org";
     protected boolean startEmbeddedLdapLerver = true;
     protected String bindDn = "uid=admin,ou=system";
     protected String bindCredential = "secret";
-    protected String vendor;
+    protected String vendor = LDAPConstants.VENDOR_OTHER;
+    protected boolean connectionPooling = true;
+    protected boolean pagination = true;
 
     public static String IDM_TEST_LDAP_CONNECTION_URL = "idm.test.ldap.connection.url";
     public static String IDM_TEST_LDAP_BASE_DN = "idm.test.ldap.base.dn";
@@ -60,6 +54,8 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     public static String IDM_TEST_LDAP_BIND_DN = "idm.test.ldap.bind.dn";
     public static String IDM_TEST_LDAP_BIND_CREDENTIAL = "idm.test.ldap.bind.credential";
     public static String IDM_TEST_LDAP_VENDOR = "idm.test.ldap.vendor";
+    public static String IDM_TEST_LDAP_CONNECTION_POOLING = "idm.test.ldap.connection.pooling";
+    public static String IDM_TEST_LDAP_PAGINATION = "idm.test.ldap.pagination";
 
 
     public LDAPEmbeddedServer() {
@@ -77,16 +73,18 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
             throw new RuntimeException(e);
         }
 
-        connectionUrl = p.getProperty(IDM_TEST_LDAP_CONNECTION_URL, LDAP_URL);
-        baseDn = p.getProperty(IDM_TEST_LDAP_BASE_DN, BASE_DN);
-        userDnSuffix = p.getProperty(IDM_TEST_LDAP_USER_DN_SUFFIX, USER_DN_SUFFIX);
-        rolesDnSuffix = p.getProperty(IDM_TEST_LDAP_ROLES_DN_SUFFIX, ROLES_DN_SUFFIX);
-        groupDnSuffix = p.getProperty(IDM_TEST_LDAP_GROUP_DN_SUFFIX, GROUP_DN_SUFFIX);
-        agentDnSuffix = p.getProperty(IDM_TEST_LDAP_AGENT_DN_SUFFIX, AGENT_DN_SUFFIX);
+        connectionUrl = p.getProperty(IDM_TEST_LDAP_CONNECTION_URL, connectionUrl);
+        baseDn = p.getProperty(IDM_TEST_LDAP_BASE_DN, baseDn);
+        userDnSuffix = p.getProperty(IDM_TEST_LDAP_USER_DN_SUFFIX, userDnSuffix);
+        rolesDnSuffix = p.getProperty(IDM_TEST_LDAP_ROLES_DN_SUFFIX, rolesDnSuffix);
+        groupDnSuffix = p.getProperty(IDM_TEST_LDAP_GROUP_DN_SUFFIX, groupDnSuffix);
+        agentDnSuffix = p.getProperty(IDM_TEST_LDAP_AGENT_DN_SUFFIX, agentDnSuffix);
         startEmbeddedLdapLerver = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_START_EMBEDDED_LDAP_SERVER, "true"));
         bindDn = p.getProperty(IDM_TEST_LDAP_BIND_DN, bindDn);
         bindCredential = p.getProperty(IDM_TEST_LDAP_BIND_CREDENTIAL, bindCredential);
         vendor = p.getProperty(IDM_TEST_LDAP_VENDOR);
+        connectionPooling = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_CONNECTION_POOLING, "true"));
+        pagination = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_PAGINATION, "true"));
     }
 
     @Override
@@ -95,7 +93,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         if (isStartEmbeddedLdapLerver()) {
             // On Windows, the directory may not be fully deleted from previous test
             String tempDir = System.getProperty("java.io.tmpdir");
-            File workDir = new File(tempDir + "/server-work");
+            File workDir = new File(tempDir + File.separator + "server-work");
             if (workDir.exists()) {
                 recursiveDeleteDir(workDir);
             }
@@ -106,13 +104,13 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
 
     @Override
     public void tearDown() throws Exception {
-
-        // clear data left in LDAP
-        DirContext ctx = getDirContext();
-        clearSubContexts(ctx, new CompositeName(baseDn));
-
         // suppress emb. LDAP server stop
         if (isStartEmbeddedLdapLerver()) {
+
+            // clear data left in LDAP
+            DirContext ctx = getDirContext();
+            clearSubContexts(ctx, new CompositeName(baseDn));
+
             super.tearDown();
         }
     }
@@ -127,7 +125,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         return ctx;
     }
 
-    public void setupLdapInRealm(RealmModel realm) {
+    public Map<String,String> getLDAPConfig() {
         Map<String,String> ldapConfig = new HashMap<String,String>();
         ldapConfig.put(LDAPConstants.CONNECTION_URL, getConnectionUrl());
         ldapConfig.put(LDAPConstants.BASE_DN, getBaseDn());
@@ -135,6 +133,9 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         ldapConfig.put(LDAPConstants.BIND_CREDENTIAL, getBindCredential());
         ldapConfig.put(LDAPConstants.USER_DN_SUFFIX, getUserDnSuffix());
         ldapConfig.put(LDAPConstants.VENDOR, getVendor());
+        ldapConfig.put(LDAPConstants.CONNECTION_POOLING, String.valueOf(isConnectionPooling()));
+        ldapConfig.put(LDAPConstants.PAGINATION, String.valueOf(isPagination()));
+        return ldapConfig;
     }
 
 
@@ -206,6 +207,14 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
 
     public String getVendor() {
         return vendor;
+    }
+
+    public boolean isConnectionPooling() {
+        return connectionPooling;
+    }
+
+    public boolean isPagination() {
+        return pagination;
     }
 
     @Override
