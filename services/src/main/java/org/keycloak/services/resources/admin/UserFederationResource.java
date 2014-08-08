@@ -12,6 +12,8 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
+import org.keycloak.services.managers.PeriodicSyncManager;
+import org.keycloak.timer.TimerProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -116,7 +118,10 @@ public class UserFederationResource {
         if (displayName != null && displayName.trim().equals("")) {
             displayName = null;
         }
-        UserFederationProviderModel model = realm.addUserFederationProvider(rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName);
+        UserFederationProviderModel model = realm.addUserFederationProvider(rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
+                rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
+        new PeriodicSyncManager().startPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
+
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
 
@@ -136,8 +141,10 @@ public class UserFederationResource {
         if (displayName != null && displayName.trim().equals("")) {
             displayName = null;
         }
-        UserFederationProviderModel model = new UserFederationProviderModel(id, rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName);
+        UserFederationProviderModel model = new UserFederationProviderModel(id, rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
+                rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         realm.updateUserFederationProvider(model);
+        new PeriodicSyncManager().startPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
     }
 
     /**
@@ -170,9 +177,9 @@ public class UserFederationResource {
     public void deleteProviderInstance(@PathParam("id") String id) {
         logger.info("deleteProvider");
         auth.requireManage();
-        UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1, null);
+        UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1, null, -1, -1, 0);
         realm.removeUserFederationProvider(model);
-
+        new PeriodicSyncManager().removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), model);
     }
 
 

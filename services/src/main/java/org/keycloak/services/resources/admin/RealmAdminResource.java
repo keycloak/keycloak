@@ -12,6 +12,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheUserProvider;
@@ -21,10 +22,12 @@ import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
+import org.keycloak.services.managers.PeriodicSyncManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.timer.TimerProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -158,6 +161,13 @@ public class RealmAdminResource {
             if (rep.isUserCacheEnabled() != null && session.userStorage() instanceof CacheUserProvider) {
                 CacheUserProvider cache = (CacheUserProvider)session.userStorage();
                 cache.setEnabled(rep.isUserCacheEnabled());
+            }
+
+            // Refresh periodic sync tasks for configured federationProviders
+            List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
+            PeriodicSyncManager periodicSyncManager = new PeriodicSyncManager();
+            for (final UserFederationProviderModel fedProvider : federationProviders) {
+                periodicSyncManager.startPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
             }
 
             return Response.noContent().build();

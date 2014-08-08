@@ -161,7 +161,7 @@ public interface RealmModel extends RoleContainerModel {
 
     List<UserFederationProviderModel> getUserFederationProviders();
 
-    UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName);
+    UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync);
     void updateUserFederationProvider(UserFederationProviderModel provider);
     void removeUserFederationProvider(UserFederationProviderModel provider);
     void setUserFederationProviders(List<UserFederationProviderModel> providers);

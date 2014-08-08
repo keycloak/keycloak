@@ -757,7 +757,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName) {
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         UserFederationProviderEntity entity = new UserFederationProviderEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setPriority(priority);
@@ -767,10 +767,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             displayName = entity.getId();
         }
         entity.setDisplayName(displayName);
+        entity.setFullSyncPeriod(fullSyncPeriod);
+        entity.setChangedSyncPeriod(changedSyncPeriod);
+        entity.setLastSync(lastSync);
         realm.getUserFederationProviders().add(entity);
         updateRealm();
 
-        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName);
+        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
     }
 
     @Override
@@ -779,7 +782,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         while (it.hasNext()) {
             UserFederationProviderEntity entity = it.next();
             if (entity.getId().equals(provider.getId())) {
-                session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
+                session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                        entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
                 it.remove();
             }
         }
@@ -799,6 +803,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 if (displayName != null) {
                     entity.setDisplayName(model.getDisplayName());
                 }
+                entity.setFullSyncPeriod(model.getFullSyncPeriod());
+                entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
+                entity.setLastSync(model.getLastSync());
             }
         }
         updateRealm();
@@ -822,7 +829,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         });
         List<UserFederationProviderModel> result = new LinkedList<UserFederationProviderModel>();
         for (UserFederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
+            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
         }
 
         return result;
@@ -843,6 +851,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 entity.setDisplayName(entity.getId());
             }
             entity.setDisplayName(displayName);
+            entity.setFullSyncPeriod(model.getFullSyncPeriod());
+            entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
+            entity.setLastSync(model.getLastSync());
             entities.add(entity);
         }
 

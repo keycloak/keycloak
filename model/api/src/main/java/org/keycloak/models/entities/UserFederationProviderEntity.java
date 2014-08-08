@@ -12,6 +12,9 @@ public class UserFederationProviderEntity {
     protected Map<String, String> config;
     protected int priority;
     protected String displayName;
+    private int fullSyncPeriod;
+    private int changedSyncPeriod;
+    private int lastSync;
 
 
     public String getId() {
@@ -52,5 +55,29 @@ public class UserFederationProviderEntity {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public int getFullSyncPeriod() {
+        return fullSyncPeriod;
+    }
+
+    public void setFullSyncPeriod(int fullSyncPeriod) {
+        this.fullSyncPeriod = fullSyncPeriod;
+    }
+
+    public int getChangedSyncPeriod() {
+        return changedSyncPeriod;
+    }
+
+    public void setChangedSyncPeriod(int changedSyncPeriod) {
+        this.changedSyncPeriod = changedSyncPeriod;
+    }
+
+    public int getLastSync() {
+        return lastSync;
+    }
+
+    public void setLastSync(int lastSync) {
+        this.lastSync = lastSync;
     }
 }

@@ -16,10 +16,13 @@ public class UserFederationProviderModel {
     private Map<String, String> config = new HashMap<String, String>();
     private int priority;
     private String displayName;
+    private int fullSyncPeriod = -1;    // In seconds. -1 means that periodic full sync is disabled
+    private int changedSyncPeriod = -1; // In seconds. -1 means that periodic changed sync is disabled
+    private int lastSync;               // Date when last sync was done for this provider
 
     public UserFederationProviderModel() {};
 
-    public UserFederationProviderModel(String id, String providerName, Map<String, String> config, int priority, String displayName) {
+    public UserFederationProviderModel(String id, String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         this.id = id;
         this.providerName = providerName;
         if (config != null) {
@@ -27,6 +30,9 @@ public class UserFederationProviderModel {
         }
         this.priority = priority;
         this.displayName = displayName;
+        this.fullSyncPeriod = fullSyncPeriod;
+        this.changedSyncPeriod = changedSyncPeriod;
+        this.lastSync = lastSync;
     }
 
     public String getId() {
@@ -63,5 +69,29 @@ public class UserFederationProviderModel {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public int getFullSyncPeriod() {
+        return fullSyncPeriod;
+    }
+
+    public void setFullSyncPeriod(int fullSyncPeriod) {
+        this.fullSyncPeriod = fullSyncPeriod;
+    }
+
+    public int getChangedSyncPeriod() {
+        return changedSyncPeriod;
+    }
+
+    public void setChangedSyncPeriod(int changedSyncPeriod) {
+        this.changedSyncPeriod = changedSyncPeriod;
+    }
+
+    public int getLastSync() {
+        return lastSync;
+    }
+
+    public void setLastSync(int lastSync) {
+        this.lastSync = lastSync;
     }
 }

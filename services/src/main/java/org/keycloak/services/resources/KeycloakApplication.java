@@ -84,8 +84,8 @@ public class KeycloakApplication extends Application {
 
         setupDefaultRealm(context.getContextPath());
 
-        setupScheduledTasks(sessionFactory);
         importRealms(context);
+        setupScheduledTasks(sessionFactory);
     }
 
     public String getContextPath() {

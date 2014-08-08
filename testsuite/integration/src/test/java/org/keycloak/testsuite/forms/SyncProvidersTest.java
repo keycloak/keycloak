@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.forms;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -10,6 +11,7 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.examples.federation.properties.ClasspathPropertiesFederationFactory;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
@@ -21,10 +23,14 @@ import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.services.managers.PeriodicSyncManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
+import org.keycloak.testutils.DummyUserFederationProvider;
+import org.keycloak.testutils.DummyUserFederationProviderFactory;
 import org.keycloak.testutils.LDAPEmbeddedServer;
+import org.keycloak.timer.TimerProvider;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.model.basic.User;
 
@@ -37,6 +43,7 @@ public class SyncProvidersTest {
     private static LDAPRule ldapRule = new LDAPRule();
 
     private static UserFederationProviderModel ldapModel = null;
+    private static UserFederationProviderModel dummyModel = null;
 
     private static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
@@ -47,7 +54,8 @@ public class SyncProvidersTest {
             ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "false");
             ldapConfig.put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.UNSYNCED.toString());
 
-            ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap");
+            ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap",
+                    -1, -1, 0);
 
             // Delete all LDAP users and add 5 new users for testing
             PartitionManager partitionManager = FederationProvidersIntegrationTest.getPartitionManager(manager.getSession(), ldapModel);
@@ -65,9 +73,7 @@ public class SyncProvidersTest {
             LDAPUtils.updatePassword(partitionManager, user5, "password5");
 
             // Add properties provider
-//            Map<String,String> filePropertiesConfig = new HashMap<String, String>();
-//            filePropertiesConfig.put("path", );
-//            appRealm.addUserFederationProvider(FilePropertiesFederationFactory.PROVIDER_NAME, filePropertiesConfig, 1, "test-fileProps");
+            dummyModel = appRealm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, 1, 0);
         }
     });
 
@@ -99,11 +105,7 @@ public class SyncProvidersTest {
             assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5@email.org");
 
             // wait a bit
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ie) {
-                throw new RuntimeException(ie);
-            }
+            sleep(1000);
             Date beforeLDAPUpdate = new Date();
 
             // Add user to LDAP and update 'user5' in LDAP
@@ -132,6 +134,45 @@ public class SyncProvidersTest {
             assertUserImported(userProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org");
         } finally {
             keycloakRule.stopSession(session, false);
+        }
+    }
+
+    @Test
+    public void testPeriodicSync() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            DummyUserFederationProviderFactory dummyFedFactory = (DummyUserFederationProviderFactory)sessionFactory.getProviderFactory(UserFederationProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
+            int full = dummyFedFactory.getFullSyncCounter();
+            int changed = dummyFedFactory.getChangedSyncCounter();
+
+            // Assert that after some period was DummyUserFederationProvider triggered
+            PeriodicSyncManager periodicSyncManager = new PeriodicSyncManager();
+            periodicSyncManager.bootstrap(sessionFactory, session.getProvider(TimerProvider.class));
+            sleep(1800);
+
+            // Cancel timer
+            periodicSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), dummyModel);
+
+            // Assert that DummyUserFederationProviderFactory.syncChangedUsers was invoked
+            int newChanged = dummyFedFactory.getChangedSyncCounter();
+            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            Assert.assertTrue(newChanged > changed);
+
+            // Assert that dummy provider won't be invoked anymore
+            sleep(1800);
+            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            Assert.assertEquals(newChanged, dummyFedFactory.getChangedSyncCounter());
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+    }
+
+    private void sleep(int time) {
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
         }
     }
 
