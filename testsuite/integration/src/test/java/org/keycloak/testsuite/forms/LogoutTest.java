@@ -124,32 +124,15 @@ public class LogoutTest {
 
         String sessionId = events.expectLogin().assertEvent().getSessionId();
 
-        // Login session 2
-        WebDriver driver2 = WebRule.createWebDriver();
-
-        OAuthClient oauth2 = new OAuthClient(driver2);
-        oauth2.doLogin("test-user@localhost", "password");
-
-        String sessionId2 = events.expectLogin().assertEvent().getSessionId();
-        assertNotEquals(sessionId, sessionId2);
-
         // Check session 1 logged-in
         oauth.openLoginForm();
         events.expectLogin().session(sessionId).detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).assertEvent();
 
-        // Check session 2 logged-in
-        oauth2.openLoginForm();
-        events.expectLogin().session(sessionId2).detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).assertEvent();
-
-        // Logout session 1 by redirect
+         //  Logout session 1 by redirect
         driver.navigate().to(oauth.getLogoutUrl(AppPage.baseUrl, null));
         events.expectLogout(sessionId).detail(Details.REDIRECT_URI, AppPage.baseUrl).assertEvent();
 
-        // Check session 2 logged-in
-        oauth2.openLoginForm();
-        events.expectLogin().session(sessionId2).detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).assertEvent();
-
-        // Check session 1 not logged-in
+         // Check session 1 not logged-in
         oauth.openLoginForm();
         assertEquals(oauth.getLoginFormUrl(), driver.getCurrentUrl());
 
@@ -157,19 +140,10 @@ public class LogoutTest {
         oauth.doLogin("test-user@localhost", "password");
         String sessionId3 = events.expectLogin().assertEvent().getSessionId();
         assertNotEquals(sessionId, sessionId3);
-        assertNotEquals(sessionId2, sessionId3);
-
-        // Logout session 2 by session_state
-        oauth2.doLogout(null, sessionId2);
-        events.expectLogout(sessionId2).removeDetail(Details.REDIRECT_URI).assertEvent();
 
         // Check session 3 logged-in
         oauth.openLoginForm();
         events.expectLogin().session(sessionId3).detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).assertEvent();
-
-        // Check session 2 not logged-in
-        oauth2.openLoginForm();
-        assertEquals(oauth2.getLoginFormUrl(), driver2.getCurrentUrl());
     }
 
 }

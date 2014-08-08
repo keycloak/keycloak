@@ -81,11 +81,8 @@ public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
                 if (account == null) return;
                 session.removeAttribute(KeycloakSecurityContext.class.getName());
                 session.removeAttribute(KeycloakUndertowAccount.class.getName());
-                String sessionId = account.getKeycloakSecurityContext().getToken().getSessionState();
-                try {
-                    ServerRequest.invokeLogout(deploymentContext.getDeployment(), sessionId);
-                } catch (Exception e) {
-                    log.error("failed to invoke remote logout", e);
+                if (account.getKeycloakSecurityContext() != null) {
+                    account.getKeycloakSecurityContext().logout(deploymentContext.getDeployment());
                 }
             }
         };

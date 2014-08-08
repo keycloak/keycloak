@@ -31,6 +31,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.ClientConnection;
 import org.keycloak.services.managers.AccessCode;
@@ -1040,39 +1041,29 @@ public class TokenService {
     }
 
     /**
-     * Logout user session.
+     * Logout user session.  User must be logged in via a session cookie.
      *
-     * @param sessionState
      * @param redirectUri
      * @return
      */
     @Path("logout")
     @GET
     @NoCache
-    public Response logout(final @QueryParam("session_state") String sessionState, final @QueryParam("redirect_uri") String redirectUri) {
+    public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
         // todo do we care if anybody can trigger this?
 
         audit.event(EventType.LOGOUT);
         if (redirectUri != null) {
             audit.detail(Details.REDIRECT_URI, redirectUri);
         }
-        if (sessionState != null) {
-            audit.session(sessionState);
-        }
-
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
         if (authResult != null) {
             logout(authResult.getSession());
-        } else if (sessionState != null) {
-            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionState);
-            if (userSession != null) {
-                logout(userSession);
-            } else {
-                audit.error(Errors.USER_SESSION_NOT_FOUND);
-            }
         } else {
             audit.error(Errors.USER_NOT_LOGGED_IN);
+            OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
+            return oauth.forwardToSecurityFailure("Not logged in.");
         }
 
         if (redirectUri != null) {
@@ -1086,6 +1077,61 @@ public class TokenService {
         } else {
             return Response.ok().build();
         }
+    }
+
+    /**
+     * Logout a session via a non-browser invocation.  Similar signature to refresh token except there is no grant_type.
+     * You must pass in the refresh token and
+     * authenticate the client if it is not public.
+     *
+     * If the client is a confidential client
+     * you must include the client-id (application name or oauth client name) and secret in an Basic Auth Authorization header.
+     *
+     * If the client is a public client, then you must include a "client_id" form parameter with the app's or oauth client's name.
+     *
+     * returns 204 if successful, 400 if not with a json error response.
+     *
+     * @param authorizationHeader
+     * @param form
+     * @return
+     */
+    @Path("logout")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response logoutToken(final @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+                                       final MultivaluedMap<String, String> form) {
+        logger.info("--> logoutToken");
+        if (!checkSsl()) {
+            throw new NotAcceptableException("HTTPS required");
+        }
+
+        audit.event(EventType.LOGOUT);
+
+        ClientModel client = authorizeClient(authorizationHeader, form, audit);
+        String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
+        if (refreshToken == null) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_REQUEST);
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "No refresh token");
+            audit.error(Errors.INVALID_TOKEN);
+            logger.error("OAuth Error: no refresh token");
+            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+        }
+        try {
+            RefreshToken token = tokenManager.verifyRefreshToken(realm, refreshToken);
+            UserSessionModel userSessionModel = session.sessions().getUserSession(realm, token.getSessionState());
+            if (userSessionModel != null) {
+                logout(userSessionModel);
+            }
+        } catch (OAuthErrorException e) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put(OAuth2Constants.ERROR, e.getError());
+            if (e.getDescription() != null) error.put(OAuth2Constants.ERROR_DESCRIPTION, e.getDescription());
+            audit.error(Errors.INVALID_TOKEN);
+            logger.error("OAuth Error", e);
+            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+        }
+       return Cors.add(request, Response.noContent()).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     private void logout(UserSessionModel userSession) {

@@ -305,8 +305,13 @@ public class AccessTokenTest {
         {
             builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
             URI logoutUri = TokenService.logoutUrl(builder).build("test");
-            Response response = client.target(logoutUri).queryParam("session_state", tokenResponse.getSessionState()).request().get();
-            Assert.assertEquals(200, response.getStatus());
+            String header = BasicAuthHelper.createHeader("test-app", "password");
+            Form form = new Form();
+            form.param("refresh_token", tokenResponse.getRefreshToken());
+            Response response = client.target(logoutUri).request()
+                    .header(HttpHeaders.AUTHORIZATION, header)
+                    .post(Entity.form(form));
+            Assert.assertEquals(204, response.getStatus());
             response.close();
         }
         {

@@ -48,19 +48,41 @@ public class ServerRequest {
         }
     }
 
-    public static void invokeLogout(KeycloakDeployment deployment, String sessionId) throws IOException, HttpFailure {
-        URI uri = deployment.getLogoutUrl().clone().queryParam("session_state", sessionId).build();
-        HttpGet logout = new HttpGet(uri);
-        HttpResponse response = deployment.getClient().execute(logout);
+    public static void invokeLogout(KeycloakDeployment deployment, String refreshToken) throws IOException, HttpFailure {
+        String client_id = deployment.getResourceName();
+        Map<String, String> credentials = deployment.getResourceCredentials();
+        HttpClient client = deployment.getClient();
+        URI uri = deployment.getLogoutUrl().clone().build();
+        List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+        for (Map.Entry<String, String> entry : credentials.entrySet()) {
+            formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+        }
+        formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
+        HttpResponse response = null;
+        HttpPost post = new HttpPost(uri);
+        if (!deployment.isPublicClient()) {
+            String clientSecret = credentials.get(CredentialRepresentation.SECRET);
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(client_id, clientSecret);
+                post.setHeader("Authorization", authorization);
+            }
+        } else {
+            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, client_id));
+        }
+
+        UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+        post.setEntity(form);
+        response = client.execute(post);
         int status = response.getStatusLine().getStatusCode();
         HttpEntity entity = response.getEntity();
-        if (status != 200) {
+        if (status != 204) {
             error(status, entity);
         }
         if (entity == null) {
             return;
         }
-        entity.getContent().close();
+        InputStream is = entity.getContent();
+        if (is != null) is.close();
     }
 
     public static AccessTokenResponse invokeAccessCodeToToken(KeycloakDeployment deployment, String code, String redirectUri) throws HttpFailure, IOException {

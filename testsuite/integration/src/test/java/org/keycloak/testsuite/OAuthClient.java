@@ -171,11 +171,31 @@ public class OAuthClient {
         return new AccessTokenResponse(client.execute(post));
     }
 
-    public HttpResponse doLogout(String redirectUri, String sessionState) throws IOException {
+    public HttpResponse doLogout(String refreshToken, String clientSecret) throws IOException {
         HttpClient client = new DefaultHttpClient();
-        HttpGet get = new HttpGet(getLogoutUrl(redirectUri, sessionState));
+        HttpPost post = new HttpPost(getLogoutUrl(null, null));
 
-        return client.execute(get);
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        if (refreshToken != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
+        }
+        if (clientId != null && clientSecret != null) {
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+        }
+        else if (clientId != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        }
+
+        UrlEncodedFormEntity formEntity;
+        try {
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        post.setEntity(formEntity);
+
+        return client.execute(post);
     }
 
     public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String password) {

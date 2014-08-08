@@ -42,6 +42,14 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         return super.getTokenString();
     }
 
+    public void logout(KeycloakDeployment deployment) {
+        try {
+            ServerRequest.invokeLogout(deployment, refreshToken);
+        } catch (Exception e) {
+            log.error("failed to invoke remote logout", e);
+        }
+    }
+
     public boolean isActive() {
         return this.token.isActive() && this.token.getIssuedAt() > deployment.getNotBefore();
     }
