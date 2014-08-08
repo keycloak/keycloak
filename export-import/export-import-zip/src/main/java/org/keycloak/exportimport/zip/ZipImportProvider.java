@@ -8,11 +8,12 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.exportimport.ImportProvider;
 import org.keycloak.exportimport.Strategy;
-import org.keycloak.exportimport.util.ExportImportJob;
-import org.keycloak.exportimport.util.ExportImportUtils;
+import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -81,10 +82,10 @@ public class ZipImportProvider implements ImportProvider {
             ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
             final RealmRepresentation realmRep = JsonSerialization.mapper.readValue(bis, RealmRepresentation.class);
 
-            ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
+            KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
                 @Override
-                public void run(KeycloakSession session) throws IOException {
+                protected void runExportImportTask(KeycloakSession session) throws IOException {
                     ImportUtils.importRealm(session, realmRep, strategy);
                 }
 
@@ -99,10 +100,10 @@ public class ZipImportProvider implements ImportProvider {
                     this.decrypter.extractEntry(entry, bos, this.password);
                     final ByteArrayInputStream bis2 = new ByteArrayInputStream(bos.toByteArray());
 
-                    ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
+                    KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
                         @Override
-                        public void run(KeycloakSession session) throws IOException {
+                        protected void runExportImportTask(KeycloakSession session) throws IOException {
                             ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, bis2);
                         }
                     });

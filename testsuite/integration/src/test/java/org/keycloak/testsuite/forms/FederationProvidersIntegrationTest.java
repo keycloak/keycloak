@@ -102,7 +102,7 @@ public class FederationProvidersIntegrationTest {
     @WebResource
     protected AccountPasswordPage changePasswordPage;
 
-    private static UserModel addUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
+    static UserModel addUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
         UserModel user = session.users().addUser(realm, username);
         user.setEmail(email);
         user.setEnabled(true);
@@ -313,7 +313,7 @@ public class FederationProvidersIntegrationTest {
         }
     }
 
-    private static PartitionManager getPartitionManager(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {
+    static PartitionManager getPartitionManager(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {
         PartitionManagerProvider partitionManagerProvider = keycloakSession.getProvider(PartitionManagerProvider.class);
         return partitionManagerProvider.getPartitionManager(ldapFedModel);
     }

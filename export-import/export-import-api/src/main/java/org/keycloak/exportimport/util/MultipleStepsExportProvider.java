@@ -6,8 +6,10 @@ import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.UsersExportStrategy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.io.IOException;
@@ -24,7 +26,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
     public void exportModel(KeycloakSessionFactory factory) throws IOException {
         final RealmsHolder holder = new RealmsHolder();
 
-        ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
+        KeycloakModelUtils.runJobInTransaction(factory, new KeycloakSessionTask() {
 
             @Override
             public void run(KeycloakSession session) {
@@ -46,10 +48,10 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
         final UsersHolder usersHolder = new UsersHolder();
         final boolean exportUsersIntoRealmFile = usersExportStrategy == UsersExportStrategy.REALM_FILE;
 
-        ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
+        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
-            public void run(KeycloakSession session) throws IOException {
+            protected void runExportImportTask(KeycloakSession session) throws IOException {
                 RealmModel realm = session.realms().getRealmByName(realmName);
                 RealmRepresentation rep = ExportUtils.exportRealm(session, realm, exportUsersIntoRealmFile);
                 writeRealm(realmName + "-realm.json", rep);
@@ -77,10 +79,10 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
                     usersHolder.currentPageEnd = usersHolder.totalCount;
                 }
 
-                ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
+                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
                     @Override
-                    public void run(KeycloakSession session) throws IOException {
+                    protected void runExportImportTask(KeycloakSession session) throws IOException {
                         RealmModel realm = session.realms().getRealmByName(realmName);
                         usersHolder.users = session.users().getUsers(realm, usersHolder.currentPageStart, usersHolder.currentPageEnd - usersHolder.currentPageStart);
 

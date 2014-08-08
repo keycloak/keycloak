@@ -42,6 +42,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     protected String vendor = LDAPConstants.VENDOR_OTHER;
     protected boolean connectionPooling = true;
     protected boolean pagination = true;
+    protected int batchSizeForSync = LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
 
     public static String IDM_TEST_LDAP_CONNECTION_URL = "idm.test.ldap.connection.url";
     public static String IDM_TEST_LDAP_BASE_DN = "idm.test.ldap.base.dn";
@@ -55,6 +56,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     public static String IDM_TEST_LDAP_VENDOR = "idm.test.ldap.vendor";
     public static String IDM_TEST_LDAP_CONNECTION_POOLING = "idm.test.ldap.connection.pooling";
     public static String IDM_TEST_LDAP_PAGINATION = "idm.test.ldap.pagination";
+    public static String IDM_TEST_LDAP_BATCH_SIZE_FOR_SYNC = "idm.test.ldap.batch.size.for.sync";
 
 
     public LDAPEmbeddedServer() {
@@ -84,6 +86,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         vendor = p.getProperty(IDM_TEST_LDAP_VENDOR);
         connectionPooling = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_CONNECTION_POOLING, "true"));
         pagination = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_PAGINATION, "true"));
+        batchSizeForSync = Integer.parseInt(p.getProperty(IDM_TEST_LDAP_BATCH_SIZE_FOR_SYNC, String.valueOf(batchSizeForSync)));
     }
 
     @Override
@@ -134,6 +137,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         ldapConfig.put(LDAPConstants.VENDOR, getVendor());
         ldapConfig.put(LDAPConstants.CONNECTION_POOLING, String.valueOf(isConnectionPooling()));
         ldapConfig.put(LDAPConstants.PAGINATION, String.valueOf(isPagination()));
+        ldapConfig.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, String.valueOf(getBatchSizeForSync()));
         return ldapConfig;
     }
 
@@ -214,6 +218,10 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
 
     public boolean isPagination() {
         return pagination;
+    }
+
+    public int getBatchSizeForSync() {
+        return batchSizeForSync;
     }
 
     @Override

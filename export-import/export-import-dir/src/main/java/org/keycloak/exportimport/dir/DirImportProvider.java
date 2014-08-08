@@ -4,11 +4,12 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.exportimport.ImportProvider;
 import org.keycloak.exportimport.Strategy;
-import org.keycloak.exportimport.util.ExportImportJob;
-import org.keycloak.exportimport.util.ExportImportUtils;
+import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -91,10 +92,10 @@ public class DirImportProvider implements ImportProvider {
         FileInputStream is = new FileInputStream(realmFile);
         final RealmRepresentation realmRep = JsonSerialization.readValue(is, RealmRepresentation.class);
 
-        ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
+        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
-            public void run(KeycloakSession session) throws IOException {
+            public void runExportImportTask(KeycloakSession session) throws IOException {
                 ImportUtils.importRealm(session, realmRep, strategy);
             }
 
@@ -103,10 +104,10 @@ public class DirImportProvider implements ImportProvider {
         // Import users
         for (File userFile : userFiles) {
             final FileInputStream fis = new FileInputStream(userFile);
-            ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
+            KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
                 @Override
-                public void run(KeycloakSession session) throws IOException {
+                protected void runExportImportTask(KeycloakSession session) throws IOException {
                     ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
                 }
             });

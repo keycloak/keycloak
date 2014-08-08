@@ -3,12 +3,13 @@ package org.keycloak.exportimport.singlefile;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.exportimport.ExportProvider;
-import org.keycloak.exportimport.util.ExportImportJob;
-import org.keycloak.exportimport.util.ExportImportUtils;
+import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -38,10 +39,10 @@ public class SingleFileExportProvider implements ExportProvider {
     @Override
     public void exportModel(KeycloakSessionFactory factory) throws IOException {
         logger.infof("Exporting model into file %s", this.file.getAbsolutePath());
-        ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
+        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
-            public void run(KeycloakSession session) throws IOException {
+            protected void runExportImportTask(KeycloakSession session) throws IOException {
                 List<RealmModel> realms = session.realms().getRealms();
                 List<RealmRepresentation> reps = new ArrayList<RealmRepresentation>();
                 for (RealmModel realm : realms) {
@@ -58,10 +59,10 @@ public class SingleFileExportProvider implements ExportProvider {
     @Override
     public void exportRealm(KeycloakSessionFactory factory, final String realmName) throws IOException {
         logger.infof("Exporting realm '%s' into file %s", realmName, this.file.getAbsolutePath());
-        ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
+        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
-            public void run(KeycloakSession session) throws IOException {
+            protected void runExportImportTask(KeycloakSession session) throws IOException {
                 RealmModel realm = session.realms().getRealmByName(realmName);
                 RealmRepresentation realmRep = ExportUtils.exportRealm(session, realm, true);
                 writeToFile(realmRep);

@@ -2,10 +2,11 @@ package org.keycloak.testutils;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
-
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,5 +45,13 @@ public class DummyUserFederationProviderFactory implements UserFederationProvide
     @Override
     public String getId() {
         return "dummy";
+    }
+
+    @Override
+    public void syncAllUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model) {
+    }
+
+    @Override
+    public void syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
     }
 }

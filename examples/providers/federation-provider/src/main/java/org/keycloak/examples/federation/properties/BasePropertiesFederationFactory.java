@@ -2,12 +2,19 @@ package org.keycloak.examples.federation.properties;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -83,5 +90,45 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public void syncAllUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                RealmModel realm = session.realms().getRealm(realmId);
+                BasePropertiesFederationProvider federationProvider = (BasePropertiesFederationProvider)getInstance(session, model);
+                Set<String> allUsernames = federationProvider.getProperties().stringPropertyNames();
+                for (String username : allUsernames) {
+                    federationProvider.getUserByUsername(realm, username);
+                }
+            }
+
+        });
+    }
+
+    @Override
+    public void syncChangedUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model, Date lastSync) {
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                RealmModel realm = session.realms().getRealm(realmId);
+                UserProvider localProvider = session.userStorage();
+                BasePropertiesFederationProvider federationProvider = (BasePropertiesFederationProvider)getInstance(session, model);
+                Set<String> allUsernames = federationProvider.getProperties().stringPropertyNames();
+                for (String username : allUsernames) {
+                    UserModel localUser = localProvider.getUserByUsername(username, realm);
+
+                    if (localUser == null) {
+                        // New user, let's import him
+                        federationProvider.getUserByUsername(realm, username);
+                    }
+                }
+            }
+
+        });
     }
 }
