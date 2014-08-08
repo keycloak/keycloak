@@ -41,6 +41,8 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     protected String bindDn = "uid=admin,ou=system";
     protected String bindCredential = "secret";
     protected String vendor = LDAPConstants.VENDOR_OTHER;
+    protected boolean connectionPooling = true;
+    protected boolean pagination = true;
 
     public static String IDM_TEST_LDAP_CONNECTION_URL = "idm.test.ldap.connection.url";
     public static String IDM_TEST_LDAP_BASE_DN = "idm.test.ldap.base.dn";
@@ -52,6 +54,8 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     public static String IDM_TEST_LDAP_BIND_DN = "idm.test.ldap.bind.dn";
     public static String IDM_TEST_LDAP_BIND_CREDENTIAL = "idm.test.ldap.bind.credential";
     public static String IDM_TEST_LDAP_VENDOR = "idm.test.ldap.vendor";
+    public static String IDM_TEST_LDAP_CONNECTION_POOLING = "idm.test.ldap.connection.pooling";
+    public static String IDM_TEST_LDAP_PAGINATION = "idm.test.ldap.pagination";
 
 
     public LDAPEmbeddedServer() {
@@ -79,6 +83,8 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         bindDn = p.getProperty(IDM_TEST_LDAP_BIND_DN, bindDn);
         bindCredential = p.getProperty(IDM_TEST_LDAP_BIND_CREDENTIAL, bindCredential);
         vendor = p.getProperty(IDM_TEST_LDAP_VENDOR);
+        connectionPooling = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_CONNECTION_POOLING, "true"));
+        pagination = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_PAGINATION, "true"));
     }
 
     @Override
@@ -127,6 +133,8 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         ldapConfig.put(LDAPConstants.BIND_CREDENTIAL, getBindCredential());
         ldapConfig.put(LDAPConstants.USER_DN_SUFFIX, getUserDnSuffix());
         ldapConfig.put(LDAPConstants.VENDOR, getVendor());
+        ldapConfig.put(LDAPConstants.CONNECTION_POOLING, String.valueOf(isConnectionPooling()));
+        ldapConfig.put(LDAPConstants.PAGINATION, String.valueOf(isPagination()));
         return ldapConfig;
     }
 
@@ -199,6 +207,14 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
 
     public String getVendor() {
         return vendor;
+    }
+
+    public boolean isConnectionPooling() {
+        return connectionPooling;
+    }
+
+    public boolean isPagination() {
+        return pagination;
     }
 
     @Override

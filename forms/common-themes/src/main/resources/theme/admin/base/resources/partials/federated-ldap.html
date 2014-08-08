@@ -116,6 +116,18 @@
                         <a class="btn btn-primary" data-ng-click="testAuthentication()">Test authentication</a>
                     </div>
                 </div>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="connectionPooling">Connection pooling</label>
+                    <div class="col-sm-4">
+                        <input ng-model="connectionPooling" name="connectionPooling" id="connectionPooling" onoffswitch />
+                    </div>
+                </div>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="pagination">Pagination</label>
+                    <div class="col-sm-4">
+                        <input ng-model="pagination" name="pagination" id="pagination" onoffswitch />
+                    </div>
+                </div>
                 <div class="form-group clearfix" data-ng-show="instance.config.vendor === 'ad' ">
                     <label class="col-sm-2 control-label" for="userAccountControlsAfterPasswordUpdate">Enable Account After Password Update</label>
                     <div class="col-sm-4">

@@ -61,7 +61,9 @@ public class PartitionManagerRegistry {
         IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
 
         Properties connectionProps = new Properties();
-        connectionProps.put("com.sun.jndi.ldap.connect.pool", "true");
+        if (ldapConfig.containsKey(LDAPConstants.CONNECTION_POOLING)) {
+            connectionProps.put("com.sun.jndi.ldap.connect.pool", ldapConfig.get(LDAPConstants.CONNECTION_POOLING));
+        }
 
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.authentication", "none simple");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.initsize", "1");
@@ -83,6 +85,8 @@ public class PartitionManagerRegistry {
         String ldapFirstNameMapping = activeDirectory ?  "givenName" : CN;
         String[] userObjectClasses = getUserObjectClasses(ldapConfig);
 
+        boolean pagination = ldapConfig.containsKey(LDAPConstants.PAGINATION) ? Boolean.parseBoolean(ldapConfig.get(LDAPConstants.PAGINATION)) : false;
+
         // Use same mapping for User and Agent for now
         LDAPStoreConfigurationBuilder ldapStoreBuilder =
         builder
@@ -96,7 +100,8 @@ public class PartitionManagerRegistry {
                         .bindCredential(ldapConfig.get(LDAPConstants.BIND_CREDENTIAL))
                         .url(ldapConfig.get(LDAPConstants.CONNECTION_URL))
                         .activeDirectory(activeDirectory)
-                        .supportAllFeatures();
+                        .supportAllFeatures()
+                        .pagination(pagination);
 
         // RHDS is using "nsuniqueid" as unique identifier instead of "entryUUID"
         if (vendor != null && vendor.equals(LDAPConstants.VENDOR_RHDS)) {
