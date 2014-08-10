@@ -9,6 +9,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -35,6 +38,25 @@ public class UserModelTest extends AbstractModelTest {
         searchRealm = realmManager.getRealm(realm.getId());
         UserModel persisted2 =  session.users().getUserById(user.getId(), searchRealm);
         assertEquals(user, persisted2);
+
+        Map<String, String> attributes = new HashMap<String, String>();
+        attributes.put(UserModel.LAST_NAME, "last-name");
+        List<UserModel> search = session.users().searchForUserByAttributes(attributes, realm);
+        Assert.assertEquals(search.size(), 1);
+        Assert.assertEquals(search.get(0).getUsername(), "user");
+
+        attributes.clear();
+        attributes.put(UserModel.EMAIL, "email");
+        search = session.users().searchForUserByAttributes(attributes, realm);
+        Assert.assertEquals(search.size(), 1);
+        Assert.assertEquals(search.get(0).getUsername(), "user");
+
+        attributes.clear();
+        attributes.put(UserModel.LAST_NAME, "last-name");
+        attributes.put(UserModel.EMAIL, "email");
+        search = session.users().searchForUserByAttributes(attributes, realm);
+        Assert.assertEquals(search.size(), 1);
+        Assert.assertEquals(search.get(0).getUsername(), "user");
     }
     
     @Test
