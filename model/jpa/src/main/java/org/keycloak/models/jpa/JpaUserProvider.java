@@ -27,6 +27,12 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class JpaUserProvider implements UserProvider {
+
+    private static final String EMAIL = "email";
+    private static final String USERNAME = "username";
+    private static final String FIRST_NAME = "firstName";
+    private static final String LAST_NAME = "lastName";
+
     private final KeycloakSession session;
     protected EntityManager em;
 
@@ -269,32 +275,45 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
-        StringBuilder builder = new StringBuilder("select u from UserEntity u");
-        boolean first = true;
+        StringBuilder builder = new StringBuilder("select u from UserEntity u where u.realmId = :realmId");
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String attribute = null;
+            String parameterName = null;
             if (entry.getKey().equals(UserModel.USERNAME)) {
-                attribute = "lower(username)";
+                attribute = "lower(u.username)";
+                parameterName = JpaUserProvider.USERNAME;
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
-                attribute = "lower(firstName)";
+                attribute = "lower(u.firstName)";
+                parameterName = JpaUserProvider.FIRST_NAME;
             } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
-                attribute = "lower(lastName)";
+                attribute = "lower(u.lastName)";
+                parameterName = JpaUserProvider.LAST_NAME;
             } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
-                attribute = "lower(email)";
+                attribute = "lower(u.email)";
+                parameterName = JpaUserProvider.EMAIL;
             }
             if (attribute == null) continue;
-            if (first) {
-                first = false;
-                builder.append(" where realm = :realm");
-            } else {
-                builder.append(" and ");
-            }
-            builder.append(attribute).append(" like '%").append(entry.getValue().toLowerCase()).append("%'");
+            builder.append(" and ");
+            builder.append(attribute).append(" like :").append(parameterName);
         }
         builder.append(" order by u.username");
         String q = builder.toString();
         TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
         query.setParameter("realmId", realm.getId());
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            String parameterName = null;
+            if (entry.getKey().equals(UserModel.USERNAME)) {
+                parameterName = JpaUserProvider.USERNAME;
+            } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
+                parameterName = JpaUserProvider.FIRST_NAME;
+            } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
+                parameterName = JpaUserProvider.LAST_NAME;
+            } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
+                parameterName = JpaUserProvider.EMAIL;
+            }
+            if (parameterName == null) continue;
+            query.setParameter(parameterName, "%" + entry.getValue().toLowerCase() + "%");
+        }
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }
