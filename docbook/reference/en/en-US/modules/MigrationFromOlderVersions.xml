@@ -1,6 +1,17 @@
 <chapter id="Migration_from_older_versions">
     <title>Migration from older versions</title>
     <sect1>
+        <title>Migrating from 1.0 Beta 4 to RC-1</title>
+        <itemizedlist>
+            <listitem>
+                logout REST API has been refactored.  The GET request on the logout URI does not take a session_state
+                parameter anymore.  You must be logged in in order to log out the session.
+                You can also POST to the lougt REST URI.  This action requires a valid refresh token to perform the logout.
+                The signature is the same as refresh token minus the grant type form parameter.  See documentation for details.
+            </listitem>
+         </itemizedlist>
+    </sect1>
+    <sect1>
         <title>Migrating from 1.0 Beta 1 to Beta 4</title>
         <itemizedlist>
             <listitem>

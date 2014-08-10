@@ -64,23 +64,7 @@ public class TokenManager {
     }
 
     public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
-        JWSInput jws = new JWSInput(encodedRefreshToken);
-        RefreshToken refreshToken = null;
-        try {
-            if (!RSAProvider.verify(jws, realm.getPublicKey())) {
-                throw new RuntimeException("Invalid refresh token");
-            }
-            refreshToken = jws.readJsonContent(RefreshToken.class);
-        } catch (IOException e) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
-        }
-        if (refreshToken.isExpired()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
-        }
-
-        if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
-        }
+        RefreshToken refreshToken = verifyRefreshToken(realm, encodedRefreshToken);
 
         audit.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
 
@@ -120,6 +104,27 @@ public class TokenManager {
         }
 
         return accessToken;
+    }
+
+    public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
+        JWSInput jws = new JWSInput(encodedRefreshToken);
+        RefreshToken refreshToken = null;
+        try {
+            if (!RSAProvider.verify(jws, realm.getPublicKey())) {
+                throw new RuntimeException("Invalid refresh token");
+            }
+            refreshToken = jws.readJsonContent(RefreshToken.class);
+        } catch (IOException e) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
+        }
+        if (refreshToken.isExpired()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+        }
+
+        if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+        }
+        return refreshToken;
     }
 
     public AccessToken createClientAccessToken(Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {

@@ -131,13 +131,9 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
 
-        HttpResponse logoutResponse = oauth.doLogout(null, accessToken.getSessionState());
-        assertEquals(200, logoutResponse.getStatusLine().getStatusCode());
-        events.expectLogout(accessToken.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
-
-        logoutResponse = oauth.doLogout(null, accessToken.getSessionState());
-        assertEquals(200, logoutResponse.getStatusLine().getStatusCode());
-        events.expectLogout(accessToken.getSessionState()).user((String) null).removeDetail(Details.REDIRECT_URI).error(Errors.USER_SESSION_NOT_FOUND).assertEvent();
+        HttpResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret");
+        assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+        events.expectLogout(accessToken.getSessionState()).client("resource-owner").removeDetail(Details.REDIRECT_URI).assertEvent();
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret");
         assertEquals(400, response.getStatusCode());

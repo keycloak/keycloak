@@ -1,0 +1,9 @@
+<section>
+    <title>Logout</title>
+    <para>
+        There are multiple ways you can logout from a web application.  For Java EE servlet containers, you can call
+        HttpServletRequest.logout().
+        For any other browser application, you can point the browser at the url <literal>http://auth-server/auth/realms/{realm-name}/tokens/logout?redirect_uri=encodedRedirectUri</literal>.
+        This will log you out if you have an SSO session with your browser.
+    </para>
+</section>

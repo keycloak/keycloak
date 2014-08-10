@@ -72,11 +72,8 @@ public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanis
                 KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
                 if (account == null) return;
                 session.removeAttribute(KeycloakUndertowAccount.class.getName());
-                String sessionId = account.getKeycloakSecurityContext().getToken().getSessionState();
-                try {
-                    ServerRequest.invokeLogout(deploymentContext.getDeployment(), sessionId);
-                } catch (Exception e) {
-                    log.error("failed to invoke remote logout", e);
+                if (account.getKeycloakSecurityContext() != null) {
+                    account.getKeycloakSecurityContext().logout(deploymentContext.getDeployment());
                 }
             }
         };

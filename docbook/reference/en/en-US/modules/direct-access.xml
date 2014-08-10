@@ -88,7 +88,7 @@ try {
    if (isPublic()) { // if client is public access type
        formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "customer-portal"));
    } else {
-       String authorization = BasicAuthHelper.createHeader("customer-portal", "secret-secret-secret);
+       String authorization = BasicAuthHelper.createHeader("customer-portal", "secret-secret-secret");
        post.setHeader("Authorization", authorization);
    }
    UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
@@ -125,4 +125,36 @@ GET /my/rest/api
 Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA
 </programlisting>
     </para>
+    <para>
+        To logout you must use the refresh token contained in the AccessTokenResponse object.
+    </para>
+<programlisting>
+    <![CDATA[
+List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+if (isPublic()) { // if client is public access type
+    formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "customer-portal"));
+} else {
+    String authorization = BasicAuthHelper.createHeader("customer-portal", "secret-secret-secret");
+    post.setHeader("Authorization", authorization);
+}
+formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, tokenResponse.getRefreshToken()));
+HttpResponse response = null;
+URI logoutUri = KeycloakUriBuilder.fromUri(getBaseUrl(request) + "/auth")
+                    .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
+                    .build("demo");
+HttpPost post = new HttpPost(logoutUri);
+UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+post.setEntity(form);
+response = client.execute(post);
+int status = response.getStatusLine().getStatusCode();
+HttpEntity entity = response.getEntity();
+if (status != 204) {
+   error(status, entity);
+}
+if (entity == null) {
+   return;
+}
+InputStream is = entity.getContent();
+if (is != null) is.close();
+]]></programlisting>
 </chapter>

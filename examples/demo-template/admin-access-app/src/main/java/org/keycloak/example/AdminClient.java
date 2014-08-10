@@ -102,17 +102,23 @@ public class AdminClient {
 
 
         try {
-            HttpGet get = new HttpGet(KeycloakUriBuilder.fromUri(getBaseUrl(request) + "/auth")
+            HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri(getBaseUrl(request) + "/auth")
                     .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-                    .queryParam("session_state", res.getSessionState())
                     .build("demo"));
-            HttpResponse response = client.execute(get);
+            List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+            formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, res.getRefreshToken()));
+            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "admin-client"));
+            HttpResponse response = client.execute(post);
+            boolean status = response.getStatusLine().getStatusCode() != 204;
             HttpEntity entity = response.getEntity();
             if (entity == null) {
                 return;
             }
             InputStream is = entity.getContent();
             if (is != null) is.close();
+            if (status) {
+                throw new RuntimeException("failed to logout");
+            }
         } finally {
             client.getConnectionManager().shutdown();
         }

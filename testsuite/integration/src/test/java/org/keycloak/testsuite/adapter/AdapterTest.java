@@ -214,7 +214,8 @@ public class AdapterTest {
 
 
         driver.navigate().to("http://localhost:8081/customer-portal");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        String currentUrl = driver.getCurrentUrl();
+        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
         driver.navigate().to("http://localhost:8081/product-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
