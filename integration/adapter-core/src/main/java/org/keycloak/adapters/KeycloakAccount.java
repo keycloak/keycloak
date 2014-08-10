@@ -1,9 +1,6 @@
 package org.keycloak.adapters;
 
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.representations.AccessToken;
 
 import java.security.Principal;
 import java.util.Set;

@@ -1,18 +1,17 @@
 package org.keycloak.example.oauth;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import org.jboss.logging.Logger;
+import org.keycloak.servlet.ServletOAuthClient;
+import org.keycloak.servlet.ServletOAuthClientBuilder;
 
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
-
-import org.jboss.logging.Logger;
-import org.keycloak.servlet.ServletOAuthClient;
-import org.keycloak.servlet.ServletOAuthClientBuilder;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -1,16 +1,16 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.Config;
+import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.enums.SslRequired;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.PrivateKey;

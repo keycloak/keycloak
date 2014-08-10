@@ -1,8 +1,8 @@
 package org.keycloak.models.cache.entities;
 
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.cache.RealmCache;
 
 /**

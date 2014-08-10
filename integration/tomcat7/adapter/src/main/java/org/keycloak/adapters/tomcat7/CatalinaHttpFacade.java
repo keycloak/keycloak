@@ -1,17 +1,16 @@
 package org.keycloak.adapters.tomcat7;
 
+import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.HttpFacade;
+
+import javax.security.cert.X509Certificate;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-
-import javax.security.cert.X509Certificate;
-import javax.servlet.http.HttpServletResponse;
-
-import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.HttpFacade;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

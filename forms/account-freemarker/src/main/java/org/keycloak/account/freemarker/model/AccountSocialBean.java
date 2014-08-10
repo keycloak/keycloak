@@ -1,13 +1,5 @@
 package org.keycloak.account.freemarker.model;
 
-import java.net.URI;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ws.rs.core.UriBuilder;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
@@ -15,6 +7,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

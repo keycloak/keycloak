@@ -8,7 +8,6 @@ import io.undertow.servlet.api.WebResourceCollection;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;

@@ -1,9 +1,5 @@
 package org.keycloak.testsuite.performance.web;
 
-import java.io.InputStream;
-
-import javax.servlet.DispatcherType;
-
 import io.undertow.server.handlers.resource.ClassPathResourceManager;
 import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
@@ -15,6 +11,9 @@ import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.test.tools.KeycloakTestApplication;
 import org.keycloak.testutils.KeycloakServer;
+
+import javax.servlet.DispatcherType;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

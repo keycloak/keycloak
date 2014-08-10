@@ -6,11 +6,9 @@ import org.keycloak.servlet.ServletOAuthClientBuilder;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.security.KeyStore;
 
 /**
  * Init code to load up the truststore so we can make appropriate SSL connections

@@ -1,12 +1,11 @@
 package org.keycloak.adapters.tomcat7;
 
-import java.util.logging.Logger;
-
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.keycloak.adapters.KeycloakDeployment;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>

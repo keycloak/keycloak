@@ -1,10 +1,9 @@
 package org.keycloak.exportimport;
 
-import java.io.IOException;
-
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
+
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

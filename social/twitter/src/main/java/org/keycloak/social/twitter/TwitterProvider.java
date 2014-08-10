@@ -28,7 +28,6 @@ import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
-import org.keycloak.social.UriBuilder;
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
 import twitter4j.auth.RequestToken;

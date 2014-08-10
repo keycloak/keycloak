@@ -1,11 +1,5 @@
 package org.keycloak.adapters.tomcat7;
 
-import java.io.IOException;
-import java.security.Principal;
-import java.util.Collections;
-import java.util.Set;
-import java.util.logging.Logger;
-
 import org.apache.catalina.Session;
 import org.apache.catalina.authenticator.Constants;
 import org.apache.catalina.connector.Request;
@@ -17,6 +11,12 @@ import org.keycloak.adapters.OAuthRequestAuthenticator;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.representations.AccessToken;
+
+import java.io.IOException;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>

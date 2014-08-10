@@ -7,10 +7,8 @@ import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.UserSessionManagement;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

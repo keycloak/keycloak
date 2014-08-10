@@ -2,11 +2,8 @@ package org.keycloak.adapters;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.ServiceUrlConstants;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.PemUtils;
 
 import java.io.IOException;

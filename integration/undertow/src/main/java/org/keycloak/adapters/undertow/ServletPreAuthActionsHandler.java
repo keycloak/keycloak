@@ -23,7 +23,6 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.PreAuthActionsHandler;
-import org.keycloak.adapters.KeycloakDeployment;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

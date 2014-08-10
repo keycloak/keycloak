@@ -2,7 +2,6 @@ package org.keycloak.test.tools.jobs;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -10,7 +9,6 @@ import org.keycloak.models.UserModel;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -17,8 +17,6 @@
 
 package org.keycloak.subsystem.extension;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -30,6 +28,9 @@ import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 

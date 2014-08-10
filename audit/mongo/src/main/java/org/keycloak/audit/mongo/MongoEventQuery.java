@@ -9,7 +9,6 @@ import org.keycloak.audit.EventType;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

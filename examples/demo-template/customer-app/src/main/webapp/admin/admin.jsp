@@ -1,5 +1,5 @@
-<%@ page import="org.keycloak.representations.idm.RoleRepresentation" %>
 <%@ page import="org.keycloak.example.AdminClient" %>
+<%@ page import="org.keycloak.representations.idm.RoleRepresentation" %>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
          pageEncoding="ISO-8859-1" %>
 <html>

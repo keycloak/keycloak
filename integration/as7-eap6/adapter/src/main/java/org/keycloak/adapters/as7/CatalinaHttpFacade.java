@@ -1,7 +1,5 @@
 package org.keycloak.adapters.as7;
 
-import org.apache.catalina.connector.Request;
-import org.apache.catalina.connector.Response;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpFacade;
 

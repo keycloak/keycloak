@@ -4,7 +4,6 @@ import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import javax.servlet.http.HttpServletResponse;
 

@@ -1,23 +1,11 @@
 package org.keycloak.testsuite.exportimport;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.regex.Matcher;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
-import org.junit.runners.MethodSorters;
 import org.keycloak.Config;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.dir.DirExportProvider;
@@ -28,7 +16,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -37,6 +24,15 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.model.AbstractModelTest;
 import org.keycloak.testsuite.model.ImportTest;
 import org.keycloak.testsuite.rule.KeycloakRule;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

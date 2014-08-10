@@ -24,10 +24,8 @@ package org.keycloak.login.freemarker.model;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.MultivaluedMap;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 

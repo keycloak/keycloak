@@ -16,8 +16,8 @@
  */
 package org.keycloak.subsystem.logging;
 
-import org.jboss.logging.annotations.MessageBundle;
 import org.jboss.logging.Messages;
+import org.jboss.logging.annotations.MessageBundle;
 
 /**
  * This interface to be fleshed out later when error messages are fully externalized.

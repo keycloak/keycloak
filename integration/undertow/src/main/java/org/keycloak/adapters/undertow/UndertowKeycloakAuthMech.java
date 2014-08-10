@@ -29,11 +29,6 @@ import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.RequestAuthenticator;
-import org.keycloak.adapters.ServerRequest;
-
-import java.io.IOException;
-
-import static org.keycloak.adapters.undertow.ServletKeycloakAuthMech.KEYCLOAK_CHALLENGE_ATTACHMENT_KEY;
 
 /**
  * Abstract base class for a Keycloak-enabled Undertow AuthenticationMechanism.

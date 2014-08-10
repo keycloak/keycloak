@@ -3,7 +3,6 @@ package org.keycloak.adapters.wildfly;
 import io.undertow.servlet.api.DeploymentInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.keycloak.adapters.undertow.ServletKeycloakAuthMech;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;

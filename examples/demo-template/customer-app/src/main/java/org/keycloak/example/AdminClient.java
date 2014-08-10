@@ -6,7 +6,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.util.JsonSerialization;
 

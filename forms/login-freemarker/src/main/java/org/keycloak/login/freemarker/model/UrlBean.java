@@ -23,7 +23,6 @@ package org.keycloak.login.freemarker.model;
 
 import org.keycloak.freemarker.Theme;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Urls;
 
 import java.net.URI;

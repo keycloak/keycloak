@@ -20,7 +20,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<project name="module-repository-lib" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+<project name="module-repository-lib">
 
     <property name="src.dir" value="src"/>
     <property name="module.repo.src.dir" value="${src.dir}/main/resources/modules"/>

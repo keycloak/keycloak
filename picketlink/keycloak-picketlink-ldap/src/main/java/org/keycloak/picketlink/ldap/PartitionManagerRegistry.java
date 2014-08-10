@@ -1,10 +1,5 @@
 package org.keycloak.picketlink.ldap;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.jboss.logging.Logger;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProviderModel;
@@ -17,10 +12,12 @@ import org.picketlink.idm.config.LDAPStoreConfigurationBuilder;
 import org.picketlink.idm.internal.DefaultPartitionManager;
 import org.picketlink.idm.model.basic.User;
 
-import static org.picketlink.common.constants.LDAPConstants.CN;
-import static org.picketlink.common.constants.LDAPConstants.EMAIL;
-import static org.picketlink.common.constants.LDAPConstants.SN;
-import static org.picketlink.common.constants.LDAPConstants.UID;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.picketlink.common.constants.LDAPConstants.*;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

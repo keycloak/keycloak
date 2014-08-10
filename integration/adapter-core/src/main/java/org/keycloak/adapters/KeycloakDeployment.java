@@ -2,7 +2,6 @@ package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.ServiceUrlConstants;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.util.KeycloakUriBuilder;

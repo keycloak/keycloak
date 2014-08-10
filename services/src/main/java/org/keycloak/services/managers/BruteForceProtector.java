@@ -2,11 +2,11 @@ package org.keycloak.services.managers;
 
 
 import org.jboss.logging.Logger;
+import org.keycloak.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UsernameLoginFailureModel;
-import org.keycloak.ClientConnection;
 
 import java.util.ArrayList;
 import java.util.Collections;

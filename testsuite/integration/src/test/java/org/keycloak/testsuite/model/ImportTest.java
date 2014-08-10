@@ -18,8 +18,6 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testutils.DummyUserFederationProvider;
-import org.keycloak.testutils.DummyUserFederationProviderFactory;
 
 import java.util.List;
 import java.util.Map;

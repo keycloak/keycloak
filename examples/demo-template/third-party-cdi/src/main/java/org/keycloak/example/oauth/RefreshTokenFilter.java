@@ -1,7 +1,8 @@
 package org.keycloak.example.oauth;
 
-import java.io.IOException;
-import java.util.Map;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.ServerRequest;
+import org.keycloak.servlet.ServletOAuthClient;
 
 import javax.inject.Inject;
 import javax.servlet.Filter;
@@ -13,10 +14,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.ServerRequest;
-import org.keycloak.servlet.ServletOAuthClient;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
