@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -58,6 +59,7 @@ public class UserFederationResource {
      * @return
      */
     @GET
+    @NoCache
     @Path("providers")
     @Produces("application/json")
     public List<UserFederationProviderFactoryRepresentation> getProviders() {
@@ -80,6 +82,7 @@ public class UserFederationResource {
      * @return
      */
     @GET
+    @NoCache
     @Path("providers/{id}")
     @Produces("application/json")
     public UserFederationProviderFactoryRepresentation getProvider(@PathParam("id") String id) {
@@ -143,6 +146,7 @@ public class UserFederationResource {
      * @param id
      */
     @GET
+    @NoCache
     @Path("instances/{id}")
     @Consumes("application/json")
     public UserFederationProviderRepresentation getProviderInstance(@PathParam("id") String id) {

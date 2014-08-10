@@ -301,6 +301,7 @@ public class RealmAdminResource {
      * @return
      */
     @GET
+    @NoCache
     @Path("audit")
     @Produces("application/json")
     public RealmAuditRepresentation getRealmAudit() {
@@ -383,6 +384,7 @@ public class RealmAdminResource {
 
     @Path("testLDAPConnection")
     @GET
+    @NoCache
     public Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
                                        @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential) {
         auth.init(RealmAuth.Resource.REALM).requireManage();

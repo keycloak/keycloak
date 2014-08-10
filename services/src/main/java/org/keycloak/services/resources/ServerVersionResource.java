@@ -1,5 +1,6 @@
 package org.keycloak.services.resources;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.Version;
 
 import javax.ws.rs.GET;
@@ -15,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 public class ServerVersionResource {
 
     @GET
+    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Version getVersion() {
         return Version.SINGLETON;

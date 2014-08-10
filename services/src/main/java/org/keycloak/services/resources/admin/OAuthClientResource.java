@@ -164,6 +164,7 @@ public class OAuthClientResource  {
      */
     @Path("client-secret")
     @GET
+    @NoCache
     @Produces("application/json")
     public CredentialRepresentation getClientSecret() {
         auth.requireView();

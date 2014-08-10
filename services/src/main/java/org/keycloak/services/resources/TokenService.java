@@ -308,6 +308,7 @@ public class TokenService {
      */
     @Path("validate")
     @GET
+    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Response validateAccessToken(@QueryParam("access_token") String tokenString) {
         audit.event(EventType.VALIDATE_ACCESS_TOKEN);
