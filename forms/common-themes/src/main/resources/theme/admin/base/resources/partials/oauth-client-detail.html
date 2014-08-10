@@ -60,7 +60,7 @@
                 </div>
                 <div class="form-group" data-ng-hide="oauth.directGrantsOnly">
                     <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI <span class="required" data-ng-show="create">*</span></label>
-                    <div class="col-sm-4 multiple" ng-repeat="redirectUri in oauth.redirectUris">
+                    <div class="col-sm-6 multiple" ng-repeat="redirectUri in oauth.redirectUris">
                         <div class="input-group kc-item-deletable">
                             <input  class="form-control" type="text" data-ng-class="{'input-below':!$first}"
                                     name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
@@ -70,7 +70,7 @@
                             </span>
                         </div>
                     </div>
-                    <div class="col-sm-4 multiple">
+                    <div class="col-sm-6 multiple">
                         <div class="input-group">
                             <input  class="form-control" type="text" name="newRedirectUri" id="newRedirectUri"
                                     placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
@@ -83,7 +83,7 @@
                 </div>
                 <div class="form-group" data-ng-hide="create">
                     <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
-                    <div class="col-sm-4 multiple" ng-repeat="webOrigin in oauth.webOrigins">
+                    <div class="col-sm-6 multiple" ng-repeat="webOrigin in oauth.webOrigins">
                         <div class="input-group kc-item-deletable">
                             <input class="form-control" type="text" data-ng-class="{'input-below':!$first}"
                                    name="webOrigin" id="webOrigin" data-ng-model="webOrigin" readonly />
@@ -93,7 +93,7 @@
                             </span>
                         </div>
                     </div>
-                    <div class="col-sm-4 multiple">
+                    <div class="col-sm-6 multiple">
                         <div class="input-group">
                             <input class="form-control" type="text" name="newWebOrigin" id="newWebOrigin"
                                    placeholder="New Web Origin..." data-ng-model="newWebOrigin"
