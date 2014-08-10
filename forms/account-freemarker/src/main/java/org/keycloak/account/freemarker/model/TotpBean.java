@@ -27,6 +27,7 @@ import org.keycloak.models.utils.Base32;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.security.SecureRandom;
 import java.util.Random;
 
 
@@ -50,13 +51,20 @@ public class TotpBean {
 
     private static String randomString(int length) {
         String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVW1234567890";
-        Random r = new Random();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
-            char c = chars.charAt(r.nextInt(chars.length()));
+            char c = chars.charAt(random.nextInt(chars.length()));
             sb.append(c);
         }
         return sb.toString();
+    }
+
+    private static final SecureRandom random;
+
+    static
+    {
+        random = new SecureRandom();
+        random.nextInt();
     }
 
     public boolean isEnabled() {
