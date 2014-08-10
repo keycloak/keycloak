@@ -197,6 +197,7 @@ public class ApplicationResource {
      */
     @Path("client-secret")
     @GET
+    @NoCache
     @Produces("application/json")
     public CredentialRepresentation getClientSecret() {
         auth.requireView();
@@ -230,6 +231,7 @@ public class ApplicationResource {
      */
     @Path("allowed-origins")
     @GET
+    @NoCache
     @Produces("application/json")
     public Set<String> getAllowedOrigins()
     {

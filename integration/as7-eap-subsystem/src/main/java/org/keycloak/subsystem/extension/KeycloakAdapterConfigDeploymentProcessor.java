@@ -17,8 +17,6 @@
 
 package org.keycloak.subsystem.extension;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -32,6 +30,9 @@ import org.jboss.metadata.web.jboss.ValveMetaData;
 import org.jboss.metadata.web.spec.LoginConfigMetaData;
 import org.keycloak.adapters.as7.KeycloakAuthenticatorValve;
 import org.keycloak.subsystem.logging.KeycloakLogger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Pass authentication data (keycloak.json) as a servlet context param so it can be read by the KeycloakServletExtension.

@@ -2,9 +2,9 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;

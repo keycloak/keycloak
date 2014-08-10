@@ -2,8 +2,8 @@ package org.keycloak.jaxrs;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.KeycloakPrincipal;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.AccessToken;

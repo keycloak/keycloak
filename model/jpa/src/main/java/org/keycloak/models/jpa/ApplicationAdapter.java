@@ -8,7 +8,6 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;

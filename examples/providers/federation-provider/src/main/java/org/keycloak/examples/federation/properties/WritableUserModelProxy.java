@@ -5,8 +5,6 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Properties;
 
 /**

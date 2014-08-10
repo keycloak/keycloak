@@ -1,25 +1,18 @@
 package org.keycloak.adapters.as7;
 
 import org.apache.catalina.Container;
-import org.apache.catalina.Session;
 import org.apache.catalina.Valve;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
-import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import javax.management.ObjectName;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Set;
 
 /**
  * Pre-installed actions that must be authenticated

@@ -1,8 +1,8 @@
 package org.keycloak.exportimport.util;
 
-import java.io.IOException;
-
 import org.keycloak.models.KeycloakSession;
+
+import java.io.IOException;
 
 /**
  * Task to be executed inside transaction

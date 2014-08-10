@@ -1,9 +1,5 @@
 package org.keycloak.picketlink.idm;
 
-import javax.naming.directory.BasicAttribute;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.ModificationItem;
-
 import org.jboss.logging.Logger;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.event.CredentialUpdatedEvent;
@@ -14,6 +10,10 @@ import org.picketlink.idm.model.basic.User;
 import org.picketlink.idm.spi.CredentialStore;
 import org.picketlink.idm.spi.IdentityContext;
 import org.picketlink.idm.spi.StoreSelector;
+
+import javax.naming.directory.BasicAttribute;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.ModificationItem;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

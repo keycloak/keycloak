@@ -1,7 +1,6 @@
 package org.keycloak.testutils;
 
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
 import org.picketbox.test.ldap.AbstractLDAPTest;
 
 import javax.naming.CompositeName;

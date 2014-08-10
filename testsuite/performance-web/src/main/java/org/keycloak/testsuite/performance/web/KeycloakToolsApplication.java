@@ -1,15 +1,14 @@
 package org.keycloak.testsuite.performance.web;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.jboss.resteasy.core.Dispatcher;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.test.tools.PerfTools;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
-
-import org.jboss.resteasy.core.Dispatcher;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.test.tools.PerfTools;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Modified version of {@link org.keycloak.test.tools.KeycloakTestApplication}, which shares ProviderSessionFactory with KeycloakApplication

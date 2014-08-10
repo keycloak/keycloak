@@ -2,7 +2,6 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderFactory;
 
-import java.util.List;
 import java.util.Set;
 
 /**

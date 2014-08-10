@@ -1,8 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
  pageEncoding="ISO-8859-1"%>
+<%@ page import="org.keycloak.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.example.oauth.ProductDatabaseClient" %>
 <%@ page import="org.keycloak.util.KeycloakUriBuilder" %>
-<%@ page import="org.keycloak.ServiceUrlConstants" %>
 <html>
 <head>
     <title>Product View Page</title>

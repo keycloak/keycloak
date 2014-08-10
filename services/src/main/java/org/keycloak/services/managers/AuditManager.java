@@ -1,12 +1,12 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.ClientConnection;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.AuditListener;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.ClientConnection;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -1,13 +1,13 @@
 package org.keycloak.example.oauth;
 
+import org.keycloak.servlet.ServletOAuthClient;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.faces.context.FacesContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.keycloak.servlet.ServletOAuthClient;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

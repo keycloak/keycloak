@@ -1,13 +1,5 @@
 package org.keycloak.exportimport.zip;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.DataFormatException;
-
 import de.idyl.winzipaes.AesZipFileDecrypter;
 import de.idyl.winzipaes.impl.AESDecrypter;
 import de.idyl.winzipaes.impl.AESDecrypterBC;
@@ -23,6 +15,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.DataFormatException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

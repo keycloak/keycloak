@@ -2,9 +2,7 @@ package org.keycloak.models.sessions.mongo.entities;
 
 import org.keycloak.models.ClientSessionModel;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

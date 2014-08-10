@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.admin;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 

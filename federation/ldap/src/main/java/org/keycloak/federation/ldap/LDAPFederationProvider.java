@@ -1,22 +1,18 @@
 package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
-import org.picketlink.idm.credential.Credentials;
-import org.picketlink.idm.credential.Password;
-import org.picketlink.idm.credential.UsernamePasswordCredentials;
-import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
 import org.picketlink.idm.query.IdentityQuery;

@@ -5,7 +5,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.social.utils.SimpleHttp;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

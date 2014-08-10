@@ -1,10 +1,10 @@
 package org.keycloak.services;
 
-import org.keycloak.models.UserFederationManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserFederationManager;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.cache.CacheRealmProvider;

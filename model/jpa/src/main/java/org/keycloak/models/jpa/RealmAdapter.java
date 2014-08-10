@@ -1,21 +1,21 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.enums.SslRequired;
-import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;

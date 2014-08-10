@@ -3,7 +3,6 @@ package org.keycloak.servlet;
 import org.apache.http.client.HttpClient;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessTokenResponse;

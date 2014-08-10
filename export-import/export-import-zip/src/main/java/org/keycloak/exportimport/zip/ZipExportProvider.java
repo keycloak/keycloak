@@ -1,11 +1,5 @@
 package org.keycloak.exportimport.zip;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
 import de.idyl.winzipaes.AesZipFileEncrypter;
 import de.idyl.winzipaes.impl.AESEncrypter;
 import de.idyl.winzipaes.impl.AESEncrypterBC;
@@ -17,6 +11,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -17,13 +17,14 @@
 
 package org.keycloak.subsystem.extension;
 
-import java.util.List;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.dmr.ModelNode;
+
+import java.util.List;
 
 /**
  * Update an attribute on a secure-deployment.

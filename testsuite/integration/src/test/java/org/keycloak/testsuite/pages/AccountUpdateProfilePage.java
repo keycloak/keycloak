@@ -21,7 +21,6 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.WebElement;

@@ -21,15 +21,14 @@
  */
 package org.keycloak.testsuite.adapter;
 
-import org.keycloak.Version;
-import org.keycloak.adapters.AdapterConstants;
-import org.keycloak.util.BasicAuthHelper;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.Version;
+import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -49,6 +48,7 @@ import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.testutils.KeycloakServer;
+import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;

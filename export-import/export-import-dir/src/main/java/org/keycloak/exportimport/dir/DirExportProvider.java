@@ -1,10 +1,5 @@
 package org.keycloak.exportimport.dir;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.List;
-
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.exportimport.util.MultipleStepsExportProvider;
 import org.keycloak.models.KeycloakSession;
@@ -12,6 +7,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

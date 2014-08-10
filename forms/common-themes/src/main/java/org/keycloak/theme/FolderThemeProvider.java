@@ -2,7 +2,6 @@ package org.keycloak.theme;
 
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
-import org.keycloak.Config;
 
 import java.io.File;
 import java.io.FileFilter;

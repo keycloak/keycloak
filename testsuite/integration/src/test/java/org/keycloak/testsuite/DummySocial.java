@@ -3,14 +3,11 @@ package org.keycloak.testsuite;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
-import org.keycloak.social.UriBuilder;
 import org.keycloak.social.SocialAccessDeniedException;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
-
-import java.net.URI;
 
 public class DummySocial implements SocialProvider {
 

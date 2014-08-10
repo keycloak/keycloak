@@ -16,14 +16,15 @@
  */
 package org.keycloak.subsystem.extension;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Defines attributes that can be present in both a realm and an application (secure-deployment).

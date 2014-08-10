@@ -1,12 +1,12 @@
 package org.keycloak.exportimport.singlefile;
 
-import java.io.File;
-
 import org.keycloak.Config;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.ExportProviderFactory;
 import org.keycloak.models.KeycloakSession;
+
+import java.io.File;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -1,10 +1,10 @@
 package org.keycloak.federation.ldap;
 
 import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.picketlink.PartitionManagerProvider;
 import org.picketlink.idm.PartitionManager;
 

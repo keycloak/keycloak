@@ -23,6 +23,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
@@ -41,7 +42,6 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.ClientConnection;
 import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;

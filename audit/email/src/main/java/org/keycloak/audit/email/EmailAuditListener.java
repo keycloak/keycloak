@@ -7,8 +7,8 @@ import org.keycloak.audit.EventType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 
 import java.util.Set;

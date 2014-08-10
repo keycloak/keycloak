@@ -21,8 +21,8 @@
   */
 package org.keycloak.util;
 
-import java.util.Properties;
 import java.io.File;
+import java.util.Properties;
 
 /**
  * A utility class for replacing properties in strings. 

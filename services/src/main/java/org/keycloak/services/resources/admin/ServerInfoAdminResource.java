@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.admin;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.audit.AuditListener;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
@@ -30,6 +31,7 @@ public class ServerInfoAdminResource {
      * @return
      */
     @GET
+    @NoCache
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         setSocialProviders(info);

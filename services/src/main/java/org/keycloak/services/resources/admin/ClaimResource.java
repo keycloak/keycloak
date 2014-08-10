@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.admin;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -32,6 +33,7 @@ public class ClaimResource {
      * @return
      */
     @GET
+    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public ClaimRepresentation getClaims() {
         auth.requireView();

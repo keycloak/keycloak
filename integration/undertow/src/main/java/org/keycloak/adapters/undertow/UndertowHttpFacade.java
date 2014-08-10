@@ -17,14 +17,12 @@
 package org.keycloak.adapters.undertow;
 
 import io.undertow.server.HttpServerExchange;
-import io.undertow.server.handlers.Cookie;
 import io.undertow.server.handlers.CookieImpl;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.util.KeycloakUriBuilder;
 
