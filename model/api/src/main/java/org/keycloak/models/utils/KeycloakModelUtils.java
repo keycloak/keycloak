@@ -5,6 +5,9 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -131,5 +134,37 @@ public final class KeycloakModelUtils {
             user =  session.users().getUserByEmail(username, realm);
         }
         return user;
+    }
+
+    /**
+     * Wrap given runnable job into KeycloakTransaction.
+     *
+     * @param factory
+     * @param task
+     */
+    public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
+        KeycloakSession session = factory.create();
+        KeycloakTransaction tx = session.getTransaction();
+        try {
+            tx.begin();
+            task.run(session);
+
+            if (tx.isActive()) {
+                if (tx.getRollbackOnly()) {
+                    tx.rollback();
+                } else {
+                    tx.commit();
+                }
+            }
+        } finally {
+            if (tx.isActive()) {
+                tx.rollback();
+            }
+            session.close();
+        }
+    }
+
+    public static String getMasterRealmAdminApplicationName(RealmModel realm) {
+        return realm.getName() + "-realm";
     }
 }

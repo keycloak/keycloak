@@ -84,8 +84,8 @@ public class KeycloakApplication extends Application {
 
         setupDefaultRealm(context.getContextPath());
 
-        setupScheduledTasks(sessionFactory);
         importRealms(context);
+        setupScheduledTasks(sessionFactory);
     }
 
     public String getContextPath() {
@@ -146,8 +146,8 @@ public class KeycloakApplication extends Application {
         long interval = Config.scope("scheduled").getLong("interval", 60L) * 1000;
 
         TimerProvider timer = sessionFactory.create().getProvider(TimerProvider.class);
-        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredAuditEvents()), interval);
-        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval);
+        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredAuditEvents()), interval, "ClearExpiredAuditEvents");
+        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, "ClearExpiredUserSessions");
     }
 
     public KeycloakSessionFactory getSessionFactory() {

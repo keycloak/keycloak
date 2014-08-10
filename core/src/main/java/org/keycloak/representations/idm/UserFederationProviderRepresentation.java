@@ -12,6 +12,9 @@ public class UserFederationProviderRepresentation {
     private String providerName;
     private Map<String, String> config;
     private int priority;
+    private int fullSyncPeriod;
+    private int changedSyncPeriod;
+    private int lastSync;
 
     public String getId() {
         return id;
@@ -52,6 +55,30 @@ public class UserFederationProviderRepresentation {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public int getFullSyncPeriod() {
+        return fullSyncPeriod;
+    }
+
+    public void setFullSyncPeriod(int fullSyncPeriod) {
+        this.fullSyncPeriod = fullSyncPeriod;
+    }
+
+    public int getChangedSyncPeriod() {
+        return changedSyncPeriod;
+    }
+
+    public void setChangedSyncPeriod(int changedSyncPeriod) {
+        this.changedSyncPeriod = changedSyncPeriod;
+    }
+
+    public int getLastSync() {
+        return lastSync;
+    }
+
+    public void setLastSync(int lastSync) {
+        this.lastSync = lastSync;
     }
 
     @Override

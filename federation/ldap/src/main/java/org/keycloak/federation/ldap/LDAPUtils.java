@@ -29,6 +29,17 @@ public class LDAPUtils {
         return picketlinkUser;
     }
 
+    public static User updateUser(PartitionManager partitionManager, String username, String firstName, String lastName, String email) {
+        IdentityManager idmManager = getIdentityManager(partitionManager);
+        User picketlinkUser = BasicModel.getUser(idmManager, username);
+        picketlinkUser.setFirstName(firstName);
+        picketlinkUser.setLastName(lastName);
+        picketlinkUser.setEmail(email);
+        picketlinkUser.setAttribute(new Attribute("fullName", getFullName(username, firstName, lastName)));
+        idmManager.update(picketlinkUser);
+        return picketlinkUser;
+    }
+
     public static void updatePassword(PartitionManager partitionManager, User picketlinkUser, String password) {
         IdentityManager idmManager = getIdentityManager(partitionManager);
         idmManager.updateCredential(picketlinkUser, new Password(password.toCharArray()));
@@ -46,10 +57,6 @@ public class LDAPUtils {
         } else {
             return false;
         }
-    }
-
-    public static boolean isUserExists(PartitionManager partitionManager, String username) {
-        return getUser(partitionManager, username) != null;
     }
 
     public static User getUser(PartitionManager partitionManager, String username) {

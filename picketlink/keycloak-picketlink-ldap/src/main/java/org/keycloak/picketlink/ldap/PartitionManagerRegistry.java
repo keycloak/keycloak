@@ -11,13 +11,17 @@ import org.picketlink.idm.config.LDAPMappingConfigurationBuilder;
 import org.picketlink.idm.config.LDAPStoreConfigurationBuilder;
 import org.picketlink.idm.internal.DefaultPartitionManager;
 import org.picketlink.idm.model.basic.User;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.picketlink.common.constants.LDAPConstants.*;
+import static org.picketlink.common.constants.LDAPConstants.CN;
+import static org.picketlink.common.constants.LDAPConstants.EMAIL;
+import static org.picketlink.common.constants.LDAPConstants.SN;
+import static org.picketlink.common.constants.LDAPConstants.UID;
+import static org.picketlink.common.constants.LDAPConstants.CREATE_TIMESTAMP;
+import static org.picketlink.common.constants.LDAPConstants.MODIFY_TIMESTAMP;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -80,6 +84,8 @@ public class PartitionManagerRegistry {
         }
 
         String ldapFirstNameMapping = activeDirectory ?  "givenName" : CN;
+        String createTimestampMapping = activeDirectory ? "whenCreated" : CREATE_TIMESTAMP;
+        String modifyTimestampMapping = activeDirectory ? "whenChanged" : MODIFY_TIMESTAMP;
         String[] userObjectClasses = getUserObjectClasses(ldapConfig);
 
         boolean pagination = ldapConfig.containsKey(LDAPConstants.PAGINATION) ? Boolean.parseBoolean(ldapConfig.get(LDAPConstants.PAGINATION)) : false;
@@ -112,7 +118,9 @@ public class PartitionManagerRegistry {
                 .attribute("loginName", ldapLoginNameMapping, true)
                 .attribute("firstName", ldapFirstNameMapping)
                 .attribute("lastName", SN)
-                .attribute("email", EMAIL);
+                .attribute("email", EMAIL)
+                .readOnlyAttribute("createdDate", createTimestampMapping)
+                .readOnlyAttribute("modifyDate", modifyTimestampMapping);
 
         if (activeDirectory && ldapLoginNameMapping.equals("sAMAccountName")) {
             ldapUserMappingBuilder.bindingAttribute("fullName", CN);

@@ -676,14 +676,15 @@ public class RealmAdapter implements RealmModel {
         });
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
         for (UserFederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
+            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
         }
 
         return result;
     }
 
     @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName) {
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         String id = KeycloakModelUtils.generateId();
         UserFederationProviderEntity entity = new UserFederationProviderEntity();
         entity.setId(id);
@@ -695,10 +696,13 @@ public class RealmAdapter implements RealmModel {
             displayName = id;
         }
         entity.setDisplayName(displayName);
+        entity.setFullSyncPeriod(fullSyncPeriod);
+        entity.setChangedSyncPeriod(changedSyncPeriod);
+        entity.setLastSync(lastSync);
         em.persist(entity);
         realm.getUserFederationProviders().add(entity);
         em.flush();
-        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName);
+        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
     }
 
     @Override
@@ -728,6 +732,9 @@ public class RealmAdapter implements RealmModel {
                 entity.setPriority(model.getPriority());
                 entity.setProviderName(model.getProviderName());
                 entity.setPriority(model.getPriority());
+                entity.setFullSyncPeriod(model.getFullSyncPeriod());
+                entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
+                entity.setLastSync(model.getLastSync());
                 break;
             }
         }
@@ -750,13 +757,17 @@ public class RealmAdapter implements RealmModel {
                     if (displayName != null) {
                         entity.setDisplayName(model.getDisplayName());
                     }
+                    entity.setFullSyncPeriod(model.getFullSyncPeriod());
+                    entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
+                    entity.setLastSync(model.getLastSync());
                     found = true;
                     break;
                 }
 
             }
             if (found) continue;
-            session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
+            session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
             it.remove();
             em.remove(entity);
         }
@@ -786,6 +797,9 @@ public class RealmAdapter implements RealmModel {
                 displayName = entity.getId();
             }
             entity.setDisplayName(displayName);
+            entity.setFullSyncPeriod(model.getFullSyncPeriod());
+            entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
+            entity.setLastSync(model.getLastSync());
             em.persist(entity);
             realm.getUserFederationProviders().add(entity);
 

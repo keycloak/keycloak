@@ -292,4 +292,29 @@ public class LDAPFederationProvider implements UserFederationProvider {
     public void close() {
         //To change body of implemented methods use File | Settings | File Templates.
     }
+
+    protected void importPicketlinkUsers(RealmModel realm, List<User> users, UserFederationProviderModel fedModel) {
+        for (User picketlinkUser : users) {
+            String username = picketlinkUser.getLoginName();
+            UserModel currentUser = session.userStorage().getUserByUsername(username, realm);
+
+            if (currentUser == null) {
+                // Add new user to Keycloak
+                importUserFromPicketlink(realm, picketlinkUser);
+                logger.infof("Added new user from LDAP: " + username);
+            } else {
+                if ((fedModel.getId().equals(currentUser.getFederationLink())) && (picketlinkUser.getId().equals(currentUser.getAttribute(LDAPFederationProvider.LDAP_ID)))) {
+                    // Update keycloak user
+                    String email = (picketlinkUser.getEmail() != null && picketlinkUser.getEmail().trim().length() > 0) ? picketlinkUser.getEmail() : null;
+                    currentUser.setEmail(email);
+                    currentUser.setFirstName(picketlinkUser.getFirstName());
+                    currentUser.setLastName(picketlinkUser.getLastName());
+                    logger.infof("Updated user from LDAP: " + currentUser.getUsername());
+                } else {
+                    // TODO: We have local user of same username like LDAP user, but not linked. What to do? Delete him and import again?
+                    throw new IllegalStateException("User " + username + " has invalid LDAP ID or doesn't have federation link");
+                }
+            }
+        }
+    }
 }

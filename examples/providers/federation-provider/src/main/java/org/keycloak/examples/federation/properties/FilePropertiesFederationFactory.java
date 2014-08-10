@@ -14,6 +14,8 @@ import java.util.Properties;
  */
 public class FilePropertiesFederationFactory extends BasePropertiesFederationFactory {
 
+    public static final String PROVIDER_NAME = "file-properties";
+
     @Override
     protected BasePropertiesFederationProvider createProvider(KeycloakSession session, UserFederationProviderModel model, Properties props) {
         return new FilePropertiesFederationProvider(session, props, model);
@@ -35,6 +37,6 @@ public class FilePropertiesFederationFactory extends BasePropertiesFederationFac
      */
     @Override
     public String getId() {
-        return "file-properties";
+        return PROVIDER_NAME;
     }
 }

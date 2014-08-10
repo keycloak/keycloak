@@ -60,7 +60,7 @@ public class FederationProvidersIntegrationTest {
             ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "true");
             ldapConfig.put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.WRITABLE.toString());
 
-            ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap");
+            ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap", -1, -1, 0);
 
             // Delete all LDAP users and add some new for testing
             PartitionManager partitionManager = getPartitionManager(manager.getSession(), ldapModel);
@@ -102,7 +102,7 @@ public class FederationProvidersIntegrationTest {
     @WebResource
     protected AccountPasswordPage changePasswordPage;
 
-    private static UserModel addUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
+    static UserModel addUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
         UserModel user = session.users().addUser(realm, username);
         user.setEmail(email);
         user.setEnabled(true);
@@ -166,7 +166,7 @@ public class FederationProvidersIntegrationTest {
                 RealmManager manager = new RealmManager(session);
 
                 RealmModel appRealm = manager.getRealm("test");
-                ldapModel = appRealm.addUserFederationProvider(ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(), ldapModel.getDisplayName());
+                ldapModel = appRealm.addUserFederationProvider(ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(), ldapModel.getDisplayName(), -1, -1, 0);
             } finally {
                 keycloakRule.stopSession(session, true);
             }
@@ -233,7 +233,8 @@ public class FederationProvidersIntegrationTest {
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
 
-            UserFederationProviderModel model = new UserFederationProviderModel(ldapModel.getId(), ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(), ldapModel.getDisplayName());
+            UserFederationProviderModel model = new UserFederationProviderModel(ldapModel.getId(), ldapModel.getProviderName(), ldapModel.getConfig(),
+                    ldapModel.getPriority(), ldapModel.getDisplayName(), -1, -1, 0);
             model.getConfig().put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.READ_ONLY.toString());
             appRealm.updateUserFederationProvider(model);
             UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
@@ -284,7 +285,8 @@ public class FederationProvidersIntegrationTest {
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
 
-            UserFederationProviderModel model = new UserFederationProviderModel(ldapModel.getId(), ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(), ldapModel.getDisplayName());
+            UserFederationProviderModel model = new UserFederationProviderModel(ldapModel.getId(), ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(),
+                    ldapModel.getDisplayName(), -1, -1, 0);
             model.getConfig().put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.UNSYNCED.toString());
             appRealm.updateUserFederationProvider(model);
             UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
@@ -313,7 +315,7 @@ public class FederationProvidersIntegrationTest {
         }
     }
 
-    private static PartitionManager getPartitionManager(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {
+    static PartitionManager getPartitionManager(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {
         PartitionManagerProvider partitionManagerProvider = keycloakSession.getProvider(PartitionManagerProvider.class);
         return partitionManagerProvider.getPartitionManager(ldapFedModel);
     }

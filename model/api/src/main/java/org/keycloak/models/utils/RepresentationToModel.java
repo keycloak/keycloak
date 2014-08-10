@@ -288,7 +288,8 @@ public class RepresentationToModel {
 
         for (UserFederationProviderRepresentation representation : providers) {
             UserFederationProviderModel model = new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
-                    representation.getConfig(), representation.getPriority(), representation.getDisplayName());
+                    representation.getConfig(), representation.getPriority(), representation.getDisplayName(),
+                    representation.getFullSyncPeriod(), representation.getChangedSyncPeriod(), representation.getLastSync());
             result.add(model);
         }
         return result;

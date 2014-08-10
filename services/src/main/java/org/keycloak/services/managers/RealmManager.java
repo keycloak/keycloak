@@ -12,12 +12,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.timer.TimerProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -127,6 +129,8 @@ public class RealmManager {
     }
 
     public boolean removeRealm(RealmModel realm) {
+        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
+
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
             new ApplicationManager(this).removeApplication(getKeycloakAdminstrationRealm(), realm.getMasterAdminApp());
@@ -134,6 +138,12 @@ public class RealmManager {
             UserSessionProvider sessions = session.sessions();
             if (sessions != null) {
                 sessions.onRealmRemoved(realm);
+            }
+
+            // Remove all periodic syncs for configured federation providers
+            PeriodicSyncManager periodicSyncManager = new PeriodicSyncManager();
+            for (final UserFederationProviderModel fedProvider : federationProviders) {
+                periodicSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), fedProvider);
             }
         }
         return removed;
@@ -202,6 +212,13 @@ public class RealmManager {
 
     public void importRealm(RealmRepresentation rep, RealmModel newRealm) {
         RepresentationToModel.importRealm(session, rep, newRealm);
+
+        // Refresh periodic sync tasks for configured federationProviders
+        List<UserFederationProviderModel> federationProviders = newRealm.getUserFederationProviders();
+        PeriodicSyncManager periodicSyncManager = new PeriodicSyncManager();
+        for (final UserFederationProviderModel fedProvider : federationProviders) {
+            periodicSyncManager.startPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, newRealm.getId());
+        }
     }
 
     /**

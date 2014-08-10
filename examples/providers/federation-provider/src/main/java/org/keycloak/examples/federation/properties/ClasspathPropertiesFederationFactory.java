@@ -12,6 +12,8 @@ import java.util.Properties;
  */
 public class ClasspathPropertiesFederationFactory extends BasePropertiesFederationFactory {
 
+    public static final String PROVIDER_NAME = "classpath-properties";
+
     @Override
     protected BasePropertiesFederationProvider createProvider(KeycloakSession session, UserFederationProviderModel model, Properties props) {
         return new ClasspathPropertiesFederationProvider(session, model, props);
@@ -30,6 +32,6 @@ public class ClasspathPropertiesFederationFactory extends BasePropertiesFederati
 
     @Override
     public String getId() {
-        return "classpath-properties";
+        return PROVIDER_NAME;
     }
 }

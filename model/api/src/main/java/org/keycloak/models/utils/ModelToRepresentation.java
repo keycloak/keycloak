@@ -262,6 +262,9 @@ public class ModelToRepresentation {
         rep.setProviderName(model.getProviderName());
         rep.setPriority(model.getPriority());
         rep.setDisplayName(model.getDisplayName());
+        rep.setFullSyncPeriod(model.getFullSyncPeriod());
+        rep.setChangedSyncPeriod(model.getChangedSyncPeriod());
+        rep.setLastSync(model.getLastSync());
         return rep;
     }
 }

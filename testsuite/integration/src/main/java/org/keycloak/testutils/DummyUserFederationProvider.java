@@ -38,7 +38,7 @@ public class DummyUserFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        return true;
+        return users.remove(user.getUsername()) != null;
     }
 
     @Override

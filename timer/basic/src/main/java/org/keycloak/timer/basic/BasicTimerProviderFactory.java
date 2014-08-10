@@ -6,6 +6,9 @@ import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
 
 import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -14,9 +17,11 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
 
     private Timer timer;
 
+    private ConcurrentMap<String, TimerTask> scheduledTasks = new ConcurrentHashMap<String, TimerTask>();
+
     @Override
     public TimerProvider create(KeycloakSession session) {
-        return new BasicTimerProvider(timer);
+        return new BasicTimerProvider(timer, this);
     }
 
     @Override
@@ -33,6 +38,14 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
     @Override
     public String getId() {
         return "basic";
+    }
+
+    protected TimerTask putTask(String taskName, TimerTask task) {
+        return scheduledTasks.put(taskName, task);
+    }
+
+    protected TimerTask removeTask(String taskName) {
+        return scheduledTasks.remove(taskName);
     }
 
 }
