@@ -11,10 +11,13 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.AttributeMap;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
+import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -127,74 +130,146 @@ public class RealmAdapter implements RealmModel {
         em.flush();
     }
 
+    public void setAttribute(String name, String value) {
+        for (RealmAttributeEntity attr : realm.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                attr.setValue(value);
+                return;
+            }
+        }
+        RealmAttributeEntity attr = new RealmAttributeEntity();
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setRealm(realm);
+        em.persist(attr);
+        realm.getAttributes().add(attr);
+    }
+
+    public void setAttribute(String name, Boolean value) {
+        setAttribute(name, value.toString());
+    }
+
+    public void setAttribute(String name, Integer value) {
+        setAttribute(name, value.toString());
+    }
+
+    public void setAttribute(String name, Long value) {
+        setAttribute(name, value.toString());
+    }
+
+    public void removeAttribute(String name) {
+        Iterator<RealmAttributeEntity> it = realm.getAttributes().iterator();
+        while (it.hasNext()) {
+            RealmAttributeEntity attr = it.next();
+            if (attr.getName().equals(name)) {
+                it.remove();
+                em.remove(attr);
+            }
+        }
+    }
+
+    public String getAttribute(String name) {
+        for (RealmAttributeEntity attr : realm.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                return attr.getValue();
+            }
+        }
+        return null;
+    }
+
+    public Integer getAttribute(String name, Integer defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Integer.parseInt(v) : defaultValue;
+
+    }
+
+    public Long getAttribute(String name, Long defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Long.parseLong(v) : defaultValue;
+
+    }
+
+    public Boolean getAttribute(String name, Boolean defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Boolean.parseBoolean(v) : defaultValue;
+
+    }
+
+    public Map<String, String> getAttributes() {
+        Map<String, String> result = new HashMap<String, String>();
+        for (RealmAttributeEntity attr : realm.getAttributes()) {
+            result.put(attr.getName(), attr.getValue());
+        }
+        return result;
+    }
     @Override
     public boolean isBruteForceProtected() {
-        return realm.isBruteForceProtected();
+        return getAttribute("bruteForceProtected", false);
     }
 
     @Override
     public void setBruteForceProtected(boolean value) {
-        realm.setBruteForceProtected(value);
+        setAttribute("bruteForceProtected", value);
     }
 
     @Override
     public int getMaxFailureWaitSeconds() {
-        return realm.getMaxFailureWaitSeconds();
+        return getAttribute("maxFailureWaitSeconds", 0);
     }
 
     @Override
     public void setMaxFailureWaitSeconds(int val) {
-        realm.setMaxFailureWaitSeconds(val);
+        setAttribute("maxFailureWaitSeconds", val);
     }
 
     @Override
     public int getWaitIncrementSeconds() {
-        return realm.getWaitIncrementSeconds();
+        return getAttribute("waitIncrementSeconds", 0);
     }
 
     @Override
     public void setWaitIncrementSeconds(int val) {
-        realm.setWaitIncrementSeconds(val);
+        setAttribute("waitIncrementSeconds", val);
     }
 
     @Override
     public long getQuickLoginCheckMilliSeconds() {
-        return realm.getQuickLoginCheckMilliSeconds();
+        return getAttribute("quickLoginCheckMilliSeconds", 0l);
     }
 
     @Override
     public void setQuickLoginCheckMilliSeconds(long val) {
-        realm.setQuickLoginCheckMilliSeconds(val);
+        setAttribute("quickLoginCheckMilliSeconds", val);
     }
 
     @Override
     public int getMinimumQuickLoginWaitSeconds() {
-        return realm.getMinimumQuickLoginWaitSeconds();
+        return getAttribute("minimumQuickLoginWaitSeconds", 0);
     }
 
     @Override
     public void setMinimumQuickLoginWaitSeconds(int val) {
-        realm.setMinimumQuickLoginWaitSeconds(val);
+        setAttribute("minimumQuickLoginWaitSeconds", val);
     }
 
     @Override
     public int getMaxDeltaTimeSeconds() {
-        return realm.getMaxDeltaTimeSeconds();
+        return getAttribute("maxDeltaTimeSeconds", 0);
     }
 
     @Override
     public void setMaxDeltaTimeSeconds(int val) {
-        realm.setMaxDeltaTimeSeconds(val);
+        setAttribute("maxDeltaTimeSeconds", val);
     }
 
     @Override
     public int getFailureFactor() {
-        return realm.getFailureFactor();
+        return getAttribute("failureFactor", 0);
     }
 
     @Override
     public void setFailureFactor(int failureFactor) {
-        realm.setFailureFactor(failureFactor);
+        setAttribute("failureFactor", failureFactor);
     }
 
     @Override
