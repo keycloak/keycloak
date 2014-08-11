@@ -220,12 +220,6 @@ public class SocialResource {
         }
 
         if (user == null) {
-
-            if (!realm.isRegistrationAllowed()) {
-                audit.error(Errors.REGISTRATION_DISABLED);
-                return oauth.forwardToSecurityFailure("Registration not allowed");
-            }
-
             user = session.users().addUser(realm, KeycloakModelUtils.generateId());
             user.setEnabled(true);
             user.setFirstName(socialUser.getFirstName());
