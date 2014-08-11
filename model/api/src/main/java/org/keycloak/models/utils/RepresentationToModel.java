@@ -4,6 +4,7 @@ import net.iharder.Base64;
 import org.jboss.logging.Logger;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -199,6 +200,12 @@ public class RepresentationToModel {
             newRealm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
         }
 
+        if (rep.getBrowserSecurityHeaders() != null) {
+            newRealm.setBrowserSecurityHeaders(rep.getBrowserSecurityHeaders());
+        } else {
+            newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.defaultHeaders);
+        }
+
         if (rep.getSocialProviders() != null) {
             newRealm.setSocialConfig(new HashMap(rep.getSocialProviders()));
         }
@@ -264,6 +271,10 @@ public class RepresentationToModel {
 
         if (rep.getSocialProviders() != null) {
             realm.setSocialConfig(new HashMap(rep.getSocialProviders()));
+        }
+
+        if (rep.getBrowserSecurityHeaders() != null) {
+            realm.setBrowserSecurityHeaders(rep.getBrowserSecurityHeaders());
         }
 
         if (rep.getUserFederationProviders() != null) {

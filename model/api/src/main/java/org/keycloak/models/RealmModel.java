@@ -151,6 +151,9 @@ public interface RealmModel extends RoleContainerModel {
 
     List<OAuthClientModel> getOAuthClients();
 
+    Map<String, String> getBrowserSecurityHeaders();
+    void setBrowserSecurityHeaders(Map<String, String> headers);
+
     Map<String, String> getSmtpConfig();
 
     void setSmtpConfig(Map<String, String> smtpConfig);

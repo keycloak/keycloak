@@ -675,16 +675,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmRevocationCtrl'
         })
-        .when('/realms/:realm/sessions/brute-force', {
-            templateUrl : 'partials/session-brute-force.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                }
-            },
-            controller : 'RealmBruteForceCtrl'
-        })
-        .when('/realms/:realm/sessions/realm', {
+         .when('/realms/:realm/sessions/realm', {
             templateUrl : 'partials/session-realm.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -760,6 +751,28 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'GenericUserFederationCtrl'
+        })
+        .when('/realms/:realm/defense/headers', {
+            templateUrl : 'partials/defense-headers.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+
+            },
+            controller : 'DefenseHeadersCtrl'
+        })
+        .when('/realms/:realm/defense/brute-force', {
+            templateUrl : 'partials/brute-force.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmBruteForceCtrl'
         })
         .when('/logout', {
             templateUrl : 'partials/home.html',

@@ -25,6 +25,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Details;
@@ -158,12 +159,12 @@ public class AccountTest {
         });
     }
 
-    /*
+    @Ignore
     @Test
     public void forever() throws Exception{
         while (true) Thread.sleep(5000);
     }
-    */
+
 
     @Test
     public void returnToAppFromQueryParam() {

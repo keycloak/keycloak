@@ -735,6 +735,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public Map<String, String> getBrowserSecurityHeaders() {
+        return realm.getBrowserSecurityHeaders();
+    }
+
+    @Override
+    public void setBrowserSecurityHeaders(Map<String, String> headers) {
+        realm.setBrowserSecurityHeaders(headers);
+        updateRealm();
+    }
+
+    @Override
     public Map<String, String> getSmtpConfig() {
         return realm.getSmtpConfig();
     }

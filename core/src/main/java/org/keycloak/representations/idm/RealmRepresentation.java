@@ -52,6 +52,7 @@ public class RealmRepresentation {
     protected Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings;
     protected List<ApplicationRepresentation> applications;
     protected List<OAuthClientRepresentation> oauthClients;
+    protected Map<String, String> browserSecurityHeaders;
     protected Map<String, String> socialProviders;
     protected Map<String, String> smtpServer;
     protected List<UserFederationProviderRepresentation> userFederationProviders;
@@ -289,6 +290,14 @@ public class RealmRepresentation {
 
     public void setUpdateProfileOnInitialSocialLogin(Boolean updateProfileOnInitialSocialLogin) {
         this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
+    }
+
+    public Map<String, String> getBrowserSecurityHeaders() {
+        return browserSecurityHeaders;
+    }
+
+    public void setBrowserSecurityHeaders(Map<String, String> browserSecurityHeaders) {
+        this.browserSecurityHeaders = browserSecurityHeaders;
     }
 
     public Map<String, String> getSocialProviders() {

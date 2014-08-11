@@ -13,6 +13,7 @@ import org.keycloak.account.freemarker.model.SessionsBean;
 import org.keycloak.account.freemarker.model.TotpBean;
 import org.keycloak.account.freemarker.model.UrlBean;
 import org.keycloak.audit.Event;
+import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
@@ -136,7 +137,9 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         try {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
-            return Response.status(status).type(MediaType.TEXT_HTML).entity(result).build();
+            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
+            BrowserSecurityHeaderSetup.headers(builder, realm);
+            return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
             return Response.serverError().build();

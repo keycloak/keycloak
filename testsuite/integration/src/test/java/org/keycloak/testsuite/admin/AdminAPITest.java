@@ -278,6 +278,9 @@ public class AdminAPITest {
         if (rep.getSocialProviders() != null) {
             Assert.assertEquals(rep.getSocialProviders(), storedRealm.getSocialProviders());
         }
+        if (rep.getBrowserSecurityHeaders() != null) {
+            Assert.assertEquals(rep.getBrowserSecurityHeaders(), storedRealm.getBrowserSecurityHeaders());
+        }
 
     }
 
