@@ -58,24 +58,6 @@ public class RealmEntity {
     protected boolean social;
     @Column(name="REMEMBER_ME")
     protected boolean rememberMe;
-    //--- brute force settings
-    @Column(name="BRUTE_FORCE_PROTECTED")
-    protected boolean bruteForceProtected;
-    @Column(name="MAX_FAILURE_WAIT")
-    protected int maxFailureWaitSeconds;
-    @Column(name="MINIMUM_QUICK_LOGIN_WAIT")
-    protected int minimumQuickLoginWaitSeconds;
-    @Column(name="WAIT_INCREMENT_SECONDS")
-    protected int waitIncrementSeconds;
-    @Column(name="QUICK_LOGIN_CHECK")
-    protected long quickLoginCheckMilliSeconds;
-    @Column(name="MAX_DELTA_TIME")
-    protected int maxDeltaTimeSeconds;
-    @Column(name="FAILURE_FACTOR")
-    protected int failureFactor;
-    //--- end brute force settings
-
-
     @Column(name="UPDATE_PROFILE_ON_SOC_LOGIN")
     protected boolean updateProfileOnInitialSocialLogin;
     @Column(name="PASSWORD_POLICY")
@@ -107,6 +89,9 @@ public class RealmEntity {
     protected String adminTheme;
     @Column(name="EMAIL_THEME")
     protected String emailTheme;
+
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    Collection<RealmAttributeEntity> attributes = new ArrayList<RealmAttributeEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
@@ -400,62 +385,6 @@ public class RealmEntity {
         this.notBefore = notBefore;
     }
 
-    public boolean isBruteForceProtected() {
-        return bruteForceProtected;
-    }
-
-    public void setBruteForceProtected(boolean bruteForceProtected) {
-        this.bruteForceProtected = bruteForceProtected;
-    }
-
-    public int getMaxFailureWaitSeconds() {
-        return maxFailureWaitSeconds;
-    }
-
-    public void setMaxFailureWaitSeconds(int maxFailureWaitSeconds) {
-        this.maxFailureWaitSeconds = maxFailureWaitSeconds;
-    }
-
-    public int getMinimumQuickLoginWaitSeconds() {
-        return minimumQuickLoginWaitSeconds;
-    }
-
-    public void setMinimumQuickLoginWaitSeconds(int minimumQuickLoginWaitSeconds) {
-        this.minimumQuickLoginWaitSeconds = minimumQuickLoginWaitSeconds;
-    }
-
-    public int getWaitIncrementSeconds() {
-        return waitIncrementSeconds;
-    }
-
-    public void setWaitIncrementSeconds(int waitIncrementSeconds) {
-        this.waitIncrementSeconds = waitIncrementSeconds;
-    }
-
-    public long getQuickLoginCheckMilliSeconds() {
-        return quickLoginCheckMilliSeconds;
-    }
-
-    public void setQuickLoginCheckMilliSeconds(long quickLoginCheckMilliSeconds) {
-        this.quickLoginCheckMilliSeconds = quickLoginCheckMilliSeconds;
-    }
-
-    public int getMaxDeltaTimeSeconds() {
-        return maxDeltaTimeSeconds;
-    }
-
-    public void setMaxDeltaTimeSeconds(int maxDeltaTimeSeconds) {
-        this.maxDeltaTimeSeconds = maxDeltaTimeSeconds;
-    }
-
-    public int getFailureFactor() {
-        return failureFactor;
-    }
-
-    public void setFailureFactor(int failureFactor) {
-        this.failureFactor = failureFactor;
-    }
-
     public boolean isAuditEnabled() {
         return auditEnabled;
     }
@@ -494,6 +423,14 @@ public class RealmEntity {
 
     public void setUserFederationProviders(List<UserFederationProviderEntity> userFederationProviders) {
         this.userFederationProviders = userFederationProviders;
+    }
+
+    public Collection<RealmAttributeEntity> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Collection<RealmAttributeEntity> attributes) {
+        this.attributes = attributes;
     }
 }
 

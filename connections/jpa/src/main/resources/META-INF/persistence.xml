@@ -7,6 +7,7 @@
         <class>org.keycloak.models.jpa.entities.CredentialEntity</class>
         <class>org.keycloak.models.jpa.entities.OAuthClientEntity</class>
         <class>org.keycloak.models.jpa.entities.RealmEntity</class>
+        <class>org.keycloak.models.jpa.entities.RealmAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.RequiredCredentialEntity</class>
         <class>org.keycloak.models.jpa.entities.UserFederationProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.RoleEntity</class>
