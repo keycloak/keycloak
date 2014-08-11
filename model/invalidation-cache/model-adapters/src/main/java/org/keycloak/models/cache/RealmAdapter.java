@@ -558,6 +558,19 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public Map<String, String> getBrowserSecurityHeaders() {
+        if (updated != null) return updated.getBrowserSecurityHeaders();
+        return cached.getBrowserSecurityHeaders();
+    }
+
+    @Override
+    public void setBrowserSecurityHeaders(Map<String, String> headers) {
+        getDelegateForUpdate();
+        updated.setBrowserSecurityHeaders(headers);
+
+    }
+
+    @Override
     public Map<String, String> getSmtpConfig() {
         if (updated != null) return updated.getSmtpConfig();
         return cached.getSmtpConfig();

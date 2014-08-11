@@ -1,0 +1,36 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li class="active"><a href="#/realms/{{realm.realm}}/defense/headers">Headers</a></li>
+        <li><a href="#/realms/{{realm.realm}}/defense/brute-force">Brute Force Detection</a></li>
+    </ul>
+    <div id="content">
+        <div data-ng-show="access.viewRealm">
+            <h2><span>{{realm.realm}}</span> Browser Security Headers</h2>
+            <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+                <fieldset class="border-top">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="xFrameOptions"><a href="http://tools.ietf.org/html/rfc7034">X-Frame-Options</a></label>
+                        <div class="col-sm-6">
+                            <input class="form-control" id="xFrameOptions" type="text" ng-model="realm.browserSecurityHeaders.xFrameOptions">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="contentSecurityPolicy"><a href="http://www.w3.org/TR/CSP/">Content-Security-Policy</a></label>
+                        <div class="col-sm-6">
+                            <input class="form-control" id="contentSecurityPolicy" type="text" ng-model="realm.browserSecurityHeaders.contentSecurityPolicy">
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="pull-right form-actions" data-ng-show="access.manageRealm">
+                    <button kc-reset data-ng-show="changed">Clear changes</button>
+                    <button kc-save  data-ng-show="changed">Save</button>
+                </div>
+            </form>
+        </div>
+        <div data-ng-hide="access.viewRealm">
+            <h2 ><span>{{realm.realm}}</span></h2>
+        </div>
+
+    </div>
+</div>

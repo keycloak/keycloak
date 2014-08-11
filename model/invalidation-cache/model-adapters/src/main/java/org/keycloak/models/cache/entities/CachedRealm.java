@@ -66,6 +66,7 @@ public class CachedRealm {
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
 
+    private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
 
@@ -123,6 +124,7 @@ public class CachedRealm {
 
         smtpConfig.putAll(model.getSmtpConfig());
         socialConfig.putAll(model.getSocialConfig());
+        browserSecurityHeaders.putAll(model.getBrowserSecurityHeaders());
 
         auditEnabled = model.isAuditEnabled();
         auditExpiration = model.getAuditExpiration();
@@ -285,6 +287,10 @@ public class CachedRealm {
 
     public Map<String, String> getSocialConfig() {
         return socialConfig;
+    }
+
+    public Map<String, String> getBrowserSecurityHeaders() {
+        return browserSecurityHeaders;
     }
 
     public String getLoginTheme() {

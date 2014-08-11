@@ -196,6 +196,7 @@ public class RealmAdapter implements RealmModel {
     }
 
     public Map<String, String> getAttributes() {
+        // should always return a copy
         Map<String, String> result = new HashMap<String, String>();
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             result.put(attr.getName(), attr.getValue());
@@ -709,6 +710,27 @@ public class RealmAdapter implements RealmModel {
         List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
         for (OAuthClientEntity entity : entities) list.add(new OAuthClientAdapter(this, entity, em));
         return list;
+    }
+
+    private static final String BROWSER_HEADER_PREFIX = "_browser_header.";
+
+    @Override
+    public Map<String, String> getBrowserSecurityHeaders() {
+        Map<String, String> attributes = getAttributes();
+        Map<String, String> headers = new HashMap<String, String>();
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            if (entry.getKey().startsWith(BROWSER_HEADER_PREFIX)) {
+                headers.put(entry.getKey().substring(BROWSER_HEADER_PREFIX.length()), entry.getValue());
+            }
+        }
+        return headers;
+    }
+
+    @Override
+    public void setBrowserSecurityHeaders(Map<String, String> headers) {
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            setAttribute(BROWSER_HEADER_PREFIX + entry.getKey(), entry.getValue());
+        }
     }
 
     @Override

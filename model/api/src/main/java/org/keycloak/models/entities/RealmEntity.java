@@ -52,6 +52,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private List<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
     private List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
+    private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
 
@@ -315,6 +316,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setRequiredCredentials(List<RequiredCredentialEntity> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
+    }
+
+    public Map<String, String> getBrowserSecurityHeaders() {
+        return browserSecurityHeaders;
+    }
+
+    public void setBrowserSecurityHeaders(Map<String, String> browserSecurityHeaders) {
+        this.browserSecurityHeaders = browserSecurityHeaders;
     }
 
     public Map<String, String> getSmtpConfig() {

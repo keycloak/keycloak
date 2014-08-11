@@ -7,6 +7,7 @@ import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -117,6 +118,8 @@ public class RealmManager {
 
 
     protected void setupRealmDefaults(RealmModel realm) {
+        realm.setBrowserSecurityHeaders(BrowserSecurityHeaders.defaultHeaders);
+
         // brute force
         realm.setBruteForceProtected(false); // default settings off for now todo set it on
         realm.setMaxFailureWaitSeconds(900);

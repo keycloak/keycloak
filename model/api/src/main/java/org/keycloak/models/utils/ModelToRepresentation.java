@@ -105,6 +105,7 @@ public class ModelToRepresentation {
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setSmtpServer(realm.getSmtpConfig());
         rep.setSocialProviders(realm.getSocialConfig());
+        rep.setBrowserSecurityHeaders(realm.getBrowserSecurityHeaders());
         rep.setAccountTheme(realm.getAccountTheme());
         rep.setLoginTheme(realm.getLoginTheme());
         rep.setAdminTheme(realm.getAdminTheme());

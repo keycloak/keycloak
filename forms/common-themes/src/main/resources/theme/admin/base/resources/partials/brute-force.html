@@ -1,16 +1,10 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
     <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
-        <li><a href="#/realms/{{realm.realm}}/sessions/realm">Realm Sessions</a></li>
-        <li><a href="#/realms/{{realm.realm}}/token-settings">Timeout Settings</a></li>
-        <li><a href="#/realms/{{realm.realm}}/sessions/revocation">Revocation</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/sessions/brute-force">Brute Force Protection</a></li>
+        <li><a href="#/realms/{{realm.realm}}/defense/headers">Headers</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/defense/brute-force">Brute Force Protection</a></li>
     </ul>
     <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li class="active">Brute Force</li>
-        </ol>
         <h2><span>{{realm.realm}}</span> Brute Force Protection Settings</h2>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">

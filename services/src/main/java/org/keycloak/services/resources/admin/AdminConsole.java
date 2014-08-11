@@ -8,6 +8,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.Config;
+import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.AdminRoles;
@@ -325,7 +326,9 @@ public class AdminConsole {
                 cacheControl.setNoTransform(false);
                 cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
 
-                return Response.ok(resource).type(contentType).cacheControl(cacheControl).build();
+                Response.ResponseBuilder builder = Response.ok(resource).type(contentType).cacheControl(cacheControl);
+                BrowserSecurityHeaderSetup.headers(builder, realm);
+                return builder.build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }

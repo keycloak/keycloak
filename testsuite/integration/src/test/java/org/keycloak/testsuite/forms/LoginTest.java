@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -41,6 +42,11 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.Response;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -84,6 +90,20 @@ public class LoginTest {
     protected LoginPage loginPage;
 
     private static String userId;
+
+    @Test
+    public void testBrowserSecurityHeaders() {
+        Client client = ClientBuilder.newClient();
+        Response response = client.target(oauth.getLoginFormUrl()).request().get();
+        Assert.assertEquals(200, response.getStatus());
+        for (Map.Entry<String, String> entry : BrowserSecurityHeaders.defaultHeaders.entrySet()) {
+            String headerName = BrowserSecurityHeaders.headerAttributeMap.get(entry.getKey());
+            String headerValue = response.getHeaderString(headerName);
+            Assert.assertNotNull(headerValue);
+            Assert.assertEquals(headerValue, entry.getValue());
+        }
+        response.close();
+    }
 
     @Test
     public void loginInvalidPassword() {
