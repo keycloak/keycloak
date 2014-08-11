@@ -156,10 +156,12 @@ public final class KeycloakModelUtils {
                     tx.commit();
                 }
             }
-        } finally {
+        } catch (RuntimeException re) {
             if (tx.isActive()) {
                 tx.rollback();
             }
+            throw re;
+        } finally {
             session.close();
         }
     }

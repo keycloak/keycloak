@@ -15,6 +15,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.PeriodicSyncManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.admin.AdminRoot;
@@ -148,6 +149,7 @@ public class KeycloakApplication extends Application {
         TimerProvider timer = sessionFactory.create().getProvider(TimerProvider.class);
         timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredAuditEvents()), interval, "ClearExpiredAuditEvents");
         timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, "ClearExpiredUserSessions");
+        new PeriodicSyncManager().bootstrap(sessionFactory, timer);
     }
 
     public KeycloakSessionFactory getSessionFactory() {
