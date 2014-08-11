@@ -217,6 +217,10 @@ module.factory('UserFederationProviders', function($resource) {
     });
 });
 
+module.factory('UserFederationSync', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/sync/:provider');
+});
+
 
 module.factory('UserSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/session-stats', {

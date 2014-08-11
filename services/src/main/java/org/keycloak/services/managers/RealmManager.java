@@ -144,9 +144,9 @@ public class RealmManager {
             }
 
             // Remove all periodic syncs for configured federation providers
-            PeriodicSyncManager periodicSyncManager = new PeriodicSyncManager();
+            UsersSyncManager usersSyncManager = new UsersSyncManager();
             for (final UserFederationProviderModel fedProvider : federationProviders) {
-                periodicSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), fedProvider);
+                usersSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), fedProvider);
             }
         }
         return removed;
@@ -218,9 +218,9 @@ public class RealmManager {
 
         // Refresh periodic sync tasks for configured federationProviders
         List<UserFederationProviderModel> federationProviders = newRealm.getUserFederationProviders();
-        PeriodicSyncManager periodicSyncManager = new PeriodicSyncManager();
+        UsersSyncManager usersSyncManager = new UsersSyncManager();
         for (final UserFederationProviderModel fedProvider : federationProviders) {
-            periodicSyncManager.startPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, newRealm.getId());
+            usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, newRealm.getId());
         }
     }
 

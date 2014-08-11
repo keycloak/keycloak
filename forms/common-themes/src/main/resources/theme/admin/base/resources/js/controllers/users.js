@@ -434,32 +434,49 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
 });
 
 
-module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog, realm, instance, UserFederationInstances, RealmLDAPConnectionTester) {
+module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog, realm, instance, UserFederationInstances, UserFederationSync, RealmLDAPConnectionTester) {
     console.log('LDAPCtrl');
+    var DEFAULT_BATCH_SIZE = "1000";
 
-    $scope.instance = angular.copy(instance);
     $scope.create = !instance.providerName;
 
-    if ($scope.create) {
-        $scope.instance.providerName = "ldap";
-        $scope.instance.config = {};
-        $scope.instance.priority = 0;
-        $scope.syncRegistrations = false;
+    function initFederationSettings() {
+        if ($scope.create) {
+            instance.providerName = "ldap";
+            instance.config = {};
+            instance.priority = 0;
+            $scope.syncRegistrations = false;
 
-        $scope.userAccountControlsAfterPasswordUpdate = true;
-        $scope.instance.config.userAccountControlsAfterPasswordUpdate = "true";
+            $scope.userAccountControlsAfterPasswordUpdate = true;
+            instance.config.userAccountControlsAfterPasswordUpdate = "true";
 
-        $scope.connectionPooling = true;
-        $scope.instance.config.connectionPooling = "true";
+            $scope.connectionPooling = true;
+            instance.config.connectionPooling = "true";
 
-        $scope.pagination = true;
-        $scope.instance.config.pagination = "true";
-    } else {
-        $scope.syncRegistrations = instance.config.syncRegistrations && instance.config.syncRegistrations == "true";
-        $scope.userAccountControlsAfterPasswordUpdate = instance.config.userAccountControlsAfterPasswordUpdate && instance.config.userAccountControlsAfterPasswordUpdate == "true";
-        $scope.connectionPooling = instance.config.connectionPooling && instance.config.connectionPooling == "true";
-        $scope.pagination = instance.config.pagination && instance.config.pagination == "true";
+            $scope.pagination = true;
+            instance.config.pagination = "true";
+            instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
+
+            $scope.fullSyncEnabled = false;
+            $scope.changedSyncEnabled = false;
+        } else {
+            $scope.syncRegistrations = instance.config.syncRegistrations && instance.config.syncRegistrations == "true";
+            $scope.userAccountControlsAfterPasswordUpdate = instance.config.userAccountControlsAfterPasswordUpdate && instance.config.userAccountControlsAfterPasswordUpdate == "true";
+            $scope.connectionPooling = instance.config.connectionPooling && instance.config.connectionPooling == "true";
+            $scope.pagination = instance.config.pagination && instance.config.pagination == "true";
+            if (!instance.config.batchSizeForSync) {
+                instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
+            }
+            $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
+            $scope.changedSyncEnabled = (instance.changedSyncPeriod && instance.changedSyncPeriod > 0);
+        }
+
+        $scope.changed = false;
+        $scope.lastVendor = instance.config.vendor;
     }
+
+    initFederationSettings();
+    $scope.instance = angular.copy(instance);
 
     $scope.ldapVendors = [
         { "id": "ad", "name": "Active Directory" },
@@ -472,11 +489,6 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     ];
 
     $scope.realm = realm;
-
-
-    $scope.changed = false;
-
-    $scope.lastVendor = $scope.instance.config.vendor;
 
     function watchBooleanProperty(propertyName) {
         $scope.$watch(propertyName, function() {
@@ -492,6 +504,24 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     watchBooleanProperty('userAccountControlsAfterPasswordUpdate');
     watchBooleanProperty('connectionPooling');
     watchBooleanProperty('pagination');
+
+    $scope.$watch('fullSyncEnabled', function(newVal, oldVal) {
+        if (oldVal == newVal) {
+            return;
+        }
+
+        $scope.instance.fullSyncPeriod = $scope.fullSyncEnabled ? 604800 : -1;
+        $scope.changed = true;
+    });
+
+    $scope.$watch('changedSyncEnabled', function(newVal, oldVal) {
+        if (oldVal == newVal) {
+            return;
+        }
+
+        $scope.instance.changedSyncPeriod = $scope.changedSyncEnabled ? 86400 : -1;
+        $scope.changed = true;
+    });
 
     $scope.$watch('instance', function() {
         if (!angular.equals($scope.instance, instance)) {
@@ -514,6 +544,13 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
 
     $scope.save = function() {
         $scope.changed = false;
+
+        if (!parseInt($scope.instance.config.batchSizeForSync)) {
+            $scope.instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
+        } else {
+            $scope.instance.config.batchSizeForSync = parseInt($scope.instance.config.batchSizeForSync).toString();
+        }
+
         if ($scope.create) {
             UserFederationInstances.save({realm: realm.realm}, $scope.instance,  function () {
                 $scope.changed = false;
@@ -534,15 +571,8 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     };
 
     $scope.reset = function() {
+        initFederationSettings();
         $scope.instance = angular.copy(instance);
-        if ($scope.create) {
-            $scope.instance.providerName = "ldap";
-            $scope.instance.config = {};
-            $scope.instance.priority = 0;
-            $scope.syncRegistrations = false;
-        }
-        $scope.changed = false;
-        $scope.lastVendor = $scope.instance.config.vendor;
     };
 
     $scope.cancel = function() {
@@ -589,5 +619,24 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
             Notifications.error("LDAP authentication failed. See server.log for details");
         });
     }
+
+    $scope.triggerFullSync = function() {
+        console.log('LDAPCtrl: triggerFullSync');
+        triggerSync('triggerFullSync');
+    }
+
+    $scope.triggerChangedUsersSync = function() {
+        console.log('LDAPCtrl: triggerChangedUsersSync');
+        triggerSync('triggerChangedUsersSync');
+    }
+
+    function triggerSync(action) {
+        UserFederationSync.get({ action: action, realm: $scope.realm.realm, provider: $scope.instance.id }, function() {
+            Notifications.success("Sync of users finished successfully");
+        }, function() {
+            Notifications.error("Error during sync of users");
+        });
+    }
+
 });
 

@@ -12,7 +12,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
-import org.keycloak.services.managers.PeriodicSyncManager;
+import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.timer.TimerProvider;
 
 import javax.ws.rs.Consumes;
@@ -23,6 +23,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -120,7 +121,7 @@ public class UserFederationResource {
         }
         UserFederationProviderModel model = realm.addUserFederationProvider(rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
-        new PeriodicSyncManager().startPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
+        new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
 
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
@@ -144,7 +145,7 @@ public class UserFederationResource {
         UserFederationProviderModel model = new UserFederationProviderModel(id, rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         realm.updateUserFederationProvider(model);
-        new PeriodicSyncManager().startPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
+        new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
     }
 
     /**
@@ -179,7 +180,7 @@ public class UserFederationResource {
         auth.requireManage();
         UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1, null, -1, -1, 0);
         realm.removeUserFederationProvider(model);
-        new PeriodicSyncManager().removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), model);
+        new UsersSyncManager().removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), model);
     }
 
 
@@ -200,6 +201,33 @@ public class UserFederationResource {
             reps.add(rep);
         }
         return reps;
+    }
+
+    /**
+     * trigger sync of users
+     *
+     * @return
+     */
+    @GET
+    @Path("sync/{id}")
+    @NoCache
+    public Response getUserFederationInstances(@PathParam("id") String providerId, @QueryParam("action") String action) {
+        logger.info("triggerSync");
+        auth.requireManage();
+
+        for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
+            if (model.getId().equals(providerId)) {
+                UsersSyncManager syncManager = new UsersSyncManager();
+                if ("triggerFullSync".equals(action)) {
+                    syncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), model);
+                } else if ("triggerChangedUsersSync".equals(action)) {
+                    syncManager.syncChangedUsers(session.getKeycloakSessionFactory(), realm.getId(), model);
+                }
+                return Response.noContent().build();
+            }
+        }
+
+        throw new NotFoundException("could not find provider");
     }
 
 

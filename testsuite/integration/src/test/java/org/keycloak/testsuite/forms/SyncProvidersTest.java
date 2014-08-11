@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
-import org.keycloak.examples.federation.properties.ClasspathPropertiesFederationFactory;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
@@ -23,11 +22,10 @@ import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.services.managers.PeriodicSyncManager;
+import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
-import org.keycloak.testutils.DummyUserFederationProvider;
 import org.keycloak.testutils.DummyUserFederationProviderFactory;
 import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.keycloak.timer.TimerProvider;
@@ -84,29 +82,43 @@ public class SyncProvidersTest {
 
     @Test
     public void testLDAPSync() {
+        UsersSyncManager usersSyncManager = new UsersSyncManager();
+
+        // wait a bit
+        sleep(1000);
+
         KeycloakSession session = keycloakRule.startSession();
         try {
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            UserFederationProviderFactory ldapFedFactory = (UserFederationProviderFactory)sessionFactory.getProviderFactory(UserFederationProvider.class, LDAPFederationProviderFactory.PROVIDER_NAME);
-            ldapFedFactory.syncAllUsers(sessionFactory, "test", ldapModel);
+            usersSyncManager.syncAllUsers(sessionFactory, "test", ldapModel);
         } finally {
             keycloakRule.stopSession(session, false);
         }
 
-        // Assert users imported (model test)
         session = keycloakRule.startSession();
         try {
             RealmModel testRealm = session.realms().getRealm("test");
             UserProvider userProvider = session.userStorage();
+            // Assert users imported
             assertUserImported(userProvider, testRealm, "user1", "User1FN", "User1LN", "user1@email.org");
             assertUserImported(userProvider, testRealm, "user2", "User2FN", "User2LN", "user2@email.org");
             assertUserImported(userProvider, testRealm, "user3", "User3FN", "User3LN", "user3@email.org");
             assertUserImported(userProvider, testRealm, "user4", "User4FN", "User4LN", "user4@email.org");
             assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5@email.org");
 
+            // Assert lastSync time updated
+            Assert.assertTrue(ldapModel.getLastSync() > 0);
+            for (UserFederationProviderModel persistentFedModel : testRealm.getUserFederationProviders()) {
+                if (LDAPFederationProviderFactory.PROVIDER_NAME.equals(persistentFedModel.getProviderName())) {
+                    Assert.assertTrue(persistentFedModel.getLastSync() > 0);
+                } else {
+                    // Dummy provider has still 0
+                    Assert.assertEquals(0, persistentFedModel.getLastSync());
+                }
+            }
+
             // wait a bit
             sleep(1000);
-            Date beforeLDAPUpdate = new Date();
 
             // Add user to LDAP and update 'user5' in LDAP
             PartitionManager partitionManager = FederationProvidersIntegrationTest.getPartitionManager(session, ldapModel);
@@ -119,8 +131,7 @@ public class SyncProvidersTest {
 
             // Trigger partial sync
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            UserFederationProviderFactory ldapFedFactory = (UserFederationProviderFactory)sessionFactory.getProviderFactory(UserFederationProvider.class, LDAPFederationProviderFactory.PROVIDER_NAME);
-            ldapFedFactory.syncChangedUsers(sessionFactory, "test", ldapModel, beforeLDAPUpdate);
+            usersSyncManager.syncChangedUsers(sessionFactory, "test", ldapModel);
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -147,12 +158,12 @@ public class SyncProvidersTest {
             int changed = dummyFedFactory.getChangedSyncCounter();
 
             // Assert that after some period was DummyUserFederationProvider triggered
-            PeriodicSyncManager periodicSyncManager = new PeriodicSyncManager();
-            periodicSyncManager.bootstrap(sessionFactory, session.getProvider(TimerProvider.class));
+            UsersSyncManager usersSyncManager = new UsersSyncManager();
+            usersSyncManager.bootstrapPeriodic(sessionFactory, session.getProvider(TimerProvider.class));
             sleep(1800);
 
             // Cancel timer
-            periodicSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), dummyModel);
+            usersSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), dummyModel);
 
             // Assert that DummyUserFederationProviderFactory.syncChangedUsers was invoked
             int newChanged = dummyFedFactory.getChangedSyncCounter();
