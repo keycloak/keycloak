@@ -64,7 +64,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
                 exception = exception == null ? e : exception;
             }
         }
-
+        active = false;
         if (exception != null) {
             throw exception;
         }
@@ -87,6 +87,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
                 exception = exception != null ? e : exception;
             }
         }
+        active = false;
         if (exception != null) {
             throw exception;
         }

@@ -106,6 +106,10 @@ public class UsersResource {
             }
             updateUserFromRep(user, rep);
 
+            if (session.getTransaction().isActive()) {
+                session.getTransaction().commit();
+            }
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("User exists with same username or email");
@@ -127,6 +131,10 @@ public class UsersResource {
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             updateUserFromRep(user, rep);
+
+            if (session.getTransaction().isActive()) {
+                session.getTransaction().commit();
+            }
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getUsername()).build()).build();
         } catch (ModelDuplicateException e) {
