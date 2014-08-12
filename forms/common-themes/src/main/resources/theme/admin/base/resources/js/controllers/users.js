@@ -359,22 +359,47 @@ module.controller('UserFederationCtrl', function($scope, $location, realm, UserF
 module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, Dialog, realm, instance, providerFactory, UserFederationInstances) {
     console.log('GenericUserFederationCtrl');
 
-    $scope.instance = angular.copy(instance);
     $scope.create = !instance.providerName;
     $scope.providerFactory = providerFactory;
 
     console.log("providerFactory: " + providerFactory.id);
 
-    if ($scope.create) {
-        $scope.instance.providerName = providerFactory.id;
-        $scope.instance.config = {};
-        $scope.instance.priority = 0;
+    function initFederationSettings() {
+        if ($scope.create) {
+            instance.providerName = providerFactory.id;
+            instance.config = {};
+            instance.priority = 0;
+            $scope.fullSyncEnabled = false;
+            $scope.changedSyncEnabled = false;
+        } else {
+            $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
+            $scope.changedSyncEnabled = (instance.changedSyncPeriod && instance.changedSyncPeriod > 0);
+        }
+
+        $scope.changed = false;
     }
 
+    initFederationSettings();
+    $scope.instance = angular.copy(instance);
     $scope.realm = realm;
 
+    $scope.$watch('fullSyncEnabled', function(newVal, oldVal) {
+        if (oldVal == newVal) {
+            return;
+        }
 
-    $scope.changed = false;
+        $scope.instance.fullSyncPeriod = $scope.fullSyncEnabled ? 604800 : -1;
+        $scope.changed = true;
+    });
+
+    $scope.$watch('changedSyncEnabled', function(newVal, oldVal) {
+        if (oldVal == newVal) {
+            return;
+        }
+
+        $scope.instance.changedSyncPeriod = $scope.changedSyncEnabled ? 86400 : -1;
+        $scope.changed = true;
+    });
 
     $scope.$watch('instance', function() {
         if (!angular.equals($scope.instance, instance)) {
@@ -405,13 +430,8 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
     };
 
     $scope.reset = function() {
+        initFederationSettings();
         $scope.instance = angular.copy(instance);
-        if ($scope.create) {
-            $scope.instance.providerName = providerFactory.id;
-            $scope.instance.config = {};
-            $scope.instance.priority = 0;
-        }
-        $scope.changed = false;
     };
 
     $scope.cancel = function() {
@@ -430,7 +450,23 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
         });
     };
 
+    $scope.triggerFullSync = function() {
+        console.log('GenericCtrl: triggerFullSync');
+        triggerSync('triggerFullSync');
+    }
 
+    $scope.triggerChangedUsersSync = function() {
+        console.log('GenericCtrl: triggerChangedUsersSync');
+        triggerSync('triggerChangedUsersSync');
+    }
+
+    function triggerSync(action) {
+        UserFederationSync.get({ action: action, realm: $scope.realm.realm, provider: $scope.instance.id }, function() {
+            Notifications.success("Sync of users finished successfully");
+        }, function() {
+            Notifications.error("Error during sync of users");
+        });
+    }
 });
 
 

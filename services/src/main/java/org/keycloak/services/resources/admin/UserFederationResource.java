@@ -211,7 +211,7 @@ public class UserFederationResource {
     @GET
     @Path("sync/{id}")
     @NoCache
-    public Response getUserFederationInstances(@PathParam("id") String providerId, @QueryParam("action") String action) {
+    public Response syncUsers(@PathParam("id") String providerId, @QueryParam("action") String action) {
         logger.info("triggerSync");
         auth.requireManage();
 
