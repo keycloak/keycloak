@@ -13,11 +13,13 @@
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageUsers">
 
             <fieldset>
-                <legend><span class="text">Realm Roles</span> </legend>
+                <legend><span class="text">Realm Roles</span> <span tooltip-placement="right" tooltip="Realm level roles mapped to user." class="pficon pficon-help"></span>
+                </legend>
                 <div class="form-group col-sm-10">
                     <div class="controls changing-selectors">
                         <div class="select-title">
-                            <label class="control-label" for="available">Available Roles</label>
+                            <label class="control-label" for="available">Available Roles <span tooltip-placement="right" tooltip="Realm roles that can be assigned to the user." class="pficon pficon-help"></span>
+                            </label>
                             <select id="available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedRealmRoles"
@@ -25,15 +27,16 @@
                             </select>
                         </div>
                         <div class="middle-buttons">
-                            <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Assign role" tooltip-placement="right">
                                 <span class="kc-icon-arrow-right">Move right</span>
                             </button>
-                            <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="left">
+                            <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Unassign role" tooltip-placement="left">
                                 <span class="kc-icon-arrow-left">Move left</span>
                             </button>
                         </div>
                         <div class="select-title">
-                            <label class="control-label" for="assigned">Assigned Roles</label>
+                            <label class="control-label" for="assigned">Assigned Roles <span tooltip-placement="right" tooltip="Realm roles mapped to the user" class="pficon pficon-help"></span>
+                            </label>
                             <select id="assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedRealmMappings"
@@ -44,7 +47,8 @@
                             -
                         </div>
                         <div class="select-title">
-                            <label class="control-label" for="realm-composite">Effective Roles</label>
+                            <label class="control-label" for="realm-composite">Effective Roles <span tooltip-placement="right" tooltip="All realm role mappings.  Some roles here might be inherited from a mapped composite role." class="pficon pficon-help"></span>
+                            </label>
                             <select id="realm-composite" class="form-control" multiple size=5
                                     ng-disabled="true"
                                     ng-model="dummymodel"
@@ -68,11 +72,12 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Select an application to view or modify additional roles to map." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group" ng-show="application">
                     <div class="controls changing-selectors col-sm-10">
                         <div class="select-title">
-                            <label class="control-label" for="available-app">Available Roles</label>
+                            <label class="control-label" for="available-app">Available Roles <span tooltip-placement="right" tooltip="Assignable roles from this application." class="pficon pficon-help"></span></label>
                             <select id="available-app" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedApplicationRoles"
@@ -80,15 +85,15 @@
                             </select>
                         </div>
                         <div class="middle-buttons">
-                            <button class="btn btn-default" type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="addApplicationRole()" tooltip="Assign role" tooltip-placement="right">
                                 <span class="kc-icon-arrow-right">Move right</span>
                             </button>
-                            <button class="btn btn-default" type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="left">
+                            <button class="btn btn-default" type="submit" ng-click="deleteApplicationRole()" tooltip="Unassign role" tooltip-placement="left">
                                 <span class="kc-icon-arrow-left">Move left</span>
                             </button>
                         </div>
                         <div class="select-title">
-                            <label class="control-label" for="assigned-app">Assigned Roles</label>
+                            <label class="control-label" for="assigned-app">Assigned Roles <span tooltip-placement="right" tooltip="Role mappings for this application." class="pficon pficon-help"></span></label>
                             <select id="assigned-app" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedApplicationMappings"
@@ -99,7 +104,7 @@
                             -
                         </div>
                         <div class="select-title">
-                            <label class="control-label" for="app-composite">Effective Roles</label>
+                            <label class="control-label" for="app-composite">Effective Roles <span tooltip-placement="right" tooltip="Role mappings for this application.  Some roles here might be inherited from a mapped composite role." class="pficon pficon-help"></span></label>
                             <select id="app-composite" class="form-control" multiple size=5
                                     ng-disabled="true"
                                     ng-model="dummymodel"
