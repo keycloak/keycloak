@@ -23,6 +23,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
@@ -1049,8 +1050,6 @@ public class TokenService {
     @GET
     @NoCache
     public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
-        // todo do we care if anybody can trigger this?
-
         audit.event(EventType.LOGOUT);
         if (redirectUri != null) {
             audit.detail(Details.REDIRECT_URI, redirectUri);
@@ -1059,20 +1058,15 @@ public class TokenService {
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
         if (authResult != null) {
             logout(authResult.getSession());
-        } else {
-            audit.error(Errors.USER_NOT_LOGGED_IN);
-            OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
-            return oauth.forwardToSecurityFailure("Not logged in.");
         }
 
         if (redirectUri != null) {
-            // todo manage legal redirects
-            if (redirectUri.startsWith("/")) { // handle relative uri
-                UriBuilder builder = uriInfo.getAbsolutePathBuilder();
-                builder.replacePath(redirectUri);
-                return Response.status(302).location(builder.build()).build();
+            String validatedRedirect = verifyRealmRedirectUri(uriInfo, redirectUri, realm);
+            if (validatedRedirect == null) {
+                OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
+                return oauth.forwardToSecurityFailure("Invalid redirect uri.");
             }
-            return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
+            return Response.status(302).location(UriBuilder.fromUri(validatedRedirect).build()).build();
         } else {
             return Response.ok().build();
         }
@@ -1235,8 +1229,32 @@ public class TokenService {
         return false;
     }
 
+    public static Set<String> getValidateRedirectUris(RealmModel realm) {
+        Set<String> redirects = new HashSet<String>();
+        for (ApplicationModel client : realm.getApplications()) {
+            for (String redirect : client.getRedirectUris()) {
+                redirects.add(redirect);
+            }
+        }
+        for (OAuthClientModel client : realm.getOAuthClients()) {
+            for (String redirect : client.getRedirectUris()) {
+                redirects.add(redirect);
+            }
+        }
+        return redirects;
+    }
+
+    public static String verifyRealmRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm) {
+        Set<String> validRedirects = getValidateRedirectUris(realm);
+        return verifyRedirectUri(uriInfo, redirectUri, realm, validRedirects);
+    }
+
     public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client) {
         Set<String> validRedirects = client.getRedirectUris();
+        return verifyRedirectUri(uriInfo, redirectUri, realm, validRedirects);
+    }
+
+    public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, Set<String> validRedirects) {
         if (redirectUri == null) {
             if (validRedirects.size() != 1) return null;
             String validRedirect = validRedirects.iterator().next();
@@ -1246,7 +1264,7 @@ public class TokenService {
             }
             redirectUri = validRedirect;
         } else if (validRedirects.isEmpty()) {
-            logger.error("Redirect URI is required for client: " + client.getClientId());
+            logger.error("No Redirect URIs supplied");
             redirectUri = null;
         } else {
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
