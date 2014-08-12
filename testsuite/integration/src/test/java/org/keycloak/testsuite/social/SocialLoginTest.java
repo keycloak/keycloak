@@ -158,7 +158,16 @@ public class SocialLoginTest {
 
     @Test
     public void loginEmailExists() throws Exception {
-        loginSuccess();
+        loginPage.open();
+        loginPage.clickSocial("dummy");
+
+        driver.findElement(By.id("id")).sendKeys("loginEmailExists1");
+        driver.findElement(By.id("username")).sendKeys("dummy-user1");
+        driver.findElement(By.id("firstname")).sendKeys("Bob");
+        driver.findElement(By.id("lastname")).sendKeys("Builder");
+        driver.findElement(By.id("email")).sendKeys("loginEmailExists@builder.com");
+        driver.findElement(By.id("login")).click();
+
         oauth.openLogout();
         events.clear();
 
@@ -166,11 +175,11 @@ public class SocialLoginTest {
 
         loginPage.clickSocial("dummy");
 
-        driver.findElement(By.id("id")).sendKeys("2");
+        driver.findElement(By.id("id")).sendKeys("loginEmailExists2");
         driver.findElement(By.id("username")).sendKeys("dummy-user2");
         driver.findElement(By.id("firstname")).sendKeys("Bob2");
         driver.findElement(By.id("lastname")).sendKeys("Builder2");
-        driver.findElement(By.id("email")).sendKeys("bob@builder.com");
+        driver.findElement(By.id("email")).sendKeys("loginEmailExists@builder.com");
         driver.findElement(By.id("login")).click();
 
         Assert.assertTrue(loginPage.isCurrent());
