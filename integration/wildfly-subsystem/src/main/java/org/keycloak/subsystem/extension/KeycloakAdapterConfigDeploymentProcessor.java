@@ -86,9 +86,12 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         // addSecurityDomain(deploymentUnit, service);
     }
 
-    private void addKeycloakAuthData(DeploymentPhaseContext phaseContext, String deploymentName, KeycloakAdapterConfigService service) {
+    private void addKeycloakAuthData(DeploymentPhaseContext phaseContext, String deploymentName, KeycloakAdapterConfigService service) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
+        if (warMetaData == null) {
+            throw new DeploymentUnitProcessingException("WarMetaData not found for " + deploymentName + ".  Make sure you have specified a WAR as your secure-deployment in the Keycloak subsystem.");
+        }
 
         addJSONData(service.getJSON(deploymentName), warMetaData);
         JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();

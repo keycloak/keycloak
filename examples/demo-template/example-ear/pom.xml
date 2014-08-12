@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.0-rc-1-SNAPSHOT</version>
+        <relativePath>../../../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.keycloak.example.demo</groupId>
+    <artifactId>customer-portal-example-ear</artifactId>
+    <packaging>ear</packaging>
+    <name>EAR example</name>
+    <description>EAR contains customer and product portals.</description>
+
+    <repositories>
+        <repository>
+            <id>jboss</id>
+            <name>jboss repo</name>
+            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.example.demo</groupId>
+            <artifactId>customer-portal-example</artifactId>
+            <version>${project.version}</version>
+            <type>war</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.example.demo</groupId>
+            <artifactId>product-portal-example</artifactId>
+            <version>${project.version}</version>
+            <type>war</type>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>example-portal</finalName>
+        <plugins>
+            <plugin>
+                <artifactId>maven-ear-plugin</artifactId>
+                <version>2.9.1</version>
+                <configuration>
+                    <modules>
+                        <webModule>
+                            <groupId>org.keycloak.example.demo</groupId>
+                            <artifactId>customer-portal-example</artifactId>
+                            <uri>customer-portal.war</uri>
+                            <contextRoot>/customer-portal</contextRoot>
+                        </webModule>
+                        <webModule>
+                            <groupId>org.keycloak.example.demo</groupId>
+                            <artifactId>product-portal-example</artifactId>
+                            <uri>product-portal.war</uri>
+                            <contextRoot>/product-portal</contextRoot>
+                        </webModule>
+                    </modules>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
