@@ -157,6 +157,27 @@ public class SocialLoginTest {
     }
 
     @Test
+    public void loginEmailExists() throws Exception {
+        loginSuccess();
+        oauth.openLogout();
+        events.clear();
+
+        loginPage.open();
+
+        loginPage.clickSocial("dummy");
+
+        driver.findElement(By.id("id")).sendKeys("2");
+        driver.findElement(By.id("username")).sendKeys("dummy-user2");
+        driver.findElement(By.id("firstname")).sendKeys("Bob2");
+        driver.findElement(By.id("lastname")).sendKeys("Builder2");
+        driver.findElement(By.id("email")).sendKeys("bob@builder.com");
+        driver.findElement(By.id("login")).click();
+
+        Assert.assertTrue(loginPage.isCurrent());
+        Assert.assertEquals("User with email already exists. Please login to account management to link the account.", loginPage.getError());
+    }
+
+    @Test
     public void loginCancelled() throws Exception {
         loginPage.open();
 

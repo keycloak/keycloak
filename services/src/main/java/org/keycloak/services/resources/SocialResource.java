@@ -31,10 +31,12 @@ import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.EventType;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
@@ -46,6 +48,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
+import org.keycloak.services.resources.flows.OAuthRedirect;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.SocialAccessDeniedException;
@@ -67,6 +70,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
@@ -182,76 +186,85 @@ public class SocialResource {
 
         audit.detail(Details.USERNAME, socialUser.getId() + "@" + provider.getId());
 
-        SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getId(), socialUser.getUsername());
-        UserModel user = session.users().getUserBySocialLink(socialLink, realm);
+        try {
+            SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getId(), socialUser.getUsername());
+            UserModel user = session.users().getUserBySocialLink(socialLink, realm);
 
-        // Check if user is already authenticated (this means linking social into existing user account)
-        String userId = initialRequest.getUser();
-        if (userId != null) {
-            UserModel authenticatedUser = session.users().getUserById(userId, realm);
+            // Check if user is already authenticated (this means linking social into existing user account)
+            String userId = initialRequest.getUser();
+            if (userId != null) {
+                UserModel authenticatedUser = session.users().getUserById(userId, realm);
 
-            audit.event(EventType.SOCIAL_LINK).user(userId);
+                audit.event(EventType.SOCIAL_LINK).user(userId);
 
-            if (user != null) {
-                audit.error(Errors.SOCIAL_ID_IN_USE);
-                return oauth.forwardToSecurityFailure("This social account is already linked to other user");
+                if (user != null) {
+                    audit.error(Errors.SOCIAL_ID_IN_USE);
+                    return oauth.forwardToSecurityFailure("This social account is already linked to other user");
+                }
+
+                if (!authenticatedUser.isEnabled()) {
+                    audit.error(Errors.USER_DISABLED);
+                    return oauth.forwardToSecurityFailure("User is disabled");
+                }
+
+                if (!authenticatedUser.hasRole(realm.getApplicationByName(Constants.ACCOUNT_MANAGEMENT_APP).getRole(AccountRoles.MANAGE_ACCOUNT))) {
+                    audit.error(Errors.NOT_ALLOWED);
+                    return oauth.forwardToSecurityFailure("Insufficient permissions to link social account");
+                }
+
+                if (redirectUri == null) {
+                    audit.error(Errors.INVALID_REDIRECT_URI);
+                    return oauth.forwardToSecurityFailure("Unknown redirectUri");
+                }
+
+                session.users().addSocialLink(realm, authenticatedUser, socialLink);
+                logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getUsername());
+
+                audit.success();
+                return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
             }
 
-            if (!authenticatedUser.isEnabled()) {
+            if (user == null) {
+                user = session.users().addUser(realm, KeycloakModelUtils.generateId());
+                user.setEnabled(true);
+                user.setFirstName(socialUser.getFirstName());
+                user.setLastName(socialUser.getLastName());
+                user.setEmail(socialUser.getEmail());
+
+                if (realm.isUpdateProfileOnInitialSocialLogin()) {
+                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
+                }
+
+                session.users().addSocialLink(realm, user, socialLink);
+
+                audit.clone().user(user).event(EventType.REGISTER)
+                        .detail(Details.REGISTER_METHOD, "social@" + provider.getId())
+                        .detail(Details.EMAIL, socialUser.getEmail())
+                        .removeDetail("auth_method")
+                        .success();
+            }
+
+            audit.user(user);
+
+            if (!user.isEnabled()) {
                 audit.error(Errors.USER_DISABLED);
-                return oauth.forwardToSecurityFailure("User is disabled");
+                return oauth.forwardToSecurityFailure("Your account is not enabled.");
             }
 
-            if (!authenticatedUser.hasRole(realm.getApplicationByName(Constants.ACCOUNT_MANAGEMENT_APP).getRole(AccountRoles.MANAGE_ACCOUNT))) {
-                audit.error(Errors.NOT_ALLOWED);
-                return oauth.forwardToSecurityFailure("Insufficient permissions to link social account");
+            String username = socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider();
+
+            UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), authMethod, false);
+            audit.session(userSession);
+
+            Response response = oauth.processAccessCode(scope, state, redirectUri, client, user, userSession, audit);
+            if (session.getTransaction().isActive()) {
+                session.getTransaction().commit();
             }
-
-            if (redirectUri == null) {
-                audit.error(Errors.INVALID_REDIRECT_URI);
-                return oauth.forwardToSecurityFailure("Unknown redirectUri");
-            }
-
-            session.users().addSocialLink(realm, authenticatedUser, socialLink);
-            logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getUsername());
-
-            audit.success();
-            return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
+            return response;
+        } catch (ModelDuplicateException e) {
+            // Assume email is the duplicate as there's nothing else atm
+            return returnToLogin(realm, client, initialRequest.getAttributes(), "socialEmailExists");
         }
-
-        if (user == null) {
-            user = session.users().addUser(realm, KeycloakModelUtils.generateId());
-            user.setEnabled(true);
-            user.setFirstName(socialUser.getFirstName());
-            user.setLastName(socialUser.getLastName());
-            user.setEmail(socialUser.getEmail());
-
-            if (realm.isUpdateProfileOnInitialSocialLogin()) {
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
-            }
-
-            session.users().addSocialLink(realm, user, socialLink);
-
-            audit.clone().user(user).event(EventType.REGISTER)
-                    .detail(Details.REGISTER_METHOD, "social@" + provider.getId())
-                    .detail(Details.EMAIL, socialUser.getEmail())
-                    .removeDetail("auth_method")
-                    .success();
-        }
-
-        audit.user(user);
-
-        if (!user.isEnabled()) {
-            audit.error(Errors.USER_DISABLED);
-            return oauth.forwardToSecurityFailure("Your account is not enabled.");
-        }
-
-        String username = socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider();
-
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), authMethod, false);
-        audit.session(userSession);
-
-        return oauth.processAccessCode(scope, state, redirectUri, client, user, userSession, audit);
     }
 
     @GET
@@ -305,6 +318,17 @@ public class SocialResource {
             logger.error("Failed to redirect to social auth", t);
             return Flows.forms(session, realm, null, uriInfo).setError("Failed to redirect to social auth").createErrorPage();
         }
+    }
+
+    private Response returnToLogin(RealmModel realm, ClientModel client, Map<String, String> attributes, String error) {
+        MultivaluedMap<String, String> q = new MultivaluedMapImpl<String, String>();
+        for (Entry<String, String> e : attributes.entrySet()) {
+            q.add(e.getKey(), e.getValue());
+        }
+        return Flows.forms(session, realm, client, uriInfo)
+                .setQueryParams(q)
+                .setError(error)
+                .createLogin();
     }
 
     private Map<String, String[]> getQueryParams() {
