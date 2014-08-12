@@ -133,6 +133,40 @@
                 </div>
             </fieldset>
 
+            <fieldset>
+                <legend><span class="text">Sync settings</span></legend>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="batchSizeForSync">Batch size</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" ng-model="instance.config.batchSizeForSync" id="batchSizeForSync" />
+                    </div>
+                </div>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="fullSyncEnabled">Periodic full sync</label>
+                    <div class="col-sm-4">
+                        <input ng-model="fullSyncEnabled" name="fullSyncEnabled" id="fullSyncEnabled" onoffswitch />
+                    </div>
+                </div>
+                <div class="form-group clearfix" data-ng-show="fullSyncEnabled">
+                    <label class="col-sm-2 control-label" for="fullSyncPeriod">Full sync period</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="number" ng-model="instance.fullSyncPeriod" id="fullSyncPeriod" />
+                    </div>
+                </div>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="changedSyncEnabled">Periodic changed users sync</label>
+                    <div class="col-sm-4">
+                        <input ng-model="changedSyncEnabled" name="changedSyncEnabled" id="changedSyncEnabled" onoffswitch />
+                    </div>
+                </div>
+                <div class="form-group clearfix" data-ng-show="changedSyncEnabled">
+                    <label class="col-sm-2 control-label" for="changedSyncPeriod">Changed users sync period</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="number" ng-model="instance.changedSyncPeriod" id="changedSyncPeriod" />
+                    </div>
+                </div>
+            </fieldset>
+
             <div class="pull-right form-actions" data-ng-show="create && access.manageUsers">
                 <button kc-cancel data-ng-click="cancel()">Cancel</button>
                 <button kc-save data-ng-show="changed">Save</button>
@@ -142,6 +176,8 @@
                 <button kc-reset data-ng-show="changed">Clear changes</button>
                 <button kc-save  data-ng-show="changed">Save</button>
                 <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
+                <button kc-delete data-ng-click="triggerFullSync()" data-ng-hide="changed">Synchronize all users</button>
+                <button kc-delete data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">Synchronize changed users</button>
             </div>
         </form>
     </div>

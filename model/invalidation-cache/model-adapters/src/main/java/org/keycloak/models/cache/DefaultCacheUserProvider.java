@@ -87,12 +87,14 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
                     cache.clear();
                 }
                 runInvalidations();
+                transactionActive = false;
             }
 
             @Override
             public void rollback() {
                 setRollbackOnly = true;
                 runInvalidations();
+                transactionActive = false;
             }
 
             @Override

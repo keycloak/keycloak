@@ -101,24 +101,7 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
                 RealmModel realm = session.realms().getRealm(realmId);
                 BasePropertiesFederationProvider federationProvider = (BasePropertiesFederationProvider)getInstance(session, model);
                 Set<String> allUsernames = federationProvider.getProperties().stringPropertyNames();
-                for (String username : allUsernames) {
-                    federationProvider.getUserByUsername(realm, username);
-                }
-            }
-
-        });
-    }
-
-    @Override
-    public void syncChangedUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model, Date lastSync) {
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-            @Override
-            public void run(KeycloakSession session) {
-                RealmModel realm = session.realms().getRealm(realmId);
                 UserProvider localProvider = session.userStorage();
-                BasePropertiesFederationProvider federationProvider = (BasePropertiesFederationProvider)getInstance(session, model);
-                Set<String> allUsernames = federationProvider.getProperties().stringPropertyNames();
                 for (String username : allUsernames) {
                     UserModel localUser = localProvider.getUserByUsername(username, realm);
 
@@ -130,5 +113,10 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
             }
 
         });
+    }
+
+    @Override
+    public void syncChangedUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model, Date lastSync) {
+        syncAllUsers(sessionFactory, realmId, model);
     }
 }
