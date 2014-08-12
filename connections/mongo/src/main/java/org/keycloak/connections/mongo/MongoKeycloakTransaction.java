@@ -42,11 +42,13 @@ public class MongoKeycloakTransaction implements KeycloakTransaction {
         } catch (MongoException e) {
             throw MongoStoreImpl.convertException(e);
         }
+        started = false;
     }
 
     @Override
     public void rollback() {
         invocationContext.rollback();
+        started = false;
     }
 
     @Override
