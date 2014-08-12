@@ -54,6 +54,14 @@
             <outputDirectory>keycloak</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>${project.build.directory}/unpacked/js-adapter</directory>
+            <outputDirectory>adapters/js-adapter</outputDirectory>
+            <includes>
+                <include>**/*.js</include>
+                <include>**/*.html</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>src/main/welcome-content</directory>
             <outputDirectory>keycloak/welcome-content</outputDirectory>
             <includes>

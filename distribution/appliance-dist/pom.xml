@@ -83,6 +83,12 @@
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked/adapter</outputDirectory>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-js-adapter</artifactId>
+                                    <version>${project.version}</version>
+                                    <outputDirectory>${project.build.directory}/unpacked/js-adapter</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                             <excludes>**/welcome-content/*</excludes>
                         </configuration>
