@@ -10,16 +10,8 @@
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/revocation">Revocation</a></li>
         <li data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
     </ul>
-
+    <h2></h2>
     <div id="content">
-        <ol class="breadcrumb" data-ng-show="create">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
-            <li class="active">Add role</li>
-        </ol>
-
         <ol class="breadcrumb" data-ng-hide="create">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
             <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>

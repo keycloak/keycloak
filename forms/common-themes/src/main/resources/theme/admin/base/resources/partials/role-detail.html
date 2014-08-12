@@ -2,31 +2,14 @@
 <div id="content-area" class="col-md-9" role="main">
 
     <ul class="nav nav-tabs nav-tabs-pf">
-        <li><a href="#/realms/{{realm.realm}}">General</a></li>
-        <li data-ng-show="realm.social"><a href="#/realms/{{realm.realm}}/social-settings">Social</a></li>
         <li class="active"><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
         <li><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
-        <li><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
-        <li><a href="#/realms/{{realm.realm}}/token-settings">Token</a></li>
-        <li><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
-        <li><a href="#/realms/{{realm.realm}}/smtp-settings">Email</a></li>
     </ul>
+    <h2></h2>
 
     <div id="content">
-        <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
-            <li><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
-            <li class="active">{{role.name}}</li>
-        </ol>
-        <h2 data-ng-hide="create"><span>{{realm.realm}}</span> {{role.name}}</h2>
-        <ol class="breadcrumb" data-ng-show="create">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
-            <li><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
-            <li class="active">Add Role</li>
-        </ol>
-        <h2 data-ng-show="create" class="pull-left"><span>{{realm.realm}}</span> Add Role</h2>
+        <h2 data-ng-hide="create"><span>{{realm.realm}}</span> {{role.name}} Realm Role</h2>
+        <h2 data-ng-show="create" class="pull-left"><span>{{realm.realm}}</span> Add Realm Role</h2>
         <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
         <form class="form-horizontal clearfix" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset>

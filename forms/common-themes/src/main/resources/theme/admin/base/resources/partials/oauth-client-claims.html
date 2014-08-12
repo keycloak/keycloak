@@ -8,13 +8,8 @@
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/installation">Installation</a></li>
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/revocation">Revocation</a></li>
     </ul>
+    <h2></h2>
     <div id="content">
-        <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>
-            <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}">{{oauth.name}}</a></li>
-            <li class="active">Claims</li>
-        </ol>
         <h2 data-ng-hide="create"><span>{{oauth.name}}</span> Allowed Claims</h2>
         <form class="form-horizontal" name="claimForm">
             <div data-ng-include data-src="'partials/claims.html'"></div>

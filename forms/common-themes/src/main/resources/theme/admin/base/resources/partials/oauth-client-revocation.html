@@ -8,13 +8,8 @@
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/installation">Installation</a></li>
         <li class="active"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/revocation">Revocation</a></li>
     </ul>
+    <h2></h2>
     <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>
-            <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}">{{oauth.name}}</a></li>
-            <li class="active">Revocation</li>
-        </ol>
         <h2 data-ng-hide="create"><span>{{oauth.name}}</span> Revocation Policies</h2>
         <form class="form-horizontal" name="credentialForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">
