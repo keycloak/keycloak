@@ -30,6 +30,7 @@
         <module>customer-app-cli</module>
         <module>customer-app-js</module>
         <module>product-app</module>
+        <module>example-ear</module>
         <module>admin-access-app</module>
         <module>angular-product-app</module>
         <module>database-service</module>
