@@ -356,7 +356,7 @@ module.controller('UserFederationCtrl', function($scope, $location, realm, UserF
 
 });
 
-module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, Dialog, realm, instance, providerFactory, UserFederationInstances) {
+module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, Dialog, realm, instance, providerFactory, UserFederationInstances, UserFederationSync) {
     console.log('GenericUserFederationCtrl');
 
     $scope.create = !instance.providerName;
