@@ -1,13 +1,12 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
-    <data-kc-navigation data-kc-current="roles" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li class="active"><a href="#/realms/{{realm.realm}}/roles">Realm Roles</a></li>
+        <li><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
+    </ul>
+    <h2></h2>
     <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
-            <li class="active">Roles</li>
-        </ol>
-        <h2><span>{{realm.realm}}</span> Roles</h2>
+        <h2><span>{{realm.realm}}</span> Realm-Level Roles</h2>
 
             <table class="table table-striped table-bordered">
                 <thead>

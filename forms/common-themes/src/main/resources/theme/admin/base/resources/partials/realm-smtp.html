@@ -1,12 +1,8 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
     <data-kc-navigation data-kc-current="email" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
+    <h2></h2>
     <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
-            <li class="active">SMTP Configuration</li>
-        </ol>
         <h2 class="pull-left"><span>{{realm.realm}}</span> Email Server Settings</h2>
         <p class="subtitle"><span class="required">*</span> Required fields</p>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">

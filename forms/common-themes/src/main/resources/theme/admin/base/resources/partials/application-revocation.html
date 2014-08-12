@@ -10,11 +10,8 @@
         <li class="active"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/revocation">Revocation</a></li>
         <li data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
     </ul>
+    <h2></h2>
     <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/">{{realm.realm}}</a></li>
-            <li class="active">Revocation</li>
-        </ol>
         <h2 data-ng-hide="create"><span>{{application.name}}</span> Revocation Policies</h2>
         <form class="form-horizontal" name="credentialForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">

@@ -5,11 +5,8 @@
         <li class="active"><a href="#/realms/{{realm.realm}}/token-settings">Timeout Settings</a></li>
         <li><a href="#/realms/{{realm.realm}}/sessions/revocation">Revocation</a></li>
     </ul>
+    <h2></h2>
     <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li class="active">Timeouts</li>
-        </ol>
         <h2><span>{{realm.realm}}</span> Session and Token Timeout Settings</h2>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">

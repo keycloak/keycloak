@@ -7,13 +7,8 @@
         <li class="active"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/sessions">Sessions</a></li>
         <li data-ng-show="realm.social"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/social-links">Social Links</a></li>
     </ul>
+    <h2></h2>
     <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
-            <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></li>
-            <li class="active">User Sessions</li>
-        </ol>
         <h2><span>{{user.username}}</span> Sessions</h2>
         <table class="table table-striped table-bordered">
             <thead>

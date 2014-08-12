@@ -5,12 +5,9 @@
         <li data-ng-class="(path[2] == 'audit') && 'active'"><a href="#/realms/{{realm.realm}}/audit">View</a></li>
         <li data-ng-class="(path[2] == 'audit-settings') && 'active'"><a href="#/realms/{{realm.realm}}/audit-settings">Config</a></li>
     </ul>
+    <h2></h2>
 
     <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li class="active">View Audit</li>
-        </ol>
         <h2><span>{{realm.realm}}</span> Audit Log</h2>
 
         <table class="table table-striped table-bordered">
