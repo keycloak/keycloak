@@ -12,14 +12,14 @@
             <fieldset class="border-top">
                 <div class="form-group input-select">
                     <label class="col-sm-2 control-label" for="ssoSessionIdleTimeout">SSO Session Idle Timeout</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-5">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-4">
                                 <input class="form-control" type="number" required min="1"
                                        max="31536000" data-ng-model="realm.ssoSessionIdleTimeout"
                                        id="ssoSessionIdleTimeout" name="ssoSessionIdleTimeout"/>
                             </div>
-                            <div class="col-sm-2 select-kc">
+                            <div class="col-sm-4 select-kc">
                                 <select name="ssoSessionIdleTimeoutUnit" data-ng-model="realm.ssoSessionIdleTimeoutUnit" >
                                     <option data-ng-selected="!realm.ssoSessionIdleTimeoutUnit">Seconds</option>
                                     <option>Minutes</option>
@@ -29,17 +29,18 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Time a session is allowed to be idle before it expires.  Tokens and browser sessions are invalidated when a session is expired." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group input-select">
                     <label class="col-sm-2 control-label" for="ssoSessionMaxLifespan">SSO Session Max Lifespan</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-5">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-4">
                                 <input class="form-control" type="number" required min="1"
                                        max="31536000" data-ng-model="realm.ssoSessionMaxLifespan"
                                        id="ssoSessionMaxLifespan" name="ssoSessionMaxLifespan"/>
                             </div>
-                            <div class="col-sm-2 select-kc">
+                            <div class="col-sm-4 select-kc">
                                 <select name="ssoSessionMaxLifespanUnit" data-ng-model="realm.ssoSessionMaxLifespanUnit" >
                                     <option data-ng-selected="!realm.ssoSessionMaxLifespanUnit">Seconds</option>
                                     <option>Minutes</option>
@@ -49,17 +50,18 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Max time before a session is expired.  Tokens and browser sessions are invalidated when a session is expired." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group input-select">
                     <label class="col-sm-2 control-label" for="accessTokenLifespan">Access Token Lifespan</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-5">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-4">
                                 <input class="form-control" type="number" required min="1"
                                        max="31536000" data-ng-model="realm.accessTokenLifespan"
                                        id="accessTokenLifespan" name="accessTokenLifespan"/>
                             </div>
-                            <div class="col-sm-2 select-kc">
+                            <div class="col-sm-4 select-kc">
                                 <select name="accessTokenLifespanUnit" data-ng-model="realm.accessTokenLifespanUnit" >
                                     <option data-ng-selected="!realm.accessTokenLifespanUnit">Seconds</option>
                                     <option>Minutes</option>
@@ -69,15 +71,16 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Max time before an access token is expired.  This value is recommended to be short relative to the SSO timeout." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-2 control-label" for="accessCodeLifespan">Access code lifespan</label>
-                    <div class="col-sm-10">
+                    <label class="col-sm-2 control-label" for="accessCodeLifespan">Client login timeout</label>
+                    <div class="col-sm-5">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-4">
                                 <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespan" id="accessCodeLifespan" name="accessCodeLifespan">
                             </div>
-                            <div class="col-sm-2 select-kc">
+                            <div class="col-sm-4 select-kc">
                                 <select name="accessCodeLifespanUnit" data-ng-model="realm.accessCodeLifespanUnit">
                                     <option data-ng-selected="!realm.accessCodeLifespanUnit">Seconds</option>
                                     <option>Minutes</option>
@@ -87,15 +90,16 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Max time an application or oauth client has to finish the access token protocol.  This should normally be 1 minute." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group input-select">
-                    <label class="col-sm-2 control-label" for="accessCodeLifespanUserAction" class="two-lines">Access code user action lifespan</label>
-                    <div class="col-sm-10">
+                    <label class="col-sm-2 control-label" for="accessCodeLifespanUserAction" class="two-lines">Login user action lifespan</label>
+                    <div class="col-sm-5">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-4">
                                 <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanUserAction" id="accessCodeLifespanUserAction" name="accessCodeLifespanUserAction">
                             </div>
-                            <div class="col-sm-2 select-kc">
+                            <div class="col-sm-4 select-kc">
                                 <select name="accessCodeLifespanUserActionUnit" data-ng-model="realm.accessCodeLifespanUserActionUnit">
                                     <option data-ng-selected="!realm.accessCodeLifespanUserActionUnit">Seconds</option>
                                     <option>Minutes</option>
@@ -105,6 +109,7 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Max time a user has to complete a login and perform actions like update password or configure totp.  This is recommended to be relatively long.  5 minutes or more." class="pficon pficon-help"></span>
                 </div>
             </fieldset>
             <div class="pull-right form-actions" data-ng-show="access.manageRealm">

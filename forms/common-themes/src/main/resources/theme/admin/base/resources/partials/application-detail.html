@@ -32,13 +32,14 @@
                 </div>
                 <div class="form-group clearfix block">
                     <label class="col-sm-2 control-label" for="enabled">Enabled</label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-6">
                         <input ng-model="application.enabled" name="enabled" id="enabled" onoffswitch />
                     </div>
+                    <span tooltip-placement="right" tooltip="Disabled applications cannot initiate a login or have obtain access tokens." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="accessType">Access Type</label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-6">
                         <div class="select-kc">
                             <select id="accessType"
                                     ng-change="changeAccessType()"
@@ -47,6 +48,7 @@
                             </select>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="'Confidential' applications require a secret to initiate login protocol.  'Public' clients do not require a secret.  'Bearer-only' applications are web services that never initiate a login." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group" data-ng-show="!application.bearerOnly">
                     <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI <span class="required" data-ng-show="create">*</span></label>
@@ -70,6 +72,7 @@
                             </span>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Valid URI pattern a browser can redirect to after a successful login or logout.  Simple wildcards are allowed i.e. 'http://example.com/*'.  Relative path can be specified too i.e. /my/relative/path/*.  Relative paths will generate a redirect URI using the request's host and port." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group" data-ng-show="!application.bearerOnly && !create">
                     <label class="col-sm-2 control-label" for="baseUrl">Base URL</label>
@@ -77,6 +80,7 @@
                         <input class="form-control" type="text" name="baseUrl" id="baseUrl"
                                data-ng-model="application.baseUrl">
                     </div>
+                    <span tooltip-placement="right" tooltip="Optional URL to use when linking to this application. i.e. the welcome page." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group" data-ng-hide="create">
                     <label class="col-sm-2 control-label" for="adminUrl">Admin URL</label>
@@ -84,6 +88,7 @@
                         <input class="form-control" type="text" name="adminUrl" id="adminUrl"
                                data-ng-model="application.adminUrl">
                     </div>
+                    <span tooltip-placement="right" tooltip="URL to the admin interface of the application.  Set this if the application supports the adapter REST API.  This REST API allows the auth server to push revocation policies and other adminstrative tasks.  Usually this is set to the base URL of the application." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group" data-ng-show="!application.bearerOnly && !create">
                     <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
@@ -107,6 +112,7 @@
                             </span>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Allowed CORS origins.  Only useful if the client adapter has CORS processing enabled." class="pficon pficon-help"></span>
                 </div>
             </fieldset>
 
