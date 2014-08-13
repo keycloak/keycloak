@@ -10,7 +10,7 @@
     </ul>
     <h2></h2>
     <div id="content">
-        <h2 data-ng-hide="create"><span>{{oauth.name}}</span> Allowed Claims</h2>
+        <h2 data-ng-hide="create"><span>{{oauth.name}}</span> Allowed Claims <span tooltip-placement="right" tooltip="Allows you to restrict which claim information is stored in the access token generated for the application." class="pficon pficon-help"></span></h2>
         <form class="form-horizontal" name="claimForm">
             <div data-ng-include data-src="'partials/claims.html'"></div>
             <div class="pull-right form-actions" data-ng-show="access.manageClients">

@@ -20,6 +20,8 @@ public class CredentialRepresentation {
     protected String hashedSaltedValue;
     protected String salt;
     protected Integer hashIterations;
+    // only used when updating a credential.  Might set required action
+    protected boolean temporary;
 
     public String getType() {
         return type;
@@ -67,5 +69,13 @@ public class CredentialRepresentation {
 
     public void setHashIterations(Integer hashIterations) {
         this.hashIterations = hashIterations;
+    }
+
+    public boolean isTemporary() {
+        return temporary;
+    }
+
+    public void setTemporary(boolean temporary) {
+        this.temporary = temporary;
     }
 }

@@ -23,14 +23,14 @@
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label"for="id">ID</label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <input class="form-control" type="text" id="id" name="id" data-ng-model="user.id" autofocus data-ng-readonly="true">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="col-sm-2 control-label"for="username">Username <span class="required" data-ng-show="create">*</span></label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <!-- Characters >,<,/,\ are forbidden in username -->
                         <input class="form-control" type="text" id="username" name="username" data-ng-model="user.username" autofocus
                                required ng-pattern="/^[^\<\>\\\/]*$/">
@@ -40,7 +40,7 @@
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="email">Email</label>
 
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <input class="form-control" type="email" name="email" id="email"
                                data-ng-model="user.email">
                     </div>
@@ -48,7 +48,7 @@
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="firstName">First Name</label>
 
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <input class="form-control" type="text" name="firstName" id="firstName"
                                data-ng-model="user.firstName">
                     </div>
@@ -56,7 +56,7 @@
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="lastName">Last Name</label>
 
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <input class="form-control" type="text" name="lastName" id="lastName"
                                data-ng-model="user.lastName">
                     </div>
@@ -64,22 +64,23 @@
 
                 <div class="form-group clearfix block">
                     <label class="col-sm-2 control-label" for="userEnabled">User Enabled</label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <input ng-model="user.enabled" name="userEnabled" id="userEnabled" onoffswitch />
                     </div>
                     <span tooltip-placement="right" tooltip="A disabled user cannot login." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="!create && user.federationLink">
                     <label class="col-sm-2 control-label" for="userEnabled">Federation Link</label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <a href="{{federationLink}}">{{federationLinkName}}</a>
                     </div>
                 </div>
                 <div class="form-group clearfix block">
                     <label class="col-sm-2 control-label" for="emailVerified">Email verified</label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" onoffswitch />
                     </div>
+                    <span tooltip-placement="right" tooltip="Has the user's email been verified?" class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="reqActions">Required User Actions</label>
@@ -89,7 +90,7 @@
                             <option ng-repeat="action in userReqActionList" value="{{action.id}}">{{action.text}}</option>
                         </select>
                     </div>
-                    <span tooltip-placement="right" tooltip="Require an action when the user logs in. 'Update profile' requires user to enter in new personal information.  'Update password' requires user to enter in a new password.  'Configure TOTP' requires setup of a mobile password generator." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="Require an action when the user logs in. 'Verify email' sends an email to the user to verify their email address.  'Update profile' requires user to enter in new personal information.  'Update password' requires user to enter in a new password.  'Configure TOTP' requires setup of a mobile password generator." class="pficon pficon-help"></span>
                 </div>
             </fieldset>
             <div class="pull-right form-actions" data-ng-show="create && access.manageUsers">
