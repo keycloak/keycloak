@@ -15,6 +15,7 @@
                     <div class="col-sm-4">
                         <input ng-disabled="true" class="form-control" type="text" id="notBefore" name="notBefore" data-ng-model="notBefore" autofocus>
                     </div>
+                    <span tooltip-placement="right" tooltip="Revoke any tokens issued before this date." class="pficon pficon-help"></span>
                 </div>
             </fieldset>
             <div class="pull-right form-actions" data-ng-show="access.manageApplications">
@@ -22,7 +23,7 @@
                 </button>
                 <button type="submit" data-ng-click="setNotBeforeNow()" class="btn btn-primary btn-lg">Set To Now
                 </button>
-                <button type="submit" data-ng-click="pushRevocation()" class="btn btn-primary btn-lg">Push
+                <button type="submit" data-ng-click="pushRevocation()" class="btn btn-primary btn-lg" tooltip="For every application that has an admin URL, notify them of the new revocation policy." tooltip-placement="bottom">Push
                 </button>
             </div>
         </form>
