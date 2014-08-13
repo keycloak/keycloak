@@ -84,12 +84,12 @@
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="reqActions">Required User Actions</label>
 
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <select ui-select2 ng-model="user.requiredActions" data-placeholder="Select an action..." multiple>
                             <option ng-repeat="action in userReqActionList" value="{{action.id}}">{{action.text}}</option>
                         </select>
                     </div>
-                    <span tooltip-placement="right" tooltip="Require an action when the user logs in. Update profile requires them to enter in new personal information.  Update password requires them to enter in a new password.  Configure TOTP requires setup of a mobile password generator" class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="Require an action when the user logs in. 'Update profile' requires user to enter in new personal information.  'Update password' requires user to enter in a new password.  'Configure TOTP' requires setup of a mobile password generator." class="pficon pficon-help"></span>
                 </div>
             </fieldset>
             <div class="pull-right form-actions" data-ng-show="create && access.manageUsers">
