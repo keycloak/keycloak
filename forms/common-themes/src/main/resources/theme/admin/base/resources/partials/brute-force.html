@@ -6,7 +6,7 @@
     </ul>
     <h2></h2>
     <div id="content">
-        <h2><span>{{realm.realm}}</span> Brute Force Protection Settings</h2>
+        <h2><span>{{realm.realm}}</span> Brute Force Protection <span tooltip-placement="right" tooltip="Seeks to prevent hackers trying to guess passwords.  It remembers failures and will lock out users that have too many failutres for a certain amount of time.  WARNING: Vulnerable to denail of service attacks see docs for more details." class="pficon pficon-help"></span></h2>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">
                 <div class="form-group">
@@ -18,21 +18,22 @@
                 <div class="form-group" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="failureFactor">Failure Factor</label>
 
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <input class="form-control" type="number" min="1" max="31536000" id="failureFactor" name="failureFactor" data-ng-model="realm.failureFactor" autofocus
                                required>
                     </div>
+                    <span tooltip-placement="right" tooltip="How many failures before wait is triggered." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="waitIncrement">Wait Increment</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-5">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-4">
                                 <input class="form-control" type="number" required min="1"
                                        max="31536000" data-ng-model="realm.waitIncrement"
                                        id="waitIncrement" name="waitIncrement"/>
                             </div>
-                            <div class="col-sm-2 select-kc">
+                            <div class="col-sm-4 select-kc">
                                 <select name="waitIncrementUnit" data-ng-model="realm.waitIncrementUnit" >
                                     <option data-ng-selected="!realm.waitIncrementUnit">Seconds</option>
                                     <option>Minutes</option>
@@ -42,25 +43,27 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="When failure threshold has been met, how much time should the user be locked out?" class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="quickLoginCheckMilliSeconds">Quick Login Check Milli Seconds</label>
 
-                    <div class="col-sm-4">
+                    <div class="col-sm-5">
                         <input class="form-control" type="number" min="1" max="31536000" id="quickLoginCheckMilliSeconds" name="quickLoginCheckMilliSeconds" data-ng-model="realm.quickLoginCheckMilliSeconds" autofocus
                                required>
                     </div>
+                    <span tooltip-placement="right" tooltip="If a failure happens concurrently too quickly, lock out the user." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="minimumQuickLoginWait">Minimum Quick Login Wait</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-5">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-4">
                                 <input class="form-control" type="number" required min="1"
                                        max="31536000" data-ng-model="realm.minimumQuickLoginWait"
                                        id="minimumQuickLoginWait" name="minimumQuickLoginWait"/>
                             </div>
-                            <div class="col-sm-2 select-kc">
+                            <div class="col-sm-4 select-kc">
                                 <select name="minimumQuickLoginWaitUnit" data-ng-model="realm.minimumQuickLoginWaitUnit" >
                                     <option data-ng-selected="!realm.minimumQuickLoginWaitUnit">Seconds</option>
                                     <option>Minutes</option>
@@ -70,17 +73,18 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="How long to wait after a quick login failure." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="maxFailureWait">Max Wait</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-5">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-4">
                                 <input class="form-control" type="number" required min="1"
                                        max="31536000" data-ng-model="realm.maxFailureWait"
                                        id="maxFailureWait" name="maxFailureWait"/>
                             </div>
-                            <div class="col-sm-2 select-kc">
+                            <div class="col-sm-4 select-kc">
                                 <select name="maxFailureWaitUnit" data-ng-model="realm.maxFailureWaitUnit" >
                                     <option data-ng-selected="!realm.maxFailureWaitUnit">Seconds</option>
                                     <option>Minutes</option>
@@ -90,17 +94,18 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Max time a user will be locked out." class="pficon pficon-help"></span>
                 </div>
                 <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="maxDeltaTime">Failure Reset Time</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-5">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-4">
                                 <input class="form-control" type="number" required min="1"
                                        max="31536000" data-ng-model="realm.maxDeltaTime"
                                        id="maxDeltaTime" name="maxDeltaTime"/>
                             </div>
-                            <div class="col-sm-2 select-kc">
+                            <div class="col-sm-4 select-kc">
                                 <select name="maxDeltaTimeUnit" data-ng-model="realm.maxDeltaTimeUnit" >
                                     <option data-ng-selected="!realm.maxDeltaTimeUnit">Seconds</option>
                                     <option>Minutes</option>
@@ -110,6 +115,7 @@
                             </div>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="When will failure count be reset?" class="pficon pficon-help"></span>
                 </div>
             </fieldset>
             <div class="pull-right form-actions" data-ng-show="access.manageRealm">
