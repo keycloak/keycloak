@@ -149,7 +149,7 @@ public class RelativeUriAdapterTest {
         // test logout
 
         String logoutUri = TokenService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
-                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8081/customer-portal").build("demo").toString();
+                .queryParam(OAuth2Constants.REDIRECT_URI, "/customer-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         driver.navigate().to("http://localhost:8081/product-portal");

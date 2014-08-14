@@ -107,6 +107,11 @@ keycloak-war-dist-all-1.0-rc-1-SNAPSHOT/
 </programlisting>
         </para>
         <para>
+            After these steps you should also <link linkend='jboss-adapter-installation'>install the client adapter</link>
+            as this may contain modules the server needs (like Bouncycastle).  You will also need to install the adapter
+            to run the examples on the same server.
+        </para>
+        <para>
             After booting up the JBoss or Wildfly distro, you can then make sure it is installed properly
             by logging into the admin console at<ulink
                 url="http://localhost:8080/auth/admin/index.html">
