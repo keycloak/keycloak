@@ -5,11 +5,15 @@
         <li data-ng-show="!oauth.publicClient"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/credentials">Credentials</a></li>
         <li class="active"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/claims">Claims</a></li>
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/scope-mappings">Scope</a></li>
-        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/installation">Installation</a></li>
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/revocation">Revocation</a></li>
+        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/installation">Installation</a></li>
     </ul>
-    <h2></h2>
     <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}">{{oauth.name}}</a></li>
+            <li class="active">Claims</li>
+        </ol>
         <h2 data-ng-hide="create"><span>{{oauth.name}}</span> Allowed Claims <span tooltip-placement="right" tooltip="Allows you to restrict which claim information is stored in the access token generated for the application." class="fa fa-info-circle"></span></h2>
         <form class="form-horizontal" name="claimForm">
             <div data-ng-include data-src="'partials/claims.html'"></div>

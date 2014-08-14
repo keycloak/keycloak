@@ -3,16 +3,20 @@
     <ul class="nav nav-tabs nav-tabs-pf">
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">Settings</a></li>
         <li data-ng-show="!application.bearerOnly && !application.publicClient"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/credentials">Credentials</a></li>
-        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/installation">Installation</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/claims">Claims</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/scope-mappings">Scope</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/revocation">Revocation</a></li>
         <li class="active"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/installation">Installation</a></li>
     </ul>
-    <h2></h2>
     <div id="content">
-        <h2><span>{{application.name}}</span> Sessions  <span tooltip-placement="right" tooltip="View active sessions for this application.  Allows you to see which users are active and when they logged in." class="fa fa-info-circle"></span></h2>
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
+            <li class="active">Application Sessions</li>
+        </ol>
+        <h2><span>{{application.name}}</span> Active Sessions  <span tooltip-placement="right" tooltip="View active sessions for this application.  Allows you to see which users are active and when they logged in." class="fa fa-info-circle"></span></h2>
         <form class="form-horizontal" name="sessionStats">
             <fieldset class="border-top">
                 <div class="form-group">
