@@ -7,7 +7,7 @@
     <h2></h2>
     <div id="content">
         <div data-ng-show="access.viewRealm">
-            <h2><span>{{realm.realm}}</span> Browser Security Headers <span tooltip-placement="right" tooltip="HTTP Response header values that you can set to help prevent clickjacking and XSS attacks." class="pficon pficon-help"></span></h2>
+            <h2><span>{{realm.realm}}</span> Browser Security Headers <span tooltip-placement="right" tooltip="HTTP Response header values that you can set to help prevent clickjacking and XSS attacks." class="fa fa-info-circle"></span></h2>
             <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
                 <fieldset class="border-top">
                     <div class="form-group">
@@ -15,14 +15,14 @@
                         <div class="col-sm-6">
                             <input class="form-control" id="xFrameOptions" type="text" ng-model="realm.browserSecurityHeaders.xFrameOptions">
                         </div>
-                        <span tooltip-placement="right" tooltip="Click on label link for more information.  The default value prevents pages from being included via non-origin iframes." class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Click on label link for more information.  The default value prevents pages from being included via non-origin iframes." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
                         <label class="col-sm-2 control-label" for="contentSecurityPolicy"><a href="http://www.w3.org/TR/CSP/">Content-Security-Policy</a></label>
                         <div class="col-sm-6">
                             <input class="form-control" id="contentSecurityPolicy" type="text" ng-model="realm.browserSecurityHeaders.contentSecurityPolicy">
                         </div>
-                        <span tooltip-placement="right" tooltip="Click on label link for more information.  The default value prevents pages from being included via non-origin iframes." class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Click on label link for more information.  The default value prevents pages from being included via non-origin iframes." class="fa fa-info-circle"></span>
                     </div>
                 </fieldset>
                 <div class="pull-right form-actions" data-ng-show="access.manageRealm">

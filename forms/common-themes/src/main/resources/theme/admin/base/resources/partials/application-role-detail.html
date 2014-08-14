@@ -49,7 +49,7 @@
                     <div class="col-sm-4">
                         <input ng-model="compositeSwitch" name="compositeSwitch" id="compositeSwitch" ng-disabled="compositeSwitchDisabled" onoffswitch />
                     </div>
-                    <span tooltip-placement="right" tooltip="When this role is assigned to a user, the user implicitly is assigned every role associated with the composite role." class="pficon pficon-help"></span>                </div>
+                    <span tooltip-placement="right" tooltip="When this role is assigned to a user, the user implicitly is assigned every role associated with the composite role." class="fa fa-info-circle"></span>                </div>
                 </div>
             </fieldset>
 
@@ -58,7 +58,7 @@
                 <div class="form-group col-sm-10">
                     <div class="controls changing-selectors">
                         <div class="select-title">
-                            <label class="control-label" for="available">Available Roles <span tooltip-placement="right" tooltip="Realm level roles associated with this composite role." class="pficon pficon-help"></span></label>
+                            <label class="control-label" for="available">Available Roles <span tooltip-placement="right" tooltip="Realm level roles associated with this composite role." class="fa fa-info-circle"></span></label>
                             <select id="available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedRealmRoles"
@@ -74,7 +74,7 @@
                             </button>
                         </div>
                         <div class="select-title">
-                            <label class="control-label" for="assigned">Associated Roles  <span tooltip-placement="right" tooltip="Realm level roles associated with this composite role." class="pficon pficon-help"></span></label>
+                            <label class="control-label" for="assigned">Associated Roles  <span tooltip-placement="right" tooltip="Realm level roles associated with this composite role." class="fa fa-info-circle"></span></label>
                             <select id="assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedRealmMappings"
@@ -96,14 +96,14 @@
                                     <option value="" selected> Select an Application...</option>
                                 </select>
                             </div>
-                            <span tooltip-placement="right" tooltip="Select an application to view/modify roles associated with this composite." class="pficon pficon-help"></span>            </div>
+                            <span tooltip-placement="right" tooltip="Select an application to view/modify roles associated with this composite." class="fa fa-info-circle"></span>            </div>
                         </div>
                     </div>
                 </div>
                 <div class="form-group" ng-show="compositeApp">
                     <div class="controls changing-selectors application col-sm-10">
                         <div class="select-title">
-                            <label class="control-label" for="available-app">Available Roles <span tooltip-placement="right" tooltip="Roles from this application that you can associate to this composite role." class="pficon pficon-help"></span></label>
+                            <label class="control-label" for="available-app">Available Roles <span tooltip-placement="right" tooltip="Roles from this application that you can associate to this composite role." class="fa fa-info-circle"></span></label>
                             <select id="available-app" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedApplicationRoles"
@@ -119,7 +119,7 @@
                             </button>
                         </div>
                         <div class="select-title">
-                            <label class="control-label" for="assigned-app">Associated Roles <span tooltip-placement="right" tooltip="Application roles associated with this composite role." class="pficon pficon-help"></span></label>
+                            <label class="control-label" for="assigned-app">Associated Roles <span tooltip-placement="right" tooltip="Application roles associated with this composite role." class="fa fa-info-circle"></span></label>
                             <select id="assigned-app" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedApplicationMappings"

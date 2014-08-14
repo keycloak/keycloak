@@ -6,14 +6,14 @@
     </ul>
     <h2></h2>
     <div id="content">
-        <h2><span>{{realm.realm}}</span> Default Roles <span tooltip-placement="right" tooltip="Role mappings to assign to newly created users." class="pficon pficon-help"></span></h2>
+        <h2><span>{{realm.realm}}</span> Default Roles <span tooltip-placement="right" tooltip="Role mappings to assign to newly created users." class="fa fa-info-circle"></span></h2>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset>
                 <legend><span class="text">Realm Default Roles</span> </legend>
                 <div class="form-group">
                     <div class="controls changing-selectors col-sm-10">
                         <div class="select-title">
-                            <label class="control-label" for="available">Available Roles <span tooltip-placement="right" tooltip="Realm level roles that can be assigned." class="pficon pficon-help"></span></label>
+                            <label class="control-label" for="available">Available Roles <span tooltip-placement="right" tooltip="Realm level roles that can be assigned." class="fa fa-info-circle"></span></label>
                             <select id="available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedRealmRoles"
@@ -29,7 +29,7 @@
                             </button>
                         </div>
                         <div class="select-title">
-                            <label class="control-label" for="assigned">Realm Default Roles <span tooltip-placement="right" tooltip="Realm level roles assigned to new users." class="pficon pficon-help"></span></label>
+                            <label class="control-label" for="assigned">Realm Default Roles <span tooltip-placement="right" tooltip="Realm level roles assigned to new users." class="fa fa-info-circle"></span></label>
                             <select id="assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedRealmDefRoles"
@@ -43,7 +43,7 @@
             <fieldset ng-show="applications.length > 0">
                 <legend><span class="text">Application Default Roles</span> </legend>
                 <div class="form-group input-select">
-                    <label class="col-sm-2 control-label" for="applications">Application</label>
+                    <label class="col-sm-2 control-label" for="applications">Application <span tooltip-placement="top" tooltip="Select an application to view/modify assigned default roles." class="fa fa-info-circle"></span></label>
                     <div class="col-sm-4">
                         <div class="input-group">
                             <div class="select-kc">
@@ -53,12 +53,12 @@
                             </div>
                         </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="Select an application to view/modify assigned default roles." class="pficon pficon-help"></span>
+
                 </div>
                 <div class="form-group" ng-show="application">
                     <div class="controls changing-selectors col-sm-10">
                         <div class="select-title">
-                            <label class="control-label" for="available-app">Available Roles <span tooltip-placement="right" tooltip="Roles from this application that are assignable as a default." class="pficon pficon-help"></span></label>
+                            <label class="control-label" for="available-app">Available Roles <span tooltip-placement="right" tooltip="Roles from this application that are assignable as a default." class="fa fa-info-circle"></span></label>
                             <select id="available-app" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedAppRoles"
@@ -74,7 +74,7 @@
                             </button>
                         </div>
                         <div class="select-title">
-                            <label class="control-label" for="assigned-app">Application Default Roles <span tooltip-placement="right" tooltip="Roles from this application assigned as a default role." class="pficon pficon-help"></span></label>
+                            <label class="control-label" for="assigned-app">Application Default Roles <span tooltip-placement="right" tooltip="Roles from this application assigned as a default role." class="fa fa-info-circle"></span></label>
                             <select id="assigned-app" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedAppDefRoles"
