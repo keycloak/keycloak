@@ -4,15 +4,19 @@
     <ul class="nav nav-tabs nav-tabs-pf">
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">Settings</a></li>
         <li data-ng-show="!application.bearerOnly && !application.publicClient"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/credentials">Credentials</a></li>
-        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/installation">Installation</a></li>
         <li class="active"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/claims">Claims</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/scope-mappings">Scope</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/revocation">Revocation</a></li>
         <li data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/installation">Installation</a></li>
     </ul>
-    <h2></h2>
     <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
+            <li class="active">Roles</li>
+        </ol>
         <h2><span>{{application.name}}</span> Application Roles</h2>
         <table class="table table-striped table-bordered">
             <thead>

@@ -4,15 +4,19 @@
     <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">Settings</a></li>
         <li data-ng-show="!application.bearerOnly && !application.publicClient"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/credentials">Credentials</a></li>
-        <li><a href="#">Installation</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/claims">Claims</a></li>
         <li class="active"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/scope-mappings">Scope</a></li>
         <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/revocation">Revocation</a></li>
         <li data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/installation">Installation</a></li>
     </ul>
-    <h2></h2>
     <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
+            <li class="active">Scope</li>
+        </ol>
         <h2><span>{{application.name}}</span> Scope Mappings <span tooltip-placement="right" tooltip="Scope mappings allow you to restrict which user role mappings are included within the access token requested by the application." class="fa fa-info-circle"></span></h2>
         <p class="subtitle"></p>
         <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageApplications">

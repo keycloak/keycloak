@@ -5,12 +5,16 @@
         <li data-ng-show="!oauth.publicClient"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/credentials">Credentials</a></li>
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/claims">Claims</a></li>
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/scope-mappings">Scope</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/installation">Installation</a></li>
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/revocation">Revocation</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/installation">Installation</a></li>
     </ul>
-    <h2></h2>
     <div id="content">
-        <h2>OAuth Client Installation <span tooltip-placement="right" tooltip="Helper utility for generating various client adapter configuration formats which you can download or cut and paste to configure your client applications." class="fa fa-info-circle"></span></h2>
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}">{{oauth.name}}</a></li>
+            <li class="active">Installation</li>
+        </ol>
+        <h2>{{oauth.name}} Adapter Installation <span tooltip-placement="right" tooltip="Helper utility for generating various client adapter configuration formats which you can download or cut and paste to configure your client applications." class="fa fa-info-circle"></span></h2>
         <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset>
                 <div class="form-group">
