@@ -1288,6 +1288,9 @@ public class TokenService {
 
                 valid = matchesRedirects(resolveValidRedirects, r);
             }
+            if (valid && redirectUri.startsWith("/")) {
+                redirectUri = relativeToAbsoluteURI(uriInfo, redirectUri);
+            }
             redirectUri = valid ? redirectUri : null;
         }
 
@@ -1302,18 +1305,24 @@ public class TokenService {
         // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
         Set<String> resolveValidRedirects = new HashSet<String>();
         for (String validRedirect : validRedirects) {
+            resolveValidRedirects.add(validRedirect); // add even relative urls.
             if (validRedirect.startsWith("/")) {
-                URI baseUri = uriInfo.getBaseUri();
-                String uri = baseUri.getScheme() + "://" + baseUri.getHost();
-                if (baseUri.getPort() != -1) {
-                    uri += ":" + baseUri.getPort();
-                }
-                validRedirect = uri + validRedirect;
+                validRedirect = relativeToAbsoluteURI(uriInfo, validRedirect);
                 logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
+                resolveValidRedirects.add(validRedirect);
             }
-            resolveValidRedirects.add(validRedirect);
         }
         return resolveValidRedirects;
+    }
+
+    public static String relativeToAbsoluteURI(UriInfo uriInfo, String relative) {
+        URI baseUri = uriInfo.getBaseUri();
+        String uri = baseUri.getScheme() + "://" + baseUri.getHost();
+        if (baseUri.getPort() != -1) {
+            uri += ":" + baseUri.getPort();
+        }
+        relative = uri + relative;
+        return relative;
     }
 
     private boolean checkSsl() {

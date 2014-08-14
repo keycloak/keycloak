@@ -12,49 +12,49 @@
                         <div class="col-sm-4">
                             <input ng-model="realm.social" name="social" id="social" onoffswitch />
                         </div>
-                        <span tooltip-placement="right" tooltip="Enable/disable social login via Facebook, Google+, etc." class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Enable/disable social login via Facebook, Google+, etc." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="realm.social">
                         <label class="col-sm-2 control-label" for="updateProfileOnInitialSocialLogin">Update profile on first social login</label>
                         <div class="col-sm-4">
                             <input ng-model="realm.updateProfileOnInitialSocialLogin" name="updateProfileOnInitialSocialLogin" id="updateProfileOnInitialSocialLogin" onoffswitch />
                         </div>
-                        <span tooltip-placement="right" tooltip="Should user information from social provider be imported into user database?" class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Should user information from social provider be imported into user database?" class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
                         <label for="registrationAllowed" class="col-sm-2 control-label">User registration</label>
                         <div class="col-sm-4">
                             <input ng-model="realm.registrationAllowed" name="registrationAllowed" id="registrationAllowed" onoffswitch />
                         </div>
-                        <span tooltip-placement="right" tooltip="Enable/disable the registration page.  A link for registration will show on login page too." class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Enable/disable the registration page.  A link for registration will show on login page too." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
                         <label for="resetPasswordAllowed" class="col-sm-2 control-label">Forget password</label>
                         <div class="col-sm-4">
                             <input ng-model="realm.resetPasswordAllowed" name="resetPasswordAllowed" id="resetPasswordAllowed" onoffswitch />
                         </div>
-                        <span tooltip-placement="right" tooltip="Show a link on login page for user to click on when they have forgotten their credentials." class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Show a link on login page for user to click on when they have forgotten their credentials." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
                         <label class="col-sm-2 control-label" for="rememberMe">Remember Me</label>
                         <div class="col-sm-4">
                             <input ng-model="realm.rememberMe" name="rememberMe" id="rememberMe" onoffswitch />
                         </div>
-                        <span tooltip-placement="right" tooltip="Show checkbox on login page to allow user to remain logged in between browser restarts until session expires." class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Show checkbox on login page to allow user to remain logged in between browser restarts until session expires." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
                         <label for="verifyEmail" class="col-sm-2 control-label">Verify email</label>
                         <div class="col-sm-4">
                             <input ng-model="realm.verifyEmail" name="verifyEmail" id="verifyEmail" onoffswitch />
                         </div>
-                        <span tooltip-placement="right" tooltip="Require the user to verify their email address the first time they login." class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Require the user to verify their email address the first time they login." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
                         <label for="passwordCredentialGrantAllowed" class="col-sm-2 control-label">Direct Grant API</label>
                         <div class="col-sm-4">
                             <input ng-model="realm.passwordCredentialGrantAllowed" name="passwordCredentialGrantAllowed" id="passwordCredentialGrantAllowed" onoffswitch />
                         </div>
-                        <span tooltip-placement="right" tooltip="Enable/disable REST API for login/token grant access" class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Enable/disable REST API for login/token grant access" class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
                         <label for="sslRequired" class="col-sm-2 control-label">Require SSL</label>
@@ -67,7 +67,7 @@
                                 </select>
                             </div>
                         </div>
-                        <span tooltip-placement="right" tooltip="Is HTTPS required?  'None' means HTTPS is not required for any client IP address. 'External requests' means localhost and private IP addresses can access without HTTPS.  'All requests' means HTTPS is required for all IP addresses." class="pficon pficon-help"></span>
+                        <span tooltip-placement="right" tooltip="Is HTTPS required?  'None' means HTTPS is not required for any client IP address. 'External requests' means localhost and private IP addresses can access without HTTPS.  'All requests' means HTTPS is required for all IP addresses." class="fa fa-info-circle"></span>
                     </div>
                 </fieldset>
                 <div class="pull-right form-actions" data-ng-show="access.manageRealm">

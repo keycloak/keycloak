@@ -6,7 +6,7 @@
     </ul>
     <h2></h2>
     <div id="content">
-        <h2><span>{{realm.realm}}</span> Brute Force Protection <span tooltip-placement="right" tooltip="Seeks to prevent hackers trying to guess passwords.  It remembers failures and will lock out users that have too many failutres for a certain amount of time.  WARNING: Vulnerable to denail of service attacks see docs for more details." class="pficon pficon-help"></span></h2>
+        <h2><span>{{realm.realm}}</span> Brute Force Protection <span tooltip-placement="right" tooltip="Seeks to prevent hackers trying to guess passwords.  It remembers failures and will lock out users that have too many failutres for a certain amount of time.  WARNING: Vulnerable to denail of service attacks see docs for more details." class="fa fa-info-circle"></span></h2>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">
                 <div class="form-group">
@@ -22,7 +22,7 @@
                         <input class="form-control" type="number" min="1" max="31536000" id="failureFactor" name="failureFactor" data-ng-model="realm.failureFactor" autofocus
                                required>
                     </div>
-                    <span tooltip-placement="right" tooltip="How many failures before wait is triggered." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="How many failures before wait is triggered." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="waitIncrement">Wait Increment</label>
@@ -43,7 +43,7 @@
                             </div>
                         </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="When failure threshold has been met, how much time should the user be locked out?" class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="When failure threshold has been met, how much time should the user be locked out?" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="quickLoginCheckMilliSeconds">Quick Login Check Milli Seconds</label>
@@ -52,7 +52,7 @@
                         <input class="form-control" type="number" min="1" max="31536000" id="quickLoginCheckMilliSeconds" name="quickLoginCheckMilliSeconds" data-ng-model="realm.quickLoginCheckMilliSeconds" autofocus
                                required>
                     </div>
-                    <span tooltip-placement="right" tooltip="If a failure happens concurrently too quickly, lock out the user." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="If a failure happens concurrently too quickly, lock out the user." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="minimumQuickLoginWait">Minimum Quick Login Wait</label>
@@ -73,7 +73,7 @@
                             </div>
                         </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="How long to wait after a quick login failure." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="How long to wait after a quick login failure." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="maxFailureWait">Max Wait</label>
@@ -94,7 +94,7 @@
                             </div>
                         </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="Max time a user will be locked out." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="Max time a user will be locked out." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
                     <label class="col-sm-2 control-label" for="maxDeltaTime">Failure Reset Time</label>
@@ -115,7 +115,7 @@
                             </div>
                         </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="When will failure count be reset?" class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="When will failure count be reset?" class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
             <div class="pull-right form-actions" data-ng-show="access.manageRealm">

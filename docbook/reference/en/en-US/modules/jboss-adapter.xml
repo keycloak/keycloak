@@ -1,4 +1,4 @@
-<section>
+<section id="jboss-adapter">
     <title>JBoss/Wildfly Adapter</title>
     <para>
         To be able to secure WAR apps deployed on JBoss AS 7.1.1, JBoss EAP 6.x, or Wildfly, you must install and
@@ -7,7 +7,7 @@
         to crack open your WARs at all and can apply Keycloak via the Keycloak Subsystem configuration in standalone.xml.
         Both methods are described in this section.
     </para>
-    <section>
+    <section id="jboss-adapter-installation">
         <title>Adapter Installation</title>
     <para>
         This is a adapter zip file for AS7, EAP, and Wildfly in the <literal>adapters/</literal> directory in the Keycloak

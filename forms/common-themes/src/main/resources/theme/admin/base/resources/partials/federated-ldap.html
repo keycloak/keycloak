@@ -23,14 +23,14 @@
                     <div class="col-sm-4">
                         <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.displayName" placeholder="defaults to id">
                     </div>
-                    <span tooltip-placement="right" tooltip="Display name of provider when linked in admin console." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="Display name of provider when linked in admin console." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="priority">Priority </label>
                     <div class="col-sm-4">
                         <input class="form-control" id="priority" type="text" ng-model="instance.priority">
                     </div>
-                    <span tooltip-placement="right" tooltip="Priority of provider when doing a user lookup.  Lowest first." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="Priority of provider when doing a user lookup.  Lowest first." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="editMode">Edit mode</label>
@@ -44,14 +44,14 @@
                             </select>
                         </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="READ_ONLY is a read only LDAP store.  WRITABLE means data will be synced back to LDAP on demand.  UNSYNCED means user data will be imported, but not synced back to LDAP." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="READ_ONLY is a read only LDAP store.  WRITABLE means data will be synced back to LDAP on demand.  UNSYNCED means user data will be imported, but not synced back to LDAP." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block">
                     <label class="col-sm-2 control-label" for="syncRegistrations">Sync Registrations</label>
                     <div class="col-sm-4">
                         <input ng-model="syncRegistrations" name="syncRegistrations" id="syncRegistrations" onoffswitch />
                     </div>
-                    <span tooltip-placement="right" tooltip="Should newly created users be created within LDAP store?  Priority effects which provider is chose to sync the new user." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="Should newly created users be created within LDAP store?  Priority effects which provider is chose to sync the new user." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="vendor">Vendor</label>
@@ -82,7 +82,7 @@
                     </div>
                 </div>
                 <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="ldapConnectionUrl">Connection URL <span class="required">*</span></label>
+                    <label class="col-sm-2 control-label" for="ldapConnectionUrl">Connection URL<span class="required">*</span></label>
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapConnectionUrl" type="text" ng-model="instance.config.connectionUrl" placeholder="LDAP connection URL" required>
                     </div>
@@ -128,7 +128,7 @@
                     <div class="col-sm-4">
                         <input ng-model="pagination" name="pagination" id="pagination" onoffswitch />
                     </div>
-                    <span tooltip-placement="right" tooltip="Does the LDAP server support pagination." class="pficon pficon-help"></span>
+                    <span tooltip-placement="right" tooltip="Does the LDAP server support pagination." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix" data-ng-show="instance.config.vendor === 'ad' ">
                     <label class="col-sm-2 control-label" for="userAccountControlsAfterPasswordUpdate">Enable Account After Password Update</label>
