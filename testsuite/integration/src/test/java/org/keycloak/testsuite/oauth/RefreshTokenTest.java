@@ -29,8 +29,12 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.Event;
+import org.keycloak.enums.SslRequired;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -333,6 +337,89 @@ public class RefreshTokenTest {
         events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
 
         events.clear();
+    }
+
+    @Test
+    public void testCheckSsl() throws Exception {
+        Client client = ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        URI grantUri = TokenService.grantAccessTokenUrl(builder).build("test");
+        WebTarget grantTarget = client.target(grantUri);
+        builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        URI uri = TokenService.refreshUrl(builder).build("test");
+        WebTarget refreshTarget = client.target(uri);
+
+        String refreshToken = null;
+        {
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(200, response.getStatus());
+            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            refreshToken = tokenResponse.getRefreshToken();
+            response.close();
+        }
+
+        {
+            Response response = executeRefreshToken(refreshTarget, refreshToken);
+            Assert.assertEquals(200, response.getStatus());
+            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            refreshToken = tokenResponse.getRefreshToken();
+            response.close();
+        }
+
+        {   // test checkSsl
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                realm.setSslRequired(SslRequired.ALL);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+            Response response = executeRefreshToken(refreshTarget, refreshToken);
+            Assert.assertEquals(403, response.getStatus());
+            response.close();
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                realm.setSslRequired(SslRequired.EXTERNAL);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+        }
+
+        {
+            Response response = executeRefreshToken(refreshTarget, refreshToken);
+            Assert.assertEquals(200, response.getStatus());
+            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            refreshToken = tokenResponse.getRefreshToken();
+            response.close();
+        }
+
+
+        client.close();
+        events.clear();
+
+    }
+
+    protected Response executeRefreshToken(WebTarget refreshTarget, String refreshToken) {
+        String header = BasicAuthHelper.createHeader("test-app", "password");
+        Form form = new Form();
+        form.param("refresh_token", refreshToken);
+        return refreshTarget.request()
+                .header(HttpHeaders.AUTHORIZATION, header)
+                .post(Entity.form(form));
+    }
+
+    protected Response executeGrantAccessTokenRequest(WebTarget grantTarget) {
+        String header = BasicAuthHelper.createHeader("test-app", "password");
+        Form form = new Form();
+        form.param("username", "test-user@localhost")
+                .param("password", "password");
+        return grantTarget.request()
+                .header(HttpHeaders.AUTHORIZATION, header)
+                .post(Entity.form(form));
     }
 
 

@@ -34,6 +34,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
@@ -245,11 +246,6 @@ public class TokenService {
 
         ClientModel client = authorizeClient(authorizationHeader, form, audit);
 
-        if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
-            audit.error(Errors.NOT_ALLOWED);
-            return createError("not_allowed", "Bearer-only applications are not allowed to invoke grants/access", Response.Status.FORBIDDEN);
-        }
-
         if (!realm.isEnabled()) {
             audit.error(Errors.REALM_DISABLED);
             return createError("realm_disabled", "Realm is disabled", Response.Status.UNAUTHORIZED);
@@ -312,6 +308,9 @@ public class TokenService {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Response validateAccessToken(@QueryParam("access_token") String tokenString) {
+        if (!checkSsl()) {
+            return createError("https_required", "HTTPS required", Response.Status.FORBIDDEN);
+        }
         audit.event(EventType.VALIDATE_ACCESS_TOKEN);
         AccessToken token = null;
         try {
@@ -423,7 +422,7 @@ public class TokenService {
                                        final MultivaluedMap<String, String> form) {
         logger.info("--> refreshAccessToken");
         if (!checkSsl()) {
-            throw new NotAcceptableException("HTTPS required");
+            return createError("https_required", "HTTPS required", Response.Status.FORBIDDEN);
         }
 
         audit.event(EventType.REFRESH_TOKEN);
@@ -716,7 +715,7 @@ public class TokenService {
         logger.debug("accessRequest <---");
 
         if (!checkSsl()) {
-            throw new NotAcceptableException("HTTPS required");
+            throw new ForbiddenException("HTTPS required");
         }
 
         audit.event(EventType.CODE_TO_TOKEN);
