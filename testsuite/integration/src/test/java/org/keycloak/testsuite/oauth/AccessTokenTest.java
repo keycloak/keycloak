@@ -29,6 +29,10 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.Event;
+import org.keycloak.enums.SslRequired;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
@@ -277,13 +281,7 @@ public class AccessTokenTest {
 
         org.keycloak.representations.AccessTokenResponse tokenResponse = null;
         {
-            String header = BasicAuthHelper.createHeader("test-app", "password");
-            Form form = new Form();
-            form.param("username", "test-user@localhost")
-                    .param("password", "password");
-            Response response = grantTarget.request()
-                    .header(HttpHeaders.AUTHORIZATION, header)
-                    .post(Entity.form(form));
+            Response response = executeGrantAccessTokenRequest(grantTarget);
             Assert.assertEquals(200, response.getStatus());
             tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
             response.close();
@@ -318,6 +316,210 @@ public class AccessTokenTest {
         client.close();
         events.clear();
 
+    }
+
+    @Test
+    public void testGrantAccessToken() throws Exception {
+        Client client = ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        URI grantUri = TokenService.grantAccessTokenUrl(builder).build("test");
+        WebTarget grantTarget = client.target(grantUri);
+
+        {   // test checkSsl
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                realm.setSslRequired(SslRequired.ALL);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(403, response.getStatus());
+            response.close();
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                realm.setSslRequired(SslRequired.EXTERNAL);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+        }
+
+        {   // test null username
+            String header = BasicAuthHelper.createHeader("test-app", "password");
+            Form form = new Form();
+            form.param("password", "password");
+            Response response = grantTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, header)
+                    .post(Entity.form(form));
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+        }
+
+        {   // test no password
+            String header = BasicAuthHelper.createHeader("test-app", "password");
+            Form form = new Form();
+            form.param("username", "test-user@localhost");
+            Response response = grantTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, header)
+                    .post(Entity.form(form));
+            Assert.assertEquals(400, response.getStatus());
+            response.close();
+        }
+
+        {   // test bearer-only
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                ApplicationModel clientModel = realm.getApplicationByName("test-app");
+                clientModel.setBearerOnly(true);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(400, response.getStatus());
+            response.close();
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                ApplicationModel clientModel = realm.getApplicationByName("test-app");
+                clientModel.setBearerOnly(false);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+        }
+
+        {   // test realm disabled
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                realm.setEnabled(false);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                realm.setEnabled(true);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+        }
+
+        {   // test application disabled
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                ClientModel clientModel = realm.findClient("test-app");
+                clientModel.setEnabled(false);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(400, response.getStatus());
+            response.close();
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                ClientModel clientModel = realm.findClient("test-app");
+                clientModel.setEnabled(true);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+        }
+
+        {   // test user action required
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(400, response.getStatus());
+            response.close();
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
+                user.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+        }
+        {   // test user disabled
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
+                user.setEnabled(false);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(400, response.getStatus());
+            response.close();
+
+            {
+                KeycloakSession session = keycloakRule.startSession();
+                RealmModel realm = session.realms().getRealmByName("test");
+                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
+                user.setEnabled(true);
+                session.getTransaction().commit();
+                session.close();
+            }
+
+        }
+
+
+        {
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(200, response.getStatus());
+            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            response.close();
+        }
+
+        client.close();
+        events.clear();
+
+    }
+
+    protected Response executeGrantAccessTokenRequest(WebTarget grantTarget) {
+        String header = BasicAuthHelper.createHeader("test-app", "password");
+        Form form = new Form();
+        form.param("username", "test-user@localhost")
+                .param("password", "password");
+        return grantTarget.request()
+                .header(HttpHeaders.AUTHORIZATION, header)
+                .post(Entity.form(form));
     }
 
 
