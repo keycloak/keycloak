@@ -48,29 +48,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.google.code.maven-replacer-plugin</groupId>
-                <artifactId>replacer</artifactId>
-                <version>1.5.2</version>
-                <executions>
-                    <execution>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>replace</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <file>${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json</file>
-                    <replacements>
-                        <replacement>
-                            <token>java:jboss/datasources/ExampleDS</token>
-                            <value>java:jboss/datasources/KeycloakDS</value>
-                        </replacement>
-                    </replacements>
-                </configuration>
-            </plugin>
+            </plugin>            
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.4</version>
