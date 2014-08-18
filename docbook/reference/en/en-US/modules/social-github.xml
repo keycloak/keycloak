@@ -1,7 +1,7 @@
 <section id="social-github">
     <title>GitHub</title>
     <para>
-        To enable login with Google you first have to create an application in
+        To enable login with GitHub you first have to create an application in
         <ulink url="https://github.com/settings/applications">GitHub Settings</ulink>. Then you need to copy
         the client id and secret into the Keycloak Admin Console.
     </para>

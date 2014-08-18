@@ -4,6 +4,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.ClientConnection;
+import org.keycloak.audit.Details;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.models.ApplicationModel;
@@ -71,6 +73,9 @@ public class UsersResource {
     private RealmAuth auth;
 
     private TokenManager tokenManager;
+
+    @Context
+    protected ClientConnection clientConnection;
 
     @Context
     protected UriInfo uriInfo;
@@ -828,7 +833,10 @@ public class UsersResource {
             return Flows.errors().error("AccountProvider management not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
-        AccessCode accessCode = tokenManager.createAccessCode(scope, state, redirect, session, realm, client, user, null);
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
+        //audit.session(userSession);
+
+        AccessCode accessCode = tokenManager.createAccessCode(null, state, redirect, session, realm, client, user, userSession);
         accessCode.setRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         try {
@@ -838,8 +846,9 @@ public class UsersResource {
             String link = builder.build(realm.getName()).toString();
             long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
 
-            session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
+            this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
 
+            //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
             return Response.ok().build();
         } catch (EmailException e) {
             logger.error("Failed to send password reset email", e);

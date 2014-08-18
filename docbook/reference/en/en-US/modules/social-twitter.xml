@@ -22,7 +22,7 @@
         </listitem>
         <listitem>
             <para>
-                Now click <literal>Details</literal>. Copy <literal>Consumer key</literal> and <literal>Consumer secret</literal> from the
+                Now click <literal>API Keys</literal> tab. Copy <literal>API key</literal> and <literal>API secret</literal> from the
                 <ulink url="https://dev.twitter.com/apps">Twitter Developer Console</ulink> into the settings
                 page in the Keycloak Admin Console as the <literal>Key</literal> and <literal>Secret</literal>. Then click
                 <literal>Save</literal> in the Keycloak Admin Console to enable login with Twitter.
