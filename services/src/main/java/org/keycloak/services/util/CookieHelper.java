@@ -1,9 +1,15 @@
 package org.keycloak.services.util;
 
+import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.HttpHeaders;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -23,6 +29,14 @@ public class CookieHelper {
      * @param secure
      * @param httpOnly
      */
+    public static void addCookie2(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
+        HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
+        StringBuffer cookieBuf = new StringBuffer();
+        ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly);
+        String cookie = cookieBuf.toString();
+        response.getOutputHeaders().add(HttpHeaders.SET_COOKIE, cookie);
+    }
+
     public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
         HttpServletResponse response = ResteasyProviderFactory.getContextData(HttpServletResponse.class);
         Cookie cookie = new Cookie(name, value);
@@ -36,4 +50,6 @@ public class CookieHelper {
         response.addCookie(cookie);
 
     }
+
+
 }
