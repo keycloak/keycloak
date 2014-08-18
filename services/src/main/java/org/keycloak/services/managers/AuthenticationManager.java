@@ -173,7 +173,7 @@ public class AuthenticationManager {
     public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers, boolean checkActive) {
         logger.info("authenticateIdentityCookie");
         Cookie cookie = headers.getCookies().get(KEYCLOAK_IDENTITY_COOKIE);
-        if (cookie == null) {
+        if (cookie == null || "".equals(cookie.getValue())) {
             logger.infov("authenticateCookie could not find cookie: {0}", KEYCLOAK_IDENTITY_COOKIE);
             return null;
         }

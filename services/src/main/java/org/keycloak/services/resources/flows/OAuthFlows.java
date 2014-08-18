@@ -96,12 +96,16 @@ public class OAuthFlows {
 
         Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
         if (sessionCookie != null) {
-            String oldSessionId = sessionCookie.getValue().split("/")[2];
-            if (!oldSessionId.equals(userSession.getId())) {
-                UserSessionModel oldSession = session.sessions().getUserSession(realm, oldSessionId);
-                if (oldSession != null) {
-                    log.debugv("Removing old user session: session: {0}", oldSessionId);
-                    session.sessions().removeUserSession(realm, oldSession);
+
+            String[] split = sessionCookie.getValue().split("/");
+            if (split.length >= 3) {
+                String oldSessionId = split[2];
+                if (!oldSessionId.equals(userSession.getId())) {
+                    UserSessionModel oldSession = session.sessions().getUserSession(realm, oldSessionId);
+                    if (oldSession != null) {
+                        log.debugv("Removing old user session: session: {0}", oldSessionId);
+                        session.sessions().removeUserSession(realm, oldSession);
+                    }
                 }
             }
         }
