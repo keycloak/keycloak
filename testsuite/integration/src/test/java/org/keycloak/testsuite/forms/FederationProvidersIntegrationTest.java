@@ -3,6 +3,7 @@ package org.keycloak.testsuite.forms;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -101,6 +102,13 @@ public class FederationProvidersIntegrationTest {
 
     @WebResource
     protected AccountPasswordPage changePasswordPage;
+
+    @Test
+    @Ignore
+    public void runit() throws Exception {
+        Thread.sleep(10000000);
+
+    }
 
     static UserModel addUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
         UserModel user = session.users().addUser(realm, username);

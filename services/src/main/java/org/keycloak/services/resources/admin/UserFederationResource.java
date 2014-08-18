@@ -156,7 +156,7 @@ public class UserFederationResource {
     @GET
     @NoCache
     @Path("instances/{id}")
-    @Consumes("application/json")
+    @Produces("application/json")
     public UserFederationProviderRepresentation getProviderInstance(@PathParam("id") String id) {
         logger.info("getProvider");
         auth.requireView();

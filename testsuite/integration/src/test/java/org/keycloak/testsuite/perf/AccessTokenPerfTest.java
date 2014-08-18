@@ -180,6 +180,11 @@ public class AccessTokenPerfTest {
             }
             Assert.assertEquals(302, response.getStatus());
             uri = response.getLocation();
+            for (String header : response.getHeaders().keySet()) {
+                for (Object value : response.getHeaders().get(header)) {
+                    System.out.println(header + ": " + value);
+                }
+            }
             response.close();
 
             Assert.assertNotNull(uri);
