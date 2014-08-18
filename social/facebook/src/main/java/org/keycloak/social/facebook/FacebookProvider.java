@@ -1,6 +1,7 @@
 package org.keycloak.social.facebook;
 
 import org.codehaus.jackson.JsonNode;
+import org.jboss.logging.Logger;
 import org.keycloak.social.AbstractOAuth2Provider;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
@@ -10,6 +11,7 @@ import org.keycloak.social.utils.SimpleHttp;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class FacebookProvider extends AbstractOAuth2Provider {
+    protected static final Logger logger = Logger.getLogger(FacebookProvider.class);
 
     private static final String ID = "facebook";
     private static final String NAME = "Facebook";
@@ -50,10 +52,20 @@ public class FacebookProvider extends AbstractOAuth2Provider {
         try {
             JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
-            SocialUser user = new SocialUser(profile.get("id").getTextValue(), profile.get("username").getTextValue());
+
+            JsonNode id = profile.get("id");
+            JsonNode username = profile.get("username");
+            JsonNode email = profile.get("email");
+
+            //logger.info("email is null: " + email == null);
+            //logger.info("username is null: " + username == null);
+
+            if (username == null) username = email == null ? id : email;
+
+            SocialUser user = new SocialUser(id.getTextValue(), username.getTextValue());
             user.setName(profile.has("first_name") ? profile.get("first_name").getTextValue() : null,
                     profile.has("last_name") ? profile.get("last_name").getTextValue() : null);
-            user.setEmail(profile.has("email") ? profile.get("email").getTextValue() : null);
+            user.setEmail(profile.has("email") ? email.getTextValue() : null);
 
             return user;
         } catch (Exception e) {

@@ -18,7 +18,8 @@
         </listitem>
         <listitem>
             <para>
-                Once the app has been created click on <literal>Settings</literal> in sidebar on the left. Then click
+                Once the app has been created click on <literal>Settings</literal> in sidebar on the left. You must specify
+                a contact email.  Save your changes.  Then click
                 on <literal>Advanced</literal>. Under <literal>Security</literal> make sure
                 <literal>Client OAuth Login</literal> is enabled. In <literal>Valid OAuth redirect URIs</literal> insert
                 the <link linkend="social-callbackurl">social callback url</link>. Scroll down and click on the
@@ -28,7 +29,8 @@
         <listitem>
             <para>
                 Click <literal>Status &amp; Review</literal> and select <literal>YES</literal> for <literal>Do you want
-                to make this app and all its live features available to the general public?</literal>.
+                to make this app and all its live features available to the general public?</literal>.  You will
+                not be able to set this until you have provided a contact email in the general settings of this application.
             </para>
         </listitem>
         <listitem>
