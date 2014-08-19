@@ -184,6 +184,8 @@ public class SocialLoginTest {
 
         Assert.assertTrue(loginPage.isCurrent());
         Assert.assertEquals("User with email already exists. Please login to account management to link the account.", loginPage.getError());
+
+        events.clear();
     }
 
     @Test
