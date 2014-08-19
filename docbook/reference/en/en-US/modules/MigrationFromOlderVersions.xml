@@ -6,7 +6,7 @@
             <listitem>
                 logout REST API has been refactored.  The GET request on the logout URI does not take a session_state
                 parameter anymore.  You must be logged in in order to log out the session.
-                You can also POST to the lougt REST URI.  This action requires a valid refresh token to perform the logout.
+                You can also POST to the logout REST URI.  This action requires a valid refresh token to perform the logout.
                 The signature is the same as refresh token minus the grant type form parameter.  See documentation for details.
             </listitem>
          </itemizedlist>

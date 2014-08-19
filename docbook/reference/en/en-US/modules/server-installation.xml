@@ -142,9 +142,9 @@ keycloak-war-dist-all-1.0-rc-1-SNAPSHOT/
             </itemizedlist>
         </para>
         <section>
-            <title>Database Configuration</title>
+            <title>Relational Database Configuration</title>
             <para>
-                The datasource used to store Keycloak data is configured in the <literal>.../standalone/deployments/keycloak-ds.xml</literal>
+                By default, Keycloak uses a relational database to store Keycloak data.  This datasource is the <literal>.../standalone/deployments/keycloak-ds.xml</literal>
                 file of your Keycloak Server installation if you used <xref linkend="WAR_distribution_installation" /> or in <literal>.../standalone/configuration/standalone.xml</literal>
                 if you used <xref linkend="Appliance_install" />. File <literal>keycloak-ds.xml</literal> is used in WAR
                 distribution, so that you have datasource available out of the box and you don't need to edit <literal>standalone.xml</literal> file.

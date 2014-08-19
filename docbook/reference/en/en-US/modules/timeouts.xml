@@ -1,4 +1,4 @@
-<chapter id="timeouts">
+    <chapter id="timeouts">
     <title>Cookie settings, Session Timeouts, and Token Lifespans</title>
     <para>
         Keycloak has a bunch of fine-grain settings to manage browser cookies, user login sessions, and token lifespans.
@@ -43,11 +43,11 @@
             application not knowing if the user's permissions have changed.  This value is usually in minutes.
         </para>
         <para>
-            The <literal>Access Code Lifespan</literal> is how long an access code is valid for.  An access code is obtained
+            The <literal>Client login timeout</literal> is how long an access code is valid for.  An access code is obtained
             on the 1st leg of the OAuth 2.0 redirection protocol.  This should be a short time limit.  Usually seconds.
         </para>
         <para>
-            The <literal>Access Code Action Lifespan</literal> is how long a user is allowed to attempt a login.  When a user tries
+            The <literal>Login user action lifespan</literal> is how long a user is allowed to attempt a login.  When a user tries
             to login, they may have to change their password, set up TOTP, or perform some other action before they are redirected
             back to your application as an authentnicated user.  This value is relatively short and is usually measured in minutes.
         </para>
