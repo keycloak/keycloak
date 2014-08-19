@@ -11,7 +11,7 @@
         Most of the time when you want to federate an external user store, much of the metadata that would be needed to
         provide this complete feature set does not exist in that external store.  For example your LDAP server may only
         provide password validation, but not support TOTP or user role mappings.  The Keycloak User Federation SPI was
-        written to support these completely variable locations
+        written to support these completely variable configurations.
     </para>
     <para>
         The way user federation works is that Keycloak will import your federated users on demand to its local storage.  How
