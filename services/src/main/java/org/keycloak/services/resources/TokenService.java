@@ -229,7 +229,7 @@ public class TokenService {
         }
 
         if (!realm.isPasswordCredentialGrantAllowed()) {
-            return createError("not_enabled", "Resource Owner Password Credentials Grant not enabled", Response.Status.FORBIDDEN);
+            return createError("not_enabled", "Direct Grant REST API not enabled", Response.Status.FORBIDDEN);
         }
 
         audit.event(EventType.LOGIN).detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
