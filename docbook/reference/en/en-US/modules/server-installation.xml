@@ -402,7 +402,7 @@ keycloak-war-dist-all-1.0-rc-1-SNAPSHOT/
 </programlisting>
         </section>
         <section>
-            <title>SSL/HTTPS Setup</title>
+            <title>SSL/HTTPS Requirement/Modes</title>
             <warning>
                 <para>
                     Keycloak is not set up by default to handle SSL/HTTPS in either the
@@ -410,6 +410,47 @@ keycloak-war-dist-all-1.0-rc-1-SNAPSHOT/
                     itself or on a reverse proxy in front of the Keycloak server.
                 </para>
             </warning>
+            <para>
+                Keycloak can run out of the box without SSL so long as you stick to private IP addresses like
+                localhost, 127.0.0.1, 10.0.x.x, 192.168.x.x, and 172..16.x.x.  If you try to access Keycloak from a
+                non-IP adress you will get an error.
+            </para>
+            <para>
+                Keycloak has 3 SSL/HTTPS modes which you can set up in the admin console under the Settings->Login page
+                and the <literal>Require SSL</literal> select box.  Each adapter config should mirror this server-side
+                setting.  See adapter config section for more details.
+                <variablelist>
+                    <varlistentry>
+                        <term>external</term>
+                        <listitem>
+                            <para>
+                                Keycloak can run out of the box without SSL so long as you stick to private IP addresses like
+                                localhost, 127.0.0.1, 10.0.x.x, 192.168.x.x, and 172..16.x.x.  If you try to access Keycloak from a
+                                non-IP adress you will get an error.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>none</term>
+                        <listitem>
+                            <para>
+                                Keycloak does not require SSL.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>all</term>
+                        <listitem>
+                            <para>
+                                Keycloak requires SSL for all IP addresses.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </para>
+        </section>
+        <section>
+            <title>SSL/HTTPS Setup</title>
 
             <para>
                 First enable SSL on Keycloak or on a reverse proxy in front of Keycloak. Then configure the Keycloak Server to enforce HTTPS connections.
