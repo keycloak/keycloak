@@ -4,9 +4,18 @@
         <li><a href="#/realms/{{realm.realm}}/users">User List</a></li>
         <li><a href="#/realms/{{realm.realm}}/user-federation">Federation</a></li>
     </ul>
-    <h2></h2>
     <div id="content">
-        <h2 class="pull-left"><span>{{realm.realm}}</span> Ldap Server Settings</h2>
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/user-federation">Federation Providers</a></li>
+            <li><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{instance.displayName}}</a></li>
+            <li class="active">LDAP Settings</li>
+        </ol>
+        <ol class="breadcrumb" data-ng-show="create">
+            <li><a href="#/realms/{{realm.realm}}/user-federation">Federation Providers</a></li>
+            <li class="active">Add LDAP Provider</li>
+        </ol>
+        <h2 class="pull-left" data-ng-hide="create">LDAP Provider Settings</h2>
+        <h2 class="pull-left" data-ng-show="create">Add LDAP Provider</h2>
         <p class="subtitle"><span class="required">*</span> Required fields</p>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             
