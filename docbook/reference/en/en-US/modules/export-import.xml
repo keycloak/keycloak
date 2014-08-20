@@ -50,6 +50,14 @@ bin/standalone.sh -Dkeycloak.migration.action=export
 ]]></programlisting>
     </para>
     <para>
+        Here's an example of importing:
+        <programlisting><![CDATA[
+bin/standalone.sh -Dkeycloak.migration.action=import
+-Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=<FILE TO IMPORT>
+-Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+]]></programlisting>
+    </para>
+    <para>
         Other available options are:
         <variablelist>
             <varlistentry>
