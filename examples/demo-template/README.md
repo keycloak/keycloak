@@ -15,6 +15,7 @@ machine on the network or Internet.
 * **customer-app-cli** A pure CLI application that does remote login using OAuth2 browser redirects with the auth server
 * **product-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
 * **admin-access-app** A WAR application that does remote REST login to admin console to obtain a list of realm roles from Admin REST API
+* **angular-product-app** An Angular JS pure HTML5/Javascript application.
 * **database-service** JAX-RS services authenticated by bearer tokens only. The customer and product app invoke on it to get data
 * **third-party** Simple WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
 * **third-party-cdi** Simple CDI/JSF WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
@@ -183,6 +184,24 @@ Keycloak has a Admin REST API.  This example shows an application making a remov
 then using that token to access the Admin REST API.
 
 [http://localhost:8080/admin-access](http://localhost:8080/admin-access)
+
+If you are already logged in, you will not be asked for a username and password, but you will be redirected to
+an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+
+Step 9: Angular JS Example
+----------------------------------
+An Angular JS example using Keycloak to secure it.
+
+[http://localhost:8080/angular-product](http://localhost:8080/angular-product)
+
+If you are already logged in, you will not be asked for a username and password, but you will be redirected to
+an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+
+Step 9: Pure HTML5/Javascript Example
+----------------------------------
+An pure HTML5/Javascript example using Keycloak to secure it.
+
+[http://localhost:8080/customer-portal-js](http://localhost:8080/customer-portal-js)
 
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.

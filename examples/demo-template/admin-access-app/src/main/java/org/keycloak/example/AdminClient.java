@@ -44,6 +44,28 @@ public class AdminClient {
         }
     }
 
+    public static String getContent(HttpEntity entity) throws IOException {
+        if (entity == null) return null;
+        InputStream is = entity.getContent();
+        try {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            int c;
+            while ((c = is.read()) != -1) {
+                os.write(c);
+            }
+            byte[] bytes = os.toByteArray();
+            String data = new String(bytes);
+            return data;
+        } finally {
+            try {
+                is.close();
+            } catch (IOException ignored) {
+
+            }
+        }
+
+    }
+
     public static AccessTokenResponse getToken(HttpServletRequest request) throws IOException {
 
         HttpClient client = new HttpClientBuilder()
@@ -64,32 +86,14 @@ public class AdminClient {
             int status = response.getStatusLine().getStatusCode();
             HttpEntity entity = response.getEntity();
             if (status != 200) {
-                throw new IOException("Bad status: " + status);
+                String json = getContent(entity);
+                throw new IOException("Bad status: " + status + " response: " + json);
             }
             if (entity == null) {
                 throw new IOException("No Entity");
             }
-            InputStream is = entity.getContent();
-            try {
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                int c;
-                while ((c = is.read()) != -1) {
-                    os.write(c);
-                }
-                byte[] bytes = os.toByteArray();
-                String json = new String(bytes);
-                try {
-                    return JsonSerialization.readValue(json, AccessTokenResponse.class);
-                } catch (IOException e) {
-                    throw new IOException(json, e);
-                }
-            } finally {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-
-                }
-            }
+            String json = getContent(entity);
+            return JsonSerialization.readValue(json, AccessTokenResponse.class);
         } finally {
             client.getConnectionManager().shutdown();
         }
@@ -108,6 +112,8 @@ public class AdminClient {
             List<NameValuePair> formparams = new ArrayList<NameValuePair>();
             formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, res.getRefreshToken()));
             formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "admin-client"));
+            UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+            post.setEntity(form);
             HttpResponse response = client.execute(post);
             boolean status = response.getStatusLine().getStatusCode() != 204;
             HttpEntity entity = response.getEntity();

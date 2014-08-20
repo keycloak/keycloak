@@ -347,7 +347,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
 
 });
 
-module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, application, applications,
+module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, application, applications, Notifications,
                                                           Application,
                                                           ApplicationRealmScopeMapping, ApplicationApplicationScopeMapping, ApplicationRole,
                                                           ApplicationAvailableRealmScopeMapping, ApplicationAvailableApplicationScopeMapping,
@@ -375,6 +375,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
             $scope.changed = false;
             application = angular.copy($scope.application);
             updateRealmRoles();
+            Notifications.success("Scope mappings updated.");
         });
     }
 
@@ -399,49 +400,40 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
         }
     }
 
-    $scope.addRealmRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name + '/scope-mappings/realm', $scope.selectedRealmRoles)
-            .success(updateRealmRoles);
-    };
-
-    $scope.deleteRealmRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/realm',
-            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}})
-            .success(updateRealmRoles);
-    };
-
-    $scope.addApplicationRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
-                $scope.selectedApplicationRoles).success(updateAppRoles);
-    };
-
-    $scope.deleteApplicationRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
-            {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(updateAppRoles);
-    };
-
     $scope.changeApplication = function() {
         updateAppRoles();
     };
 
     $scope.addRealmRole = function() {
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name + '/scope-mappings/realm',
-                $scope.selectedRealmRoles).success(updateRealmRoles);
+                $scope.selectedRealmRoles).success(function() {
+                updateRealmRoles();
+                Notifications.success("Scope mappings updated.");
+            });
     };
 
     $scope.deleteRealmRole = function() {
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/realm',
-            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(updateRealmRoles);
+            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function () {
+                updateRealmRoles();
+                Notifications.success("Scope mappings updated.");
+            });
     };
 
     $scope.addApplicationRole = function() {
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
-                $scope.selectedApplicationRoles).success(updateAppRoles);
+                $scope.selectedApplicationRoles).success(function () {
+                updateAppRoles();
+                Notifications.success("Scope mappings updated.");
+            });
     };
 
     $scope.deleteApplicationRole = function() {
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
-            {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(updateAppRoles);
+            {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function () {
+                updateAppRoles();
+                Notifications.success("Scope mappings updated.");
+            });
     };
 
     updateRealmRoles();
