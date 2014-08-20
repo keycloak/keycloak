@@ -192,14 +192,18 @@ public class AccountService {
                 return Flows.forms(session, realm, null, uriInfo).setError("No access").createErrorPage();
             }
 
-            String[] referrer = getReferrer();
-            if (referrer != null) {
-                account.setReferrer(referrer);
-            }
+            setReferrerOnPage();
 
             return account.createResponse(page);
         } else {
             return login(path);
+        }
+    }
+
+    protected void setReferrerOnPage() {
+        String[] referrer = getReferrer();
+        if (referrer != null) {
+            account.setReferrer(referrer);
         }
     }
 
@@ -324,10 +328,17 @@ public class AccountService {
 
         require(AccountRoles.MANAGE_ACCOUNT);
 
+        String action = formData.getFirst("submitAction");
+        if (action != null && action.equals("Cancel")) {
+            setReferrerOnPage();
+            return account.createResponse(AccountPages.ACCOUNT);
+        }
+
         UserModel user = auth.getUser();
 
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
+            setReferrerOnPage();
             return account.setError(error).createResponse(AccountPages.ACCOUNT);
         }
 
@@ -346,7 +357,7 @@ public class AccountService {
             user.setEmailVerified(false);
             audit.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
-
+        setReferrerOnPage();
         return account.setSuccess("accountUpdated").createResponse(AccountPages.ACCOUNT);
     }
 
@@ -364,6 +375,7 @@ public class AccountService {
 
         audit.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
+        setReferrerOnPage();
         return account.setSuccess("successTotpRemoved").createResponse(AccountPages.TOTP);
     }
 
@@ -380,7 +392,14 @@ public class AccountService {
         UserModel user = auth.getUser();
         session.sessions().removeUserSessions(realm, user);
 
-        return Response.seeOther(Urls.accountSessionsPage(uriInfo.getBaseUri(), realm.getName())).build();
+        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "sessionsPage");
+        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
+        if (referrer != null) {
+            builder.queryParam("referrer", referrer);
+
+        }
+        URI location = builder.build(realm.getName());
+        return Response.seeOther(location).build();
     }
 
     /**
@@ -404,14 +423,22 @@ public class AccountService {
 
         require(AccountRoles.MANAGE_ACCOUNT);
 
+        String action = formData.getFirst("submitAction");
+        if (action != null && action.equals("Cancel")) {
+            setReferrerOnPage();
+            return account.createResponse(AccountPages.TOTP);
+        }
+
         UserModel user = auth.getUser();
 
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
 
         if (Validation.isEmpty(totp)) {
+            setReferrerOnPage();
             return account.setError(Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
         } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
+            setReferrerOnPage();
             return account.setError(Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
         }
 
@@ -424,6 +451,7 @@ public class AccountService {
 
         audit.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
+        setReferrerOnPage();
         return account.setSuccess("successTotp").createResponse(AccountPages.TOTP);
     }
 
@@ -449,6 +477,12 @@ public class AccountService {
 
         require(AccountRoles.MANAGE_ACCOUNT);
 
+        String action = formData.getFirst("submitAction");
+        if (action != null && action.equals("Cancel")) {
+            setReferrerOnPage();
+            return account.createResponse(AccountPages.PASSWORD);
+        }
+
         UserModel user = auth.getUser();
 
         String password = formData.getFirst("password");
@@ -456,16 +490,20 @@ public class AccountService {
         String passwordConfirm = formData.getFirst("password-confirm");
 
         if (Validation.isEmpty(passwordNew)) {
+            setReferrerOnPage();
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         } else if (!passwordNew.equals(passwordConfirm)) {
+            setReferrerOnPage();
             return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
         UserCredentialModel cred = UserCredentialModel.password(password);
         if (Validation.isEmpty(password)) {
+            setReferrerOnPage();
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         } else {
             if (!session.users().validCredentials(realm, user, cred)) {
+                setReferrerOnPage();
                 return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
             }
         }
@@ -474,11 +512,13 @@ public class AccountService {
             session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
          } catch (Exception ape) {
             logger.error("Failed to update password", ape);
+            setReferrerOnPage();
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
 
         audit.event(EventType.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
 
+        setReferrerOnPage();
         return account.setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
     }
 
@@ -494,19 +534,23 @@ public class AccountService {
         UserModel user = auth.getUser();
 
         if (Validation.isEmpty(providerId)) {
+            setReferrerOnPage();
             return account.setError(Messages.MISSING_SOCIAL_PROVIDER).createResponse(AccountPages.SOCIAL);
         }
         AccountSocialAction accountSocialAction = AccountSocialAction.getAction(action);
         if (accountSocialAction == null) {
+            setReferrerOnPage();
             return account.setError(Messages.INVALID_SOCIAL_ACTION).createResponse(AccountPages.SOCIAL);
         }
 
         SocialProvider provider = SocialLoader.load(providerId);
         if (provider == null) {
+            setReferrerOnPage();
             return account.setError(Messages.SOCIAL_PROVIDER_NOT_FOUND).createResponse(AccountPages.SOCIAL);
         }
 
         if (!user.isEnabled()) {
+            setReferrerOnPage();
             return account.setError(Messages.ACCOUNT_DISABLED).createResponse(AccountPages.SOCIAL);
         }
 
@@ -522,6 +566,7 @@ public class AccountService {
                             .putClientAttribute(OAuth2Constants.REDIRECT_URI, redirectUri)
                             .redirectToSocialProvider();
                 } catch (SocialProviderException spe) {
+                    setReferrerOnPage();
                     return account.setError(Messages.SOCIAL_REDIRECT_ERROR).createResponse(AccountPages.SOCIAL);
                 }
             case REMOVE:
@@ -538,11 +583,14 @@ public class AccountService {
                                 .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())
                                 .success();
 
+                        setReferrerOnPage();
                         return account.setSuccess(Messages.SOCIAL_PROVIDER_REMOVED).createResponse(AccountPages.SOCIAL);
                     } else {
+                        setReferrerOnPage();
                         return account.setError(Messages.SOCIAL_REMOVING_LAST_PROVIDER).createResponse(AccountPages.SOCIAL);
                     }
                 } else {
+                    setReferrerOnPage();
                     return account.setError(Messages.SOCIAL_LINK_NOT_ACTIVE).createResponse(AccountPages.SOCIAL);
                 }
             default:

@@ -50,6 +50,14 @@ bin/standalone.sh -Dkeycloak.migration.action=export
 ]]></programlisting>
     </para>
     <para>
+        Here's an example of importing:
+        <programlisting><![CDATA[
+bin/standalone.sh -Dkeycloak.migration.action=import
+-Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=<FILE TO IMPORT>
+-Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+]]></programlisting>
+    </para>
+    <para>
         Other available options are:
         <variablelist>
             <varlistentry>
@@ -92,7 +100,7 @@ bin/standalone.sh -Dkeycloak.migration.action=export
                         is used during import. It can be used to specify how to proceed if realm with same name
                         already exists in the database where you are going to import data. Possible values are:
                         <itemizedlist>
-                            <listitem>IGNORE_EXISTING - Ignore exporting if realm of this name already exists</listitem>
+                            <listitem>IGNORE_EXISTING - Ignore importing if realm of this name already exists</listitem>
                             <listitem>OVERWRITE_EXISTING - Remove existing realm and import it again with new data from JSON file.
                                 If you want to fully migrate one environment to another and ensure that the new environment will contain same data
                                 like the old one, you can specify this.
