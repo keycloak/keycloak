@@ -50,8 +50,8 @@
             <div class="form-group">
                 <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                     <div class="">
-                        <button type="submit" class="btn btn-primary btn-lg">Save</button>
-                        <button type="submit" class="btn btn-default btn-lg">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-lg" name="submitAction" value="Save">Save</button>
+                        <button type="submit" class="btn btn-default btn-lg" name="submitAction" value="Cancel">Cancel</button>
                     </div>
                 </div>
             </div>
