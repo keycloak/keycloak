@@ -1,4 +1,4 @@
-module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, applications, RealmRoleMapping,
+module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, applications, Notifications, RealmRoleMapping,
                                                   ApplicationRoleMapping, AvailableRealmRoleMapping, AvailableApplicationRoleMapping,
                                                   CompositeRealmRoleMapping, CompositeApplicationRoleMapping) {
     $scope.realm = realm;
@@ -34,6 +34,8 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ap
                     $scope.selectedApplicationRoles = [];
                     $scope.selectedApplicationMappings = [];
                 }
+                Notifications.success("Role mappings updated.");
+
             });
     };
 
@@ -53,6 +55,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ap
                     $scope.selectedApplicationRoles = [];
                     $scope.selectedApplicationMappings = [];
                 }
+                Notifications.success("Role mappings updated.");
             });
     };
 
@@ -64,6 +67,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ap
                 $scope.applicationComposite = CompositeApplicationRoleMapping.query({realm : realm.realm, userId : user.username, application : $scope.application.name});
                 $scope.selectedApplicationRoles = [];
                 $scope.selectedApplicationMappings = [];
+                Notifications.success("Role mappings updated.");
             });
     };
 
@@ -75,6 +79,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ap
                 $scope.applicationComposite = CompositeApplicationRoleMapping.query({realm : realm.realm, userId : user.username, application : $scope.application.name});
                 $scope.selectedApplicationRoles = [];
                 $scope.selectedApplicationMappings = [];
+                Notifications.success("Role mappings updated.");
             });
     };
 
