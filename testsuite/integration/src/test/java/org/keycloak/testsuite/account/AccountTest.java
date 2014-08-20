@@ -395,7 +395,7 @@ public class AccountTest {
             Collections.reverse(e);
 
             Assert.assertTrue(logPage.isCurrent());
-
+            Thread.sleep(100); // seems to be some kind of race here.
             final int expectedEvents = e.size();
             Retry.execute(new Runnable() {
                 @Override
