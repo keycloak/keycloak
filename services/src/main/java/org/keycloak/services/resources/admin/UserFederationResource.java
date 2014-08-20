@@ -192,6 +192,7 @@ public class UserFederationResource {
     @GET
     @Path("instances")
     @Produces("application/json")
+    @NoCache
     public List<UserFederationProviderRepresentation> getUserFederationInstances() {
         logger.info("getUserFederationInstances");
         auth.requireManage();
