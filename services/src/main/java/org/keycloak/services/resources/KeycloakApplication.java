@@ -217,8 +217,7 @@ public class KeycloakApplication extends Application {
                 return;
             }
 
-            RealmModel realm = manager.createRealm(rep.getId(), rep.getRealm());
-            manager.importRealm(rep, realm);
+            RealmModel realm = manager.importRealm(rep);
 
             log.info("Imported realm " + realm.getName() + " from " + from);
 

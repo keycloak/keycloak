@@ -246,8 +246,7 @@ public class KeycloakServer {
                 return;
             }
             manager.setContextPath("/auth");
-            RealmModel realm = manager.createRealm(rep.getId(), rep.getRealm());
-            manager.importRealm(rep, realm);
+            RealmModel realm = manager.importRealm(rep);
 
             info("Imported realm " + realm.getName());
 
