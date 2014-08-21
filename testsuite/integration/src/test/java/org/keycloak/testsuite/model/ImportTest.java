@@ -43,8 +43,8 @@ public class ImportTest extends AbstractModelTest {
     @Test
     public void install() throws Exception {
         RealmRepresentation rep = AbstractModelTest.loadJson("model/testrealm.json");
-        RealmModel realm = realmManager.createRealm("demo", rep.getRealm());
-        realmManager.importRealm(rep, realm);
+        rep.setId("demo");
+        RealmModel realm = realmManager.importRealm(rep);
 
         // Commit after import
         commit();
@@ -216,8 +216,8 @@ public class ImportTest extends AbstractModelTest {
     public void install2() throws Exception {
         RealmManager manager = realmManager;
         RealmRepresentation rep = AbstractModelTest.loadJson("model/testrealm-demo.json");
-        RealmModel realm = manager.createRealm("demo", rep.getRealm());
-        manager.importRealm(rep, realm);
+        rep.setId("demo");
+        RealmModel realm =manager.importRealm(rep);
 
         Assert.assertFalse(realm.isUpdateProfileOnInitialSocialLogin());
         Assert.assertEquals(600, realm.getAccessCodeLifespanUserAction());

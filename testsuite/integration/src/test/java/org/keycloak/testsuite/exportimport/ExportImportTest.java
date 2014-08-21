@@ -103,8 +103,8 @@ public class ExportImportTest {
             // Import "test-realm" realm
             try {
                 RealmRepresentation rep = AbstractModelTest.loadJson("model/testrealm.json");
-                RealmModel demoRealm = manager.createRealm("test-realm", rep.getRealm());
-                manager.importRealm(rep, demoRealm);
+                rep.setId("test-realm");
+                RealmModel demoRealm = manager.importRealm(rep);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }

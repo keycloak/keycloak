@@ -53,9 +53,9 @@ public class CompositeImportRoleTest {
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            RealmModel realm = manager.createRealm("Test");
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/testcomposite.json"), RealmRepresentation.class);
-            manager.importRealm(representation, realm);
+            representation.setId("Test");
+            RealmModel realm = manager.importRealm(representation);
 
             realmPublicKey = realm.getPublicKey();
 

@@ -24,8 +24,8 @@ public class CompositeRolesModelTest extends AbstractModelTest {
         super.before();
         RealmManager manager = realmManager;
         RealmRepresentation rep = AbstractModelTest.loadJson("model/testcomposites.json");
-        RealmModel realm = manager.createRealm("TestComposites", rep.getRealm());
-        manager.importRealm(rep, realm);
+        rep.setId("TestComposites");
+        RealmModel realm = manager.importRealm(rep);
     }
 
     @Test

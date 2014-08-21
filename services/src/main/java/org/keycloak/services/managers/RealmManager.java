@@ -18,6 +18,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.timer.TimerProvider;
@@ -115,6 +116,10 @@ public class RealmManager {
         return "realm-management";
     }
 
+    public String getRealmAdminApplicationName(RealmRepresentation realm) {
+        return "realm-management";
+    }
+
 
 
     protected void setupRealmDefaults(RealmModel realm) {
@@ -208,20 +213,61 @@ public class RealmManager {
         if (id == null) {
             id = KeycloakModelUtils.generateId();
         }
-        RealmModel realm = createRealm(id, rep.getRealm());
-        importRealm(rep, realm);
+        RealmModel realm = model.createRealm(id, rep.getRealm());
+        realm.setName(rep.getRealm());
+
+        // setup defaults
+
+        setupRealmDefaults(realm);
+        setupMasterAdminManagement(realm);
+        if (!hasRealmAdminManagementApp(rep)) setupRealmAdminManagement(realm);
+        if (!hasAccountManagementApp(rep)) setupAccountManagement(realm);
+        if (!hasAdminConsoleApp(rep)) setupAdminConsole(realm);
+
+        RepresentationToModel.importRealm(session, rep, realm);
+
+
+        if (realm.getAuditListeners().size() == 0) {
+            realm.setAuditListeners(Collections.singleton("jboss-logging"));
+        }
+
+        // Refresh periodic sync tasks for configured federationProviders
+        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
+        UsersSyncManager usersSyncManager = new UsersSyncManager();
+        for (final UserFederationProviderModel fedProvider : federationProviders) {
+            usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
+        }
         return realm;
     }
 
-    public void importRealm(RealmRepresentation rep, RealmModel newRealm) {
-        RepresentationToModel.importRealm(session, rep, newRealm);
-
-        // Refresh periodic sync tasks for configured federationProviders
-        List<UserFederationProviderModel> federationProviders = newRealm.getUserFederationProviders();
-        UsersSyncManager usersSyncManager = new UsersSyncManager();
-        for (final UserFederationProviderModel fedProvider : federationProviders) {
-            usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, newRealm.getId());
+    private boolean hasRealmAdminManagementApp(RealmRepresentation rep) {
+        if (rep.getApplications() == null) return false;
+        for (ApplicationRepresentation app : rep.getApplications()) {
+            if (app.getName().equals(getRealmAdminApplicationName(rep))) {
+                return true;
+            }
         }
+        return false;
+    }
+
+    private boolean hasAccountManagementApp(RealmRepresentation rep) {
+        if (rep.getApplications() == null) return false;
+        for (ApplicationRepresentation app : rep.getApplications()) {
+            if (app.getName().equals(Constants.ACCOUNT_MANAGEMENT_APP)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasAdminConsoleApp(RealmRepresentation rep) {
+        if (rep.getApplications() == null) return false;
+        for (ApplicationRepresentation app : rep.getApplications()) {
+            if (app.getName().equals(Constants.ADMIN_CONSOLE_APPLICATION)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
