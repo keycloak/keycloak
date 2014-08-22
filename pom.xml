@@ -34,6 +34,7 @@
         <slf4j.version>1.5.10</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
         <wildfly.version>8.1.0.Final</wildfly.version>
+        <wildfly.core.version>1.0.0.Alpha5</wildfly.core.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <google.zxing.version>2.2</google.zxing.version>
         <google.client.version>1.14.1-beta</google.client.version>
@@ -405,14 +406,14 @@
             </dependency>
              -->
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-controller</artifactId>
-                <version>${wildfly.version}</version>
+                <version>${wildfly.core.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-server</artifactId>
-                <version>${wildfly.version}</version>
+                <version>${wildfly.core.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
@@ -420,9 +421,9 @@
                 <version>${wildfly.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-subsystem-test</artifactId>
-                <version>${wildfly.version}</version>
+                <version>${wildfly.core.version}</version>
                 <type>pom</type>
                 <scope>test</scope>
             </dependency>
