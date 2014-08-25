@@ -149,9 +149,6 @@ module.controller('UserListCtrl', function($scope, realm, User) {
 
     $scope.firstPage = function() {
         $scope.query.first = 0;
-        if ($scope.query.first < 0) {
-            $scope.query.first = 0;
-        }
         $scope.searchQuery();
     }
 

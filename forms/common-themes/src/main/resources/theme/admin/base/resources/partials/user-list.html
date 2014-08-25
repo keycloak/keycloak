@@ -15,13 +15,13 @@
                     <div class="search-comp clearfix">
                         <input type="text" placeholder="Search..." data-ng-model="query.search" class="form-control search"
                                onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
-                        <button data-ng-click="searchQuery()" type="submit"
+                        <button data-ng-click="firstPage()" type="submit"
                                 class="kc-icon-search" tooltip-placement="right"
                                 tooltip="Search by full name, last name, email, or username.">
                             Icon: search
                         </button>
                     </div>
-                    <span><span>or</span><button class="kc-link" ng-click="query.search = null; searchQuery()">View all users</button></span>
+                    <span><span>or</span><button class="kc-link" ng-click="query.search = null; firstPage()">View all users</button></span>
                     <div class="pull-right">
                         <a class="btn btn-primary" href="#/create/user/{{realm.realm}}">Add User</a>
                     </div>
@@ -36,7 +36,7 @@
             </tr>
             </tr>
             </thead>
-            <tfoot data-ng-show="users && users.length > 5">
+            <tfoot data-ng-show="users && (users.length >= query.max || query.first > 0)">
             <tr>
                 <td colspan="7">
                     <div class="table-nav">
