@@ -225,7 +225,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         } else if (agents.size() == 1) {
             return agents.get(0);
         } else {
-            throw new IdentityManagementException("Error - multiple Agent objects found with same login name");
+            throw new IdentityManagementException("Error - multiple Agent objects found with same email");
         }
     }
 
