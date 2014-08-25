@@ -72,6 +72,7 @@
                             </select>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="LDAP vendor (provider)" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="usernameLDAPAttribute">Username LDAP attribute </label>
@@ -83,18 +84,21 @@
                             </select>
                         </div>
                     </div>
+                    <span tooltip-placement="right" tooltip="Name of LDAP attribute, which is mapped as Keycloak username" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="userObjectClasses">User Object Classes </label>
                     <div class="col-sm-4">
                         <input class="form-control" id="userObjectClasses" type="text" ng-model="instance.config.userObjectClasses" placeholder="LDAP User Object Classes (div. by comma)">
                     </div>
+                    <span tooltip-placement="right" tooltip="All values of LDAP objectClass attribute divided by comma, which are used for newly created LDAP users" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="ldapConnectionUrl">Connection URL<span class="required">*</span></label>
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapConnectionUrl" type="text" ng-model="instance.config.connectionUrl" placeholder="LDAP connection URL" required>
                     </div>
+                    <span tooltip-placement="right" tooltip="Connection URL to your LDAP server" class="fa fa-info-circle"></span>
                     <div class="col-sm-4" data-ng-show="access.manageRealm">
                         <a class="btn btn-primary" data-ng-click="testConnection()">Test connection</a>
                     </div>
@@ -104,24 +108,28 @@
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapBaseDn" type="text" ng-model="instance.config.baseDn" placeholder="LDAP Base DN" required>
                     </div>
+                    <span tooltip-placement="right" tooltip="Base DN of LDAP tree where your data are. Base DN is usually ancestor of User DN Suffix" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="ldapUserDnSuffix">User DN Suffix <span class="required">*</span></label>
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapUserDnSuffix" type="text" ng-model="instance.config.userDnSuffix" placeholder="LDAP User DN Suffix" required>
                     </div>
+                    <span tooltip-placement="right" tooltip="Base DN of LDAP tree where your users are. This DN is parent of all DNs of LDAP users" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="ldapBindDn">Bind DN <span class="required">*</span></label>
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapBindDn" type="text" ng-model="instance.config.bindDn" placeholder="LDAP Bind DN" required>
                     </div>
+                    <span tooltip-placement="right" tooltip="DN of LDAP admin, which will be used by Keycloak to access LDAP server" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="ldapBindCredential">Bind Credential <span class="required">*</span></label>
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapBindCredential" type="text" ng-model="instance.config.bindCredential" placeholder="LDAP Bind Credentials" required>
                     </div>
+                    <span tooltip-placement="right" tooltip="Password of LDAP admin" class="fa fa-info-circle"></span>
                     <div class="col-sm-4" data-ng-show="access.manageRealm">
                         <a class="btn btn-primary" data-ng-click="testAuthentication()">Test authentication</a>
                     </div>
@@ -131,6 +139,7 @@
                     <div class="col-sm-4">
                         <input ng-model="connectionPooling" name="connectionPooling" id="connectionPooling" onoffswitch />
                     </div>
+                    <span tooltip-placement="right" tooltip="Does Keycloak should use connection pooling for accessing LDAP server" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="pagination">Pagination</label>
@@ -144,6 +153,8 @@
                     <div class="col-sm-4">
                         <input ng-model="userAccountControlsAfterPasswordUpdate" name="userAccountControlsAfterPasswordUpdate" id="userAccountControlsAfterPasswordUpdate" onoffswitch />
                     </div>
+                    <span tooltip-placement="right" tooltip="Useful just for Active Directory. If enabled, then Keycloak will always set
+                    Active Directory userAccountControl attribute to 512 after password update. This would mean that particular user will be enabled in Active Directory" class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
 
@@ -154,30 +165,35 @@
                     <div class="col-sm-4">
                         <input class="form-control" type="text" ng-model="instance.config.batchSizeForSync" id="batchSizeForSync" />
                     </div>
+                    <span tooltip-placement="right" tooltip="Count of LDAP users to be imported from LDAP to Keycloak within single transaction." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="fullSyncEnabled">Periodic full sync</label>
                     <div class="col-sm-4">
                         <input ng-model="fullSyncEnabled" name="fullSyncEnabled" id="fullSyncEnabled" onoffswitch />
                     </div>
+                    <span tooltip-placement="right" tooltip="Does periodic full synchronization of LDAP users to Keycloak should be enabled or not" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix" data-ng-show="fullSyncEnabled">
                     <label class="col-sm-2 control-label" for="fullSyncPeriod">Full sync period</label>
                     <div class="col-sm-4">
                         <input class="form-control" type="number" ng-model="instance.fullSyncPeriod" id="fullSyncPeriod" />
                     </div>
+                    <span tooltip-placement="right" tooltip="Period for full synchronization in seconds" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="changedSyncEnabled">Periodic changed users sync</label>
                     <div class="col-sm-4">
                         <input ng-model="changedSyncEnabled" name="changedSyncEnabled" id="changedSyncEnabled" onoffswitch />
                     </div>
+                    <span tooltip-placement="right" tooltip="Does periodic synchronization of changed or newly created LDAP users to Keycloak should be enabled or not" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix" data-ng-show="changedSyncEnabled">
                     <label class="col-sm-2 control-label" for="changedSyncPeriod">Changed users sync period</label>
                     <div class="col-sm-4">
                         <input class="form-control" type="number" ng-model="instance.changedSyncPeriod" id="changedSyncPeriod" />
                     </div>
+                    <span tooltip-placement="right" tooltip="Period for synchronization of changed or newly created LDAP users in seconds" class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
 

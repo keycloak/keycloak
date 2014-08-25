@@ -32,12 +32,14 @@
                     <div class="col-sm-4">
                         <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.displayName" placeholder="defaults to id">
                     </div>
+                    <span tooltip-placement="right" tooltip="Display name of provider when linked in admin console." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="priority">Priority </label>
                     <div class="col-sm-4">
                         <input class="form-control" id="priority" type="text" ng-model="instance.priority">
                     </div>
+                    <span tooltip-placement="right" tooltip="Priority of provider when doing a user lookup.  Lowest first." class="fa fa-info-circle"></span>
                 </div>
                 <div data-ng-repeat="option in providerFactory.options" class="form-group">
                     <label class="col-sm-2 control-label">{{option|capitalize}} </label>
@@ -56,24 +58,28 @@
                     <div class="col-sm-4">
                         <input ng-model="fullSyncEnabled" name="fullSyncEnabled" id="fullSyncEnabled" onoffswitch />
                     </div>
+                    <span tooltip-placement="right" tooltip="Does periodic full synchronization of provider users to Keycloak should be enabled or not" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix" data-ng-show="fullSyncEnabled">
                     <label class="col-sm-2 control-label" for="fullSyncPeriod">Full sync period</label>
                     <div class="col-sm-4">
                         <input class="form-control" type="number" ng-model="instance.fullSyncPeriod" id="fullSyncPeriod" />
                     </div>
+                    <span tooltip-placement="right" tooltip="Period for full synchronization in seconds" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="changedSyncEnabled">Periodic changed users sync</label>
                     <div class="col-sm-4">
                         <input ng-model="changedSyncEnabled" name="changedSyncEnabled" id="changedSyncEnabled" onoffswitch />
                     </div>
+                    <span tooltip-placement="right" tooltip="Does periodic synchronization of changed or newly created provider users to Keycloak should be enabled or not" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix" data-ng-show="changedSyncEnabled">
                     <label class="col-sm-2 control-label" for="changedSyncPeriod">Changed users sync period</label>
                     <div class="col-sm-4">
                         <input class="form-control" type="number" ng-model="instance.changedSyncPeriod" id="changedSyncPeriod" />
                     </div>
+                    <span tooltip-placement="right" tooltip="Period for synchronization of changed or newly created provider users in seconds" class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
 

@@ -68,7 +68,7 @@ public class UsersSyncManager {
                     try {
                         syncAllUsers(sessionFactory, realmId, fedProvider);
                     } catch (Throwable t) {
-                        logger.error("Error occured during full sync of users", t);
+                        logger.error("Error occurred during full sync of users", t);
                     }
                 }
 
@@ -86,7 +86,7 @@ public class UsersSyncManager {
                     try {
                         syncChangedUsers(sessionFactory, realmId, fedProvider);
                     } catch (Throwable t) {
-                        logger.error("Error occured during sync of changed users", t);
+                        logger.error("Error occurred during sync of changed users", t);
                     }
                 }
 
