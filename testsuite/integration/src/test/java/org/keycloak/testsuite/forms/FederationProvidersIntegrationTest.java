@@ -237,23 +237,6 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
-    public void testRemoveFederatedUser() {
-        KeycloakSession session = keycloakRule.startSession();
-        try {
-            RealmModel appRealm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("registerUserSuccess2", appRealm);
-            Assert.assertNotNull(user);
-            Assert.assertNotNull(user.getFederationLink());
-            Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
-
-            Assert.assertTrue(session.users().removeUser(appRealm, user));
-            Assert.assertNull(session.users().getUserByUsername("registerUserSuccess2", appRealm));
-        } finally {
-            keycloakRule.stopSession(session, true);
-        }
-    }
-
-    @Test
     public void testReadonly() {
         KeycloakSession session = keycloakRule.startSession();
         try {
@@ -304,6 +287,60 @@ public class FederationProvidersIntegrationTest {
             Assert.assertEquals(UserFederationProvider.EditMode.WRITABLE.toString(), appRealm.getUserFederationProviders().get(0).getConfig().get(LDAPFederationProvider.EDIT_MODE));
         } finally {
             keycloakRule.stopSession(session, false);
+        }
+    }
+
+    @Test
+    public void testRemoveFederatedUser() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("registerUserSuccess2", appRealm);
+            Assert.assertNotNull(user);
+            Assert.assertNotNull(user.getFederationLink());
+            Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
+
+            Assert.assertTrue(session.users().removeUser(appRealm, user));
+            Assert.assertNull(session.users().getUserByUsername("registerUserSuccess2", appRealm));
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    @Test
+    public void testSearch() {
+        KeycloakSession session = keycloakRule.startSession();
+        PartitionManager partitionManager = getPartitionManager(session, ldapModel);
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            LDAPUtils.addUser(partitionManager, "username1", "John1", "Doel1", "user1@email.org");
+            LDAPUtils.addUser(partitionManager, "username2", "John2", "Doel2", "user2@email.org");
+            LDAPUtils.addUser(partitionManager, "username3", "John3", "Doel3", "user3@email.org");
+            LDAPUtils.addUser(partitionManager, "username4", "John4", "Doel4", "user4@email.org");
+
+            // Users are not at local store at this moment
+            Assert.assertNull(session.userStorage().getUserByUsername("username1", appRealm));
+            Assert.assertNull(session.userStorage().getUserByUsername("username2", appRealm));
+            Assert.assertNull(session.userStorage().getUserByUsername("username3", appRealm));
+            Assert.assertNull(session.userStorage().getUserByUsername("username4", appRealm));
+
+            // search by username
+            session.users().searchForUser("username1", appRealm);
+            SyncProvidersTest.assertUserImported(session.userStorage(), appRealm, "username1", "John1", "Doel1", "user1@email.org");
+
+            // search by email
+            session.users().searchForUser("user2@email.org", appRealm);
+            SyncProvidersTest.assertUserImported(session.userStorage(), appRealm, "username2", "John2", "Doel2", "user2@email.org");
+
+            // search by lastName
+            session.users().searchForUser("Doel3", appRealm);
+            SyncProvidersTest.assertUserImported(session.userStorage(), appRealm, "username3", "John3", "Doel3", "user3@email.org");
+
+            // search by firstName + lastName
+            session.users().searchForUser("John4 Doel4", appRealm);
+            SyncProvidersTest.assertUserImported(session.userStorage(), appRealm, "username4", "John4", "Doel4", "user4@email.org");
+        } finally {
+            keycloakRule.stopSession(session, true);
         }
     }
 

@@ -185,7 +185,7 @@ public class SyncProvidersTest {
         }
     }
 
-    private void assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail) {
+    public static void assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail) {
         UserModel user = userProvider.getUserByUsername(username, realm);
         Assert.assertNotNull(user);
         Assert.assertEquals(expectedFirstName, user.getFirstName());
