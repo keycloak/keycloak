@@ -311,8 +311,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     currentUser.setLastName(picketlinkUser.getLastName());
                     logger.infof("Updated user from LDAP: " + currentUser.getUsername());
                 } else {
-                    // TODO: We have local user of same username like LDAP user, but not linked. What to do? Delete him and import again?
-                    throw new IllegalStateException("User " + username + " has invalid LDAP ID or doesn't have federation link");
+                    logger.warnf("User '%s' is not updated during sync as he is not linked to federation provider '%s'", username, fedModel.getDisplayName());
                 }
             }
         }

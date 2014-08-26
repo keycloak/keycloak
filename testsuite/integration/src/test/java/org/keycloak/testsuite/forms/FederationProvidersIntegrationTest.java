@@ -14,6 +14,7 @@ import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -252,26 +253,26 @@ public class FederationProvidersIntegrationTest {
             try {
                 user.setEmail("error@error.com");
                 Assert.fail("should fail");
-            } catch (Exception e) {
+            } catch (ModelReadOnlyException e) {
 
             }
             try {
                 user.setLastName("Berk");
                 Assert.fail("should fail");
-            } catch (Exception e) {
+            } catch (ModelReadOnlyException e) {
 
             }
             try {
                 user.setFirstName("Bilbo");
                 Assert.fail("should fail");
-            } catch (Exception e) {
+            } catch (ModelReadOnlyException e) {
 
             }
             try {
                 UserCredentialModel cred = UserCredentialModel.password("poop");
                 user.updateCredential(cred);
                 Assert.fail("should fail");
-            } catch (Exception e) {
+            } catch (ModelReadOnlyException e) {
 
             }
         } finally {

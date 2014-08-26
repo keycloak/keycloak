@@ -1,6 +1,6 @@
 package org.keycloak.federation.ldap;
 
-import org.jboss.logging.Logger;
+import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
@@ -10,7 +10,6 @@ import org.keycloak.models.utils.UserModelDelegate;
  * @version $Revision: 1 $
  */
 public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate implements UserModel {
-    private static final Logger logger = Logger.getLogger(ReadonlyLDAPUserModelDelegate.class);
 
     protected LDAPFederationProvider provider;
 
@@ -21,30 +20,30 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate implements 
 
     @Override
     public void setUsername(String username) {
-        throw new IllegalStateException("Federated storage is not writable");
+        throw new ModelReadOnlyException("Federated storage is not writable");
     }
 
     @Override
     public void setLastName(String lastName) {
-        throw new IllegalStateException("Federated storage is not writable");
+        throw new ModelReadOnlyException("Federated storage is not writable");
     }
 
     @Override
     public void setFirstName(String first) {
-        throw new IllegalStateException("Federated storage is not writable");
+        throw new ModelReadOnlyException("Federated storage is not writable");
     }
 
     @Override
     public void updateCredential(UserCredentialModel cred) {
         if (provider.getSupportedCredentialTypes(delegate).contains(cred.getType())) {
-            throw new IllegalStateException("Federated storage is not writable");
+            throw new ModelReadOnlyException("Federated storage is not writable");
         }
         delegate.updateCredential(cred);
     }
 
     @Override
     public void setEmail(String email) {
-        throw new IllegalStateException("Federated storage is not writable");
+        throw new ModelReadOnlyException("Federated storage is not writable");
     }
 
 }

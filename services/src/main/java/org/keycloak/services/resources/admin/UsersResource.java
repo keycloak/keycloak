@@ -13,6 +13,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
@@ -118,6 +119,8 @@ public class UsersResource {
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("User exists with same username or email");
+        } catch (ModelReadOnlyException re) {
+            return Flows.errors().exists("User is read only!");
         }
     }
 
@@ -779,7 +782,11 @@ public class UsersResource {
         }
 
         UserCredentialModel cred = RepresentationToModel.convertCredential(pass);
-        session.users().updateCredential(realm, user, cred);
+        try {
+            session.users().updateCredential(realm, user, cred);
+        } catch (ModelReadOnlyException mre) {
+            throw new BadRequestException("Can't reset password as account is read only");
+        }
         if (pass.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
     }
 

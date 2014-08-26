@@ -39,6 +39,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
@@ -342,23 +343,28 @@ public class AccountService {
             return account.setError(error).createResponse(AccountPages.ACCOUNT);
         }
 
-        user.setFirstName(formData.getFirst("firstName"));
-        user.setLastName(formData.getFirst("lastName"));
+        try {
+            user.setFirstName(formData.getFirst("firstName"));
+            user.setLastName(formData.getFirst("lastName"));
 
-        String email = formData.getFirst("email");
-        String oldEmail = user.getEmail();
-        boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
+            String email = formData.getFirst("email");
+            String oldEmail = user.getEmail();
+            boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
 
-        user.setEmail(formData.getFirst("email"));
+            user.setEmail(formData.getFirst("email"));
 
-        audit.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).success();
+            audit.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).success();
 
-        if (emailChanged) {
-            user.setEmailVerified(false);
-            audit.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
+            if (emailChanged) {
+                user.setEmailVerified(false);
+                audit.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
+            }
+            setReferrerOnPage();
+            return account.setSuccess("accountUpdated").createResponse(AccountPages.ACCOUNT);
+        } catch (ModelReadOnlyException roe) {
+            setReferrerOnPage();
+            return account.setError(Messages.READ_ONLY_USER).createResponse(AccountPages.ACCOUNT);
         }
-        setReferrerOnPage();
-        return account.setSuccess("accountUpdated").createResponse(AccountPages.ACCOUNT);
     }
 
     @Path("totp-remove")
@@ -510,7 +516,10 @@ public class AccountService {
 
         try {
             session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
-         } catch (Exception ape) {
+        } catch (ModelReadOnlyException mre) {
+            setReferrerOnPage();
+            return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
+        } catch (Exception ape) {
             logger.error("Failed to update password", ape);
             setReferrerOnPage();
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);

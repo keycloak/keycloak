@@ -37,6 +37,10 @@ public class Messages {
 
     public static final String INVALID_USER = "invalidUser";
 
+    public static final String READ_ONLY_USER = "readOnlyUser";
+
+    public static final String READ_ONLY_PASSWORD = "readOnlyPassword";
+
     public static final String MISSING_EMAIL = "missingEmail";
 
     public static final String MISSING_FIRST_NAME = "missingFirstName";
