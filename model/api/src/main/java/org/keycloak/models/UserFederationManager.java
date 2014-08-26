@@ -7,11 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UserFederationManager implements UserProvider {
+
+    private static final Logger logger = Logger.getLogger(UserFederationManager.class);
+
     protected KeycloakSession session;
 
     public UserFederationManager(KeycloakSession session) {
@@ -83,6 +88,7 @@ public class UserFederationManager implements UserProvider {
             RealmModel realmModel = tx.realms().getRealm(realm.getId());
             UserModel deletedUser = tx.userStorage().getUserById(user.getId(), realmModel);
             tx.userStorage().removeUser(realmModel, deletedUser);
+            logger.debugf("Removed invalid user '%s'", user.getUsername());
             tx.getTransaction().commit();
         } finally {
             tx.close();

@@ -126,7 +126,10 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) return false;
+        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) {
+            logger.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'", user.getUsername(), editMode.toString());
+            return false;
+        }
 
         try {
             return LDAPUtils.removeUser(partitionManager, user.getUsername());

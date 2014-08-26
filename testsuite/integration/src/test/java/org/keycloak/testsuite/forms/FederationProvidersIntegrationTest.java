@@ -237,6 +237,23 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
+    public void testRemoveFederatedUser() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("registerUserSuccess2", appRealm);
+            Assert.assertNotNull(user);
+            Assert.assertNotNull(user.getFederationLink());
+            Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
+
+            Assert.assertTrue(session.users().removeUser(appRealm, user));
+            Assert.assertNull(session.users().getUserByUsername("registerUserSuccess2", appRealm));
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    @Test
     public void testReadonly() {
         KeycloakSession session = keycloakRule.startSession();
         try {
@@ -275,6 +292,8 @@ public class FederationProvidersIntegrationTest {
             } catch (ModelReadOnlyException e) {
 
             }
+
+            Assert.assertFalse(session.users().removeUser(appRealm, user));
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -311,6 +330,9 @@ public class FederationProvidersIntegrationTest {
 
             // LDAP password is still unchanged
             Assert.assertTrue(LDAPUtils.validatePassword(getPartitionManager(session, model), "johnkeycloak", "new-password"));
+
+            // ATM it's not permitted to delete user in unsynced mode. Should be user deleted just locally instead?
+            Assert.assertFalse(session.users().removeUser(appRealm, user));
         } finally {
             keycloakRule.stopSession(session, false);
         }

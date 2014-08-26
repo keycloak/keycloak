@@ -305,7 +305,7 @@ public class UsersResource {
     @Path("{username}")
     @DELETE
     @NoCache
-    public void deleteUser(final @PathParam("username") String username) {
+    public Response deleteUser(final @PathParam("username") String username) {
         auth.requireManage();
 
         UserModel user = session.users().getUserByUsername(username, realm);
@@ -313,7 +313,12 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        new UserManager(session).removeUser(realm, user);
+        boolean removed = new UserManager(session).removeUser(realm, user);
+        if (removed) {
+            return Response.noContent().build();
+        } else {
+            return Flows.errors().error("User couldn't be deleted", Response.Status.BAD_REQUEST);
+        }
     }
 
     /**
