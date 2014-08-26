@@ -253,6 +253,8 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
             }, function() {
                 $location.url("/realms/" + realm.realm + "/users");
                 Notifications.success("The user has been deleted.");
+            }, function() {
+                Notifications.error("User couldn't be deleted");
             });
         });
     };

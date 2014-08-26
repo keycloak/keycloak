@@ -41,7 +41,7 @@
                     <div class="col-sm-5">
                         <!-- Characters >,<,/,\ are forbidden in username -->
                         <input class="form-control" type="text" id="username" name="username" data-ng-model="user.username" autofocus
-                               required ng-pattern="/^[^\<\>\\\/]*$/">
+                               required ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!create">
                     </div>
                 </div>
 

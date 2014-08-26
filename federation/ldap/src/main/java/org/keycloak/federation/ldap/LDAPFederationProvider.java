@@ -126,7 +126,10 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) return false;
+        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) {
+            logger.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'", user.getUsername(), editMode.toString());
+            return false;
+        }
 
         try {
             return LDAPUtils.removeUser(partitionManager, user.getUsername());
@@ -137,31 +140,10 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
-        IdentityManager identityManager = getIdentityManager();
         List<UserModel> searchResults =new LinkedList<UserModel>();
         try {
-            Map<String, User> results = new HashMap<String, User>();
-            if (attributes.containsKey(USERNAME)) {
-                User user = BasicModel.getUser(identityManager, attributes.get(USERNAME));
-                if (user != null) results.put(user.getLoginName(), user);
-            } else if (attributes.containsKey(EMAIL)) {
-                User user = queryByEmail(identityManager, attributes.get(EMAIL));
-                if (user != null) results.put(user.getLoginName(), user);
-            } else if (attributes.containsKey(FIRST_NAME) || attributes.containsKey(LAST_NAME)) {
-                IdentityQuery<User> query = identityManager.createIdentityQuery(User.class);
-                if (attributes.containsKey(FIRST_NAME)) {
-                    query.setParameter(User.FIRST_NAME, attributes.get(FIRST_NAME));
-                }
-                if (attributes.containsKey(LAST_NAME)) {
-                    query.setParameter(User.LAST_NAME, attributes.get(LAST_NAME));
-                }
-                query.setLimit(maxResults);
-                List<User> agents = query.getResultList();
-                for (User user : agents) {
-                    results.put(user.getLoginName(), user);
-                }
-            }
-            for (User user : results.values()) {
+            Map<String, User> plUsers = searchPicketlink(attributes, maxResults);
+            for (User user : plUsers.values()) {
                 if (session.userStorage().getUserByUsername(user.getLoginName(), realm) == null) {
                     UserModel imported = importUserFromPicketlink(realm, user);
                     searchResults.add(imported);
@@ -171,6 +153,43 @@ public class LDAPFederationProvider implements UserFederationProvider {
             throw convertIDMException(ie);
         }
         return searchResults;
+    }
+
+    protected Map<String, User> searchPicketlink(Map<String, String> attributes, int maxResults) {
+        IdentityManager identityManager = getIdentityManager();
+        Map<String, User> results = new HashMap<String, User>();
+        if (attributes.containsKey(USERNAME)) {
+            User user = BasicModel.getUser(identityManager, attributes.get(USERNAME));
+            if (user != null) {
+                results.put(user.getLoginName(), user);
+                return results;
+            }
+        }
+
+        if (attributes.containsKey(EMAIL)) {
+            User user = queryByEmail(identityManager, attributes.get(EMAIL));
+            if (user != null) {
+                results.put(user.getLoginName(), user);
+                return results;
+            }
+        }
+
+        if (attributes.containsKey(FIRST_NAME) || attributes.containsKey(LAST_NAME)) {
+            IdentityQuery<User> query = identityManager.createIdentityQuery(User.class);
+            if (attributes.containsKey(FIRST_NAME)) {
+                query.setParameter(User.FIRST_NAME, attributes.get(FIRST_NAME));
+            }
+            if (attributes.containsKey(LAST_NAME)) {
+                query.setParameter(User.LAST_NAME, attributes.get(LAST_NAME));
+            }
+            query.setLimit(maxResults);
+            List<User> agents = query.getResultList();
+            for (User user : agents) {
+                results.put(user.getLoginName(), user);
+            }
+        }
+
+        return results;
     }
 
     @Override
