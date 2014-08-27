@@ -635,10 +635,16 @@ public class TokenService {
             return Flows.forms(session, realm, client, uriInfo).setError(error).setFormData(formData).createRegistration();
         }
 
-        // Validate that user with this username doesn't exist in realm or any authentication provider
+        // Validate that user with this username doesn't exist in realm or any federation provider
         if (session.users().getUserByUsername(username, realm) != null) {
             audit.error(Errors.USERNAME_IN_USE);
             return Flows.forms(session, realm, client, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
+        }
+
+        // Validate that user with this email doesn't exist in realm or any federation provider
+        if (session.users().getUserByEmail(email, realm) != null) {
+            audit.error(Errors.EMAIL_IN_USE);
+            return Flows.forms(session, realm, client, uriInfo).setError(Messages.EMAIL_EXISTS).setFormData(formData).createRegistration();
         }
 
         UserModel user = session.users().addUser(realm, username);

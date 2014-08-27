@@ -20,6 +20,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.UserStats;
@@ -136,6 +137,14 @@ public class UsersResource {
     public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
         auth.requireManage();
 
+        // Double-check duplicated username and email here due to federation
+        if (session.users().getUserByUsername(rep.getUsername(), realm) != null) {
+            return Flows.errors().exists("User exists with same username");
+        }
+        if (session.users().getUserByEmail(rep.getEmail(), realm) != null) {
+            return Flows.errors().exists("User exists with same email");
+        }
+
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             updateUserFromRep(user, rep);
@@ -146,6 +155,9 @@ public class UsersResource {
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getUsername()).build()).build();
         } catch (ModelDuplicateException e) {
+            if (session.getTransaction().isActive()) {
+                session.getTransaction().setRollbackOnly();
+            }
             return Flows.errors().exists("User exists with same username or email");
         }
     }

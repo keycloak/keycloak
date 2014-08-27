@@ -162,7 +162,6 @@ public class LDAPFederationProvider implements UserFederationProvider {
             User user = BasicModel.getUser(identityManager, attributes.get(USERNAME));
             if (user != null) {
                 results.put(user.getLoginName(), user);
-                return results;
             }
         }
 
@@ -170,7 +169,6 @@ public class LDAPFederationProvider implements UserFederationProvider {
             User user = queryByEmail(identityManager, attributes.get(EMAIL));
             if (user != null) {
                 results.put(user.getLoginName(), user);
-                return results;
             }
         }
 
@@ -236,16 +234,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     protected User queryByEmail(IdentityManager identityManager, String email) throws IdentityManagementException {
-        List<User> agents = identityManager.createIdentityQuery(User.class)
-                .setParameter(User.EMAIL, email).getResultList();
-
-        if (agents.isEmpty()) {
-            return null;
-        } else if (agents.size() == 1) {
-            return agents.get(0);
-        } else {
-            throw new IdentityManagementException("Error - multiple Agent objects found with same email");
-        }
+        return LDAPUtils.getUserByEmail(identityManager, email);
     }
 
 
