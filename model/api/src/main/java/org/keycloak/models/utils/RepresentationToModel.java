@@ -397,7 +397,7 @@ public class RepresentationToModel {
             if (resourceRep.getRedirectUris() != null) {
                 Set<String> origins = new HashSet<String>();
                 for (String redirectUri : resourceRep.getRedirectUris()) {
-                    logger.info("add redirectUri to origin: " + redirectUri);
+                    logger.debugv("add redirect-uri to origin: {0}", redirectUri);
                     if (redirectUri.startsWith("http:")) {
                         URI uri = URI.create(redirectUri);
                         String origin = uri.getScheme() + "://" + uri.getHost();

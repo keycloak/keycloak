@@ -200,11 +200,11 @@ public class AdminConsole {
             throw new NotFoundException("No realm found");
         boolean createRealm = false;
         if (realm.equals(masterRealm)) {
-            logger.info("setting up realm access for a master realm user");
+            logger.debug("setting up realm access for a master realm user");
             createRealm = user.hasRole(masterRealm.getRole(AdminRoles.CREATE_REALM));
             addMasterRealmAccess(realm, user, realmAccess);
         } else {
-            logger.info("setting up realm access for a realm user");
+            logger.debug("setting up realm access for a realm user");
             addRealmAccess(realm, user, realmAccess);
         }
         if (realmAccess.size() == 0) {
@@ -290,7 +290,6 @@ public class AdminConsole {
     @Path("js/keycloak.js")
     @Produces("text/javascript")
     public Response getKeycloakJs() {
-        //logger.info("**** -> getting console keycloak.js" + " uri: " + uriInfo.getRequestUri().toString());
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("keycloak.js");
         if (inputStream != null) {
             return Response.ok(inputStream).build();

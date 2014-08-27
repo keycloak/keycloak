@@ -92,10 +92,8 @@ public class RealmsResource {
     public String getLoginStatusIframe(final @PathParam("realm") String name,
                                        @QueryParam("client_id") String client_id,
                                        @QueryParam("origin") String origin) {
-        logger.info("getLoginStatusIframe");
         AuthenticationManager auth = new AuthenticationManager();
 
-        //logger.info("getting login-status-iframe.html for client_id: " + client_id);
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         ClientModel client = realm.findClient(client_id);

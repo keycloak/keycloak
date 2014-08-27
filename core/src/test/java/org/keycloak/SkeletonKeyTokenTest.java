@@ -24,8 +24,6 @@ public class SkeletonKeyTokenTest {
         token.addAccess("bar").addRole("user");
 
         String json = JsonSerialization.writeValueAsString(token);
-        System.out.println(json);
-
         token = JsonSerialization.readValue(json, AccessToken.class);
         Assert.assertEquals("111", token.getId());
         AccessToken.Access foo = token.getResourceAccess("foo");
@@ -46,8 +44,6 @@ public class SkeletonKeyTokenTest {
         String encoded = new JWSBuilder()
                 .jsonContent(token)
                 .rsa256(keyPair.getPrivate());
-
-        System.out.println(encoded);
 
         JWSInput input = new JWSInput(encoded);
 

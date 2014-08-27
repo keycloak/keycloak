@@ -179,14 +179,14 @@ public class AdminRoot {
     @Path("realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
         if (request.getHttpMethod().equalsIgnoreCase("OPTIONS")) {
-            logger.info("*** CORS ADMIN PREFLIGHT!!!!");
+            logger.debug("Cors admin pre-flight");
             Response response = Cors.add(request, Response.ok()).preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
             throw new WebApplicationException(response);
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(headers);
         if (auth != null) {
-            logger.info("authenticated admin access for: " + auth.getUser().getUsername());
+            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
         }
 
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);

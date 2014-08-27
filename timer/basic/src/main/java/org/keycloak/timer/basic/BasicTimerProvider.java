@@ -32,11 +32,11 @@ public class BasicTimerProvider implements TimerProvider {
 
         TimerTask existingTask = factory.putTask(taskName, task);
         if (existingTask != null) {
-            logger.infof("Existing timer task '%s' found. Cancelling it", taskName);
+            logger.debugf("Existing timer task '%s' found. Cancelling it", taskName);
             existingTask.cancel();
         }
 
-        logger.infof("Starting task '%s' with interval '%d'", taskName, interval);
+        logger.debugf("Starting task '%s' with interval '%d'", taskName, interval);
         timer.schedule(task, interval, interval);
     }
 
@@ -44,7 +44,7 @@ public class BasicTimerProvider implements TimerProvider {
     public void cancelTask(String taskName) {
         TimerTask existingTask = factory.removeTask(taskName);
         if (existingTask != null) {
-            logger.infof("Cancelling task '%s'", taskName);
+            logger.debugf("Cancelling task '%s'", taskName);
             existingTask.cancel();
         }
     }

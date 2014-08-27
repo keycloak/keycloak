@@ -586,7 +586,7 @@ public class AccountService {
                     if (session.users().getSocialLinks(user, realm).size() > 1 || user.getFederationLink() != null) {
                         session.users().removeSocialLink(realm, user, providerId);
 
-                        logger.debug("Social provider " + providerId + " removed successfully from user " + user.getUsername());
+                        logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
 
                         audit.event(EventType.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
                                 .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())
@@ -603,9 +603,7 @@ public class AccountService {
                     return account.setError(Messages.SOCIAL_LINK_NOT_ACTIVE).createResponse(AccountPages.SOCIAL);
                 }
             default:
-                // Shouldn't happen
-                logger.warn("Action is null!");
-                return null;
+                throw new IllegalArgumentException();
         }
     }
 

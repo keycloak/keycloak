@@ -129,18 +129,17 @@ public class Cors {
         return builder.build();
     }
     public void build(HttpResponse response) {
-        logger.info("build CORS");
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
-            logger.info("No origin returning");
+            logger.debug("No origin returning");
             return;
         }
 
         if (!preflight && (allowedOrigins == null || !allowedOrigins.contains(origin))) {
-            logger.info("!preflight and no origin");
+            logger.debug("!preflight and no origin");
             return;
         }
-        logger.info("build CORS headers and return");
+        logger.debug("build CORS headers and return");
         response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
         if (allowedMethods != null) {

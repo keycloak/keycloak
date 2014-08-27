@@ -38,7 +38,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
                 factories.put(factory.getId(), factory);
 
-                log.info("Loaded SPI " + spi.getName() + " (provider = " + provider + ")");
+                log.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
             } else {
                 for (ProviderFactory factory : ServiceLoader.load(spi.getProviderFactoryClass())) {
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());
@@ -51,9 +51,9 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                     provider = factories.values().iterator().next().getId();
                     this.provider.put(spi.getProviderClass(), provider);
 
-                    log.info("Loaded SPI " + spi.getName() + " (provider = " + provider + ")");
+                    log.debugv("Loaded SPI {0}  (provider = {1})", spi.getName(), provider);
                 } else {
-                    log.info("Loaded SPI " + spi.getName() + " (providers = " + factories.keySet() + ")");
+                    log.debugv("Loaded SPI {0} (providers = {1})", spi.getName(), factories.keySet());
                 }
             }
         }
