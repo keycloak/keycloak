@@ -60,8 +60,6 @@ public class ApplianceBootstrap {
         realm.setRegistrationAllowed(false);
         KeycloakModelUtils.generateRealmKeys(realm);
 
-        realm.setAuditListeners(Collections.singleton("jboss-logging"));
-
         UserModel adminUser = session.users().addUser(realm, "admin");
         adminUser.setEnabled(true);
         UserCredentialModel password = new UserCredentialModel();

@@ -74,7 +74,7 @@ public class KeycloakServletExtension implements ServletExtension {
         if (is == null) {
             String path = context.getInitParameter("keycloak.config.file");
             if (path == null) {
-                log.info("**** using /WEB-INF/keycloak.json");
+                log.debug("using /WEB-INF/keycloak.json");
                 is = context.getResourceAsStream("/WEB-INF/keycloak.json");
             } else {
                 try {
@@ -91,10 +91,10 @@ public class KeycloakServletExtension implements ServletExtension {
     @Override
     public void handleDeployment(DeploymentInfo deploymentInfo, ServletContext servletContext) {
         if (!isAuthenticationMechanismPresent(deploymentInfo, "KEYCLOAK")) {
-            log.info("auth-method is not keycloak!");
+            log.debug("auth-method is not keycloak!");
             return;
         }
-        log.info("KeycloakServletException initialization");
+        log.debug("KeycloakServletException initialization");
         InputStream is = getConfigInputStream(servletContext);
         KeycloakDeployment deployment = null;
         if (is == null) {
@@ -139,14 +139,14 @@ public class KeycloakServletExtension implements ServletExtension {
             }
         });
 
-        log.info("Setting jsession cookie path to: " + deploymentInfo.getContextPath());
+        log.debug("Setting jsession cookie path to: " + deploymentInfo.getContextPath());
         ServletSessionConfig cookieConfig = new ServletSessionConfig();
         cookieConfig.setPath(deploymentInfo.getContextPath());
         deploymentInfo.setServletSessionConfig(cookieConfig);
     }
 
     protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement) {
-       log.info("creating ServletKeycloakAuthMech");
+       log.debug("creating ServletKeycloakAuthMech");
        return new ServletKeycloakAuthMech(deploymentContext, userSessionManagement, deploymentInfo.getConfidentialPortManager());
     }
 }

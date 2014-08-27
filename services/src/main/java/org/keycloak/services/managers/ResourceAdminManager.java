@@ -59,7 +59,7 @@ public class ResourceAdminManager {
             SessionStatsAction adminAction = new SessionStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName());
             adminAction.setListUsers(users);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.infov("session stats for application: {0} url: {1}", application.getName(), managementUrl);
+            logger.debugv("session stats for application: {0} url: {1}", application.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_GET_SESSION_STATS).build().toString());
             ClientResponse<SessionStats> response = null;
             try {
@@ -90,7 +90,7 @@ public class ResourceAdminManager {
                 response.releaseConnection();
             }
         } else {
-            logger.info("no management url.");
+            logger.debug("no management url.");
             return null;
         }
 
@@ -121,7 +121,7 @@ public class ResourceAdminManager {
         if (managementUrl != null) {
             UserStatsAction adminAction = new UserStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName(), user.getId());
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.infov("session stats for application: {0} url: {1}", application.getName(), managementUrl);
+            logger.debugv("session stats for application: {0} url: {1}", application.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_GET_USER_STATS).build().toString());
             ClientResponse<UserStats> response = null;
             try {
@@ -141,7 +141,7 @@ public class ResourceAdminManager {
                 response.releaseConnection();
             }
         } else {
-            logger.info("no management url.");
+            logger.debug("no management url.");
             return null;
         }
 
@@ -210,7 +210,7 @@ public class ResourceAdminManager {
         if (managementUrl != null) {
             LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), user, session, notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.infov("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
+            logger.debugv("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());
             ClientResponse response;
             try {
@@ -220,13 +220,13 @@ public class ResourceAdminManager {
             }
             try {
                 boolean success = response.getStatus() == 204;
-                logger.info("logout success.");
+                logger.debug("logout success.");
                 return success;
             } finally {
                 response.releaseConnection();
             }
         } else {
-            logger.info("Can't logout " + resource.getName() + " no mgmt url.");
+            logger.debugv("Can't logout {0}: no management url", resource.getName());
             return false;
         }
     }
@@ -260,7 +260,7 @@ public class ResourceAdminManager {
         if (managementUrl != null) {
             PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.infov("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
+            logger.debugv("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build().toString());
             ClientResponse response = null;
             try {
@@ -271,13 +271,13 @@ public class ResourceAdminManager {
 
             try {
                 boolean success = response.getStatus() == 204;
-                logger.info("pushRevocation success.");
+                logger.debug("pushRevocation success.");
                 return success;
             } finally {
                 response.releaseConnection();
             }
         } else {
-            logger.info("no management URL for application: " + resource.getName());
+            logger.debug("no management URL for application: " + resource.getName());
             return false;
         }
 

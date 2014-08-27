@@ -206,7 +206,6 @@ public class RSAVerifierTest {
             v = verifySkeletonKeyToken(encoded);
             Assert.fail();
         } catch (VerificationException ignored) {
-            System.out.println(ignored.getMessage());
         }
     }
 
@@ -225,7 +224,6 @@ public class RSAVerifierTest {
         try {
             v = verifySkeletonKeyToken(encoded);
         } catch (VerificationException ignored) {
-            System.out.println(ignored.getMessage());
         }
     }
 

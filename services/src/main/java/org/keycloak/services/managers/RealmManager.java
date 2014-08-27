@@ -86,8 +86,6 @@ public class RealmManager {
         setupAccountManagement(realm);
         setupAdminConsole(realm);
 
-        realm.setAuditListeners(Collections.singleton("jboss-logging"));
-
         return realm;
     }
 
@@ -225,11 +223,6 @@ public class RealmManager {
         if (!hasAdminConsoleApp(rep)) setupAdminConsole(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
-
-
-        if (realm.getAuditListeners().size() == 0) {
-            realm.setAuditListeners(Collections.singleton("jboss-logging"));
-        }
 
         // Refresh periodic sync tasks for configured federationProviders
         List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();

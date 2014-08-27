@@ -1,6 +1,13 @@
 <chapter id="Migration_from_older_versions">
     <title>Migration from older versions</title>
     <sect1>
+        <title>Migrating from 1.0 RC-1 to RC-2</title>
+        <itemizedlist>
+            <listitem>A lot of info level logging has been changed to debug. Also, a realm no longer has the jboss-logging audit listener by default.
+            If you want log output when users login, logout, change passwords, etc. enable the jboss-logging audit listener through the admin console.</listitem>
+         </itemizedlist>
+    </sect1>
+    <sect1>
         <title>Migrating from 1.0 Beta 4 to RC-1</title>
         <itemizedlist>
             <listitem>

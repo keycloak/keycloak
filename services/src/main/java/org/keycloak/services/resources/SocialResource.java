@@ -70,7 +70,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
@@ -113,7 +112,7 @@ public class SocialResource {
         try {
             initialRequest = new JWSInput(encodedState).readJsonContent(State.class);
         } catch (Throwable t) {
-            logger.warn("Invalid social callback", t);
+            logger.error("Invalid social callback", t);
             return Flows.forms(session, null, null, uriInfo).setError("Unexpected callback").createErrorPage();
         }
 
@@ -218,7 +217,7 @@ public class SocialResource {
                 }
 
                 session.users().addSocialLink(realm, authenticatedUser, socialLink);
-                logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getUsername());
+                logger.debugv("Social provider {0} linked with user {1}", provider.getId(), authenticatedUser.getUsername());
 
                 audit.success();
                 return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
@@ -291,13 +290,11 @@ public class SocialResource {
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             audit.error(Errors.CLIENT_NOT_FOUND);
-            logger.warn("Unknown login requester: " + clientId);
             return Flows.forms(session, realm, null, uriInfo).setError("Unknown login requester.").createErrorPage();
         }
 
         if (!client.isEnabled()) {
             audit.error(Errors.CLIENT_DISABLED);
-            logger.warn("Login requester not enabled.");
             return Flows.forms(session, realm, null, uriInfo).setError("Login requester not enabled.").createErrorPage();
         }
         redirectUri = TokenService.verifyRedirectUri(uriInfo, redirectUri, realm, client);

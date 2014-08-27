@@ -69,6 +69,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RequiredActionsService {
+
     protected static final Logger logger = Logger.getLogger(RequiredActionsService.class);
 
     private RealmModel realm;
@@ -180,13 +181,10 @@ public class RequiredActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response updatePassword(final MultivaluedMap<String, String> formData) {
-        logger.debug("updatePassword");
         AccessCode accessCode = getAccessCodeEntry(RequiredAction.UPDATE_PASSWORD);
         if (accessCode == null) {
-            logger.debug("updatePassword access code is null");
             return unauthorized();
         }
-        logger.debug("updatePassword has access code");
 
         UserModel user = getUser(accessCode);
 
@@ -207,8 +205,6 @@ public class RequiredActionsService {
         } catch (Exception ape) {
             return loginForms.setError(ape.getMessage()).createResponse(RequiredAction.UPDATE_PASSWORD);
         }
-
-        logger.debug("updatePassword updated credential");
 
         user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
 
@@ -306,7 +302,6 @@ public class RequiredActionsService {
         }
 
         if (user == null) {
-            logger.warn("Failed to send password reset email: user not found");
             audit.error(Errors.USER_NOT_FOUND);
         } else {
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
@@ -337,19 +332,18 @@ public class RequiredActionsService {
     private AccessCode getAccessCodeEntry(RequiredAction requiredAction) {
         String code = uriInfo.getQueryParameters().getFirst(OAuth2Constants.CODE);
         if (code == null) {
-            logger.debug("getAccessCodeEntry code as not in query param");
+            logger.debug("Code query param not found");
             return null;
         }
 
         AccessCode accessCode = AccessCode.parse(code, session, realm);
         if (accessCode == null) {
-            logger.debug("getAccessCodeEntry access code entry null");
+            logger.debug("Access code not found");
             return null;
         }
 
         if (!accessCode.isValid(requiredAction)) {
-            logger.debugv("getAccessCodeEntry: access code id: {0}", accessCode.getCodeId());
-            logger.debugv("getAccessCodeEntry access code not valid");
+            logger.debugv("Invalid access code");
             return null;
         }
 
@@ -371,7 +365,7 @@ public class RequiredActionsService {
             return Flows.forms(session, realm, null, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
                     .createResponse(requiredActions.iterator().next());
         } else {
-            logger.debugv("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
+            logger.debugv("Redirecting to: {0}", accessCode.getRedirectUri());
             accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
 
             AuthenticationManager authManager = new AuthenticationManager();
