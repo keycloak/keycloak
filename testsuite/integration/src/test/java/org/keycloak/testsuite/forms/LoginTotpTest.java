@@ -26,7 +26,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.audit.Details;
+import org.keycloak.events.Details;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -66,7 +66,7 @@ public class LoginTotpTest {
             user.updateCredential(credentials);
 
             user.setTotp(true);
-            appRealm.setAuditListeners(Collections.singleton("dummy"));
+            appRealm.setEventsListeners(Collections.singleton("dummy"));
         }
 
     });

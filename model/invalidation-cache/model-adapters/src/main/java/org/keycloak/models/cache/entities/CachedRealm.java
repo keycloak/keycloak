@@ -70,9 +70,9 @@ public class CachedRealm {
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
 
-    private boolean auditEnabled;
-    private long auditExpiration;
-    private Set<String> auditListeners = new HashSet<String>();
+    private boolean eventsEnabled;
+    private long eventsExpiration;
+    private Set<String> eventsListeners = new HashSet<String>();
     private List<String> defaultRoles = new LinkedList<String>();
     private Map<String, String> realmRoles = new HashMap<String, String>();
     private Map<String, String> applications = new HashMap<String, String>();
@@ -126,9 +126,9 @@ public class CachedRealm {
         socialConfig.putAll(model.getSocialConfig());
         browserSecurityHeaders.putAll(model.getBrowserSecurityHeaders());
 
-        auditEnabled = model.isAuditEnabled();
-        auditExpiration = model.getAuditExpiration();
-        auditListeners.addAll(model.getAuditListeners());
+        eventsEnabled = model.isEventsEnabled();
+        eventsExpiration = model.getEventsExpiration();
+        eventsListeners.addAll(model.getEventsListeners());
         defaultRoles.addAll(model.getDefaultRoles());
         masterAdminApp = model.getMasterAdminApp().getId();
 
@@ -313,16 +313,16 @@ public class CachedRealm {
         return notBefore;
     }
 
-    public boolean isAuditEnabled() {
-        return auditEnabled;
+    public boolean isEventsEnabled() {
+        return eventsEnabled;
     }
 
-    public long getAuditExpiration() {
-        return auditExpiration;
+    public long getEventsExpiration() {
+        return eventsExpiration;
     }
 
-    public Set<String> getAuditListeners() {
-        return auditListeners;
+    public Set<String> getEventsListeners() {
+        return eventsListeners;
     }
 
     public List<UserFederationProviderModel> getUserFederationProviders() {

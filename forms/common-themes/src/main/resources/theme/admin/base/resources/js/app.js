@@ -197,17 +197,17 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSMTPSettingsCtrl'
         })
-        .when('/realms/:realm/audit', {
-            templateUrl : 'partials/realm-audit.html',
+        .when('/realms/:realm/events', {
+            templateUrl : 'partials/realm-events.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 }
             },
-            controller : 'RealmAuditEventsCtrl'
+            controller : 'RealmEventsCtrl'
         })
-        .when('/realms/:realm/audit-settings', {
-            templateUrl : 'partials/realm-audit-config.html',
+        .when('/realms/:realm/events-settings', {
+            templateUrl : 'partials/realm-events-config.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -215,11 +215,11 @@ module.config([ '$routeProvider', function($routeProvider) {
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
                 },
-                auditConfig : function(RealmAuditLoader) {
-                    return RealmAuditLoader();
+                eventsConfig : function(RealmEventsConfigLoader) {
+                    return RealmEventsConfigLoader();
                 }
             },
-            controller : 'RealmAuditCtrl'
+            controller : 'RealmEventsConfigCtrl'
         })
         .when('/create/user/:realm', {
             templateUrl : 'partials/user-detail.html',

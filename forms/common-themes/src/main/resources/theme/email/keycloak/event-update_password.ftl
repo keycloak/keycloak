@@ -1,1 +1,1 @@
-A failed login attempt was dettected to your account on ${event.date} from ${event.ipAddress}. If this was not you, please contact an admin.
+Your password was changed on ${event.date?datetime} from ${event.ipAddress}. If this was not you, please contact an admin.

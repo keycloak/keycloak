@@ -3,8 +3,8 @@
         "realm": "master"
     },
 
-    "audit": {
-        "provider": "${keycloak.audit.provider:jpa}"
+    "eventsStore": {
+        "provider": "${keycloak.eventStore.provider:jpa}"
     },
 
     "realm": {

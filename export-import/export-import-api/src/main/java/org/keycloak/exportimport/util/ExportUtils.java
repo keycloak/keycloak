@@ -48,13 +48,13 @@ public class ExportUtils {
         RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm);
 
         // Audit
-        rep.setAuditEnabled(realm.isAuditEnabled());
-        if (realm.getAuditExpiration() != 0) {
-            rep.setAuditExpiration(realm.getAuditExpiration());
+        rep.setEventsEnabled(realm.isEventsEnabled());
+        if (realm.getEventsExpiration() != 0) {
+            rep.setEventsExpiration(realm.getEventsExpiration());
         }
 
-        if (realm.getAuditListeners() != null) {
-            rep.setAuditListeners(new LinkedList<String>(realm.getAuditListeners()));
+        if (realm.getEventsListeners() != null) {
+            rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
         }
 
         // Applications

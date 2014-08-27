@@ -60,9 +60,9 @@ public class RealmRepresentation {
     protected String accountTheme;
     protected String adminTheme;
     protected String emailTheme;
-    protected boolean auditEnabled;
-    protected long auditExpiration;
-    protected List<String> auditListeners;
+    protected boolean eventsEnabled;
+    protected long eventsExpiration;
+    protected List<String> eventsListeners;
 
     public String getId() {
         return id;
@@ -436,28 +436,28 @@ public class RealmRepresentation {
         this.failureFactor = failureFactor;
     }
 
-    public boolean isAuditEnabled() {
-        return auditEnabled;
+    public boolean isEventsEnabled() {
+        return eventsEnabled;
     }
 
-    public void setAuditEnabled(boolean auditEnabled) {
-        this.auditEnabled = auditEnabled;
+    public void setEventsEnabled(boolean eventsEnabled) {
+        this.eventsEnabled = eventsEnabled;
     }
 
-    public long getAuditExpiration() {
-        return auditExpiration;
+    public long getEventsExpiration() {
+        return eventsExpiration;
     }
 
-    public void setAuditExpiration(long auditExpiration) {
-        this.auditExpiration = auditExpiration;
+    public void setEventsExpiration(long eventsExpiration) {
+        this.eventsExpiration = eventsExpiration;
     }
 
-    public List<String> getAuditListeners() {
-        return auditListeners;
+    public List<String> getEventsListeners() {
+        return eventsListeners;
     }
 
-    public void setAuditListeners(List<String> auditListeners) {
-        this.auditListeners = auditListeners;
+    public void setEventsListeners(List<String> eventsListeners) {
+        this.eventsListeners = eventsListeners;
     }
 
     public List<UserFederationProviderRepresentation> getUserFederationProviders() {

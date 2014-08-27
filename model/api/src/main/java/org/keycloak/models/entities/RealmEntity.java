@@ -56,9 +56,9 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
 
-    private boolean auditEnabled;
-    private long auditExpiration;
-    private List<String> auditListeners = new ArrayList<String>();
+    private boolean eventsEnabled;
+    private long eventsExpiration;
+    private List<String> eventsListeners = new ArrayList<String>();
 
     private String adminAppId;
 
@@ -342,28 +342,28 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.socialConfig = socialConfig;
     }
 
-    public boolean isAuditEnabled() {
-        return auditEnabled;
+    public boolean isEventsEnabled() {
+        return eventsEnabled;
     }
 
-    public void setAuditEnabled(boolean auditEnabled) {
-        this.auditEnabled = auditEnabled;
+    public void setEventsEnabled(boolean eventsEnabled) {
+        this.eventsEnabled = eventsEnabled;
     }
 
-    public long getAuditExpiration() {
-        return auditExpiration;
+    public long getEventsExpiration() {
+        return eventsExpiration;
     }
 
-    public void setAuditExpiration(long auditExpiration) {
-        this.auditExpiration = auditExpiration;
+    public void setEventsExpiration(long eventsExpiration) {
+        this.eventsExpiration = eventsExpiration;
     }
 
-    public List<String> getAuditListeners() {
-        return auditListeners;
+    public List<String> getEventsListeners() {
+        return eventsListeners;
     }
 
-    public void setAuditListeners(List<String> auditListeners) {
-        this.auditListeners = auditListeners;
+    public void setEventsListeners(List<String> eventsListeners) {
+        this.eventsListeners = eventsListeners;
     }
 
     public String getAdminAppId() {

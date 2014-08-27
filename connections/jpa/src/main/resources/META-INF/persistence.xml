@@ -25,7 +25,7 @@
         <class>org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity</class>
 
         <!-- JpaAuditProvider -->
-        <class>org.keycloak.audit.jpa.EventEntity</class>
+        <class>org.keycloak.events.jpa.EventEntity</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         

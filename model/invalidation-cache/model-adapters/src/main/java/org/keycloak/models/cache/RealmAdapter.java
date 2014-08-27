@@ -694,39 +694,39 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isAuditEnabled() {
-        if (updated != null) return updated.isAuditEnabled();
-        return cached.isAuditEnabled();
+    public boolean isEventsEnabled() {
+        if (updated != null) return updated.isEventsEnabled();
+        return cached.isEventsEnabled();
     }
 
     @Override
-    public void setAuditEnabled(boolean enabled) {
+    public void setEventsEnabled(boolean enabled) {
         getDelegateForUpdate();
-        updated.setAuditEnabled(enabled);
+        updated.setEventsEnabled(enabled);
     }
 
     @Override
-    public long getAuditExpiration() {
-        if (updated != null) return updated.getAuditExpiration();
-        return cached.getAuditExpiration();
+    public long getEventsExpiration() {
+        if (updated != null) return updated.getEventsExpiration();
+        return cached.getEventsExpiration();
     }
 
     @Override
-    public void setAuditExpiration(long expiration) {
+    public void setEventsExpiration(long expiration) {
         getDelegateForUpdate();
-        updated.setAuditExpiration(expiration);
+        updated.setEventsExpiration(expiration);
     }
 
     @Override
-    public Set<String> getAuditListeners() {
-        if (updated != null) return updated.getAuditListeners();
-        return cached.getAuditListeners();
+    public Set<String> getEventsListeners() {
+        if (updated != null) return updated.getEventsListeners();
+        return cached.getEventsListeners();
     }
 
     @Override
-    public void setAuditListeners(Set<String> listeners) {
+    public void setEventsListeners(Set<String> listeners) {
         getDelegateForUpdate();
-        updated.setAuditListeners(listeners);
+        updated.setEventsListeners(listeners);
     }
 
     @Override

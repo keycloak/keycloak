@@ -4,10 +4,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.audit.AuditProvider;
-import org.keycloak.audit.Event;
-import org.keycloak.audit.EventQuery;
-import org.keycloak.audit.EventType;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -19,7 +19,7 @@ import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.SessionStats;
-import org.keycloak.representations.idm.RealmAuditRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.UsersSyncManager;
@@ -306,62 +306,62 @@ public class RealmAdminResource {
     }
 
     /**
-     * View the audit provider and how it is configured.
+     * View the events provider and how it is configured.
      *
      * @return
      */
     @GET
     @NoCache
-    @Path("audit")
+    @Path("events/config")
     @Produces("application/json")
-    public RealmAuditRepresentation getRealmAudit() {
-        auth.init(RealmAuth.Resource.AUDIT).requireView();
+    public RealmEventsConfigRepresentation getRealmEventsConfig() {
+        auth.init(RealmAuth.Resource.EVENTS).requireView();
 
-        return ModelToRepresentation.toAuditReprensetation(realm);
+        return ModelToRepresentation.toEventsConfigReprensetation(realm);
     }
 
     /**
-     * Change the audit provider and/or it's configuration
+     * Change the events provider and/or it's configuration
      *
      * @param rep
      */
     @PUT
-    @Path("audit")
+    @Path("events/config")
     @Consumes("application/json")
-    public void updateRealmAudit(final RealmAuditRepresentation rep) {
-        auth.init(RealmAuth.Resource.AUDIT).requireManage();
+    public void updateRealmEventsConfig(final RealmEventsConfigRepresentation rep) {
+        auth.init(RealmAuth.Resource.EVENTS).requireManage();
 
-        logger.debug("updating realm audit: " + realm.getName());
-        new RealmManager(session).updateRealmAudit(rep, realm);
+        logger.debug("updating realm events config: " + realm.getName());
+        new RealmManager(session).updateRealmEventsConfig(rep, realm);
     }
 
     /**
-     * Query audit events.  Returns all events, or will query based on URL query parameters listed here
+     * Query events.  Returns all events, or will query based on URL query parameters listed here
      *
      * @param client app or oauth client name
-     * @param event event type
+     * @param type type type
      * @param user user id
      * @param ipAddress
      * @param firstResult
      * @param maxResults
      * @return
      */
-    @Path("audit/events")
+    @Path("events")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Event> getAudit(@QueryParam("client") String client, @QueryParam("event") String event, @QueryParam("user") String user,
-                                @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
-        auth.init(RealmAuth.Resource.AUDIT).requireView();
+    public List<Event> getEvents(@QueryParam("client") String client, @QueryParam("type") String type, @QueryParam("user") String user,
+                                 @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+        auth.init(RealmAuth.Resource.EVENTS).requireView();
 
-        AuditProvider audit = session.getProvider(AuditProvider.class);
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
-        EventQuery query = audit.createQuery().realm(realm.getId());
+        EventQuery query = eventStore.createQuery().realm(realm.getId());
         if (client != null) {
             query.client(client);
         }
-        if (event != null) {
-            query.event(EventType.valueOf(event));
+        if (type != null) {
+            query.type(EventType.valueOf(type));
         }
         if (user != null) {
             query.user(user);
@@ -380,16 +380,16 @@ public class RealmAdminResource {
     }
 
     /**
-     * Delete all audit events.
+     * Delete all events.
      *
      */
-    @Path("audit/events")
+    @Path("events")
     @DELETE
-    public void clearAudit() {
-        auth.init(RealmAuth.Resource.AUDIT).requireManage();
+    public void clearEvents() {
+        auth.init(RealmAuth.Resource.EVENTS).requireManage();
 
-        AuditProvider audit = session.getProvider(AuditProvider.class);
-        audit.clear(realm.getId());
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        eventStore.clear(realm.getId());
     }
 
     @Path("testLDAPConnection")

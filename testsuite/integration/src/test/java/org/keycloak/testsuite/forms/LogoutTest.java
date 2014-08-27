@@ -24,7 +24,7 @@ package org.keycloak.testsuite.forms;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.audit.Details;
+import org.keycloak.events.Details;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;

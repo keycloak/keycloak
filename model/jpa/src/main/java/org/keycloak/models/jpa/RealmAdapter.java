@@ -11,13 +11,11 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
-import org.keycloak.models.jpa.entities.AttributeMap;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -1047,35 +1045,35 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isAuditEnabled() {
-        return realm.isAuditEnabled();
+    public boolean isEventsEnabled() {
+        return realm.isEventsEnabled();
     }
 
     @Override
-    public void setAuditEnabled(boolean enabled) {
-        realm.setAuditEnabled(enabled);
+    public void setEventsEnabled(boolean enabled) {
+        realm.setEventsEnabled(enabled);
         em.flush();
     }
 
     @Override
-    public long getAuditExpiration() {
-        return realm.getAuditExpiration();
+    public long getEventsExpiration() {
+        return realm.getEventsExpiration();
     }
 
     @Override
-    public void setAuditExpiration(long expiration) {
-        realm.setAuditExpiration(expiration);
+    public void setEventsExpiration(long expiration) {
+        realm.setEventsExpiration(expiration);
         em.flush();
     }
 
     @Override
-    public Set<String> getAuditListeners() {
-        return realm.getAuditListeners();
+    public Set<String> getEventsListeners() {
+        return realm.getEventsListeners();
     }
 
     @Override
-    public void setAuditListeners(Set<String> listeners) {
-        realm.setAuditListeners(listeners);
+    public void setEventsListeners(Set<String> listeners) {
+        realm.setEventsListeners(listeners);
         em.flush();
     }
 

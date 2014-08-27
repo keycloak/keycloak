@@ -19,7 +19,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.RealmAuditRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.timer.TimerProvider;
 
@@ -155,11 +155,11 @@ public class RealmManager {
         return removed;
     }
 
-    public void updateRealmAudit(RealmAuditRepresentation rep, RealmModel realm) {
-        realm.setAuditEnabled(rep.isAuditEnabled());
-        realm.setAuditExpiration(rep.getAuditExpiration() != null ? rep.getAuditExpiration() : 0);
-        if (rep.getAuditListeners() != null) {
-            realm.setAuditListeners(new HashSet<String>(rep.getAuditListeners()));
+    public void updateRealmEventsConfig(RealmEventsConfigRepresentation rep, RealmModel realm) {
+        realm.setEventsEnabled(rep.isEventsEnabled());
+        realm.setEventsExpiration(rep.getEventsExpiration() != null ? rep.getEventsExpiration() : 0);
+        if (rep.getEventsListeners() != null) {
+            realm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
         }
     }
 

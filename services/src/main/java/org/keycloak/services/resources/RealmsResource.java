@@ -6,13 +6,13 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
-import org.keycloak.audit.Audit;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.managers.AuditManager;
+import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
@@ -140,9 +140,9 @@ public class RealmsResource {
     public TokenService getTokenService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        Audit audit = new AuditManager(realm, session, clientConnection).createAudit();
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
         AuthenticationManager authManager = new AuthenticationManager(protector);
-        TokenService tokenService = new TokenService(realm, tokenManager, audit, authManager);
+        TokenService tokenService = new TokenService(realm, tokenManager, event, authManager);
         ResteasyProviderFactory.getInstance().injectProperties(tokenService);
         //resourceContext.initResource(tokenService);
         return tokenService;
@@ -167,8 +167,8 @@ public class RealmsResource {
             throw new NotFoundException("account management not enabled");
         }
 
-        Audit audit = new AuditManager(realm, session, clientConnection).createAudit();
-        AccountService accountService = new AccountService(realm, application, audit);
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        AccountService accountService = new AccountService(realm, application, event);
         ResteasyProviderFactory.getInstance().injectProperties(accountService);
         //resourceContext.initResource(accountService);
         accountService.init();

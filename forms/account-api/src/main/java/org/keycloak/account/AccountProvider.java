@@ -1,6 +1,6 @@
 package org.keycloak.account;
 
-import org.keycloak.audit.Event;
+import org.keycloak.events.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -37,5 +37,5 @@ public interface AccountProvider extends Provider {
 
     AccountProvider setSessions(List<UserSessionModel> sessions);
 
-    AccountProvider setFeatures(boolean social, boolean audit, boolean passwordUpdateSupported);
+    AccountProvider setFeatures(boolean social, boolean events, boolean passwordUpdateSupported);
 }

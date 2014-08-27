@@ -1,6 +1,6 @@
 package org.keycloak.account.freemarker.model;
 
-import org.keycloak.audit.Event;
+import org.keycloak.events.Event;
 
 import java.util.Date;
 import java.util.LinkedList;
@@ -38,7 +38,7 @@ public class LogBean {
         }
 
         public String getEvent() {
-            return event.getEvent().toString().toLowerCase().replace("_", " ");
+            return event.getType().toString().toLowerCase().replace("_", " ");
         }
 
         public String getClient() {

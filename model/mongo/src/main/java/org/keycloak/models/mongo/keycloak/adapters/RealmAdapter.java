@@ -873,38 +873,38 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public boolean isAuditEnabled() {
-        return realm.isAuditEnabled();
+    public boolean isEventsEnabled() {
+        return realm.isEventsEnabled();
     }
 
     @Override
-    public void setAuditEnabled(boolean enabled) {
-        realm.setAuditEnabled(enabled);
+    public void setEventsEnabled(boolean enabled) {
+        realm.setEventsEnabled(enabled);
         updateRealm();
     }
 
     @Override
-    public long getAuditExpiration() {
-        return realm.getAuditExpiration();
+    public long getEventsExpiration() {
+        return realm.getEventsExpiration();
     }
 
     @Override
-    public void setAuditExpiration(long expiration) {
-        realm.setAuditExpiration(expiration);
+    public void setEventsExpiration(long expiration) {
+        realm.setEventsExpiration(expiration);
         updateRealm();
     }
 
     @Override
-    public Set<String> getAuditListeners() {
-        return new HashSet<String>(realm.getAuditListeners());
+    public Set<String> getEventsListeners() {
+        return new HashSet<String>(realm.getEventsListeners());
     }
 
     @Override
-    public void setAuditListeners(Set<String> listeners) {
+    public void setEventsListeners(Set<String> listeners) {
         if (listeners != null) {
-            realm.setAuditListeners(new ArrayList<String>(listeners));
+            realm.setEventsListeners(new ArrayList<String>(listeners));
         } else {
-            realm.setAuditListeners(Collections.EMPTY_LIST);
+            realm.setEventsListeners(Collections.EMPTY_LIST);
         }
         updateRealm();
     }

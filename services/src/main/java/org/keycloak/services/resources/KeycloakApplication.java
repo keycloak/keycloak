@@ -19,7 +19,7 @@ import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.services.scheduled.ClearExpiredAuditEvents;
+import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.services.util.JsonConfigProvider;
@@ -147,7 +147,7 @@ public class KeycloakApplication extends Application {
         long interval = Config.scope("scheduled").getLong("interval", 60L) * 1000;
 
         TimerProvider timer = sessionFactory.create().getProvider(TimerProvider.class);
-        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredAuditEvents()), interval, "ClearExpiredAuditEvents");
+        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredEvents()), interval, "ClearExpiredEvents");
         timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, "ClearExpiredUserSessions");
         new UsersSyncManager().bootstrapPeriodic(sessionFactory, timer);
     }

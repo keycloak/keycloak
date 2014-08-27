@@ -124,15 +124,15 @@ public class RealmEntity {
     @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     protected Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
-    @Column(name="AUDIT_ENABLED")
-    protected boolean auditEnabled;
-    @Column(name="AUDIT_EXPIRATION")
-    protected long auditExpiration;
+    @Column(name="EVENTS_ENABLED")
+    protected boolean eventsEnabled;
+    @Column(name="EVENTS_EXPIRATION")
+    protected long eventsExpiration;
 
     @ElementCollection
     @Column(name="VALUE")
-    @CollectionTable(name="REALM_AUDIT_LISTENERS", joinColumns={ @JoinColumn(name="REALM_ID") })
-    protected Set<String> auditListeners= new HashSet<String>();
+    @CollectionTable(name="REALM_EVENTS_LISTENERS", joinColumns={ @JoinColumn(name="REALM_ID") })
+    protected Set<String> eventsListeners = new HashSet<String>();
 
     @OneToOne
     @JoinColumn(name="MASTER_ADMIN_APP")
@@ -385,28 +385,28 @@ public class RealmEntity {
         this.notBefore = notBefore;
     }
 
-    public boolean isAuditEnabled() {
-        return auditEnabled;
+    public boolean isEventsEnabled() {
+        return eventsEnabled;
     }
 
-    public void setAuditEnabled(boolean auditEnabled) {
-        this.auditEnabled = auditEnabled;
+    public void setEventsEnabled(boolean eventsEnabled) {
+        this.eventsEnabled = eventsEnabled;
     }
 
-    public long getAuditExpiration() {
-        return auditExpiration;
+    public long getEventsExpiration() {
+        return eventsExpiration;
     }
 
-    public void setAuditExpiration(long auditExpiration) {
-        this.auditExpiration = auditExpiration;
+    public void setEventsExpiration(long eventsExpiration) {
+        this.eventsExpiration = eventsExpiration;
     }
 
-    public Set<String> getAuditListeners() {
-        return auditListeners;
+    public Set<String> getEventsListeners() {
+        return eventsListeners;
     }
 
-    public void setAuditListeners(Set<String> auditListeners) {
-        this.auditListeners = auditListeners;
+    public void setEventsListeners(Set<String> eventsListeners) {
+        this.eventsListeners = eventsListeners;
     }
 
     public ApplicationEntity getMasterAdminApp() {

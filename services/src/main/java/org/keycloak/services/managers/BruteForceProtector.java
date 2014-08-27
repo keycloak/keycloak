@@ -185,7 +185,7 @@ public class BruteForceProtector implements Runnable {
                             session.close();
                         }
                     } catch (Exception e) {
-                        logger.error("Failed processing event", e);
+                        logger.error("Failed processing type", e);
                     }
                 } catch (InterruptedException e) {
                     break;
@@ -228,7 +228,7 @@ public class BruteForceProtector implements Runnable {
         try {
             FailedLogin event = new FailedLogin(realm.getId(), username, clientConnection.getRemoteAddr());
             queue.offer(event);
-            // wait a minimum of seconds for event to process so that a hacker
+            // wait a minimum of seconds for type to process so that a hacker
             // cannot flood with failed logins and overwhelm the queue and not have notBefore updated to block next requests
             // todo failure HTTP responses should be queued via async HTTP
             event.latch.await(5, TimeUnit.SECONDS);

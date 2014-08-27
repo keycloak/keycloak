@@ -3,7 +3,7 @@
         "realm": "master"
     },
 
-    "audit": {
+    "eventsStore": {
         "provider": "jpa",
         "jpa": {
             "exclude-events": [ "REFRESH_TOKEN" ]

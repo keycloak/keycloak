@@ -26,9 +26,9 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.audit.Audit;
-import org.keycloak.audit.Details;
-import org.keycloak.audit.EventType;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -124,7 +124,7 @@ public class OAuthFlows {
         return Response.status(302).location(redirectUri.build()).build();
     }
 
-    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, UserSessionModel session, Audit audit) {
+    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, UserSessionModel session, EventBuilder event) {
         isTotpConfigurationRequired(user);
         isEmailVerificationRequired(user);
 
@@ -135,7 +135,7 @@ public class OAuthFlows {
         log.debugv("processAccessCode: go to oauth page?: {0}",
                 !isResource);
 
-        audit.detail(Details.CODE_ID, accessCode.getCodeId());
+        event.detail(Details.CODE_ID, accessCode.getCodeId());
 
         Set<RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
@@ -143,7 +143,7 @@ public class OAuthFlows {
             accessCode.setRequiredAction(action);
 
             if (action.equals(RequiredAction.VERIFY_EMAIL)) {
-                audit.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
+                event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
             }
 
             return Flows.forms(this.session, realm, client, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
@@ -171,7 +171,7 @@ public class OAuthFlows {
         }
 
         if (redirect != null) {
-            audit.success();
+            event.success();
 
             accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
             return redirectAccessCode(accessCode, session, state, redirect);

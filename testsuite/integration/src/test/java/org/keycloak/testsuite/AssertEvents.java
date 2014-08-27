@@ -8,11 +8,11 @@ import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.Config;
-import org.keycloak.audit.AuditListener;
-import org.keycloak.audit.AuditListenerFactory;
-import org.keycloak.audit.Details;
-import org.keycloak.audit.Event;
-import org.keycloak.audit.EventType;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
+import org.keycloak.events.Details;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AssertEvents implements TestRule, AuditListenerFactory {
+public class AssertEvents implements TestRule, EventListenerProviderFactory {
 
     public static String DEFAULT_CLIENT_ID = "test-app";
     public static String DEFAULT_REDIRECT_URI = "http://localhost:8081/app/auth";
@@ -71,7 +71,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
                         Set<String> listeners = new HashSet<String>();
                         listeners.add("jboss-logging");
                         listeners.add("assert-events");
-                        appRealm.setAuditListeners(listeners);
+                        appRealm.setEventsListeners(listeners);
                     }
                 });
 
@@ -80,13 +80,13 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
 
                     Event event = events.peek();
                     if (event != null) {
-                        Assert.fail("Unexpected event after test: " + event.getEvent());
+                        Assert.fail("Unexpected type after test: " + event.getType());
                     }
                 } finally {
                     keycloak.configure(new KeycloakRule.KeycloakSetup() {
                         @Override
                         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                            appRealm.setAuditListeners(null);
+                            appRealm.setEventsListeners(null);
                         }
                     });
                 }
@@ -172,12 +172,12 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     @Override
-    public AuditListener create(KeycloakSession session) {
-        return new AuditListener() {
+    public EventListenerProvider create(KeycloakSession session) {
+        return new EventListenerProvider() {
             @Override
             public void onEvent(Event event) {
                 if (event == null) {
-                    throw new RuntimeException("Added null event");
+                    throw new RuntimeException("Added null type");
                 }
                 events.add(event);
             }
@@ -254,7 +254,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
         }
 
         public ExpectedEvent event(EventType e) {
-            expected.setEvent(e);
+            expected.setType(e);
             return this;
         }
 
@@ -286,15 +286,15 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
             try {
                 return assertEvent(events.poll(10, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
-                throw new AssertionError("No event received within timeout");
+                throw new AssertionError("No type received within timeout");
             }
         }
 
         public Event assertEvent(Event actual) {
-            if (expected.getError() != null && !expected.getEvent().toString().endsWith("_ERROR")) {
-                expected.setEvent(EventType.valueOf(expected.getEvent().toString() + "_ERROR"));
+            if (expected.getError() != null && !expected.getType().toString().endsWith("_ERROR")) {
+                expected.setType(EventType.valueOf(expected.getType().toString() + "_ERROR"));
             }
-            Assert.assertEquals(expected.getEvent(), actual.getEvent());
+            Assert.assertEquals(expected.getType(), actual.getType());
             Assert.assertEquals(expected.getRealmId(), actual.getRealmId());
             Assert.assertEquals(expected.getClientId(), actual.getClientId());
             Assert.assertEquals(expected.getError(), actual.getError());

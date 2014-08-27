@@ -18,7 +18,7 @@ import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
-import org.keycloak.representations.idm.RealmAuditRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
@@ -143,16 +143,16 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static RealmAuditRepresentation toAuditReprensetation(RealmModel realm) {
-        RealmAuditRepresentation rep = new RealmAuditRepresentation();
-        rep.setAuditEnabled(realm.isAuditEnabled());
+    public static RealmEventsConfigRepresentation toEventsConfigReprensetation(RealmModel realm) {
+        RealmEventsConfigRepresentation rep = new RealmEventsConfigRepresentation();
+        rep.setEventsEnabled(realm.isEventsEnabled());
 
-        if (realm.getAuditExpiration() != 0) {
-            rep.setAuditExpiration(realm.getAuditExpiration());
+        if (realm.getEventsExpiration() != 0) {
+            rep.setEventsExpiration(realm.getEventsExpiration());
         }
 
-        if (realm.getAuditListeners() != null) {
-            rep.setAuditListeners(new LinkedList<String>(realm.getAuditListeners()));
+        if (realm.getEventsListeners() != null) {
+            rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
         }
         return rep;
     }

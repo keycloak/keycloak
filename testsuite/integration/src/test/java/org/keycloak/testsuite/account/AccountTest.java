@@ -28,9 +28,9 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.audit.Details;
-import org.keycloak.audit.Event;
-import org.keycloak.audit.EventType;
+import org.keycloak.events.Details;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -370,7 +370,7 @@ public class AccountTest {
         keycloakRule.update(new KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setAuditEnabled(true);
+                appRealm.setEventsEnabled(true);
             }
         });
 
@@ -407,7 +407,7 @@ public class AccountTest {
             Iterator<List<String>> itr = logPage.getEvents().iterator();
             for (Event event : e) {
                 List<String> a = itr.next();
-                Assert.assertEquals(event.getEvent().toString().replace('_', ' ').toLowerCase(), a.get(1));
+                Assert.assertEquals(event.getType().toString().replace('_', ' ').toLowerCase(), a.get(1));
                 Assert.assertEquals(event.getIpAddress(), a.get(2));
                 Assert.assertEquals(event.getClientId(), a.get(3));
             }
@@ -417,7 +417,7 @@ public class AccountTest {
             keycloakRule.update(new KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setAuditEnabled(false);
+                    appRealm.setEventsEnabled(false);
                 }
             });
         }

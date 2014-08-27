@@ -26,7 +26,7 @@
                 <!ENTITY DirectAccess SYSTEM "modules/direct-access.xml">
                 <!ENTITY CORS SYSTEM "modules/cors.xml">
                 <!ENTITY Timeouts SYSTEM "modules/timeouts.xml">
-                <!ENTITY Audit SYSTEM "modules/audit.xml">
+                <!ENTITY Events SYSTEM "modules/events.xml">
                 <!ENTITY AdminApi SYSTEM "modules/admin-rest-api.xml">
                 <!ENTITY UserFederation SYSTEM "modules/user-federation.xml">
                 <!ENTITY ExportImport SYSTEM "modules/export-import.xml">
@@ -115,7 +115,7 @@ This one is short
     &CORS;
     &Timeouts;
     &AdminApi;
-    &Audit;
+    &Events;
     &UserFederation;
     &ExportImport;
     &ServerCache;

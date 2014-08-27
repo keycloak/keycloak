@@ -12,7 +12,7 @@ import org.keycloak.account.freemarker.model.ReferrerBean;
 import org.keycloak.account.freemarker.model.SessionsBean;
 import org.keycloak.account.freemarker.model.TotpBean;
 import org.keycloak.account.freemarker.model.UrlBean;
-import org.keycloak.audit.Event;
+import org.keycloak.events.Event;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
@@ -47,8 +47,8 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private String[] referrer;
     private List<Event> events;
     private List<UserSessionModel> sessions;
-    private boolean social;
-    private boolean audit;
+    private boolean socialEnabled;
+    private boolean eventsEnabled;
     private boolean passwordUpdateSupported;
     private KeycloakSession session;
     private FreeMarkerUtil freeMarker;
@@ -115,7 +115,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri()));
 
-        attributes.put("features", new FeaturesBean(social, audit, passwordUpdateSupported));
+        attributes.put("features", new FeaturesBean(socialEnabled, eventsEnabled, passwordUpdateSupported));
 
         switch (page) {
             case ACCOUNT:
@@ -204,9 +204,9 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     }
 
     @Override
-    public AccountProvider setFeatures(boolean social, boolean audit, boolean passwordUpdateSupported) {
-        this.social = social;
-        this.audit = audit;
+    public AccountProvider setFeatures(boolean socialEnabled, boolean eventsEnabled, boolean passwordUpdateSupported) {
+        this.socialEnabled = socialEnabled;
+        this.eventsEnabled = eventsEnabled;
         this.passwordUpdateSupported = passwordUpdateSupported;
         return this;
     }
