@@ -59,6 +59,8 @@ public class Messages {
 
     public static final String USERNAME_EXISTS = "usernameExists";
 
+    public static final String EMAIL_EXISTS = "emailExists";
+
     public static final String ACTION_WARN_TOTP = "actionTotpWarning";
 
     public static final String ACTION_WARN_PROFILE = "actionProfileWarning";

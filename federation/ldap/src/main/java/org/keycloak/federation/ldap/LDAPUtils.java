@@ -1,5 +1,7 @@
 package org.keycloak.federation.ldap;
 
+import org.keycloak.models.ModelDuplicateException;
+import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.credential.Credentials;
@@ -19,13 +21,21 @@ import java.util.List;
 public class LDAPUtils {
 
     public static User addUser(PartitionManager partitionManager, String username, String firstName, String lastName, String email) {
-        IdentityManager idmManager = getIdentityManager(partitionManager);
+        IdentityManager identityManager = getIdentityManager(partitionManager);
+
+        if (BasicModel.getUser(identityManager, username) != null) {
+            throw new ModelDuplicateException("User with same username already exists");
+        }
+        if (getUserByEmail(identityManager, email) != null) {
+            throw new ModelDuplicateException("User with same email already exists");
+        }
+
         User picketlinkUser = new User(username);
         picketlinkUser.setFirstName(firstName);
         picketlinkUser.setLastName(lastName);
         picketlinkUser.setEmail(email);
         picketlinkUser.setAttribute(new Attribute("fullName", getFullName(username, firstName, lastName)));
-        idmManager.add(picketlinkUser);
+        identityManager.add(picketlinkUser);
         return picketlinkUser;
     }
 
@@ -62,6 +72,20 @@ public class LDAPUtils {
     public static User getUser(PartitionManager partitionManager, String username) {
         IdentityManager idmManager = getIdentityManager(partitionManager);
         return BasicModel.getUser(idmManager, username);
+    }
+
+
+    public static User getUserByEmail(IdentityManager idmManager, String email) throws IdentityManagementException {
+        List<User> agents = idmManager.createIdentityQuery(User.class)
+                .setParameter(User.EMAIL, email).getResultList();
+
+        if (agents.isEmpty()) {
+            return null;
+        } else if (agents.size() == 1) {
+            return agents.get(0);
+        } else {
+            throw new IdentityManagementException("Error - multiple users found with same email");
+        }
     }
 
     public static boolean removeUser(PartitionManager partitionManager, String username) {
