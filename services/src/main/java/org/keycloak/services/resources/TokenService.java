@@ -17,6 +17,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -38,6 +39,7 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
+import org.keycloak.representations.PasswordToken;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
@@ -545,6 +547,11 @@ public class TokenService {
                 event.error(Errors.USER_DISABLED);
                 return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
             case MISSING_TOTP:
+                formData.remove(CredentialRepresentation.PASSWORD);
+
+                String passwordToken = new JWSBuilder().jsonContent(new PasswordToken(realm.getName(), user.getId())).rsa256(realm.getPrivateKey());
+                formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
+
                 return Flows.forms(this.session, realm, client, uriInfo).setFormData(formData).createLoginTotp();
             case INVALID_USER:
                 event.error(Errors.USER_NOT_FOUND);

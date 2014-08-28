@@ -6,15 +6,19 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.ClientConnection;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.PasswordToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.RealmManager;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.UUID;
@@ -117,7 +121,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
     }
 
     @Test
-    public void authFormWithToltpInvalidPassword() {
+    public void authFormWithTotpInvalidPassword() {
         authFormWithTotp();
 
         formData.remove(CredentialRepresentation.PASSWORD);
@@ -125,6 +129,16 @@ public class AuthenticationManagerTest extends AbstractModelTest {
 
         AuthenticationStatus status = am.authenticateForm(session, dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
+    }
+
+    @Test
+    public void authFormWithTotpMissingPassword() {
+        authFormWithTotp();
+
+        formData.remove(CredentialRepresentation.PASSWORD);
+
+        AuthenticationStatus status = am.authenticateForm(session, dummyConnection, realm, formData);
+        Assert.assertEquals(AuthenticationStatus.MISSING_PASSWORD, status);
     }
 
     @Test
@@ -148,6 +162,92 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         Assert.assertEquals(AuthenticationStatus.MISSING_TOTP, status);
     }
 
+    @Test
+    public void authFormWithTotpPasswordToken() {
+        realm.addRequiredCredential(CredentialRepresentation.TOTP);
+
+        String totpSecret = UUID.randomUUID().toString();
+
+        UserCredentialModel credential = new UserCredentialModel();
+        credential.setType(CredentialRepresentation.TOTP);
+        credential.setValue(totpSecret);
+
+        user.updateCredential(credential);
+
+        user.setTotp(true);
+
+        String token = otp.generate(totpSecret);
+
+        formData.add(CredentialRepresentation.TOTP, token);
+        formData.remove(CredentialRepresentation.PASSWORD);
+
+        String passwordToken = new JWSBuilder().jsonContent(new PasswordToken(realm.getName(), user.getId())).rsa256(realm.getPrivateKey());
+        formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
+
+        AuthenticationStatus status = am.authenticateForm(session, dummyConnection, realm, formData);
+        Assert.assertEquals(AuthenticationStatus.SUCCESS, status);
+    }
+
+    @Test
+    public void authFormWithTotpPasswordTokenInvalidKey() {
+        authFormWithTotpPasswordToken();
+
+        formData.remove(CredentialRepresentation.PASSWORD_TOKEN);
+        String passwordToken = new JWSBuilder().jsonContent(new PasswordToken(realm.getName(), user.getId())).rsa256(realm.getPrivateKey());
+        formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
+
+        KeycloakModelUtils.generateRealmKeys(realm);
+
+        AuthenticationStatus status = am.authenticateForm(session, dummyConnection, realm, formData);
+        Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
+    }
+
+    @Test
+    public void authFormWithTotpPasswordTokenInvalidRealm() {
+        authFormWithTotpPasswordToken();
+
+        formData.remove(CredentialRepresentation.PASSWORD_TOKEN);
+        String passwordToken = new JWSBuilder().jsonContent(new PasswordToken("invalid", user.getId())).rsa256(realm.getPrivateKey());
+        formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
+
+        AuthenticationStatus status = am.authenticateForm(session, dummyConnection, realm, formData);
+        Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
+    }
+
+    @Test
+    public void authFormWithTotpPasswordTokenInvalidUser() {
+        authFormWithTotpPasswordToken();
+
+        formData.remove(CredentialRepresentation.PASSWORD_TOKEN);
+        String passwordToken = new JWSBuilder().jsonContent(new PasswordToken(realm.getName(), "invalid")).rsa256(realm.getPrivateKey());
+        formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
+
+        AuthenticationStatus status = am.authenticateForm(session, dummyConnection, realm, formData);
+        Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
+    }
+
+    @Test
+    public void authFormWithTotpPasswordTokenExpired() throws InterruptedException {
+        int lifespan = realm.getAccessCodeLifespanUserAction();
+
+        try {
+            authFormWithTotpPasswordToken();
+
+            realm.setAccessCodeLifespanUserAction(1);
+
+            formData.remove(CredentialRepresentation.PASSWORD_TOKEN);
+            String passwordToken = new JWSBuilder().jsonContent(new PasswordToken(realm.getName(), "invalid")).rsa256(realm.getPrivateKey());
+            formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
+
+            Thread.sleep(2000);
+
+            AuthenticationStatus status = am.authenticateForm(session, dummyConnection, realm, formData);
+            Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
+        } finally {
+            realm.setAccessCodeLifespanUserAction(lifespan);
+        }
+    }
+
     @Before
     @Override
     public void before() throws Exception {
@@ -157,8 +257,9 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         realm.setAccessCodeLifespan(100);
         realm.setEnabled(true);
         realm.setName("TestAuth");
-        realm.setPrivateKeyPem("0234234");
-        realm.setPublicKeyPem("0234234");
+
+        KeycloakModelUtils.generateRealmKeys(realm);
+
         realm.setAccessTokenLifespan(1000);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
 

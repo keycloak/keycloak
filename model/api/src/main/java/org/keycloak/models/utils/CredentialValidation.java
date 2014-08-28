@@ -1,11 +1,16 @@
 package org.keycloak.models.utils;
 
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.PasswordToken;
+import org.keycloak.util.Time;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -55,6 +60,28 @@ public class CredentialValidation {
         }
         return validated;
 
+    }
+
+    public static boolean validPasswordToken(RealmModel realm, UserModel user, String encodedPasswordToken) {
+        JWSInput jws = new JWSInput(encodedPasswordToken);
+        if (!RSAProvider.verify(jws, realm.getPublicKey())) {
+            return false;
+        }
+        try {
+            PasswordToken passwordToken = jws.readJsonContent(PasswordToken.class);
+            if (!passwordToken.getRealm().equals(realm.getName())) {
+                return false;
+            }
+            if (!passwordToken.getUser().equals(user.getId())) {
+                return false;
+            }
+            if (Time.currentTime() - passwordToken.getTimestamp() > realm.getAccessCodeLifespanUserAction()) {
+                return false;
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     public static boolean validTOTP(RealmModel realm, UserModel user, String otp) {
@@ -112,6 +139,10 @@ public class CredentialValidation {
     private static boolean validCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {
         if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
             if (!validPassword(realm, user, credential.getValue())) {
+                return false;
+            }
+        } else if (credential.getType().equals(UserCredentialModel.PASSWORD_TOKEN)) {
+            if (!validPasswordToken(realm, user, credential.getValue())) {
                 return false;
             }
         } else if (credential.getType().equals(UserCredentialModel.TOTP)) {

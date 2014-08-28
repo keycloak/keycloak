@@ -32,10 +32,13 @@ public class LoginBean {
 
     private String password;
 
+    private String passwordToken;
+
     public LoginBean(MultivaluedMap<String, String> formData){
         if (formData != null) {
             username = formData.getFirst("username");
             password = formData.getFirst("password");
+            passwordToken = formData.getFirst("password-token");
         }
     }
 
@@ -47,4 +50,7 @@ public class LoginBean {
         return password;
     }
 
+    public String getPasswordToken() {
+        return passwordToken;
+    }
 }

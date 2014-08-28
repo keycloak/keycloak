@@ -8,6 +8,7 @@ import java.util.UUID;
  */
 public class UserCredentialModel {
     public static final String PASSWORD = "password";
+    public static final String PASSWORD_TOKEN = "password-token";
 
     // Secret is same as password but it is not hashed
     public static final String SECRET = "secret";
@@ -25,6 +26,12 @@ public class UserCredentialModel {
         UserCredentialModel model = new UserCredentialModel();
         model.setType(PASSWORD);
         model.setValue(password);
+        return model;
+    }
+    public static UserCredentialModel passwordToken(String passwordToken) {
+        UserCredentialModel model = new UserCredentialModel();
+        model.setType(PASSWORD_TOKEN);
+        model.setValue(passwordToken);
         return model;
     }
 

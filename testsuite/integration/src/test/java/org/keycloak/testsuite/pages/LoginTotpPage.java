@@ -33,6 +33,9 @@ public class LoginTotpPage extends AbstractPage {
     @FindBy(id = "totp")
     private WebElement totpInput;
 
+    @FindBy(id = "password-token")
+    private WebElement passwordToken;
+
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
