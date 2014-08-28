@@ -265,27 +265,35 @@ public class AuthenticationManager {
 
         if (types.contains(CredentialRepresentation.PASSWORD)) {
             List<UserCredentialModel> credentials = new LinkedList<UserCredentialModel>();
+
             String password = formData.getFirst(CredentialRepresentation.PASSWORD);
-            if (password == null) {
+            if (password != null) {
+                credentials.add(UserCredentialModel.password(password));
+            }
+
+            String passwordToken = formData.getFirst(CredentialRepresentation.PASSWORD_TOKEN);
+            if (passwordToken != null) {
+                credentials.add(UserCredentialModel.passwordToken(passwordToken));
+            }
+
+            String totp = formData.getFirst(CredentialRepresentation.TOTP);
+            if (totp != null) {
+                credentials.add(UserCredentialModel.totp(totp));
+            }
+
+            if (password == null && passwordToken == null) {
                 logger.debug("Password not provided");
                 return AuthenticationStatus.MISSING_PASSWORD;
             }
-            credentials.add(UserCredentialModel.password(password));
 
-            if (user.isTotp()) {
-                String token = formData.getFirst(CredentialRepresentation.TOTP);
-                if (token == null) {
-                    logger.debug("TOTP token not provided");
-                    return AuthenticationStatus.MISSING_TOTP;
-                }
-                credentials.add(UserCredentialModel.totp(token));
-
-             }
-
-            logger.debug("validating password for user: " + username);
+            logger.debugv("validating password for user: {0}", username);
 
             if (!session.users().validCredentials(realm, user, credentials)) {
                 return AuthenticationStatus.INVALID_CREDENTIALS;
+            }
+
+            if (user.isTotp() && totp == null) {
+                return AuthenticationStatus.MISSING_TOTP;
             }
 
             if (!user.getRequiredActions().isEmpty()) {

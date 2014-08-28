@@ -94,6 +94,8 @@ public class LoginTotpTest {
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 
+    private int lifespan;
+
     @Before
     public void before() throws MalformedURLException {
         totp = new TimeBasedOTP();
@@ -133,14 +135,45 @@ public class LoginTotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "invalid");
 
-        loginTotpPage.assertCurrent();
-
-        loginTotpPage.login(totp.generate("totpSecret"));
-
         loginPage.assertCurrent();
+
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).session((String) null).assertEvent();
+    }
+
+    @Test
+    public void loginWithTotpExpiredPasswordToken() throws Exception {
+        try {
+            keycloakRule.configure(new KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    lifespan = appRealm.getAccessCodeLifespanUserAction();
+                    appRealm.setAccessCodeLifespanUserAction(1);
+                }
+            });
+
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+
+            loginTotpPage.assertCurrent();
+
+            Thread.sleep(2000);
+
+            loginTotpPage.login(totp.generate("totpSecret"));
+
+            loginPage.assertCurrent();
+            Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+            events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).session((String) null).assertEvent();
+        } finally {
+            keycloakRule.configure(new KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setAccessCodeLifespanUserAction(lifespan);
+                }
+            });
+        }
     }
 
 }
