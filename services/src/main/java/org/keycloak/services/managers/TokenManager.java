@@ -3,8 +3,8 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.audit.Audit;
-import org.keycloak.audit.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -63,10 +63,10 @@ public class TokenManager {
         return new AccessCode(realm, clientSession);
     }
 
-    public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
+    public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, EventBuilder event) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(realm, encodedRefreshToken);
 
-        audit.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
+        event.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
 
         UserModel user = session.users().getUserById(refreshToken.getSubject(), realm);
         if (user == null) {
@@ -290,8 +290,8 @@ public class TokenManager {
         return encodedToken;
     }
 
-    public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client, Audit audit) {
-        return new AccessTokenResponseBuilder(realm, client, audit);
+    public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client, EventBuilder event) {
+        return new AccessTokenResponseBuilder(realm, client, event);
     }
 
     public class AccessTokenResponseBuilder {
@@ -300,12 +300,12 @@ public class TokenManager {
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
-        Audit audit;
+        EventBuilder event;
 
-        public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, Audit audit) {
+        public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event) {
             this.realm = realm;
             this.client = client;
-            this.audit = audit;
+            this.event = event;
         }
 
         public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {
@@ -379,14 +379,14 @@ public class TokenManager {
 
         public AccessTokenResponse build() {
             if (accessToken != null) {
-                audit.detail(Details.TOKEN_ID, accessToken.getId());
+                event.detail(Details.TOKEN_ID, accessToken.getId());
             }
 
             if (refreshToken != null) {
-                if (audit.getEvent().getDetails().containsKey(Details.REFRESH_TOKEN_ID)) {
-                    audit.detail(Details.UPDATED_REFRESH_TOKEN_ID, refreshToken.getId());
+                if (event.getEvent().getDetails().containsKey(Details.REFRESH_TOKEN_ID)) {
+                    event.detail(Details.UPDATED_REFRESH_TOKEN_ID, refreshToken.getId());
                 } else {
-                    audit.detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
+                    event.detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
                 }
             }
 

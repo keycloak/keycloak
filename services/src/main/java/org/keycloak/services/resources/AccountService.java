@@ -28,11 +28,11 @@ import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
-import org.keycloak.audit.Audit;
-import org.keycloak.audit.AuditProvider;
-import org.keycloak.audit.Details;
-import org.keycloak.audit.Event;
-import org.keycloak.audit.EventType;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -92,18 +92,18 @@ public class AccountService {
 
     private static final Logger logger = Logger.getLogger(AccountService.class);
 
-    private static final EventType[] AUDIT_EVENTS = {EventType.LOGIN, EventType.LOGOUT, EventType.REGISTER, EventType.REMOVE_SOCIAL_LINK, EventType.REMOVE_TOTP, EventType.SEND_RESET_PASSWORD,
+    private static final EventType[] LOG_EVENTS = {EventType.LOGIN, EventType.LOGOUT, EventType.REGISTER, EventType.REMOVE_SOCIAL_LINK, EventType.REMOVE_TOTP, EventType.SEND_RESET_PASSWORD,
             EventType.SEND_VERIFY_EMAIL, EventType.SOCIAL_LINK, EventType.UPDATE_EMAIL, EventType.UPDATE_PASSWORD, EventType.UPDATE_PROFILE, EventType.UPDATE_TOTP, EventType.VERIFY_EMAIL};
 
-    private static final Set<String> AUDIT_DETAILS = new HashSet<String>();
+    private static final Set<String> LOG_DETAILS = new HashSet<String>();
     static {
-        AUDIT_DETAILS.add(Details.UPDATED_EMAIL);
-        AUDIT_DETAILS.add(Details.EMAIL);
-        AUDIT_DETAILS.add(Details.PREVIOUS_EMAIL);
-        AUDIT_DETAILS.add(Details.USERNAME);
-        AUDIT_DETAILS.add(Details.REMEMBER_ME);
-        AUDIT_DETAILS.add(Details.REGISTER_METHOD);
-        AUDIT_DETAILS.add(Details.AUTH_METHOD);
+        LOG_DETAILS.add(Details.UPDATED_EMAIL);
+        LOG_DETAILS.add(Details.EMAIL);
+        LOG_DETAILS.add(Details.PREVIOUS_EMAIL);
+        LOG_DETAILS.add(Details.USERNAME);
+        LOG_DETAILS.add(Details.REMEMBER_ME);
+        LOG_DETAILS.add(Details.REGISTER_METHOD);
+        LOG_DETAILS.add(Details.AUTH_METHOD);
     }
 
     private RealmModel realm;
@@ -125,20 +125,20 @@ public class AccountService {
 
     private final AppAuthManager authManager;
     private final ApplicationModel application;
-    private Audit audit;
+    private EventBuilder event;
     private AccountProvider account;
     private Auth auth;
-    private AuditProvider auditProvider;
+    private EventStoreProvider eventStore;
 
-    public AccountService(RealmModel realm, ApplicationModel application, Audit audit) {
+    public AccountService(RealmModel realm, ApplicationModel application, EventBuilder event) {
         this.realm = realm;
         this.application = application;
-        this.audit = audit;
+        this.event = event;
         this.authManager = new AppAuthManager();
     }
 
     public void init() {
-        auditProvider = session.getProvider(AuditProvider.class);
+        eventStore = session.getProvider(EventStoreProvider.class);
 
         account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
 
@@ -170,10 +170,10 @@ public class AccountService {
 
         }
 
-        boolean auditEnabled = auditProvider != null && realm.isAuditEnabled();
+        boolean eventsEnabled = eventStore != null && realm.isEventsEnabled();
 
         // todo find out from federation if password is updatable
-        account.setFeatures(realm.isSocial(), auditEnabled, true);
+        account.setFeatures(realm.isSocial(), eventsEnabled, true);
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
@@ -282,12 +282,12 @@ public class AccountService {
     @GET
     public Response logPage() {
         if (auth != null) {
-            List<Event> events = auditProvider.createQuery().event(AUDIT_EVENTS).user(auth.getUser().getId()).maxResults(30).getResultList();
+            List<Event> events = eventStore.createQuery().type(LOG_EVENTS).user(auth.getUser().getId()).maxResults(30).getResultList();
             for (Event e : events) {
                 if (e.getDetails() != null) {
                     Iterator<Map.Entry<String, String>> itr = e.getDetails().entrySet().iterator();
                     while (itr.hasNext()) {
-                        if (!AUDIT_DETAILS.contains(itr.next().getKey())) {
+                        if (!LOG_DETAILS.contains(itr.next().getKey())) {
                             itr.remove();
                         }
                     }
@@ -353,11 +353,11 @@ public class AccountService {
 
             user.setEmail(formData.getFirst("email"));
 
-            audit.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).success();
+            event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).success();
 
             if (emailChanged) {
                 user.setEmailVerified(false);
-                audit.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
+                event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
             }
             setReferrerOnPage();
             return account.setSuccess("accountUpdated").createResponse(AccountPages.ACCOUNT);
@@ -379,7 +379,7 @@ public class AccountService {
         UserModel user = auth.getUser();
         user.setTotp(false);
 
-        audit.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
+        event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         setReferrerOnPage();
         return account.setSuccess("successTotpRemoved").createResponse(AccountPages.TOTP);
@@ -455,7 +455,7 @@ public class AccountService {
 
         user.setTotp(true);
 
-        audit.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
+        event.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         setReferrerOnPage();
         return account.setSuccess("successTotp").createResponse(AccountPages.TOTP);
@@ -525,7 +525,7 @@ public class AccountService {
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
 
-        audit.event(EventType.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
+        event.event(EventType.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
 
         setReferrerOnPage();
         return account.setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
@@ -588,7 +588,7 @@ public class AccountService {
 
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
 
-                        audit.event(EventType.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
+                        event.event(EventType.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
                                 .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())
                                 .success();
 

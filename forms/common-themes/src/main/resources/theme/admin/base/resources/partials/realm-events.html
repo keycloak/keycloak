@@ -1,0 +1,102 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li data-ng-class="(path[2] == 'events') && 'active'"><a href="#/realms/{{realm.realm}}/events">View</a></li>
+        <li data-ng-class="(path[2] == 'events-settings') && 'active'"><a href="#/realms/{{realm.realm}}/events-settings">Config</a></li>
+    </ul>
+    <h2></h2>
+
+    <div id="content">
+        <h2><span>{{realm.realm}}</span> Events <span tooltip-placement="right" tooltip="Displays saved events for the realm. Events are related to user accounts, for example a user login. To enable persisted events go to config." class="fa fa-info-circle"></span></h2>
+
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="4">
+                    <div class="pull-right">
+                        <select data-ng-model="query.max" data-ng-click="update()" class="btn btn-default">
+                            <option>5</option>
+                            <option>10</option>
+                            <option>50</option>
+                            <option>100</option>
+                        </select>
+                        <button class="btn btn-default" data-ng-click="filter = !filter">
+                            <span class="glyphicon glyphicon-plus" data-ng-show="!filter"></span>
+                            <span class="glyphicon glyphicon-minus" data-ng-show="filter"></span>
+                            Filter
+                        </button>
+                        <button class="btn btn-default btn-primary" data-ng-click="update()">Update</button>
+                    </div>
+                    <form class="form-horizontal">
+                        <div class="form-group" data-ng-show="filter">
+                            <label class="col-sm-2 control-label" for="type">Type</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" type="text" id="type" name="event" data-ng-model="query.type">
+                            </div>
+                        </div>
+                        <div class="form-group" data-ng-show="filter">
+                            <label class="col-sm-2 control-label" for="client">Client</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" type="text" id="client" name="client" data-ng-model="query.client">
+                            </div>
+                        </div>
+                        <div class="form-group" data-ng-show="filter">
+                            <label class="col-sm-2 control-label" for="user">User</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" type="text" id="user" name="user" data-ng-model="query.user">
+                            </div>
+                        </div>
+                    </form>
+                </th>
+            </tr>
+            <tr>
+                <th width="100px">Time</th>
+                <th width="180px">Event</th>
+                <th>Details</th>
+            </tr>
+            </thead>
+            <tfoot>
+            <tr>
+                <td colspan="7">
+                    <div class="table-nav">
+                        <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">First page</button>
+                        <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">Previous page</button>
+                        <button data-ng-click="nextPage()" class="next" ng-disabled="events.length < query.max">Next page</button>
+                    </div>
+                </td>
+            </tr>
+            </tfoot>
+            <tbody>
+                <tr ng-repeat="event in events">
+                    <td>{{event.time|date:'shortDate'}}<br>{{event.time|date:'mediumTime'}}</td>
+                    <td data-ng-class="event.error && 'events-error' || 'events-success'">{{event.type}}</td>
+                    <td>
+                        <table class="table table-striped table-bordered">
+                            <tr><td width="100px">Client</td><td>{{event.clientId}}</td></tr>
+                            <tr><td>User</td><td>{{event.userId}}</td></tr>
+                            <tr><td>IP Address</td><td>{{event.ipAddress}}</td></tr>
+                            <tr data-ng-show="event.error"><td>Error</td><td>{{event.error}}</td></tr>
+                            <tr>
+                                <td>Details</td>
+                                <td>
+                                    <button type="button" class="btn btn-default btn-xs" ng-click="event.collapse = !event.collapse">
+                                        <span class="glyphicon glyphicon-plus" data-ng-show="!event.collapse"></span>
+                                        <span class="glyphicon glyphicon-minus" data-ng-show="event.collapse"></span>
+                                    </button>
+                                    <table data-ng-show="event.collapse" class="table table-striped table-bordered">
+                                        <tr ng-repeat="(key, value) in event.details">
+                                            <td>{{key}}</td>
+                                            <td>{{value}}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>

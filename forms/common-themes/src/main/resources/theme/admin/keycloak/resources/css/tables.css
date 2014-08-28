@@ -64,11 +64,11 @@ table tfoot tr .table-nav span {
 }
 
 
-td.audit-success {
+td.events-success {
     background-color: #E4F1E1 !important;
 }
 
-td.audit-error {
+td.events-error {
     background-color: #F8E7E7 !important;
 }
 

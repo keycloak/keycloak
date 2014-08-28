@@ -26,12 +26,11 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.audit.Audit;
-import org.keycloak.audit.Details;
-import org.keycloak.audit.Errors;
-import org.keycloak.audit.EventType;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -42,13 +41,12 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.managers.AuditManager;
+import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
-import org.keycloak.services.resources.flows.OAuthRedirect;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.SocialAccessDeniedException;
@@ -124,7 +122,7 @@ public class SocialResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
 
-        Audit audit = new AuditManager(realm, session, clientConnection).createAudit()
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder()
                 .event(EventType.LOGIN)
                 .detail(Details.RESPONSE_TYPE, initialRequest.get(OAuth2Constants.RESPONSE_TYPE))
                 .detail(Details.AUTH_METHOD, authMethod);
@@ -133,7 +131,7 @@ public class SocialResource {
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
-            audit.error(Errors.REALM_DISABLED);
+            event.error(Errors.REALM_DISABLED);
             return oauth.forwardToSecurityFailure("Realm not enabled.");
         }
 
@@ -143,15 +141,15 @@ public class SocialResource {
         String state = initialRequest.get(OAuth2Constants.STATE);
         String responseType = initialRequest.get(OAuth2Constants.RESPONSE_TYPE);
 
-        audit.client(clientId).detail(Details.REDIRECT_URI, redirectUri);
+        event.client(clientId).detail(Details.REDIRECT_URI, redirectUri);
 
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
-            audit.error(Errors.CLIENT_NOT_FOUND);
+            event.error(Errors.CLIENT_NOT_FOUND);
             return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
         if (!client.isEnabled()) {
-            audit.error(Errors.CLIENT_DISABLED);
+            event.error(Errors.CLIENT_DISABLED);
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
@@ -176,14 +174,14 @@ public class SocialResource {
             queryParms.putSingle(OAuth2Constants.REDIRECT_URI, redirectUri);
             queryParms.putSingle(OAuth2Constants.RESPONSE_TYPE, responseType);
 
-            audit.error(Errors.REJECTED_BY_USER);
+            event.error(Errors.REJECTED_BY_USER);
             return  Flows.forms(session, realm, client, uriInfo).setQueryParams(queryParms).setWarning("Access denied").createLogin();
         } catch (SocialProviderException e) {
             logger.error("Failed to process social callback", e);
             return oauth.forwardToSecurityFailure("Failed to process social callback");
         }
 
-        audit.detail(Details.USERNAME, socialUser.getId() + "@" + provider.getId());
+        event.detail(Details.USERNAME, socialUser.getId() + "@" + provider.getId());
 
         try {
             SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getId(), socialUser.getUsername());
@@ -194,32 +192,32 @@ public class SocialResource {
             if (userId != null) {
                 UserModel authenticatedUser = session.users().getUserById(userId, realm);
 
-                audit.event(EventType.SOCIAL_LINK).user(userId);
+                event.event(EventType.SOCIAL_LINK).user(userId);
 
                 if (user != null) {
-                    audit.error(Errors.SOCIAL_ID_IN_USE);
+                    event.error(Errors.SOCIAL_ID_IN_USE);
                     return oauth.forwardToSecurityFailure("This social account is already linked to other user");
                 }
 
                 if (!authenticatedUser.isEnabled()) {
-                    audit.error(Errors.USER_DISABLED);
+                    event.error(Errors.USER_DISABLED);
                     return oauth.forwardToSecurityFailure("User is disabled");
                 }
 
                 if (!authenticatedUser.hasRole(realm.getApplicationByName(Constants.ACCOUNT_MANAGEMENT_APP).getRole(AccountRoles.MANAGE_ACCOUNT))) {
-                    audit.error(Errors.NOT_ALLOWED);
+                    event.error(Errors.NOT_ALLOWED);
                     return oauth.forwardToSecurityFailure("Insufficient permissions to link social account");
                 }
 
                 if (redirectUri == null) {
-                    audit.error(Errors.INVALID_REDIRECT_URI);
+                    event.error(Errors.INVALID_REDIRECT_URI);
                     return oauth.forwardToSecurityFailure("Unknown redirectUri");
                 }
 
                 session.users().addSocialLink(realm, authenticatedUser, socialLink);
                 logger.debugv("Social provider {0} linked with user {1}", provider.getId(), authenticatedUser.getUsername());
 
-                audit.success();
+                event.success();
                 return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
             }
 
@@ -236,26 +234,26 @@ public class SocialResource {
 
                 session.users().addSocialLink(realm, user, socialLink);
 
-                audit.clone().user(user).event(EventType.REGISTER)
+                event.clone().user(user).event(EventType.REGISTER)
                         .detail(Details.REGISTER_METHOD, "social@" + provider.getId())
                         .detail(Details.EMAIL, socialUser.getEmail())
                         .removeDetail("auth_method")
                         .success();
             }
 
-            audit.user(user);
+            event.user(user);
 
             if (!user.isEnabled()) {
-                audit.error(Errors.USER_DISABLED);
+                event.error(Errors.USER_DISABLED);
                 return oauth.forwardToSecurityFailure("Your account is not enabled.");
             }
 
             String username = socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider();
 
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), authMethod, false);
-            audit.session(userSession);
+            event.session(userSession);
 
-            Response response = oauth.processAccessCode(scope, state, redirectUri, client, user, userSession, audit);
+            Response response = oauth.processAccessCode(scope, state, redirectUri, client, user, userSession, event);
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
@@ -275,7 +273,7 @@ public class SocialResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
 
-        Audit audit = new AuditManager(realm, session, clientConnection).createAudit()
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder()
                 .event(EventType.LOGIN).client(clientId)
                 .detail(Details.REDIRECT_URI, redirectUri)
                 .detail(Details.RESPONSE_TYPE, "code")
@@ -283,23 +281,23 @@ public class SocialResource {
 
         SocialProvider provider = SocialLoader.load(providerId);
         if (provider == null) {
-            audit.error(Errors.SOCIAL_PROVIDER_NOT_FOUND);
+            event.error(Errors.SOCIAL_PROVIDER_NOT_FOUND);
             return Flows.forms(session, realm, null, uriInfo).setError("Social provider not found").createErrorPage();
         }
 
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
-            audit.error(Errors.CLIENT_NOT_FOUND);
+            event.error(Errors.CLIENT_NOT_FOUND);
             return Flows.forms(session, realm, null, uriInfo).setError("Unknown login requester.").createErrorPage();
         }
 
         if (!client.isEnabled()) {
-            audit.error(Errors.CLIENT_DISABLED);
+            event.error(Errors.CLIENT_DISABLED);
             return Flows.forms(session, realm, null, uriInfo).setError("Login requester not enabled.").createErrorPage();
         }
         redirectUri = TokenService.verifyRedirectUri(uriInfo, redirectUri, realm, client);
         if (redirectUri == null) {
-            audit.error(Errors.INVALID_REDIRECT_URI);
+            event.error(Errors.INVALID_REDIRECT_URI);
             return Flows.forms(session, realm, null, uriInfo).setError("Invalid redirect_uri.").createErrorPage();
         }
 

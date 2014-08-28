@@ -329,7 +329,7 @@ keycloak-war-dist-all-1.0-rc-2-SNAPSHOT/
                 in your favourite editor, then change:
 
 <programlisting><![CDATA[
-"audit": {
+"eventsStore": {
     "provider": "jpa",
     "jpa": {
         "exclude-events": [ "REFRESH_TOKEN" ]
@@ -348,7 +348,7 @@ keycloak-war-dist-all-1.0-rc-2-SNAPSHOT/
                 to:
 
                 <programlisting><![CDATA[
-"audit": {
+"eventsStore": {
     "provider": "mongo",
 },
 

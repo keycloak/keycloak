@@ -15,5 +15,5 @@
     <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'oauth-clients' || path[1] == 'oauth-client') && 'active'"><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>
     <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'sessions' || path[2] == 'token-settings') && 'active'"><a href="#/realms/{{realm.realm}}/sessions/realm">Sessions and Tokens</a></li>
     <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'defense') && 'active'"><a href="#/realms/{{realm.realm}}/defense/headers">Security Defenses</a></li>
-    <li data-ng-show="access.viewAudit" data-ng-class="(path[2] == 'audit' || path[2] == 'audit-settings') && 'active'"><a href="#/realms/{{realm.realm}}/audit">Audit</a></li>
+    <li data-ng-show="access.viewEvents" data-ng-class="(path[2] == 'events' || path[2] == 'events-settings') && 'active'"><a href="#/realms/{{realm.realm}}/events">Events</a></li>
 </ul>

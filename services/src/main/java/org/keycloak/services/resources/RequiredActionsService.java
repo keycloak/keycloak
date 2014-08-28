@@ -25,10 +25,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.audit.Audit;
-import org.keycloak.audit.Details;
-import org.keycloak.audit.Errors;
-import org.keycloak.audit.EventType;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.login.LoginFormsProvider;
@@ -94,12 +94,12 @@ public class RequiredActionsService {
 
     private TokenManager tokenManager;
 
-    private Audit audit;
+    private EventBuilder event;
 
-    public RequiredActionsService(RealmModel realm, TokenManager tokenManager, Audit audit) {
+    public RequiredActionsService(RealmModel realm, TokenManager tokenManager, EventBuilder event) {
         this.realm = realm;
         this.tokenManager = tokenManager;
-        this.audit = audit;
+        this.event = event;
     }
 
     @Path("profile")
@@ -113,7 +113,7 @@ public class RequiredActionsService {
 
         UserModel user = getUser(accessCode);
 
-        initAudit(accessCode);
+        initEvent(accessCode);
 
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
@@ -131,10 +131,10 @@ public class RequiredActionsService {
 
         user.removeRequiredAction(RequiredAction.UPDATE_PROFILE);
 
-        audit.clone().event(EventType.UPDATE_PROFILE).success();
+        event.clone().event(EventType.UPDATE_PROFILE).success();
         if (emailChanged) {
             user.setEmailVerified(false);
-            audit.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
+            event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
 
         return redirectOauth(user, accessCode);
@@ -151,7 +151,7 @@ public class RequiredActionsService {
 
         UserModel user = getUser(accessCode);
 
-        initAudit(accessCode);
+        initEvent(accessCode);
 
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
@@ -172,7 +172,7 @@ public class RequiredActionsService {
 
         user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP);
 
-        audit.clone().event(EventType.UPDATE_TOTP).success();
+        event.clone().event(EventType.UPDATE_TOTP).success();
 
         return redirectOauth(user, accessCode);
     }
@@ -188,7 +188,7 @@ public class RequiredActionsService {
 
         UserModel user = getUser(accessCode);
 
-        initAudit(accessCode);
+        initEvent(accessCode);
 
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
@@ -208,7 +208,7 @@ public class RequiredActionsService {
 
         user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
 
-        audit.clone().event(EventType.UPDATE_PASSWORD).success();
+        event.clone().event(EventType.UPDATE_PASSWORD).success();
 
         // Redirect to account management to login if password reset was initiated by admin
         if (accessCode.getSessionState() == null) {
@@ -230,13 +230,13 @@ public class RequiredActionsService {
 
             UserModel user = getUser(accessCode);
 
-            initAudit(accessCode);
+            initEvent(accessCode);
 
             user.setEmailVerified(true);
 
             user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
 
-            audit.clone().event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
+            event.clone().event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
 
             return redirectOauth(user, accessCode);
         } else {
@@ -245,7 +245,7 @@ public class RequiredActionsService {
                 return unauthorized();
             }
 
-            initAudit(accessCode);
+            initEvent(accessCode);
 
             return Flows.forms(session, realm, null, uriInfo).setAccessCode(accessCode.getCode()).setUser(accessCode.getUser())
                     .createResponse(RequiredAction.VERIFY_EMAIL);
@@ -290,7 +290,7 @@ public class RequiredActionsService {
                     "Login requester not enabled.");
         }
 
-        audit.event(EventType.SEND_RESET_PASSWORD).client(clientId)
+        event.event(EventType.SEND_RESET_PASSWORD).client(clientId)
                 .detail(Details.REDIRECT_URI, redirect)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "form")
@@ -302,10 +302,10 @@ public class RequiredActionsService {
         }
 
         if (user == null) {
-            audit.error(Errors.USER_NOT_FOUND);
+            event.error(Errors.USER_NOT_FOUND);
         } else {
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
-            audit.session(userSession);
+            event.session(userSession);
 
             AccessCode accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, session, realm, client, user, userSession);
             accessCode.setRequiredAction(RequiredAction.UPDATE_PASSWORD);
@@ -319,7 +319,7 @@ public class RequiredActionsService {
 
                 this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
 
-                audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
+                event.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
             } catch (EmailException e) {
                 logger.error("Failed to send password reset email", e);
                 return Flows.forms(this.session, realm, client, uriInfo).setError("emailSendError").createErrorPage();
@@ -375,17 +375,17 @@ public class RequiredActionsService {
                 AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
                 return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager).redirectError(accessCode.getClient(), "access_denied", accessCode.getState(), accessCode.getRedirectUri());
             }
-            audit.session(userSession);
+            event.session(userSession);
 
-            audit.success();
+            event.success();
 
             return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager).redirectAccessCode(accessCode,
                     userSession, accessCode.getState(), accessCode.getRedirectUri());
         }
     }
 
-    private void initAudit(AccessCode accessCode) {
-        audit.event(EventType.LOGIN).client(accessCode.getClient())
+    private void initEvent(AccessCode accessCode) {
+        event.event(EventType.LOGIN).client(accessCode.getClient())
                 .user(accessCode.getUser())
                 .session(accessCode.getSessionState())
                 .detail(Details.CODE_ID, accessCode.getCodeId())
@@ -395,10 +395,10 @@ public class RequiredActionsService {
         UserSessionModel userSession = accessCode.getSessionState() != null ? session.sessions().getUserSession(realm, accessCode.getSessionState()) : null;
 
         if (userSession != null) {
-            audit.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
-            audit.detail(Details.USERNAME, userSession.getLoginUsername());
+            event.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
+            event.detail(Details.USERNAME, userSession.getLoginUsername());
             if (userSession.isRememberMe()) {
-                audit.detail(Details.REMEMBER_ME, "true");
+                event.detail(Details.REMEMBER_ME, "true");
             }
         }
     }

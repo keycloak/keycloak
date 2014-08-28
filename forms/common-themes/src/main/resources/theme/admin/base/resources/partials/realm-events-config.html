@@ -1,0 +1,64 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li data-ng-class="(path[2] == 'events') && 'active'"><a href="#/realms/{{realm.realm}}/events">View</a></li>
+        <li data-ng-class="(path[2] == 'events-settings') && 'active'"><a href="#/realms/{{realm.realm}}/events-settings">Config</a></li>
+    </ul>
+    <h2></h2>
+    <div id="content">
+        <h2><span>{{realm.realm}}</span> Events Config</h2>
+
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageEvents">
+            <fieldset class="border-top">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="enabled">Save Events</label>
+                    <div class="col-sm-5">
+                        <input ng-model="eventsConfig.eventsEnabled" name="enabled" id="enabled" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="If enabled events are saved to the database which makes events available to the admin and account management consoles." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="access.manageEvents && eventsConfig.eventsEnabled">
+                    <label class="col-sm-2 control-label" for="password">Clear Events</label>
+                    <div class="col-sm-5">
+                        <button class="btn btn-danger" type="submit" data-ng-click="clearEvents()" >Clear Events</button>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Deletes all events in the database." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group input-select" data-ng-show="eventsConfig.eventsEnabled">
+                    <label class="col-sm-2 control-label" for="expiration">Expiration</label>
+                    <div class="col-sm-2">
+                        <input class="form-control" type="number" data-ng-model="eventsConfig.eventsExpiration" id="expiration" name="expiration" min="0"/>
+                    </div>
+                    <div class="col-sm-2 select-kc">
+                        <select name="expirationUnit" data-ng-model="eventsConfig.expirationUnit" >
+                            <option>Minutes</option>
+                            <option>Hours</option>
+                            <option>Days</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-1"></div>
+                    <span tooltip-placement="right" tooltip="Sets the expiration for events. Expired events are periodically deleted from the database." class="fa fa-info-circle"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="eventsListeners" class="control-label">Listeners</label>
+
+                    <div class="col-sm-5">
+                        <select ui-select2 ng-model="eventsConfig.eventsListeners" data-placeholder="Select an action..." multiple>
+                            <option ng-repeat="listener in eventListeners" value="{{listener}}">{{listener}}</option>
+                        </select>
+                    </div>
+
+                    <span tooltip-placement="right" tooltip="Configure what listeners receive events for the realm." class="fa fa-info-circle"></span>
+                </div>
+            </fieldset>
+
+            <div class="pull-right form-actions" data-ng-show="access.manageEvents">
+                <button data-kc-reset data-ng-show="changed">Clear changes</button>
+                <button data-kc-save data-ng-show="changed">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>

@@ -96,11 +96,11 @@
     </contributors>
 
     <modules>
-        <module>audit</module>
         <module>core</module>
         <module>core-jaxrs</module>
         <module>connections</module>
         <module>dependencies</module>
+        <module>events</module>
         <module>model</module>
         <module>integration</module>
         <module>picketlink</module>

@@ -47,8 +47,8 @@ module.factory('RealmLoader', function(Loader, Realm, $route, $q) {
 	});
 });
 
-module.factory('RealmAuditLoader', function(Loader, RealmAudit, $route, $q) {
-    return Loader.get(RealmAudit, function() {
+module.factory('RealmEventsConfigLoader', function(Loader, RealmEventsConfig, $route, $q) {
+    return Loader.get(RealmEventsConfig, function() {
         return {
             id : $route.current.params.realm
         }

@@ -164,8 +164,8 @@ module.factory('Realm', function($resource) {
     });
 });
 
-module.factory('RealmAudit', function($resource) {
-    return $resource(authUrl + '/admin/realms/:id/audit', {
+module.factory('RealmEventsConfig', function($resource) {
+    return $resource(authUrl + '/admin/realms/:id/events/config', {
         id : '@realm'
     }, {
         update : {
@@ -174,8 +174,8 @@ module.factory('RealmAudit', function($resource) {
     });
 });
 
-module.factory('RealmAuditEvents', function($resource) {
-    return $resource(authUrl + '/admin/realms/:id/audit/events', {
+module.factory('RealmEvents', function($resource) {
+    return $resource(authUrl + '/admin/realms/:id/events', {
         id : '@realm'
     });
 });

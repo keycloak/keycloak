@@ -25,8 +25,8 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.audit.Details;
-import org.keycloak.audit.EventType;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -72,7 +72,7 @@ public class ResetPasswordTest {
             creds.setValue("password");
 
             user.updateCredential(creds);
-            appRealm.setAuditListeners(Collections.singleton("dummy"));
+            appRealm.setEventsListeners(Collections.singleton("dummy"));
         }
     }));
 

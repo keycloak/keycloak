@@ -1,6 +1,6 @@
 package org.keycloak.email;
 
-import org.keycloak.audit.Event;
+import org.keycloak.events.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;

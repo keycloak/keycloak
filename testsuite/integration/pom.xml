@@ -288,7 +288,7 @@
                             <systemPropertyVariables>
                                 <keycloak.realm.provider>jpa</keycloak.realm.provider>
                                 <keycloak.user.provider>jpa</keycloak.user.provider>
-                                <keycloak.audit.provider>jpa</keycloak.audit.provider>
+                                <keycloak.eventStore.provider>jpa</keycloak.eventStore.provider>
                                 <keycloak.userSessions.provider>jpa</keycloak.userSessions.provider>
                             </systemPropertyVariables>
                         </configuration>

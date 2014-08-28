@@ -50,17 +50,17 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-audit-api</artifactId>
+            <artifactId>keycloak-events-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-audit-jpa</artifactId>
+            <artifactId>keycloak-events-jpa</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-audit-jboss-logging</artifactId>
+            <artifactId>keycloak-events-jboss-logging</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

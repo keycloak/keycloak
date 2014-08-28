@@ -197,17 +197,17 @@ public interface RealmModel extends RoleContainerModel {
 
     boolean removeRoleById(String id);
 
-    boolean isAuditEnabled();
+    boolean isEventsEnabled();
 
-    void setAuditEnabled(boolean enabled);
+    void setEventsEnabled(boolean enabled);
 
-    long getAuditExpiration();
+    long getEventsExpiration();
 
-    void setAuditExpiration(long expiration);
+    void setEventsExpiration(long expiration);
 
-    Set<String> getAuditListeners();
+    Set<String> getEventsListeners();
 
-    void setAuditListeners(Set<String> listeners);
+    void setEventsListeners(Set<String> listeners);
 
     ApplicationModel getMasterAdminApp();
 

@@ -1,7 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.audit.AuditListener;
+import org.keycloak.events.EventListenerProvider;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
@@ -26,7 +26,7 @@ public class ServerInfoAdminResource {
     private KeycloakSession session;
 
     /**
-     * Returns a list of themes, social providers, auth providers, and audit listeners available on this server
+     * Returns a list of themes, social providers, auth providers, and event listeners available on this server
      *
      * @return
      */
@@ -36,7 +36,7 @@ public class ServerInfoAdminResource {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         setSocialProviders(info);
         setThemes(info);
-        setAuditListeners(info);
+        setEventListeners(info);
         return info;
     }
 
@@ -60,12 +60,12 @@ public class ServerInfoAdminResource {
         Collections.sort(info.socialProviders);
     }
 
-    private void setAuditListeners(ServerInfoRepresentation info) {
-        info.auditListeners = new LinkedList<String>();
+    private void setEventListeners(ServerInfoRepresentation info) {
+        info.eventListeners = new LinkedList<String>();
 
-        Set<String> providers = session.listProviderIds(AuditListener.class);
+        Set<String> providers = session.listProviderIds(EventListenerProvider.class);
         if (providers != null) {
-            info.auditListeners.addAll(providers);
+            info.eventListeners.addAll(providers);
         }
     }
 
@@ -76,7 +76,7 @@ public class ServerInfoAdminResource {
         private List<String> socialProviders;
 
 
-        private List<String> auditListeners;
+        private List<String> eventListeners;
 
         public ServerInfoRepresentation() {
         }
@@ -89,8 +89,8 @@ public class ServerInfoAdminResource {
             return socialProviders;
         }
 
-        public List<String> getAuditListeners() {
-            return auditListeners;
+        public List<String> getEventListeners() {
+            return eventListeners;
         }
     }
 

@@ -1,0 +1,103 @@
+<chapter id="events">
+    <title>Events</title>
+    <para>
+        Keycloak provides an Events SPI that makes it possible to register listeners for user related events, for example
+        user logins. There are two interfaces that can be implemented, the first is a pure listener, the second is a events
+        store which listens for events, but is also required to store events. An events store provides a way for the admin
+        and account management consoles to view events.
+    </para>
+    <section>
+        <title>Event types</title>
+        <para>
+            Login events:
+            <itemizedlist>
+                <listitem>Login - A user has logged in</listitem>
+                <listitem>Register - A user has registered</listitem>
+                <listitem>Logout - A user has logged out</listitem>
+                <listitem>Code to Token - An application/client has exchanged a code for a token</listitem>
+                <listitem>Refresh Token - An application/client has refreshed a token</listitem>
+            </itemizedlist>
+        </para>
+        <para>
+            Account events:
+            <itemizedlist>
+                <listitem>Social Link - An account has been linked to a social provider</listitem>
+                <listitem>Remove Social Link - A social provider has been removed from an account</listitem>
+                <listitem>Update Email - The email address for an account has changed</listitem>
+                <listitem>Update Profile - The profile for an account has changed</listitem>
+                <listitem>Send Password Reset - A password reset email has been sent</listitem>
+                <listitem>Update Password - The password for an account has changed</listitem>
+                <listitem>Update TOTP - The TOTP settings for an account has changed</listitem>
+                <listitem>Remove TOTP - TOTP has been removed from an account</listitem>
+                <listitem>Send Verify Email - A email verification email has been sent</listitem>
+                <listitem>Verify Email - The email address for an account has been verified</listitem>
+            </itemizedlist>
+        </para>
+        <para>
+            For all events there is a corresponding error event.
+        </para>
+    </section>
+    <section>
+        <title>Event Listener</title>
+        <para>
+            Keycloak comes with an Email Event Listener and a JBogg Logging Event Listener. The Email Event Listener
+            sends an email to the users account when an event occurs. The JBoss Logging Event Listener writes to a log
+            file when an events occurs.
+        </para>
+        <para>
+            The Email Event Listener only supports the following events at the moment:
+            <itemizedlist>
+                <listitem>Login Error</listitem>
+                <listitem>Update Password</listitem>
+                <listitem>Update TOTP</listitem>
+                <listitem>Remove TOTP</listitem>
+            </itemizedlist>
+            You can exclude one or more events by editing <literal>standalone/configuration/keycloak-server.json</literal>
+            and adding for example:
+<programlisting><![CDATA[
+"eventListener": {
+    "email": {
+        "exclude-events": [ "UPDATE_TOTP", "REMOVE_TOTP" ]
+    }
+}
+]]></programlisting>
+        </para>
+    </section>
+
+    <section>
+        <title>Event Store</title>
+        <para>
+            Event Store listen for events and is expected to persist the events to make it possible to query for them
+            later. This is used by the admin console and account management to view events. Keycloak includes providers
+            to persist events to JPA and Mongo.
+        </para>
+        <para>
+            You can specify events to include or exclude by editing <literal>standalone/configuration/keycloak-server.json</literal>,
+        and adding for example:
+<programlisting><![CDATA[
+"eventsStore": {
+    "jpa": {
+        "exclude-events": [ "LOGIN", "REFRESH_TOKEN", "CODE_TO_TOKEN" ]
+    }
+}
+]]></programlisting>
+        </para>
+    </section>
+
+    <section>
+        <title>Configure Events Settings for Realm</title>
+        <para>
+            To enable persisting of events for a realm you first need to make sure you have a event store provider registered for Keycloak.
+            By default the JPA event store provider is registered. Once you've done that open the admin console, select the
+            realm you're configuring, select <literal>Events</literal>. Then click on <literal>Config</literal>.
+            You can enable storing events for your realm by toggling <literal>Save Events</literal> to ON. You can also set
+            an expiration on events. This will periodically delete events from the database that are older than the specified
+            time.
+        </para>
+        <para>
+            To configure listeners for a realm on the same page as above add one or more event listeners to the
+            <literal>Listeners</literal> select box. This will allow you to enable any registered event listeners with the
+            realm.
+        </para>
+    </section>
+</chapter>
