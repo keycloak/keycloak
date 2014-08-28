@@ -5,6 +5,7 @@ import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.Session;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
@@ -20,6 +21,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.ServerRequest;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -32,11 +34,10 @@ import java.io.InputStream;
 import java.util.logging.Logger;
 
 /**
- * Web deployment whose security is managed by a remote OAuth Skeleton Key
- * authentication server
+ * Web deployment whose security is managed by a remote OAuth Skeleton Key authentication server
  * <p/>
- * Redirects browser to remote authentication server if not logged in. Also
- * allows OAuth Bearer Token requests that contain a Skeleton Key bearer tokens.
+ * Redirects browser to remote authentication server if not logged in.  Also allows OAuth Bearer Token requests
+ * that contain a Skeleton Key bearer tokens.
  * 
  * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>
  * @version $Revision: 1 $
@@ -48,13 +49,33 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
-        if (event.getType() == Lifecycle.START_EVENT) {
+        if (Lifecycle.START_EVENT.equals(event.getType())) {
             try {
                 startDeployment();
             } catch (LifecycleException e) {
-                e.printStackTrace();
+            	log.severe("Error starting deployment. " + e.getMessage());
+            }
+        } else if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
+        	initInternal();
+        }
+    }
+    
+    @Override
+    public void logout(Request request) throws ServletException {
+        KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
+        if (ksc != null) {
+            request.removeAttribute(KeycloakSecurityContext.class.getName());
+            Session session = request.getSessionInternal(false);
+            if (session != null) {
+                session.removeNote(KeycloakSecurityContext.class.getName());
+                try {
+                    ServerRequest.invokeLogout(deploymentContext.getDeployment(), ksc.getToken().getSessionState());
+                } catch (Exception e) {
+                	log.severe("failed to invoke remote logout. " + e.getMessage());
+                }
             }
         }
+        super.logout(request);
     }
 
     public void startDeployment() throws LifecycleException {
@@ -151,7 +172,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
      * @param request
      */
     protected void checkKeycloakSession(Request request, HttpFacade facade) {
-        if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null) return;
+        if (request.getSessionInternal(false) == null || request.getPrincipal() == null) return;
         RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (session == null) return;
         // just in case session got serialized

@@ -1,5 +1,11 @@
 package org.keycloak.adapters.tomcat7;
 
+import java.io.IOException;
+import java.util.logging.Logger;
+
+import javax.management.ObjectName;
+import javax.servlet.ServletException;
+
 import org.apache.catalina.Container;
 import org.apache.catalina.Valve;
 import org.apache.catalina.connector.Request;
@@ -8,11 +14,6 @@ import org.apache.catalina.valves.ValveBase;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
-
-import javax.management.ObjectName;
-import javax.servlet.ServletException;
-import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * Pre-installed actions that must be authenticated
