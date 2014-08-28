@@ -59,6 +59,17 @@ public class CatalinaSecurityContextHelper {
                 subjectGroup.addMember(role);
             }
         }
+        
+        // add the CallerPrincipal group if none has been added in getRoleSets
+//        Group callerGroup = new SimpleGroup(SecurityConstants.CALLER_PRINCIPAL_GROUP);
+//        callerGroup.addMember(identity);
+//        principals.add(callerGroup);
+//        SecurityContext sc = SecurityContextAssociation.getSecurityContext();
+//        Principal userPrincipal = getPrincipal(subject);
+//        sc.getUtil().createSubjectInfo(userPrincipal, account, subject);
+//        List<String> rolesAsStringList = new ArrayList<String>();
+//        rolesAsStringList.addAll(roleSet);
+//        
         Principal userPrincipal = getPrincipal(subject);
         List<String> rolesAsStringList = new ArrayList<String>();
         rolesAsStringList.addAll(roleSet);
