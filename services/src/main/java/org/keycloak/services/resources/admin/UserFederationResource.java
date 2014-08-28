@@ -66,7 +66,6 @@ public class UserFederationResource {
     @Path("providers")
     @Produces("application/json")
     public List<UserFederationProviderFactoryRepresentation> getProviders() {
-        logger.info("get provider list");
         auth.requireView();
         List<UserFederationProviderFactoryRepresentation> providers = new LinkedList<UserFederationProviderFactoryRepresentation>();
         for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(UserFederationProvider.class)) {
@@ -75,7 +74,6 @@ public class UserFederationResource {
             rep.setOptions(((UserFederationProviderFactory)factory).getConfigurationOptions());
             providers.add(rep);
         }
-        logger.info("provider list.size() " + providers.size());
         return providers;
     }
 
@@ -89,7 +87,6 @@ public class UserFederationResource {
     @Path("providers/{id}")
     @Produces("application/json")
     public UserFederationProviderFactoryRepresentation getProvider(@PathParam("id") String id) {
-        logger.info("get provider list");
         auth.requireView();
         for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(UserFederationProvider.class)) {
             if (!factory.getId().equals(id)) {
@@ -113,7 +110,6 @@ public class UserFederationResource {
     @Path("instances")
     @Consumes("application/json")
     public Response createProviderInstance(UserFederationProviderRepresentation rep) {
-        logger.info("createProvider");
         auth.requireManage();
         String displayName = rep.getDisplayName();
         if (displayName != null && displayName.trim().equals("")) {
@@ -136,7 +132,6 @@ public class UserFederationResource {
     @Path("instances/{id}")
     @Consumes("application/json")
     public void updateProviderInstance(@PathParam("id") String id, UserFederationProviderRepresentation rep) {
-        logger.info("updateProvider");
         auth.requireManage();
         String displayName = rep.getDisplayName();
         if (displayName != null && displayName.trim().equals("")) {
@@ -158,7 +153,6 @@ public class UserFederationResource {
     @Path("instances/{id}")
     @Produces("application/json")
     public UserFederationProviderRepresentation getProviderInstance(@PathParam("id") String id) {
-        logger.info("getProvider");
         auth.requireView();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
             if (model.getId().equals(id)) {
@@ -176,7 +170,6 @@ public class UserFederationResource {
     @DELETE
     @Path("instances/{id}")
     public void deleteProviderInstance(@PathParam("id") String id) {
-        logger.info("deleteProvider");
         auth.requireManage();
         UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1, null, -1, -1, 0);
         realm.removeUserFederationProvider(model);
@@ -194,7 +187,6 @@ public class UserFederationResource {
     @Produces("application/json")
     @NoCache
     public List<UserFederationProviderRepresentation> getUserFederationInstances() {
-        logger.info("getUserFederationInstances");
         auth.requireManage();
         List<UserFederationProviderRepresentation> reps = new LinkedList<UserFederationProviderRepresentation>();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
@@ -213,7 +205,7 @@ public class UserFederationResource {
     @Path("sync/{id}")
     @NoCache
     public Response syncUsers(@PathParam("id") String providerId, @QueryParam("action") String action) {
-        logger.info("triggerSync");
+        logger.debug("Syncing users");
         auth.requireManage();
 
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
