@@ -255,6 +255,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
 
         realm = realmManager.createRealm("TestAuth");
         realm.setAccessCodeLifespan(100);
+        realm.setAccessCodeLifespanUserAction(100);
         realm.setEnabled(true);
         realm.setName("TestAuth");
 
