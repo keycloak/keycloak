@@ -504,7 +504,7 @@ public class AccountService {
         String passwordConfirm = formData.getFirst("password-confirm");
 
         if (requireCurrent) {
-            if (Validation.isEmpty(passwordNew)) {
+            if (Validation.isEmpty(password)) {
                 setReferrerOnPage();
                 return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
             }
@@ -514,6 +514,11 @@ public class AccountService {
                 setReferrerOnPage();
                 return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
             }
+        }
+
+        if (Validation.isEmpty(passwordNew)) {
+            setReferrerOnPage();
+            return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         }
 
         if (!passwordNew.equals(passwordConfirm)) {
@@ -690,6 +695,11 @@ public class AccountService {
 
     public static boolean isPasswordSet(UserModel user) {
         boolean passwordSet = false;
+
+        if (user.getFederationLink() != null) {
+            passwordSet = true;
+        }
+
         for (UserCredentialValueModel c : user.getCredentialsDirectly()) {
             if (c.getType().equals(CredentialRepresentation.PASSWORD)) {
                 passwordSet = true;
