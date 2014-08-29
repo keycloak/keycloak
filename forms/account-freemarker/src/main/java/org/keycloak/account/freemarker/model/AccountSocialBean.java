@@ -4,6 +4,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
@@ -52,7 +53,7 @@ public class AccountSocialBean {
         }
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        this.removeLinkPossible = availableLinks > 1 || user.getFederationLink() != null;
+        this.removeLinkPossible = availableLinks > 1 || user.getFederationLink() != null || AccountService.isPasswordSet(user);
     }
 
     private SocialLinkModel getSocialLink(Set<SocialLinkModel> userSocialLinks, String socialProviderId) {

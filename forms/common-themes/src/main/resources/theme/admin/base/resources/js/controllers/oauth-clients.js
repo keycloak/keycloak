@@ -152,6 +152,7 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
                 }, $scope.oauth, function() {
                     $scope.changed = false;
                     oauth = angular.copy($scope.oauth);
+                    $location.url("/realms/" + realm.realm + "/oauth-clients/" + oauth.name);
                     Notifications.success("Your changes have been saved to the oauth client.");
                 });
             }
@@ -279,7 +280,10 @@ module.controller('OAuthClientInstallationCtrl', function($scope, realm, install
     $scope.realm = realm;
     $scope.oauth = oauth;
     $scope.installation = installation;
-    $scope.download = OAuthClientInstallation.url({ realm: $routeParams.realm, oauth: $routeParams.oauth });
+
+    $scope.download = function() {
+        saveAs(new Blob([$scope.installation], { type: $scope.type }), 'keycloak.json');
+    }
 });
 
 module.controller('OAuthClientRevocationCtrl', function($scope, realm, oauth, OAuthClient, $location, Dialog, Notifications) {

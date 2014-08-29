@@ -36,6 +36,7 @@ public class OAuthClientAdapter extends ClientAdapter implements OAuthClientMode
     public void setClientId(String id) {
         getDelegateForUpdate();
         updated.setClientId(id);
+        cacheSession.registerRealmInvalidation(cachedRealm.getId());
     }
 
     @Override

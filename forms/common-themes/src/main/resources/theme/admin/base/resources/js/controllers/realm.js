@@ -1110,7 +1110,7 @@ module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $
 
         $scope.changed = false;
         Realm.update(realmCopy, function () {
-            $location.url("/realms/" + realm.realm + "/sessions/brute-force");
+            $location.url("/realms/" + realm.realm + "/defense/brute-force");
             Notifications.success("Your changes have been saved to the realm.");
         });
     };
