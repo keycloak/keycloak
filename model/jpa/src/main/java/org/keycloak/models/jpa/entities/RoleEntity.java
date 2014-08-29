@@ -140,11 +140,11 @@ public class RoleEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof RoleEntity)) return false;
 
         RoleEntity that = (RoleEntity) o;
 
-        if (!id.equals(that.id)) return false;
+        if (!id.equals(that.getId())) return false;
 
         return true;
     }
