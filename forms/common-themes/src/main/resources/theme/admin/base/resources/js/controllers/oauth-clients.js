@@ -280,7 +280,10 @@ module.controller('OAuthClientInstallationCtrl', function($scope, realm, install
     $scope.realm = realm;
     $scope.oauth = oauth;
     $scope.installation = installation;
-    $scope.download = OAuthClientInstallation.url({ realm: $routeParams.realm, oauth: $routeParams.oauth });
+
+    $scope.download = function() {
+        saveAs(new Blob([$scope.installation], { type: $scope.type }), 'keycloak.json');
+    }
 });
 
 module.controller('OAuthClientRevocationCtrl', function($scope, realm, oauth, OAuthClient, $location, Dialog, Notifications) {
