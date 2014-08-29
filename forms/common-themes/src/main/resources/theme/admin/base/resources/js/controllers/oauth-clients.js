@@ -152,6 +152,7 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
                 }, $scope.oauth, function() {
                     $scope.changed = false;
                     oauth = angular.copy($scope.oauth);
+                    $location.url("/realms/" + realm.realm + "/oauth-clients/" + oauth.name);
                     Notifications.success("Your changes have been saved to the oauth client.");
                 });
             }

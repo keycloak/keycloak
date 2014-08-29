@@ -53,6 +53,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     public void setName(String name) {
         getDelegateForUpdate();
         updated.setName(name);
+        cacheSession.registerRealmInvalidation(cachedRealm.getId());
     }
 
     @Override

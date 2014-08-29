@@ -317,6 +317,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
                 }, $scope.application, function() {
                     $scope.changed = false;
                     application = angular.copy($scope.application);
+                    $location.url("/realms/" + realm.realm + "/applications/" + application.name);
                     Notifications.success("Your changes have been saved to the application.");
                 });
             }
