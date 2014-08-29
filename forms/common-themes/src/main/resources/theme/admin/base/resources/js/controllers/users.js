@@ -265,13 +265,14 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
 
     $scope.realm = realm;
     $scope.user = angular.copy(user);
+    $scope.temporaryPassword = true;
 
     $scope.isTotp = false;
     if(!!user.totp){
         $scope.isTotp = user.totp;
     }
 
-    $scope.resetPassword = function(temporary) {
+    $scope.resetPassword = function() {
         if ($scope.pwdChange) {
             if ($scope.password != $scope.confirmPassword) {
                 Notifications.error("Password and confirmation does not match.");
@@ -281,13 +282,9 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
 
         var msgTitle = 'Change password';
         var msg = 'Are you sure you want to change the users password?';
-        if (temporary) {
-            msgTitle = 'Reset password';
-            msg = 'Are you sure you want to reset the users password?';
-        }
 
         Dialog.confirm(msgTitle, msg, function() {
-            UserCredentials.resetPassword({ realm: realm.realm, userId: user.username }, { type : "password", value : $scope.password, temporary: temporary }, function() {
+            UserCredentials.resetPassword({ realm: realm.realm, userId: user.username }, { type : "password", value : $scope.password, temporary: $scope.temporaryPassword }, function() {
                 Notifications.success("The password has been reset");
                 $scope.password = null;
                 $scope.confirmPassword = null;
