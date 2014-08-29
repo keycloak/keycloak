@@ -8,6 +8,7 @@ import org.keycloak.account.freemarker.model.AccountSocialBean;
 import org.keycloak.account.freemarker.model.FeaturesBean;
 import org.keycloak.account.freemarker.model.LogBean;
 import org.keycloak.account.freemarker.model.MessageBean;
+import org.keycloak.account.freemarker.model.PasswordBean;
 import org.keycloak.account.freemarker.model.ReferrerBean;
 import org.keycloak.account.freemarker.model.SessionsBean;
 import org.keycloak.account.freemarker.model.TotpBean;
@@ -50,6 +51,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private boolean socialEnabled;
     private boolean eventsEnabled;
     private boolean passwordUpdateSupported;
+    private boolean passwordSet;
     private KeycloakSession session;
     private FreeMarkerUtil freeMarker;
 
@@ -133,6 +135,8 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             case SESSIONS:
                 attributes.put("sessions", new SessionsBean(realm, sessions));
                 break;
+            case PASSWORD:
+                attributes.put("password", new PasswordBean(passwordSet));
         }
 
         try {
@@ -144,6 +148,11 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             logger.error("Failed to process template", e);
             return Response.serverError().build();
         }
+    }
+
+    public AccountProvider setPasswordSet(boolean passwordSet) {
+        this.passwordSet = passwordSet;
+        return this;
     }
 
     @Override

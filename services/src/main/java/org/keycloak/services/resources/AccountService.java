@@ -43,6 +43,7 @@ import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -264,6 +265,10 @@ public class AccountService {
     @Path("password")
     @GET
     public Response passwordPage() {
+        if (auth != null) {
+            account.setPasswordSet(isPasswordSet(auth.getUser()));
+        }
+
         return forwardToPage("password", AccountPages.PASSWORD);
     }
 
@@ -491,27 +496,29 @@ public class AccountService {
 
         UserModel user = auth.getUser();
 
+        boolean requireCurrent = isPasswordSet(user);
+        account.setPasswordSet(requireCurrent);
+
         String password = formData.getFirst("password");
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
-        if (Validation.isEmpty(passwordNew)) {
-            setReferrerOnPage();
-            return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
-        } else if (!passwordNew.equals(passwordConfirm)) {
-            setReferrerOnPage();
-            return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
-        }
+        if (requireCurrent) {
+            if (Validation.isEmpty(passwordNew)) {
+                setReferrerOnPage();
+                return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
+            }
 
-        UserCredentialModel cred = UserCredentialModel.password(password);
-        if (Validation.isEmpty(password)) {
-            setReferrerOnPage();
-            return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
-        } else {
+            UserCredentialModel cred = UserCredentialModel.password(password);
             if (!session.users().validCredentials(realm, user, cred)) {
                 setReferrerOnPage();
                 return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
             }
+        }
+
+        if (!passwordNew.equals(passwordConfirm)) {
+            setReferrerOnPage();
+            return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
         try {
@@ -528,7 +535,7 @@ public class AccountService {
         event.event(EventType.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
 
         setReferrerOnPage();
-        return account.setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
+        return account.setPasswordSet(true).setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
     }
 
     @Path("social-update")
@@ -583,7 +590,7 @@ public class AccountService {
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (session.users().getSocialLinks(user, realm).size() > 1 || user.getFederationLink() != null) {
+                    if (session.users().getSocialLinks(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet(user)) {
                         session.users().removeSocialLink(realm, user, providerId);
 
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
@@ -679,6 +686,16 @@ public class AccountService {
 
         oauth.setStateCookiePath(accountUri.getRawPath());
         return oauth.redirect(uriInfo, accountUri.toString());
+    }
+
+    public static boolean isPasswordSet(UserModel user) {
+        boolean passwordSet = false;
+        for (UserCredentialValueModel c : user.getCredentialsDirectly()) {
+            if (c.getType().equals(CredentialRepresentation.PASSWORD)) {
+                passwordSet = true;
+            }
+        }
+        return passwordSet;
     }
 
     private String[] getReferrer() {

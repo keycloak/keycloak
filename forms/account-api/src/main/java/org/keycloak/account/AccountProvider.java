@@ -37,5 +37,7 @@ public interface AccountProvider extends Provider {
 
     AccountProvider setSessions(List<UserSessionModel> sessions);
 
+    AccountProvider setPasswordSet(boolean passwordSet);
+
     AccountProvider setFeatures(boolean social, boolean events, boolean passwordUpdateSupported);
 }
