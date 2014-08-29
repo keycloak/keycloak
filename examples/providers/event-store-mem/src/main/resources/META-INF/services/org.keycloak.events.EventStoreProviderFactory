@@ -1,1 +1,1 @@
-events.MemEventStoreProviderFactory
+org.keycloak.examples.providers.events.MemEventStoreProviderFactory
