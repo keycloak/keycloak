@@ -3,13 +3,13 @@ Example Event Store that stores events in memory
 
 To deploy copy target/event-store-mem-example.jar to standalone/deployments/auth-server.war/WEB-INF/lib. Then edit standalone/configuration/keycloak-server.json, change:
 
-   "event-store": {
+   "eventsStore": {
      "provider": "jpa"
    }
 
 to:
 
-   "event-store": {
+   "eventsStore": {
      "provider": "in-mem"
    }
 

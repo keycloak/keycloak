@@ -59,7 +59,7 @@ public class MemEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void onEvent(Event event) {
-        events.add(event);
+        events.add(0, event);
     }
 
     @Override
