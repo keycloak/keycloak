@@ -43,6 +43,9 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     protected boolean connectionPooling = true;
     protected boolean pagination = true;
     protected int batchSizeForSync = LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
+    protected String usernameLDAPAttribute;
+    protected String userObjectClasses;
+    protected boolean userAccountControlsAfterPasswordUpdate;
 
     public static String IDM_TEST_LDAP_CONNECTION_URL = "idm.test.ldap.connection.url";
     public static String IDM_TEST_LDAP_BASE_DN = "idm.test.ldap.base.dn";
@@ -57,6 +60,9 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     public static String IDM_TEST_LDAP_CONNECTION_POOLING = "idm.test.ldap.connection.pooling";
     public static String IDM_TEST_LDAP_PAGINATION = "idm.test.ldap.pagination";
     public static String IDM_TEST_LDAP_BATCH_SIZE_FOR_SYNC = "idm.test.ldap.batch.size.for.sync";
+    public static String IDM_TEST_LDAP_USERNAME_LDAP_ATTRIBUTE = "idm.test.ldap.username.ldap.attribute";
+    public static String IDM_TEST_LDAP_USER_OBJECT_CLASSES = "idm.test.ldap.user.object.classes";
+    public static String IDM_TEST_LDAP_USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE = "idm.test.ldap.user.account.controls.after.password.update";
 
 
     public LDAPEmbeddedServer() {
@@ -87,6 +93,9 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         connectionPooling = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_CONNECTION_POOLING, "true"));
         pagination = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_PAGINATION, "true"));
         batchSizeForSync = Integer.parseInt(p.getProperty(IDM_TEST_LDAP_BATCH_SIZE_FOR_SYNC, String.valueOf(batchSizeForSync)));
+        usernameLDAPAttribute = p.getProperty(IDM_TEST_LDAP_USERNAME_LDAP_ATTRIBUTE);
+        userObjectClasses = p.getProperty(IDM_TEST_LDAP_USER_OBJECT_CLASSES);
+        userAccountControlsAfterPasswordUpdate = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE));
     }
 
     @Override
@@ -138,6 +147,9 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         ldapConfig.put(LDAPConstants.CONNECTION_POOLING, String.valueOf(isConnectionPooling()));
         ldapConfig.put(LDAPConstants.PAGINATION, String.valueOf(isPagination()));
         ldapConfig.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, String.valueOf(getBatchSizeForSync()));
+        ldapConfig.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, getUsernameLDAPAttribute());
+        ldapConfig.put(LDAPConstants.USER_OBJECT_CLASSES, getUserObjectClasses());
+        ldapConfig.put(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE, String.valueOf(isUserAccountControlsAfterPasswordUpdate()));
         return ldapConfig;
     }
 
@@ -222,6 +234,18 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
 
     public int getBatchSizeForSync() {
         return batchSizeForSync;
+    }
+
+    public String getUsernameLDAPAttribute() {
+        return usernameLDAPAttribute;
+    }
+
+    public String getUserObjectClasses() {
+        return userObjectClasses;
+    }
+
+    public boolean isUserAccountControlsAfterPasswordUpdate() {
+        return userAccountControlsAfterPasswordUpdate;
     }
 
     @Override
