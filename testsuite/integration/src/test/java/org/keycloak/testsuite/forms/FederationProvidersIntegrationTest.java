@@ -195,7 +195,7 @@ public class FederationProvidersIntegrationTest {
         changePasswordPage.logout();
 
         loginPage.open();
-        loginPage.login("johnkeycloak", "password");
+        loginPage.login("johnkeycloak", "bad-password");
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         loginPage.open();
