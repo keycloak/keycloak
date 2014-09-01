@@ -6,7 +6,7 @@
 
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-reference-guide-${translation}</artifactId>
-    <version>1.0-rc-2-SNAPSHOT</version>
+    <version>1.0-rc-2</version>
     <packaging>jdocbook</packaging>
     <name>Keycloak Reference Guide (${translation})</name>
     <description/>
