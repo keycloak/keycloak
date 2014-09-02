@@ -193,16 +193,16 @@ public class MongoUserProvider implements UserProvider {
                 .and("realmId").is(realm.getId());
 
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            if (entry.getKey().equals(UserModel.USERNAME)) {
-                queryBuilder.and("username").regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
+            if (entry.getKey().equalsIgnoreCase(UserModel.USERNAME)) {
+                queryBuilder.and(UserModel.USERNAME).regex(Pattern.compile(".*" + entry.getValue() + ".*", Pattern.CASE_INSENSITIVE));
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
-                queryBuilder.and(UserModel.FIRST_NAME).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
+                queryBuilder.and(UserModel.FIRST_NAME).regex(Pattern.compile(".*" + entry.getValue() + ".*", Pattern.CASE_INSENSITIVE));
 
             } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
-                queryBuilder.and(UserModel.LAST_NAME).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
+                queryBuilder.and(UserModel.LAST_NAME).regex(Pattern.compile(".*" + entry.getValue() + ".*", Pattern.CASE_INSENSITIVE));
 
             } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
-                queryBuilder.and(UserModel.EMAIL).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
+                queryBuilder.and(UserModel.EMAIL).regex(Pattern.compile(".*" + entry.getValue() + ".*", Pattern.CASE_INSENSITIVE));
             }
         }
 
