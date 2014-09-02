@@ -1,0 +1,35 @@
+@import url("../lib/patternfly/css/patternfly.css");
+@import url("../lib/select2-3.4.1/select2.css");
+
+@import url("admin-console.css");
+@import url("tables.css");
+@import url("sprites.css");
+
+.navbar-pf {
+    background-image: url('../img/header-bkgrnd.png');
+    border-top: 3px solid rgba(255, 255, 255, 0.15);
+}
+
+.navbar-pf .navbar-primary {
+    font-size: 13px;
+    background-image: -webkit-linear-gradient(top, rgba(0,0,0,0.1) 0%, rgba(0,0,0,.4) 100%);
+    background-image: linear-gradient(to bottom, rgba(0,0,0,.1) 0%, rgba(0,0,0,.4) 100%);
+}
+
+.navbar-pf .navbar-header {
+    border-bottom: 1px solid rgba(255,255,255,.15);
+}
+
+.navbar-pf .navbar-primary li.dropdown.context > a,
+.navbar-pf .navbar-primary li.dropdown.context > a:hover,
+.navbar-pf .navbar-primary li.dropdown.context.open > a,
+.navbar-pf .navbar-primary > .active > a,
+.navbar-pf .navbar-primary > .active > a:hover{
+    background-color: rgba(0,0,0,0.1);
+    background-image: -webkit-linear-gradient(top, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 100%);
+    background-image: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 100%);
+    border-bottom: none;
+    border-right-color: rgba(255,255,255,0.15);
+    border-top-color: rgba(255,255,255,0.05);
+}
+
