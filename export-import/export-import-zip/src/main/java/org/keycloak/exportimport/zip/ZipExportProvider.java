@@ -4,6 +4,7 @@ import de.idyl.winzipaes.AesZipFileEncrypter;
 import de.idyl.winzipaes.impl.AESEncrypter;
 import de.idyl.winzipaes.impl.AESEncrypterBC;
 import org.jboss.logging.Logger;
+import org.keycloak.Version;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.exportimport.util.MultipleStepsExportProvider;
 import org.keycloak.models.KeycloakSession;
@@ -47,17 +48,24 @@ public class ZipExportProvider extends MultipleStepsExportProvider {
     protected void writeRealm(String fileName, RealmRepresentation rep) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         JsonSerialization.mapper.writeValue(stream, rep);
-
-        byte[] byteArray = stream.toByteArray();
-        ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
-        this.encrypter.add(fileName, bis, this.password);
+        writeStream(fileName, stream);
     }
 
     @Override
     protected void writeUsers(String fileName, KeycloakSession session, RealmModel realm, List<UserModel> users) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ExportUtils.exportUsersToStream(session, realm, users, JsonSerialization.mapper, stream);
+        writeStream(fileName, stream);
+    }
 
+    @Override
+    protected void writeVersion(String fileName, Version version) throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        JsonSerialization.mapper.writeValue(stream, version);
+        writeStream(fileName, stream);
+    }
+
+    private void writeStream(String fileName, ByteArrayOutputStream stream) throws IOException {
         byte[] byteArray = stream.toByteArray();
         ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
         this.encrypter.add(fileName, bis, this.password);

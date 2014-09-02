@@ -14,7 +14,7 @@ public class Version {
     public static String VERSION;
     public static String BUILD_TIME;
     public static final String UNKNOWN = "UNKNOWN";
-    public static final Version SINGLETON = new Version();
+    public static final Version SINGLETON;
 
     private final String version = VERSION;
     private final String buildTime = BUILD_TIME;
@@ -30,6 +30,8 @@ public class Version {
             VERSION=UNKNOWN;
             BUILD_TIME=UNKNOWN;
         }
+
+        SINGLETON = new Version();
     }
 
     @JsonProperty("version")
