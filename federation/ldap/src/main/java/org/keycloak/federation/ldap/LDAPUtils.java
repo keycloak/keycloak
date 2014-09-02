@@ -45,7 +45,6 @@ public class LDAPUtils {
         picketlinkUser.setFirstName(firstName);
         picketlinkUser.setLastName(lastName);
         picketlinkUser.setEmail(email);
-        picketlinkUser.setAttribute(new Attribute("fullName", getFullName(username, firstName, lastName)));
         idmManager.update(picketlinkUser);
         return picketlinkUser;
     }
