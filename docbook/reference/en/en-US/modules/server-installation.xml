@@ -8,11 +8,11 @@
         <itemizedlist>
 
             <listitem>
-                keycloak-appliance-dist-all-1.0-final-SNAPSHOT.zip
+                keycloak-appliance-dist-all-&project.version;.zip
             </listitem>
 
             <listitem>
-                keycloak-war-dist-all-1.0-final-SNAPSHOT.zip
+                keycloak-war-dist-all-&project.version;.zip
             </listitem>
 
         </itemizedlist>
@@ -31,7 +31,7 @@
 
         <para>
 <programlisting>
-keycloak-appliance-dist-all-1.0-final-SNAPSHOT/
+keycloak-appliance-dist-all-&project.version;/
     keycloak/
         bin/
             standalone.sh
@@ -42,9 +42,9 @@ keycloak-appliance-dist-all-1.0-final-SNAPSHOT/
                 keycloak-server.json
                 themes/
     adapters/
-        keycloak-as7-adapter-dist-1.0-final-SNAPSHOT.zip
-        keycloak-eap6-adapter-dist-1.0-final-SNAPSHOT.zip
-        keycloak-wildfly-adapter-dist-1.0-final-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-&project.version;.zip
+        keycloak-eap6-adapter-dist-&project.version;.zip
+        keycloak-wildfly-adapter-dist-&project.version;.zip
     examples/
     docs/
 </programlisting>
@@ -79,7 +79,7 @@ keycloak-appliance-dist-all-1.0-final-SNAPSHOT/
         </para>
         <para>
 <programlisting>
-keycloak-war-dist-all-1.0-final-SNAPSHOT/
+keycloak-war-dist-all-&project.version;/
     deployments/
         auth-server.war/
         keycloak-ds.xml
@@ -87,9 +87,9 @@ keycloak-war-dist-all-1.0-final-SNAPSHOT/
         keycloak-server.json
         themes/
     adapters/
-        keycloak-as7-adapter-dist-1.0-final-SNAPSHOT.zip
-        keycloak-eap6-adapter-dist-1.0-final-SNAPSHOT.zip
-        keycloak-wildfly-adapter-dist-1.0-final-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-&project.version;.zip
+        keycloak-eap6-adapter-dist-&project.version;.zip
+        keycloak-wildfly-adapter-dist-&project.version;.zip
     examples/
     docs/
 </programlisting>
@@ -101,7 +101,7 @@ keycloak-war-dist-all-1.0-final-SNAPSHOT/
         </para>
         <para>
 <programlisting>
-    $ cd keycloak-war-dist-all-1.0-final-SNAPSHOT
+    $ cd keycloak-war-dist-all-&project.version;
     $ cp -r deployments $JBOSS_HOME/standalone
     $ cp -r configuration $JBOSS_HOME/standalone
 </programlisting>
