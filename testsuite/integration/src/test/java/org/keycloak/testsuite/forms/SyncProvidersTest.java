@@ -58,15 +58,15 @@ public class SyncProvidersTest {
             LDAPUtils.removeAllUsers(partitionManager);
 
             User user1 = LDAPUtils.addUser(partitionManager, "user1", "User1FN", "User1LN", "user1@email.org");
-            LDAPUtils.updatePassword(partitionManager, user1, "password1");
+            LDAPUtils.updatePassword(partitionManager, user1, "Password1");
             User user2 = LDAPUtils.addUser(partitionManager, "user2", "User2FN", "User2LN", "user2@email.org");
-            LDAPUtils.updatePassword(partitionManager, user2, "password2");
+            LDAPUtils.updatePassword(partitionManager, user2, "Password2");
             User user3 = LDAPUtils.addUser(partitionManager, "user3", "User3FN", "User3LN", "user3@email.org");
-            LDAPUtils.updatePassword(partitionManager, user3, "password3");
+            LDAPUtils.updatePassword(partitionManager, user3, "Password3");
             User user4 = LDAPUtils.addUser(partitionManager, "user4", "User4FN", "User4LN", "user4@email.org");
-            LDAPUtils.updatePassword(partitionManager, user4, "password4");
+            LDAPUtils.updatePassword(partitionManager, user4, "Password4");
             User user5 = LDAPUtils.addUser(partitionManager, "user5", "User5FN", "User5LN", "user5@email.org");
-            LDAPUtils.updatePassword(partitionManager, user5, "password5");
+            LDAPUtils.updatePassword(partitionManager, user5, "Password5");
 
             // Add properties provider
             dummyModel = appRealm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, 1, 0);

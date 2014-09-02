@@ -69,7 +69,7 @@ public class FederationProvidersIntegrationTest {
             LDAPUtils.removeAllUsers(partitionManager);
 
             User john = LDAPUtils.addUser(partitionManager, "johnkeycloak", "John", "Doe", "john@email.org");
-            LDAPUtils.updatePassword(partitionManager, john, "password");
+            LDAPUtils.updatePassword(partitionManager, john, "Password1");
 
             User existing = LDAPUtils.addUser(partitionManager, "existing", "Existing", "Foo", "existing@email.org");
         }
@@ -137,7 +137,7 @@ public class FederationProvidersIntegrationTest {
     @Test
     public void loginLdap() {
         loginPage.open();
-        loginPage.login("johnkeycloak", "password");
+        loginPage.login("johnkeycloak", "Password1");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
@@ -164,7 +164,7 @@ public class FederationProvidersIntegrationTest {
             }
         }
         loginPage.open();
-        loginPage.login("johnkeycloak", "password");
+        loginPage.login("johnkeycloak", "Password1");
         loginPage.assertCurrent();
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
@@ -187,19 +187,19 @@ public class FederationProvidersIntegrationTest {
     @Test
     public void passwordChangeLdap() throws Exception {
         changePasswordPage.open();
-        loginPage.login("johnkeycloak", "password");
-        changePasswordPage.changePassword("password", "new-password", "new-password");
+        loginPage.login("johnkeycloak", "Password1");
+        changePasswordPage.changePassword("Password1", "New-password1", "New-password1");
 
         Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
 
         changePasswordPage.logout();
 
         loginPage.open();
-        loginPage.login("johnkeycloak", "bad-password");
+        loginPage.login("johnkeycloak", "Bad-password1");
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         loginPage.open();
-        loginPage.login("johnkeycloak", "new-password");
+        loginPage.login("johnkeycloak", "New-password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
@@ -210,12 +210,12 @@ public class FederationProvidersIntegrationTest {
         registerPage.assertCurrent();
 
         // check existing username
-        registerPage.register("firstName", "lastName", "email", "existing", "password", "password");
+        registerPage.register("firstName", "lastName", "email", "existing", "Password1", "Password1");
         registerPage.assertCurrent();
         Assert.assertEquals("Username already exists", registerPage.getError());
 
         // Check existing email
-        registerPage.register("firstName", "lastName", "existing@email.org", "nonExisting", "password", "password");
+        registerPage.register("firstName", "lastName", "existing@email.org", "nonExisting", "Password1", "Password1");
         registerPage.assertCurrent();
         Assert.assertEquals("Email already exists", registerPage.getError());
     }
@@ -226,7 +226,7 @@ public class FederationProvidersIntegrationTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "email2", "registerUserSuccess2", "password", "password");
+        registerPage.register("firstName", "lastName", "email2", "registerUserSuccess2", "Password1", "Password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         KeycloakSession session = keycloakRule.startSession();
@@ -274,7 +274,7 @@ public class FederationProvidersIntegrationTest {
 
             }
             try {
-                UserCredentialModel cred = UserCredentialModel.password("poop");
+                UserCredentialModel cred = UserCredentialModel.password("PoopyPoop1");
                 user.updateCredential(cred);
                 Assert.fail("should fail");
             } catch (ModelReadOnlyException e) {
@@ -364,14 +364,14 @@ public class FederationProvidersIntegrationTest {
             Assert.assertNotNull(user.getFederationLink());
             Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
 
-            UserCredentialModel cred = UserCredentialModel.password("candy");
+            UserCredentialModel cred = UserCredentialModel.password("Candycand1");
             user.updateCredential(cred);
             UserCredentialValueModel userCredentialValueModel = user.getCredentialsDirectly().get(0);
             Assert.assertEquals(UserCredentialModel.PASSWORD, userCredentialValueModel.getType());
             Assert.assertTrue(session.users().validCredentials(appRealm, user, cred));
 
             // LDAP password is still unchanged
-            Assert.assertTrue(LDAPUtils.validatePassword(getPartitionManager(session, model), "johnkeycloak", "new-password"));
+            Assert.assertTrue(LDAPUtils.validatePassword(getPartitionManager(session, model), "johnkeycloak", "New-password1"));
 
             // ATM it's not permitted to delete user in unsynced mode. Should be user deleted just locally instead?
             Assert.assertFalse(session.users().removeUser(appRealm, user));
