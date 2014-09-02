@@ -193,7 +193,7 @@ public class UserFederationManager implements UserProvider {
 
     protected List<UserModel> query(PaginatedQuery pagedQuery, RealmModel realm, int firstResult, int maxResults) {
         List<UserModel> results = new LinkedList<UserModel>();
-        if (maxResults <= 0) return results;
+        if (maxResults == 0) return results;
         int first = firstResult;
         int max = maxResults;
         do {
@@ -210,6 +210,7 @@ public class UserFederationManager implements UserProvider {
             if (query.size() < max) return results;
             first = query.size();
             max -= added;
+            if (max <= 0) return results;
         } while (true);
     }
 
