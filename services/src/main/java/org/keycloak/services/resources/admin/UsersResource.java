@@ -376,9 +376,6 @@ public class UsersResource {
                 attributes.put(UserModel.USERNAME, username);
             }
             userModels = session.users().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
-            for (UserModel user : userModels) {
-                results.add(ModelToRepresentation.toRepresentation(user));
-            }
         } else {
             userModels = session.users().getUsers(realm, firstResult, maxResults);
         }

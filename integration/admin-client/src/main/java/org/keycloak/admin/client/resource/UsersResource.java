@@ -16,14 +16,18 @@ public interface UsersResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserRepresentation> search(@QueryParam("username")  String username,
+    public List<UserRepresentation> search(@QueryParam("username") String username,
                                            @QueryParam("firstName") String firstName,
-                                           @QueryParam("lastName")  String lastName,
-                                           @QueryParam("email")     String email);
+                                           @QueryParam("lastName") String lastName,
+                                           @QueryParam("email") String email,
+                                           @QueryParam("first") Integer firstResult,
+                                           @QueryParam("max") Integer maxResults);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserRepresentation> search(@QueryParam("search") String search);
+    public List<UserRepresentation> search(@QueryParam("search") String search,
+                                           @QueryParam("first") Integer firstResult,
+                                           @QueryParam("max") Integer maxResults);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
