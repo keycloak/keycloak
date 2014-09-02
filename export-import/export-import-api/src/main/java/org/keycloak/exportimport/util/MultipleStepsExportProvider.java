@@ -1,6 +1,7 @@
 package org.keycloak.exportimport.util;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Version;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.UsersExportStrategy;
@@ -37,12 +38,19 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
         });
 
         for (RealmModel realm : holder.realms) {
-            exportRealm(factory, realm.getName());
+            exportRealmImpl(factory, realm.getName());
         }
+
+        writeVersion("version.json", Version.SINGLETON);
     }
 
     @Override
-    public void exportRealm(KeycloakSessionFactory factory, final String realmName) throws IOException {
+    public void exportRealm(KeycloakSessionFactory factory, String realmName) throws IOException {
+        exportRealmImpl(factory, realmName);
+        writeVersion("version.json", Version.SINGLETON);
+    }
+
+    protected void exportRealmImpl(KeycloakSessionFactory factory, final String realmName) throws IOException {
         final UsersExportStrategy usersExportStrategy = ExportImportConfig.getUsersExportStrategy();
         final int usersPerFile = ExportImportConfig.getUsersPerFile();
         final UsersHolder usersHolder = new UsersHolder();
@@ -101,6 +109,8 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
     protected abstract void writeRealm(String fileName, RealmRepresentation rep) throws IOException;
 
     protected abstract void writeUsers(String fileName, KeycloakSession session, RealmModel realm, List<UserModel> users) throws IOException;
+
+    protected abstract void writeVersion(String fileName, Version version) throws IOException;
 
     public static class RealmsHolder {
         List<RealmModel> realms;
