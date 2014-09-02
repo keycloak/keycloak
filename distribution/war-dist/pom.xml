@@ -89,6 +89,7 @@
                                     <artifactId>keycloak-js-adapter</artifactId>
                                     <version>${project.version}</version>
                                     <outputDirectory>${project.build.directory}/unpacked/js-adapter</outputDirectory>
+                                    <includes>*.js</includes>                                    
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
