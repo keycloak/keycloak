@@ -261,7 +261,7 @@ public class AccountTest {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     appRealm.setPasswordPolicy(new PasswordPolicy(null));
-               }
+                }
             });
         }
     }
@@ -368,44 +368,43 @@ public class AccountTest {
         });
 
         try {
-            List<Event> e = new LinkedList<Event>();
+            List<Event> expectedEvents = new LinkedList<Event>();
 
             loginPage.open();
             loginPage.clickRegister();
 
             registerPage.register("view", "log", "view-log@localhost", "view-log", "password", "password");
 
-            e.add(events.poll());
-            e.add(events.poll());
+            expectedEvents.add(events.poll());
+            expectedEvents.add(events.poll());
 
             profilePage.open();
             profilePage.updateProfile("view", "log2", "view-log@localhost");
 
-            e.add(events.poll());
+            expectedEvents.add(events.poll());
 
             logPage.open();
 
-            Collections.reverse(e);
-
             Assert.assertTrue(logPage.isCurrent());
-            Thread.sleep(100); // seems to be some kind of race here.
-            final int expectedEvents = e.size();
-            Retry.execute(new Runnable() {
-                @Override
-                public void run() {
-                    Assert.assertEquals(expectedEvents, logPage.getEvents().size());
-                }
-            }, 10, 500);
 
-            Iterator<List<String>> itr = logPage.getEvents().iterator();
-            for (Event event : e) {
-                List<String> a = itr.next();
-                Assert.assertEquals(event.getType().toString().replace('_', ' ').toLowerCase(), a.get(1));
-                Assert.assertEquals(event.getIpAddress(), a.get(2));
-                Assert.assertEquals(event.getClientId(), a.get(3));
+            List<List<String>> actualEvents = logPage.getEvents();
+
+            Assert.assertEquals(expectedEvents.size(), actualEvents.size());
+
+            for (Event e : expectedEvents) {
+                boolean match = false;
+                for (List<String> a : logPage.getEvents()) {
+                    if (e.getType().toString().replace('_', ' ').toLowerCase().equals(a.get(1)) &&
+                            e.getIpAddress().equals(a.get(2)) &&
+                            e.getClientId().equals(a.get(3))) {
+                        match = true;
+                        break;
+                    }
+                }
+                if (!match) {
+                    Assert.fail("Event not found " + e.getType());
+                }
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         } finally {
             keycloakRule.update(new KeycloakSetup() {
                 @Override
