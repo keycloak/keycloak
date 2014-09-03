@@ -1,10 +1,48 @@
-Login, Distributed SSO, Distributed Logout, and OAuth Token Grant Examples
-===================================
+Keycloak Examples
+=================
 
-Preconfigured Examples
-===================================
-The Preconfigured Examples (in 'preconfigured-demo') contains pre-configured examples that can be deployed without having to configure anything except importing the realm settings into Keycloak. To try this out follow the instructions in preconfigured-demo/README.md.
+This directory contains a number of examples for Keycloak.
 
-Unconfigured Examples
-===================================
-The Unconfigured Examples (in 'unconfigured-demo') contains examples without any Keycloak specific configuration. These should be used in conjunction with the online screencasts tutorials at [http://keycloak.org/docs](http://keycloak.org/docs).
+Demo
+----
+
+This is the our main example, which shows Login, Single-Sign On, Single-Sign Out and OAuth Token Grant. The demo comes in two flavours: 
+
+* Preconfigured - Use this flavour to quickly deploy the demo to a local Keycloak server without having to configure anything other than importing the realm settings into Keycloak
+* Unconfigured - Use this flavour to manually configure and deploy the demo to either a local or external Keycloak server
+
+For more information look at `preconfigured-demo/README.md` or `unconfigured-demo/README.md`. For the unconfigured-demo there's an accompanying screencast at [http://keycloak.org/docs](http://keycloak.org/docs) that walks you through the setup process.
+
+
+Cordova
+-------
+
+Example Cordova application. For more information look at `cordova/README.md`.
+
+
+CORS
+----
+
+Example CORS application. For more information look at `cors/README.md`.
+
+
+JS Console
+----------
+
+Example JavaScript application that let's you experiment with the JavaScript adapter. For more information look at `js-console/README.md`.
+
+
+Providers
+---------
+
+Example providers for Event Listener SPI, Event Store SPI and User Federation SPI. For more information look at:
+
+* Event Listener that outputs event detalis to sysout - `providers/event-listener-sysout/README.md`
+* Event Store that stores events in memory - `providers/event-store-mem/README.md`
+* User Federation that loads users from a text file - `providers/federation-provider/README.md`
+
+
+Themes
+------
+
+Example themes to change the look and feel of login forms, account management console and admin console. For more information look at `themes/README.md`.
