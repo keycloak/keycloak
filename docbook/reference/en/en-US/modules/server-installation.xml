@@ -22,7 +22,7 @@
         <title>Appliance Install</title>
         <para>
             The
-            <literal>keycloak-appliance-dist-all.zip</literal>
+            <literal>keycloak-appliance-dist-all-&project.version;.zip</literal>
             is quite large, but contains a complete server (backed by Wildfly)
             that runs out of the box. The only thing you'll have to enable and configure is SSL. Unzipping it, the
             directory layout looks
@@ -67,7 +67,7 @@ keycloak-appliance-dist-all-&project.version;/
         <title>WAR Distribution Installation</title>
         <para>
             The
-            <literal>keycloak-war-dist-all.zip</literal>
+            <literal>keycloak-war-dist-all-&project.version;.zip</literal>
             contains
             just the bits you need to install keycloak on your favorite web container. We currently only support
             installing it on top of an existing JBoss AS 7.1.1, JBoss EAP 6.x, or Wildfly 8 distribution. We may in the
@@ -129,7 +129,7 @@ keycloak-war-dist-all-&project.version;/
             <itemizedlist>
 
                 <listitem>
-                    Configuring keycloak to use a production database.
+                    Configuring Keycloak to use a production database.
                 </listitem>
 
                 <listitem>
@@ -144,14 +144,14 @@ keycloak-war-dist-all-&project.version;/
         <section>
             <title>Relational Database Configuration</title>
             <para>
-                By default, Keycloak uses a relational database to store Keycloak data.  This datasource is the <literal>.../standalone/deployments/keycloak-ds.xml</literal>
-                file of your Keycloak Server installation if you used <xref linkend="WAR_distribution_installation" /> or in <literal>.../standalone/configuration/standalone.xml</literal>
+                By default, Keycloak uses a relational database to store Keycloak data.  This datasource is the <literal>standalone/deployments/keycloak-ds.xml</literal>
+                file of your Keycloak Server installation if you used <xref linkend="WAR_distribution_installation" /> or in <literal>standalone/configuration/standalone.xml</literal>
                 if you used <xref linkend="Appliance_install" />. File <literal>keycloak-ds.xml</literal> is used in WAR
                 distribution, so that you have datasource available out of the box and you don't need to edit <literal>standalone.xml</literal> file.
                 However a good thing is to always delete the file  <literal>keycloak-ds.xml</literal> and move its configuration text
                 into the centrally managed <literal>standalone.xml</literal> file.
                 This will allow you to manage the database connection pool from the Wildfly/JBoss administration console.  Here's what
-                <literal>.../standalone/configuration/standalone.xml</literal> should look like after you've done this:
+                <literal>standalone/configuration/standalone.xml</literal> should look like after you've done this:
             </para>
             <para>
 <programlisting><![CDATA[
@@ -180,8 +180,8 @@ keycloak-war-dist-all-&project.version;/
             <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
          </driver>
       </drivers>
-            </datasources>
-        </subsystem>
+   </datasources>
+</subsystem>
 ]]>
 </programlisting>
             </para>
@@ -206,16 +206,6 @@ keycloak-war-dist-all-&project.version;/
 ]]></programlisting>
                 Possible configuration options are:
                 <variablelist>
-                    <varlistentry>
-                        <term>unitName</term>
-                        <listitem>
-                            <para>
-                                Allow you to specify name of persistence unit if you want to provide your own persistence.xml file for JPA configuration.
-                                If this option is used, then all other configuration options are ignored as you are expected to configure
-                                all JPA/DB properties in your own persistence.xml file. Hence you can remove properties "dataSource" and "databaseSchema" in this case.
-                            </para>
-                        </listitem>
-                    </varlistentry>
                     <varlistentry>
                         <term>dataSource</term>
                         <listitem>
@@ -262,6 +252,16 @@ keycloak-war-dist-all-&project.version;/
                         <listitem>
                             <para>
                                 Specify whether Hibernate should format SQL commands (true by default)
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>unitName</term>
+                        <listitem>
+                            <para>
+                                Allow you to specify name of persistence unit if you want to provide your own persistence.xml file for JPA configuration.
+                                If this option is used, then all other configuration options are ignored as you are expected to configure
+                                all JPA/DB properties in your own persistence.xml file. Hence you can remove properties "dataSource" and "databaseSchema" in this case.
                             </para>
                         </listitem>
                     </varlistentry>
@@ -350,6 +350,9 @@ keycloak-war-dist-all-&project.version;/
                 <programlisting><![CDATA[
 "eventsStore": {
     "provider": "mongo",
+    "mongo": {
+        "exclude-events": [ "REFRESH_TOKEN" ]
+    }
 },
 
 "realm": {
@@ -358,7 +361,7 @@ keycloak-war-dist-all-&project.version;/
 
 "user": {
     "provider": "mongo"
-}
+},
 ]]></programlisting>
 
                 And at the end of the file add the snippet like this where you can configure details about your Mongo database:
@@ -666,17 +669,6 @@ keycloak-war-dist-all-&project.version;/
            </user-data-constraint>
        </security-constraint>
 </web-app>]]></programlisting>
-                </para>
-            </section>
-
-            <section>
-                <title>Enforce HTTPS at Realm Level</title>
-                <para>
-                    In Keycloak, each realm has an "Require SSL" switch that you should turn on.  Log into the
-                    adminstration console and set this switch for each realm that Keycloak manages.  This switch is on
-                    the <literal>Settings>>General</literal> page.  While this switch does do similar checks as the security
-                    constraint in <literal>web.xml</literal>, it will also force applications and oauth clients to only
-                    register HTTPS based redirect URLs.
                 </para>
             </section>
         </section>
