@@ -24,6 +24,13 @@
         </listitem>
         <listitem>
             <para>
+                Now click on the <literal>Consent screen</literal> link on the sidebar menu on the left.  You must specify
+                a project name and choose an email for the consent screen.  Otherwise users will get a login error.  There's
+                other things you can configure here like what the consent screen looks like.  Feel free to play around with this.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
                 Now click <literal>Credentials</literal> in the sidebar on the left. Then click
                 <literal>Create New Client ID</literal>. Select <literal>Web application</literal> as
                 <literal>Application type</literal>. Empty the <literal>Authorized Javascript origins</literal> textarea. In
@@ -40,9 +47,4 @@
             </para>
         </listitem>
     </orderedlist>
-    <para>
-        You may also want to configure how the Google Consent Screen looks when users log in to your application via
-        Google. To do this go to <ulink url="https://cloud.google.com/console/project">Google Developer Console</ulink>
-        and click on <literal>Consent Screen</literal> in the sidebar to the left.
-    </para>
 </section>
