@@ -11,7 +11,7 @@
   "realm-public-key" : "MIGfMA0GCSqGSIb3D...31LwIDAQAB",
   "auth-server-url" : "https://localhost:8443/auth",
   "ssl-required" : "external",
-  "user-resource-role-mappings" : false,
+  "use-resource-role-mappings" : false,
   "enable-cors" : true,
   "cors-max-age" : 1000,
   "cors-allowed-methods" : [ "POST", "PUT", "DELETE", "GET" ],
@@ -101,7 +101,7 @@
                 </listitem>
             </varlistentry>
             <varlistentry>
-                <term>user-resource-role-mappings</term>
+                <term>use-resource-role-mappings</term>
                 <listitem>
                     <para>
                         If set to true, the adapter will look inside the token for application level role mappings for
