@@ -10,9 +10,7 @@
         <title>Configure theme</title>
         <para>
             To configure the theme used by a realm open the <literal>Keycloak Admin Console</literal>, select your realm
-            from the drop-down box in the top left corner. In the <literal>Optional Settings</literal> use the drop-down
-            boxes for <literal>Login Theme</literal> and <literal>Account Theme</literal> to select the theme used
-            by login forms and account management pages.
+            from the drop-down box in the top left corner. Under <literal>Settings</literal> click on <literal>Theme</literal>.
         </para>
     </section>
 
@@ -56,7 +54,7 @@
             templates.
         </para>
         <para>
-            To create a new theme, create a folder in <literal>.../standalone/configuration/themes/&lt; theme type&gt;</literal>.
+            To create a new theme, create a folder in <literal>.../standalone/configuration/themes/&lt;theme type&gt;</literal>.
             The name of the folder is the name of the theme. Then create a file <literal>theme.properties</literal> inside the theme folder.
             The contents of the file should be:
         </para>
@@ -79,6 +77,7 @@
             <programlisting>styles=css/styles.css css/more-styles.css</programlisting>
         </section>
         <section>
+            <title>Scripts</title>
             <para>
                 A theme can have one or more scripts, to add a script create a file inside <literal>resources/js</literal> (for example <literal>resources/js/script.js</literal>)
                 inside your theme folder. Then registering it in <literal>theme.properties</literal> by adding:
