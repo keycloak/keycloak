@@ -3,6 +3,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.jboss.resteasy.spi.NoLogWebApplicationException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
@@ -181,7 +182,7 @@ public class AdminRoot {
         if (request.getHttpMethod().equalsIgnoreCase("OPTIONS")) {
             logger.debug("Cors admin pre-flight");
             Response response = Cors.add(request, Response.ok()).preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
-            throw new WebApplicationException(response);
+            throw new NoLogWebApplicationException(response);
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(headers);
