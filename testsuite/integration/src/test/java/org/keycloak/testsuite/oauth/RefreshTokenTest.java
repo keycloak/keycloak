@@ -241,10 +241,7 @@ public class RefreshTokenTest {
         session.getTransaction().commit();
         session.close();
 
-        // should not update last refresh because the access token interval is way less than idle timeout
-        Assert.assertEquals(last, next);
-
-
+        Assert.assertNotEquals(last, next);
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("test");
