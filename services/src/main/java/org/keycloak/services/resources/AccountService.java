@@ -58,6 +58,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialLoader;
@@ -71,6 +72,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -107,6 +109,8 @@ public class AccountService {
         LOG_DETAILS.add(Details.AUTH_METHOD);
     }
 
+    public static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
+
     private RealmModel realm;
 
     @Context
@@ -130,6 +134,7 @@ public class AccountService {
     private AccountProvider account;
     private Auth auth;
     private EventStoreProvider eventStore;
+    private String stateChecker;
 
     public AccountService(RealmModel realm, ApplicationModel application, EventBuilder event) {
         this.realm = realm;
@@ -146,6 +151,16 @@ public class AccountService {
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {
             auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, authResult.getSession(), true);
+            Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
+            if (cookie != null) {
+                stateChecker = cookie.getValue();
+            } else {
+                stateChecker = UUID.randomUUID().toString();
+                String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
+                boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
+                CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
+            }
+            account.setStateChecker(stateChecker);
 
         } else {
             authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
@@ -164,7 +179,6 @@ public class AccountService {
         if (authResult != null) {
             UserSessionModel userSession = authResult.getSession();
             if (userSession != null) {
-                account.setStateChecker(authResult.getSession().getId());
                 boolean associated = false;
                 for (ClientSessionModel c : userSession.getClientSessions()) {
                     if (c.getClient().equals(application)) {
@@ -329,9 +343,8 @@ public class AccountService {
      */
     protected void csrfCheck(final MultivaluedMap<String, String> formData) {
         if (!auth.isCookieAuthenticated()) return;
-        if (auth.getSession() == null) return;
         String stateChecker = formData.getFirst("stateChecker");
-        if (!auth.getSession().getId().equals(stateChecker)) {
+        if (!this.stateChecker.equals(stateChecker)) {
             throw new ForbiddenException();
         }
 
@@ -344,7 +357,7 @@ public class AccountService {
     protected void csrfCheck(String stateChecker) {
         if (!auth.isCookieAuthenticated()) return;
         if (auth.getSession() == null) return;
-        if (!auth.getSession().getId().equals(stateChecker)) {
+        if (!this.stateChecker.equals(stateChecker)) {
             throw new ForbiddenException();
         }
 
