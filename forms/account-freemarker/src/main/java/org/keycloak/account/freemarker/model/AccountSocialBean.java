@@ -25,7 +25,7 @@ public class AccountSocialBean {
     private final boolean removeLinkPossible;
     private final KeycloakSession session;
 
-    public AccountSocialBean(KeycloakSession session, RealmModel realm, UserModel user, URI baseUri) {
+    public AccountSocialBean(KeycloakSession session, RealmModel realm, UserModel user, URI baseUri, String stateChecker) {
         this.session = session;
         URI accountSocialUpdateUri = Urls.accountSocialUpdate(baseUri, realm.getName());
         this.socialLinks = new LinkedList<SocialLinkEntry>();
@@ -44,7 +44,11 @@ public class AccountSocialBean {
                         availableLinks++;
                     }
                     String action = socialLink != null ? "remove" : "add";
-                    String actionUrl = UriBuilder.fromUri(accountSocialUpdateUri).queryParam("action", action).queryParam("provider_id", socialProviderId).build().toString();
+                    String actionUrl = UriBuilder.fromUri(accountSocialUpdateUri)
+                            .queryParam("action", action)
+                            .queryParam("provider_id", socialProviderId)
+                            .queryParam("stateChecker", stateChecker)
+                            .build().toString();
 
                     SocialLinkEntry entry = new SocialLinkEntry(socialLink, provider.getName(), actionUrl);
                     this.socialLinks.add(entry);

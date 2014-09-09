@@ -44,6 +44,8 @@ public class SessionsBean {
             this.session = session;
         }
 
+        public String getId() {return session.getId(); }
+
         public String getIpAddress() {
             return session.getIpAddress();
         }

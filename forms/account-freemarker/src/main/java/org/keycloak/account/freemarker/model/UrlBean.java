@@ -16,13 +16,15 @@ public class UrlBean {
     private URI baseURI;
     private URI baseQueryURI;
     private URI currentURI;
+    private String stateChecker;
 
-    public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI baseQueryURI, URI currentURI) {
+    public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI baseQueryURI, URI currentURI, String stateChecker) {
         this.realm = realm.getName();
         this.theme = theme;
         this.baseURI = baseURI;
         this.baseQueryURI = baseQueryURI;
         this.currentURI = currentURI;
+        this.stateChecker = stateChecker;
     }
 
     public String getAccessUrl() {
@@ -54,11 +56,11 @@ public class UrlBean {
     }
 
     public String getSessionsLogoutUrl() {
-        return Urls.accountSessionsLogoutPage(baseQueryURI, realm).toString();
+        return Urls.accountSessionsLogoutPage(baseQueryURI, realm, stateChecker).toString();
     }
 
     public String getTotpRemoveUrl() {
-        return Urls.accountTotpRemove(baseQueryURI, realm).toString();
+        return Urls.accountTotpRemove(baseQueryURI, realm, stateChecker).toString();
     }
 
     public String getLogoutUrl() {

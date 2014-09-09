@@ -12,6 +12,8 @@
 
     <form action="${url.accountUrl}" class="form-horizontal" method="post">
 
+        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
+
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
                 <label for="username" class="control-label">${rb.username}</label>

@@ -68,8 +68,10 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmId);
     }
 
-    public static URI accountTotpRemove(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "processTotpRemove").build(realmId);
+    public static URI accountTotpRemove(URI baseUri, String realmId, String stateChecker) {
+        return accountBase(baseUri).path(AccountService.class, "processTotpRemove")
+                .queryParam("stateChecker", stateChecker)
+                .build(realmId);
     }
 
     public static URI accountLogPage(URI baseUri, String realmId) {
@@ -80,8 +82,10 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "sessionsPage").build(realmId);
     }
 
-    public static URI accountSessionsLogoutPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "processSessionsLogout").build(realmId);
+    public static URI accountSessionsLogoutPage(URI baseUri, String realmId, String stateChecker) {
+        return accountBase(baseUri).path(AccountService.class, "processSessionsLogout")
+                .queryParam("stateChecker", stateChecker)
+                .build(realmId);
     }
 
     public static URI accountLogout(URI baseUri, URI redirectUri, String realmId) {
