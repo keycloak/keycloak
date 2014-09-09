@@ -179,11 +179,7 @@ public class AdminRoot {
      */
     @Path("realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
-        if (request.getHttpMethod().equalsIgnoreCase("OPTIONS")) {
-            logger.debug("Cors admin pre-flight");
-            Response response = Cors.add(request, Response.ok()).preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
-            throw new NoLogWebApplicationException(response);
-        }
+        handlePreflightRequest();
 
         AdminAuth auth = authenticateRealmAdminRequest(headers);
         if (auth != null) {
@@ -206,10 +202,26 @@ public class AdminRoot {
      */
     @Path("serverinfo")
     public ServerInfoAdminResource getServerInfo(@Context final HttpHeaders headers) {
+        handlePreflightRequest();
+
+        AdminAuth auth = authenticateRealmAdminRequest(headers);
+        if (auth != null) {
+            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
+        }
+        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
+
         ServerInfoAdminResource adminResource = new ServerInfoAdminResource();
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);
         return adminResource;
+    }
+
+    protected void handlePreflightRequest() {
+        if (request.getHttpMethod().equalsIgnoreCase("OPTIONS")) {
+            logger.debug("Cors admin pre-flight");
+            Response response = Cors.add(request, Response.ok()).preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
+            throw new NoLogWebApplicationException(response);
+        }
     }
 
 }

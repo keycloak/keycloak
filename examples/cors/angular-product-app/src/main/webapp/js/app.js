@@ -58,6 +58,14 @@ module.controller('GlobalCtrl', function($scope, $http) {
         });
 
     };
+
+    $scope.loadServerInfo = function() {
+        $http.get("http://localhost-auth:8080/auth/admin/serverinfo").success(function(data) {
+            $scope.serverInfo = angular.fromJson(data);
+        });
+
+    };
+
     $scope.logout = logout;
 });
 
