@@ -98,10 +98,7 @@ public class TokenManager {
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
 
-        // only refresh session if next token refresh will be after idle timeout
-        if (currentTime + realm.getAccessTokenLifespan() > userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout()) {
-            userSession.setLastSessionRefresh(currentTime);
-        }
+        userSession.setLastSessionRefresh(currentTime);
 
         return accessToken;
     }
