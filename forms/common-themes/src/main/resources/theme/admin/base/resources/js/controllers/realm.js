@@ -4,8 +4,6 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
     };
 
     $scope.authUrl = authUrl;
-    $scope.logout = logout;
-
     $scope.auth = Auth;
 
     WhoAmI.get(function (data) {
