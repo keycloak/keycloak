@@ -146,6 +146,10 @@ public class AuthenticationManager {
     }
 
     protected static String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
+        return getRealmCookiePath(realm, uriInfo);
+    }
+
+    public static String getRealmCookiePath(RealmModel realm, UriInfo uriInfo) {
         URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getName());
         return uri.getRawPath();
     }
