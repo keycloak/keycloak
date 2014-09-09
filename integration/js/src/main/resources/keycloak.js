@@ -7,6 +7,7 @@
 
         var kc = this;
         var adapter;
+        var refreshQueue = [];
 
         var loginIframe = {
             enable: true,
@@ -237,31 +238,39 @@
                     var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
                     var url = getRealmUrl() + '/tokens/refresh';
 
-                    var req = new XMLHttpRequest();
-                    req.open('POST', url, true);
-                    req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                    refreshQueue.push(promise);
 
-                    if (kc.clientId && kc.clientSecret) {
-                        req.setRequestHeader('Authorization', 'Basic ' + btoa(kc.clientId + ':' + kc.clientSecret));
-                    } else {
-                        params += '&client_id=' + encodeURIComponent(kc.clientId);
-                    }
+                    if (refreshQueue.length == 1) {
+                        var req = new XMLHttpRequest();
+                        req.open('POST', url, true);
+                        req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
-                    req.onreadystatechange = function() {
-                        if (req.readyState == 4) {
-                            if (req.status == 200) {
-                                var tokenResponse = JSON.parse(req.responseText);
-                                setToken(tokenResponse['access_token'], tokenResponse['refresh_token']);
-                                kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
-                                promise.setSuccess(true);
-                            } else {
-                                kc.onAuthRefreshError && kc.onAuthRefreshError();
-                                promise.setError();
-                            }
+                        if (kc.clientId && kc.clientSecret) {
+                            req.setRequestHeader('Authorization', 'Basic ' + btoa(kc.clientId + ':' + kc.clientSecret));
+                        } else {
+                            params += '&client_id=' + encodeURIComponent(kc.clientId);
                         }
-                    };
 
-                    req.send(params);
+                        req.onreadystatechange = function () {
+                            if (req.readyState == 4) {
+                                if (req.status == 200) {
+                                    var tokenResponse = JSON.parse(req.responseText);
+                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token']);
+                                    kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
+                                    for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
+                                        p.setSuccess(true);
+                                    }
+                                } else {
+                                    kc.onAuthRefreshError && kc.onAuthRefreshError();
+                                    for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
+                                        p.setError(true);
+                                    }
+                                }
+                            }
+                        };
+
+                        req.send(params);
+                    }
                 }
             }
 

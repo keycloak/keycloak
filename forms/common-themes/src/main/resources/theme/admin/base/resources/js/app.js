@@ -33,18 +33,22 @@ angular.element(document).ready(function ($http) {
 module.factory('authInterceptor', function($q, Auth) {
     return {
         request: function (config) {
-            var deferred = $q.defer();
-            if (Auth.authz.token) {
-                Auth.authz.updateToken(5).success(function() {
-                    config.headers = config.headers || {};
-                    config.headers.Authorization = 'Bearer ' + Auth.authz.token;
+            if (!config.url.match(/.html$/)) {
+                var deferred = $q.defer();
+                if (Auth.authz.token) {
+                    Auth.authz.updateToken(5).success(function () {
+                        config.headers = config.headers || {};
+                        config.headers.Authorization = 'Bearer ' + Auth.authz.token;
 
-                    deferred.resolve(config);
-                }).error(function() {
-                    location.reload();
-                });
+                        deferred.resolve(config);
+                    }).error(function () {
+                        location.reload();
+                    });
+                }
+                return deferred.promise;
+            } else {
+                return config;
             }
-            return deferred.promise;
         }
     };
 });
