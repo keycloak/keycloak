@@ -39,5 +39,7 @@ public interface AccountProvider extends Provider {
 
     AccountProvider setPasswordSet(boolean passwordSet);
 
+    AccountProvider setStateChecker(String stateChecker);
+
     AccountProvider setFeatures(boolean social, boolean events, boolean passwordUpdateSupported);
 }

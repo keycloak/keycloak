@@ -4,6 +4,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 
 /**
@@ -16,17 +17,19 @@ public class Auth {
     private final AccessToken token;
     private final UserModel user;
     private final ClientModel client;
+    private final UserSessionModel session;
 
-    public Auth(RealmModel realm, AccessToken token, UserModel user, ClientModel client, boolean cookie) {
+    public Auth(RealmModel realm, AccessToken token, UserModel user, ClientModel client, UserSessionModel session, boolean cookie) {
         this.cookie = cookie;
         this.token = token;
         this.realm = realm;
 
         this.user = user;
         this.client = client;
+        this.session = session;
     }
 
-    public boolean isCookie() {
+    public boolean isCookieAuthenticated() {
         return cookie;
     }
 
@@ -44,6 +47,10 @@ public class Auth {
 
     public AccessToken getToken() {
         return token;
+    }
+
+    public UserSessionModel getSession() {
+        return session;
     }
 
     public boolean hasRealmRole(String role) {

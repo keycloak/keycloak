@@ -145,16 +145,26 @@ public class AccountService {
 
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {
-            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, true);
+            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, authResult.getSession(), true);
+
         } else {
             authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
             if (authResult != null) {
-                auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, false);
+                auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, authResult.getSession(), false);
             }
         }
+        // don't allow cors requests unless they were authenticated by an access token
+        // This is to prevent CSRF attacks.
+        if (auth != null && auth.isCookieAuthenticated()) {
+            if (headers.getRequestHeaders().containsKey("Origin")) {
+                throw new ForbiddenException();
+            }
+        }
+
         if (authResult != null) {
             UserSessionModel userSession = authResult.getSession();
             if (userSession != null) {
+                account.setStateChecker(authResult.getSession().getId());
                 boolean associated = false;
                 for (ClientSessionModel c : userSession.getClientSessions()) {
                     if (c.getClient().equals(application)) {
@@ -313,6 +323,34 @@ public class AccountService {
     }
 
     /**
+     * Check to see if form post has sessionId hidden field and match it against the session id.
+     *
+     * @param formData
+     */
+    protected void csrfCheck(final MultivaluedMap<String, String> formData) {
+        if (!auth.isCookieAuthenticated()) return;
+        if (auth.getSession() == null) return;
+        String stateChecker = formData.getFirst("stateChecker");
+        if (!auth.getSession().getId().equals(stateChecker)) {
+            throw new ForbiddenException();
+        }
+
+    }
+
+    /**
+     * Check to see if form post has sessionId hidden field and match it against the session id.
+     *
+     */
+    protected void csrfCheck(String stateChecker) {
+        if (!auth.isCookieAuthenticated()) return;
+        if (auth.getSession() == null) return;
+        if (!auth.getSession().getId().equals(stateChecker)) {
+            throw new ForbiddenException();
+        }
+
+    }
+
+    /**
      * Update account information.
      *
      * Form params:
@@ -339,6 +377,8 @@ public class AccountService {
             setReferrerOnPage();
             return account.createResponse(AccountPages.ACCOUNT);
         }
+
+        csrfCheck(formData);
 
         UserModel user = auth.getUser();
 
@@ -393,12 +433,13 @@ public class AccountService {
 
     @Path("sessions-logout")
     @GET
-    public Response processSessionsLogout() {
+    public Response processSessionsLogout(@QueryParam("stateChecker") String stateChecker) {
         if (auth == null) {
             return login("sessions");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
+        csrfCheck(stateChecker);
 
         UserModel user = auth.getUser();
         session.sessions().removeUserSessions(realm, user);
@@ -439,6 +480,8 @@ public class AccountService {
             setReferrerOnPage();
             return account.createResponse(AccountPages.TOTP);
         }
+
+        csrfCheck(formData);
 
         UserModel user = auth.getUser();
 
@@ -494,6 +537,7 @@ public class AccountService {
             return account.createResponse(AccountPages.PASSWORD);
         }
 
+        csrfCheck(formData);
         UserModel user = auth.getUser();
 
         boolean requireCurrent = isPasswordSet(user);
@@ -546,12 +590,14 @@ public class AccountService {
     @Path("social-update")
     @GET
     public Response processSocialUpdate(@QueryParam("action") String action,
-                                        @QueryParam("provider_id") String providerId) {
+                                        @QueryParam("provider_id") String providerId,
+                                        @QueryParam("stateChecker") String stateChecker) {
         if (auth == null) {
             return login("social");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
+        csrfCheck(stateChecker);
         UserModel user = auth.getUser();
 
         if (Validation.isEmpty(providerId)) {

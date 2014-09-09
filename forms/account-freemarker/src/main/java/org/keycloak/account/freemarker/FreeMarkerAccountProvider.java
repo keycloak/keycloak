@@ -47,6 +47,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private RealmModel realm;
     private String[] referrer;
     private List<Event> events;
+    private String stateChecker;
     private List<UserSessionModel> sessions;
     private boolean socialEnabled;
     private boolean eventsEnabled;
@@ -107,6 +108,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         }
         URI baseQueryUri = baseUriBuilder.build();
 
+        if (stateChecker != null) {
+            attributes.put("stateChecker", stateChecker);
+        }
+
         if (message != null) {
             attributes.put("message", new MessageBean(messages.containsKey(message) ? messages.getProperty(message) : message, messageType));
         }
@@ -115,7 +120,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             attributes.put("referrer", new ReferrerBean(referrer));
         }
 
-        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri()));
+        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
 
         attributes.put("features", new FeaturesBean(socialEnabled, eventsEnabled, passwordUpdateSupported));
 
@@ -127,7 +132,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                 attributes.put("totp", new TotpBean(user, baseUri));
                 break;
             case SOCIAL:
-                attributes.put("social", new AccountSocialBean(session, realm, user, uriInfo.getBaseUri()));
+                attributes.put("social", new AccountSocialBean(session, realm, user, uriInfo.getBaseUri(), stateChecker));
                 break;
             case LOG:
                 attributes.put("log", new LogBean(events));
@@ -209,6 +214,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     @Override
     public AccountProvider setSessions(List<UserSessionModel> sessions) {
         this.sessions = sessions;
+        return this;
+    }
+
+    @Override
+    public AccountProvider setStateChecker(String stateChecker) {
+        this.stateChecker = stateChecker;
         return this;
     }
 
