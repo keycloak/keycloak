@@ -4,17 +4,9 @@ var consoleBaseUrl = window.location.href;
 consoleBaseUrl = consoleBaseUrl.substring(0, consoleBaseUrl.indexOf("/console"));
 consoleBaseUrl = consoleBaseUrl + "/console";
 var configUrl = consoleBaseUrl + "/config";
-var logoutUrl = consoleBaseUrl + "/logout";
+
 var auth = {};
-var logout = function(){
-    console.log('*** LOGOUT');
-    window.location = logoutUrl;
-};
-
-
-var authUrl = window.location.href;
-authUrl = authUrl.substring(0, authUrl.indexOf('/admin/'));
-
+var authUrl = window.location.href.substring(0, window.location.href.indexOf('/admin/'));
 
 var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload' ]);
 var resourceRequests = 0;
@@ -803,14 +795,13 @@ module.config(function($httpProvider) {
 
 });
 
-module.factory('errorInterceptor', function($q, $window, $rootScope, $location,Notifications) {
+module.factory('errorInterceptor', function($q, $window, $rootScope, $location, Notifications, Auth) {
     return function(promise) {
         return promise.then(function(response) {
             return response;
         }, function(response) {
             if (response.status == 401) {
-                console.log('session timeout?');
-                logout();
+                Auth.authz.logout();
              } else if (response.status == 403) {
                 Notifications.error("Forbidden");
             } else if (response.status == 404) {
