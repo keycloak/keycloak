@@ -24,7 +24,6 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Sessions;
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
@@ -36,7 +35,6 @@ import org.keycloak.adapters.RequestAuthenticator;
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
 public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanism {
-    private static final Logger log = Logger.getLogger(UndertowKeycloakAuthMech.class);
     public static final AttachmentKey<AuthChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(AuthChallenge.class);
     protected AdapterDeploymentContext deploymentContext;
 

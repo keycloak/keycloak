@@ -31,7 +31,7 @@ public class AuthenticatedActionsValve extends ValveBase {
 
     public AuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container, ObjectName controller) {
         this.deploymentContext = deploymentContext;
-        if (next == null) throw new RuntimeException("WTF is next null?!");
+        if (next == null) throw new RuntimeException("Next valve is null!!!");
         setNext(next);
         setContainer(container);
         setController(controller);

@@ -113,7 +113,9 @@ public class PreAuthActionsHandler {
     }
 
     protected void handleLogout()  {
-        log.info("K_LOGOUT sent");
+        if (log.isTraceEnabled()) {
+            log.trace("K_LOGOUT sent");
+        }
         try {
             JWSInput token = verifyAdminRequest();
             if (token == null) {
@@ -123,12 +125,12 @@ public class PreAuthActionsHandler {
             if (!validateAction(action)) return;
             String user = action.getUser();
             if (user != null) {
-                log.info("logout of session for: " + user);
+                log.debug("logout of session for: " + user);
                 userSessionManagement.logoutUser(user);
             } else if (action.getSession() != null) {
                 userSessionManagement.logoutKeycloakSession(action.getSession());
             } else {
-                log.info("logout of all sessions");
+                log.debug("logout of all sessions");
                 if (action.getNotBefore() > deployment.getNotBefore()) {
                     deployment.setNotBefore(action.getNotBefore());
                 }
@@ -142,7 +144,9 @@ public class PreAuthActionsHandler {
 
 
     protected void handlePushNotBefore()  {
-        log.info("K_PUSH_NOT_BEFORE sent");
+        if (log.isTraceEnabled()) {
+            log.trace("K_PUSH_NOT_BEFORE sent");
+        }
         try {
             JWSInput token = verifyAdminRequest();
             if (token == null) {
@@ -205,7 +209,9 @@ public class PreAuthActionsHandler {
     }
 
     protected void handleGetSessionStats()  {
-        log.info("K_GET_SESSION_STATS sent");
+        if (log.isTraceEnabled()) {
+            log.trace("K_GET_SESSION_STATS sent");
+        }
         try {
             JWSInput token = verifyAdminRequest();
             if (token == null) return;
@@ -229,7 +235,9 @@ public class PreAuthActionsHandler {
         }
     }
     protected void handleGetUserStats()  {
-        log.info("K_GET_USER_STATS sent");
+        if (log.isTraceEnabled()) {
+            log.trace("K_GET_USER_STATS sent");
+        }
         try {
             JWSInput token = verifyAdminRequest();
             if (token == null) return;
