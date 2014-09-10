@@ -63,11 +63,15 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
     }
 
     public void refreshExpiredToken() {
-        log.info("checking whether to refresh.");
+        if (log.isTraceEnabled()) {
+            log.trace("checking whether to refresh.");
+        }
         if (isActive()) return;
         if (this.deployment == null || refreshToken == null) return; // Might be serialized in HttpSession?
 
-        log.info("Doing refresh");
+        if (log.isTraceEnabled()) {
+            log.trace("Doing refresh");
+        }
         AccessTokenResponse response = null;
         try {
             response = ServerRequest.invokeRefresh(deployment, refreshToken);
@@ -78,12 +82,14 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
             return;
         }
-        log.info("received refresh response");
+        if (log.isTraceEnabled()) {
+            log.trace("received refresh response");
+        }
         String tokenString = response.getToken();
         AccessToken token = null;
         try {
             token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealm());
-            log.info("Token Verification succeeded!");
+            log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
         }

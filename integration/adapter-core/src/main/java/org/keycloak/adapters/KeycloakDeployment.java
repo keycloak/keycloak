@@ -1,7 +1,6 @@
 package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
-import org.jboss.logging.Logger;
 import org.keycloak.ServiceUrlConstants;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.util.KeycloakUriBuilder;
@@ -16,7 +15,6 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class KeycloakDeployment {
-    private static final Logger log = Logger.getLogger(KeycloakDeployment.class);
 
     protected boolean relativeUrls;
     protected String realm;

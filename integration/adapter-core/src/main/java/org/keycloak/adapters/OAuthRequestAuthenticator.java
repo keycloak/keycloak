@@ -109,7 +109,7 @@ public abstract class OAuthRequestAuthenticator {
 
     protected String getRedirectUri(String state) {
         String url = getRequestUrl();
-        log.infof("callback uri: %s", url);
+        log.debugf("callback uri: %s", url);
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             int port = sslRedirectPort();
             if (port < 0) {
@@ -148,7 +148,7 @@ public abstract class OAuthRequestAuthenticator {
                     exchange.getResponse().setStatus(403);
                     return true;
                 }
-                log.info("Sending redirect to login page: " + redirect);
+                log.debug("Sending redirect to login page: " + redirect);
                 exchange.getResponse().setStatus(302);
                 exchange.getResponse().setCookie(deployment.getStateCookieName(), state, /* need to set path? */ null, null, -1, deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr()), false);
                 exchange.getResponse().setHeader("Location", redirect);
@@ -165,7 +165,7 @@ public abstract class OAuthRequestAuthenticator {
             return challenge(400);
         }
         // reset the cookie
-        log.info("** reseting application state cookie");
+        log.debug("** reseting application state cookie");
         facade.getResponse().resetCookie(deployment.getStateCookieName(), stateCookie.getPath());
         String stateCookieValue = getCookieValue(deployment.getStateCookieName());
 
@@ -187,7 +187,7 @@ public abstract class OAuthRequestAuthenticator {
     public AuthOutcome authenticate() {
         String code = getCode();
         if (code == null) {
-            log.info("there was no code");
+            log.debug("there was no code");
             String error = getError();
             if (error != null) {
                 // todo how do we send a response?
@@ -195,13 +195,13 @@ public abstract class OAuthRequestAuthenticator {
                 challenge = challenge(400);
                 return AuthOutcome.FAILED;
             } else {
-                log.info("redirecting to auth server");
+                log.debug("redirecting to auth server");
                 challenge = loginRedirect();
                 saveRequest();
                 return AuthOutcome.NOT_ATTEMPTED;
             }
         } else {
-            log.info("there was a code, resolving");
+            log.debug("there was a code, resolving");
             challenge = resolveCode(code);
             if (challenge != null) {
                 return AuthOutcome.FAILED;
@@ -246,7 +246,7 @@ public abstract class OAuthRequestAuthenticator {
             return challenge(403);
         }
 
-        log.info("checking state cookie for after code");
+        log.debug("checking state cookie for after code");
         AuthChallenge challenge = checkStateCookie();
         if (challenge != null) return challenge;
 
@@ -292,7 +292,7 @@ public abstract class OAuthRequestAuthenticator {
             log.error("Stale token");
             return challenge(403);
         }
-        log.info("successful authenticated");
+        log.debug("successful authenticated");
         return null;
     }
 

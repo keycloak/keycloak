@@ -48,11 +48,15 @@ public class KeycloakUndertowAccount implements Account, Serializable, KeycloakA
     protected void setRoles(AccessToken accessToken) {
         Set<String> roles = null;
         if (session.getDeployment().isUseResourceRoleMappings()) {
-            log.info("useResourceRoleMappings");
+            if (log.isTraceEnabled()) {
+                log.trace("useResourceRoleMappings");
+            }
             AccessToken.Access access = accessToken.getResourceAccess(session.getDeployment().getResourceName());
             if (access != null) roles = access.getRoles();
         } else {
-            log.info("use realm role mappings");
+            if (log.isTraceEnabled()) {
+                log.trace("use realm role mappings");
+            }
             AccessToken.Access access = accessToken.getRealmAccess();
             if (access != null) roles = access.getRoles();
         }
@@ -88,18 +92,18 @@ public class KeycloakUndertowAccount implements Account, Serializable, KeycloakA
     public boolean isActive() {
         // this object may have been serialized, so we need to reset realm config/metadata
         if (session.isActive()) {
-            log.info("session is active");
+            log.debug("session is active");
             return true;
         }
 
-        log.info("session is not active try refresh");
+        log.debug("session is not active try refresh");
         session.refreshExpiredToken();
         if (!session.isActive()) {
-            log.info("session is not active return with failure");
+            log.debug("session is not active return with failure");
 
             return false;
         }
-        log.info("refresh succeeded");
+        log.debug("refresh succeeded");
 
         setRoles(session.getToken());
         return true;

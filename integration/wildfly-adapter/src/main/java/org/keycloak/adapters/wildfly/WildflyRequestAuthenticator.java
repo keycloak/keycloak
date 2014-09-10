@@ -39,7 +39,7 @@ public class WildflyRequestAuthenticator extends ServletRequestAuthenticator {
     protected void propagateKeycloakContext(KeycloakUndertowAccount account) {
         super.propagateKeycloakContext(account);
         SecurityInfoHelper.propagateSessionInfo(account);
-        log.info("propagate security context to wildfly");
+        log.debug("propagate security context to wildfly");
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(account.getPrincipal());

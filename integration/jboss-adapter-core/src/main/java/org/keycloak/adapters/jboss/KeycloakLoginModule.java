@@ -29,7 +29,7 @@ public class KeycloakLoginModule extends AbstractServerLoginModule {
     @SuppressWarnings("unchecked")
     @Override
     public boolean login() throws LoginException {
-        log.info("KeycloakLoginModule.login()");
+        log.debug("KeycloakLoginModule.login()");
         if (super.login() == true) {
             log.info("super.login()==true");
             return true;
@@ -37,7 +37,7 @@ public class KeycloakLoginModule extends AbstractServerLoginModule {
 
         Object credential = getCredential();
         if (credential != null && (credential instanceof KeycloakAccount)) {
-            log.info("Found Account");
+            log.debug("Found Account");
             KeycloakAccount account = (KeycloakAccount)credential;
             roleSet = account.getRoles();
             identity = account.getPrincipal();

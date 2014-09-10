@@ -123,7 +123,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
-            log.info("invoke");
+            if (log.isTraceEnabled()) {
+                log.trace("invoke");
+            }
             CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
             PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deploymentContext, facade);
             if (handler.handleRequest()) {
@@ -137,7 +139,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     @Override
     public boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException {
-        log.info("*** authenticate");
+        if (log.isTraceEnabled()) {
+            log.trace("*** authenticate");
+        }
         CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
