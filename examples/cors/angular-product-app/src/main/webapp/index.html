@@ -52,6 +52,22 @@
             </tbody>
         </table>
     </div>
+    <div>
+        <h2><span>Social providers</span></h2>
+        <button type="submit" data-ng-click="loadServerInfo()">load available social providers</button>
+        <table class="table" data-ng-show="serverInfo.socialProviders.length > 0">
+            <thead>
+            <tr>
+                <th>Available social providers</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="sp in serverInfo.socialProviders">
+                <td>{{sp}}</a></td>
+            </tr>
+            </tbody>
+        </table>
+     </div>
 </div>
 </body>
 </html>
