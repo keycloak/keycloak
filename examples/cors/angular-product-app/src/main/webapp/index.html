@@ -34,6 +34,7 @@
             </tbody>
         </table>
     </div>
+    <hr />
     <div>
         <h2><span>Realm Roles</span></h2>
         <button type="submit" data-ng-click="loadRoles()">load Roles</button>
@@ -52,6 +53,7 @@
             </tbody>
         </table>
     </div>
+    <hr />
     <div>
         <h2><span>Social providers</span></h2>
         <button type="submit" data-ng-click="loadServerInfo()">load available social providers</button>
@@ -67,7 +69,18 @@
             </tr>
             </tbody>
         </table>
-     </div>
+    </div>
+    <hr />
+    <div>
+        <h2><span>Realm info</span></h2>
+        <button type="submit" data-ng-click="loadPublicRealmInfo()">Load public realm info</button>
+
+        <div data-ng-show="realm">
+            Realm name: {{realm.realm}} <br/>
+            Public key: {{realm.public_key}} <br/>
+        </div>
+    </div>
+    <hr />
 </div>
 </body>
 </html>

@@ -34,6 +34,8 @@ public class Cors {
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
     public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
 
+    public static final String ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD = "*";
+
 
     private HttpRequest request;
     private ResponseBuilder builder;
@@ -85,6 +87,13 @@ public class Cors {
         return this;
     }
 
+    public Cors allowedOrigins(String... allowedOrigins) {
+        if (allowedOrigins != null && allowedOrigins.length > 0) {
+            this.allowedOrigins = new HashSet<String>(Arrays.asList(allowedOrigins));
+        }
+        return this;
+    }
+
     public Cors allowedMethods(String... allowedMethods) {
         this.allowedMethods = new HashSet<String>(Arrays.asList(allowedMethods));
         return this;
@@ -101,7 +110,7 @@ public class Cors {
             return builder.build();
         }
 
-        if (!preflight && (allowedOrigins == null || !allowedOrigins.contains(origin))) {
+        if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
             return builder.build();
         }
 
@@ -135,7 +144,7 @@ public class Cors {
             return;
         }
 
-        if (!preflight && (allowedOrigins == null || !allowedOrigins.contains(origin))) {
+        if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
             logger.debug("!preflight and no origin");
             return;
         }
