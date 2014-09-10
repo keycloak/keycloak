@@ -64,6 +64,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderException;
+import org.keycloak.util.UriUtils;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -148,30 +149,38 @@ public class AccountService {
 
         account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
 
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {
-            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, authResult.getSession(), true);
-            Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
-            if (cookie != null) {
-                stateChecker = cookie.getValue();
-            } else {
-                stateChecker = UUID.randomUUID().toString();
-                String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-                boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
-                CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
-            }
-            account.setStateChecker(stateChecker);
-
+            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, authResult.getSession(), false);
         } else {
-            authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
+            authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
             if (authResult != null) {
-                auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, authResult.getSession(), false);
+                auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, authResult.getSession(), true);
+                Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
+                if (cookie != null) {
+                    stateChecker = cookie.getValue();
+                } else {
+                    stateChecker = UUID.randomUUID().toString();
+                    String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
+                    boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
+                    CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
+                }
+                account.setStateChecker(stateChecker);
             }
         }
+
+        String requestOrigin = UriUtils.getOrigin(uriInfo.getBaseUri());
+
         // don't allow cors requests unless they were authenticated by an access token
         // This is to prevent CSRF attacks.
         if (auth != null && auth.isCookieAuthenticated()) {
-            if (headers.getRequestHeaders().containsKey("Origin")) {
+            String origin = headers.getRequestHeaders().getFirst("Origin");
+            if (origin != null && !requestOrigin.equals(origin)) {
+                throw new ForbiddenException();
+            }
+
+            String referrer = headers.getRequestHeaders().getFirst("Referer");
+            if (referrer != null && !requestOrigin.equals(UriUtils.getOrigin(referrer))) {
                 throw new ForbiddenException();
             }
         }
