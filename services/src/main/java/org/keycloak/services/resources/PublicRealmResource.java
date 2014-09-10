@@ -2,13 +2,18 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.services.resources.admin.AdminRoot;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 /**
@@ -23,10 +28,27 @@ public class PublicRealmResource {
     @Context
     protected UriInfo uriInfo;
 
+    @Context
+    protected HttpRequest request;
+
+    @Context
+    protected HttpResponse response;
+
     protected RealmModel realm;
 
     public PublicRealmResource(RealmModel realm) {
         this.realm = realm;
+    }
+
+    /**
+     * CORS preflight
+     *
+     * @return
+     */
+    @Path("/")
+    @OPTIONS
+    public Response accountPreflight() {
+        return Cors.add(request, Response.ok()).auth().preflight().build();
     }
 
     /**
@@ -38,6 +60,7 @@ public class PublicRealmResource {
     @NoCache
     @Produces("application/json")
     public PublishedRealmRepresentation getRealm() {
+        Cors.add(request).allowedOrigins(Cors.ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD).auth().build(response);
         return realmRep(realm, uriInfo);
     }
 

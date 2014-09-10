@@ -66,6 +66,12 @@ module.controller('GlobalCtrl', function($scope, $http) {
 
     };
 
+    $scope.loadPublicRealmInfo = function() {
+        $http.get("http://localhost-auth:8080/auth/realms/cors").success(function(data) {
+            $scope.realm = angular.fromJson(data);
+        });
+    };
+
     $scope.logout = logout;
 });
 
