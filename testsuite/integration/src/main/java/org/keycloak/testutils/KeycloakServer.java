@@ -296,7 +296,7 @@ public class KeycloakServer {
         di.setDeploymentName("Keycloak");
 
         di.setDefaultServletConfig(new DefaultServletConfig(true));
-        di.addWelcomePage("welcome-content/index.html");
+        di.addWelcomePage("theme/welcome/keycloak/resources/index.html");
 
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
         di.addFilter(filter);

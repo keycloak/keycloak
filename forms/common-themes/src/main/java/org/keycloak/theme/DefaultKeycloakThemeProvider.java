@@ -21,6 +21,7 @@ public class DefaultKeycloakThemeProvider implements ThemeProvider {
     private static Set<String> LOGIN_THEMES = new HashSet<String>();
     private static Set<String> ADMIN_THEMES = new HashSet<String>();
     private static Set<String> EMAIL_THEMES = new HashSet<String>();
+    private static Set<String> WELCOME_THEMES = new HashSet<String>();
     private static Set<String> COMMON_THEMES = new HashSet<String>();
 
     static {
@@ -28,6 +29,7 @@ public class DefaultKeycloakThemeProvider implements ThemeProvider {
         Collections.addAll(LOGIN_THEMES, BASE, PATTERNFLY, KEYCLOAK);
         Collections.addAll(ADMIN_THEMES, BASE, PATTERNFLY, KEYCLOAK);
         Collections.addAll(EMAIL_THEMES, KEYCLOAK);
+        Collections.addAll(WELCOME_THEMES, KEYCLOAK);
         Collections.addAll(COMMON_THEMES, KEYCLOAK);
     }
 
@@ -56,6 +58,8 @@ public class DefaultKeycloakThemeProvider implements ThemeProvider {
                 return ADMIN_THEMES;
             case EMAIL:
                 return EMAIL_THEMES;
+            case WELCOME:
+                return WELCOME_THEMES;
             case COMMON:
                 return COMMON_THEMES;
             default:

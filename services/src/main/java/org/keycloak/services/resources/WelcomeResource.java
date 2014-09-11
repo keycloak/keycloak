@@ -1,9 +1,19 @@
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
+import org.keycloak.freemarker.Theme;
+import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.models.KeycloakSession;
+
+import javax.activation.FileTypeMap;
+import javax.activation.MimetypesFileTypeMap;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -17,8 +27,15 @@ import java.net.URISyntaxException;
 @Path("/")
 public class WelcomeResource {
 
+    private static final Logger logger = Logger.getLogger(WelcomeResource.class);
+
+    private static FileTypeMap mimeTypes = MimetypesFileTypeMap.getDefaultFileTypeMap();
+
     @Context
     private UriInfo uriInfo;
+
+    @Context
+    protected KeycloakSession session;
 
     /**
      * Welcome page of Keycloak
@@ -40,18 +57,34 @@ public class WelcomeResource {
     /**
      * Resources for welcome page
      *
-     * @param name
+     * @param path
      * @return
      */
     @GET
-    @Path("/welcome-content/{name}")
+    @Path("/welcome-content/{path}")
     @Produces("text/html")
-    public Response getResource(@PathParam("name") String name) {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("welcome-content/" + name);
-        if (inputStream != null) {
-            return Response.ok(inputStream).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
+    public Response getResource(@PathParam("path") String path) {
+        try {
+            Config.Scope config = Config.scope("theme");
+
+            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+            Theme theme = themeProvider.getTheme(config.get("welcomeTheme"), Theme.Type.WELCOME);
+            InputStream resource = theme.getResourceAsStream(path);
+            if (resource != null) {
+                String contentType = mimeTypes.getContentType(path);
+
+                CacheControl cacheControl = new CacheControl();
+                cacheControl.setNoTransform(false);
+                cacheControl.setMaxAge(config.getInt("staticMaxAge", -1));
+
+                Response.ResponseBuilder builder = Response.ok(resource).type(contentType).cacheControl(cacheControl);
+                return builder.build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to get theme resource", e);
+            return Response.serverError().build();
         }
     }
 

@@ -41,7 +41,8 @@
         "cacheThemes": "${keycloak.theme.cacheThemes:true}",
         "folder": {
             "dir": "${keycloak.theme.dir}"
-        }
+        },
+        "welcomeTheme": "logo-example"
     },
 
     "login": {
