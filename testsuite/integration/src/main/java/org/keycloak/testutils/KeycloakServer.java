@@ -139,6 +139,10 @@ public class KeycloakServer {
             }
         }
 
+        if (System.getenv("KEYCLOAK_DEV_PORT") != null) {
+            config.setPort(Integer.valueOf(System.getenv("KEYCLOAK_DEV_PORT")));
+        }
+
         if (System.getProperties().containsKey("resources")) {
             String resources = System.getProperty("resources");
             if (resources == null || resources.equals("") || resources.equals("true")) {
