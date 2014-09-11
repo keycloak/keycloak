@@ -48,8 +48,11 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
     @FindBy(id = "referrer")
     private WebElement backToApplicationLink;
 
-    @FindBy(css = "button[type=\"submit\"]")
+    @FindBy(css = "button[type=\"submit\"][value=\"Save\"]")
     private WebElement submitButton;
+
+    @FindBy(css = "button[type=\"submit\"][value=\"Cancel\"]")
+    private WebElement cancelButton;
 
     @FindBy(className = "alert-success")
     private WebElement successMessage;
@@ -67,6 +70,11 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
 
         submitButton.click();
     }
+
+    public void clickCancel() {
+        cancelButton.click();
+    }
+
 
     public String getFirstName() {
         return firstNameInput.getAttribute("value");
