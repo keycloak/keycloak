@@ -51,6 +51,8 @@ public abstract class AbstractClientTest {
 
     @After
     public void after() {
+        keycloak.close();
+
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {

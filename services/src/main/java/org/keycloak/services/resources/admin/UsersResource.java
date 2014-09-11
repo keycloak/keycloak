@@ -290,6 +290,39 @@ public class UsersResource {
         return result;
     }
 
+    @Path("{username}/social-links/{provider}")
+    @POST
+    @NoCache
+    public Response addSocialLink(final @PathParam("username") String username, final @PathParam("provider") String provider, SocialLinkRepresentation rep) {
+        auth.requireManage();
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        if (session.users().getSocialLink(user, provider, realm) != null) {
+            return Flows.errors().exists("User is already linked with provider");
+        }
+
+        SocialLinkModel socialLink = new SocialLinkModel(provider, rep.getSocialUserId(), rep.getSocialUsername());
+        session.users().addSocialLink(realm, user, socialLink);
+
+        return Response.noContent().build();
+    }
+
+    @Path("{username}/social-links/{provider}")
+    @DELETE
+    @NoCache
+    public void removeSocialLink(final @PathParam("username") String username, final @PathParam("provider") String provider) {
+        auth.requireManage();
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        if (!session.users().removeSocialLink(realm, user, provider)) {
+            throw new NotFoundException("Link not found");
+        }
+    }
+
     /**
      * Remove all user sessions associated with this user.  And, for all applications that have an admin URL, tell
      * them to invalidate the sessions for this particular user.

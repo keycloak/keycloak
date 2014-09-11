@@ -1,10 +1,12 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.ClientErrorException;
-
+import javax.ws.rs.core.Response;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -106,6 +108,45 @@ public class UserTest extends AbstractClientTest {
 
         users = realm.users().search("username", 0, 20);
         assertEquals(9, users.size());
+    }
+
+    @Test
+    public void addSocialLink() {
+        createUser();
+
+        UserResource user = realm.users().get("user1");
+
+        SocialLinkRepresentation link = new SocialLinkRepresentation();
+        link.setSocialUserId("social-user-id");
+        link.setSocialUsername("social-username");
+
+        Response response = user.addSocialLink("social-provider-id", link);
+        assertEquals(204, response.getStatus());
+    }
+
+    @Test
+    public void getSocialLinks() {
+        addSocialLink();
+
+        UserResource user = realm.users().get("user1");
+        assertEquals(1, user.getSocialLinks().size());
+
+        SocialLinkRepresentation link = user.getSocialLinks().get(0);
+        assertEquals("social-provider-id", link.getSocialProvider());
+        assertEquals("social-user-id", link.getSocialUserId());
+        assertEquals("social-username", link.getSocialUsername());
+    }
+
+    @Test
+    public void removeSocialLink() {
+        addSocialLink();
+
+        UserResource user = realm.users().get("user1");
+        assertEquals(1, user.getSocialLinks().size());
+
+        user.removeSocialLink("social-provider-id");
+
+        assertEquals(0, user.getSocialLinks().size());
     }
 
 }
