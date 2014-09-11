@@ -35,6 +35,8 @@ public class Messages {
 
     public static final String INVALID_PASSWORD_CONFIRM = "invalidPasswordConfirm";
 
+    public static final String INVALID_EMAIL = "invalidEmail";
+
     public static final String INVALID_USER = "invalidUser";
 
     public static final String READ_ONLY_USER = "readOnlyUser";
