@@ -25,6 +25,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -43,6 +44,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private static final Logger logger = Logger.getLogger(FreeMarkerAccountProvider.class);
 
     private UserModel user;
+    private MultivaluedMap<String, String> profileFormData;
     private Response.Status status = Response.Status.OK;
     private RealmModel realm;
     private String[] referrer;
@@ -126,7 +128,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         switch (page) {
             case ACCOUNT:
-                attributes.put("account", new AccountBean(user));
+                attributes.put("account", new AccountBean(user, profileFormData));
                 break;
             case TOTP:
                 attributes.put("totp", new TotpBean(user, baseUri));
@@ -184,6 +186,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     @Override
     public AccountProvider setUser(UserModel user) {
         this.user = user;
+        return this;
+    }
+
+    @Override
+    public AccountProvider setProfileFormData(MultivaluedMap<String, String> formData) {
+        this.profileFormData = formData;
         return this;
     }
 

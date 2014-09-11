@@ -407,7 +407,7 @@ public class AccountService {
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
             setReferrerOnPage();
-            return account.setError(error).createResponse(AccountPages.ACCOUNT);
+            return account.setError(error).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         }
 
         try {
@@ -430,7 +430,7 @@ public class AccountService {
             return account.setSuccess("accountUpdated").createResponse(AccountPages.ACCOUNT);
         } catch (ModelReadOnlyException roe) {
             setReferrerOnPage();
-            return account.setError(Messages.READ_ONLY_USER).createResponse(AccountPages.ACCOUNT);
+            return account.setError(Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         }
     }
 

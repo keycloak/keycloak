@@ -1,5 +1,7 @@
 package org.keycloak.account.freemarker.model;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.models.UserModel;
 
 /**
@@ -7,18 +9,20 @@ import org.keycloak.models.UserModel;
  */
 public class AccountBean {
 
-    private UserModel user;
+    private final UserModel user;
+    private final MultivaluedMap<String, String> profileFormData;
 
-    public AccountBean(UserModel user) {
+    public AccountBean(UserModel user, MultivaluedMap<String, String> profileFormData) {
         this.user = user;
+        this.profileFormData = profileFormData;
     }
 
     public String getFirstName() {
-        return user.getFirstName();
+        return profileFormData != null ?  profileFormData.getFirst("firstName") : user.getFirstName();
     }
 
     public String getLastName() {
-        return user.getLastName();
+        return profileFormData != null ?  profileFormData.getFirst("lastName") :user.getLastName();
     }
 
     public String getUsername() {
@@ -26,7 +30,7 @@ public class AccountBean {
     }
 
     public String getEmail() {
-        return user.getEmail();
+        return profileFormData != null ?  profileFormData.getFirst("email") :user.getEmail();
     }
 
 }

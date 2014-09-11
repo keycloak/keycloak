@@ -6,6 +6,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
@@ -26,6 +27,8 @@ public interface AccountProvider extends Provider {
     AccountProvider setWarning(String message);
 
     AccountProvider setUser(UserModel user);
+
+    AccountProvider setProfileFormData(MultivaluedMap<String, String> formData);
 
     AccountProvider setStatus(Response.Status status);
 

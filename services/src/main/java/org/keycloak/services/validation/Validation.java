@@ -6,8 +6,12 @@ import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class Validation {
+
+    // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
 
     public static String validateRegistrationForm(MultivaluedMap<String, String> formData, List<String> requiredCredentialTypes) {
         if (isEmpty(formData.getFirst("firstName"))) {
@@ -20,6 +24,10 @@ public class Validation {
 
         if (isEmpty(formData.getFirst("email"))) {
             return Messages.MISSING_EMAIL;
+        }
+
+        if (!isEmailValid(formData.getFirst("email"))) {
+            return Messages.INVALID_EMAIL;
         }
 
         if (isEmpty(formData.getFirst("username"))) {
@@ -56,11 +64,20 @@ public class Validation {
             return Messages.MISSING_EMAIL;
         }
 
+        if (!isEmailValid(formData.getFirst("email"))) {
+            return Messages.INVALID_EMAIL;
+        }
+
         return null;
     }
 
     public static boolean isEmpty(String s) {
         return s == null || s.length() == 0;
     }
+
+    public static boolean isEmailValid(String email) {
+        return EMAIL_PATTERN.matcher(email).matches();
+    }
+
 
 }

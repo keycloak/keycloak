@@ -135,9 +135,9 @@ public class RequiredActionEmailVerificationTest {
     public void verifyEmailRegister() throws IOException, MessagingException {
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("firstName", "lastName", "email", "verifyEmail", "password", "password");
+        registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
 
-        String userId = events.expectRegister("verifyEmail", "email").assertEvent().getUserId();
+        String userId = events.expectRegister("verifyEmail", "email@mail.com").assertEvent().getUserId();
 
         Assert.assertTrue(verifyEmailPage.isCurrent());
 
@@ -147,7 +147,7 @@ public class RequiredActionEmailVerificationTest {
 
         String body = (String) message.getContent();
 
-        Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("username", "verifyEmail").detail("email", "email").assertEvent();
+        Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("username", "verifyEmail").detail("email", "email@mail.com").assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
@@ -158,7 +158,7 @@ public class RequiredActionEmailVerificationTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectRequiredAction(EventType.VERIFY_EMAIL).user(userId).session(sessionId).detail("username", "verifyEmail").detail("email", "email").detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectRequiredAction(EventType.VERIFY_EMAIL).user(userId).session(sessionId).detail("username", "verifyEmail").detail("email", "email@mail.com").detail(Details.CODE_ID, mailCodeId).assertEvent();
 
         events.expectLogin().user(userId).session(sessionId).detail("username", "verifyEmail").detail(Details.CODE_ID, mailCodeId).assertEvent();
     }
