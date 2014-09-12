@@ -259,7 +259,7 @@ public class RealmAdminResource {
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
         session.sessions().removeUserSession(realm, userSession);
-        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, userSession.getId());
+        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, userSession);
     }
 
     /**

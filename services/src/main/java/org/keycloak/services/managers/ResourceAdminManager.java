@@ -28,6 +28,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -157,29 +158,44 @@ public class ResourceAdminManager {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            // don't set user notBefore as we don't want a database hit on a user driven logout
-            List<ApplicationModel> resources = realm.getApplications();
-            logger.debugv("logging out {0} resources ", resources.size());
-            for (ClientSessionModel clientSession : session.getClientSessions()) {
-                ClientModel client = clientSession.getClient();
-                if (client instanceof ApplicationModel) {
-                    logoutApplication(requestUri, realm, (ApplicationModel) client, user, session.getId(), executor, 0);
+            List<ApplicationModel> resources;
+            if (session != null) {
+                resources = new LinkedList<ApplicationModel>();
+
+                for (ClientSessionModel clientSession : session.getClientSessions()) {
+                    ClientModel client = clientSession.getClient();
+                    if (client instanceof ApplicationModel) {
+                        resources.add((ApplicationModel) client);
+                    }
                 }
+            } else {
+                resources = realm.getApplications();
+            }
+
+            logger.debugv("logging out {0} resources ", resources.size());
+            for (ApplicationModel resource : resources) {
+                logoutApplication(requestUri, realm, resource, user, session != null ? session.getId() : null, executor, 0);
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
     }
 
-    public void logoutSession(URI requestUri, RealmModel realm, String session) {
+    public void logoutSession(URI requestUri, RealmModel realm, UserSessionModel session) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            // don't set user notBefore as we don't want a database hit on a user driven logout
-            List<ApplicationModel> resources = realm.getApplications();
+            List<ApplicationModel> resources = new LinkedList<ApplicationModel>();
+            for (ClientSessionModel clientSession : session.getClientSessions()) {
+                ClientModel client = clientSession.getClient();
+                if (client instanceof ApplicationModel) {
+                    resources.add((ApplicationModel) client);
+                }
+            }
+
             logger.debugv("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
-                logoutApplication(requestUri, realm, resource, null, session, executor, 0);
+                logoutApplication(requestUri, realm, resource, null, session.getId(), executor, 0);
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
