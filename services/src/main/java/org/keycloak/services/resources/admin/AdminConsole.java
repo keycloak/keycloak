@@ -292,7 +292,11 @@ public class AdminConsole {
     public Response getKeycloakJs() {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("keycloak.js");
         if (inputStream != null) {
-            return Response.ok(inputStream).build();
+            CacheControl cacheControl = new CacheControl();
+            cacheControl.setNoTransform(false);
+            cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
+
+            return Response.ok(inputStream).type("text/javascript").cacheControl(cacheControl).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }

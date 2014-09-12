@@ -6,6 +6,7 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
+import org.keycloak.Config;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -24,9 +25,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -88,8 +91,7 @@ public class RealmsResource {
     @Path("{realm}/login-status-iframe.html")
     @GET
     @Produces(MediaType.TEXT_HTML)
-    @NoCache
-    public String getLoginStatusIframe(final @PathParam("realm") String name,
+    public Response getLoginStatusIframe(final @PathParam("realm") String name,
                                        @QueryParam("client_id") String client_id,
                                        @QueryParam("origin") String origin) {
         AuthenticationManager auth = new AuthenticationManager();
@@ -130,7 +132,13 @@ public class RealmsResource {
 
         try {
             String file = StreamUtil.readString(is);
-            return file.replace("ORIGIN", origin);
+            file = file.replace("ORIGIN", origin);
+
+            CacheControl cacheControl = new CacheControl();
+            cacheControl.setNoTransform(false);
+            cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
+
+            return Response.ok(file).cacheControl(cacheControl).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
