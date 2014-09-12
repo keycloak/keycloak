@@ -1121,6 +1121,24 @@ module.directive('kcNavigation', function ($compile, Notifications) {
     }
 });
 
+module.directive('kcNavigationApplication', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: 'templates/kc-navigation-application.html',
+    }
+});
+
+module.directive('kcNavigationOauthClient', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: 'templates/kc-navigation-oauth-client.html',
+    }
+});
+
 /*
 *  Used to select the element (invoke $(elem).select()) on specified action list.
 *  Usages kc-select-action="click mouseover"

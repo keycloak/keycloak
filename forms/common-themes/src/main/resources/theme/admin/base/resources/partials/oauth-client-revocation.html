@@ -1,13 +1,6 @@
 <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
 <div id="content-area" class="col-md-9" role="main">
-    <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
-        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}">Settings</a></li>
-        <li data-ng-show="!oauth.publicClient"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/credentials">Credentials</a></li>
-        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/claims">Claims</a></li>
-        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/scope-mappings">Scope</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/revocation">Revocation</a></li>
-        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/installation">Installation</a></li>
-    </ul>
+    <kc-navigation-oauth-client></kc-navigation-oauth-client>
     <div id="content">
         <ol class="breadcrumb">
             <li><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>

@@ -189,7 +189,7 @@ public class AuthenticationManager {
                     logger.debug("identity cookie expired");
                     return null;
                 } else {
-                    logger.debugv("token not active - active: {0}, issued-at: {1}, not-before: {2}", token.isActive(), token.getIssuedAt(), realm.getNotBefore());
+                    logger.debugv("token active - active: {0}, issued-at: {1}, not-before: {2}", token.isActive(), token.getIssuedAt(), realm.getNotBefore());
                 }
             }
 
