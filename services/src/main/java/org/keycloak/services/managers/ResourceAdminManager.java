@@ -8,9 +8,12 @@ import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.SessionStats;
@@ -98,6 +101,9 @@ public class ResourceAdminManager {
 
     protected String getManagementUrl(URI requestUri, ApplicationModel application) {
         String mgmtUrl = application.getManagementUrl();
+        if (mgmtUrl == null || mgmtUrl.equals("")) {
+            return null;
+        }
 
         // this is to support relative admin urls when keycloak and applications are deployed on the same machine
         return ResolveRelative.resolveRelativeUri(requestUri, mgmtUrl);
@@ -147,15 +153,18 @@ public class ResourceAdminManager {
 
     }
 
-    public void logoutUser(URI requestUri, RealmModel realm, String user, String session) {
+    public void logoutUser(URI requestUri, RealmModel realm, String user, UserSessionModel session) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
             // don't set user notBefore as we don't want a database hit on a user driven logout
             List<ApplicationModel> resources = realm.getApplications();
             logger.debugv("logging out {0} resources ", resources.size());
-            for (ApplicationModel resource : resources) {
-                logoutApplication(requestUri, realm, resource, user, session, executor, 0);
+            for (ClientSessionModel clientSession : session.getClientSessions()) {
+                ClientModel client = clientSession.getClient();
+                if (client instanceof ApplicationModel) {
+                    logoutApplication(requestUri, realm, (ApplicationModel) client, user, session.getId(), executor, 0);
+                }
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
