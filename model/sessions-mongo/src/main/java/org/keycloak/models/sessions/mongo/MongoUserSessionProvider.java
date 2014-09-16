@@ -70,6 +70,9 @@ public class MongoUserSessionProvider implements UserSessionProvider {
 
         MongoUserSessionEntity userSessionEntity = entities.get(0);
         List<MongoClientSessionEntity> sessions = userSessionEntity.getClientSessions();
+        if (sessions == null) {
+            return null;
+        }
         for (MongoClientSessionEntity s : sessions) {
             if (s.getId().equals(id)) {
                 return new ClientSessionAdapter(session, this, realm, s, userSessionEntity, invocationContext);
@@ -240,6 +243,10 @@ public class MongoUserSessionProvider implements UserSessionProvider {
                 .get();
         List<MongoUserSessionEntity> userSessionEntities = mongoStore.loadEntities(MongoUserSessionEntity.class, query, invocationContext);
         for (MongoUserSessionEntity e : userSessionEntities) {
+            if (e.getClientSessions() == null) {
+                continue;
+            }
+
             List<MongoClientSessionEntity> remove = new LinkedList<MongoClientSessionEntity>();
             for (MongoClientSessionEntity c : e.getClientSessions()) {
                 if (c.getClientId().equals(client.getId())) {

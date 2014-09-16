@@ -92,7 +92,6 @@ public class OAuthFlows {
         if (state != null)
             redirectUri.queryParam(OAuth2Constants.STATE, state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
-        Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
 
         Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
         if (sessionCookie != null) {
@@ -112,7 +111,7 @@ public class OAuthFlows {
 
         // refresh the cookies!
         authManager.createLoginCookie(realm, accessCode.getUser(), userSession, uriInfo, clientConnection);
-        if (userSession.isRememberMe()) authManager.createRememberMeCookie(realm, uriInfo, clientConnection);
+        if (userSession.isRememberMe()) authManager.createRememberMeCookie(realm, accessCode.getUser().getUsername(), uriInfo, clientConnection);
         return location.build();
     }
 

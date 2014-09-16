@@ -131,6 +131,10 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     @Override
     public List<ClientSessionModel> getClientSessions() {
         List<ClientSessionModel> sessions = new LinkedList<ClientSessionModel>();
+        if (entity.getClientSessions() == null) {
+            return sessions;
+        }
+
         for (MongoClientSessionEntity e : entity.getClientSessions()) {
             sessions.add(new ClientSessionAdapter(keycloakSession, provider, realm, e, entity, invocationContext));
         }

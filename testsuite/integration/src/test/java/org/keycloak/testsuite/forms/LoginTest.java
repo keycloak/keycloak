@@ -27,7 +27,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
+import org.keycloak.events.Event;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -163,6 +165,49 @@ public class LoginTest {
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+    }
+
+    @Test
+    public void loginWithRememberMe() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setRememberMe(true);
+            }
+        });
+
+        try {
+            loginPage.open();
+            Assert.assertFalse(loginPage.isRememberMeChecked());
+            loginPage.setRememberMe(true);
+            Assert.assertTrue(loginPage.isRememberMeChecked());
+            loginPage.login("login-test", "password");
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            Event loginEvent = events.expectLogin().user(userId)
+                    .detail(Details.USERNAME, "login-test")
+                    .detail(Details.REMEMBER_ME, "true")
+                    .assertEvent();
+            String sessionId = loginEvent.getSessionId();
+
+            // Expire session
+            keycloakRule.removeUserSession(sessionId);
+
+            // Assert rememberMe checked and username/email prefilled
+            loginPage.open();
+            Assert.assertTrue(loginPage.isRememberMeChecked());
+            Assert.assertEquals("login-test", loginPage.getUsername());
+
+            loginPage.setRememberMe(false);
+        } finally {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setRememberMe(false);
+                }
+            });
+        }
     }
 
     @Test
