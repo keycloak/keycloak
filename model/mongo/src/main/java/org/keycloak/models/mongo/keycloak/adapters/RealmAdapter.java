@@ -693,7 +693,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             credsEntities.remove(entity);
         }
         for (String cred : creds) {
-            logger.info("updating cred: " + cred);
             if (!already.contains(cred)) {
                 RequiredCredentialModel credentialModel = initRequiredCredentialModel(cred);
                 addRequiredCredential(credentialModel, credsEntities);
