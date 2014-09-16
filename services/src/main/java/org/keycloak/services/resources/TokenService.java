@@ -59,6 +59,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -523,7 +524,7 @@ public class TokenService {
         AuthenticationStatus status = authManager.authenticateForm(session, clientConnection, realm, formData);
 
         if (remember) {
-            authManager.createRememberMeCookie(realm, uriInfo, clientConnection);
+            authManager.createRememberMeCookie(realm, username, uriInfo, clientConnection);
         } else {
             authManager.expireRememberMeCookie(realm, uriInfo, clientConnection);
         }
@@ -962,9 +963,21 @@ public class TokenService {
 
         LoginFormsProvider forms = Flows.forms(session, realm, client, uriInfo);
 
-        if (loginHint != null) {
+        String rememberMeUsername = null;
+        Cookie rememberMeCookie = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
+        if (rememberMeCookie != null && !"".equals(rememberMeCookie.getValue())) {
+            rememberMeUsername = rememberMeCookie.getValue();
+        }
+
+        if (loginHint != null || rememberMeUsername != null) {
             MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
-            formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
+
+            if (loginHint != null) {
+                formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
+            } else {
+                formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
+                formData.add("rememberMe", "on");
+            }
 
             forms.setFormData(formData);
         }

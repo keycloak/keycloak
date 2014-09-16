@@ -40,7 +40,11 @@
                         <#if realm.rememberMe>
                             <div class="checkbox">
                                 <label>
-                                    <input id="rememberMe" name="rememberMe" type="checkbox" tabindex="3"> Remember Me
+                                    <#if login.rememberMe??>
+                                        <input id="rememberMe" name="rememberMe" type="checkbox" tabindex="3" checked> Remember Me
+                                    <#else>
+                                        <input id="rememberMe" name="rememberMe" type="checkbox" tabindex="3"> Remember Me
+                                    </#if>
                                 </label>
                             </div>
                         </#if>

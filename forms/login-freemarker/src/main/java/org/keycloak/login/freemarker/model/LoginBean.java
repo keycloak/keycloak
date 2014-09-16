@@ -34,11 +34,14 @@ public class LoginBean {
 
     private String passwordToken;
 
+    private String rememberMe;
+
     public LoginBean(MultivaluedMap<String, String> formData){
         if (formData != null) {
             username = formData.getFirst("username");
             password = formData.getFirst("password");
             passwordToken = formData.getFirst("password-token");
+            rememberMe = formData.getFirst("rememberMe");
         }
     }
 
@@ -52,5 +55,9 @@ public class LoginBean {
 
     public String getPasswordToken() {
         return passwordToken;
+    }
+
+    public String getRememberMe() {
+        return rememberMe;
     }
 }

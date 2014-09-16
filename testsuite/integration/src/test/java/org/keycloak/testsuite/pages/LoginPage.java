@@ -44,6 +44,9 @@ public class LoginPage extends AbstractPage {
     @FindBy(id = "totp")
     private WebElement totp;
 
+    @FindBy(id = "rememberMe")
+    private WebElement rememberMe;
+
     @FindBy(name = "login")
     private WebElement submitButton;
 
@@ -119,6 +122,16 @@ public class LoginPage extends AbstractPage {
         recoverUsernameLink.click();
     }
 
+    public void setRememberMe(boolean enable) {
+        boolean current = rememberMe.isSelected();
+        if (current != enable) {
+            rememberMe.click();
+        }
+    }
+
+    public boolean isRememberMeChecked() {
+        return rememberMe.isSelected();
+    }
 
     @Override
     public void open() {

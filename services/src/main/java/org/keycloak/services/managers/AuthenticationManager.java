@@ -87,8 +87,8 @@ public class AuthenticationManager {
         if (session != null) {
             token.setSessionState(session.getId());
         }
-        if (realm.getSsoSessionIdleTimeout() > 0) {
-            token.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());
+        if (realm.getSsoSessionMaxLifespan() > 0) {
+            token.expiration(Time.currentTime() + realm.getSsoSessionMaxLifespan());
         }
         return token;
     }
@@ -100,7 +100,7 @@ public class AuthenticationManager {
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
         if (session.isRememberMe()) {
-            maxAge = realm.getSsoSessionIdleTimeout();
+            maxAge = realm.getSsoSessionMaxLifespan();
         }
         logger.debugv("Create login cookie - name: {0}, path: {1}, max-age: {2}", KEYCLOAK_IDENTITY_COOKIE, cookiePath, maxAge);
         CookieHelper.addCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, cookiePath, null, null, maxAge, secureOnly, true);
@@ -116,12 +116,12 @@ public class AuthenticationManager {
 
     }
 
-    public void createRememberMeCookie(RealmModel realm, UriInfo uriInfo, ClientConnection connection) {
+    public void createRememberMeCookie(RealmModel realm, String username, UriInfo uriInfo, ClientConnection connection) {
         String path = getIdentityCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
-        // remember me cookie should be persistent
+        // remember me cookie should be persistent (hardcoded to 1 month for now)
         //NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly);// todo httponly , true);
-        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getSsoSessionIdleTimeout(), secureOnly, true);
+        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, username, path, null, null, 2592000, secureOnly, true);
     }
 
     protected String encodeToken(RealmModel realm, Object token) {
@@ -136,7 +136,6 @@ public class AuthenticationManager {
         String path = getIdentityCookiePath(realm, uriInfo);
         expireCookie(realm, KEYCLOAK_IDENTITY_COOKIE, path, true, connection);
         expireCookie(realm, KEYCLOAK_SESSION_COOKIE, path, false, connection);
-        expireRememberMeCookie(realm, uriInfo, connection);
     }
     public static void expireRememberMeCookie(RealmModel realm, UriInfo uriInfo, ClientConnection connection) {
         logger.debug("Expiring remember me cookie");
