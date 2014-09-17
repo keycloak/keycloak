@@ -964,9 +964,11 @@ public class TokenService {
         LoginFormsProvider forms = Flows.forms(session, realm, client, uriInfo);
 
         String rememberMeUsername = null;
-        Cookie rememberMeCookie = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
-        if (rememberMeCookie != null && !"".equals(rememberMeCookie.getValue())) {
-            rememberMeUsername = rememberMeCookie.getValue();
+        if (realm.isRememberMe()) {
+            Cookie rememberMeCookie = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
+            if (rememberMeCookie != null && !"".equals(rememberMeCookie.getValue())) {
+                rememberMeUsername = rememberMeCookie.getValue();
+            }
         }
 
         if (loginHint != null || rememberMeUsername != null) {
