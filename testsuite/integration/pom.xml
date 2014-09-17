@@ -184,6 +184,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
         </dependency>
@@ -375,6 +379,26 @@
                 </plugins>
             </build>
 
+        </profile>
+
+        <profile>
+            <id>infinispan</id>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.realm.cache.provider>infinispan</keycloak.realm.cache.provider>
+                                <keycloak.user.cache.provider>infinispan</keycloak.user.cache.provider>
+                                <keycloak.userSessions.provider>infinispan</keycloak.userSessions.provider>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <!-- MySQL -->

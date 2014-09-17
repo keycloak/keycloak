@@ -26,5 +26,6 @@
     </build>
     <modules>
         <module>model-adapters</module>
+        <module>infinispan</module>
     </modules>
 </project>

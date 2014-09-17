@@ -87,17 +87,6 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm) {
-        TypedQuery<UsernameLoginFailureEntity> query = em.createNamedQuery("getAllFailures", UsernameLoginFailureEntity.class);
-        List<UsernameLoginFailureEntity> entities = query.getResultList();
-        List<UsernameLoginFailureModel> models = new ArrayList<UsernameLoginFailureModel>();
-        for (UsernameLoginFailureEntity entity : entities) {
-            models.add(new UsernameLoginFailureAdapter(entity));
-        }
-        return models;
-    }
-
-    @Override
     public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(KeycloakModelUtils.generateId());

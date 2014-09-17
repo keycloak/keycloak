@@ -18,8 +18,6 @@ import java.util.List;
  */
 public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEntity> implements UserSessionModel {
 
-    private static final Logger logger = Logger.getLogger(UserSessionAdapter.class);
-
     private final MongoUserSessionProvider provider;
     private MongoUserSessionEntity entity;
     private RealmModel realm;
@@ -46,20 +44,8 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     }
 
     @Override
-    public void setId(String id) {
-        entity.setId(id);
-        updateMongoEntity();
-    }
-
-    @Override
     public UserModel getUser() {
         return keycloakSession.users().getUserById(entity.getUser(), realm);
-    }
-
-    @Override
-    public void setUser(UserModel user) {
-        entity.setUser(user.getId());
-        updateMongoEntity();
     }
 
     @Override
@@ -68,20 +54,8 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     }
 
     @Override
-    public void setLoginUsername(String loginUsername) {
-        entity.setLoginUsername(loginUsername);
-        updateMongoEntity();
-    }
-
-    @Override
     public String getIpAddress() {
         return entity.getIpAddress();
-    }
-
-    @Override
-    public void setIpAddress(String ipAddress) {
-        entity.setIpAddress(ipAddress);
-        updateMongoEntity();
     }
 
     @Override
@@ -90,31 +64,13 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     }
 
     @Override
-    public void setAuthMethod(String authMethod) {
-        entity.setAuthMethod(authMethod);
-        updateMongoEntity();
-    }
-
-    @Override
     public boolean isRememberMe() {
         return entity.isRememberMe();
     }
 
     @Override
-    public void setRememberMe(boolean rememberMe) {
-        entity.setRememberMe(rememberMe);
-        updateMongoEntity();
-    }
-
-    @Override
     public int getStarted() {
         return entity.getStarted();
-    }
-
-    @Override
-    public void setStarted(int started) {
-        entity.setStarted(started);
-        updateMongoEntity();
     }
 
     @Override
