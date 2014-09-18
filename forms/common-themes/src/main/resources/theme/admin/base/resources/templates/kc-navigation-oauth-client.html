@@ -1,4 +1,4 @@
-<ul class="nav nav-tabs nav-tabs-pf">
+<ul class="nav nav-tabs nav-tabs-pf" data-ng-show="!create">
     <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}">Settings</a></li>
     <li ng-class="{active: path[4] == 'credentials'}" data-ng-show="!oauth.publicClient"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/credentials">Credentials</a></li>
     <li ng-class="{active: path[4] == 'claims'}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/claims">Claims</a></li>
