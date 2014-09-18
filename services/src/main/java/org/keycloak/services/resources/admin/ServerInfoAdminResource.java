@@ -1,6 +1,6 @@
 package org.keycloak.services.resources.admin;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.Version;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
@@ -31,9 +31,9 @@ public class ServerInfoAdminResource {
      * @return
      */
     @GET
-    @NoCache
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
+        info.setVersion(Version.VERSION);
         setSocialProviders(info);
         setThemes(info);
         setEventListeners(info);
@@ -71,6 +71,8 @@ public class ServerInfoAdminResource {
 
     public static class ServerInfoRepresentation {
 
+        private String version;
+
         private Map<String, List<String>> themes;
 
         private List<String> socialProviders;
@@ -79,6 +81,14 @@ public class ServerInfoAdminResource {
         private List<String> eventListeners;
 
         public ServerInfoRepresentation() {
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
         }
 
         public Map<String, List<String>> getThemes() {

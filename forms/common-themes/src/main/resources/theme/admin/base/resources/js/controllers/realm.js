@@ -1,10 +1,11 @@
-module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $location, Notifications) {
+module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $location, Notifications, ServerInfo) {
     $scope.addMessage = function() {
         Notifications.success("test");
     };
 
     $scope.authUrl = authUrl;
     $scope.auth = Auth;
+    $scope.serverInfo = ServerInfo.get();
 
     WhoAmI.get(function (data) {
         Auth.user = data;
