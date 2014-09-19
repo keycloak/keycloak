@@ -65,7 +65,91 @@
         </para>
         <para>
             By default, every response by Keycloak sets some specific browser headers that can prevent this from happening
-
+            specifically <ulink url="http://tools.ietf.org/html/rfc7034">X-FRAME_OPTIONS</ulink> and <ulink url="http://www.w3.org/TR/CSP/">Content-Security-Policy</ulink>.  You
+            should take a look at both of these headers.  In the admin console you can specify the values these headers will
+            have.  By default, Keycloak only sets up a same-origin policy for iframes.
+        </para>
+    </section>
+    <section>
+        <title>Compromised Access Codes</title>
+        <para>
+            It would be very hard for an attacker to compromise Keycloak access codes.  Keycloak generates a cryptographically
+            strong random value for its access codes so it would be very hard to guess an access token.
+            An access code can only be turned into an access token once so it can't be replayed.  In the admin console
+            you can specify how long an access token is valid for.  This value should be really short.  Like a seconds.
+            Just long enough for the client to make the request to turn the code into an token.
+        </para>
+    </section>
+    <section>
+        <title>Compromised access and refresh tokens</title>
+        <para>
+            There's a few things you can do to mitigate access tokens and refresh tokens from being stolen.
+            Most importantly is to enforce SSL/HTTPS communication between Keycloak and its clients and applications.
+            Short lifespans (minutes) for access tokens allows Keycloak to check the validity of a refresh token.  Making
+            sure refresh tokens always stay private to the client and are never transmitted ever is very important as well.
+        </para>
+        <para>
+            If an access token or refresh token is compromised, the first thing you should do is go to the admin console
+            and push a not-before revocation policy to all applications.  This will enforce that any tokens issued
+            prior to that date are now invalid.  You can also disable specific applications, clients, and users if you
+            feel that any one of those entities is completely compromised.
+        </para>
+    </section>
+    <section>
+        <title>Open redirectors</title>
+        <para>
+            An attacker could use the end-user authorization endpoint and the
+            redirect URI parameter to abuse the authorization server as an open
+            redirector.  An open redirector is an endpoint using a parameter to
+            automatically redirect a user agent to the location specified by the
+            parameter value without any validation.  An attacker could utilize a user's trust in an authorization
+            server to launch a phishing attack.
+        </para>
+        <para>
+            Keycloak requires that all registered applications and clients register at least one redirection uri pattern.
+            Any time a client asks Keycloak to perform a redirect (on login or logout for example), Keycloak will
+            check the redirect uri vs. the list of valid registered uri patterns.  It is important that clients and
+            applications register as specific a URI pattern as possible to mitigate open redirector attacks.
+        </para>
+    </section>
+    <section>
+        <title>Password guess: brute force attacks</title>
+        <para>
+            A brute force attack happens when an attacker is trying to guess a user's password.  Keycloak has some
+            limited brute force detection capabilities.  If turned on, a user account will be temporarily disabled
+            if a threshold of login failures is reached.  The downside of this is that this makes Keycloak vulnerable
+            to denial of service attacks.  Eventually we will expand this functionality to take client IP address into
+            account when deciding whether to block a user.
+        </para>
+        <para>
+            Another thing you can do to prevent password guessing is to point a tool like <ulink url="http://fail2ban.org">Fail2Ban</ulink> to the Keycloak
+            server's log file.  Keycloak logs every login failure and client IP address that had the failure.
+        </para>
+        <para>
+            In the admin console, per realm, you can set up a password policy to enforce that users pick hard to guess passwords.
+        </para>
+        <para>
+            Finally, the best way to mitigate against brute force attacks is to require user to set up a one-time-password (OTP).
+        </para>
+    </section>
+    <section>
+        <title>Password database compromised</title>
+        <para>
+            Keycloak does not store passwords in raw text.  It stores a hash of them.  Because of performance reasons,
+            Keycloak only hashes passwords once.  While a human could probably never crack a hashed password, it is very
+            possible that a computer could.  The security community suggests around 20,000 (yes thousand!) hashing iterations
+            to be done to each password.  This number grows every year due to increasing computing power (It was 1000 12 years ago).
+            The problem with this is that password hashing is a huge performance hit as each login would require the entered
+            password to be hashed that many times and compared to the stored hash.  So, its up to the admin to configure the
+            password hash iterations.  This can be done in the admin console password policy configuration.  Again, the default
+            value is 1 as we thought it might be more important for Keycloak to scale out of the box.  There's a lot of
+            other measures admins can do to protect their password databases.
+        </para>
+    </section>
+    <section>
+        <title>SQL Injection attacks</title>
+        <para>
+            At this point in time, there is no knowledge of any SQL injection vulnerabilities in Keycloak
         </para>
     </section>
 </chapter>
