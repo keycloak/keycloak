@@ -31,6 +31,7 @@
                 <!ENTITY UserFederation SYSTEM "modules/user-federation.xml">
                 <!ENTITY ExportImport SYSTEM "modules/export-import.xml">
                 <!ENTITY ServerCache SYSTEM "modules/cache.xml">
+                <!ENTITY SecurityVulnerabilities SYSTEM "modules/security-vulnerabilities.xml">
                 ]>
 
 <book>
@@ -119,6 +120,7 @@ This one is short
     &UserFederation;
     &ExportImport;
     &ServerCache;
+    &SecurityVulnerabilities;
     &Migration;
 
 </book>
