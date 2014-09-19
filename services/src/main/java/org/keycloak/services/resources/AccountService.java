@@ -436,12 +436,14 @@ public class AccountService {
 
     @Path("totp-remove")
     @GET
-    public Response processTotpRemove() {
+    public Response processTotpRemove(@QueryParam("stateChecker") String stateChecker) {
         if (auth == null) {
             return login("totp");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
+
+        csrfCheck(stateChecker);
 
         UserModel user = auth.getUser();
         user.setTotp(false);

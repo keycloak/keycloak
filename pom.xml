@@ -16,7 +16,7 @@
         <jackson.version>1.9.9</jackson.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <resteasy.version>2.3.7.Final</resteasy.version>
-        <resteasy.version.latest>3.0.8.Final</resteasy.version.latest>
+        <resteasy.version.latest>3.0.9.Final</resteasy.version.latest>
         <undertow.version>1.0.15.Final</undertow.version>
         <picketlink.version>2.7.0.Beta1</picketlink.version>
         <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
