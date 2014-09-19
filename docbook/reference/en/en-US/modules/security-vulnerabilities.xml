@@ -1,0 +1,71 @@
+<chapter id="security_vulnerabilities">
+    <title>Security Vulnerabilities</title>
+    <para>
+        This chapter discusses possible security vulnerabilities Keycloak could have, how Keycloak mitigates those
+        vulnerabilities, and what steps you need to do to configure Keycloak to mitigate some vulnerabilities.  A good list
+        of potential vulnerabilities and what security implementations should do to mitigate them can be found in the
+        <ulink url="http://tools.ietf.org/html/rfc6819">OAuth 2.0 Thread Model</ulink> document put out by the IETF.  Many of those vulnerabilities are discussed here.
+    </para>
+    <section>
+        <title>SSL/HTTPS Requirement</title>
+        <para>
+            If you do not use SSL/HTTPS for all communication between the Keycloak auth server and the clients it secures
+            you will be very vulnerable to man in the middle attacks.  OAuth 2.0/OpenID Connect uses access tokens for
+            security.  Without SSL/HTTPS, attackers can sniff your network and obtain an access token.  Once they have an
+            access token they can do any operation that the token has been given permission for.
+        </para>
+        <para>
+            Keycloak has <link linkend="ssl_modes">three modes for SSL/HTTPS</link>.  SSL can be hard to set up, so out of the box, Keycloak allows
+            non-HTTPS communication over private IP addresses like localhost, 192.168.x.x, and other private IP addresses.
+            In production, you should make sure SSL is enabled and required across the board.
+        </para>
+        <para>
+            On the adapter/client side, Keycloak allows you to turn off the SSL trust manager.  The trust manager ensures
+            identity the client is talking to.  It checks the DNS domain name against the server's certificate.  In production
+            you should make sure that each of your client adapters is configured to use a truststore.  Otherwise you are vulnerable
+            to DNS man in the middle attacks.
+        </para>
+    </section>
+    <section>
+        <title>CSRF Attacks</title>
+        <para>
+            Cross-site request forgery (CSRF) is a web-based attack whereby HTTP
+            requests are transmitted from a user that the web site trusts or has
+            authenticated (e.g., via HTTP redirects or HTML forms).  Any site that uses
+            cookie based authentication is vulnerable for these types of attacks.  These attacks are mitigated
+            by matching a state cookie against a posted form or query parameter.
+        </para>
+        <para>
+            OAuth 2.0 login specification requires that a state cookie be used and matched against a transmitted state
+            parameter.  Keycloak fully implements this part of the specification so all logins are protected.
+        </para>
+        <para>
+            The Keycloak adminstration console is a pure Javascript/HTML5 application that makes REST calls to the
+            backend Keycloak admin API.  These calls all require bearer token authentication and are made via Javascript
+            Ajax calls.  CSRF does not apply here.  The admin REST API can also be configured to validate CORS origins
+            as well.
+        </para>
+        <para>
+            The only part of Keycloak that really falls into CSRF is the user account management pages.  To mitigate this
+            Keycloak sets a state cookie and also embeds the value of this state cookie within hidden form fields or
+            query parameters in action links.  This query or form parameter is checked against the state cookie to verify
+            that the call was made by the user.
+        </para>
+    </section>
+    <section>
+        <title>Clickjacking</title>
+        <para>
+            With clickjacking, a malicious site loads the target site in a
+            transparent iFrame overlaid on top of a set of dummy
+            buttons that are carefully constructed to be placed directly under
+            important buttons on the target site.  When a user clicks a visible
+            button, they are actually clicking a button (such as an "Authorize"
+            button) on the hidden page.  An attacker can steal a user's authentication credentials and
+            access their resources.
+        </para>
+        <para>
+            By default, every response by Keycloak sets some specific browser headers that can prevent this from happening
+
+        </para>
+    </section>
+</chapter>

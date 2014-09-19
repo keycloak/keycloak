@@ -404,7 +404,7 @@ keycloak-war-dist-all-&project.version;/
 ]]>
 </programlisting>
         </section>
-        <section>
+        <section id="ssl_modes">
             <title>SSL/HTTPS Requirement/Modes</title>
             <warning>
                 <para>
