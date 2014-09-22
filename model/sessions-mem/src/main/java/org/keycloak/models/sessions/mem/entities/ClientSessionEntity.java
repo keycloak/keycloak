@@ -2,6 +2,8 @@ package org.keycloak.models.sessions.mem.entities;
 
 import org.keycloak.models.ClientSessionModel;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -20,6 +22,7 @@ public class ClientSessionEntity {
     private int timestamp;
     private ClientSessionModel.Action action;
     private Set<String> roles;
+    private Map<String, String> notes = new HashMap<String, String>();
 
     public String getId() {
         return id;
@@ -83,5 +86,9 @@ public class ClientSessionEntity {
 
     public void setRoles(Set<String> roles) {
         this.roles = roles;
+    }
+
+    public Map<String, String> getNotes() {
+        return notes;
     }
 }

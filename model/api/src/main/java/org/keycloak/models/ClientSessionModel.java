@@ -27,6 +27,10 @@ public interface ClientSessionModel {
 
     public Set<String> getRoles();
 
+    public String getNote(String name);
+    public void setNote(String name, String value);
+    public void removeNote(String name);
+
     public static enum Action {
         OAUTH_GRANT,
         CODE_TO_TOKEN,

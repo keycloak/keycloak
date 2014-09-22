@@ -2,7 +2,9 @@ package org.keycloak.models.sessions.mongo.entities;
 
 import org.keycloak.models.ClientSessionModel;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -18,6 +20,7 @@ public class MongoClientSessionEntity {
     private int timestamp;
     private ClientSessionModel.Action action;
     private List<String> roles;
+    private Map<String, String> notes = new HashMap<String, String>();
 
     public String getId() {
         return id;
@@ -75,4 +78,11 @@ public class MongoClientSessionEntity {
         this.roles = roles;
     }
 
+    public Map<String, String> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(Map<String, String> notes) {
+        this.notes = notes;
+    }
 }

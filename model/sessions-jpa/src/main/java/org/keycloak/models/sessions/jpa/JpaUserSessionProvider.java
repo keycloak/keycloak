@@ -185,6 +185,10 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
+        em.createNamedQuery("removeClientSessionNoteByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .executeUpdate();
         em.createNamedQuery("removeClientSessionRoleByUser")
                 .setParameter("realmId", realm.getId())
                 .setParameter("userId", user.getId())
@@ -209,6 +213,11 @@ public class JpaUserSessionProvider implements UserSessionProvider {
                 .setParameter("maxTime", maxTime)
                 .setParameter("idleTime", idleTime)
                 .executeUpdate();
+        em.createNamedQuery("removeClientSessionNoteByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", maxTime)
+                .setParameter("idleTime", idleTime)
+                .executeUpdate();
         em.createNamedQuery("removeClientSessionByExpired")
                 .setParameter("realmId", realm.getId())
                 .setParameter("maxTime", maxTime)
@@ -223,6 +232,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm) {
+        em.createNamedQuery("removeClientSessionNoteByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionRoleByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
@@ -236,6 +246,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
+        em.createNamedQuery("removeClientSessionNoteByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionRoleByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getId()).executeUpdate();
     }

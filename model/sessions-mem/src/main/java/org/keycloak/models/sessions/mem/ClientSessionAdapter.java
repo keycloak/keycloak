@@ -76,4 +76,22 @@ public class ClientSessionAdapter implements ClientSessionModel {
         return entity.getRoles();
     }
 
+    @Override
+    public String getNote(String name) {
+        return entity.getNotes().get(name);
+    }
+
+    @Override
+    public void setNote(String name, String value) {
+        entity.getNotes().put(name, value);
+
+    }
+
+    @Override
+    public void removeNote(String name) {
+        entity.getNotes().remove(name);
+
+    }
+
+
 }

@@ -56,6 +56,9 @@ public class ClientSessionEntity {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
     protected Collection<ClientSessionRoleEntity> roles = new ArrayList<ClientSessionRoleEntity>();
 
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
+    protected Collection<ClientSessionNoteEntity> notes = new ArrayList<ClientSessionNoteEntity>();
+
     public String getId() {
         return id;
     }
@@ -120,4 +123,11 @@ public class ClientSessionEntity {
         this.roles = roles;
     }
 
+    public Collection<ClientSessionNoteEntity> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(Collection<ClientSessionNoteEntity> notes) {
+        this.notes = notes;
+    }
 }
