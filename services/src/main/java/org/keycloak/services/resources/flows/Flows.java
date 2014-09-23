@@ -31,6 +31,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.social.SocialProvider;
 
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 /**
@@ -57,5 +58,10 @@ public class Flows {
     public static ErrorFlows errors() {
         return new ErrorFlows();
     }
+
+    public static Response forwardToSecurityFailurePage(KeycloakSession session, RealmModel realm, UriInfo uriInfo, String message) {
+        return Flows.forms(session, realm, null, uriInfo).setError(message).createErrorPage();
+    }
+
 
 }

@@ -282,11 +282,11 @@ public class RequiredActionsService {
 
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
-            return Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager).forwardToSecurityFailure(
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo,
                     "Unknown login requester.");
         }
         if (!client.isEnabled()) {
-            return Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager).forwardToSecurityFailure(
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo,
                     "Login requester not enabled.");
         }
 

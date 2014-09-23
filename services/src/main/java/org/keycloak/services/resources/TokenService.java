@@ -493,27 +493,27 @@ public class TokenService {
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!checkSsl()) {
-            return oauth.forwardToSecurityFailure("HTTPS required");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
         }
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            return oauth.forwardToSecurityFailure("Realm not enabled.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
         }
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
         }
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
         }
 
         redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
         if (redirect == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
-            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
         }
 
         if (formData.containsKey("cancel")) {
@@ -603,28 +603,28 @@ public class TokenService {
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            return oauth.forwardToSecurityFailure("Realm not enabled");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled");
         }
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
         }
 
         redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
         if (redirect == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
-            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
         }
 
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
-            return oauth.forwardToSecurityFailure("Registration not allowed");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Registration not allowed");
         }
 
         List<String> requiredCredentialTypes = new LinkedList<String>();
@@ -917,35 +917,35 @@ public class TokenService {
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!checkSsl()) {
-            return oauth.forwardToSecurityFailure("HTTPS required");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
         }
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            return oauth.forwardToSecurityFailure("Realm not enabled");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled");
         }
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
         }
         if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
-            return oauth.forwardToSecurityFailure("Bearer-only applications are not allowed to initiate browser login");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Bearer-only applications are not allowed to initiate browser login");
         }
         if (client.isDirectGrantsOnly()) {
             event.error(Errors.NOT_ALLOWED);
-            return oauth.forwardToSecurityFailure("direct-grants-only clients are not allowed to initiate browser login");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
         }
         redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
         if (redirect == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
-            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
         }
 
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
@@ -1007,33 +1007,33 @@ public class TokenService {
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!checkSsl()) {
-            return oauth.forwardToSecurityFailure("HTTPS required");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
         }
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            return oauth.forwardToSecurityFailure("Realm not enabled");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled");
         }
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
         }
 
         redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
         if (redirect == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
-            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
         }
 
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
-            return oauth.forwardToSecurityFailure("Registration not allowed");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Registration not allowed");
         }
 
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
@@ -1065,7 +1065,7 @@ public class TokenService {
             String validatedRedirect = verifyRealmRedirectUri(uriInfo, redirectUri, realm);
             if (validatedRedirect == null) {
                 OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
-                return oauth.forwardToSecurityFailure("Invalid redirect uri.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect uri.");
             }
             return Response.status(302).location(UriBuilder.fromUri(validatedRedirect).build()).build();
         } else {
@@ -1145,7 +1145,7 @@ public class TokenService {
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!checkSsl()) {
-            return oauth.forwardToSecurityFailure("HTTPS required");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
         }
 
         String code = formData.getFirst(OAuth2Constants.CODE);
@@ -1153,7 +1153,7 @@ public class TokenService {
         AccessCode accessCode = AccessCode.parse(code, session, realm);
         if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT)) {
             event.error(Errors.INVALID_CODE);
-            return oauth.forwardToSecurityFailure("Invalid access code.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid access code.");
         }
         event.detail(Details.CODE_ID, accessCode.getCodeId());
 
@@ -1177,7 +1177,7 @@ public class TokenService {
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
             AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
             event.error(Errors.INVALID_CODE);
-            return oauth.forwardToSecurityFailure("Session not active");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Session not active");
         }
         event.session(userSession);
 

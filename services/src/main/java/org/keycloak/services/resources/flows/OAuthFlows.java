@@ -179,9 +179,11 @@ public class OAuthFlows {
         }
     }
 
+    /*
     public Response forwardToSecurityFailure(String message) {
         return Flows.forms(session, realm, null, uriInfo).setError(message).createErrorPage();
     }
+    */
 
     private void isTotpConfigurationRequired(UserModel user) {
         for (RequiredCredentialModel c : realm.getRequiredCredentials()) {

@@ -22,4 +22,6 @@ public class ErrorFlows {
         return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON).build();
     }
 
+
+
 }

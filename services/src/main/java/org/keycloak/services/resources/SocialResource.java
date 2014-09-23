@@ -132,7 +132,7 @@ public class SocialResource {
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            return oauth.forwardToSecurityFailure("Realm not enabled.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
         }
 
         String clientId = initialRequest.get(OAuth2Constants.CLIENT_ID);
@@ -146,11 +146,11 @@ public class SocialResource {
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
         }
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
         }
 
         String key = realm.getSocialConfig().get(provider.getId() + ".key");
@@ -178,7 +178,7 @@ public class SocialResource {
             return  Flows.forms(session, realm, client, uriInfo).setQueryParams(queryParms).setWarning("Access denied").createLogin();
         } catch (SocialProviderException e) {
             logger.error("Failed to process social callback", e);
-            return oauth.forwardToSecurityFailure("Failed to process social callback");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process social callback");
         }
 
         event.detail(Details.USERNAME, socialUser.getId() + "@" + provider.getId());
@@ -196,22 +196,22 @@ public class SocialResource {
 
                 if (user != null) {
                     event.error(Errors.SOCIAL_ID_IN_USE);
-                    return oauth.forwardToSecurityFailure("This social account is already linked to other user");
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "This social account is already linked to other user");
                 }
 
                 if (!authenticatedUser.isEnabled()) {
                     event.error(Errors.USER_DISABLED);
-                    return oauth.forwardToSecurityFailure("User is disabled");
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "User is disabled");
                 }
 
                 if (!authenticatedUser.hasRole(realm.getApplicationByName(Constants.ACCOUNT_MANAGEMENT_APP).getRole(AccountRoles.MANAGE_ACCOUNT))) {
                     event.error(Errors.NOT_ALLOWED);
-                    return oauth.forwardToSecurityFailure("Insufficient permissions to link social account");
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Insufficient permissions to link social account");
                 }
 
                 if (redirectUri == null) {
                     event.error(Errors.INVALID_REDIRECT_URI);
-                    return oauth.forwardToSecurityFailure("Unknown redirectUri");
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown redirectUri");
                 }
 
                 session.users().addSocialLink(realm, authenticatedUser, socialLink);
@@ -245,7 +245,7 @@ public class SocialResource {
 
             if (!user.isEnabled()) {
                 event.error(Errors.USER_DISABLED);
-                return oauth.forwardToSecurityFailure("Your account is not enabled.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Your account is not enabled.");
             }
 
             String username = socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider();
