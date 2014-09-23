@@ -101,4 +101,14 @@ public class ClientSessionAdapter implements ClientSessionModel {
         entity.getNotes().remove(name);
 
     }
+
+    @Override
+    public String getAuthMethod() {
+        return entity.getAuthMethod();
+    }
+
+    @Override
+    public void setAuthMethod(String method) {
+        entity.setAuthMethod(method);
+    }
 }

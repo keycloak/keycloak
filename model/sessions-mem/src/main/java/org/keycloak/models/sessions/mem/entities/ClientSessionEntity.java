@@ -18,6 +18,7 @@ public class ClientSessionEntity {
 
     private String redirectUri;
     private String state;
+    private String authMethod;
 
     private int timestamp;
     private ClientSessionModel.Action action;
@@ -90,5 +91,13 @@ public class ClientSessionEntity {
 
     public Map<String, String> getNotes() {
         return notes;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
     }
 }

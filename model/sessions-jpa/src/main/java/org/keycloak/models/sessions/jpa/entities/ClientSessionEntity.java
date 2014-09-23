@@ -47,6 +47,9 @@ public class ClientSessionEntity {
     @Column(name="REDIRECT_URI")
     protected String redirectUri;
 
+    @Column(name="AUTH_METHOD")
+    protected String authMethod;
+
     @Column(name="STATE")
     protected String state;
 
@@ -129,5 +132,13 @@ public class ClientSessionEntity {
 
     public void setNotes(Collection<ClientSessionNoteEntity> notes) {
         this.notes = notes;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
     }
 }

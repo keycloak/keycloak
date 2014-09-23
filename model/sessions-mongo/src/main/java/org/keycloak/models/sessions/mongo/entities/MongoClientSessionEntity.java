@@ -16,6 +16,7 @@ public class MongoClientSessionEntity {
 
     private String redirectUri;
     private String state;
+    private String authMethod;
 
     private int timestamp;
     private ClientSessionModel.Action action;
@@ -52,6 +53,14 @@ public class MongoClientSessionEntity {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
     }
 
     public int getTimestamp() {

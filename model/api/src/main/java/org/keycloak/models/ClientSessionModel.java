@@ -27,6 +27,14 @@ public interface ClientSessionModel {
 
     public Set<String> getRoles();
 
+    /**
+     * Authentication request type, i.e. OAUTH, SAML 2.0, SAML 1.1, etc.
+     *
+     * @return
+     */
+    public String getAuthMethod();
+    public void setAuthMethod(String method);
+
     public String getNote(String name);
     public void setNote(String name, String value);
     public void removeNote(String name);
