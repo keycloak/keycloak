@@ -32,5 +32,6 @@
         <module>sessions-jpa</module>
         <module>sessions-mem</module>
         <module>sessions-mongo</module>
+        <module>sessions-infinispan</module>
     </modules>
 </project>
