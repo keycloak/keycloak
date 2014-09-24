@@ -44,7 +44,7 @@
                 <listitem>
                     <para>
                         For OAuth clients, you would also see a "Direct Access Only" switch when creating the OAuth Client.
-                        This switch is for oauth clients that only use the  <link linkend='direct-access-grant'>Direct Access Grant</link>
+                        This switch is for oauth clients that only use the  <link linkend='direct-access-grants'>Direct Access Grant</link>
                         protocol to obtain access tokens.
                     </para>
                 </listitem>
