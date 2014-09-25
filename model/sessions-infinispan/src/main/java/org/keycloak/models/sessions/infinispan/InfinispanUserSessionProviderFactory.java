@@ -6,6 +6,7 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
@@ -17,21 +18,16 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
 
     private DefaultCacheManager cacheManager;
-    private Cache<String, UserSessionEntity> userSessions;
-    private Cache<String, ClientSessionEntity> clientSessions;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
-        return new InfinispanUserSessionProvider(session, userSessions, clientSessions);
+        return new InfinispanUserSessionProvider(session, cacheManager);
     }
 
     @Override
     public void init(Config.Scope config) {
-        Configuration configuration = new ConfigurationBuilder().indexing().enable().indexLocalOnly(true).build();
-
+        Configuration configuration = new ConfigurationBuilder().build();
         cacheManager = new DefaultCacheManager(configuration);
-        userSessions = cacheManager.getCache("userSessions");
-        clientSessions = cacheManager.getCache("clientSessions");
     }
 
     @Override

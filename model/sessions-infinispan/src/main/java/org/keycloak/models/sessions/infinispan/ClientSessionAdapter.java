@@ -59,7 +59,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setTimestamp(int timestamp) {
         entity.setTimestamp(timestamp);
-        provider.update(entity);
+        update();
     }
 
     @Override
@@ -70,12 +70,16 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setAction(Action action) {
         entity.setAction(action);
-        provider.update(entity);
+        update();
     }
 
     @Override
     public Set<String> getRoles() {
         return entity.getRoles();
+    }
+
+    void update() {
+        provider.clientCache(realm).replace(entity.getId(), entity);
     }
 
 }

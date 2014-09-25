@@ -1,31 +1,26 @@
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Indexed;
-
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Indexed
 public class UserSessionEntity implements Serializable {
 
     private String id;
-    @Field(analyze = Analyze.NO)
-    private String realm;
-    @Field(analyze = Analyze.NO)
+
     private String user;
+
     private String loginUsername;
+
     private String ipAddress;
+
     private String authMethod;
+
     private boolean rememberMe;
-    @Field(analyze = Analyze.NO)
+
     private int started;
+
     private int lastSessionRefresh;
 
     public String getId() {
@@ -34,14 +29,6 @@ public class UserSessionEntity implements Serializable {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getRealm() {
-        return realm;
-    }
-
-    public void setRealm(String realm) {
-        this.realm = realm;
     }
 
     public String getUser() {

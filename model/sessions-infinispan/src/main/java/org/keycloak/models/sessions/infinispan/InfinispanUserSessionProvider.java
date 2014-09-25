@@ -1,9 +1,8 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
-import org.infinispan.query.Search;
-import org.infinispan.query.SearchManager;
-import org.infinispan.query.dsl.*;
+import org.infinispan.distexec.mapreduce.MapReduceTask;
+import org.infinispan.manager.DefaultCacheManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -14,14 +13,19 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.mapreduce.ClientSessionMapper;
+import org.keycloak.models.sessions.infinispan.mapreduce.FirstResultReducer;
+import org.keycloak.models.sessions.infinispan.mapreduce.LargestResultReducer;
+import org.keycloak.models.sessions.infinispan.mapreduce.UserSessionMapper;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.util.Time;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -30,20 +34,19 @@ import java.util.Set;
 public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     private KeycloakSession session;
-    private Cache<String, UserSessionEntity> userSessions;
-    private Cache<String, ClientSessionEntity> clientSessions;
+    private DefaultCacheManager cacheManager;
 
-    public InfinispanUserSessionProvider(KeycloakSession session, Cache<String, UserSessionEntity> userSessions, Cache<String, ClientSessionEntity> clientSessions) {
+    public InfinispanUserSessionProvider(KeycloakSession session, DefaultCacheManager cacheManager) {
         this.session = session;
-        this.userSessions = userSessions;
-        this.clientSessions = clientSessions;
+        this.cacheManager = cacheManager;
     }
 
     @Override
     public ClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, String redirectUri, String state, Set<String> roles) {
+        String id = KeycloakModelUtils.generateId();
+
         ClientSessionEntity entity = new ClientSessionEntity();
-        entity.setId(KeycloakModelUtils.generateId());
-        entity.setRealm(realm.getId());
+        entity.setId(id);
         entity.setTimestamp(Time.currentTime());
         entity.setClient(client.getId());
         entity.setUserSession(userSession.getId());
@@ -51,7 +54,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setState(state);
         entity.setRoles(roles);
 
-        add(entity);
+        clientCache(realm).put(id, entity);
 
         return wrap(realm, entity);
     }
@@ -62,7 +65,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(id);
-        entity.setRealm(realm.getId());
         entity.setUser(user.getId());
         entity.setLoginUsername(loginUsername);
         entity.setIpAddress(ipAddress);
@@ -74,27 +76,33 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
 
-        add(entity);
+        userCache(realm).put(id, entity);
 
         return wrap(realm, entity);
     }
 
     @Override
     public ClientSessionModel getClientSession(RealmModel realm, String id) {
-        ClientSessionEntity entity = clientSessions.get(id);
+        ClientSessionEntity entity = clientCache(realm).get(id);
         return wrap(realm, entity);
     }
 
     @Override
     public UserSessionModel getUserSession(RealmModel realm, String id) {
-        UserSessionEntity entity = userSessions.get(id);
+        UserSessionEntity entity = userCache(realm).get(id);
         return wrap(realm, entity);
     }
 
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user) {
-        List<UserSessionEntity> entities = userSessions().eq("user", user.getId()).orderBy("started").list();
-        return wrapUserSessions(realm, entities);
+        Cache<String, UserSessionEntity> userCache = userCache(realm);
+
+        Map<String, UserSessionEntity> sessions = new MapReduceTask(userCache)
+                .mappedWith(UserSessionMapper.create().user(user.getId()))
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        return wrapUserSessions(realm, sessions.values());
     }
 
     @Override
@@ -104,58 +112,107 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
-        Set<String> userSessionIds = new LinkedHashSet<String>();
-        List<ClientSessionEntity> clientSessions = clientSessions().eq("client", client.getId()).first(firstResult).max(maxResults).orderBy("timestamp").list();
-        for (ClientSessionEntity e : clientSessions) {
-            userSessionIds.add(e.getUserSession());
+        Cache<String, ClientSessionEntity> clientCache = clientCache(realm);
+        Cache<String, UserSessionEntity> userCache = userCache(realm);
+
+        Map<String, Integer> map = new MapReduceTask(clientCache)
+                .mappedWith(ClientSessionMapper.create().client(client.getId()).emitUserSessionAndTimestamp())
+                .reducedWith(new LargestResultReducer())
+                .execute();
+
+        List<Map.Entry<String, Integer>> sessionTimestamps = new LinkedList<Map.Entry<String, Integer>>(map.entrySet());
+
+        sessionTimestamps.sort(new Comparator<Map.Entry<String, Integer>>() {
+            @Override
+            public int compare(Map.Entry<String, Integer> e1, Map.Entry<String, Integer> e2) {
+                return e1.getValue().compareTo(e2.getValue());
+            }
+        });
+
+        if (firstResult != -1 || maxResults == -1) {
+            if (firstResult == -1) {
+                firstResult = 0;
+            }
+
+            if (maxResults == -1) {
+                maxResults = Integer.MAX_VALUE;
+            }
+
+            if (firstResult > sessionTimestamps.size()) {
+                return Collections.emptyList();
+            }
+
+            int toIndex = (firstResult + maxResults) < sessionTimestamps.size() ? firstResult + maxResults : sessionTimestamps.size();
+            sessionTimestamps = sessionTimestamps.subList(firstResult, toIndex);
         }
 
         List<UserSessionModel> userSessions = new LinkedList<UserSessionModel>();
-        for (String userSessionId : userSessionIds) {
-            userSessions.add(getUserSession(realm, userSessionId));
+        for (Map.Entry<String, Integer> e : sessionTimestamps) {
+            UserSessionEntity userSessionEntity = userCache.get(e.getKey());
+            if (userSessionEntity != null) {
+                userSessions.add(wrap(realm, userSessionEntity));
+            }
         }
+
         return userSessions;
     }
 
     @Override
     public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        Set<String> userSessionIds = new HashSet<String>();
-        List<ClientSessionEntity> clientSessions = clientSessions().eq("client", client.getId()).list();
-        for (ClientSessionEntity e : clientSessions) {
-            userSessionIds.add(e.getUserSession());
-        }
-        return userSessionIds.size();
+        Cache<String, ClientSessionEntity> clientCache = clientCache(realm);
+
+        Map map = new MapReduceTask(clientCache)
+                .mappedWith(ClientSessionMapper.create().client(client.getId()).emitUserSessionAndTimestamp())
+                .reducedWith(new LargestResultReducer()).execute();
+
+        return map.size();
     }
 
     @Override
     public void removeUserSession(RealmModel realm, UserSessionModel session) {
-        removeUserSession(session.getId());
+        Cache<String, UserSessionEntity> userCache = userCache(realm);
+        Cache<String, ClientSessionEntity> clientCache = clientCache(realm);
+
+        removeUserSession(userCache, clientCache, session.getId());
     }
 
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
-        List<UserSessionEntity> entities = userSessions().eq("user", user.getId()).list();
-        for (UserSessionEntity e : entities) {
-            if (realm.getId().equals(e.getRealm())) {
-                removeUserSession(e.getId());
-            }
+        Cache<String, UserSessionEntity> userCache = userCache(realm);
+        Cache<String, ClientSessionEntity> clientCache = clientCache(realm);
+
+        Map<String, String> sessions = new MapReduceTask(userCache)
+                .mappedWith(UserSessionMapper.create().user(user.getId()).emitKey())
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        for (String id : sessions.keySet()) {
+            removeUserSession(userCache, clientCache, id);
         }
     }
 
     @Override
     public void removeExpiredUserSessions(RealmModel realm) {
-        List<UserSessionEntity> entities = userSessions().eq("realm", realm.getId()).and().lt("started", Time.currentTime() - realm.getSsoSessionMaxLifespan()).list();
-        for (UserSessionEntity e : entities) {
-            removeUserSession(e.getId());
+        Cache<String, UserSessionEntity> userCache = userCache(realm);
+        Cache<String, ClientSessionEntity> clientCache = clientCache(realm);
+
+        int expired = Time.currentTime() - realm.getSsoSessionMaxLifespan();
+        int expiredRefresh = Time.currentTime() - realm.getSsoSessionIdleTimeout();
+
+        Map<String, String> map = new MapReduceTask(userCache)
+                .mappedWith(UserSessionMapper.create().expired(expired, expiredRefresh).emitKey())
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        for (String id : map.keySet()) {
+            removeUserSession(userCache, clientCache, id);
         }
     }
 
     @Override
     public void removeUserSessions(RealmModel realm) {
-        List<UserSessionEntity> entities = userSessions().eq("realm", realm.getId()).list();
-        for (UserSessionEntity e : entities) {
-            removeUserSession(e.getId());
-        }
+        cacheManager.removeCache(realm.getId() + ":userSessions");
+        cacheManager.removeCache(realm.getId() + ":clientSessions");
     }
 
     @Override
@@ -183,9 +240,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
-        List<ClientSessionEntity> entities = clientSessions().eq("realm", realm.getId()).and().eq("client", client.getId()).list();
-        for (ClientSessionEntity c : entities) {
-            clientSessions.remove(c.getId());
+        Cache<String, ClientSessionEntity> clientCache = clientCache(realm);
+
+        Map<String, String> map = new MapReduceTask(clientCache)
+                .mappedWith(ClientSessionMapper.create().client(client.getId()).emitKey())
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        for (String id : map.keySet()) {
+            clientCache.remove(id);
         }
     }
 
@@ -198,163 +261,49 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     public void close() {
     }
 
-    void add(UserSessionEntity entity) {
-        userSessions.put(entity.getId(), entity);
-    }
+    void removeUserSession(Cache<String, UserSessionEntity> userCache, Cache<String, ClientSessionEntity> clientCache, String userSessionId) {
+        userCache.remove(userSessionId);
 
-    void update(UserSessionEntity entity) {
-        userSessions.replace(entity.getId(), entity);
-    }
+        Map<String, String> map = new MapReduceTask(clientCache)
+                .mappedWith(ClientSessionMapper.create().userSession(userSessionId).emitKey())
+                .reducedWith(new FirstResultReducer())
+                .execute();
 
-    void removeUserSession(String userSessionId) {
-        userSessions.remove(userSessionId);
-
-        List<ClientSessionEntity> clientSessions = clientSessions().eq("userSession", userSessionId).list();
-        for (ClientSessionEntity c : clientSessions) {
-            removeClientSession(c.getId());
+        for (String id : map.keySet()) {
+            clientCache.remove(id);
         }
-    }
-
-    void add(ClientSessionEntity entity) {
-        clientSessions.put(entity.getId(), entity);
-    }
-
-    void update(ClientSessionEntity entity) {
-        clientSessions.replace(entity.getId(), entity);
-    }
-
-    void removeClientSession(String clientSessionId) {
-        clientSessions.remove(clientSessionId);
     }
 
     UserSessionModel wrap(RealmModel realm, UserSessionEntity entity) {
-        if (entity != null && realm.getId().equals(entity.getRealm())) {
-            return new UserSessionAdapter(session, this, realm, entity);
-        } else {
-            return null;
-        }
+        return entity != null ? new UserSessionAdapter(session, this, realm, entity) : null;
     }
 
-    List<UserSessionModel> wrapUserSessions(RealmModel realm, List<UserSessionEntity> entities) {
+    List<UserSessionModel> wrapUserSessions(RealmModel realm, Collection<UserSessionEntity> entities) {
         List<UserSessionModel> models = new LinkedList<UserSessionModel>();
         for (UserSessionEntity e : entities) {
-            UserSessionModel m = wrap(realm, e);
-            if (m != null) {
-                models.add(m);
-            }
+            models.add(wrap(realm, e));
         }
         return models;
     }
 
     ClientSessionModel wrap(RealmModel realm, ClientSessionEntity entity) {
-        if (entity != null && realm.getId().equals(entity.getRealm())) {
-            return new ClientSessionAdapter(session, this, realm, entity);
-        } else {
-            return null;
-        }
+        return entity != null ? new ClientSessionAdapter(session, this, realm, entity) : null;
     }
 
-    List<ClientSessionModel> wrapClientSessions(RealmModel realm, List<ClientSessionEntity> entities) {
+    List<ClientSessionModel> wrapClientSessions(RealmModel realm, Collection<ClientSessionEntity> entities) {
         List<ClientSessionModel> models = new LinkedList<ClientSessionModel>();
         for (ClientSessionEntity e : entities) {
-            ClientSessionModel m = wrap(realm, e);
-            if (m != null) {
-                models.add(m);
-            }
+            models.add(wrap(realm, e));
         }
         return models;
     }
 
-
-    class Query<T> {
-
-        private boolean indexed;
-        private final QueryBuilder qb;
-        private FilterConditionContext ctx;
-        private FilterConditionBeginContext chainCtx;
-        private long first = -1;
-        private int max = -1;
-        private String orderBy;
-
-        public Query(SearchManager searchManager, Class<T> clazz) {
-            indexed = searchManager.getSearchFactory().getIndexedTypes().contains(clazz);
-            qb = searchManager.getQueryFactory().from(clazz);
-        }
-
-        Query eq(String field, Object value) {
-            if (chainCtx != null) {
-                ctx = chainCtx.having(field).eq(value);
-                chainCtx = null;
-            } else if (ctx == null) {
-                ctx = qb.having(field).eq(value);
-            } else {
-                throw new IllegalStateException();
-            }
-            return this;
-        }
-
-        Query and() {
-            if (chainCtx != null) {
-                throw new IllegalStateException();
-            }
-            chainCtx = ctx.and();
-            return this;
-        }
-
-        Query lt(String field, Object value) {
-            if (chainCtx != null) {
-                ctx = chainCtx.having(field).lt(value);
-                chainCtx = null;
-            } else if (ctx == null) {
-                ctx = qb.having(field).lt(value);
-            } else {
-                throw new IllegalStateException();
-            }
-            return this;
-        }
-
-        Query first(long first) {
-            this.first = first;
-            return this;
-        }
-
-        Query max(int max) {
-            this.max = max;
-            return this;
-        }
-
-        Query orderBy(String orderBy) {
-            this.orderBy = orderBy;
-            return this;
-        }
-
-        <T> List<T> list() {
-            if (!indexed) {
-                return Collections.emptyList();
-            }
-
-            QueryBuilder<org.infinispan.query.dsl.Query> qb = ctx.toBuilder();
-            if (first != -1) {
-                qb.startOffset(first);
-            }
-            if (max != -1) {
-                qb.maxResults(max);
-            }
-            if (orderBy != null) {
-                qb.orderBy(orderBy, SortOrder.ASC);
-            }
-            return qb.build().list();
-        }
-
+    Cache<String, UserSessionEntity> userCache(RealmModel realm) {
+        return cacheManager.getCache(realm.getId() + ":userSessions");
     }
 
-    Query userSessions() {
-        return new Query<UserSessionEntity>(Search.getSearchManager(userSessions), UserSessionEntity.class);
-    }
-
-
-    Query clientSessions() {
-        return new Query<ClientSessionEntity>(Search.getSearchManager(clientSessions), ClientSessionEntity.class);
+    Cache<String, ClientSessionEntity> clientCache(RealmModel realm) {
+        return cacheManager.getCache(realm.getId() + ":clientSessions");
     }
 
 }

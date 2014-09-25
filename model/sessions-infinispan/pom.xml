@@ -32,16 +32,5 @@
             <artifactId>infinispan-core</artifactId>
             <version>6.0.2.Final</version>
         </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-query</artifactId>
-            <version>6.0.2.Final</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-search</artifactId>
-            <version>4.5.1.Final</version>
-        </dependency>
-
     </dependencies>
 </project>

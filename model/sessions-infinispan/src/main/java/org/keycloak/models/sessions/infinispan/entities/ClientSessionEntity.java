@@ -1,8 +1,5 @@
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Indexed;
 import org.keycloak.models.ClientSessionModel;
 
 import java.io.Serializable;
@@ -11,26 +8,22 @@ import java.util.Set;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Indexed
 public class ClientSessionEntity implements Serializable {
 
     private String id;
 
-    @Field(analyze = Analyze.NO)
-    private String realm;
-
-    @Field(analyze = Analyze.NO)
     private String client;
 
-    @Field(analyze = Analyze.NO)
     private String userSession;
 
     private String redirectUri;
+
     private String state;
 
-    @Field(analyze = Analyze.NO)
     private int timestamp;
+
     private ClientSessionModel.Action action;
+
     private Set<String> roles;
 
     public String getId() {
@@ -39,14 +32,6 @@ public class ClientSessionEntity implements Serializable {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getRealm() {
-        return realm;
-    }
-
-    public void setRealm(String realm) {
-        this.realm = realm;
     }
 
     public String getClient() {

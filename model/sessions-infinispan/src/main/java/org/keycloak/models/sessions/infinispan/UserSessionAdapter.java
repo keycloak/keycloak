@@ -1,5 +1,7 @@
 package org.keycloak.models.sessions.infinispan;
 
+import org.infinispan.Cache;
+import org.infinispan.distexec.mapreduce.MapReduceTask;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -7,8 +9,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.mapreduce.ClientSessionMapper;
+import org.keycloak.models.sessions.infinispan.mapreduce.FirstResultReducer;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -97,13 +102,19 @@ public class UserSessionAdapter implements UserSessionModel {
 
     public void setLastSessionRefresh(int lastSessionRefresh) {
         entity.setLastSessionRefresh(lastSessionRefresh);
-        provider.update(entity);
+        update();
     }
 
     @Override
     public List<ClientSessionModel> getClientSessions() {
-        List<ClientSessionEntity> clientSessions = provider.clientSessions().eq("userSession", entity.getId()).list();
-        return provider.wrapClientSessions(realm, clientSessions);
+        Cache<String, ClientSessionEntity> clientCache = provider.clientCache(realm);
+
+        Map<String, ClientSessionEntity> map = new MapReduceTask(clientCache)
+                .mappedWith(ClientSessionMapper.create().userSession(entity.getId()))
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        return provider.wrapClientSessions(realm, map.values());
     }
 
     @Override
@@ -118,6 +129,10 @@ public class UserSessionAdapter implements UserSessionModel {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    void update() {
+        provider.userCache(realm).replace(entity.getId(), entity);
     }
 
 }

@@ -62,6 +62,16 @@ public class UserSessionProviderTest {
     }
 
     @Test
+    public void testUpdateSession() {
+        UserSessionModel[] sessions = createSessions();
+        sessions[0].setLastSessionRefresh(1000);
+
+        resetSession();
+
+        assertEquals(1000, session.sessions().getUserSession(realm, sessions[0].getId()).getLastSessionRefresh());
+    }
+
+    @Test
     public void testCreateClientSession() {
         UserSessionModel[] sessions = createSessions();
 
@@ -225,16 +235,15 @@ public class UserSessionProviderTest {
             Time.setOffset(-(realm.getSsoSessionMaxLifespan() + 1));
             expired.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true).getId());
 
-            Time.setOffset(-(realm.getSsoSessionMaxLifespan() + 100));
-            expired.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", true).getId());
+            Time.setOffset(0);
+            UserSessionModel s = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", true);
+            //s.setLastSessionRefresh(Time.currentTime() - (realm.getSsoSessionIdleTimeout() + 1));
+            s.setLastSessionRefresh(0);
+            expired.add(s.getId());
 
             Set<String> valid = new HashSet<String>();
 
-            Time.setOffset(-(realm.getSsoSessionMaxLifespan() - 100));
             valid.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true).getId());
-
-            Time.setOffset(0);
-            valid.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", true).getId());
 
             resetSession();
 
