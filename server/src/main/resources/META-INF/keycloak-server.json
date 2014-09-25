@@ -1,4 +1,4 @@
-{
+    {
     "admin": {
         "realm": "master"
     },
@@ -19,7 +19,11 @@
     },
 
     "userSessions": {
-        "provider" : "${keycloak.userSessions.provider:mem}"
+        "provider" : "${keycloak.userSessions.provider:infinispan}",
+
+        "infinispan" : {
+            "cacheContainer" : "java:jboss/infinispan/container/Keycloak"
+        }
     },
 
     "realmCache": {

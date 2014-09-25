@@ -4,17 +4,20 @@ import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.manager.EmbeddedCacheManager;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+
+import javax.naming.InitialContext;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
 
-    private DefaultCacheManager cacheManager;
+    private EmbeddedCacheManager cacheManager;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
@@ -23,20 +26,29 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public void init(Config.Scope config) {
-        GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-        ConfigurationBuilder cb = new ConfigurationBuilder();
+        String cacheContainer = config.get("cacheContainer");
+        if (cacheContainer != null) {
+            try {
+                cacheManager = (EmbeddedCacheManager) new InitialContext().lookup(cacheContainer);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to retrieve cache container", e);
+            }
+        } else {
+            GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
+            ConfigurationBuilder cb = new ConfigurationBuilder();
 
-        CacheMode cacheMode = getCacheMode(config.get("cacheMode", "local"), config.getBoolean("async", false));
-        if (!cacheMode.equals(CacheMode.LOCAL)) {
-            gcb.transport().defaultTransport();
+            CacheMode cacheMode = getCacheMode(config.get("cacheMode", "local"), config.getBoolean("async", false));
+            if (!cacheMode.equals(CacheMode.LOCAL)) {
+                gcb.transport().defaultTransport();
 
-            int owners = config.getInt("owners", 2);
-            int segments = config.getInt("segments", 60);
+                int owners = config.getInt("owners", 2);
+                int segments = config.getInt("segments", 60);
 
-            cb.clustering().cacheMode(cacheMode).hash().numOwners(owners).numSegments(segments);
+                cb.clustering().cacheMode(cacheMode).hash().numOwners(owners).numSegments(segments);
+            }
+
+            cacheManager = new DefaultCacheManager(gcb.build(), cb.build());
         }
-
-        cacheManager = new DefaultCacheManager(gcb.build(), cb.build());
     }
 
     private CacheMode getCacheMode(String cacheModeString, boolean async) {

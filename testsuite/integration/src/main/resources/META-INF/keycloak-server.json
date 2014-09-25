@@ -4,27 +4,31 @@
     },
 
     "eventsStore": {
-        "provider": "${keycloak.eventStore.provider:jpa}"
+        "provider": "mongo"
     },
 
     "realm": {
-        "provider": "${keycloak.realm.provider:jpa}"
+        "provider": "mongo"
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:jpa}"
+        "provider": "mongo"
     },
 
     "userSessions": {
-        "provider" : "${keycloak.userSessions.provider:infinispan}"
+        "provider" : "infinispan",
+
+        "infinispan" : {
+            "cacheMode": "replicated"
+        }
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:mem}"
+        "provider": "none"
     },
 
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:mem}",
+        "provider": "none",
         "mem": {
             "maxSize": 20000
         }

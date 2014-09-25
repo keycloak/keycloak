@@ -3,6 +3,7 @@ package org.keycloak.models.sessions.infinispan;
 import org.infinispan.Cache;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
 import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.manager.EmbeddedCacheManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -34,9 +35,9 @@ import java.util.Set;
 public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     private KeycloakSession session;
-    private DefaultCacheManager cacheManager;
+    private EmbeddedCacheManager cacheManager;
 
-    public InfinispanUserSessionProvider(KeycloakSession session, DefaultCacheManager cacheManager) {
+    public InfinispanUserSessionProvider(KeycloakSession session, EmbeddedCacheManager cacheManager) {
         this.session = session;
         this.cacheManager = cacheManager;
     }
