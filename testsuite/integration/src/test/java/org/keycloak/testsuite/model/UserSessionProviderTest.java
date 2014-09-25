@@ -77,16 +77,30 @@ public class UserSessionProviderTest {
 
         List<ClientSessionModel> clientSessions = sessions[0].getClientSessions();
         assertEquals(2, clientSessions.size());
-        ClientSessionModel session = clientSessions.get(0);
 
-        assertEquals(null, session.getAction());
-        assertEquals(realm.findClient("test-app").getClientId(), session.getClient().getClientId());
-        assertEquals(sessions[0].getId(), session.getUserSession().getId());
-        assertEquals("http://redirect", session.getRedirectUri());
-        assertEquals("state", session.getState());
-        assertEquals(2, session.getRoles().size());
-        assertTrue(session.getRoles().contains("one"));
-        assertTrue(session.getRoles().contains("two"));
+        String client1 = realm.findClient("test-app").getId();
+        String client2 = realm.findClient("third-party").getId();
+
+        ClientSessionModel session1;
+        ClientSessionModel session2;
+
+        if (clientSessions.get(0).getClient().equals(client1)) {
+            session1 = clientSessions.get(0);
+            session2 = clientSessions.get(1);
+        } else {
+            session1 = clientSessions.get(1);
+            session2 = clientSessions.get(0);
+        }
+
+        assertEquals(null, session1.getAction());
+        assertEquals(client1, session1.getClient().getId());
+        assertEquals(client2, session2.getClient().getId());
+        assertEquals(sessions[0].getId(), session1.getUserSession().getId());
+        assertEquals("http://redirect", session1.getRedirectUri());
+        assertEquals("state", session1.getState());
+        assertEquals(2, session1.getRoles().size());
+        assertTrue(session1.getRoles().contains("one"));
+        assertTrue(session1.getRoles().contains("two"));
     }
 
     @Test

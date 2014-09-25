@@ -1,5 +1,6 @@
 package org.keycloak.models.sessions.infinispan;
 
+import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
@@ -9,6 +10,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 import javax.naming.InitialContext;
 
@@ -18,10 +20,11 @@ import javax.naming.InitialContext;
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
 
     private EmbeddedCacheManager cacheManager;
+    private Cache<String, SessionEntity> cache;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
-        return new InfinispanUserSessionProvider(session, cacheManager);
+        return new InfinispanUserSessionProvider(session, cache);
     }
 
     @Override
@@ -29,7 +32,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         String cacheContainer = config.get("cacheContainer");
         if (cacheContainer != null) {
             try {
-                cacheManager = (EmbeddedCacheManager) new InitialContext().lookup(cacheContainer);
+                cache = ((EmbeddedCacheManager) new InitialContext().lookup(cacheContainer)).getCache("sessions");
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve cache container", e);
             }
@@ -48,6 +51,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             }
 
             cacheManager = new DefaultCacheManager(gcb.build(), cb.build());
+            cache = cacheManager.getCache("sessions");
         }
     }
 

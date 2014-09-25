@@ -8,9 +8,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ClientSessionEntity implements Serializable {
-
-    private String id;
+public class ClientSessionEntity extends SessionEntity {
 
     private String client;
 
@@ -25,14 +23,6 @@ public class ClientSessionEntity implements Serializable {
     private ClientSessionModel.Action action;
 
     private Set<String> roles;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getClient() {
         return client;

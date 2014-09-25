@@ -3,13 +3,20 @@ package org.keycloak.models.sessions.infinispan.mapreduce;
 import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 import java.io.Serializable;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ClientSessionMapper implements Mapper<String, ClientSessionEntity, String, Object>, Serializable {
+public class ClientSessionMapper implements Mapper<String, SessionEntity, String, Object>, Serializable {
+
+    private static String realm;
+
+    public ClientSessionMapper(String realm) {
+        this.realm = realm;
+    }
 
     private enum EmitValue {
         KEY, ENTITY, USER_SESSION_AND_TIMESTAMP
@@ -21,8 +28,8 @@ public class ClientSessionMapper implements Mapper<String, ClientSessionEntity, 
 
     private String userSession;
 
-    public static ClientSessionMapper create() {
-        return new ClientSessionMapper();
+    public static ClientSessionMapper create(String realm) {
+        return new ClientSessionMapper(realm);
     }
 
     public ClientSessionMapper emitKey() {
@@ -46,7 +53,17 @@ public class ClientSessionMapper implements Mapper<String, ClientSessionEntity, 
     }
 
     @Override
-    public void map(String key, ClientSessionEntity entity, Collector collector) {
+    public void map(String key, SessionEntity e, Collector collector) {
+        if (!realm.equals(e.getRealm())) {
+            return;
+        }
+
+        if (!(e instanceof ClientSessionEntity)) {
+            return;
+        }
+
+        ClientSessionEntity entity = (ClientSessionEntity) e;
+
         if (client != null && !entity.getClient().equals(client)) {
             return;
         }

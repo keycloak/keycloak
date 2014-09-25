@@ -8,6 +8,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.mapreduce.ClientSessionMapper;
 import org.keycloak.models.sessions.infinispan.mapreduce.FirstResultReducer;
@@ -22,14 +23,18 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private final KeycloakSession session;
 
-    private InfinispanUserSessionProvider provider;
+    private final InfinispanUserSessionProvider provider;
+
+    private final Cache<String, SessionEntity> cache;
+
     private final RealmModel realm;
 
     private final UserSessionEntity entity;
 
-    public UserSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, RealmModel realm, UserSessionEntity entity) {
+    public UserSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache, RealmModel realm, UserSessionEntity entity) {
         this.session = session;
         this.provider = provider;
+        this.cache = cache;
         this.realm = realm;
         this.entity = entity;
     }
@@ -107,10 +112,8 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public List<ClientSessionModel> getClientSessions() {
-        Cache<String, ClientSessionEntity> clientCache = provider.clientCache(realm);
-
-        Map<String, ClientSessionEntity> map = new MapReduceTask(clientCache)
-                .mappedWith(ClientSessionMapper.create().userSession(entity.getId()))
+        Map<String, ClientSessionEntity> map = new MapReduceTask(cache)
+                .mappedWith(ClientSessionMapper.create(realm.getId()).userSession(entity.getId()))
                 .reducedWith(new FirstResultReducer())
                 .execute();
 
@@ -132,7 +135,7 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     void update() {
-        provider.userCache(realm).replace(entity.getId(), entity);
+        cache.replace(entity.getId(), entity);
     }
 
 }

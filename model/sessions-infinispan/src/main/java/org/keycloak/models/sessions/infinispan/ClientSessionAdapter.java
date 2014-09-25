@@ -1,11 +1,13 @@
 package org.keycloak.models.sessions.infinispan;
 
+import org.infinispan.Cache;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 import java.util.Set;
 
@@ -16,12 +18,14 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     private KeycloakSession session;
     private InfinispanUserSessionProvider provider;
+    private Cache<String, SessionEntity> cache;
     private RealmModel realm;
     private ClientSessionEntity entity;
 
-    public ClientSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, RealmModel realm, ClientSessionEntity entity) {
+    public ClientSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache, RealmModel realm, ClientSessionEntity entity) {
         this.session = session;
         this.provider = provider;
+        this.cache = cache;
         this.realm = realm;
         this.entity = entity;
     }
@@ -79,7 +83,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     void update() {
-        provider.clientCache(realm).replace(entity.getId(), entity);
+        cache.replace(entity.getId(), entity);
     }
 
 }

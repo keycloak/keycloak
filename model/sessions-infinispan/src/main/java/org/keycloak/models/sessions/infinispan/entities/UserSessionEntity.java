@@ -1,13 +1,9 @@
 package org.keycloak.models.sessions.infinispan.entities;
 
-import java.io.Serializable;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserSessionEntity implements Serializable {
-
-    private String id;
+public class UserSessionEntity extends SessionEntity {
 
     private String user;
 
@@ -22,14 +18,6 @@ public class UserSessionEntity implements Serializable {
     private int started;
 
     private int lastSessionRefresh;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getUser() {
         return user;
