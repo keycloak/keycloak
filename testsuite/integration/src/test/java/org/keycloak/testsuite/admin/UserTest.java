@@ -7,9 +7,13 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -17,12 +21,21 @@ import static org.junit.Assert.fail;
  */
 public class UserTest extends AbstractClientTest {
 
+	public static final String ATTRIBUTE1 = "ATTRIBUTE1";
+	public static final String ATTRIBUTE2 = "ATTRIBUTE2";
+	
+	
     @Test
     public void createUser() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user1");
         user.setEmail("user1@localhost");
 
+		Map<String, String> attributs = new HashMap<String, String>();
+		attributs.put(ATTRIBUTE1, ATTRIBUTE1);
+		attributs.put(ATTRIBUTE2, ATTRIBUTE2);
+		user.setAttributes(attributs);
+		
         realm.users().create(user);
     }
 
@@ -48,6 +61,11 @@ public class UserTest extends AbstractClientTest {
             user.setFirstName("First" + i);
             user.setLastName("Last" + i);
 
+			Map<String, String> attributs = new HashMap<String, String>();
+			attributs.put(ATTRIBUTE1, ATTRIBUTE1);
+			attributs.put(ATTRIBUTE2, ATTRIBUTE2);
+			user.setAttributes(attributs);
+			
             realm.users().create(user);
         }
     }
@@ -61,6 +79,7 @@ public class UserTest extends AbstractClientTest {
 
         users = realm.users().search(null, null, null, "@localhost", null, null);
         assertEquals(9, users.size());
+		checkAttributes(users);
     }
 
     @Test
@@ -72,6 +91,7 @@ public class UserTest extends AbstractClientTest {
 
         users = realm.users().search("user", null, null, null, null, null);
         assertEquals(9, users.size());
+        checkAttributes(users);
     }
 
     @Test
@@ -86,6 +106,8 @@ public class UserTest extends AbstractClientTest {
 
         users = realm.users().search("last", null, null);
         assertEquals(9, users.size());
+        
+        checkAttributes(users);
     }
 
     @Test
@@ -108,6 +130,7 @@ public class UserTest extends AbstractClientTest {
 
         users = realm.users().search("username", 0, 20);
         assertEquals(9, users.size());
+        checkAttributes(users);
     }
 
     @Test
@@ -149,4 +172,25 @@ public class UserTest extends AbstractClientTest {
         assertEquals(0, user.getSocialLinks().size());
     }
 
+    /**
+     * Check the attributes are present as expected for all (alike) users.
+     * @param users
+     */
+    private void checkAttributes(List<UserRepresentation> users){
+    	for(UserRepresentation user : users){
+    		checkAttributes(user);
+		}
+    }
+    
+    /*
+     * Check the attributes are present as expected for one user.
+     */
+    private void checkAttributes(UserRepresentation user){
+    	assertNotNull( user.getAttributes() );
+		assertNotNull( user.getAttributes().get(ATTRIBUTE1) );
+		assertEquals(ATTRIBUTE1, user.getAttributes().get(ATTRIBUTE1) );
+		assertNotNull( user.getAttributes().get(ATTRIBUTE2) );
+		assertEquals(ATTRIBUTE2, user.getAttributes().get(ATTRIBUTE2) );
+		// TODO add more attributes like with accentuated characters.
+    }
 }
