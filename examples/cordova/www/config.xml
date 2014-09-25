@@ -10,5 +10,5 @@
 
     <gap:plugin name="org.apache.cordova.inappbrowser" />
 
-    <access origin="http://*"/>
+    <access origin="*"/>
 </widget>
