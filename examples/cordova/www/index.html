@@ -28,7 +28,7 @@
         }
 
         document.addEventListener("deviceready", function() {
-            keycloak.init({ onLoad: 'check-sso' });
+            keycloak.init({ onLoad: 'check-sso' }).success(updateState);
         }, false);
     </script>
 </head>

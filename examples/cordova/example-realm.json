@@ -35,12 +35,6 @@
             }
         ]
     },
-    "roleMappings": [
-        {
-            "username": "user",
-            "roles": ["user"]
-        }
-    ],
     "scopeMappings": [
         {
             "client": "cordova",
@@ -52,17 +46,10 @@
             "name": "cordova",
             "enabled": true,
             "publicClient": true,
-            "redirectUris": []
+            "redirectUris": ["http://localhost"],
+            "webOrigins": ["localhost"]
         }
     ],
-    "applicationRoleMappings": {
-        "account": [
-            {
-                "username": "user",
-                "roles": ["view-profile", "manage-account"]
-            }
-        ]
-    },
     "applicationScopeMappings": {
         "account": [
             {
