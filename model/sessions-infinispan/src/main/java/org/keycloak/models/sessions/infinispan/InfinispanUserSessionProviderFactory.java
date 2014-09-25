@@ -7,6 +7,7 @@ import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.keycloak.Config;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
@@ -19,64 +20,20 @@ import javax.naming.InitialContext;
  */
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
 
-    private EmbeddedCacheManager cacheManager;
-    private Cache<String, SessionEntity> cache;
+    private static final String CACHE_NAME = "sessions";
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
+        Cache<String, SessionEntity> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(CACHE_NAME);
         return new InfinispanUserSessionProvider(session, cache);
     }
 
     @Override
     public void init(Config.Scope config) {
-        String cacheContainer = config.get("cacheContainer");
-        if (cacheContainer != null) {
-            try {
-                cache = ((EmbeddedCacheManager) new InitialContext().lookup(cacheContainer)).getCache("sessions");
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to retrieve cache container", e);
-            }
-        } else {
-            GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-            ConfigurationBuilder cb = new ConfigurationBuilder();
-
-            CacheMode cacheMode = getCacheMode(config.get("cacheMode", "local"), config.getBoolean("async", false));
-            if (!cacheMode.equals(CacheMode.LOCAL)) {
-                gcb.transport().defaultTransport();
-
-                int owners = config.getInt("owners", 2);
-                int segments = config.getInt("segments", 60);
-
-                cb.clustering().cacheMode(cacheMode).hash().numOwners(owners).numSegments(segments);
-            }
-
-            cacheManager = new DefaultCacheManager(gcb.build(), cb.build());
-            cache = cacheManager.getCache("sessions");
-        }
-    }
-
-    private CacheMode getCacheMode(String cacheModeString, boolean async) {
-        if (cacheModeString.equalsIgnoreCase("local")) {
-            return CacheMode.LOCAL;
-        }
-
-        if (cacheModeString.equalsIgnoreCase("replicated")) {
-            return async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC;
-        }
-
-        if (cacheModeString.equalsIgnoreCase("distributed")) {
-            return async ? CacheMode.DIST_ASYNC : CacheMode.DIST_SYNC;
-        }
-
-        throw new RuntimeException("Invalid cacheMode " + cacheModeString);
     }
 
     @Override
     public void close() {
-        if (cacheManager != null) {
-            cacheManager.stop();
-            cacheManager = null;
-        }
     }
 
     @Override

@@ -14,6 +14,7 @@
 
     <modules>
         <module>jpa</module>
+        <module>infinispan</module>
         <module>mongo</module>
     </modules>
 

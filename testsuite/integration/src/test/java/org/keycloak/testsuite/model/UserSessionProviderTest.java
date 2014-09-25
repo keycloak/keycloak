@@ -75,7 +75,7 @@ public class UserSessionProviderTest {
     public void testCreateClientSession() {
         UserSessionModel[] sessions = createSessions();
 
-        List<ClientSessionModel> clientSessions = sessions[0].getClientSessions();
+        List<ClientSessionModel> clientSessions = session.sessions().getUserSession(realm, sessions[0].getId()).getClientSessions();
         assertEquals(2, clientSessions.size());
 
         String client1 = realm.findClient("test-app").getId();

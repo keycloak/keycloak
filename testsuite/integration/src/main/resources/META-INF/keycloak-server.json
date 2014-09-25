@@ -4,31 +4,27 @@
     },
 
     "eventsStore": {
-        "provider": "mongo"
+        "provider": "${keycloak.eventStore.provider:jpa}"
     },
 
     "realm": {
-        "provider": "mongo"
+        "provider": "${keycloak.realm.provider:jpa}"
     },
 
     "user": {
-        "provider": "mongo"
+        "provider": "${keycloak.user.provider:jpa}"
     },
 
     "userSessions": {
-        "provider" : "infinispan",
-
-        "infinispan" : {
-            "cacheMode": "replicated"
-        }
+        "provider" : "${keycloak.userSessions.provider:infinispan}"
     },
 
     "realmCache": {
-        "provider": "none"
+        "provider": "${keycloak.realm.cache.provider:mem}"
     },
 
     "userCache": {
-        "provider": "none",
+        "provider": "${keycloak.user.cache.provider:mem}",
         "mem": {
             "maxSize": 20000
         }
@@ -83,6 +79,12 @@
             "port": "${keycloak.connectionsMongo.port:27017}",
             "db": "${keycloak.connectionsMongo.db:keycloak}",
             "clearOnStartup": "${keycloak.connectionsMongo.clearOnStartup:false}"
+        }
+    },
+
+    "connectionsInfinispan": {
+        "default": {
+            "cacheMode": "local"
         }
     }
 }

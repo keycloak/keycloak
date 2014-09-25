@@ -43,6 +43,7 @@
         <twitter4j.version>3.0.5</twitter4j.version>
         <selenium.version>2.35.0</selenium.version>
         <javax.mail.version>1.4.5</javax.mail.version>
+        <infinispan.version>6.0.2.Final</infinispan.version>
 
         <!-- maven-compiler-plugin -->
         <maven.compiler.target>1.6</maven.compiler.target>
@@ -436,6 +437,11 @@
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging-processor</artifactId>
                 <version>${jboss-logging-tools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${infinispan.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

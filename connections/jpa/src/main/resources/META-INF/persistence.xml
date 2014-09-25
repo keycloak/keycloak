@@ -31,7 +31,6 @@
         
         <properties>
             <property name="jboss.as.jpa.managed" value="false"/>
-            <property name="hibernate.search.autoregister_listeners" value="false"/>
         </properties>
     </persistence-unit>
 </persistence>
