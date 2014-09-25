@@ -12,8 +12,6 @@ import java.io.Serializable;
  */
 public class SessionMapper implements Mapper<String, SessionEntity, String, Object>, Serializable {
 
-    private String realm;
-
     public SessionMapper(String realm) {
         this.realm = realm;
     }
@@ -21,6 +19,8 @@ public class SessionMapper implements Mapper<String, SessionEntity, String, Obje
     private enum EmitValue {
         KEY, ENTITY
     }
+
+    private String realm;
 
     private EmitValue emit = EmitValue.ENTITY;
 

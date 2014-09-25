@@ -13,8 +13,6 @@ import java.io.Serializable;
  */
 public class UserSessionMapper implements Mapper<String, SessionEntity, String, Object>, Serializable {
 
-    private String realm;
-
     public UserSessionMapper(String realm) {
         this.realm = realm;
     }
@@ -22,6 +20,8 @@ public class UserSessionMapper implements Mapper<String, SessionEntity, String, 
     private enum EmitValue {
         KEY, ENTITY
     }
+
+    private String realm;
 
     private EmitValue emit = EmitValue.ENTITY;
 
