@@ -10,6 +10,7 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -147,6 +148,56 @@ public class UserTest extends AbstractClientTest {
         user.removeSocialLink("social-provider-id");
 
         assertEquals(0, user.getSocialLinks().size());
+    }
+
+    @Test
+    public void attributes() {
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        user1.attribute("attr1", "value1user1");
+        user1.attribute("attr2", "value2user1");
+        realm.users().create(user1);
+
+        UserRepresentation user2 = new UserRepresentation();
+        user2.setUsername("user2");
+        user2.attribute("attr1", "value1user2");
+        user2.attribute("attr2", "value2user2");
+        realm.users().create(user2);
+
+        user1 = realm.users().get("user1").toRepresentation();
+        assertEquals(2, user1.getAttributes().size());
+        assertEquals("value1user1", user1.getAttributes().get("attr1"));
+        assertEquals("value2user1", user1.getAttributes().get("attr2"));
+
+        user2 = realm.users().get("user2").toRepresentation();
+        assertEquals(2, user2.getAttributes().size());
+        assertEquals("value1user2", user2.getAttributes().get("attr1"));
+        assertEquals("value2user2", user2.getAttributes().get("attr2"));
+
+        user1.attribute("attr1", "value3user1");
+        user1.attribute("attr3", "value4user1");
+
+        realm.users().get("user1").update(user1);
+
+        user1 = realm.users().get("user1").toRepresentation();
+        assertEquals(3, user1.getAttributes().size());
+        assertEquals("value3user1", user1.getAttributes().get("attr1"));
+        assertEquals("value2user1", user1.getAttributes().get("attr2"));
+        assertEquals("value4user1", user1.getAttributes().get("attr3"));
+
+        user1.getAttributes().remove("attr1");
+        realm.users().get("user1").update(user1);
+
+        user1 = realm.users().get("user1").toRepresentation();
+        assertEquals(2, user1.getAttributes().size());
+        assertEquals("value2user1", user1.getAttributes().get("attr2"));
+        assertEquals("value4user1", user1.getAttributes().get("attr3"));
+
+        user1.getAttributes().clear();
+        realm.users().get("user1").update(user1);
+
+        user1 = realm.users().get("user1").toRepresentation();
+        assertNull(user1.getAttributes());
     }
 
 }
