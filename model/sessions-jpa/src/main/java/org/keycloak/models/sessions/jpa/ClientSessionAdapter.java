@@ -8,10 +8,13 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionNoteEntity;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity;
+import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 
 import javax.persistence.EntityManager;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -29,6 +32,11 @@ public class ClientSessionAdapter implements ClientSessionModel {
         this.em = em;
         this.realm = realm;
         this.entity = entity;
+    }
+
+    @Override
+    public RealmModel getRealm() {
+        return session.realms().getRealm(entity.getRealmId());
     }
 
     @Override
@@ -80,8 +88,32 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public String getState() {
-        return entity.getState();
+    public void setUserSession(UserSessionModel userSession) {
+        UserSessionAdapter adapter = (UserSessionAdapter)userSession;
+        UserSessionEntity userSessionEntity = adapter.getEntity();
+        entity.setSession(userSessionEntity);
+        userSessionEntity.getClientSessions().add(entity);
+    }
+
+    @Override
+    public void setRedirectUri(String uri) {
+       entity.setRedirectUri(uri);
+    }
+
+    @Override
+    public void setRoles(Set<String> roles) {
+        if (roles != null) {
+            List<ClientSessionRoleEntity> roleEntities = new LinkedList<ClientSessionRoleEntity>();
+            for (String r : roles) {
+                ClientSessionRoleEntity roleEntity = new ClientSessionRoleEntity();
+                roleEntity.setClientSession(entity);
+                roleEntity.setRoleId(r);
+                em.persist(roleEntity);
+
+                roleEntities.add(roleEntity);
+            }
+            entity.setRoles(roleEntities);
+        }
     }
 
     @Override
@@ -96,6 +128,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public UserSessionModel getUserSession() {
+        if (entity.getSession() == null) return null;
         return new UserSessionAdapter(session, em, realm, entity.getSession());
     }
 

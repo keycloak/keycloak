@@ -114,14 +114,17 @@ public class SocialLoginTest {
         String userId = events.expect(EventType.REGISTER)
                 .user(AssertEvents.isUUID())
                 .detail(Details.EMAIL, "bob@builder.com")
-                .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.REGISTER_METHOD, "social@dummy")
                 .detail(Details.REDIRECT_URI, AssertEvents.DEFAULT_REDIRECT_URI)
                 .detail(Details.USERNAME, "1@dummy")
                 .session((String) null)
                 .assertEvent().getUserId();
 
-        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social@dummy").assertEvent();
+        Event loginEvent = events.expectSocialLogin()
+                .user(userId)
+                .detail(Details.USERNAME, "1@dummy")
+                .detail(Details.AUTH_METHOD, "social@dummy")
+                .assertEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -153,7 +156,7 @@ public class SocialLoginTest {
         driver.findElement(By.id("username")).sendKeys("dummy-user1");
         driver.findElement(By.id("login")).click();
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social@dummy").assertEvent();
+        events.expectSocialLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social@dummy").assertEvent();
     }
 
     @Test
@@ -199,8 +202,9 @@ public class SocialLoginTest {
         Assert.assertTrue(loginPage.isCurrent());
         Assert.assertEquals("Access denied", loginPage.getWarning());
 
-        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null).detail(Details.AUTH_METHOD, "social@dummy").removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
+        events.expectSocialLogin().error("rejected_by_user").user((String) null).session((String) null).detail(Details.AUTH_METHOD, "social@dummy").removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
 
+        String src = driver.getPageSource();
         loginPage.login("test-user@localhost", "password");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -238,7 +242,6 @@ public class SocialLoginTest {
             String userId = events.expect(EventType.REGISTER)
                     .user(AssertEvents.isUUID())
                     .detail(Details.EMAIL, "bob@builder.com")
-                    .detail(Details.RESPONSE_TYPE, "code")
                     .detail(Details.REGISTER_METHOD, "social@dummy")
                     .detail(Details.REDIRECT_URI, AssertEvents.DEFAULT_REDIRECT_URI)
                     .detail(Details.USERNAME, "2@dummy")

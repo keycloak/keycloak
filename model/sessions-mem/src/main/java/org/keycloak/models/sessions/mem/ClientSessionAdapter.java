@@ -6,6 +6,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.mem.entities.ClientSessionEntity;
+import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
 
 import java.util.Set;
 
@@ -32,18 +33,39 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
+    public RealmModel getRealm() {
+        return session.realms().getRealm(entity.getRealmId());
+    }
+
+
+
+    @Override
     public ClientModel getClient() {
         return realm.findClientById(entity.getClientId());
     }
 
     @Override
-    public String getState() {
-        return entity.getState();
+    public UserSessionModel getUserSession() {
+        if (entity.getSession() == null) return null;
+        return new UserSessionAdapter(session, provider, realm, entity.getSession());
     }
 
     @Override
-    public UserSessionModel getUserSession() {
-        return new UserSessionAdapter(session, provider, realm, entity.getSession());
+    public void setUserSession(UserSessionModel userSession) {
+        UserSessionAdapter adapter = (UserSessionAdapter)userSession;
+        UserSessionEntity userSessionEntity = adapter.getEntity();
+        entity.setSession(userSessionEntity);
+        userSessionEntity.getClientSessions().add(entity);
+    }
+
+    @Override
+    public void setRedirectUri(String uri) {
+        entity.setRedirectUri(uri);
+    }
+
+    @Override
+    public void setRoles(Set<String> roles) {
+        entity.setRoles(roles);
     }
 
     @Override

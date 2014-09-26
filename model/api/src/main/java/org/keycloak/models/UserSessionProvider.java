@@ -11,8 +11,9 @@ import java.util.Set;
  */
 public interface UserSessionProvider extends Provider {
 
-    ClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, String redirectUri, String state, Set<String> roles);
+    ClientSessionModel createClientSession(RealmModel realm, ClientModel client);
     ClientSessionModel getClientSession(RealmModel realm, String id);
+    ClientSessionModel getClientSession(String id);
 
     UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe);
     UserSessionModel getUserSession(RealmModel realm, String id);

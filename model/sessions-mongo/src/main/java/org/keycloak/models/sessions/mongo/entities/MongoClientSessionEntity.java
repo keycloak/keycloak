@@ -1,6 +1,9 @@
 package org.keycloak.models.sessions.mongo.entities;
 
+import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.entities.AbstractIdentifiableEntity;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,13 +12,14 @@ import java.util.Map;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class MongoClientSessionEntity {
+public class MongoClientSessionEntity extends AbstractIdentifiableEntity implements MongoIdentifiableEntity {
 
     private String id;
     private String clientId;
+    private String realmId;
+    private String sessionId;
 
     private String redirectUri;
-    private String state;
     private String authMethod;
 
     private int timestamp;
@@ -39,20 +43,20 @@ public class MongoClientSessionEntity {
         this.clientId = clientId;
     }
 
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
+    }
+
     public String getRedirectUri() {
         return redirectUri;
     }
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
     }
 
     public String getAuthMethod() {
@@ -94,4 +98,17 @@ public class MongoClientSessionEntity {
     public void setNotes(Map<String, String> notes) {
         this.notes = notes;
     }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    @Override
+    public void afterRemove(MongoStoreInvocationContext context) {
+    }
+
 }

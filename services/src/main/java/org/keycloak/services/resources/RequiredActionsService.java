@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -44,8 +45,10 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.protocol.OpenIdConnectProtocol;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
@@ -54,6 +57,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -63,6 +67,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -102,22 +107,66 @@ public class RequiredActionsService {
         this.event = event;
     }
 
+    private boolean checkSsl() {
+        if (uriInfo.getBaseUri().getScheme().equals("https")) {
+            return true;
+        } else {
+            return !realm.getSslRequired().isRequired(clientConnection);
+        }
+    }
+
+
+    private class Checks {
+        ClientSessionCode clientCode;
+        Response response;
+
+        boolean check(String code, ClientSessionModel.Action requiredAction) {
+            if (!checkSsl()) {
+                event.error(Errors.SSL_REQUIRED);
+                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+                return false;
+            }
+            if (!realm.isEnabled()) {
+                event.error(Errors.REALM_DISABLED);
+                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
+                return false;
+            }
+            clientCode = ClientSessionCode.parse(code, session, realm);
+            if (clientCode == null) {
+                event.error(Errors.INVALID_CODE);
+                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
+                return false;
+            }
+            if (!clientCode.isValid(requiredAction)) {
+                event.error(Errors.INVALID_CODE);
+                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
+            }
+            return true;
+        }
+    }
+
     @Path("profile")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response updateProfile(final MultivaluedMap<String, String> formData) {
-        AccessCode accessCode = getAccessCodeEntry(RequiredAction.UPDATE_PROFILE);
-        if (accessCode == null) {
-            return unauthorized();
+    public Response updateProfile(@QueryParam("code") String code,
+                                  final MultivaluedMap<String, String> formData) {
+        event.event(EventType.UPDATE_PROFILE);
+        Checks checks = new Checks();
+        if (!checks.check(code, ClientSessionModel.Action.UPDATE_PROFILE)) {
+            return checks.response;
         }
+        ClientSessionCode accessCode = checks.clientCode;
+        ClientSessionModel clientSession = accessCode.getClientSession();
+        UserSessionModel userSession = clientSession.getUserSession();
+        UserModel user = userSession.getUser();
 
-        UserModel user = getUser(accessCode);
-
-        initEvent(accessCode);
+        initEvent(clientSession);
 
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
-            return Flows.forms(session, realm, null, uriInfo).setUser(user).setError(error).createResponse(RequiredAction.UPDATE_PROFILE);
+            return Flows.forms(session, realm, null, uriInfo).setUser(user).setError(error)
+                    .setAccessCode(accessCode.getCode())
+                    .createResponse(RequiredAction.UPDATE_PROFILE);
         }
 
         user.setFirstName(formData.getFirst("firstName"));
@@ -137,30 +186,38 @@ public class RequiredActionsService {
             event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
 
-        return redirectOauth(user, accessCode);
+        return redirectOauth(user, accessCode, clientSession, userSession);
     }
 
     @Path("totp")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response updateTotp(final MultivaluedMap<String, String> formData) {
-        AccessCode accessCode = getAccessCodeEntry(RequiredAction.CONFIGURE_TOTP);
-        if (accessCode == null) {
-            return unauthorized();
+    public Response updateTotp(@QueryParam("code") String code,
+                               final MultivaluedMap<String, String> formData) {
+        event.event(EventType.UPDATE_TOTP);
+        Checks checks = new Checks();
+        if (!checks.check(code, ClientSessionModel.Action.CONFIGURE_TOTP)) {
+            return checks.response;
         }
+        ClientSessionCode accessCode = checks.clientCode;
+        ClientSessionModel clientSession = accessCode.getClientSession();
+        UserSessionModel userSession = clientSession.getUserSession();
+        UserModel user = userSession.getUser();
 
-        UserModel user = getUser(accessCode);
-
-        initEvent(accessCode);
+        initEvent(clientSession);
 
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
 
         LoginFormsProvider loginForms = Flows.forms(session, realm, null, uriInfo).setUser(user);
         if (Validation.isEmpty(totp)) {
-            return loginForms.setError(Messages.MISSING_TOTP).createResponse(RequiredAction.CONFIGURE_TOTP);
+            return loginForms.setError(Messages.MISSING_TOTP)
+                    .setAccessCode(accessCode.getCode())
+                    .createResponse(RequiredAction.CONFIGURE_TOTP);
         } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
-            return loginForms.setError(Messages.INVALID_TOTP).createResponse(RequiredAction.CONFIGURE_TOTP);
+            return loginForms.setError(Messages.INVALID_TOTP)
+                    .setAccessCode(accessCode.getCode())
+                    .createResponse(RequiredAction.CONFIGURE_TOTP);
         }
 
         UserCredentialModel credentials = new UserCredentialModel();
@@ -174,113 +231,163 @@ public class RequiredActionsService {
 
         event.clone().event(EventType.UPDATE_TOTP).success();
 
-        return redirectOauth(user, accessCode);
+        return redirectOauth(user, accessCode, clientSession, userSession);
     }
 
     @Path("password")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response updatePassword(final MultivaluedMap<String, String> formData) {
-        AccessCode accessCode = getAccessCodeEntry(RequiredAction.UPDATE_PASSWORD);
-        if (accessCode == null) {
-            return unauthorized();
+    public Response updatePassword(@QueryParam("code") String code,
+                                   final MultivaluedMap<String, String> formData) {
+        event.event(EventType.UPDATE_PASSWORD);
+        Checks checks = new Checks();
+        if (!checks.check(code, ClientSessionModel.Action.UPDATE_PASSWORD)) {
+            return checks.response;
         }
+        ClientSessionCode accessCode = checks.clientCode;
+        ClientSessionModel clientSession = accessCode.getClientSession();
+        UserSessionModel userSession = clientSession.getUserSession();
+        UserModel user = userSession.getUser();
 
-        UserModel user = getUser(accessCode);
-
-        initEvent(accessCode);
+        initEvent(clientSession);
 
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
         LoginFormsProvider loginForms = Flows.forms(session, realm, null, uriInfo).setUser(user);
         if (Validation.isEmpty(passwordNew)) {
-            return loginForms.setError(Messages.MISSING_PASSWORD).createResponse(RequiredAction.UPDATE_PASSWORD);
+            return loginForms.setError(Messages.MISSING_PASSWORD)
+                    .setAccessCode(accessCode.getCode())
+                    .createResponse(RequiredAction.UPDATE_PASSWORD);
         } else if (!passwordNew.equals(passwordConfirm)) {
-            return loginForms.setError(Messages.NOTMATCH_PASSWORD).createResponse(RequiredAction.UPDATE_PASSWORD);
+            return loginForms.setError(Messages.NOTMATCH_PASSWORD)
+                    .setAccessCode(accessCode.getCode())
+                    .createResponse(RequiredAction.UPDATE_PASSWORD);
         }
 
         try {
             session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
         } catch (Exception ape) {
-            return loginForms.setError(ape.getMessage()).createResponse(RequiredAction.UPDATE_PASSWORD);
+            return loginForms.setError(ape.getMessage())
+                    .setAccessCode(accessCode.getCode())
+                    .createResponse(RequiredAction.UPDATE_PASSWORD);
         }
 
         user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
 
         event.clone().event(EventType.UPDATE_PASSWORD).success();
+        return redirectOauth(user, accessCode, clientSession, userSession);
 
         // Redirect to account management to login if password reset was initiated by admin
+        /* here while refactoring,  ok to remove when you want
         if (accessCode.getSessionState() == null) {
             return Response.seeOther(Urls.accountPage(uriInfo.getBaseUri(), realm.getId())).build();
         } else {
             return redirectOauth(user, accessCode);
         }
+        */
     }
 
 
     @Path("email-verification")
     @GET
-    public Response emailVerification() {
+    public Response emailVerification(@QueryParam("code") String code) {
+        event.event(EventType.VERIFY_EMAIL);
         if (uriInfo.getQueryParameters().containsKey("key")) {
-            AccessCode accessCode = AccessCode.parse(uriInfo.getQueryParameters().getFirst("key"), session, realm);
-            if (accessCode == null || !accessCode.isValid(RequiredAction.VERIFY_EMAIL)) {
-                return unauthorized();
+            Checks checks = new Checks();
+            if (!checks.check(code, ClientSessionModel.Action.VERIFY_EMAIL)) {
+                return checks.response;
             }
-
-            UserModel user = getUser(accessCode);
-
-            initEvent(accessCode);
-
+            ClientSessionCode accessCode = checks.clientCode;
+            ClientSessionModel clientSession = accessCode.getClientSession();
+            UserSessionModel userSession = clientSession.getUserSession();
+            UserModel user = userSession.getUser();
+            String key = uriInfo.getQueryParameters().getFirst("key");
+            String keyNote = clientSession.getNote("key");
+            if (key == null || !key.equals(keyNote)) {
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Somebody is trying to illegally change your email.");
+            }
+            initEvent(clientSession);
             user.setEmailVerified(true);
 
             user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
 
-            event.clone().event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
+            event.clone().event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
 
-            return redirectOauth(user, accessCode);
+            return redirectOauth(user, accessCode, clientSession, userSession);
         } else {
-            AccessCode accessCode = getAccessCodeEntry(RequiredAction.VERIFY_EMAIL);
-            if (accessCode == null) {
-                return unauthorized();
+            Checks checks = new Checks();
+            if (!checks.check(code, ClientSessionModel.Action.VERIFY_EMAIL)) {
+                return checks.response;
             }
+            ClientSessionCode accessCode = checks.clientCode;
+            ClientSessionModel clientSession = accessCode.getClientSession();
+            String verifyCode = UUID.randomUUID().toString();
+            clientSession.setNote("key", verifyCode);
+            UserSessionModel userSession = clientSession.getUserSession();
+            UserModel user = userSession.getUser();
 
-            initEvent(accessCode);
+            initEvent(clientSession);
 
-            return Flows.forms(session, realm, null, uriInfo).setAccessCode(accessCode.getCode()).setUser(accessCode.getUser())
+            return Flows.forms(session, realm, null, uriInfo)
+                    .setAccessCode(accessCode.getCode())
+                    .setVerifyCode(verifyCode)
+                    .setUser(userSession.getUser())
                     .createResponse(RequiredAction.VERIFY_EMAIL);
         }
     }
 
     @Path("password-reset")
     @GET
-    public Response passwordReset() {
+    public Response passwordReset(@QueryParam("code") String code) {
+        event.event(EventType.SEND_RESET_PASSWORD);
         if (uriInfo.getQueryParameters().containsKey("key")) {
-            AccessCode accessCode = AccessCode.parse(uriInfo.getQueryParameters().getFirst("key"), session, realm);
-            if (accessCode == null || !accessCode.isValid(RequiredAction.UPDATE_PASSWORD)) {
-                return unauthorized();
+            Checks checks = new Checks();
+            if (!checks.check(code, ClientSessionModel.Action.UPDATE_PASSWORD)) {
+                return checks.response;
             }
-
-            return Flows.forms(session, realm, null, uriInfo).setAccessCode(accessCode.getCode()).createResponse(RequiredAction.UPDATE_PASSWORD);
+            ClientSessionCode accessCode = checks.clientCode;
+            ClientSessionModel clientSession = accessCode.getClientSession();
+            UserSessionModel userSession = clientSession.getUserSession();
+            UserModel user = userSession.getUser();
+            String key = uriInfo.getQueryParameters().getFirst("key");
+            String keyNote = clientSession.getNote("key");
+            if (key == null || !key.equals(keyNote)) {
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Somebody is trying to illegally change your password.");
+            }
+            return Flows.forms(session, realm, null, uriInfo)
+                    .setAccessCode(accessCode.getCode())
+                    .createResponse(RequiredAction.UPDATE_PASSWORD);
         } else {
-            return Flows.forms(session, realm, null, uriInfo).createPasswordReset();
+            return Flows.forms(session, realm, null, uriInfo)
+                    .setAccessCode(code)
+                    .createPasswordReset();
         }
     }
 
     @Path("password-reset")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response sendPasswordReset(final MultivaluedMap<String, String> formData) {
+    public Response sendPasswordReset(@QueryParam("code") String code,
+                                      final MultivaluedMap<String, String> formData) {
+        event.event(EventType.SEND_RESET_PASSWORD);
+        if (!checkSsl()) {
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+        }
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
+        }
+        ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
+        if (accessCode == null) {
+            event.error(Errors.INVALID_CODE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
+        }
+        ClientSessionModel clientSession = accessCode.getClientSession();
+
         String username = formData.getFirst("username");
 
-        String scopeParam = uriInfo.getQueryParameters().getFirst(OAuth2Constants.SCOPE);
-        String state = uriInfo.getQueryParameters().getFirst(OAuth2Constants.STATE);
-        String redirect = uriInfo.getQueryParameters().getFirst(OAuth2Constants.REDIRECT_URI);
-        String clientId = uriInfo.getQueryParameters().getFirst(OAuth2Constants.CLIENT_ID);
-
-        AuthenticationManager authManager = new AuthenticationManager();
-
-        ClientModel client = realm.findClient(clientId);
+        ClientModel client = clientSession.getClient();
         if (client == null) {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo,
                     "Unknown login requester.");
@@ -290,8 +397,8 @@ public class RequiredActionsService {
                     "Login requester not enabled.");
         }
 
-        event.event(EventType.SEND_RESET_PASSWORD).client(clientId)
-                .detail(Details.REDIRECT_URI, redirect)
+        event.client(client.getClientId())
+                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "form")
                 .detail(Details.USERNAME, username);
@@ -306,55 +413,35 @@ public class RequiredActionsService {
         } else {
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
             event.session(userSession);
+            TokenManager.attachClientSession(userSession, clientSession);
 
-            AccessCode accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, session, realm, client, user, userSession);
             accessCode.setRequiredAction(RequiredAction.UPDATE_PASSWORD);
 
             try {
                 UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
-                builder.queryParam("key", accessCode.getCode());
+                builder.queryParam("code", accessCode.getCode());
+                String verifyCode = UUID.randomUUID().toString();
+                clientSession.setNote("key", verifyCode);
+                builder.queryParam("key", verifyCode);
 
                 String link = builder.build(realm.getName()).toString();
                 long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
 
                 this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
 
-                event.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
+                event.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, clientSession.getId()).success();
             } catch (EmailException e) {
                 logger.error("Failed to send password reset email", e);
-                return Flows.forms(this.session, realm, client, uriInfo).setError("emailSendError").createErrorPage();
+                return Flows.forms(this.session, realm, client, uriInfo).setError("emailSendError")
+                        .setAccessCode(accessCode.getCode())
+                        .createErrorPage();
             }
         }
 
         return Flows.forms(session, realm, client,  uriInfo).setSuccess("emailSent").createPasswordReset();
     }
 
-    private AccessCode getAccessCodeEntry(RequiredAction requiredAction) {
-        String code = uriInfo.getQueryParameters().getFirst(OAuth2Constants.CODE);
-        if (code == null) {
-            logger.debug("Code query param not found");
-            return null;
-        }
-
-        AccessCode accessCode = AccessCode.parse(code, session, realm);
-        if (accessCode == null) {
-            logger.debug("Access code not found");
-            return null;
-        }
-
-        if (!accessCode.isValid(requiredAction)) {
-            logger.debugv("Invalid access code");
-            return null;
-        }
-
-        return accessCode;
-    }
-
-    private UserModel getUser(AccessCode accessCode) {
-        return session.users().getUserByUsername(accessCode.getUser().getUsername(), realm);
-    }
-
-    private Response redirectOauth(UserModel user, AccessCode accessCode) {
+    private Response redirectOauth(UserModel user, ClientSessionCode accessCode, ClientSessionModel clientSession, UserSessionModel userSession) {
         if (accessCode == null) {
             return null;
         }
@@ -362,37 +449,40 @@ public class RequiredActionsService {
         Set<RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
             accessCode.setRequiredAction(requiredActions.iterator().next());
-            return Flows.forms(session, realm, null, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
+            return Flows.forms(session, realm, null, uriInfo)
+                    .setAccessCode(accessCode.getCode())
+                    .setUser(user)
                     .createResponse(requiredActions.iterator().next());
         } else {
-            logger.debugv("Redirecting to: {0}", accessCode.getRedirectUri());
+            logger.debugv("Redirecting to: {0}", clientSession.getRedirectUri());
             accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
 
             AuthenticationManager authManager = new AuthenticationManager();
 
-            UserSessionModel userSession = session.sessions().getUserSession(realm, accessCode.getSessionState());
             if (!AuthenticationManager.isSessionValid(realm, userSession)) {
                 AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
-                return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager).redirectError(accessCode.getClient(), "access_denied", accessCode.getState(), accessCode.getRedirectUri());
+                return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager)
+                        .redirectError(clientSession.getClient(), "access_denied", clientSession.getNote(OpenIdConnectProtocol.STATE_PARAM), clientSession.getRedirectUri());
             }
             event.session(userSession);
 
             event.success();
 
-            return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager).redirectAccessCode(accessCode,
-                    userSession, accessCode.getState(), accessCode.getRedirectUri());
+            return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager)
+                    .redirectAccessCode(accessCode,
+                            userSession, clientSession.getNote(OpenIdConnectProtocol.STATE_PARAM), clientSession.getRedirectUri());
         }
     }
 
-    private void initEvent(AccessCode accessCode) {
-        event.event(EventType.LOGIN).client(accessCode.getClient())
-                .user(accessCode.getUser())
-                .session(accessCode.getSessionState())
-                .detail(Details.CODE_ID, accessCode.getCodeId())
-                .detail(Details.REDIRECT_URI, accessCode.getRedirectUri())
+    private void initEvent(ClientSessionModel clientSession) {
+        event.event(EventType.LOGIN).client(clientSession.getClient())
+                .user(clientSession.getUserSession().getUser())
+                .session(clientSession.getUserSession().getId())
+                .detail(Details.CODE_ID, clientSession.getId())
+                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.RESPONSE_TYPE, "code");
 
-        UserSessionModel userSession = accessCode.getSessionState() != null ? session.sessions().getUserSession(realm, accessCode.getSessionState()) : null;
+        UserSessionModel userSession = clientSession.getUserSession();
 
         if (userSession != null) {
             event.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
@@ -402,9 +492,4 @@ public class RequiredActionsService {
             }
         }
     }
-
-    private Response unauthorized() {
-        return Flows.forms(session, realm, null, uriInfo).setError("Unauthorized request").createErrorPage();
-    }
-
 }

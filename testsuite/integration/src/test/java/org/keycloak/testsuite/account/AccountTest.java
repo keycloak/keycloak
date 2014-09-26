@@ -140,6 +140,7 @@ public class AccountTest {
 
     @Before
     public void before() {
+        oauth.state("mystate"); // keycloak enforces that a state param has been sent by client
         userId = keycloakRule.getUser("test", "test-user@localhost").getId();
     }
 
@@ -158,6 +159,16 @@ public class AccountTest {
             }
         });
     }
+
+    @Test
+    @Ignore
+    public void runit() throws Exception {
+        Thread.sleep(10000000);
+
+    }
+
+
+
 
     @Test
     public void returnToAppFromQueryParam() {
@@ -446,6 +457,7 @@ public class AccountTest {
         // Create second session
         WebDriver driver2 = WebRule.createWebDriver();
         OAuthClient oauth2 = new OAuthClient(driver2);
+        oauth2.state("mystate");
         oauth2.doLogin("view-sessions", "password");
 
         Event login2Event = events.expectLogin().user(userId).detail(Details.USERNAME, "view-sessions").assertEvent();

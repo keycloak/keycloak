@@ -54,7 +54,9 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.protocol.OpenIdConnectProtocol;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
 import org.keycloak.services.resources.flows.Urls;
@@ -191,12 +193,15 @@ public class AccountService {
                 boolean associated = false;
                 for (ClientSessionModel c : userSession.getClientSessions()) {
                     if (c.getClient().equals(application)) {
+                        auth.setClientSession(c);
                         associated = true;
                         break;
                     }
                 }
                 if (!associated) {
-                    session.sessions().createClientSession(realm, application, userSession, null, null, null);
+                    ClientSessionModel clientSession = session.sessions().createClientSession(realm, application);
+                    clientSession.setUserSession(userSession);
+                    auth.setClientSession(clientSession);
                 }
             }
 
@@ -650,12 +655,13 @@ public class AccountService {
                 String redirectUri = UriBuilder.fromUri(Urls.accountSocialPage(uriInfo.getBaseUri(), realm.getName())).build().toString();
 
                 try {
+                    ClientSessionModel clientSession = auth.getClientSession();
+                    clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+                    clientSession.setRedirectUri(redirectUri);
+                    clientSession.setNote(OpenIdConnectProtocol.STATE_PARAM, UUID.randomUUID().toString());
+                    ClientSessionCode clientSessionCode = new ClientSessionCode(realm, clientSession);
                     return Flows.social(realm, uriInfo, clientConnection, provider)
-                            .user(user)
-                            .putClientAttribute(OAuth2Constants.CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_APP)
-                            .putClientAttribute(OAuth2Constants.STATE, UUID.randomUUID().toString())
-                            .putClientAttribute(OAuth2Constants.REDIRECT_URI, redirectUri)
-                            .redirectToSocialProvider();
+                            .redirectToSocialProvider(clientSessionCode);
                 } catch (SocialProviderException spe) {
                     setReferrerOnPage();
                     return account.setError(Messages.SOCIAL_REDIRECT_ERROR).createResponse(AccountPages.SOCIAL);

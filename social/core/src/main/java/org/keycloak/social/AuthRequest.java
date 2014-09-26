@@ -35,8 +35,6 @@ public class AuthRequest {
 
     private URI authUri;
 
-    private Map<String, String> attributes;
-
     public static AuthRequestBuilder create(String url) {
         AuthRequestBuilder req = new AuthRequestBuilder();
 
@@ -46,17 +44,12 @@ public class AuthRequest {
         return req;
     }
 
-    private AuthRequest(URI authUri, Map<String, String> attributes) {
+    private AuthRequest(URI authUri) {
         this.authUri = authUri;
-        this.attributes = attributes;
     }
 
     public URI getAuthUri() {
         return authUri;
-    }
-
-    public Map<String, String> getAttributes() {
-        return attributes;
     }
 
     public static class AuthRequestBuilder {
@@ -64,8 +57,6 @@ public class AuthRequest {
         private StringBuilder b;
 
         private char sep;
-
-        private Map<String, String> attributes;
 
         private String id;
 
@@ -90,17 +81,9 @@ public class AuthRequest {
             }
         }
 
-        public AuthRequestBuilder setAttribute(String name, String value) {
-            if (attributes == null) {
-                attributes = new HashMap<String, String>();
-            }
-            attributes.put(name, value);
-            return this;
-        }
-
         public AuthRequest build() {
             try {
-                return new AuthRequest(new URI(b.toString()), attributes);
+                return new AuthRequest(new URI(b.toString()));
             } catch (URISyntaxException e) {
                 throw new IllegalArgumentException(e);
             }

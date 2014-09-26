@@ -124,6 +124,15 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
                 .session(isUUID());
     }
 
+    public ExpectedEvent expectSocialLogin() {
+        return expect(EventType.SOCIAL_LOGIN)
+                .detail(Details.CODE_ID, isCodeId())
+                .detail(Details.USERNAME, DEFAULT_USERNAME)
+                .detail(Details.AUTH_METHOD, "form")
+                .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI)
+                .session(isUUID());
+    }
+
     public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
         return expect(EventType.CODE_TO_TOKEN)
                 .detail(Details.CODE_ID, codeId)
@@ -274,6 +283,11 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
             if (details != null) {
                 details.remove(key);
             }
+            return this;
+        }
+
+        public ExpectedEvent clearDetails() {
+            if (details != null) details.clear();
             return this;
         }
 

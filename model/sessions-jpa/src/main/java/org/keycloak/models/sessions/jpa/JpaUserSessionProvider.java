@@ -37,32 +37,13 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public ClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, String redirectUri, String state, Set<String> roles) {
-        UserSessionEntity userSessionEntity = em.find(UserSessionEntity.class, userSession.getId());
-
+    public ClientSessionModel createClientSession(RealmModel realm, ClientModel client) {
         ClientSessionEntity entity = new ClientSessionEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setTimestamp(Time.currentTime());
         entity.setClientId(client.getId());
-        entity.setSession(userSessionEntity);
-        entity.setRedirectUri(redirectUri);
-        entity.setState(state);
+        entity.setRealmId(realm.getId());
         em.persist(entity);
-
-        if (roles != null) {
-            List<ClientSessionRoleEntity> roleEntities = new LinkedList<ClientSessionRoleEntity>();
-            for (String r : roles) {
-                ClientSessionRoleEntity roleEntity = new ClientSessionRoleEntity();
-                roleEntity.setClientSession(entity);
-                roleEntity.setRoleId(r);
-                em.persist(roleEntity);
-
-                roleEntities.add(roleEntity);
-            }
-            entity.setRoles(roleEntities);
-        }
-
-        userSessionEntity.getClientSessions().add(entity);
 
         return new ClientSessionAdapter(session, em, realm, entity);
     }
@@ -71,6 +52,16 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     public ClientSessionModel getClientSession(RealmModel realm, String id) {
         ClientSessionEntity clientSession = em.find(ClientSessionEntity.class, id);
         if (clientSession != null && clientSession.getSession().getRealmId().equals(realm.getId())) {
+            return new ClientSessionAdapter(session, em, realm, clientSession);
+        }
+        return null;
+    }
+
+    @Override
+    public ClientSessionModel getClientSession(String id) {
+        ClientSessionEntity clientSession = em.find(ClientSessionEntity.class, id);
+        if (clientSession != null) {
+            RealmModel realm = session.realms().getRealm(clientSession.getRealmId());
             return new ClientSessionAdapter(session, em, realm, clientSession);
         }
         return null;
@@ -208,6 +199,18 @@ public class JpaUserSessionProvider implements UserSessionProvider {
         int maxTime = Time.currentTime() - realm.getSsoSessionMaxLifespan();
         int idleTime = Time.currentTime() - realm.getSsoSessionIdleTimeout();
 
+        em.createNamedQuery("removeDetachedClientSessionRoleByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", idleTime)
+                .executeUpdate();
+        em.createNamedQuery("removeDetachedClientSessionNoteByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", idleTime)
+                .executeUpdate();
+        em.createNamedQuery("removeDetachedClientSessionByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", idleTime)
+                .executeUpdate();
         em.createNamedQuery("removeClientSessionRoleByExpired")
                 .setParameter("realmId", realm.getId())
                 .setParameter("maxTime", maxTime)

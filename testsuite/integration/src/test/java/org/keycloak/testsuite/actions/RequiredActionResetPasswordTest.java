@@ -22,6 +22,7 @@
 package org.keycloak.testsuite.actions;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -85,6 +86,12 @@ public class RequiredActionResetPasswordTest {
 
     @WebResource
     protected LoginPasswordUpdatePage changePasswordPage;
+
+    @Before
+    public void before() {
+        oauth.state("mystate"); // have to set this as keycloak validates that state is sent
+    }
+
 
     @Test
     public void tempPassword() throws Exception {

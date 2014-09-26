@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.AccessCode;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
 
@@ -109,12 +110,12 @@ public class KeycloakRule extends AbstractKeycloakRule {
         stopSession(session, true);
     }
 
-    public AccessCode verifyCode(String code) {
+    public ClientSessionCode verifyCode(String code) {
         KeycloakSession session = startSession();
         try {
             RealmModel realm = session.realms().getRealm("test");
             try {
-                AccessCode accessCode = AccessCode.parse(code, session, realm);
+                ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
                 if (accessCode == null) {
                     Assert.fail("Invalid code");
                 }

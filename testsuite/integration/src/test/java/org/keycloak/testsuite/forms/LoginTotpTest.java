@@ -145,6 +145,10 @@ public class LoginTotpTest {
     @Test
     public void loginWithTotpExpiredPasswordToken() throws Exception {
         try {
+
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+
             keycloakRule.configure(new KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
@@ -152,9 +156,6 @@ public class LoginTotpTest {
                     appRealm.setAccessCodeLifespanUserAction(1);
                 }
             });
-
-            loginPage.open();
-            loginPage.login("test-user@localhost", "password");
 
             loginTotpPage.assertCurrent();
 
@@ -165,7 +166,11 @@ public class LoginTotpTest {
             loginPage.assertCurrent();
             Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-            events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).session((String) null).assertEvent();
+            AssertEvents.ExpectedEvent expectedEvent = events.expectLogin().error("invalid_user_credentials")
+                    .user((String)null)
+                    .clearDetails()
+                    .session((String) null);
+            expectedEvent.assertEvent();
         } finally {
             keycloakRule.configure(new KeycloakSetup() {
                 @Override

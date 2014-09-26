@@ -30,6 +30,10 @@ public class UserSessionAdapter implements UserSessionModel {
         this.entity = entity;
     }
 
+    public UserSessionEntity getEntity() {
+        return entity;
+    }
+
     public String getId() {
         return entity.getId();
     }

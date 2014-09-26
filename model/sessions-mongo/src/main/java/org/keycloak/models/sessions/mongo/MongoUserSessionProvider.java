@@ -38,49 +38,37 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         this.invocationContext = invocationContext;
     }
 
-    @Override
-    public ClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, String redirectUri, String state, Set<String> roles) {
-        MongoUserSessionEntity userSessionEntity = getUserSessionEntity(realm, userSession.getId());
+    public MongoStore getMongoStore() {
+        return mongoStore;
+    }
 
+    @Override
+    public ClientSessionModel createClientSession(RealmModel realm, ClientModel client) {
         MongoClientSessionEntity entity = new MongoClientSessionEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setTimestamp(Time.currentTime());
         entity.setClientId(client.getId());
-        entity.setRedirectUri(redirectUri);
-        entity.setState(state);
-        if (roles != null) {
-            entity.setRoles(new LinkedList<String>(roles));
-        }
-
-        mongoStore.pushItemToList(userSessionEntity, "clientSessions", entity, false, invocationContext);
-
-        return new ClientSessionAdapter(session, this, realm, entity, userSessionEntity, invocationContext);
+        entity.setRealmId(realm.getId());
+        return new ClientSessionAdapter(session, this, realm, entity, invocationContext);
     }
 
     @Override
     public ClientSessionModel getClientSession(RealmModel realm, String id) {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(realm.getId())
-                .and("clientSessions.id").is(id).get();
+        MongoClientSessionEntity entity = getClientSessionEntity(id);
+        if (entity == null) return null;
+        return new ClientSessionAdapter(session, this, realm, entity, invocationContext);
+    }
 
-        List<MongoUserSessionEntity> entities = mongoStore.loadEntities(MongoUserSessionEntity.class, query, invocationContext);
-        if (entities.isEmpty()) {
-            return null;
+    @Override
+    public ClientSessionModel getClientSession(String id) {
+        MongoClientSessionEntity entity = getClientSessionEntity(id);
+        if (entity != null) {
+            RealmModel realm = session.realms().getRealm(entity.getRealmId());
+            return  new ClientSessionAdapter(session, this, realm, entity, invocationContext);
         }
-
-        MongoUserSessionEntity userSessionEntity = entities.get(0);
-        List<MongoClientSessionEntity> sessions = userSessionEntity.getClientSessions();
-        if (sessions == null) {
-            return null;
-        }
-        for (MongoClientSessionEntity s : sessions) {
-            if (s.getId().equals(id)) {
-                return new ClientSessionAdapter(session, this, realm, s, userSessionEntity, invocationContext);
-            }
-        }
-
         return null;
     }
+
 
     @Override
     public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
@@ -91,6 +79,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         entity.setIpAddress(ipAddress);
         entity.setAuthMethod(authMethod);
         entity.setRememberMe(rememberMe);
+        entity.setRealmId(realm.getId());
 
         int currentTime = Time.currentTime();
 
@@ -113,6 +102,10 @@ public class MongoUserSessionProvider implements UserSessionProvider {
 
     MongoUserSessionEntity getUserSessionEntity(RealmModel realm, String id) {
         return mongoStore.loadEntity(MongoUserSessionEntity.class, id, invocationContext);
+    }
+
+    MongoClientSessionEntity getClientSessionEntity(String id) {
+        return mongoStore.loadEntity(MongoClientSessionEntity.class, id, invocationContext);
     }
 
     @Override
@@ -167,21 +160,35 @@ public class MongoUserSessionProvider implements UserSessionProvider {
     public void removeUserSessions(RealmModel realm) {
         DBObject query = new BasicDBObject("realmId", realm.getId());
         mongoStore.removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+
+        mongoStore.removeEntities(MongoClientSessionEntity.class, query, invocationContext);
     }
 
     @Override
     public void removeExpiredUserSessions(RealmModel realm) {
         int currentTime = Time.currentTime();
         DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
                 .and("started").lessThan(currentTime - realm.getSsoSessionMaxLifespan())
                 .get();
 
         mongoStore.removeEntities(MongoUserSessionEntity.class, query, invocationContext);
         query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
                 .and("lastSessionRefresh").lessThan(currentTime - realm.getSsoSessionIdleTimeout())
                 .get();
 
         mongoStore.removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        query = new QueryBuilder()
+                .and("sessionId").is(null)
+                .and("realmId").is(realm.getId())
+                .and("timestamp").lessThan(currentTime - realm.getSsoSessionIdleTimeout())
+                .get();
+
+        mongoStore.removeEntities(MongoClientSessionEntity.class, query, invocationContext);
     }
 
     @Override
@@ -239,24 +246,9 @@ public class MongoUserSessionProvider implements UserSessionProvider {
     // TODO Not very efficient, should use Mongo $pull to remove directly
     public void onClientRemoved(RealmModel realm, ClientModel client) {
         DBObject query = new QueryBuilder()
-                .and("clientSessions.clientId").is(client.getId())
+                .and("clientId").is(client.getId())
                 .get();
-        List<MongoUserSessionEntity> userSessionEntities = mongoStore.loadEntities(MongoUserSessionEntity.class, query, invocationContext);
-        for (MongoUserSessionEntity e : userSessionEntities) {
-            if (e.getClientSessions() == null) {
-                continue;
-            }
-
-            List<MongoClientSessionEntity> remove = new LinkedList<MongoClientSessionEntity>();
-            for (MongoClientSessionEntity c : e.getClientSessions()) {
-                if (c.getClientId().equals(client.getId())) {
-                    remove.add(c);
-                }
-            }
-            for (MongoClientSessionEntity c : remove) {
-                mongoStore.pullItemFromList(e, "clientSessions", c, invocationContext);
-            }
-        }
+        mongoStore.removeEntities(MongoUserSessionEntity.class, query, invocationContext);
     }
 
     @Override

@@ -22,18 +22,23 @@
 package org.keycloak.testsuite.oauth;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AccessCode;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AuthorizationCodeResponse;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -64,6 +69,9 @@ public class AuthorizationCodeTest {
 
     @WebResource
     protected LoginPage loginPage;
+
+    @WebResource
+    protected ErrorPage errorPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(keycloakRule);
@@ -103,7 +111,7 @@ public class AuthorizationCodeTest {
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getText();
         keycloakRule.verifyCode(code);
 
-        String codeId = events.expectLogin().detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
+        String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/tokens/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, code);
 
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
@@ -133,7 +141,10 @@ public class AuthorizationCodeTest {
         String error = driver.findElement(By.id(OAuth2Constants.ERROR)).getText();
         assertEquals("access_denied", error);
 
-        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null).removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
+        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null)
+                .removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID)
+                .detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/tokens/oauth/oob")
+                .assertEvent().getDetails().get(Details.CODE_ID);
 
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
@@ -167,22 +178,22 @@ public class AuthorizationCodeTest {
 
     @Test
     public void authorizationRequestNoState() throws IOException {
-        AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        oauth.state(null);
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
 
-        Assert.assertTrue(response.isRedirected());
-        Assert.assertNotNull(response.getCode());
-        Assert.assertNull(response.getState());
-        Assert.assertNull(response.getError());
-
-        keycloakRule.verifyCode(response.getCode());
-
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        assertCode(codeId, response.getCode());
+        events.expect(EventType.LOGIN_ERROR)
+                .error(Errors.STATE_PARAM_NOT_FOUND)
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .user((String)null)
+                .assertEvent();
+        //assertCode(codeId, response.getCode());
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {
-        AccessCode code = keycloakRule.verifyCode(actualCode);
-        assertEquals(expectedCodeId, code.getCodeId());
+        ClientSessionCode code = keycloakRule.verifyCode(actualCode);
+        assertEquals(expectedCodeId, code.getClientSession().getId());
     }
 
 }

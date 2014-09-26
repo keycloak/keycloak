@@ -23,10 +23,11 @@ import java.util.Collection;
 @Entity
 @Table(name = "CLIENT_SESSION")
 @NamedQueries({
-        @NamedQuery(name = "removeClientSessionByRealm", query = "delete from ClientSessionEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId)"),
+        @NamedQuery(name = "removeClientSessionByRealm", query = "delete from ClientSessionEntity a where a.realmId = :realmId"),
         @NamedQuery(name = "removeClientSessionByUser", query = "delete from ClientSessionEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId)"),
-        @NamedQuery(name = "removeClientSessionByClient", query = "delete from ClientSessionEntity a where a.clientId = :clientId and a.session IN (select s from UserSessionEntity s where s.realmId = :realmId)"),
-        @NamedQuery(name = "removeClientSessionByExpired", query = "delete from ClientSessionEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime))")
+        @NamedQuery(name = "removeClientSessionByClient", query = "delete from ClientSessionEntity a where a.clientId = :clientId and a.realmId = :realmId"),
+        @NamedQuery(name = "removeClientSessionByExpired", query = "delete from ClientSessionEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime))"),
+        @NamedQuery(name = "removeDetachedClientSessionByExpired", query = "delete from ClientSessionEntity a where a.session IS NULL and a.timestamp < :maxTime and a.realmId = :realmId")
 })
 public class ClientSessionEntity {
 
@@ -41,6 +42,9 @@ public class ClientSessionEntity {
     @Column(name="CLIENT_ID",length = 36)
     protected String clientId;
 
+    @Column(name="REALM_ID")
+    protected String realmId;
+
     @Column(name="TIMESTAMP")
     protected int timestamp;
 
@@ -49,9 +53,6 @@ public class ClientSessionEntity {
 
     @Column(name="AUTH_METHOD")
     protected String authMethod;
-
-    @Column(name="STATE")
-    protected String state;
 
     @Column(name="ACTION")
     protected ClientSessionModel.Action action;
@@ -86,6 +87,14 @@ public class ClientSessionEntity {
         this.clientId = clientId;
     }
 
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
+    }
+
     public int getTimestamp() {
         return timestamp;
     }
@@ -100,14 +109,6 @@ public class ClientSessionEntity {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
     }
 
     public ClientSessionModel.Action getAction() {

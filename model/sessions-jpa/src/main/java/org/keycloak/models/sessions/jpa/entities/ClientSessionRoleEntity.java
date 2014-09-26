@@ -17,9 +17,10 @@ import java.io.Serializable;
  */
 @NamedQueries({
         @NamedQuery(name = "removeClientSessionRoleByUser", query="delete from ClientSessionRoleEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IN (select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId))"),
-        @NamedQuery(name = "removeClientSessionRoleByClient", query="delete from ClientSessionRoleEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.clientId = :clientId and c.session IN (select s from UserSessionEntity s where s.realmId = :realmId))"),
-        @NamedQuery(name = "removeClientSessionRoleByRealm", query="delete from ClientSessionRoleEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IN (select s from UserSessionEntity s where s.realmId = :realmId))"),
-        @NamedQuery(name = "removeClientSessionRoleByExpired", query = "delete from ClientSessionRoleEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime)))")
+        @NamedQuery(name = "removeClientSessionRoleByClient", query="delete from ClientSessionRoleEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.clientId = :clientId and c.realmId = :realmId)"),
+        @NamedQuery(name = "removeClientSessionRoleByRealm", query="delete from ClientSessionRoleEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.realmId = :realmId)"),
+        @NamedQuery(name = "removeClientSessionRoleByExpired", query = "delete from ClientSessionRoleEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime)))"),
+        @NamedQuery(name = "removeDetachedClientSessionRoleByExpired", query = "delete from ClientSessionRoleEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IS NULL and c.realmId = :realmId and c.timestamp < :maxTime )")
 })
 @Table(name="CLIENT_SESSION_ROLE")
 @Entity

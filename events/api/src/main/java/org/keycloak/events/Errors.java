@@ -35,6 +35,8 @@ public interface Errors {
 
     String SOCIAL_PROVIDER_NOT_FOUND = "social_provider_not_found";
     String SOCIAL_ID_IN_USE = "social_id_in_use";
+    String STATE_PARAM_NOT_FOUND = "state_param_not_found";
+    String SSL_REQUIRED = "ssl_required";
 
     String USER_NOT_LOGGED_IN = "user_not_logged_in";
     String USER_SESSION_NOT_FOUND = "user_session_not_found";

@@ -10,6 +10,8 @@ import org.keycloak.models.sessions.mongo.entities.MongoClientSessionEntity;
 import org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -21,15 +23,13 @@ public class ClientSessionAdapter implements ClientSessionModel {
     private MongoUserSessionProvider provider;
     private RealmModel realm;
     private MongoClientSessionEntity entity;
-    private MongoUserSessionEntity userSessionEntity;
     private MongoStoreInvocationContext invContext;
 
-    public ClientSessionAdapter(KeycloakSession session, MongoUserSessionProvider provider, RealmModel realm, MongoClientSessionEntity entity, MongoUserSessionEntity userSessionEntity, MongoStoreInvocationContext invContext) {
+    public ClientSessionAdapter(KeycloakSession session, MongoUserSessionProvider provider, RealmModel realm, MongoClientSessionEntity entity, MongoStoreInvocationContext invContext) {
         this.session = session;
         this.provider = provider;
         this.realm = realm;
         this.entity = entity;
-        this.userSessionEntity = userSessionEntity;
         this.invContext = invContext;
     }
 
@@ -39,18 +39,39 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
+    public RealmModel getRealm() {
+        return session.realms().getRealm(entity.getRealmId());
+    }
+
+    @Override
     public ClientModel getClient() {
         return realm.findClientById(entity.getClientId());
     }
 
     @Override
-    public String getState() {
-        return entity.getState();
+    public UserSessionModel getUserSession() {
+        if (entity.getSessionId() == null) return null;
+        return provider.getUserSession(realm, entity.getSessionId());
     }
 
     @Override
-    public UserSessionModel getUserSession() {
-        return new UserSessionAdapter(session, provider, userSessionEntity, realm, invContext);
+    public void setUserSession(UserSessionModel userSession) {
+        MongoUserSessionEntity userSessionEntity = provider.getUserSessionEntity(realm, userSession.getId());
+        entity.setSessionId(userSessionEntity.getId());
+        provider.getMongoStore().pushItemToList(userSessionEntity, "clientSessions", entity.getId(), true, invContext);
+    }
+
+    @Override
+    public void setRedirectUri(String uri) {
+        entity.setRedirectUri(uri);
+
+    }
+
+    @Override
+    public void setRoles(Set<String> roles) {
+        List<String> list = new LinkedList<String>();
+        list.addAll(roles);
+        entity.setRoles(list);
     }
 
     @Override
@@ -66,7 +87,6 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setTimestamp(int timestamp) {
         entity.setTimestamp(timestamp);
-        invContext.getMongoStore().updateEntity(userSessionEntity, invContext);
     }
 
     @Override
@@ -77,7 +97,6 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setAction(Action action) {
         entity.setAction(action);
-        invContext.getMongoStore().updateEntity(userSessionEntity, invContext);
     }
 
     @Override

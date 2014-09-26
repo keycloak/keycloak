@@ -55,6 +55,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -163,21 +165,24 @@ public class AccessTokenPerfTest {
             return b.build(realm).toString();
         }
 
+        static Pattern actionParser = Pattern.compile("action=\"([^\"]+)\"");
 
-        @Override
         public void run() {
             //this.client = new ResteasyClientBuilder().build();
             String state = "42";
-            Response response = client.target(getLoginFormUrl(state)).request().get();
-            URI uri = null;
-            if (200 == response.getStatus()) {
-                response.close();
-                Form form = new Form();
-                form.param("username", "test-user@localhost");
-                form.param("password", "password");
-                response = client.target(getProcessLoginUrl(state)).request().post(Entity.form(form));
-
+            String loginFormUrl = getLoginFormUrl(state);
+            String html = client.target(loginFormUrl).request().get(String.class);
+            Matcher matcher = actionParser.matcher(html);
+            matcher.find();
+            String actionUrl = matcher.group(1);
+            if (!actionUrl.startsWith("http")) {
+                actionUrl = UriBuilder.fromUri(actionUrl).scheme("http").host("localhost").port(8081).build().toString();
             }
+            Form form = new Form();
+            form.param("username", "test-user@localhost");
+            form.param("password", "password");
+            Response response = client.target(actionUrl).request().post(Entity.form(form));
+            URI uri = null;
             Assert.assertEquals(302, response.getStatus());
             uri = response.getLocation();
             for (String header : response.getHeaders().keySet()) {
@@ -191,7 +196,7 @@ public class AccessTokenPerfTest {
             String code = getCode(uri);
             Assert.assertNotNull(code);
 
-            Form form = new Form();
+            form = new Form();
             form.param(OAuth2Constants.GRANT_TYPE, grantType)
                     .param(OAuth2Constants.CODE, code)
                     .param(OAuth2Constants.REDIRECT_URI, redirectUri);

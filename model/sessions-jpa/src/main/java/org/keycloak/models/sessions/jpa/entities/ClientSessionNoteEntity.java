@@ -18,9 +18,10 @@ import java.io.Serializable;
  */
 @NamedQueries({
         @NamedQuery(name = "removeClientSessionNoteByUser", query="delete from ClientSessionNoteEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IN (select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId))"),
-        @NamedQuery(name = "removeClientSessionNoteByClient", query="delete from ClientSessionNoteEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.clientId = :clientId and c.session IN (select s from UserSessionEntity s where s.realmId = :realmId))"),
-        @NamedQuery(name = "removeClientSessionNoteByRealm", query="delete from ClientSessionNoteEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IN (select s from UserSessionEntity s where s.realmId = :realmId))"),
-        @NamedQuery(name = "removeClientSessionNoteByExpired", query = "delete from ClientSessionNoteEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime)))")
+        @NamedQuery(name = "removeClientSessionNoteByClient", query="delete from ClientSessionNoteEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.clientId = :clientId and c.realmId = :realmId)"),
+        @NamedQuery(name = "removeClientSessionNoteByRealm", query="delete from ClientSessionNoteEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.realmId = :realmId)"),
+        @NamedQuery(name = "removeClientSessionNoteByExpired", query = "delete from ClientSessionNoteEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime)))"),
+        @NamedQuery(name = "removeDetachedClientSessionNoteByExpired", query = "delete from ClientSessionNoteEntity r where r.clientSession IN (select c from ClientSessionEntity c where c.session IS NULL and c.realmId = :realmId and c.timestamp < :maxTime )")
 })
 @Table(name="CLIENT_SESSION_NOTE")
 @Entity
