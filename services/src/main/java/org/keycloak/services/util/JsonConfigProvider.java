@@ -17,17 +17,17 @@ public class JsonConfigProvider implements Config.ConfigProvider {
 
     @Override
     public String getProvider(String spi) {
-        JsonNode n = getNode(spi, "provider");
+        JsonNode n = getNode(config, spi, "provider");
         return n != null ? StringPropertyReplacer.replaceProperties(n.getTextValue()) : null;
     }
 
     @Override
     public Config.Scope scope(String... path) {
-        return new JsonScope(getNode(path));
+        return new JsonScope(getNode(config, path));
     }
 
-    private JsonNode getNode(String... path) {
-        JsonNode n = config;
+    private static JsonNode getNode(JsonNode root, String... path) {
+        JsonNode n = root;
         for (String p : path) {
             n = n.get(p);
             if (n == null) {
@@ -143,6 +143,11 @@ public class JsonConfigProvider implements Config.ConfigProvider {
             } else {
                 return n.getBooleanValue();
             }
+        }
+
+        @Override
+        public Config.Scope scope(String... path) {
+            return new JsonScope(getNode(config, path));
         }
     }
 

@@ -84,7 +84,15 @@
 
     "connectionsInfinispan": {
         "default": {
-            "cacheMode": "local"
+            "transport": true,
+            "caches": {
+                "sessions": {
+                    "cacheMode": "local"
+                },
+                "realms": {
+                    "cacheMode": "local"
+                }
+            }
         }
     }
 }
