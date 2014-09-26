@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<datasources xmlns="http://www.jboss.org/ironjacamar/schema">        
+  <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+    <connection-url>jdbc:mysql://${mysql.host}/keycloak_db</connection-url>
+    <driver>mysql</driver>
+    <security>
+      <user-name>root</user-name>
+      <password>mysecretpassword</password>
+    </security>
+  </datasource>
+</datasources>

@@ -1,0 +1,30 @@
+<assembly>
+    <id>docker-cluster</id>
+
+    <formats>
+        <format>dir</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>../../examples/demo-template</directory>
+            <outputDirectory>examples</outputDirectory>
+            <includes>
+                <include>**/target/*.war</include>
+                <include>**/testrealm.json</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target/deployments</directory>
+            <outputDirectory>deployments</outputDirectory>
+            <excludes>
+                <exclude>**/keycloak-ds.xml</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>target/modules</directory>
+            <outputDirectory>modules</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>
