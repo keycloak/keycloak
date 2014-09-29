@@ -12,7 +12,7 @@ import org.keycloak.protocol.LoginProtocolFactory;
 public class OpenIDConnectFactory implements LoginProtocolFactory {
     @Override
     public LoginProtocol create(KeycloakSession session) {
-        return new OAuthFlows().setSession(session);
+        return new OpenIDConnect().setSession(session);
     }
 
     @Override

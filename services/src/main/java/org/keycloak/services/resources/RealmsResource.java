@@ -156,6 +156,20 @@ public class RealmsResource {
         return tokenService;
     }
 
+    @Path("{realm}/login-actions")
+    public LoginActionsService getLoginActionsService(final @PathParam("realm") String name) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = locateRealm(name, realmManager);
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        AuthenticationManager authManager = new AuthenticationManager(protector);
+        LoginActionsService service = new LoginActionsService(realm, authManager, event);
+        ResteasyProviderFactory.getInstance().injectProperties(service);
+
+        //resourceContext.initResource(service);
+        return service;
+    }
+
+
     protected RealmModel locateRealm(String name, RealmManager realmManager) {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) {

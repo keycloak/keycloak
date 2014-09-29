@@ -22,8 +22,8 @@
 package org.keycloak.services.resources.flows;
 
 import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.resources.RequiredActionsService;
 import org.keycloak.services.resources.SocialResource;
 import org.keycloak.services.resources.ThemeResource;
 import org.keycloak.services.resources.TokenService;
@@ -93,15 +93,15 @@ public class Urls {
     }
 
     public static URI loginActionUpdatePassword(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "updatePassword").build(realmId);
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "updatePassword").build(realmId);
     }
 
     public static URI loginActionUpdateTotp(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "updateTotp").build(realmId);
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "updateTotp").build(realmId);
     }
 
     public static URI loginActionUpdateProfile(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "updateProfile").build(realmId);
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "updateProfile").build(realmId);
     }
 
     public static URI loginActionEmailVerification(URI baseUri, String realmId) {
@@ -109,7 +109,7 @@ public class Urls {
     }
 
     public static UriBuilder loginActionEmailVerificationBuilder(URI baseUri) {
-        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "emailVerification");
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "emailVerification");
     }
 
     public static URI loginPasswordReset(URI baseUri, String realmId) {
@@ -117,7 +117,7 @@ public class Urls {
     }
 
     public static UriBuilder loginPasswordResetBuilder(URI baseUri) {
-        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "passwordReset");
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "passwordReset");
     }
 
     public static URI loginUsernameReminder(URI baseUri, String realmId) {
@@ -125,7 +125,7 @@ public class Urls {
     }
 
     public static UriBuilder loginUsernameReminderBuilder(URI baseUri) {
-        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "usernameReminder");
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "usernameReminder");
     }
 
     private static UriBuilder realmBase(URI baseUri) {
@@ -133,7 +133,7 @@ public class Urls {
     }
 
     public static URI realmLoginAction(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(TokenService.class, "processLogin").build(realmId);
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "processLogin").build(realmId);
     }
 
     public static URI realmLoginPage(URI baseUri, String realmId) {
@@ -145,7 +145,7 @@ public class Urls {
     }
 
     public static URI realmRegisterAction(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(TokenService.class, "processRegister").build(realmId);
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "processRegister").build(realmId);
     }
 
     public static URI realmRegisterPage(URI baseUri, String realmId) {
@@ -157,7 +157,7 @@ public class Urls {
     }
 
     public static URI realmOauthAction(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(TokenService.class, "processOAuth").build(realmId);
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmId);
     }
 
     public static URI realmCode(URI baseUri, String realmId) {
@@ -182,7 +182,7 @@ public class Urls {
     }
 
     private static UriBuilder requiredActionsBase(URI baseUri) {
-        return tokenBase(baseUri).path(TokenService.class, "getRequiredActionsService");
+        return realmBase(baseUri).path(RealmsResource.class, "getLoginActionsService");
     }
 
     private static UriBuilder tokenBase(URI baseUri) {
