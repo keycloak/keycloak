@@ -190,6 +190,12 @@ public class UsersResource {
             for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
                 user.setAttribute(attr.getKey(), attr.getValue());
             }
+
+            for (String key : user.getAttributes().keySet()) {
+                if (!rep.getAttributes().containsKey(key)) {
+                    user.removeAttribute(key);
+                }
+            }
         }
     }
 
