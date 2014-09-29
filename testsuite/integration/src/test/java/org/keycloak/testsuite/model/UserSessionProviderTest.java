@@ -10,7 +10,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.services.protocol.OpenIdConnectProtocol;
+import org.keycloak.protocol.oidc.OAuthFlows;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.util.Time;
 
@@ -74,7 +74,7 @@ public class UserSessionProviderTest {
         assertEquals(realm.findClient("test-app").getClientId(), session.getClient().getClientId());
         assertEquals(sessions[0].getId(), session.getUserSession().getId());
         assertEquals("http://redirect", session.getRedirectUri());
-        assertEquals("state", session.getNote(OpenIdConnectProtocol.STATE_PARAM));
+        assertEquals("state", session.getNote(OAuthFlows.STATE_PARAM));
         assertEquals(2, session.getRoles().size());
         assertTrue(session.getRoles().contains("one"));
         assertTrue(session.getRoles().contains("two"));
@@ -250,7 +250,7 @@ public class UserSessionProviderTest {
             clientSession.setUserSession(userSession);
             clientSession.setRedirectUri("http://redirect");
             clientSession.setRoles(new HashSet<String>());
-            clientSession.setNote(OpenIdConnectProtocol.STATE_PARAM, "state");
+            clientSession.setNote(OAuthFlows.STATE_PARAM, "state");
         }
 
         resetSession();
@@ -289,7 +289,7 @@ public class UserSessionProviderTest {
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
         if (userSession != null) clientSession.setUserSession(userSession);
         clientSession.setRedirectUri(redirect);
-        if (state != null) clientSession.setNote(OpenIdConnectProtocol.STATE_PARAM, state);
+        if (state != null) clientSession.setNote(OAuthFlows.STATE_PARAM, state);
         if (roles != null) clientSession.setRoles(roles);
         return clientSession;
     }

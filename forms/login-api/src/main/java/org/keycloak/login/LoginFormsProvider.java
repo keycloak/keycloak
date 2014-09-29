@@ -36,7 +36,7 @@ public interface LoginFormsProvider extends Provider {
 
     public Response createCode();
 
-    public LoginFormsProvider setAccessCode(String accessCode);
+    public LoginFormsProvider setClientSessionCode(String accessCode);
 
     public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested);
 
