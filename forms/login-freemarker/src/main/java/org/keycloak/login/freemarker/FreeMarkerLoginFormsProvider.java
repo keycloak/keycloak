@@ -293,7 +293,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public LoginFormsProvider setAccessCode(String accessCode) {
+    public LoginFormsProvider setClientSessionCode(String accessCode) {
         this.accessCode = accessCode;
         return this;
     }

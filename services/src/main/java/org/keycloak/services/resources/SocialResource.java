@@ -25,12 +25,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -48,7 +46,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.SocialAccessDeniedException;
@@ -63,7 +60,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -156,7 +152,7 @@ public class SocialResource {
         } catch (SocialAccessDeniedException e) {
             event.error(Errors.REJECTED_BY_USER);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
-            return  Flows.forms(session, realm, clientSession.getClient(), uriInfo).setAccessCode(clientCode.getCode()).setWarning("Access denied").createLogin();
+            return  Flows.forms(session, realm, clientSession.getClient(), uriInfo).setClientSessionCode(clientCode.getCode()).setWarning("Access denied").createLogin();
         } catch (SocialProviderException e) {
             logger.error("Failed to process social callback", e);
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process social callback");
@@ -230,8 +226,8 @@ public class SocialResource {
             event.session(userSession);
             TokenManager.attachClientSession(userSession, clientSession);
 
-            OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, new AuthenticationManager(), tokenManager);
-            Response response = oauth.processAccessCode(clientSession, userSession, event);
+            AuthenticationManager authManager = new AuthenticationManager();
+            Response response = authManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
@@ -239,7 +235,7 @@ public class SocialResource {
         } catch (ModelDuplicateException e) {
             // Assume email is the duplicate as there's nothing else atm
             return Flows.forms(session, realm, clientSession.getClient(), uriInfo)
-                    .setAccessCode(clientCode.getCode())
+                    .setClientSessionCode(clientCode.getCode())
                     .setError("socialEmailExists")
                     .createLogin();
         }

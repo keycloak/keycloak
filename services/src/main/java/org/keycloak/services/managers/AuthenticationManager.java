@@ -1,20 +1,32 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.util.Time;
 
@@ -22,12 +34,14 @@ import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Stateless object that manages authentication
@@ -78,7 +92,7 @@ public class AuthenticationManager {
     }
 
 
-    public AccessToken createIdentityToken(RealmModel realm, UserModel user, UserSessionModel session) {
+    public static AccessToken createIdentityToken(RealmModel realm, UserModel user, UserSessionModel session) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
@@ -93,7 +107,7 @@ public class AuthenticationManager {
         return token;
     }
 
-    public void createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
+    public static void createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         AccessToken identityToken = createIdentityToken(realm, user, session);
         String encoded = encodeToken(realm, identityToken);
@@ -116,7 +130,7 @@ public class AuthenticationManager {
 
     }
 
-    public void createRememberMeCookie(RealmModel realm, String username, UriInfo uriInfo, ClientConnection connection) {
+    public static void createRememberMeCookie(RealmModel realm, String username, UriInfo uriInfo, ClientConnection connection) {
         String path = getIdentityCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         // remember me cookie should be persistent (hardcoded to 365 days for now)
@@ -124,7 +138,7 @@ public class AuthenticationManager {
         CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, username, path, null, null, 31536000, secureOnly, true);
     }
 
-    protected String encodeToken(RealmModel realm, Object token) {
+    protected static String encodeToken(RealmModel realm, Object token) {
         String encodedToken = new JWSBuilder()
                 .jsonContent(token)
                 .rsa256(realm.getPrivateKey());
@@ -178,6 +192,114 @@ public class AuthenticationManager {
         }
         authResult.getSession().setLastSessionRefresh(Time.currentTime());
         return authResult;
+    }
+
+    public static Response redirectAfterSuccessfulFlow(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
+                                                ClientSessionModel clientSession,
+                                                HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection) {
+        Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
+        if (sessionCookie != null) {
+
+            String[] split = sessionCookie.getValue().split("/");
+            if (split.length >= 3) {
+                String oldSessionId = split[2];
+                if (!oldSessionId.equals(userSession.getId())) {
+                    UserSessionModel oldSession = session.sessions().getUserSession(realm, oldSessionId);
+                    if (oldSession != null) {
+                        logger.debugv("Removing old user session: session: {0}", oldSessionId);
+                        session.sessions().removeUserSession(realm, oldSession);
+                    }
+                }
+            }
+        }
+
+        // refresh the cookies!
+        createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
+        if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
+        LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
+        protocol.setRealm(realm)
+                .setRequest(request)
+                .setUriInfo(uriInfo)
+                .setClientConnection(clientConnection);
+        return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
+
+    }
+
+    public static Response nextActionAfterAuthentication(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
+                                                  ClientConnection clientConnection,
+                                                  HttpRequest request, UriInfo uriInfo, EventBuilder event) {
+        RealmModel realm = clientSession.getRealm();
+        UserModel user = userSession.getUser();
+        isTotpConfigurationRequired(realm, user);
+        isEmailVerificationRequired(realm, user);
+        ClientModel client = clientSession.getClient();
+
+        boolean isResource = client instanceof ApplicationModel;
+        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+
+
+        logger.debugv("processAccessCode: isResource: {0}", isResource);
+        logger.debugv("processAccessCode: go to oauth page?: {0}",
+                !isResource);
+
+        event.detail(Details.CODE_ID, clientSession.getId());
+
+        Set<UserModel.RequiredAction> requiredActions = user.getRequiredActions();
+        if (!requiredActions.isEmpty()) {
+            UserModel.RequiredAction action = user.getRequiredActions().iterator().next();
+            accessCode.setRequiredAction(action);
+
+            LoginFormsProvider loginFormsProvider = Flows.forms(session, realm, client, uriInfo).setClientSessionCode(accessCode.getCode()).setUser(user);
+            if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL)) {
+                String key = UUID.randomUUID().toString();
+                clientSession.setNote("key", key);
+                loginFormsProvider.setVerifyCode(key);
+                event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
+            }
+
+            return loginFormsProvider
+                    .createResponse(action);
+        }
+
+        if (!isResource) {
+            accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
+
+            List<RoleModel> realmRoles = new LinkedList<RoleModel>();
+            MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
+            for (RoleModel r : accessCode.getRequestedRoles()) {
+                if (r.getContainer() instanceof RealmModel) {
+                    realmRoles.add(r);
+                } else {
+                    resourceRoles.add(((ApplicationModel) r.getContainer()).getName(), r);
+                }
+            }
+
+            return Flows.forms(session, realm, client, uriInfo)
+                    .setClientSessionCode(accessCode.getCode())
+                    .setAccessRequest(realmRoles, resourceRoles)
+                    .setClient(client)
+                    .createOAuthGrant();
+        }
+
+        event.success();
+        return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection);
+
+    }
+
+    protected static void isTotpConfigurationRequired(RealmModel realm, UserModel user) {
+        for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
+            if (c.getType().equals(CredentialRepresentation.TOTP) && !user.isTotp()) {
+                user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
+                logger.debug("User is required to configure totp");
+            }
+        }
+    }
+
+    protected static void isEmailVerificationRequired(RealmModel realm, UserModel user) {
+        if (realm.isVerifyEmail() && !user.isEmailVerified()) {
+            user.addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
+            logger.debug("User is required to verify email");
+        }
     }
 
     protected AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, String tokenString) {

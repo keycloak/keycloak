@@ -24,8 +24,6 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -42,13 +40,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.protocol.OpenIdConnectProtocol;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
@@ -165,7 +162,7 @@ public class RequiredActionsService {
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
             return Flows.forms(session, realm, null, uriInfo).setUser(user).setError(error)
-                    .setAccessCode(accessCode.getCode())
+                    .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PROFILE);
         }
 
@@ -212,11 +209,11 @@ public class RequiredActionsService {
         LoginFormsProvider loginForms = Flows.forms(session, realm, null, uriInfo).setUser(user);
         if (Validation.isEmpty(totp)) {
             return loginForms.setError(Messages.MISSING_TOTP)
-                    .setAccessCode(accessCode.getCode())
+                    .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.CONFIGURE_TOTP);
         } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
             return loginForms.setError(Messages.INVALID_TOTP)
-                    .setAccessCode(accessCode.getCode())
+                    .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.CONFIGURE_TOTP);
         }
 
@@ -257,11 +254,11 @@ public class RequiredActionsService {
         LoginFormsProvider loginForms = Flows.forms(session, realm, null, uriInfo).setUser(user);
         if (Validation.isEmpty(passwordNew)) {
             return loginForms.setError(Messages.MISSING_PASSWORD)
-                    .setAccessCode(accessCode.getCode())
+                    .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);
         } else if (!passwordNew.equals(passwordConfirm)) {
             return loginForms.setError(Messages.NOTMATCH_PASSWORD)
-                    .setAccessCode(accessCode.getCode())
+                    .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);
         }
 
@@ -269,7 +266,7 @@ public class RequiredActionsService {
             session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
         } catch (Exception ape) {
             return loginForms.setError(ape.getMessage())
-                    .setAccessCode(accessCode.getCode())
+                    .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);
         }
 
@@ -330,7 +327,7 @@ public class RequiredActionsService {
             initEvent(clientSession);
 
             return Flows.forms(session, realm, null, uriInfo)
-                    .setAccessCode(accessCode.getCode())
+                    .setClientSessionCode(accessCode.getCode())
                     .setVerifyCode(verifyCode)
                     .setUser(userSession.getUser())
                     .createResponse(RequiredAction.VERIFY_EMAIL);
@@ -356,11 +353,11 @@ public class RequiredActionsService {
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Somebody is trying to illegally change your password.");
             }
             return Flows.forms(session, realm, null, uriInfo)
-                    .setAccessCode(accessCode.getCode())
+                    .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);
         } else {
             return Flows.forms(session, realm, null, uriInfo)
-                    .setAccessCode(code)
+                    .setClientSessionCode(code)
                     .createPasswordReset();
         }
     }
@@ -433,7 +430,7 @@ public class RequiredActionsService {
             } catch (EmailException e) {
                 logger.error("Failed to send password reset email", e);
                 return Flows.forms(this.session, realm, client, uriInfo).setError("emailSendError")
-                        .setAccessCode(accessCode.getCode())
+                        .setClientSessionCode(accessCode.getCode())
                         .createErrorPage();
             }
         }
@@ -442,36 +439,7 @@ public class RequiredActionsService {
     }
 
     private Response redirectOauth(UserModel user, ClientSessionCode accessCode, ClientSessionModel clientSession, UserSessionModel userSession) {
-        if (accessCode == null) {
-            return null;
-        }
-
-        Set<RequiredAction> requiredActions = user.getRequiredActions();
-        if (!requiredActions.isEmpty()) {
-            accessCode.setRequiredAction(requiredActions.iterator().next());
-            return Flows.forms(session, realm, null, uriInfo)
-                    .setAccessCode(accessCode.getCode())
-                    .setUser(user)
-                    .createResponse(requiredActions.iterator().next());
-        } else {
-            logger.debugv("Redirecting to: {0}", clientSession.getRedirectUri());
-            accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
-
-            AuthenticationManager authManager = new AuthenticationManager();
-
-            if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-                AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
-                return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager)
-                        .redirectError(clientSession.getClient(), "access_denied", clientSession.getNote(OpenIdConnectProtocol.STATE_PARAM), clientSession.getRedirectUri());
-            }
-            event.session(userSession);
-
-            event.success();
-
-            return Flows.oauth(this.session, realm, request, uriInfo, clientConnection, authManager, tokenManager)
-                    .redirectAccessCode(accessCode,
-                            userSession, clientSession.getNote(OpenIdConnectProtocol.STATE_PARAM), clientSession.getRedirectUri());
-        }
+        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
     private void initEvent(ClientSessionModel clientSession) {
