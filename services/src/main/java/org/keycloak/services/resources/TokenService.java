@@ -13,11 +13,10 @@ import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -26,27 +25,20 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
-import org.keycloak.representations.PasswordToken;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.protocol.oidc.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
-import org.keycloak.services.validation.Validation;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.BasicAuthHelper;
 
@@ -71,8 +63,6 @@ import javax.ws.rs.ext.Providers;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -174,26 +164,6 @@ public class TokenService {
     public static UriBuilder logoutUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(TokenService.class, "logout");
-    }
-
-    public static UriBuilder processLoginUrl(UriInfo uriInfo) {
-        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
-        return processLoginUrl(baseUriBuilder);
-    }
-
-    public static UriBuilder processLoginUrl(UriBuilder baseUriBuilder) {
-        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(TokenService.class, "processLogin");
-    }
-
-    public static UriBuilder processOAuthUrl(UriInfo uriInfo) {
-        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
-        return processOAuthUrl(baseUriBuilder);
-    }
-
-    public static UriBuilder processOAuthUrl(UriBuilder baseUriBuilder) {
-        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(TokenService.class, "processOAuth");
     }
 
     public static UriBuilder refreshUrl(UriBuilder baseUriBuilder) {
@@ -458,285 +428,6 @@ public class TokenService {
     }
 
     /**
-     * URL called after login page.  YOU SHOULD NEVER INVOKE THIS DIRECTLY!
-     *
-     * @param code
-     * @param formData
-     * @return
-     */
-    @Path("auth/request/login")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processLogin(@QueryParam("code") String code,
-                                 final MultivaluedMap<String, String> formData) {
-        event.event(EventType.LOGIN);
-        if (!checkSsl()) {
-            event.error(Errors.SSL_REQUIRED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
-        }
-
-        if (!realm.isEnabled()) {
-            event.error(Errors.REALM_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
-        }
-        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
-        if (clientCode == null) {
-            event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
-        }
-        ClientSessionModel clientSession = clientCode.getClientSession();
-        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
-            clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
-            event.client(clientSession.getClient()).error(Errors.INVALID_USER_CREDENTIALS);
-            return Flows.forms(this.session, realm, clientSession.getClient(), uriInfo).setError(Messages.INVALID_USER)
-                    .setClientSessionCode(clientCode.getCode())
-                    .createLogin();
-        }
-
-        String username = formData.getFirst(AuthenticationManager.FORM_USERNAME);
-
-        String rememberMe = formData.getFirst("rememberMe");
-        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
-
-        event.client(clientSession.getClient().getClientId())
-                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.AUTH_METHOD, "form")
-                .detail(Details.USERNAME, username);
-
-        if (remember) {
-            event.detail(Details.REMEMBER_ME, "true");
-        }
-
-
-        ClientModel client = clientSession.getClient();
-        if (client == null) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
-        }
-        if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
-        }
-
-        if (formData.containsKey("cancel")) {
-            event.error(Errors.REJECTED_BY_USER);
-            LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
-            protocol.setRealm(realm)
-                    .setRequest(request)
-                    .setUriInfo(uriInfo)
-                    .setClientConnection(clientConnection);
-            return protocol.cancelLogin(clientSession);
-        }
-
-        AuthenticationStatus status = authManager.authenticateForm(session, clientConnection, realm, formData);
-
-        if (remember) {
-            authManager.createRememberMeCookie(realm, username, uriInfo, clientConnection);
-        } else {
-            authManager.expireRememberMeCookie(realm, uriInfo, clientConnection);
-        }
-
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
-        if (user != null) {
-            event.user(user);
-        }
-
-        switch (status) {
-            case SUCCESS:
-            case ACTIONS_REQUIRED:
-                UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", remember);
-                TokenManager.attachClientSession(userSession, clientSession);
-		        event.session(userSession);
-                return authManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-            case ACCOUNT_TEMPORARILY_DISABLED:
-                event.error(Errors.USER_TEMPORARILY_DISABLED);
-                return Flows.forms(this.session, realm, client, uriInfo)
-                        .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED)
-                        .setFormData(formData)
-                        .setClientSessionCode(clientCode.getCode())
-                        .createLogin();
-            case ACCOUNT_DISABLED:
-                event.error(Errors.USER_DISABLED);
-                return Flows.forms(this.session, realm, client, uriInfo)
-                        .setError(Messages.ACCOUNT_DISABLED)
-                        .setClientSessionCode(clientCode.getCode())
-                        .setFormData(formData).createLogin();
-            case MISSING_TOTP:
-                formData.remove(CredentialRepresentation.PASSWORD);
-
-                String passwordToken = new JWSBuilder().jsonContent(new PasswordToken(realm.getName(), user.getId())).rsa256(realm.getPrivateKey());
-                formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
-
-                return Flows.forms(this.session, realm, client, uriInfo)
-                        .setFormData(formData)
-                        .setClientSessionCode(clientCode.getCode())
-                        .createLoginTotp();
-            case INVALID_USER:
-                event.error(Errors.USER_NOT_FOUND);
-                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER)
-                        .setFormData(formData)
-                        .setClientSessionCode(clientCode.getCode())
-                        .createLogin();
-            default:
-                event.error(Errors.INVALID_USER_CREDENTIALS);
-                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER)
-                        .setFormData(formData)
-                        .setClientSessionCode(clientCode.getCode())
-                        .createLogin();
-        }
-    }
-
-    @Path("auth/request/login-actions")
-    public RequiredActionsService getRequiredActionsService() {
-        RequiredActionsService service = new RequiredActionsService(realm, tokenManager, event);
-        ResteasyProviderFactory.getInstance().injectProperties(service);
-
-        //resourceContext.initResource(service);
-        return service;
-    }
-
-    /**
-     * Registration
-     *
-     * @param code
-     * @param formData
-     * @return
-     */
-    @Path("registrations")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRegister(@QueryParam("code") String code,
-                                    final MultivaluedMap<String, String> formData) {
-        event.event(EventType.REGISTER);
-        if (!checkSsl()) {
-            event.error(Errors.SSL_REQUIRED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
-        }
-
-        if (!realm.isEnabled()) {
-            event.error(Errors.REALM_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
-        }
-        if (!realm.isRegistrationAllowed()) {
-            event.error(Errors.REGISTRATION_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Registration not allowed");
-        }
-        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
-        if (clientCode == null) {
-            event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
-        }
-        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
-            event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
-        }
-
-        String username = formData.getFirst("username");
-        String email = formData.getFirst("email");
-        ClientSessionModel clientSession = clientCode.getClientSession();
-        event.client(clientSession.getClient())
-                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.USERNAME, username)
-                .detail(Details.EMAIL, email)
-                .detail(Details.REGISTER_METHOD, "form");
-
-        if (!realm.isEnabled()) {
-            event.error(Errors.REALM_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled");
-        }
-        ClientModel client = clientSession.getClient();
-        if (client == null) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
-        }
-
-        if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
-        }
-
-
-        List<String> requiredCredentialTypes = new LinkedList<String>();
-        for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
-            requiredCredentialTypes.add(m.getType());
-        }
-
-        // Validate here, so user is not created if password doesn't validate to passwordPolicy of current realm
-        String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
-        if (error == null) {
-            error = Validation.validatePassword(formData, realm.getPasswordPolicy());
-        }
-
-        if (error != null) {
-            event.error(Errors.INVALID_REGISTRATION);
-            return Flows.forms(session, realm, client, uriInfo)
-                    .setError(error)
-                    .setFormData(formData)
-                    .setClientSessionCode(clientCode.getCode())
-                    .createRegistration();
-        }
-
-        // Validate that user with this username doesn't exist in realm or any federation provider
-        if (session.users().getUserByUsername(username, realm) != null) {
-            event.error(Errors.USERNAME_IN_USE);
-            return Flows.forms(session, realm, client, uriInfo)
-                    .setError(Messages.USERNAME_EXISTS)
-                    .setFormData(formData)
-                    .setClientSessionCode(clientCode.getCode())
-                    .createRegistration();
-        }
-
-        // Validate that user with this email doesn't exist in realm or any federation provider
-        if (session.users().getUserByEmail(email, realm) != null) {
-            event.error(Errors.EMAIL_IN_USE);
-            return Flows.forms(session, realm, client, uriInfo)
-                    .setError(Messages.EMAIL_EXISTS)
-                    .setFormData(formData)
-                    .setClientSessionCode(clientCode.getCode())
-                    .createRegistration();
-        }
-
-        UserModel user = session.users().addUser(realm, username);
-        user.setEnabled(true);
-        user.setFirstName(formData.getFirst("firstName"));
-        user.setLastName(formData.getFirst("lastName"));
-
-        user.setEmail(email);
-
-        if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
-            UserCredentialModel credentials = new UserCredentialModel();
-            credentials.setType(CredentialRepresentation.PASSWORD);
-            credentials.setValue(formData.getFirst("password"));
-
-            boolean passwordUpdateSuccessful;
-            String passwordUpdateError = null;
-            try {
-                session.users().updateCredential(realm, user, UserCredentialModel.password(formData.getFirst("password")));
-                passwordUpdateSuccessful = true;
-            } catch (Exception ape) {
-                passwordUpdateSuccessful = false;
-                passwordUpdateError = ape.getMessage();
-            }
-
-            // User already registered, but force him to update password
-            if (!passwordUpdateSuccessful) {
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                return Flows.forms(session, realm, client, uriInfo)
-                        .setError(passwordUpdateError)
-                        .setClientSessionCode(clientCode.getCode())
-                        .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
-            }
-        }
-
-        event.user(user).success();
-        event.reset();
-
-        return processLogin(code, formData);
-    }
-
-    /**
      * CORS preflight path for access code to token
      *
      * @return
@@ -979,15 +670,15 @@ public class TokenService {
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
                 }
                 clientSession = clientCode.getClientSession();
-                if (!clientSession.getAuthMethod().equals(OAuthFlows.LOGIN_PAGE_PROTOCOL)) {
+                if (!clientSession.getAuthMethod().equals(OpenIDConnect.LOGIN_PAGE_PROTOCOL)) {
                     event.error(Errors.INVALID_CODE);
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid protocol, please login again through your application.");
                 }
-                state = clientSession.getNote(OAuthFlows.STATE_PARAM);
-                scopeParam = clientSession.getNote(OAuthFlows.SCOPE_PARAM);
-                responseType = clientSession.getNote(OAuthFlows.RESPONSE_TYPE_PARAM);
-                loginHint = clientSession.getNote(OAuthFlows.LOGIN_HINT_PARAM);
-                prompt = clientSession.getNote(OAuthFlows.PROMPT_PARAM);
+                state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
+                scopeParam = clientSession.getNote(OpenIDConnect.SCOPE_PARAM);
+                responseType = clientSession.getNote(OpenIDConnect.RESPONSE_TYPE_PARAM);
+                loginHint = clientSession.getNote(OpenIDConnect.LOGIN_HINT_PARAM);
+                prompt = clientSession.getNote(OpenIDConnect.PROMPT_PARAM);
             } else {
                 if (state == null) {
                     event.error(Errors.STATE_PARAM_NOT_FOUND);
@@ -1018,14 +709,14 @@ public class TokenService {
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
                 }
                 clientSession = session.sessions().createClientSession(realm, client);
-                clientSession.setAuthMethod(OAuthFlows.LOGIN_PAGE_PROTOCOL);
+                clientSession.setAuthMethod(OpenIDConnect.LOGIN_PAGE_PROTOCOL);
                 clientSession.setRedirectUri(redirect);
                 clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
-                clientSession.setNote(OAuthFlows.STATE_PARAM, state);
-                if (scopeParam != null) clientSession.setNote(OAuthFlows.SCOPE_PARAM, scopeParam);
-                if (responseType != null) clientSession.setNote(OAuthFlows.RESPONSE_TYPE_PARAM, responseType);
-                if (loginHint != null) clientSession.setNote(OAuthFlows.LOGIN_HINT_PARAM, loginHint);
-                if (prompt != null) clientSession.setNote(OAuthFlows.PROMPT_PARAM, prompt);
+                clientSession.setNote(OpenIDConnect.STATE_PARAM, state);
+                if (scopeParam != null) clientSession.setNote(OpenIDConnect.SCOPE_PARAM, scopeParam);
+                if (responseType != null) clientSession.setNote(OpenIDConnect.RESPONSE_TYPE_PARAM, responseType);
+                if (loginHint != null) clientSession.setNote(OpenIDConnect.LOGIN_HINT_PARAM, loginHint);
+                if (prompt != null) clientSession.setNote(OpenIDConnect.PROMPT_PARAM, prompt);
             }
             return null;
         }
@@ -1049,13 +740,13 @@ public class TokenService {
     @Path("login")
     @GET
     public Response loginPage(@QueryParam("code") String code,
-                              @QueryParam(OAuthFlows.RESPONSE_TYPE_PARAM) String responseType,
-                              @QueryParam(OAuthFlows.REDIRECT_URI_PARAM) String redirect,
-                              @QueryParam(OAuthFlows.CLIENT_ID_PARAM) String clientId,
-                              @QueryParam(OAuthFlows.SCOPE_PARAM) String scopeParam,
-                              @QueryParam(OAuthFlows.STATE_PARAM) String state,
-                              @QueryParam(OAuthFlows.PROMPT_PARAM) String prompt,
-                              @QueryParam(OAuthFlows.LOGIN_HINT_PARAM) String loginHint) {
+                              @QueryParam(OpenIDConnect.RESPONSE_TYPE_PARAM) String responseType,
+                              @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirect,
+                              @QueryParam(OpenIDConnect.CLIENT_ID_PARAM) String clientId,
+                              @QueryParam(OpenIDConnect.SCOPE_PARAM) String scopeParam,
+                              @QueryParam(OpenIDConnect.STATE_PARAM) String state,
+                              @QueryParam(OpenIDConnect.PROMPT_PARAM) String prompt,
+                              @QueryParam(OpenIDConnect.LOGIN_HINT_PARAM) String loginHint) {
         event.event(EventType.LOGIN);
         FrontPageInitializer pageInitializer = new FrontPageInitializer();
         pageInitializer.code = code;
@@ -1090,7 +781,7 @@ public class TokenService {
         }
 
         if (prompt != null && prompt.equals("none")) {
-            OAuthFlows oauth = new OAuthFlows(session, realm, request, uriInfo, clientConnection);
+            OpenIDConnect oauth = new OpenIDConnect(session, realm, request, uriInfo, clientConnection);
             return oauth.cancelLogin(clientSession);
         }
 
@@ -1134,11 +825,11 @@ public class TokenService {
     @Path("registrations")
     @GET
     public Response registerPage(@QueryParam("code") String code,
-                                 @QueryParam(OAuthFlows.RESPONSE_TYPE_PARAM) String responseType,
-                                 @QueryParam(OAuthFlows.REDIRECT_URI_PARAM) String redirect,
-                                 @QueryParam(OAuthFlows.CLIENT_ID_PARAM) String clientId,
-                                 @QueryParam(OAuthFlows.SCOPE_PARAM) String scopeParam,
-                                 @QueryParam(OAuthFlows.STATE_PARAM) String state) {
+                                 @QueryParam(OpenIDConnect.RESPONSE_TYPE_PARAM) String responseType,
+                                 @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirect,
+                                 @QueryParam(OpenIDConnect.CLIENT_ID_PARAM) String clientId,
+                                 @QueryParam(OpenIDConnect.SCOPE_PARAM) String scopeParam,
+                                 @QueryParam(OpenIDConnect.STATE_PARAM) String state) {
         event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
@@ -1173,7 +864,7 @@ public class TokenService {
     @Path("logout")
     @GET
     @NoCache
-    public Response logout(final @QueryParam(OAuthFlows.REDIRECT_URI_PARAM) String redirectUri) {
+    public Response logout(final @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirectUri) {
         event.event(EventType.LOGOUT);
         if (redirectUri != null) {
             event.detail(Details.REDIRECT_URI, redirectUri);
@@ -1250,71 +941,6 @@ public class TokenService {
     private void logout(UserSessionModel userSession) {
         authManager.logout(session, realm, userSession, uriInfo, clientConnection);
         event.user(userSession.getUser()).session(userSession).success();
-    }
-
-    /**
-     * OAuth grant page.  You should not invoked this directly!
-     *
-     * @param formData
-     * @return
-     */
-    @Path("oauth/grant")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processOAuth(final MultivaluedMap<String, String> formData) {
-        event.event(EventType.LOGIN).detail(Details.RESPONSE_TYPE, "code");
-
-
-        if (!checkSsl()) {
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
-        }
-
-        String code = formData.getFirst(OAuth2Constants.CODE);
-
-        ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT)) {
-            event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid access code.");
-        }
-        ClientSessionModel clientSession = accessCode.getClientSession();
-        event.detail(Details.CODE_ID, clientSession.getId());
-
-        String redirect = clientSession.getRedirectUri();
-
-        event.client(clientSession.getClient())
-                .user(clientSession.getUserSession().getUser())
-                .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.REDIRECT_URI, redirect);
-
-        UserSessionModel userSession = clientSession.getUserSession();
-        if (userSession != null) {
-            event.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
-            event.detail(Details.USERNAME, userSession.getLoginUsername());
-            if (userSession.isRememberMe()) {
-                event.detail(Details.REMEMBER_ME, "true");
-            }
-        }
-
-        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
-            event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Session not active");
-        }
-        event.session(userSession);
-
-        LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
-        protocol.setRealm(realm)
-                .setRequest(request)
-                .setUriInfo(uriInfo)
-                .setClientConnection(clientConnection);
-        if (formData.containsKey("cancel")) {
-            event.error(Errors.REJECTED_BY_USER);
-            return protocol.consentDenied(clientSession);
-        }
-
-        event.success();
-
-        return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection);
     }
 
     @Path("oauth/oob")

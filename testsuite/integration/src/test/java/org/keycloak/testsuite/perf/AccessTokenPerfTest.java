@@ -34,6 +34,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.OAuthClient;
@@ -152,7 +153,7 @@ public class AccessTokenPerfTest {
         }
 
         public String getProcessLoginUrl(String state) {
-            UriBuilder b = TokenService.processLoginUrl(UriBuilder.fromUri(baseUrl));
+            UriBuilder b = LoginActionsService.processLoginUrl(UriBuilder.fromUri(baseUrl));
             if (clientId != null) {
                 b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
             }

@@ -22,45 +22,25 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
-import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.services.resources.flows.Flows;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class OAuthFlows implements LoginProtocol {
+public class OpenIDConnect implements LoginProtocol {
 
     public static final String LOGIN_PAGE_PROTOCOL = "openid-connect";
     public static final String STATE_PARAM = "state";
@@ -70,7 +50,7 @@ public class OAuthFlows implements LoginProtocol {
     public static final String CLIENT_ID_PARAM = "client_id";
     public static final String PROMPT_PARAM = "prompt";
     public static final String LOGIN_HINT_PARAM = "login_hint";
-    private static final Logger log = Logger.getLogger(OAuthFlows.class);
+    private static final Logger log = Logger.getLogger(OpenIDConnect.class);
 
     protected KeycloakSession session;
 
@@ -82,8 +62,8 @@ public class OAuthFlows implements LoginProtocol {
 
     protected ClientConnection clientConnection;
 
-    public OAuthFlows(KeycloakSession session, RealmModel realm, HttpRequest request, UriInfo uriInfo,
-               ClientConnection clientConnection) {
+    public OpenIDConnect(KeycloakSession session, RealmModel realm, HttpRequest request, UriInfo uriInfo,
+                         ClientConnection clientConnection) {
         this.session = session;
         this.realm = realm;
         this.request = request;
@@ -91,35 +71,35 @@ public class OAuthFlows implements LoginProtocol {
         this.clientConnection = clientConnection;
     }
 
-    public OAuthFlows() {
+    public OpenIDConnect() {
     }
 
     @Override
-    public OAuthFlows setSession(KeycloakSession session) {
+    public OpenIDConnect setSession(KeycloakSession session) {
         this.session = session;
         return this;
     }
 
     @Override
-    public OAuthFlows setRealm(RealmModel realm) {
+    public OpenIDConnect setRealm(RealmModel realm) {
         this.realm = realm;
         return this;
     }
 
     @Override
-    public OAuthFlows setRequest(HttpRequest request) {
+    public OpenIDConnect setRequest(HttpRequest request) {
         this.request = request;
         return this;
     }
 
     @Override
-    public OAuthFlows setUriInfo(UriInfo uriInfo) {
+    public OpenIDConnect setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
         return this;
     }
 
     @Override
-    public OAuthFlows setClientConnection(ClientConnection clientConnection) {
+    public OpenIDConnect setClientConnection(ClientConnection clientConnection) {
         this.clientConnection = clientConnection;
         return this;
     }
@@ -127,7 +107,7 @@ public class OAuthFlows implements LoginProtocol {
     @Override
     public Response cancelLogin(ClientSessionModel clientSession) {
         String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OAuthFlows.STATE_PARAM);
+        String state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null) {
             redirectUri.queryParam(OAuth2Constants.STATE, state);
@@ -139,7 +119,7 @@ public class OAuthFlows implements LoginProtocol {
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
         String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OAuthFlows.STATE_PARAM);
+        String state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
         accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, accessCode.getCode());
         log.debugv("redirectAccessCode: state: {0}", state);
@@ -152,7 +132,7 @@ public class OAuthFlows implements LoginProtocol {
 
     public Response consentDenied(ClientSessionModel clientSession) {
         String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OAuthFlows.STATE_PARAM);
+        String state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null)
             redirectUri.queryParam(OAuth2Constants.STATE, state);
@@ -163,7 +143,7 @@ public class OAuthFlows implements LoginProtocol {
 
     public Response invalidSessionError(ClientSessionModel clientSession) {
         String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OAuthFlows.STATE_PARAM);
+        String state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null) {
             redirectUri.queryParam(OAuth2Constants.STATE, state);

@@ -47,6 +47,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
@@ -56,7 +57,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.protocol.oidc.OAuthFlows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.util.CookieHelper;
@@ -657,7 +657,7 @@ public class AccountService {
                     ClientSessionModel clientSession = auth.getClientSession();
                     clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
                     clientSession.setRedirectUri(redirectUri);
-                    clientSession.setNote(OAuthFlows.STATE_PARAM, UUID.randomUUID().toString());
+                    clientSession.setNote(OpenIDConnect.STATE_PARAM, UUID.randomUUID().toString());
                     ClientSessionCode clientSessionCode = new ClientSessionCode(realm, clientSession);
                     return Flows.social(realm, uriInfo, clientConnection, provider)
                             .redirectToSocialProvider(clientSessionCode);

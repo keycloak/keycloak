@@ -22,6 +22,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -36,7 +37,6 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.managers.UserManager;
 import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.protocol.oidc.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
 
 import javax.ws.rs.Consumes;
@@ -895,7 +895,7 @@ public class UsersResource {
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
         //audit.session(userSession);
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(OAuthFlows.LOGIN_PAGE_PROTOCOL);
+        clientSession.setAuthMethod(OpenIDConnect.LOGIN_PAGE_PROTOCOL);
         clientSession.setRedirectUri(redirect);
         clientSession.setUserSession(userSession);
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);

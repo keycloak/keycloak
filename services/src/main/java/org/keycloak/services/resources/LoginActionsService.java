@@ -24,23 +24,28 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.representations.PasswordToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -63,16 +68,17 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionsService {
+public class LoginActionsService {
 
-    protected static final Logger logger = Logger.getLogger(RequiredActionsService.class);
+    protected static final Logger logger = Logger.getLogger(LoginActionsService.class);
 
     private RealmModel realm;
 
@@ -94,13 +100,42 @@ public class RequiredActionsService {
     @Context
     protected KeycloakSession session;
 
-    private TokenManager tokenManager;
+    private AuthenticationManager authManager;
 
     private EventBuilder event;
 
-    public RequiredActionsService(RealmModel realm, TokenManager tokenManager, EventBuilder event) {
+    public static UriBuilder loginActionsBaseUrl(UriInfo uriInfo) {
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return loginActionsBaseUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder loginActionsBaseUrl(UriBuilder baseUriBuilder) {
+        return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getLoginActionsService");
+    }
+
+    public static UriBuilder processLoginUrl(UriInfo uriInfo) {
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return processLoginUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder processLoginUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = loginActionsBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "processLogin");
+    }
+
+    public static UriBuilder processOAuthUrl(UriInfo uriInfo) {
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return processOAuthUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder processOAuthUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = loginActionsBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "processOAuth");
+    }
+
+    public LoginActionsService(RealmModel realm, AuthenticationManager authManager, EventBuilder event) {
         this.realm = realm;
-        this.tokenManager = tokenManager;
+        this.authManager = authManager;
         this.event = event;
     }
 
@@ -141,6 +176,344 @@ public class RequiredActionsService {
             return true;
         }
     }
+
+    /**
+     * URL called after login page.  YOU SHOULD NEVER INVOKE THIS DIRECTLY!
+     *
+     * @param code
+     * @param formData
+     * @return
+     */
+    @Path("request/login")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response processLogin(@QueryParam("code") String code,
+                                 final MultivaluedMap<String, String> formData) {
+        event.event(EventType.LOGIN);
+        if (!checkSsl()) {
+            event.error(Errors.SSL_REQUIRED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+        }
+
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
+        }
+        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
+        if (clientCode == null) {
+            event.error(Errors.INVALID_CODE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
+        }
+        ClientSessionModel clientSession = clientCode.getClientSession();
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
+            clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
+            event.client(clientSession.getClient()).error(Errors.INVALID_USER_CREDENTIALS);
+            return Flows.forms(this.session, realm, clientSession.getClient(), uriInfo).setError(Messages.INVALID_USER)
+                    .setClientSessionCode(clientCode.getCode())
+                    .createLogin();
+        }
+
+        String username = formData.getFirst(AuthenticationManager.FORM_USERNAME);
+
+        String rememberMe = formData.getFirst("rememberMe");
+        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
+
+        event.client(clientSession.getClient().getClientId())
+                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.AUTH_METHOD, "form")
+                .detail(Details.USERNAME, username);
+
+        if (remember) {
+            event.detail(Details.REMEMBER_ME, "true");
+        }
+
+
+        ClientModel client = clientSession.getClient();
+        if (client == null) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
+        }
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
+        }
+
+        if (formData.containsKey("cancel")) {
+            event.error(Errors.REJECTED_BY_USER);
+            LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
+            protocol.setRealm(realm)
+                    .setRequest(request)
+                    .setUriInfo(uriInfo)
+                    .setClientConnection(clientConnection);
+            return protocol.cancelLogin(clientSession);
+        }
+
+        AuthenticationManager.AuthenticationStatus status = authManager.authenticateForm(session, clientConnection, realm, formData);
+
+        if (remember) {
+            authManager.createRememberMeCookie(realm, username, uriInfo, clientConnection);
+        } else {
+            authManager.expireRememberMeCookie(realm, uriInfo, clientConnection);
+        }
+
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+        if (user != null) {
+            event.user(user);
+        }
+
+        switch (status) {
+            case SUCCESS:
+            case ACTIONS_REQUIRED:
+                UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", remember);
+                TokenManager.attachClientSession(userSession, clientSession);
+                event.session(userSession);
+                return authManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
+            case ACCOUNT_TEMPORARILY_DISABLED:
+                event.error(Errors.USER_TEMPORARILY_DISABLED);
+                return Flows.forms(this.session, realm, client, uriInfo)
+                        .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED)
+                        .setFormData(formData)
+                        .setClientSessionCode(clientCode.getCode())
+                        .createLogin();
+            case ACCOUNT_DISABLED:
+                event.error(Errors.USER_DISABLED);
+                return Flows.forms(this.session, realm, client, uriInfo)
+                        .setError(Messages.ACCOUNT_DISABLED)
+                        .setClientSessionCode(clientCode.getCode())
+                        .setFormData(formData).createLogin();
+            case MISSING_TOTP:
+                formData.remove(CredentialRepresentation.PASSWORD);
+
+                String passwordToken = new JWSBuilder().jsonContent(new PasswordToken(realm.getName(), user.getId())).rsa256(realm.getPrivateKey());
+                formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
+
+                return Flows.forms(this.session, realm, client, uriInfo)
+                        .setFormData(formData)
+                        .setClientSessionCode(clientCode.getCode())
+                        .createLoginTotp();
+            case INVALID_USER:
+                event.error(Errors.USER_NOT_FOUND);
+                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER)
+                        .setFormData(formData)
+                        .setClientSessionCode(clientCode.getCode())
+                        .createLogin();
+            default:
+                event.error(Errors.INVALID_USER_CREDENTIALS);
+                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER)
+                        .setFormData(formData)
+                        .setClientSessionCode(clientCode.getCode())
+                        .createLogin();
+        }
+    }
+
+    /**
+     * Registration
+     *
+     * @param code
+     * @param formData
+     * @return
+     */
+    @Path("request/registration")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response processRegister(@QueryParam("code") String code,
+                                    final MultivaluedMap<String, String> formData) {
+        event.event(EventType.REGISTER);
+        if (!checkSsl()) {
+            event.error(Errors.SSL_REQUIRED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+        }
+
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
+        }
+        if (!realm.isRegistrationAllowed()) {
+            event.error(Errors.REGISTRATION_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Registration not allowed");
+        }
+        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
+        if (clientCode == null) {
+            event.error(Errors.INVALID_CODE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
+        }
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
+            event.error(Errors.INVALID_CODE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
+        }
+
+        String username = formData.getFirst("username");
+        String email = formData.getFirst("email");
+        ClientSessionModel clientSession = clientCode.getClientSession();
+        event.client(clientSession.getClient())
+                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, email)
+                .detail(Details.REGISTER_METHOD, "form");
+
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled");
+        }
+        ClientModel client = clientSession.getClient();
+        if (client == null) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
+        }
+
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
+        }
+
+
+        List<String> requiredCredentialTypes = new LinkedList<String>();
+        for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
+            requiredCredentialTypes.add(m.getType());
+        }
+
+        // Validate here, so user is not created if password doesn't validate to passwordPolicy of current realm
+        String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
+        if (error == null) {
+            error = Validation.validatePassword(formData, realm.getPasswordPolicy());
+        }
+
+        if (error != null) {
+            event.error(Errors.INVALID_REGISTRATION);
+            return Flows.forms(session, realm, client, uriInfo)
+                    .setError(error)
+                    .setFormData(formData)
+                    .setClientSessionCode(clientCode.getCode())
+                    .createRegistration();
+        }
+
+        // Validate that user with this username doesn't exist in realm or any federation provider
+        if (session.users().getUserByUsername(username, realm) != null) {
+            event.error(Errors.USERNAME_IN_USE);
+            return Flows.forms(session, realm, client, uriInfo)
+                    .setError(Messages.USERNAME_EXISTS)
+                    .setFormData(formData)
+                    .setClientSessionCode(clientCode.getCode())
+                    .createRegistration();
+        }
+
+        // Validate that user with this email doesn't exist in realm or any federation provider
+        if (session.users().getUserByEmail(email, realm) != null) {
+            event.error(Errors.EMAIL_IN_USE);
+            return Flows.forms(session, realm, client, uriInfo)
+                    .setError(Messages.EMAIL_EXISTS)
+                    .setFormData(formData)
+                    .setClientSessionCode(clientCode.getCode())
+                    .createRegistration();
+        }
+
+        UserModel user = session.users().addUser(realm, username);
+        user.setEnabled(true);
+        user.setFirstName(formData.getFirst("firstName"));
+        user.setLastName(formData.getFirst("lastName"));
+
+        user.setEmail(email);
+
+        if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
+            UserCredentialModel credentials = new UserCredentialModel();
+            credentials.setType(CredentialRepresentation.PASSWORD);
+            credentials.setValue(formData.getFirst("password"));
+
+            boolean passwordUpdateSuccessful;
+            String passwordUpdateError = null;
+            try {
+                session.users().updateCredential(realm, user, UserCredentialModel.password(formData.getFirst("password")));
+                passwordUpdateSuccessful = true;
+            } catch (Exception ape) {
+                passwordUpdateSuccessful = false;
+                passwordUpdateError = ape.getMessage();
+            }
+
+            // User already registered, but force him to update password
+            if (!passwordUpdateSuccessful) {
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                return Flows.forms(session, realm, client, uriInfo)
+                        .setError(passwordUpdateError)
+                        .setClientSessionCode(clientCode.getCode())
+                        .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+            }
+        }
+
+        event.user(user).success();
+        event.reset();
+
+        return processLogin(code, formData);
+    }
+
+    /**
+     * OAuth grant page.  You should not invoked this directly!
+     *
+     * @param formData
+     * @return
+     */
+    @Path("consent")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response processConsent(final MultivaluedMap<String, String> formData) {
+        event.event(EventType.LOGIN).detail(Details.RESPONSE_TYPE, "code");
+
+
+        if (!checkSsl()) {
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+        }
+
+        String code = formData.getFirst("code");
+
+        ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
+        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT)) {
+            event.error(Errors.INVALID_CODE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid access code.");
+        }
+        ClientSessionModel clientSession = accessCode.getClientSession();
+        event.detail(Details.CODE_ID, clientSession.getId());
+
+        String redirect = clientSession.getRedirectUri();
+
+        event.client(clientSession.getClient())
+                .user(clientSession.getUserSession().getUser())
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.REDIRECT_URI, redirect);
+
+        UserSessionModel userSession = clientSession.getUserSession();
+        if (userSession != null) {
+            event.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
+            event.detail(Details.USERNAME, userSession.getLoginUsername());
+            if (userSession.isRememberMe()) {
+                event.detail(Details.REMEMBER_ME, "true");
+            }
+        }
+
+        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+            AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
+            event.error(Errors.INVALID_CODE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Session not active");
+        }
+        event.session(userSession);
+
+        LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
+        protocol.setRealm(realm)
+                .setRequest(request)
+                .setUriInfo(uriInfo)
+                .setClientConnection(clientConnection);
+        if (formData.containsKey("cancel")) {
+            event.error(Errors.REJECTED_BY_USER);
+            return protocol.consentDenied(clientSession);
+        }
+
+        event.success();
+
+        return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection);
+    }
+
+
+
 
     @Path("profile")
     @POST
@@ -274,15 +647,6 @@ public class RequiredActionsService {
 
         event.clone().event(EventType.UPDATE_PASSWORD).success();
         return redirectOauth(user, accessCode, clientSession, userSession);
-
-        // Redirect to account management to login if password reset was initiated by admin
-        /* here while refactoring,  ok to remove when you want
-        if (accessCode.getSessionState() == null) {
-            return Response.seeOther(Urls.accountPage(uriInfo.getBaseUri(), realm.getId())).build();
-        } else {
-            return redirectOauth(user, accessCode);
-        }
-        */
     }
 
 

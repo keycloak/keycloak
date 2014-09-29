@@ -2,14 +2,12 @@ package org.keycloak.protocol;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.provider.Provider;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.protocol.oidc.OAuthFlows;
 import org.keycloak.services.managers.ClientSessionCode;
 
 import javax.ws.rs.core.Response;
@@ -20,15 +18,15 @@ import javax.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public interface LoginProtocol extends Provider {
-    OAuthFlows setSession(KeycloakSession session);
+    OpenIDConnect setSession(KeycloakSession session);
 
-    OAuthFlows setRealm(RealmModel realm);
+    OpenIDConnect setRealm(RealmModel realm);
 
-    OAuthFlows setRequest(HttpRequest request);
+    OpenIDConnect setRequest(HttpRequest request);
 
-    OAuthFlows setUriInfo(UriInfo uriInfo);
+    OpenIDConnect setUriInfo(UriInfo uriInfo);
 
-    OAuthFlows setClientConnection(ClientConnection clientConnection);
+    OpenIDConnect setClientConnection(ClientConnection clientConnection);
 
     Response cancelLogin(ClientSessionModel clientSession);
     Response invalidSessionError(ClientSessionModel clientSession);
