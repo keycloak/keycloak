@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.1.0-Alpha1-SNAPSHOT</version>
+        <version>1.0.1.Final</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -14,18 +14,6 @@
     <description/>
 
     <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-war-deployment</artifactId>
-            <version>${project.version}</version>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-adapter-dist</artifactId>
-            <version>${project.version}</version>
-            <type>zip</type>
-        </dependency>
     </dependencies>
     <build>
         <finalName>keycloak-docker-cluster</finalName>

@@ -19,11 +19,7 @@
     },
 
     "userSessions": {
-        "provider" : "${keycloak.userSessions.provider:infinispan}",
-
-        "infinispan" : {
-            "cacheContainer" : "java:jboss/infinispan/container/Keycloak"
-        }
+        "provider" : "${keycloak.userSessions.provider:infinispan}"
     },
 
     "realmCache": {
@@ -71,6 +67,12 @@
         "default": {
             "dataSource": "java:jboss/datasources/KeycloakDS",
             "databaseSchema": "update"
+        }
+    },
+
+    "connectionsInfinispan": {
+        "default": {
+            "cacheContainer" : "java:jboss/infinispan/Keycloak"
         }
     }
 }

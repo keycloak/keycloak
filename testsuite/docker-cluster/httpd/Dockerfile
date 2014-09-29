@@ -10,5 +10,7 @@ RUN unzip -q apache24-modcluster131.zip
 ADD httpd-run /bin/httpd-run
 RUN chmod u+x /bin/httpd-run
 
+ADD httpd.conf  /opt/jboss/httpd/httpd/conf/httpd.conf
+
 EXPOSE 80 10001
 CMD ["/bin/httpd-run"]

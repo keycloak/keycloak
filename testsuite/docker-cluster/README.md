@@ -77,12 +77,17 @@ Run this in separate terminal to add more (in this case 2) cluster nodes:
 $ fig scale node=2
 ````
 
-Now it should be visible on mod_cluster_manager page that they are 2 nodes. At this moment, you will likely have issues with 
-login to admin console and other apps as UserSession provider is 'mem' right now.
+Now it should be visible on mod_cluster_manager page that they are 2 nodes.
 
 Seeing logs
 -----------
 It's easiest to do:
+```shell
+$ fig logs
+````
+to see output of MySql and Keycloak server consoles.
+
+To see Apache and debug logs of keycloak server:
 ```shell
 $ fig run node /bin/bash
 ````
