@@ -20,14 +20,11 @@
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:mem}"
+        "provider": "${keycloak.realm.cache.provider:infinispan}"
     },
 
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:mem}",
-        "mem": {
-            "maxSize": 20000
-        }
+        "provider": "${keycloak.user.cache.provider:infinispan}"
     },
 
     "timer": {

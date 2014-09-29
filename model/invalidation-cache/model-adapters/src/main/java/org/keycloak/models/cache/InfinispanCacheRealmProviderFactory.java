@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFactory {
 
@@ -19,13 +19,11 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
     public CacheRealmProvider create(KeycloakSession session) {
         Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache("realms");
         RealmCache realmCache = new InfinispanRealmCache(cache, realmLookup);
-        return new DefaultCacheRealmProvider(realmCache, session);
+        return new InfinispanCacheRealmProvider(realmCache, session);
     }
 
     @Override
     public void init(Config.Scope config) {
-        config.get("");
-
     }
 
     @Override
