@@ -29,6 +29,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -42,16 +43,20 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.protocol.OpenIdConnectProtocol;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -85,7 +90,7 @@ public class OAuthFlows {
         this.tokenManager = tokenManager;
     }
 
-    public Response redirectAccessCode(AccessCode accessCode, UserSessionModel userSession, String state, String redirect) {
+    public Response redirectAccessCode(ClientSessionCode accessCode, UserSessionModel userSession, String state, String redirect) {
         String code = accessCode.getCode();
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
         log.debugv("redirectAccessCode: state: {0}", state);
@@ -110,8 +115,8 @@ public class OAuthFlows {
         }
 
         // refresh the cookies!
-        authManager.createLoginCookie(realm, accessCode.getUser(), userSession, uriInfo, clientConnection);
-        if (userSession.isRememberMe()) authManager.createRememberMeCookie(realm, accessCode.getUser().getUsername(), uriInfo, clientConnection);
+        authManager.createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
+        if (userSession.isRememberMe()) authManager.createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
         return location.build();
     }
 
@@ -123,6 +128,72 @@ public class OAuthFlows {
         return Response.status(302).location(redirectUri.build()).build();
     }
 
+
+    public Response processAccessCode(ClientSessionModel clientSession, UserSessionModel session, EventBuilder event) {
+        UserModel user = session.getUser();
+        isTotpConfigurationRequired(user);
+        isEmailVerificationRequired(user);
+        ClientModel client = clientSession.getClient();
+
+        boolean isResource = client instanceof ApplicationModel;
+        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+
+
+        log.debugv("processAccessCode: isResource: {0}", isResource);
+        log.debugv("processAccessCode: go to oauth page?: {0}",
+                !isResource);
+
+        event.detail(Details.CODE_ID, clientSession.getId());
+
+        Set<RequiredAction> requiredActions = user.getRequiredActions();
+        if (!requiredActions.isEmpty()) {
+            RequiredAction action = user.getRequiredActions().iterator().next();
+            accessCode.setRequiredAction(action);
+
+            LoginFormsProvider loginFormsProvider = Flows.forms(this.session, realm, client, uriInfo).setAccessCode(accessCode.getCode()).setUser(user);
+            if (action.equals(RequiredAction.VERIFY_EMAIL)) {
+                String key = UUID.randomUUID().toString();
+                clientSession.setNote("key", key);
+                loginFormsProvider.setVerifyCode(key);
+                event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
+            }
+
+            return loginFormsProvider
+                    .createResponse(action);
+        }
+
+        if (!isResource) {
+            accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
+
+            List<RoleModel> realmRoles = new LinkedList<RoleModel>();
+            MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
+            for (RoleModel r : accessCode.getRequestedRoles()) {
+                if (r.getContainer() instanceof RealmModel) {
+                    realmRoles.add(r);
+                } else {
+                    resourceRoles.add(((ApplicationModel) r.getContainer()).getName(), r);
+                }
+            }
+
+            return Flows.forms(this.session, realm, client, uriInfo)
+                    .setAccessCode(accessCode.getCode())
+                    .setAccessRequest(realmRoles, resourceRoles)
+                    .setClient(client)
+                    .createOAuthGrant();
+        }
+
+        String redirect = clientSession.getRedirectUri();
+
+        if (redirect != null) {
+            event.success();
+            String state = clientSession.getNote(OpenIdConnectProtocol.STATE_PARAM);
+            accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
+            return redirectAccessCode(accessCode, session, state, redirect);
+        } else {
+            return null;
+        }
+    }
+    /*
     public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, UserSessionModel session, EventBuilder event) {
         isTotpConfigurationRequired(user);
         isEmailVerificationRequired(user);
@@ -178,10 +249,13 @@ public class OAuthFlows {
             return null;
         }
     }
+    */
 
+    /*
     public Response forwardToSecurityFailure(String message) {
         return Flows.forms(session, realm, null, uriInfo).setError(message).createErrorPage();
     }
+    */
 
     private void isTotpConfigurationRequired(UserModel user) {
         for (RequiredCredentialModel c : realm.getRequiredCredentials()) {

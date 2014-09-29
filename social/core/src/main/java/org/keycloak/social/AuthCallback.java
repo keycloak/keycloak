@@ -29,11 +29,9 @@ import java.util.Map;
 public class AuthCallback {
 
     private Map<String, String[]> queryParams;
-    private Map<String, String> attributes;
 
-    public AuthCallback(Map<String, String[]> queryParams, Map<String, String> attributes) {
+    public AuthCallback(Map<String, String[]> queryParams) {
         this.queryParams = queryParams;
-        this.attributes = attributes;
     }
 
     public String getQueryParam(String name) {
@@ -44,8 +42,5 @@ public class AuthCallback {
         return null;
     }
 
-    public String getAttribute(String name) {
-        return attributes != null ? attributes.get(name) : null;
-    }
 
 }

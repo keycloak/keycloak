@@ -23,10 +23,11 @@ import java.util.Collection;
 @Entity
 @Table(name = "CLIENT_SESSION")
 @NamedQueries({
-        @NamedQuery(name = "removeClientSessionByRealm", query = "delete from ClientSessionEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId)"),
+        @NamedQuery(name = "removeClientSessionByRealm", query = "delete from ClientSessionEntity a where a.realmId = :realmId"),
         @NamedQuery(name = "removeClientSessionByUser", query = "delete from ClientSessionEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId)"),
-        @NamedQuery(name = "removeClientSessionByClient", query = "delete from ClientSessionEntity a where a.clientId = :clientId and a.session IN (select s from UserSessionEntity s where s.realmId = :realmId)"),
-        @NamedQuery(name = "removeClientSessionByExpired", query = "delete from ClientSessionEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime))")
+        @NamedQuery(name = "removeClientSessionByClient", query = "delete from ClientSessionEntity a where a.clientId = :clientId and a.realmId = :realmId"),
+        @NamedQuery(name = "removeClientSessionByExpired", query = "delete from ClientSessionEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime))"),
+        @NamedQuery(name = "removeDetachedClientSessionByExpired", query = "delete from ClientSessionEntity a where a.session IS NULL and a.timestamp < :maxTime and a.realmId = :realmId")
 })
 public class ClientSessionEntity {
 
@@ -41,20 +42,26 @@ public class ClientSessionEntity {
     @Column(name="CLIENT_ID",length = 36)
     protected String clientId;
 
+    @Column(name="REALM_ID")
+    protected String realmId;
+
     @Column(name="TIMESTAMP")
     protected int timestamp;
 
     @Column(name="REDIRECT_URI")
     protected String redirectUri;
 
-    @Column(name="STATE")
-    protected String state;
+    @Column(name="AUTH_METHOD")
+    protected String authMethod;
 
     @Column(name="ACTION")
     protected ClientSessionModel.Action action;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
     protected Collection<ClientSessionRoleEntity> roles = new ArrayList<ClientSessionRoleEntity>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
+    protected Collection<ClientSessionNoteEntity> notes = new ArrayList<ClientSessionNoteEntity>();
 
     public String getId() {
         return id;
@@ -80,6 +87,14 @@ public class ClientSessionEntity {
         this.clientId = clientId;
     }
 
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
+    }
+
     public int getTimestamp() {
         return timestamp;
     }
@@ -94,14 +109,6 @@ public class ClientSessionEntity {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
     }
 
     public ClientSessionModel.Action getAction() {
@@ -120,4 +127,19 @@ public class ClientSessionEntity {
         this.roles = roles;
     }
 
+    public Collection<ClientSessionNoteEntity> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(Collection<ClientSessionNoteEntity> notes) {
+        this.notes = notes;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
+    }
 }

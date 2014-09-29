@@ -6,10 +6,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
+import org.keycloak.models.sessions.jpa.entities.ClientSessionNoteEntity;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity;
+import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 
 import javax.persistence.EntityManager;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -30,6 +35,49 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
+    public RealmModel getRealm() {
+        return session.realms().getRealm(entity.getRealmId());
+    }
+
+    @Override
+    public void setNote(String name, String value) {
+        for (ClientSessionNoteEntity attr : entity.getNotes()) {
+            if (attr.getName().equals(name)) {
+                attr.setValue(value);
+                return;
+            }
+        }
+        ClientSessionNoteEntity attr = new ClientSessionNoteEntity();
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setClientSession(entity);
+        em.persist(attr);
+        entity.getNotes().add(attr);
+    }
+
+    @Override
+    public void removeNote(String name) {
+        Iterator<ClientSessionNoteEntity> it = entity.getNotes().iterator();
+        while (it.hasNext()) {
+            ClientSessionNoteEntity attr = it.next();
+            if (attr.getName().equals(name)) {
+                it.remove();
+                em.remove(attr);
+            }
+        }
+    }
+
+    @Override
+    public String getNote(String name) {
+        for (ClientSessionNoteEntity attr : entity.getNotes()) {
+            if (attr.getName().equals(name)) {
+                return attr.getValue();
+            }
+        }
+        return null;
+    }
+
+    @Override
     public String getId() {
         return entity.getId();
     }
@@ -40,12 +88,47 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public String getState() {
-        return entity.getState();
+    public void setUserSession(UserSessionModel userSession) {
+        UserSessionAdapter adapter = (UserSessionAdapter)userSession;
+        UserSessionEntity userSessionEntity = adapter.getEntity();
+        entity.setSession(userSessionEntity);
+        userSessionEntity.getClientSessions().add(entity);
+    }
+
+    @Override
+    public void setRedirectUri(String uri) {
+       entity.setRedirectUri(uri);
+    }
+
+    @Override
+    public void setRoles(Set<String> roles) {
+        if (roles != null) {
+            List<ClientSessionRoleEntity> roleEntities = new LinkedList<ClientSessionRoleEntity>();
+            for (String r : roles) {
+                ClientSessionRoleEntity roleEntity = new ClientSessionRoleEntity();
+                roleEntity.setClientSession(entity);
+                roleEntity.setRoleId(r);
+                em.persist(roleEntity);
+
+                roleEntities.add(roleEntity);
+            }
+            entity.setRoles(roleEntities);
+        }
+    }
+
+    @Override
+    public String getAuthMethod() {
+        return entity.getAuthMethod();
+    }
+
+    @Override
+    public void setAuthMethod(String method) {
+        entity.setAuthMethod(method);
     }
 
     @Override
     public UserSessionModel getUserSession() {
+        if (entity.getSession() == null) return null;
         return new UserSessionAdapter(session, em, realm, entity.getSession());
     }
 

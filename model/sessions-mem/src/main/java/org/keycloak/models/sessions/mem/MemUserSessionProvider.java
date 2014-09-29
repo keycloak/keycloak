@@ -42,20 +42,12 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public ClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, String redirectUri, String state, Set<String> roles) {
-        UserSessionEntity userSessionEntity = getUserSessionEntity(realm, userSession.getId());
-
+    public ClientSessionModel createClientSession(RealmModel realm, ClientModel client) {
         ClientSessionEntity entity = new ClientSessionEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setTimestamp(Time.currentTime());
         entity.setClientId(client.getId());
-        entity.setSession(userSessionEntity);
-        entity.setRedirectUri(redirectUri);
-        entity.setState(state);
-        entity.setRoles(roles);
-
-        userSessionEntity.addClientSession(entity);
-
+        entity.setRealmId(realm.getId());
         clientSessions.put(entity.getId(), entity);
         return new ClientSessionAdapter(session, this, realm, entity);
     }
@@ -64,6 +56,16 @@ public class MemUserSessionProvider implements UserSessionProvider {
     public ClientSessionModel getClientSession(RealmModel realm, String id) {
         ClientSessionEntity entity = clientSessions.get(id);
         return entity != null ? new ClientSessionAdapter(session, this, realm, entity) : null;
+    }
+
+    @Override
+    public ClientSessionModel getClientSession(String id) {
+        ClientSessionEntity entity = clientSessions.get(id);
+        if (entity != null) {
+            RealmModel realm = session.realms().getRealm(entity.getRealmId());
+            return  new ClientSessionAdapter(session, this, realm, entity);
+        }
+        return null;
     }
 
     @Override
@@ -118,7 +120,9 @@ public class MemUserSessionProvider implements UserSessionProvider {
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
         List<UserSessionEntity> userSessionEntities = new LinkedList<UserSessionEntity>();
         for (ClientSessionEntity s : clientSessions.values()) {
-            if (s.getSession().getRealm().equals(realm.getId()) && s.getClientId().equals(client.getId())) {
+            String realmId = realm.getId();
+            String clientId = client.getId();
+            if (s.getSession().getRealm().equals(realmId) && s.getClientId().equals(clientId)) {
                 if (!userSessionEntities.contains(s.getSession())) {
                     userSessionEntities.add(s.getSession());
                 }
@@ -188,6 +192,13 @@ public class MemUserSessionProvider implements UserSessionProvider {
                 }
             }
         }
+        Iterator<ClientSessionEntity> citr = clientSessions.values().iterator();
+        while (citr.hasNext()) {
+            ClientSessionEntity c = citr.next();
+            if (c.getSession() == null && c.getTimestamp() < Time.currentTime() - realm.getSsoSessionIdleTimeout()) {
+                citr.remove();
+            }
+        }
     }
 
     @Override
@@ -201,6 +212,13 @@ public class MemUserSessionProvider implements UserSessionProvider {
                 for (ClientSessionEntity clientSession : s.getClientSessions()) {
                     clientSessions.remove(clientSession.getId());
                 }
+            }
+        }
+        Iterator<ClientSessionEntity> citr = clientSessions.values().iterator();
+        while (citr.hasNext()) {
+            ClientSessionEntity c = citr.next();
+            if (c.getSession() == null && c.getRealmId().equals(realm.getId())) {
+                citr.remove();
             }
         }
     }

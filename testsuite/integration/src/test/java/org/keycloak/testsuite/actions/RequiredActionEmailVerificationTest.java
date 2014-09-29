@@ -88,6 +88,7 @@ public class RequiredActionEmailVerificationTest {
 
     @Before
     public void before() {
+        oauth.state("mystate"); // have to set this as keycloak validates that state is sent
         keycloakRule.configure(new KeycloakSetup() {
 
             @Override
@@ -115,7 +116,8 @@ public class RequiredActionEmailVerificationTest {
         String body = (String) message.getContent();
         String verificationUrl = MailUtil.getLink(body);
 
-        Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost").assertEvent();
+        AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
+        Event sendEvent = emailEvent.assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);

@@ -1,10 +1,13 @@
 package org.keycloak.models.sessions.mongo.entities;
 
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.entities.AbstractIdentifiableEntity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,7 +32,7 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
 
     private int lastSessionRefresh;
 
-    private List<MongoClientSessionEntity> clientSessions;
+    private List<String> clientSessions = new ArrayList<String>();
 
     public String getRealmId() {
         return realmId;
@@ -95,16 +98,20 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
-    public List<MongoClientSessionEntity> getClientSessions() {
+    public List<String> getClientSessions() {
         return clientSessions;
     }
 
-    public void setClientSessions(List<MongoClientSessionEntity> clientSessions) {
+    public void setClientSessions(List<String> clientSessions) {
         this.clientSessions = clientSessions;
     }
 
     @Override
     public void afterRemove(MongoStoreInvocationContext context) {
+        DBObject query = new QueryBuilder()
+                .and("sessionId").is(getId())
+                .get();
+        context.getMongoStore().removeEntities(MongoClientSessionEntity.class, query, context);
     }
 
 }

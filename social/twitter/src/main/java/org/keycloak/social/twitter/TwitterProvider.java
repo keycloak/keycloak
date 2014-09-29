@@ -21,6 +21,7 @@
  */
 package org.keycloak.social.twitter;
 
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.SocialAccessDeniedException;
@@ -45,7 +46,7 @@ public class TwitterProvider implements SocialProvider {
     }
 
     @Override
-    public AuthRequest getAuthUrl(SocialProviderConfig config, String state) throws SocialProviderException {
+    public AuthRequest getAuthUrl(ClientSessionModel clientSession, SocialProviderConfig config, String state) throws SocialProviderException {
         try {
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(config.getKey(), config.getSecret());
@@ -53,8 +54,9 @@ public class TwitterProvider implements SocialProvider {
             URI uri = new URI(config.getCallbackUrl() + "?state=" + state);
 
             RequestToken requestToken = twitter.getOAuthRequestToken(uri.toString());
+            clientSession.setNote("twitter_token", requestToken.getToken());
+            clientSession.setNote("twitter_tokenSecret", requestToken.getTokenSecret());
             return AuthRequest.create(requestToken.getAuthenticationURL())
-                    .setAttribute("token", requestToken.getToken()).setAttribute("tokenSecret", requestToken.getTokenSecret())
                     .build();
         } catch (Exception e) {
             throw new SocialProviderException(e);
@@ -67,7 +69,7 @@ public class TwitterProvider implements SocialProvider {
     }
 
     @Override
-    public SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
+    public SocialUser processCallback(ClientSessionModel clientSession, SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
         if (callback.getQueryParam("denied") != null) {
             throw new SocialAccessDeniedException();
         }
@@ -78,8 +80,10 @@ public class TwitterProvider implements SocialProvider {
 
             String token = callback.getQueryParam("oauth_token");
             String verifier = callback.getQueryParam("oauth_verifier");
+            String twitterToken = clientSession.getNote("twitter_token");
+            String twitterSecret = clientSession.getNote("twitter_tokenSecret");
 
-            RequestToken requestToken = new RequestToken((String)callback.getAttribute("token"), (String)callback.getAttribute("tokenSecret"));
+            RequestToken requestToken = new RequestToken(twitterToken, twitterSecret);
 
             twitter.getOAuthAccessToken(requestToken, verifier);
             twitter4j.User twitterUser = twitter.verifyCredentials();

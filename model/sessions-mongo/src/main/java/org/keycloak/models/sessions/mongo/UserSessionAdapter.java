@@ -135,8 +135,10 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
             return sessions;
         }
 
-        for (MongoClientSessionEntity e : entity.getClientSessions()) {
-            sessions.add(new ClientSessionAdapter(keycloakSession, provider, realm, e, entity, invocationContext));
+        for (String id : entity.getClientSessions()) {
+            ClientSessionModel clientSession = provider.getClientSession(realm, id);
+            if (clientSession == null) continue;
+            sessions.add(clientSession);
         }
         return sessions;
     }

@@ -135,7 +135,8 @@ public class AccessTokenTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, "invalid");
         Assert.assertEquals(400, response.getStatusCode());
 
-        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).assertEvent();
+        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID);
+        expectedEvent.assertEvent();
     }
 
     @Test

@@ -75,7 +75,7 @@ public class OAuthClient {
 
     private String redirectUri = "http://localhost:8081/app/auth";
 
-    private String state;
+    private String state = "mystate";
 
     private PublicKey realmPublicKey;
 

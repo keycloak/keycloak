@@ -36,13 +36,14 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.managers.AccessCode;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.representations.PasswordToken;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.protocol.OpenIdConnectProtocol;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
@@ -462,26 +463,46 @@ public class TokenService {
     /**
      * URL called after login page.  YOU SHOULD NEVER INVOKE THIS DIRECTLY!
      *
-     * @param clientId
-     * @param scopeParam
-     * @param state
-     * @param redirect
+     * @param code
      * @param formData
      * @return
      */
     @Path("auth/request/login")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processLogin(@QueryParam("client_id") final String clientId, @QueryParam("scope") final String scopeParam,
-                                 @QueryParam("state") final String state, @QueryParam("redirect_uri") String redirect,
+    public Response processLogin(@QueryParam("code") String code,
                                  final MultivaluedMap<String, String> formData) {
+        event.event(EventType.LOGIN);
+        if (!checkSsl()) {
+            event.error(Errors.SSL_REQUIRED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+        }
+
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
+        }
+        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
+        if (clientCode == null) {
+            event.error(Errors.INVALID_CODE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
+        }
+        ClientSessionModel clientSession = clientCode.getClientSession();
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
+            clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
+            event.client(clientSession.getClient()).error(Errors.INVALID_USER_CREDENTIALS);
+            return Flows.forms(this.session, realm, clientSession.getClient(), uriInfo).setError(Messages.INVALID_USER)
+                    .setAccessCode(clientCode.getCode())
+                    .createLogin();
+        }
+
         String username = formData.getFirst(AuthenticationManager.FORM_USERNAME);
 
         String rememberMe = formData.getFirst("rememberMe");
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
 
-        event.event(EventType.LOGIN).client(clientId)
-                .detail(Details.REDIRECT_URI, redirect)
+        event.client(clientSession.getClient().getClientId())
+                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "form")
                 .detail(Details.USERNAME, username);
@@ -492,33 +513,19 @@ public class TokenService {
 
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
-        if (!checkSsl()) {
-            return oauth.forwardToSecurityFailure("HTTPS required");
-        }
-
-        if (!realm.isEnabled()) {
-            event.error(Errors.REALM_DISABLED);
-            return oauth.forwardToSecurityFailure("Realm not enabled.");
-        }
-        ClientModel client = realm.findClient(clientId);
+        ClientModel client = clientSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
         }
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
-        }
-
-        redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
-        if (redirect == null) {
-            event.error(Errors.INVALID_REDIRECT_URI);
-            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
         }
 
         if (formData.containsKey("cancel")) {
             event.error(Errors.REJECTED_BY_USER);
-            return oauth.redirectError(client, "access_denied", state, redirect);
+            return oauth.redirectError(client, "access_denied", clientSession.getNote(OpenIdConnectProtocol.STATE_PARAM), clientSession.getRedirectUri());
         }
 
         AuthenticationStatus status = authManager.authenticateForm(session, clientConnection, realm, formData);
@@ -538,28 +545,45 @@ public class TokenService {
             case SUCCESS:
             case ACTIONS_REQUIRED:
                 UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", remember);
+                TokenManager.attachClientSession(userSession, clientSession);
 		        event.session(userSession);
 
-                return oauth.processAccessCode(scopeParam, state, redirect, client, user, userSession, event);
+                return oauth.processAccessCode(clientSession, userSession, event);
             case ACCOUNT_TEMPORARILY_DISABLED:
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
-                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).setFormData(formData).createLogin();
+                return Flows.forms(this.session, realm, client, uriInfo)
+                        .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED)
+                        .setFormData(formData)
+                        .setAccessCode(clientCode.getCode())
+                        .createLogin();
             case ACCOUNT_DISABLED:
                 event.error(Errors.USER_DISABLED);
-                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
+                return Flows.forms(this.session, realm, client, uriInfo)
+                        .setError(Messages.ACCOUNT_DISABLED)
+                        .setAccessCode(clientCode.getCode())
+                        .setFormData(formData).createLogin();
             case MISSING_TOTP:
                 formData.remove(CredentialRepresentation.PASSWORD);
 
                 String passwordToken = new JWSBuilder().jsonContent(new PasswordToken(realm.getName(), user.getId())).rsa256(realm.getPrivateKey());
                 formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
 
-                return Flows.forms(this.session, realm, client, uriInfo).setFormData(formData).createLoginTotp();
+                return Flows.forms(this.session, realm, client, uriInfo)
+                        .setFormData(formData)
+                        .setAccessCode(clientCode.getCode())
+                        .createLoginTotp();
             case INVALID_USER:
                 event.error(Errors.USER_NOT_FOUND);
-                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
+                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER)
+                        .setFormData(formData)
+                        .setAccessCode(clientCode.getCode())
+                        .createLogin();
             default:
                 event.error(Errors.INVALID_USER_CREDENTIALS);
-                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
+                return Flows.forms(this.session, realm, client, uriInfo).setError(Messages.INVALID_USER)
+                        .setFormData(formData)
+                        .setAccessCode(clientCode.getCode())
+                        .createLogin();
         }
     }
 
@@ -575,25 +599,44 @@ public class TokenService {
     /**
      * Registration
      *
-     * @param clientId
-     * @param scopeParam
-     * @param state
-     * @param redirect
+     * @param code
      * @param formData
      * @return
      */
     @Path("registrations")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRegister(@QueryParam("client_id") final String clientId,
-                                    @QueryParam("scope") final String scopeParam, @QueryParam("state") final String state,
-                                    @QueryParam("redirect_uri") String redirect, final MultivaluedMap<String, String> formData) {
+    public Response processRegister(@QueryParam("code") String code,
+                                    final MultivaluedMap<String, String> formData) {
+        event.event(EventType.REGISTER);
+        if (!checkSsl()) {
+            event.error(Errors.SSL_REQUIRED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+        }
+
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled.");
+        }
+        if (!realm.isRegistrationAllowed()) {
+            event.error(Errors.REGISTRATION_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Registration not allowed");
+        }
+        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
+        if (clientCode == null) {
+            event.error(Errors.INVALID_CODE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
+        }
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
+            event.error(Errors.INVALID_CODE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
+        }
 
         String username = formData.getFirst("username");
         String email = formData.getFirst("email");
-
-        event.event(EventType.REGISTER).client(clientId)
-                .detail(Details.REDIRECT_URI, redirect)
+        ClientSessionModel clientSession = clientCode.getClientSession();
+        event.client(clientSession.getClient())
+                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
@@ -603,29 +646,19 @@ public class TokenService {
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            return oauth.forwardToSecurityFailure("Realm not enabled");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled");
         }
-        ClientModel client = realm.findClient(clientId);
+        ClientModel client = clientSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
         }
 
-        redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
-        if (redirect == null) {
-            event.error(Errors.INVALID_REDIRECT_URI);
-            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
-        }
-
-        if (!realm.isRegistrationAllowed()) {
-            event.error(Errors.REGISTRATION_DISABLED);
-            return oauth.forwardToSecurityFailure("Registration not allowed");
-        }
 
         List<String> requiredCredentialTypes = new LinkedList<String>();
         for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
@@ -640,19 +673,31 @@ public class TokenService {
 
         if (error != null) {
             event.error(Errors.INVALID_REGISTRATION);
-            return Flows.forms(session, realm, client, uriInfo).setError(error).setFormData(formData).createRegistration();
+            return Flows.forms(session, realm, client, uriInfo)
+                    .setError(error)
+                    .setFormData(formData)
+                    .setAccessCode(clientCode.getCode())
+                    .createRegistration();
         }
 
         // Validate that user with this username doesn't exist in realm or any federation provider
         if (session.users().getUserByUsername(username, realm) != null) {
             event.error(Errors.USERNAME_IN_USE);
-            return Flows.forms(session, realm, client, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
+            return Flows.forms(session, realm, client, uriInfo)
+                    .setError(Messages.USERNAME_EXISTS)
+                    .setFormData(formData)
+                    .setAccessCode(clientCode.getCode())
+                    .createRegistration();
         }
 
         // Validate that user with this email doesn't exist in realm or any federation provider
         if (session.users().getUserByEmail(email, realm) != null) {
             event.error(Errors.EMAIL_IN_USE);
-            return Flows.forms(session, realm, client, uriInfo).setError(Messages.EMAIL_EXISTS).setFormData(formData).createRegistration();
+            return Flows.forms(session, realm, client, uriInfo)
+                    .setError(Messages.EMAIL_EXISTS)
+                    .setFormData(formData)
+                    .setAccessCode(clientCode.getCode())
+                    .createRegistration();
         }
 
         UserModel user = session.users().addUser(realm, username);
@@ -680,14 +725,17 @@ public class TokenService {
             // User already registered, but force him to update password
             if (!passwordUpdateSuccessful) {
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                return Flows.forms(session, realm, client, uriInfo).setError(passwordUpdateError).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+                return Flows.forms(session, realm, client, uriInfo)
+                        .setError(passwordUpdateError)
+                        .setAccessCode(clientCode.getCode())
+                        .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
         }
 
         event.user(user).success();
         event.reset();
 
-        return processLogin(clientId, scopeParam, state, redirect, formData);
+        return processLogin(code, formData);
     }
 
     /**
@@ -737,8 +785,7 @@ public class TokenService {
             event.error(Errors.INVALID_CODE);
             throw new BadRequestException("Code not specified", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
-
-        AccessCode accessCode = AccessCode.parse(code, session, realm);
+        ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
         if (accessCode == null) {
             String[] parts = code.split("\\.");
             if (parts.length == 2) {
@@ -754,7 +801,8 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
-        event.detail(Details.CODE_ID, accessCode.getCodeId());
+        ClientSessionModel clientSession = accessCode.getClientSession();
+        event.detail(Details.CODE_ID, clientSession.getId());
         if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN)) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
@@ -765,13 +813,13 @@ public class TokenService {
         }
 
         accessCode.setAction(null);
-
-        event.user(accessCode.getUser());
-        event.session(accessCode.getSessionState());
+        UserSessionModel userSession = clientSession.getUserSession();
+        event.user(userSession.getUser());
+        event.session(userSession.getId());
 
         ClientModel client = authorizeClient(authorizationHeader, formData, event);
 
-        if (!client.getClientId().equals(accessCode.getClient().getClientId())) {
+        if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Auth error");
@@ -780,7 +828,7 @@ public class TokenService {
                     .build();
         }
 
-        UserModel user = session.users().getUserById(accessCode.getUser().getId(), realm);
+        UserModel user = session.users().getUserById(userSession.getUser().getId(), realm);
         if (user == null) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
@@ -799,7 +847,6 @@ public class TokenService {
                     .build();
         }
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, accessCode.getSessionState());
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
             AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
             Map<String, String> res = new HashMap<String, String>();
@@ -893,11 +940,106 @@ public class TokenService {
     }
 
     /**
+     * checks input and initializes variables based on a front page action like the login page or registration page
+     *
+     */
+    private class FrontPageInitializer {
+        protected String code;
+        protected String clientId;
+        protected String redirect;
+        protected String state;
+        protected String scopeParam;
+        protected String responseType;
+        protected String loginHint;
+        protected String prompt;
+        protected ClientSessionModel clientSession;
+
+        public Response processInput() {
+            if (code != null) {
+                event.detail(Details.CODE_ID, code);
+            } else {
+                event.client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
+            }
+            if (!checkSsl()) {
+                event.error(Errors.SSL_REQUIRED);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+            }
+            if (!realm.isEnabled()) {
+                event.error(Errors.REALM_DISABLED);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled");
+            }
+
+            clientSession = null;
+            if (code != null) {
+                ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
+                if (clientCode == null) {
+                    event.error(Errors.INVALID_CODE);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
+                }
+                if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
+                    event.error(Errors.INVALID_CODE);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
+                }
+                clientSession = clientCode.getClientSession();
+                if (!clientSession.getAuthMethod().equals(OpenIdConnectProtocol.LOGIN_PAGE_PROTOCOL)) {
+                    event.error(Errors.INVALID_CODE);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid protocol, please login again through your application.");
+                }
+                state = clientSession.getNote(OpenIdConnectProtocol.STATE_PARAM);
+                scopeParam = clientSession.getNote(OpenIdConnectProtocol.SCOPE_PARAM);
+                responseType = clientSession.getNote(OpenIdConnectProtocol.RESPONSE_TYPE_PARAM);
+                loginHint = clientSession.getNote(OpenIdConnectProtocol.LOGIN_HINT_PARAM);
+                prompt = clientSession.getNote(OpenIdConnectProtocol.PROMPT_PARAM);
+            } else {
+                if (state == null) {
+                    event.error(Errors.STATE_PARAM_NOT_FOUND);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid state param.");
+
+                }
+                ClientModel client = realm.findClient(clientId);
+                if (client == null) {
+                    event.error(Errors.CLIENT_NOT_FOUND);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
+                }
+
+                if (!client.isEnabled()) {
+                    event.error(Errors.CLIENT_DISABLED);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
+                }
+                if ((client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
+                    event.error(Errors.NOT_ALLOWED);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Bearer-only applications are not allowed to initiate browser login");
+                }
+                if (client.isDirectGrantsOnly()) {
+                    event.error(Errors.NOT_ALLOWED);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
+                }
+                redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
+                if (redirect == null) {
+                    event.error(Errors.INVALID_REDIRECT_URI);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
+                }
+                clientSession = session.sessions().createClientSession(realm, client);
+                clientSession.setAuthMethod(OpenIdConnectProtocol.LOGIN_PAGE_PROTOCOL);
+                clientSession.setRedirectUri(redirect);
+                clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+                clientSession.setNote(OpenIdConnectProtocol.STATE_PARAM, state);
+                if (scopeParam != null) clientSession.setNote(OpenIdConnectProtocol.SCOPE_PARAM, scopeParam);
+                if (responseType != null) clientSession.setNote(OpenIdConnectProtocol.RESPONSE_TYPE_PARAM, responseType);
+                if (loginHint != null) clientSession.setNote(OpenIdConnectProtocol.LOGIN_HINT_PARAM, loginHint);
+                if (prompt != null) clientSession.setNote(OpenIdConnectProtocol.PROMPT_PARAM, prompt);
+            }
+            return null;
+        }
+    }
+
+    /**
      * Login page.  Must be redirected to from the application or oauth client.
      *
      * @See <a href="http://tools.ietf.org/html/rfc6749#section-4.1">http://tools.ietf.org/html/rfc6749#section-4.1</a>
      *
      *
+     * @param code
      * @param responseType
      * @param redirect
      * @param clientId
@@ -908,60 +1050,54 @@ public class TokenService {
      */
     @Path("login")
     @GET
-    public Response loginPage(final @QueryParam("response_type") String responseType,
-                              @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
-                              final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt,
-                              final @QueryParam("login_hint") String loginHint) {
-        event.event(EventType.LOGIN).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
+    public Response loginPage(@QueryParam("code") String code,
+                              @QueryParam(OpenIdConnectProtocol.RESPONSE_TYPE_PARAM) String responseType,
+                              @QueryParam(OpenIdConnectProtocol.REDIRECT_URI_PARAM) String redirect,
+                              @QueryParam(OpenIdConnectProtocol.CLIENT_ID_PARAM) String clientId,
+                              @QueryParam(OpenIdConnectProtocol.SCOPE_PARAM) String scopeParam,
+                              @QueryParam(OpenIdConnectProtocol.STATE_PARAM) String state,
+                              @QueryParam(OpenIdConnectProtocol.PROMPT_PARAM) String prompt,
+                              @QueryParam(OpenIdConnectProtocol.LOGIN_HINT_PARAM) String loginHint) {
+        event.event(EventType.LOGIN);
+        FrontPageInitializer pageInitializer = new FrontPageInitializer();
+        pageInitializer.code = code;
+        pageInitializer.responseType = responseType;
+        pageInitializer.redirect = redirect;
+        pageInitializer.clientId = clientId;
+        pageInitializer.scopeParam = scopeParam;
+        pageInitializer.state = state;
+        pageInitializer.prompt = prompt;
+        pageInitializer.loginHint = loginHint;
+        Response response = pageInitializer.processInput();
+        if (response != null) return response;
+        ClientSessionModel clientSession = pageInitializer.clientSession;
+        code = pageInitializer.code;
+        responseType = pageInitializer.responseType;
+        redirect = pageInitializer.redirect;
+        clientId = pageInitializer.clientId ;
+        scopeParam = pageInitializer.scopeParam;
+        state = pageInitializer.state;
+        prompt = pageInitializer.prompt;
+        loginHint = pageInitializer.loginHint;
+
 
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
-
-        if (!checkSsl()) {
-            return oauth.forwardToSecurityFailure("HTTPS required");
-        }
-
-        if (!realm.isEnabled()) {
-            event.error(Errors.REALM_DISABLED);
-            return oauth.forwardToSecurityFailure("Realm not enabled");
-        }
-        ClientModel client = realm.findClient(clientId);
-        if (client == null) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
-        }
-
-        if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_DISABLED);
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
-        }
-        if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
-            event.error(Errors.NOT_ALLOWED);
-            return oauth.forwardToSecurityFailure("Bearer-only applications are not allowed to initiate browser login");
-        }
-        if (client.isDirectGrantsOnly()) {
-            event.error(Errors.NOT_ALLOWED);
-            return oauth.forwardToSecurityFailure("direct-grants-only clients are not allowed to initiate browser login");
-        }
-        redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
-        if (redirect == null) {
-            event.error(Errors.INVALID_REDIRECT_URI);
-            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
-        }
 
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {
             UserModel user = authResult.getUser();
             UserSessionModel session = authResult.getSession();
-
+            TokenManager.attachClientSession(session, clientSession);
             event.user(user).session(session).detail(Details.AUTH_METHOD, "sso");
-            return oauth.processAccessCode(scopeParam, state, redirect, client, user, session, event);
+            return oauth.processAccessCode(clientSession, session, event);
         }
 
         if (prompt != null && prompt.equals("none")) {
-            return oauth.redirectError(client, "access_denied", state, redirect);
+            return oauth.redirectError(clientSession.getClient(), "access_denied", state, redirect);
         }
 
-        LoginFormsProvider forms = Flows.forms(session, realm, client, uriInfo);
+        LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
+                .setAccessCode(new ClientSessionCode(realm, clientSession).getCode());
 
         String rememberMeUsername = null;
         if (realm.isRememberMe()) {
@@ -999,46 +1135,35 @@ public class TokenService {
      */
     @Path("registrations")
     @GET
-    public Response registerPage(final @QueryParam("response_type") String responseType,
-                                 @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
-                                 final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
-        event.event(EventType.REGISTER).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
-
-        OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
-
-        if (!checkSsl()) {
-            return oauth.forwardToSecurityFailure("HTTPS required");
-        }
-
-        if (!realm.isEnabled()) {
-            event.error(Errors.REALM_DISABLED);
-            return oauth.forwardToSecurityFailure("Realm not enabled");
-        }
-        ClientModel client = realm.findClient(clientId);
-        if (client == null) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
-        }
-
-        if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_DISABLED);
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
-        }
-
-        redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
-        if (redirect == null) {
-            event.error(Errors.INVALID_REDIRECT_URI);
-            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
-        }
-
+    public Response registerPage(@QueryParam("code") String code,
+                                 @QueryParam("response_type") String responseType,
+                                 @QueryParam(OpenIdConnectProtocol.REDIRECT_URI_PARAM) String redirect,
+                                 @QueryParam(OpenIdConnectProtocol.CLIENT_ID_PARAM) String clientId,
+                                 @QueryParam("scope") String scopeParam,
+                                 @QueryParam("state") String state) {
+        event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
-            return oauth.forwardToSecurityFailure("Registration not allowed");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Registration not allowed");
         }
+
+        FrontPageInitializer pageInitializer = new FrontPageInitializer();
+        pageInitializer.code = code;
+        pageInitializer.responseType = responseType;
+        pageInitializer.redirect = redirect;
+        pageInitializer.clientId = clientId;
+        pageInitializer.scopeParam = scopeParam;
+        pageInitializer.state = state;
+        Response response = pageInitializer.processInput();
+        if (response != null) return response;
+        ClientSessionModel clientSession = pageInitializer.clientSession;
+
 
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return Flows.forms(session, realm, client, uriInfo).createRegistration();
+        return Flows.forms(session, realm, clientSession.getClient(), uriInfo)
+                .setAccessCode(new ClientSessionCode(realm, clientSession).getCode())
+                .createRegistration();
     }
 
     /**
@@ -1050,7 +1175,7 @@ public class TokenService {
     @Path("logout")
     @GET
     @NoCache
-    public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
+    public Response logout(final @QueryParam(OpenIdConnectProtocol.REDIRECT_URI_PARAM) String redirectUri) {
         event.event(EventType.LOGOUT);
         if (redirectUri != null) {
             event.detail(Details.REDIRECT_URI, redirectUri);
@@ -1065,7 +1190,7 @@ public class TokenService {
             String validatedRedirect = verifyRealmRedirectUri(uriInfo, redirectUri, realm);
             if (validatedRedirect == null) {
                 OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
-                return oauth.forwardToSecurityFailure("Invalid redirect uri.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect uri.");
             }
             return Response.status(302).location(UriBuilder.fromUri(validatedRedirect).build()).build();
         } else {
@@ -1145,27 +1270,27 @@ public class TokenService {
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
 
         if (!checkSsl()) {
-            return oauth.forwardToSecurityFailure("HTTPS required");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
         }
 
         String code = formData.getFirst(OAuth2Constants.CODE);
 
-        AccessCode accessCode = AccessCode.parse(code, session, realm);
+        ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
         if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT)) {
             event.error(Errors.INVALID_CODE);
-            return oauth.forwardToSecurityFailure("Invalid access code.");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid access code.");
         }
-        event.detail(Details.CODE_ID, accessCode.getCodeId());
+        ClientSessionModel clientSession = accessCode.getClientSession();
+        event.detail(Details.CODE_ID, clientSession.getId());
 
-        String redirect = accessCode.getRedirectUri();
-        String state = accessCode.getState();
+        String redirect = clientSession.getRedirectUri();
 
-        event.client(accessCode.getClient())
-                .user(accessCode.getUser())
+        event.client(clientSession.getClient())
+                .user(clientSession.getUserSession().getUser())
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.REDIRECT_URI, redirect);
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, accessCode.getSessionState());
+        UserSessionModel userSession = clientSession.getUserSession();
         if (userSession != null) {
             event.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
             event.detail(Details.USERNAME, userSession.getLoginUsername());
@@ -1177,19 +1302,19 @@ public class TokenService {
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
             AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
             event.error(Errors.INVALID_CODE);
-            return oauth.forwardToSecurityFailure("Session not active");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Session not active");
         }
         event.session(userSession);
 
         if (formData.containsKey("cancel")) {
             event.error(Errors.REJECTED_BY_USER);
-            return redirectAccessDenied(redirect, state);
+            return redirectAccessDenied(redirect, clientSession.getNote(OpenIdConnectProtocol.STATE_PARAM));
         }
 
         event.success();
 
         accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
-        return oauth.redirectAccessCode(accessCode, userSession, state, redirect);
+        return oauth.redirectAccessCode(accessCode, userSession, clientSession.getNote(OpenIdConnectProtocol.STATE_PARAM), redirect);
     }
 
     @Path("oauth/oob")

@@ -53,16 +53,6 @@ public class TokenManager {
         }
     }
 
-    public AccessCode createAccessCode(String scopeParam, String state, String redirect, KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession) {
-        Set<String> requestedRoles = new HashSet<String>();
-        for (RoleModel r : getAccess(scopeParam, client, user)) {
-            requestedRoles.add(r.getId());
-        }
-
-        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client, userSession, redirect, state, requestedRoles);
-        return new AccessCode(realm, clientSession);
-    }
-
     public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, EventBuilder event) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(realm, encodedRefreshToken);
 
@@ -132,7 +122,21 @@ public class TokenManager {
         return token;
     }
 
-    public Set<RoleModel> getAccess(String scopeParam, ClientModel client, UserModel user) {
+    public static void attachClientSession(UserSessionModel session, ClientSessionModel clientSession) {
+        UserModel user = session.getUser();
+        clientSession.setUserSession(session);
+        Set<String> requestedRoles = new HashSet<String>();
+        // todo scope param protocol independent
+        for (RoleModel r : TokenManager.getAccess(null, clientSession.getClient(), user)) {
+            requestedRoles.add(r.getId());
+        }
+        clientSession.setRoles(requestedRoles);
+
+
+    }
+
+
+    public static Set<RoleModel> getAccess(String scopeParam, ClientModel client, UserModel user) {
         // todo scopeParam is ignored until we figure out a scheme that fits with openid connect
         Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
 

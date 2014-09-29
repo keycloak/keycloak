@@ -9,6 +9,7 @@ import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -31,10 +32,12 @@ import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AccessCode;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.managers.UserManager;
+import org.keycloak.services.protocol.OpenIdConnectProtocol;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 
@@ -58,6 +61,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -884,8 +888,6 @@ public class UsersResource {
 
         String redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
         String clientId = Constants.ACCOUNT_MANAGEMENT_APP;
-        String state = null;
-        String scope = null;
 
         ClientModel client = realm.findClient(clientId);
         if (client == null || !client.isEnabled()) {
@@ -894,13 +896,20 @@ public class UsersResource {
 
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
         //audit.session(userSession);
+        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
+        clientSession.setAuthMethod(OpenIdConnectProtocol.LOGIN_PAGE_PROTOCOL);
+        clientSession.setRedirectUri(redirect);
+        clientSession.setUserSession(userSession);
+        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
 
-        AccessCode accessCode = tokenManager.createAccessCode(null, state, redirect, session, realm, client, user, userSession);
         accessCode.setRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         try {
             UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
-            builder.queryParam("key", accessCode.getCode());
+            builder.queryParam("code", accessCode.getCode());
+            String key = UUID.randomUUID().toString();
+            clientSession.setNote("key", key);
+            builder.queryParam("key", key);
 
             String link = builder.build(realm.getName()).toString();
             long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());

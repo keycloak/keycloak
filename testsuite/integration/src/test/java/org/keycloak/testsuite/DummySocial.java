@@ -1,6 +1,7 @@
 package org.keycloak.testsuite;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.SocialAccessDeniedException;
@@ -19,7 +20,7 @@ public class DummySocial implements SocialProvider {
     }
 
     @Override
-    public AuthRequest getAuthUrl(SocialProviderConfig config, String state) throws SocialProviderException {
+    public AuthRequest getAuthUrl(ClientSessionModel clientSession, SocialProviderConfig config, String state) throws SocialProviderException {
         return AuthRequest.create(AUTH_PATH)
                 .setQueryParam(OAuth2Constants.RESPONSE_TYPE, "token")
                 .setQueryParam(OAuth2Constants.REDIRECT_URI, config.getCallbackUrl())
@@ -32,7 +33,7 @@ public class DummySocial implements SocialProvider {
     }
 
     @Override
-    public SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
+    public SocialUser processCallback(ClientSessionModel clientSession, SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
         String error = callback.getQueryParam(OAuth2Constants.ERROR);
         if (error != null) {
             throw new SocialAccessDeniedException();

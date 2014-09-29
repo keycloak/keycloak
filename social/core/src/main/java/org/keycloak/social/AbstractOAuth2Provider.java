@@ -2,6 +2,7 @@ package org.keycloak.social;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.social.utils.SimpleHttp;
 
 import java.io.IOException;
@@ -43,7 +44,7 @@ public abstract class AbstractOAuth2Provider implements SocialProvider {
     protected abstract SocialUser getProfile(String accessToken) throws SocialProviderException;
 
     @Override
-    public AuthRequest getAuthUrl(SocialProviderConfig config, String state) throws SocialProviderException {
+    public AuthRequest getAuthUrl(ClientSessionModel clientSession, SocialProviderConfig config, String state) throws SocialProviderException {
         return AuthRequest.create(getAuthUrl())
                 .setQueryParam(CLIENT_ID, config.getKey())
                 .setQueryParam(RESPONSE_TYPE, CODE)
@@ -54,7 +55,7 @@ public abstract class AbstractOAuth2Provider implements SocialProvider {
     }
 
     @Override
-    public SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
+    public SocialUser processCallback(ClientSessionModel clientSession, SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
         String error = callback.getQueryParam(OAuth2Constants.ERROR);
         if (error != null) {
             if (error.equals("access_denied")) {

@@ -23,17 +23,39 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AccessCode {
+public class ClientSessionCode {
 
     private final RealmModel realm;
     private final ClientSessionModel clientSession;
 
-    public AccessCode(RealmModel realm, ClientSessionModel clientSession) {
+    public ClientSessionCode(RealmModel realm, ClientSessionModel clientSession) {
         this.realm = realm;
         this.clientSession = clientSession;
     }
 
-    public static AccessCode parse(String code, KeycloakSession session, RealmModel realm) {
+    public static ClientSessionCode parse(String code, KeycloakSession session) {
+        try {
+            String[] parts = code.split("\\.");
+            String id = new String(Base64Url.decode(parts[1]));
+
+            ClientSessionModel clientSession = session.sessions().getClientSession(id);
+            if (clientSession == null) {
+                return null;
+            }
+
+            String hash = createSignatureHash(clientSession.getRealm(), clientSession);
+            if (!hash.equals(parts[0])) {
+                return null;
+            }
+
+            return new ClientSessionCode(clientSession.getRealm(), clientSession);
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+
+    public static ClientSessionCode parse(String code, KeycloakSession session, RealmModel realm) {
         try {
             String[] parts = code.split("\\.");
             String id = new String(Base64Url.decode(parts[1]));
@@ -48,22 +70,14 @@ public class AccessCode {
                 return null;
             }
 
-            return new AccessCode(realm, clientSession);
+            return new ClientSessionCode(realm, clientSession);
         } catch (RuntimeException e) {
             return null;
         }
     }
 
-    public String getCodeId() {
-        return clientSession.getId();
-    }
-
-    public UserModel getUser() {
-        return clientSession.getUserSession().getUser();
-    }
-
-    public String getSessionState() {
-        return clientSession.getUserSession().getId();
+    public ClientSessionModel getClientSession() {
+        return clientSession;
     }
 
     public boolean isValid(RequiredAction requiredAction) {
@@ -98,22 +112,6 @@ public class AccessCode {
         return requestedRoles;
     }
 
-    public ClientModel getClient() {
-        return clientSession.getClient();
-    }
-
-    public String getState() {
-        throw new RuntimeException("REFACTORING, TODO REMOVE ACCESS CODE");
-    }
-
-    public String getRedirectUri() {
-        return clientSession.getRedirectUri();
-    }
-
-    public ClientSessionModel.Action getAction() {
-        return clientSession.getAction();
-    }
-
     public void setAction(ClientSessionModel.Action action) {
         clientSession.setAction(action);
         clientSession.setTimestamp(Time.currentTime());
@@ -139,6 +137,10 @@ public class AccessCode {
     }
 
     public String getCode() {
+        return generateCode(realm, clientSession);
+    }
+
+    private static String generateCode(RealmModel realm, ClientSessionModel clientSession) {
         String hash = createSignatureHash(realm, clientSession);
 
         StringBuilder sb = new StringBuilder();

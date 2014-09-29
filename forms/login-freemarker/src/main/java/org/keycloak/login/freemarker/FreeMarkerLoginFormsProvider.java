@@ -1,6 +1,7 @@
 package org.keycloak.login.freemarker;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
@@ -50,6 +51,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private static final Logger logger = Logger.getLogger(FreeMarkerLoginFormsProvider.class);
 
+    private String verifyCode;
     private String message;
     private String accessCode;
     private Response.Status status = Response.Status.OK;
@@ -108,7 +110,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case VERIFY_EMAIL:
                 try {
                     UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
-                    builder.queryParam("key", accessCode);
+                    builder.queryParam("code", accessCode);
+                    builder.queryParam("key", verifyCode);
 
                     String link = builder.build(realm.getName()).toString();
                     long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
@@ -134,7 +137,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     private Response createResponse(LoginFormsPages page) {
-        MultivaluedMap<String, String> queryParameterMap = queryParams != null ? queryParams : uriInfo.getQueryParameters();
+        MultivaluedMap<String, String> queryParameterMap = queryParams != null ? queryParams : new MultivaluedMapImpl<String, String>();
 
         String requestURI = uriInfo.getBaseUri().getPath();
         UriBuilder uriBuilder = UriBuilder.fromUri(requestURI);
@@ -305,6 +308,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setStatus(Response.Status status) {
         this.status = status;
+        return this;
+    }
+
+    @Override
+    public LoginFormsProvider setVerifyCode(String code) {
+        this.verifyCode = code;
         return this;
     }
 

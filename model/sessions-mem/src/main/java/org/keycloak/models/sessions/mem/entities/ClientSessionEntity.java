@@ -2,6 +2,8 @@ package org.keycloak.models.sessions.mem.entities;
 
 import org.keycloak.models.ClientSessionModel;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -11,15 +13,17 @@ public class ClientSessionEntity {
 
     private String id;
     private String clientId;
+    private String realmId;
 
     private UserSessionEntity session;
 
     private String redirectUri;
-    private String state;
+    private String authMethod;
 
     private int timestamp;
     private ClientSessionModel.Action action;
     private Set<String> roles;
+    private Map<String, String> notes = new HashMap<String, String>();
 
     public String getId() {
         return id;
@@ -37,6 +41,14 @@ public class ClientSessionEntity {
         this.clientId = clientId;
     }
 
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
+    }
+
     public UserSessionEntity getSession() {
         return session;
     }
@@ -51,14 +63,6 @@ public class ClientSessionEntity {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
     }
 
     public int getTimestamp() {
@@ -83,5 +87,17 @@ public class ClientSessionEntity {
 
     public void setRoles(Set<String> roles) {
         this.roles = roles;
+    }
+
+    public Map<String, String> getNotes() {
+        return notes;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
     }
 }

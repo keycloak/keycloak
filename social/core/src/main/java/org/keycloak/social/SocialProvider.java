@@ -22,6 +22,8 @@
 package org.keycloak.social;
 
 
+import org.keycloak.models.ClientSessionModel;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -29,10 +31,10 @@ public interface SocialProvider {
 
     String getId();
 
-    AuthRequest getAuthUrl(SocialProviderConfig config, String state) throws SocialProviderException;
+    AuthRequest getAuthUrl(ClientSessionModel clientSession, SocialProviderConfig config, String state) throws SocialProviderException;
 
     String getName();
 
-    SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException;
+    SocialUser processCallback(ClientSessionModel clientSession, SocialProviderConfig config, AuthCallback callback) throws SocialProviderException;
 
 }
