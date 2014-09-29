@@ -24,7 +24,10 @@
     },
 
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:mem}"
+        "provider": "${keycloak.user.cache.provider:mem}",
+        "mem": {
+            "maxSize": 20000
+        }
     },
 
     "timer": {
