@@ -84,7 +84,7 @@ public class UserSessionProviderTest {
         ClientSessionModel session1;
         ClientSessionModel session2;
 
-        if (clientSessions.get(0).getClient().equals(client1)) {
+        if (clientSessions.get(0).getClient().getId().equals(client1)) {
             session1 = clientSessions.get(0);
             session2 = clientSessions.get(1);
         } else {

@@ -20,11 +20,11 @@
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:infinispan}"
+        "provider": "${keycloak.realm.cache.provider:mem}"
     },
 
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:infinispan}"
+        "provider": "${keycloak.user.cache.provider:mem}"
     },
 
     "timer": {
@@ -81,12 +81,15 @@
 
     "connectionsInfinispan": {
         "default": {
-            "transport": true,
+            "transport": false,
             "caches": {
                 "sessions": {
                     "cacheMode": "local"
                 },
                 "realms": {
+                    "cacheMode": "local"
+                },
+                "users": {
                     "cacheMode": "local"
                 }
             }

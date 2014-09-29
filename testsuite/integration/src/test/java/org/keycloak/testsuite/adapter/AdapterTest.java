@@ -411,6 +411,9 @@ public class AdapterTest {
         String logoutUri = TokenService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
                 .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8081/secure-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
+
+        System.out.println(driver.getCurrentUrl());
+
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         driver.navigate().to("http://localhost:8081/secure-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));

@@ -68,13 +68,12 @@ public class AuthenticationManager {
         UserModel user = userSession.getUser();
 
         logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
-
-        session.sessions().removeUserSession(realm, userSession);
         expireIdentityCookie(realm, uriInfo, connection);
         expireRememberMeCookie(realm, uriInfo, connection);
 
         new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), userSession);
 
+        session.sessions().removeUserSession(realm, userSession);
     }
 
 
