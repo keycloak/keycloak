@@ -40,7 +40,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     private AccessTokenResponse resolveBearerToken(HttpServletRequest request, String redirectUri, String code) throws IOException, ServerRequest.HttpFailure {
-        return ServerRequest.invokeAccessCodeToToken(client, publicClient, code, getUrl(request, codeUrl), redirectUri, clientId, credentials);
+        return ServerRequest.invokeAccessCodeToToken(client, publicClient, code, getUrl(request, codeUrl, false), redirectUri, clientId, credentials);
     }
 
     /**
@@ -74,7 +74,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     public void redirect(String redirectUri, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String state = getStateCode();
 
-        KeycloakUriBuilder uriBuilder =  KeycloakUriBuilder.fromUri(getUrl(request, authUrl))
+        KeycloakUriBuilder uriBuilder =  KeycloakUriBuilder.fromUri(getUrl(request, authUrl, true))
                 .queryParam(OAuth2Constants.CLIENT_ID, clientId)
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .queryParam(OAuth2Constants.STATE, state);
@@ -146,7 +146,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     public AccessTokenResponse refreshToken(HttpServletRequest request, String refreshToken) throws IOException, ServerRequest.HttpFailure {
-        return ServerRequest.invokeRefresh(client, publicClient, refreshToken, getUrl(request, refreshUrl), clientId, credentials);
+        return ServerRequest.invokeRefresh(client, publicClient, refreshToken, getUrl(request, refreshUrl, false), clientId, credentials);
     }
 
     public static IDToken extractIdToken(String idToken) {
@@ -159,8 +159,8 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         }
     }
 
-    private String getUrl(HttpServletRequest request, String url) {
-        if (relativeUrls) {
+    private String getUrl(HttpServletRequest request, String url, boolean isBrowserRequest) {
+        if (relativeUrlsUsed.useRelative(isBrowserRequest)) {
             String baseUrl = request.getRequestURL().toString();
             baseUrl = baseUrl.substring(0, baseUrl.indexOf('/', 8));
             return baseUrl + url;

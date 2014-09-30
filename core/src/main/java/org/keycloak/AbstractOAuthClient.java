@@ -1,5 +1,6 @@
 package org.keycloak;
 
+import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import java.util.Map;
@@ -19,7 +20,7 @@ public class AbstractOAuthClient {
     protected String authUrl;
     protected String codeUrl;
     protected String refreshUrl;
-    protected boolean relativeUrls;
+    protected RelativeUrlsUsed relativeUrlsUsed;
     protected String scope;
     protected String stateCookieName = OAUTH_TOKEN_REQUEST_STATE;
     protected String stateCookiePath;
@@ -101,12 +102,12 @@ public class AbstractOAuthClient {
         this.publicClient = publicClient;
     }
 
-    public boolean isRelativeUrls() {
-        return relativeUrls;
+    public RelativeUrlsUsed getRelativeUrlsUsed() {
+        return relativeUrlsUsed;
     }
 
-    public void setRelativeUrls(boolean relativeUrls) {
-        this.relativeUrls = relativeUrls;
+    public void setRelativeUrlsUsed(RelativeUrlsUsed relativeUrlsUsed) {
+        this.relativeUrlsUsed = relativeUrlsUsed;
     }
 
     protected String stripOauthParametersFromRedirect(String uri) {
