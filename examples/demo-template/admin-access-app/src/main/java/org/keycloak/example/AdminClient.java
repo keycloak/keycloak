@@ -15,6 +15,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
@@ -158,8 +159,12 @@ public class AdminClient {
     }
 
     public static String getBaseUrl(HttpServletRequest request) {
-        String url = request.getRequestURL().toString();
-        return url.substring(0, url.indexOf('/', 8));
+        String useHostname = request.getServletContext().getInitParameter("useHostname");
+        if (useHostname != null && "true".equalsIgnoreCase(useHostname)) {
+            return "http://" + UriUtils.getHostName() + ":8080";
+        } else {
+            return UriUtils.getOrigin(request.getRequestURL().toString());
+        }
     }
 
 }

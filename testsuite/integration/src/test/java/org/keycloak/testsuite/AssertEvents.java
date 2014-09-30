@@ -156,7 +156,7 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
     }
 
     public ExpectedEvent expectRegister(String username, String email) {
-        UserRepresentation user = keycloak.getUser("test", username);
+        UserRepresentation user = username != null ? keycloak.getUser("test", username) : null;
         return expect(EventType.REGISTER)
                 .user(user != null ? user.getId() : null)
                 .detail(Details.USERNAME, username)

@@ -406,6 +406,7 @@ public class OAuthClient {
         private String refreshToken;
 
         private String error;
+        private String errorDescription;
 
         public AccessTokenResponse(HttpResponse response) throws Exception {
             statusCode = response.getStatusLine().getStatusCode();
@@ -426,6 +427,7 @@ public class OAuthClient {
                 }
             } else {
                 error = responseJson.getString(OAuth2Constants.ERROR);
+                errorDescription = responseJson.has(OAuth2Constants.ERROR_DESCRIPTION) ? responseJson.getString(OAuth2Constants.ERROR_DESCRIPTION) : null;
             }
         }
 
@@ -435,6 +437,10 @@ public class OAuthClient {
 
         public String getError() {
             return error;
+        }
+
+        public String getErrorDescription() {
+            return errorDescription;
         }
 
         public int getExpiresIn() {

@@ -5,11 +5,18 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -48,7 +55,7 @@ public class CustomerDatabaseClient {
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet(getBaseUrl(req) + "/database/customers");
+            HttpGet get = new HttpGet(AdapterUtils.getBaseUrl(req.getRequestURL().toString(), session) + "/database/customers");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);
@@ -70,8 +77,11 @@ public class CustomerDatabaseClient {
         }
     }
 
-    public static String getBaseUrl(HttpServletRequest request) {
-        String url = request.getRequestURL().toString();
-        return url.substring(0, url.indexOf('/', 8));
+    public static String increaseAndGetCounter(HttpServletRequest req) {
+        HttpSession session = req.getSession();
+        Integer counter = (Integer)session.getAttribute("counter");
+        counter = (counter == null) ? 1 : counter + 1;
+        session.setAttribute("counter", counter);
+        return String.valueOf(counter);
     }
 }

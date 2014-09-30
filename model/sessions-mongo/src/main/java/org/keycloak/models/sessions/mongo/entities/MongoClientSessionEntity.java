@@ -1,5 +1,6 @@
 package org.keycloak.models.sessions.mongo.entities;
 
+import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientSessionModel;
@@ -12,6 +13,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@MongoCollection(collectionName = "clientSessions")
 public class MongoClientSessionEntity extends AbstractIdentifiableEntity implements MongoIdentifiableEntity {
 
     private String id;

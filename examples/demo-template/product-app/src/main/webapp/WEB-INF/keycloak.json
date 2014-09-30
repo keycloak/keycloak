@@ -6,5 +6,6 @@
   "ssl-required" : "external",
   "credentials" : {
       "secret": "password"
-   }
+  },
+  "use-hostname-for-local-requests": false
 }
