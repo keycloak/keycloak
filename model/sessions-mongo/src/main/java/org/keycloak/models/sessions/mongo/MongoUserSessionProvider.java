@@ -19,6 +19,7 @@ import org.keycloak.models.sessions.mongo.entities.MongoUsernameLoginFailureEnti
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.util.Time;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -49,6 +50,9 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         entity.setTimestamp(Time.currentTime());
         entity.setClientId(client.getId());
         entity.setRealmId(realm.getId());
+
+        mongoStore.insertEntity(entity, invocationContext);
+
         return new ClientSessionAdapter(session, this, realm, entity, invocationContext);
     }
 
@@ -125,24 +129,22 @@ public class MongoUserSessionProvider implements UserSessionProvider {
 
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
         DBObject query = new QueryBuilder()
-                .and("clientSessions.clientId").is(client.getId())
+                .and("clientId").is(client.getId())
                 .get();
-        DBObject sort = new BasicDBObject("started", 1).append("id", 1);
+        DBObject sort = new BasicDBObject("timestamp", 1).append("id", 1);
 
-        List<MongoUserSessionEntity> sessions = mongoStore.loadEntities(MongoUserSessionEntity.class, query, sort, firstResult, maxResults, invocationContext);
+        List<MongoClientSessionEntity> clientSessions = mongoStore.loadEntities(MongoClientSessionEntity.class, query, sort, firstResult, maxResults, invocationContext);
         List<UserSessionModel> result = new LinkedList<UserSessionModel>();
-        for (MongoUserSessionEntity session : sessions) {
-            result.add(new UserSessionAdapter(this.session, this, session, realm, invocationContext));
+        for (MongoClientSessionEntity clientSession : clientSessions) {
+            MongoUserSessionEntity userSession = mongoStore.loadEntity(MongoUserSessionEntity.class, clientSession.getSessionId(), invocationContext);
+            result.add(new UserSessionAdapter(session, this, userSession, realm, invocationContext));
         }
         return result;
     }
 
     @Override
     public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        DBObject query = new QueryBuilder()
-                .and("clientSessions.clientId").is(client.getId())
-                .get();
-        return mongoStore.countEntities(MongoUserSessionEntity.class, query, invocationContext);
+        return getUserSessions(realm, client).size();
     }
 
     @Override
@@ -232,7 +234,14 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         DBObject query = new QueryBuilder()
                 .and("clientId").is(client.getId())
                 .get();
-        mongoStore.removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        DBObject sort = new BasicDBObject("timestamp", 1).append("id", 1);
+
+        List<MongoClientSessionEntity> clientSessions = mongoStore.loadEntities(MongoClientSessionEntity.class, query, sort, -1, -1, invocationContext);
+        for (MongoClientSessionEntity clientSession : clientSessions) {
+            MongoUserSessionEntity userSession = mongoStore.loadEntity(MongoUserSessionEntity.class, clientSession.getSessionId(), invocationContext);
+            getMongoStore().pullItemFromList(userSession, "clientSessions", clientSession.getId(), invocationContext);
+            mongoStore.removeEntity(clientSession, invocationContext);
+        }
     }
 
     @Override

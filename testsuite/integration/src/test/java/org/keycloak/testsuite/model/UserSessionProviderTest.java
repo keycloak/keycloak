@@ -66,7 +66,7 @@ public class UserSessionProviderTest {
     @Test
     public void testUpdateSession() {
         UserSessionModel[] sessions = createSessions();
-        sessions[0].setLastSessionRefresh(1000);
+        session.sessions().getUserSession(realm, sessions[0].getId()).setLastSessionRefresh(1000);
 
         resetSession();
 
@@ -137,6 +137,8 @@ public class UserSessionProviderTest {
         List<String> clientSessionsRemoved = new LinkedList<String>();
         List<String> clientSessionsKept = new LinkedList<String>();
         for (UserSessionModel s : sessions) {
+            s = session.sessions().getUserSession(realm, s.getId());
+
             for (ClientSessionModel c : s.getClientSessions()) {
                 if (c.getUserSession().getUser().getUsername().equals("user1")) {
                     clientSessionsRemoved.add(c.getId());
@@ -349,7 +351,10 @@ public class UserSessionProviderTest {
 
         resetSession();
 
+        failure1 = session.sessions().getUserLoginFailure(realm, "user1");
         failure1.clearFailures();
+
+        resetSession();
 
         failure1 = session.sessions().getUserLoginFailure(realm, "user1");
         assertEquals(0, failure1.getNumFailures());

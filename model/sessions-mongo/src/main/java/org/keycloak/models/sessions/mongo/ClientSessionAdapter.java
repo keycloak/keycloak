@@ -17,20 +17,19 @@ import java.util.Set;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ClientSessionAdapter implements ClientSessionModel {
+public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessionEntity> implements ClientSessionModel {
 
     private KeycloakSession session;
     private MongoUserSessionProvider provider;
     private RealmModel realm;
     private MongoClientSessionEntity entity;
-    private MongoStoreInvocationContext invContext;
 
     public ClientSessionAdapter(KeycloakSession session, MongoUserSessionProvider provider, RealmModel realm, MongoClientSessionEntity entity, MongoStoreInvocationContext invContext) {
+        super(invContext);
         this.session = session;
         this.provider = provider;
         this.realm = realm;
         this.entity = entity;
-        this.invContext = invContext;
     }
 
     @Override
@@ -58,13 +57,15 @@ public class ClientSessionAdapter implements ClientSessionModel {
     public void setUserSession(UserSessionModel userSession) {
         MongoUserSessionEntity userSessionEntity = provider.getUserSessionEntity(realm, userSession.getId());
         entity.setSessionId(userSessionEntity.getId());
-        provider.getMongoStore().pushItemToList(userSessionEntity, "clientSessions", entity.getId(), true, invContext);
+        updateMongoEntity();
+
+        provider.getMongoStore().pushItemToList(userSessionEntity, "clientSessions", entity.getId(), true, invocationContext);
     }
 
     @Override
     public void setRedirectUri(String uri) {
         entity.setRedirectUri(uri);
-
+        updateMongoEntity();
     }
 
     @Override
@@ -72,6 +73,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
         List<String> list = new LinkedList<String>();
         list.addAll(roles);
         entity.setRoles(list);
+        updateMongoEntity();
     }
 
     @Override
@@ -87,6 +89,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setTimestamp(int timestamp) {
         entity.setTimestamp(timestamp);
+        updateMongoEntity();
     }
 
     @Override
@@ -97,6 +100,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setAction(Action action) {
         entity.setAction(action);
+        updateMongoEntity();
     }
 
     @Override
@@ -112,13 +116,13 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setNote(String name, String value) {
         entity.getNotes().put(name, value);
-
+        updateMongoEntity();
     }
 
     @Override
     public void removeNote(String name) {
         entity.getNotes().remove(name);
-
+        updateMongoEntity();
     }
 
     @Override
@@ -129,5 +133,11 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setAuthMethod(String method) {
         entity.setAuthMethod(method);
+        updateMongoEntity();
+    }
+
+    @Override
+    protected MongoClientSessionEntity getMongoEntity() {
+        return entity;
     }
 }
