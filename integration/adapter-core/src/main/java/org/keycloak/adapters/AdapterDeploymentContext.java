@@ -5,6 +5,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
+import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
@@ -48,12 +49,21 @@ public class AdapterDeploymentContext {
         KeycloakDeployment deployment = this.deployment;
         if (deployment == null) return null;
         if (deployment.getAuthServerBaseUrl() == null) return deployment;
-        if (deployment.relativeUrls) {
-            deployment = new DeploymentDelegate(this.deployment);
-            deployment.setAuthServerBaseUrl(getBaseBuilder(facade, this.deployment.getAuthServerBaseUrl()).build().toString());
-        }
+
+        deployment = resolveUrls(deployment, facade);
         if (deployment.getRealmKey() == null) resolveRealmKey(deployment);
         return deployment;
+    }
+
+    protected KeycloakDeployment resolveUrls(KeycloakDeployment deployment, HttpFacade facade) {
+        if (deployment.relativeUrls == RelativeUrlsUsed.NEVER) {
+            // Absolute URI are already set to everything
+            return deployment;
+        } else {
+            DeploymentDelegate delegate = new DeploymentDelegate(this.deployment);
+            delegate.setAuthServerBaseUrl(getBaseBuilder(facade, this.deployment.getAuthServerBaseUrl()).build().toString());
+            return delegate;
+        }
     }
 
     protected void resolveRealmKey(KeycloakDeployment deployment) {
@@ -105,6 +115,46 @@ public class AdapterDeploymentContext {
 
         public DeploymentDelegate(KeycloakDeployment delegate) {
             this.delegate = delegate;
+        }
+
+        public void setAuthServerBaseUrl(String authServerBaseUrl) {
+            this.authServerBaseUrl = authServerBaseUrl;
+            KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
+            resolveBrowserUrls(serverBuilder);
+
+            if (delegate.getRelativeUrls() == RelativeUrlsUsed.ALL_REQUESTS) {
+                resolveNonBrowserUrls(serverBuilder);
+            }
+        }
+
+        @Override
+        public RelativeUrlsUsed getRelativeUrls() {
+            return delegate.getRelativeUrls();
+        }
+
+        @Override
+        public String getRealmInfoUrl() {
+            return (this.realmInfoUrl != null) ? this.realmInfoUrl : delegate.getRealmInfoUrl();
+        }
+
+        @Override
+        public String getCodeUrl() {
+            return (this.codeUrl != null) ? this.codeUrl : delegate.getCodeUrl();
+        }
+
+        @Override
+        public String getRefreshUrl() {
+            return (this.refreshUrl != null) ? this.refreshUrl : delegate.getRefreshUrl();
+        }
+
+        @Override
+        public KeycloakUriBuilder getLogoutUrl() {
+            return (this.logoutUrl != null) ? this.logoutUrl : delegate.getLogoutUrl();
+        }
+
+        @Override
+        public String getAccountUrl() {
+            return (this.accountUrl != null) ? this.accountUrl : delegate.getAccountUrl();
         }
 
         @Override

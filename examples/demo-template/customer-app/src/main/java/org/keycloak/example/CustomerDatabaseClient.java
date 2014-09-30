@@ -6,8 +6,12 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -48,7 +52,7 @@ public class CustomerDatabaseClient {
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet(getBaseUrl(req) + "/database/customers");
+            HttpGet get = new HttpGet(getBaseUrl(req, session) + "/database/customers");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);
@@ -70,8 +74,23 @@ public class CustomerDatabaseClient {
         }
     }
 
-    public static String getBaseUrl(HttpServletRequest request) {
-        String url = request.getRequestURL().toString();
-        return url.substring(0, url.indexOf('/', 8));
+    public static String getBaseUrl(HttpServletRequest request, KeycloakSecurityContext session) {
+        if (session instanceof RefreshableKeycloakSecurityContext) {
+            KeycloakDeployment deployment = ((RefreshableKeycloakSecurityContext)session).getDeployment();
+            switch (deployment.getRelativeUrls()) {
+                case ALL_REQUESTS:
+                    // Resolve baseURI from the request
+                    return UriUtils.getOrigin(request.getRequestURL().toString());
+                case BROWSER_ONLY:
+                    // Resolve baseURI from the codeURL (This is already non-relative and based on our hostname)
+                    return UriUtils.getOrigin(deployment.getCodeUrl());
+                case NEVER:
+                    return "";
+                default:
+                    return "";
+            }
+        } else {
+            return UriUtils.getOrigin(request.getRequestURL().toString());
+        }
     }
 }

@@ -42,7 +42,7 @@ public class AdminClient {
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet(getBaseUrl(req) + "/auth/admin/realms/demo/roles");
+            HttpGet get = new HttpGet(CustomerDatabaseClient.getBaseUrl(req, session) + "/auth/admin/realms/demo/roles");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);
@@ -62,11 +62,6 @@ public class AdminClient {
         } finally {
             client.getConnectionManager().shutdown();
         }
-    }
-
-    public static String getBaseUrl(HttpServletRequest request) {
-        String url = request.getRequestURL().toString();
-        return url.substring(0, url.indexOf('/', 8));
     }
 
 }

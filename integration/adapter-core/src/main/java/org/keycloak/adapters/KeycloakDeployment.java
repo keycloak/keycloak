@@ -1,9 +1,13 @@
 package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
+import org.jboss.logging.Logger;
 import org.keycloak.ServiceUrlConstants;
+import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.util.UriUtils;
 
 import java.net.URI;
 import java.security.PublicKey;
@@ -16,10 +20,11 @@ import java.util.Map;
  */
 public class KeycloakDeployment {
 
-    protected boolean relativeUrls;
+    private static final Logger log = Logger.getLogger(KeycloakDeployment.class);
+
+    protected RelativeUrlsUsed relativeUrls;
     protected String realm;
     protected PublicKey realmKey;
-    protected KeycloakUriBuilder serverBuilder;
     protected String authServerBaseUrl;
     protected String realmInfoUrl;
     protected KeycloakUriBuilder authUrl;
@@ -76,26 +81,62 @@ public class KeycloakDeployment {
         return authServerBaseUrl;
     }
 
-    public void setAuthServerBaseUrl(String authServerBaseUrl) {
+    public void setAuthServerBaseUrl(String authServerBaseUrl, AdapterConfig config) {
         this.authServerBaseUrl = authServerBaseUrl;
         if (authServerBaseUrl == null) return;
 
         URI uri = URI.create(authServerBaseUrl);
         if (uri.getHost() == null) {
-            relativeUrls = true;
-            return;
+            if (config.isUseHostnameForLocalRequests()) {
+                relativeUrls = RelativeUrlsUsed.BROWSER_ONLY;
+
+                KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
+                serverBuilder.host(UriUtils.getHostName()).port(config.getLocalRequestsPort()).scheme(config.getLocalRequestsScheme());
+                resolveNonBrowserUrls(serverBuilder);
+            } else {
+                relativeUrls = RelativeUrlsUsed.ALL_REQUESTS;
+                return;
+            }
+        } else {
+            // We have absolute URI in config
+            relativeUrls = RelativeUrlsUsed.NEVER;
+            KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
+            resolveBrowserUrls(serverBuilder);
+            resolveNonBrowserUrls(serverBuilder);
+        }
+    }
+
+
+
+    /**
+     * @param authUrlBuilder absolute URI
+     */
+    protected void resolveBrowserUrls(KeycloakUriBuilder authUrlBuilder) {
+        if (log.isDebugEnabled()) {
+            log.debug("resolveBrowserUrls");
         }
 
-        relativeUrls = false;
-
-        serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
-        String login = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(getRealm()).toString();
+        String login = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(getRealm()).toString();
         authUrl = KeycloakUriBuilder.fromUri(login);
-        refreshUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(getRealm()).toString();
-        logoutUrl = KeycloakUriBuilder.fromUri(serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());
-        accountUrl = serverBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
-        realmInfoUrl = serverBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
-        codeUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(getRealm()).toString();
+    }
+
+    /**
+     * @param authUrlBuilder absolute URI
+     */
+    protected void resolveNonBrowserUrls(KeycloakUriBuilder authUrlBuilder) {
+        if (log.isDebugEnabled()) {
+            log.debug("resolveNonBrowserUrls");
+        }
+
+        refreshUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(getRealm()).toString();
+        logoutUrl = KeycloakUriBuilder.fromUri(authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());
+        accountUrl = authUrlBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
+        realmInfoUrl = authUrlBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
+        codeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(getRealm()).toString();
+    }
+
+    public RelativeUrlsUsed getRelativeUrls() {
+        return relativeUrls;
     }
 
     public String getRealmInfoUrl() {
