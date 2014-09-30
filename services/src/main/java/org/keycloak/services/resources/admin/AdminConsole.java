@@ -23,7 +23,7 @@ import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.TokenService;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 
 import javax.activation.FileTypeMap;
 import javax.activation.MimetypesFileTypeMap;
@@ -256,7 +256,7 @@ public class AdminConsole {
         URI redirect = AdminRoot.adminConsoleUrl(uriInfo).path("index.html").build(realm.getName());
 
         return Response.status(302).location(
-                TokenService.logoutUrl(uriInfo).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
+                OpenIDConnectService.logoutUrl(uriInfo).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
         ).build();
     }
 

@@ -39,7 +39,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.services.resources.TokenService;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.PemUtils;
 import org.openqa.selenium.By;
@@ -278,7 +278,7 @@ public class OAuthClient {
     }
 
     public void openLogout() {
-        UriBuilder b = TokenService.logoutUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OpenIDConnectService.logoutUrl(UriBuilder.fromUri(baseUrl));
         if (redirectUri != null) {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
@@ -290,7 +290,7 @@ public class OAuthClient {
     }
 
     public String getLoginFormUrl() {
-        UriBuilder b = TokenService.loginPageUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri(baseUrl));
         if (responseType != null) {
             b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
         }
@@ -307,12 +307,12 @@ public class OAuthClient {
     }
 
     public String getAccessTokenUrl() {
-        UriBuilder b = TokenService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OpenIDConnectService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
     public String getLogoutUrl(String redirectUri, String sessionState) {
-        UriBuilder b = TokenService.logoutUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OpenIDConnectService.logoutUrl(UriBuilder.fromUri(baseUrl));
         if (redirectUri != null) {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
@@ -323,12 +323,12 @@ public class OAuthClient {
     }
 
     public String getResourceOwnerPasswordCredentialGrantUrl() {
-        UriBuilder b = TokenService.grantAccessTokenUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OpenIDConnectService.grantAccessTokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
     public String getRefreshTokenUrl() {
-        UriBuilder b = TokenService.refreshUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OpenIDConnectService.refreshUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 

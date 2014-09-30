@@ -23,10 +23,10 @@ package org.keycloak.services.resources.flows;
 
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SocialResource;
 import org.keycloak.services.resources.ThemeResource;
-import org.keycloak.services.resources.TokenService;
 
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
@@ -137,11 +137,11 @@ public class Urls {
     }
 
     public static URI realmLoginPage(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(TokenService.class, "loginPage").build(realmId);
+        return tokenBase(baseUri).path(OpenIDConnectService.class, "loginPage").build(realmId);
     }
 
     public static UriBuilder realmLogout(URI baseUri) {
-        return tokenBase(baseUri).path(TokenService.class, "logout");
+        return tokenBase(baseUri).path(OpenIDConnectService.class, "logout");
     }
 
     public static URI realmRegisterAction(URI baseUri, String realmId) {
@@ -149,11 +149,11 @@ public class Urls {
     }
 
     public static URI realmRegisterPage(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(TokenService.class, "registerPage").build(realmId);
+        return tokenBase(baseUri).path(OpenIDConnectService.class, "registerPage").build(realmId);
     }
 
     public static URI realmInstalledAppUrnCallback(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(TokenService.class, "installedAppUrnCallback").build(realmId);
+        return tokenBase(baseUri).path(OpenIDConnectService.class, "installedAppUrnCallback").build(realmId);
     }
 
     public static URI realmOauthAction(URI baseUri, String realmId) {
@@ -161,7 +161,7 @@ public class Urls {
     }
 
     public static URI realmCode(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(TokenService.class, "accessCodeToToken").build(realmId);
+        return tokenBase(baseUri).path(OpenIDConnectService.class, "accessCodeToToken").build(realmId);
     }
 
     public static UriBuilder socialBase(URI baseUri) {

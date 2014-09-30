@@ -37,7 +37,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.TokenService;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -266,10 +266,10 @@ public class AccessTokenTest {
     public void testValidateAccessToken() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = TokenService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OpenIDConnectService.grantAccessTokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI validateUri = TokenService.validateAccessTokenUrl(builder).build("test");
+        URI validateUri = OpenIDConnectService.validateAccessTokenUrl(builder).build("test");
         WebTarget validateTarget = client.target(validateUri);
 
         {
@@ -297,7 +297,7 @@ public class AccessTokenTest {
         }
         {
             builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-            URI logoutUri = TokenService.logoutUrl(builder).build("test");
+            URI logoutUri = OpenIDConnectService.logoutUrl(builder).build("test");
             String header = BasicAuthHelper.createHeader("test-app", "password");
             Form form = new Form();
             form.param("refresh_token", tokenResponse.getRefreshToken());
@@ -323,7 +323,7 @@ public class AccessTokenTest {
     public void testGrantAccessToken() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = TokenService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OpenIDConnectService.grantAccessTokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
 
         {   // test checkSsl

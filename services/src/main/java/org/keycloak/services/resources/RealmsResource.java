@@ -1,7 +1,6 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -13,6 +12,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
@@ -94,8 +94,6 @@ public class RealmsResource {
     public Response getLoginStatusIframe(final @PathParam("realm") String name,
                                        @QueryParam("client_id") String client_id,
                                        @QueryParam("origin") String origin) {
-        AuthenticationManager auth = new AuthenticationManager();
-
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         ClientModel client = realm.findClient(client_id);
@@ -114,7 +112,7 @@ public class RealmsResource {
             }
         }
 
-        for (String r : TokenService.resolveValidRedirects(uriInfo, client.getRedirectUris())) {
+        for (String r : OpenIDConnectService.resolveValidRedirects(uriInfo, client.getRedirectUris())) {
             int i = r.indexOf('/', 8);
             if (i != -1) {
                 r = r.substring(0, i);
@@ -145,12 +143,12 @@ public class RealmsResource {
     }
 
     @Path("{realm}/tokens")
-    public TokenService getTokenService(final @PathParam("realm") String name) {
+    public OpenIDConnectService getTokenService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
         AuthenticationManager authManager = new AuthenticationManager(protector);
-        TokenService tokenService = new TokenService(realm, tokenManager, event, authManager);
+        OpenIDConnectService tokenService = new OpenIDConnectService(realm, tokenManager, event, authManager);
         ResteasyProviderFactory.getInstance().injectProperties(tokenService);
         //resourceContext.initResource(tokenService);
         return tokenService;

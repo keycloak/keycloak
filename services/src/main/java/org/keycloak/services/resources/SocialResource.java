@@ -95,12 +95,6 @@ public class SocialResource {
     @Context
     protected ClientConnection clientConnection;
 
-    private TokenManager tokenManager;
-
-    public SocialResource(TokenManager tokenManager) {
-        this.tokenManager = tokenManager;
-    }
-
     @GET
     @Path("callback")
     public Response callback(@QueryParam("state") String encodedState) throws URISyntaxException, IOException {
