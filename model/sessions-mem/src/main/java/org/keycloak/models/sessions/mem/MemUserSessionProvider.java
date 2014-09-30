@@ -240,17 +240,6 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm) {
-        List<UsernameLoginFailureModel> failures = new LinkedList<UsernameLoginFailureModel>();
-        for (UsernameLoginFailureEntity entity : loginFailures.values()) {
-            if (entity.getRealm().equals(realm.getId())) {
-                failures.add(new UsernameLoginFailureAdapter(entity));
-            }
-        }
-        return failures;
-    }
-
-    @Override
     public void onRealmRemoved(RealmModel realm) {
         removeUserSessions(realm);
 

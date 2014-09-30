@@ -222,22 +222,6 @@ public class MongoUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm) {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(realm.getId())
-                .get();
-        List<MongoUsernameLoginFailureEntity> failures = mongoStore.loadEntities(MongoUsernameLoginFailureEntity.class, query, invocationContext);
-
-        List<UsernameLoginFailureModel> result = new LinkedList<UsernameLoginFailureModel>();
-        if (failures == null) return result;
-        for (MongoUsernameLoginFailureEntity failure : failures) {
-            result.add(new UsernameLoginFailureAdapter(invocationContext, failure));
-        }
-
-        return result;
-    }
-
-    @Override
     public void onRealmRemoved(RealmModel realm) {
         removeUserSessions(realm);
     }

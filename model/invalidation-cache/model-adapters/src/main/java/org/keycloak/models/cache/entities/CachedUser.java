@@ -18,6 +18,7 @@ import java.util.Set;
  */
 public class CachedUser {
     private String id;
+    private String realm;
     private String username;
     private String firstName;
     private String lastName;
@@ -34,6 +35,7 @@ public class CachedUser {
 
     public CachedUser(RealmModel realm, UserModel user) {
         this.id = user.getId();
+        this.realm = realm.getId();
         this.username = user.getUsername();
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
@@ -52,6 +54,10 @@ public class CachedUser {
 
     public String getId() {
         return id;
+    }
+
+    public String getRealm() {
+        return realm;
     }
 
     public String getUsername() {

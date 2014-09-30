@@ -39,18 +39,8 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public void setId(String id) {
-        entity.setId(id);
-    }
-
-    @Override
     public UserModel getUser() {
         return session.users().getUserById(entity.getUserId(), realm);
-    }
-
-    @Override
-    public void setUser(UserModel user) {
-        entity.setUserId(user.getId());
     }
 
     @Override
@@ -59,18 +49,8 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public void setLoginUsername(String loginUsername) {
-        entity.setLoginUsername(loginUsername);
-    }
-
-    @Override
     public String getIpAddress() {
         return entity.getIpAddress();
-    }
-
-    @Override
-    public void setIpAddress(String ipAddress) {
-        entity.setIpAddress(ipAddress);
     }
 
     @Override
@@ -79,28 +59,13 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public void setAuthMethod(String authMethod) {
-        entity.setAuthMethod(authMethod);
-    }
-
-    @Override
     public boolean isRememberMe() {
         return entity.isRememberMe();
     }
 
     @Override
-    public void setRememberMe(boolean rememberMe) {
-        entity.setRememberMe(rememberMe);
-    }
-
-    @Override
     public int getStarted() {
         return entity.getStarted();
-    }
-
-    @Override
-    public void setStarted(int started) {
-        entity.setStarted(started);
     }
 
     @Override

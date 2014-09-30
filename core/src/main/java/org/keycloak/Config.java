@@ -121,6 +121,17 @@ public class Config {
             return v != null ? Boolean.parseBoolean(v) : defaultValue;
         }
 
+        @Override
+        public Scope scope(String... scope) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(prefix + ".");
+            for (String s : scope) {
+                sb.append(s);
+                sb.append(".");
+            }
+            return new SystemPropertiesScope(sb.toString());
+        }
+
     }
 
     /**
@@ -145,6 +156,8 @@ public class Config {
         Boolean getBoolean(String key);
 
         Boolean getBoolean(String key, Boolean defaultValue);
+
+        Scope scope(String... scope);
 
     }
 }

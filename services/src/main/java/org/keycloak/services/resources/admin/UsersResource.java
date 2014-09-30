@@ -142,7 +142,7 @@ public class UsersResource {
         if (session.users().getUserByUsername(rep.getUsername(), realm) != null) {
             return Flows.errors().exists("User exists with same username");
         }
-        if (session.users().getUserByEmail(rep.getEmail(), realm) != null) {
+        if (rep.getEmail() != null && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
             return Flows.errors().exists("User exists with same email");
         }
 
