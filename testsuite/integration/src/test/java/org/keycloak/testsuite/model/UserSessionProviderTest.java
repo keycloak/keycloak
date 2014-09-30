@@ -285,14 +285,14 @@ public class UserSessionProviderTest {
     public void testGetByClientPaginated() {
         try {
             for (int i = 0; i < 25; i++) {
-                UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0." + i, "form", false);
                 Time.setOffset(i);
+                UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0." + i, "form", false);
                 ClientSessionModel clientSession = session.sessions().createClientSession(realm, realm.findClient("test-app"));
                 clientSession.setUserSession(userSession);
                 clientSession.setRedirectUri("http://redirect");
                 clientSession.setRoles(new HashSet<String>());
                 clientSession.setNote(OpenIDConnect.STATE_PARAM, "state");
-                clientSession.setTimestamp(Time.currentTime() + i);
+                clientSession.setTimestamp(userSession.getStarted());
             }
         } finally {
             Time.setOffset(0);
