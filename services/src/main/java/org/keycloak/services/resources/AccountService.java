@@ -48,6 +48,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OpenIDConnect;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
@@ -794,7 +795,7 @@ public class AccountService {
         ApplicationModel application = realm.getApplicationByName(referrer);
         if (application != null) {
             if (referrerUri != null) {
-                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
+                referrerUri = OpenIDConnectService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
             } else {
                 referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), application.getBaseUrl());
             }
@@ -805,7 +806,7 @@ public class AccountService {
         } else if (referrerUri != null) {
             ClientModel client = realm.getOAuthClient(referrer);
             if (client != null) {
-                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
+                referrerUri = OpenIDConnectService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};

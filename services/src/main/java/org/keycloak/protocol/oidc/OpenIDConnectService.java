@@ -1,4 +1,4 @@
-package org.keycloak.services.resources;
+package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -7,7 +7,6 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotAcceptableException;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
@@ -27,8 +26,6 @@ import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
@@ -37,6 +34,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.util.Base64Url;
@@ -72,9 +71,9 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class TokenService {
+public class OpenIDConnectService {
 
-    protected static final Logger logger = Logger.getLogger(TokenService.class);
+    protected static final Logger logger = Logger.getLogger(OpenIDConnectService.class);
 
     protected RealmModel realm;
     protected TokenManager tokenManager;
@@ -103,7 +102,7 @@ public class TokenService {
     protected ResourceContext resourceContext;
     */
 
-    public TokenService(RealmModel realm, TokenManager tokenManager, EventBuilder event, AuthenticationManager authManager) {
+    public OpenIDConnectService(RealmModel realm, TokenManager tokenManager, EventBuilder event, AuthenticationManager authManager) {
         this.realm = realm;
         this.tokenManager = tokenManager;
         this.event = event;
@@ -127,12 +126,12 @@ public class TokenService {
 
     public static UriBuilder accessCodeToTokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(TokenService.class, "accessCodeToToken");
+        return uriBuilder.path(OpenIDConnectService.class, "accessCodeToToken");
     }
 
     public static UriBuilder validateAccessTokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(TokenService.class, "validateAccessToken");
+        return uriBuilder.path(OpenIDConnectService.class, "validateAccessToken");
     }
 
     public static UriBuilder grantAccessTokenUrl(UriInfo uriInfo) {
@@ -143,7 +142,7 @@ public class TokenService {
 
     public static UriBuilder grantAccessTokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(TokenService.class, "grantAccessToken");
+        return uriBuilder.path(OpenIDConnectService.class, "grantAccessToken");
     }
 
     public static UriBuilder loginPageUrl(UriInfo uriInfo) {
@@ -153,7 +152,7 @@ public class TokenService {
 
     public static UriBuilder loginPageUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(TokenService.class, "loginPage");
+        return uriBuilder.path(OpenIDConnectService.class, "loginPage");
     }
 
     public static UriBuilder logoutUrl(UriInfo uriInfo) {
@@ -163,12 +162,12 @@ public class TokenService {
 
     public static UriBuilder logoutUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(TokenService.class, "logout");
+        return uriBuilder.path(OpenIDConnectService.class, "logout");
     }
 
     public static UriBuilder refreshUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(TokenService.class, "refreshAccessToken");
+        return uriBuilder.path(OpenIDConnectService.class, "refreshAccessToken");
     }
 
 

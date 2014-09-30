@@ -35,7 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.services.resources.TokenService;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -93,7 +93,7 @@ public class RefreshTokenTest {
     public void nullRefreshToken() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI uri = TokenService.refreshUrl(builder).build("test");
+        URI uri = OpenIDConnectService.refreshUrl(builder).build("test");
         WebTarget target = client.target(uri);
 
         org.keycloak.representations.AccessTokenResponse tokenResponse = null;
@@ -337,10 +337,10 @@ public class RefreshTokenTest {
     public void testCheckSsl() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = TokenService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OpenIDConnectService.grantAccessTokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI uri = TokenService.refreshUrl(builder).build("test");
+        URI uri = OpenIDConnectService.refreshUrl(builder).build("test");
         WebTarget refreshTarget = client.target(uri);
 
         String refreshToken = null;
