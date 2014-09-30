@@ -7,5 +7,6 @@
     "expose-token": true,
     "credentials": {
         "secret": "password"
-    }
+    },
+    "use-hostname-for-local-requests": false
 }

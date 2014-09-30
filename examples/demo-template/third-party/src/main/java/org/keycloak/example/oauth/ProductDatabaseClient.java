@@ -5,9 +5,11 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.adapters.ServerRequest;
+import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -58,7 +60,6 @@ public class ProductDatabaseClient {
         // and obtain the ServletOAuthClient.  I actually suggest downloading the ServletOAuthClient code
         // and take a look how it works. You can also take a look at third-party-cdi example
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
-        String token = null;
         try {
             return oAuthClient.getBearerToken(request);
         } catch (IOException e) {
@@ -78,7 +79,7 @@ public class ProductDatabaseClient {
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
         HttpClient client = oAuthClient.getClient();
 
-        HttpGet get = new HttpGet(getBaseUrl(request) + "/database/products");
+        HttpGet get = new HttpGet(getBaseUrl(oAuthClient, request) + "/database/products");
         get.addHeader("Authorization", "Bearer " + accessToken);
         try {
             HttpResponse response = client.execute(get);
@@ -97,9 +98,19 @@ public class ProductDatabaseClient {
         }
     }
 
-    public static String getBaseUrl(HttpServletRequest request) {
-        String url = request.getRequestURL().toString();
-        return url.substring(0, url.indexOf('/', 8));
+    public static String getBaseUrl(ServletOAuthClient oAuthClient, HttpServletRequest request) {
+        switch (oAuthClient.getRelativeUrlsUsed()) {
+            case ALL_REQUESTS:
+                // Resolve baseURI from the request
+                return UriUtils.getOrigin(request.getRequestURL().toString());
+            case BROWSER_ONLY:
+                // Resolve baseURI from the codeURL (This is already non-relative and based on our hostname)
+                return UriUtils.getOrigin(oAuthClient.getCodeUrl());
+            case NEVER:
+                return "";
+            default:
+                return "";
+        }
     }
 
 }

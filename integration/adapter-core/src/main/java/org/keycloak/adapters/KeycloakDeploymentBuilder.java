@@ -2,6 +2,7 @@ package org.keycloak.adapters;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.jboss.logging.Logger;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.PemUtils;
@@ -15,6 +16,9 @@ import java.security.PublicKey;
  * @version $Revision: 1 $
  */
 public class KeycloakDeploymentBuilder {
+
+    private static final Logger log = Logger.getLogger(KeycloakDeploymentBuilder.class);
+
     protected KeycloakDeployment deployment = new KeycloakDeployment();
 
     protected KeycloakDeploymentBuilder() {
@@ -68,7 +72,9 @@ public class KeycloakDeploymentBuilder {
         if (adapterConfig.getAuthServerUrl() == null && (!deployment.isBearerOnly() || realmKeyPem == null)) {
             throw new RuntimeException("You must specify auth-url");
         }
-        deployment.setAuthServerBaseUrl(adapterConfig.getAuthServerUrl());
+        deployment.setAuthServerBaseUrl(adapterConfig.getAuthServerUrl(), adapterConfig);
+
+        log.debug("Use authServerUrl: " + deployment.getAuthServerBaseUrl() + ", codeUrl: " + deployment.getCodeUrl() + ", relativeUrls: " + deployment.getRelativeUrls());
         return deployment;
     }
 

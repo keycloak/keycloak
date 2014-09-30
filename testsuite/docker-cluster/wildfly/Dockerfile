@@ -29,6 +29,8 @@ RUN sed -i "s|#JAVA_OPTS=\"\$JAVA_OPTS -agentlib:jdwp=transport=dt_socket|JAVA_O
 ADD mysql-keycloak-ds.xml /opt/wildfly/standalone/deployments/
 ADD keycloak-run-node.sh /keycloak-run-node.sh
 RUN chmod u+x /keycloak-run-node.sh
+ADD deploy-examples.sh /deploy-examples.sh
+RUN chmod u+x /deploy-examples.sh
 
 EXPOSE 8787
 
