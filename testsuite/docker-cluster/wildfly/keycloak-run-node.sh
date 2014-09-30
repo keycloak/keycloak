@@ -50,9 +50,8 @@ cp -r /keycloak-docker-cluster/modules ./
 # Deploy keycloak
 cp -r /keycloak-docker-cluster/deployments/* /opt/wildfly/standalone/deployments/
 
-# Deploy examples
-cd /keycloak-docker-cluster/examples
-for I in $(find . | grep .war$); do cp $I /opt/wildfly/standalone/deployments/; done;
+# Deploy and configure examples
+/deploy-examples.sh
 
 # Deploy to volume
 rm -rf /keycloak-docker-shared/keycloak-wildfly-$MYHOST
