@@ -5,6 +5,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -42,7 +43,7 @@ public class AdminClient {
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet(CustomerDatabaseClient.getBaseUrl(req, session) + "/auth/admin/realms/demo/roles");
+            HttpGet get = new HttpGet(AdapterUtils.getBaseUrl(req.getRequestURL().toString(), session) + "/auth/admin/realms/demo/roles");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);

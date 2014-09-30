@@ -18,22 +18,6 @@ public class UriUtils {
         return u.substring(0, u.indexOf('/', 8));
     }
 
-    /**
-     * Get origin based on current hostname
-     *
-     * @param scheme
-     * @param port
-     * @return Address like "http://myHost:8080"
-     */
-    public static String getLocalOrigin(String scheme, Integer port) {
-        String hostname = getHostName();
-        StringBuilder sb = new StringBuilder(scheme + "://" + hostname);
-        if (port != null && port != -1) {
-            sb.append(":").append(port);
-        }
-        return sb.toString();
-    }
-
     public static String getHostName() {
         try {
             return InetAddress.getLocalHost().getHostName();

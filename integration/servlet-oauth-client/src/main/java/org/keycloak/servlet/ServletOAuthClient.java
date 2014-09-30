@@ -8,6 +8,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.util.UriUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -161,8 +162,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
 
     private String getUrl(HttpServletRequest request, String url, boolean isBrowserRequest) {
         if (relativeUrlsUsed.useRelative(isBrowserRequest)) {
-            String baseUrl = request.getRequestURL().toString();
-            baseUrl = baseUrl.substring(0, baseUrl.indexOf('/', 8));
+            String baseUrl = UriUtils.getOrigin(request.getRequestURL().toString());
             return baseUrl + url;
         } else {
             return url;

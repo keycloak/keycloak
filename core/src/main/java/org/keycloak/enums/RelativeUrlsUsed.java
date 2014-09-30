@@ -21,14 +21,14 @@ public enum RelativeUrlsUsed {
      */
     NEVER;
 
-    public boolean useRelative(boolean browserReq) {
+    public boolean useRelative(boolean isBrowserReq) {
         switch (this) {
             case ALL_REQUESTS:
                 return true;
             case NEVER:
                 return false;
             case BROWSER_ONLY:
-                return browserReq;
+                return isBrowserReq;
             default:
                 return true;
         }

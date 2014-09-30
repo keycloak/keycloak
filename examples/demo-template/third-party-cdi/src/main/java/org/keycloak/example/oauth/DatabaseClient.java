@@ -7,6 +7,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.UriUtils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.faces.application.FacesMessage;
@@ -102,9 +103,18 @@ public class DatabaseClient {
     }
 
     public String getBaseUrl() {
-        String url = request.getRequestURL().toString();
-        return url.substring(0, url.indexOf('/', 8));
+        switch (oauthClient.getRelativeUrlsUsed()) {
+            case ALL_REQUESTS:
+                // Resolve baseURI from the request
+                return UriUtils.getOrigin(request.getRequestURL().toString());
+            case BROWSER_ONLY:
+                // Resolve baseURI from the codeURL (This is already non-relative and based on our hostname)
+                return UriUtils.getOrigin(oauthClient.getCodeUrl());
+            case NEVER:
+                return "";
+            default:
+                return "";
+        }
     }
-
 
 }

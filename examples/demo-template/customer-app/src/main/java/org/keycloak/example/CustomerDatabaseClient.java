@@ -5,6 +5,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
@@ -14,6 +15,8 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -52,7 +55,7 @@ public class CustomerDatabaseClient {
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet(getBaseUrl(req, session) + "/database/customers");
+            HttpGet get = new HttpGet(AdapterUtils.getBaseUrl(req.getRequestURL().toString(), session) + "/database/customers");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);
@@ -74,23 +77,11 @@ public class CustomerDatabaseClient {
         }
     }
 
-    public static String getBaseUrl(HttpServletRequest request, KeycloakSecurityContext session) {
-        if (session instanceof RefreshableKeycloakSecurityContext) {
-            KeycloakDeployment deployment = ((RefreshableKeycloakSecurityContext)session).getDeployment();
-            switch (deployment.getRelativeUrls()) {
-                case ALL_REQUESTS:
-                    // Resolve baseURI from the request
-                    return UriUtils.getOrigin(request.getRequestURL().toString());
-                case BROWSER_ONLY:
-                    // Resolve baseURI from the codeURL (This is already non-relative and based on our hostname)
-                    return UriUtils.getOrigin(deployment.getCodeUrl());
-                case NEVER:
-                    return "";
-                default:
-                    return "";
-            }
-        } else {
-            return UriUtils.getOrigin(request.getRequestURL().toString());
-        }
+    public static String increaseAndGetCounter(HttpServletRequest req) {
+        HttpSession session = req.getSession();
+        Integer counter = (Integer)session.getAttribute("counter");
+        counter = (counter == null) ? 1 : counter + 1;
+        session.setAttribute("counter", counter);
+        return String.valueOf(counter);
     }
 }
