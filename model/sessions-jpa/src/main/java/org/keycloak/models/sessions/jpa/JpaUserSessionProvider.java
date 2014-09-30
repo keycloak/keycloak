@@ -51,7 +51,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     @Override
     public ClientSessionModel getClientSession(RealmModel realm, String id) {
         ClientSessionEntity clientSession = em.find(ClientSessionEntity.class, id);
-        if (clientSession != null && clientSession.getSession().getRealmId().equals(realm.getId())) {
+        if (clientSession != null && clientSession.getRealmId().equals(realm.getId())) {
             return new ClientSessionAdapter(session, em, realm, clientSession);
         }
         return null;
@@ -69,8 +69,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
     @Override
     public UsernameLoginFailureModel getUserLoginFailure(RealmModel realm, String username) {
-        String id = username + "-" + realm;
-        UsernameLoginFailureEntity entity = em.find(UsernameLoginFailureEntity.class, id);
+        UsernameLoginFailureEntity entity = em.find(UsernameLoginFailureEntity.class, new UsernameLoginFailureEntity.Key(realm.getId(), username));
         if (entity == null) return null;
         return new UsernameLoginFailureAdapter(entity);
     }

@@ -103,16 +103,14 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setRoles(Set<String> roles) {
         if (roles != null) {
-            List<ClientSessionRoleEntity> roleEntities = new LinkedList<ClientSessionRoleEntity>();
             for (String r : roles) {
                 ClientSessionRoleEntity roleEntity = new ClientSessionRoleEntity();
                 roleEntity.setClientSession(entity);
                 roleEntity.setRoleId(r);
                 em.persist(roleEntity);
 
-                roleEntities.add(roleEntity);
+                entity.getRoles().add(roleEntity);
             }
-            entity.setRoles(roleEntities);
         }
     }
 
