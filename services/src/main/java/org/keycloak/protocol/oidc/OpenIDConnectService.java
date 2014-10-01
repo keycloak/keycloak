@@ -631,7 +631,6 @@ public class OpenIDConnectService {
      *
      */
     private class FrontPageInitializer {
-        protected String code;
         protected String clientId;
         protected String redirect;
         protected String state;
@@ -642,11 +641,7 @@ public class OpenIDConnectService {
         protected ClientSessionModel clientSession;
 
         public Response processInput() {
-            if (code != null) {
-                event.detail(Details.CODE_ID, code);
-            } else {
-                event.client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
-            }
+            event.client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
             if (!checkSsl()) {
                 event.error(Errors.SSL_REQUIRED);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
@@ -657,65 +652,43 @@ public class OpenIDConnectService {
             }
 
             clientSession = null;
-            if (code != null) {
-                ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
-                if (clientCode == null) {
-                    event.error(Errors.INVALID_CODE);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
-                }
-                if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
-                    event.error(Errors.INVALID_CODE);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
-                }
-                clientSession = clientCode.getClientSession();
-                if (!clientSession.getAuthMethod().equals(OpenIDConnect.LOGIN_PROTOCOL)) {
-                    event.error(Errors.INVALID_CODE);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid protocol, please login again through your application.");
-                }
-                state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
-                scopeParam = clientSession.getNote(OpenIDConnect.SCOPE_PARAM);
-                responseType = clientSession.getNote(OpenIDConnect.RESPONSE_TYPE_PARAM);
-                loginHint = clientSession.getNote(OpenIDConnect.LOGIN_HINT_PARAM);
-                prompt = clientSession.getNote(OpenIDConnect.PROMPT_PARAM);
-            } else {
-                if (state == null) {
-                    event.error(Errors.STATE_PARAM_NOT_FOUND);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid state param.");
+            if (state == null) {
+                event.error(Errors.STATE_PARAM_NOT_FOUND);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid state param.");
 
-                }
-                ClientModel client = realm.findClient(clientId);
-                if (client == null) {
-                    event.error(Errors.CLIENT_NOT_FOUND);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
-                }
-
-                if (!client.isEnabled()) {
-                    event.error(Errors.CLIENT_DISABLED);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
-                }
-                if ((client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
-                    event.error(Errors.NOT_ALLOWED);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Bearer-only applications are not allowed to initiate browser login");
-                }
-                if (client.isDirectGrantsOnly()) {
-                    event.error(Errors.NOT_ALLOWED);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
-                }
-                redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
-                if (redirect == null) {
-                    event.error(Errors.INVALID_REDIRECT_URI);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
-                }
-                clientSession = session.sessions().createClientSession(realm, client);
-                clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);
-                clientSession.setRedirectUri(redirect);
-                clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
-                clientSession.setNote(OpenIDConnect.STATE_PARAM, state);
-                if (scopeParam != null) clientSession.setNote(OpenIDConnect.SCOPE_PARAM, scopeParam);
-                if (responseType != null) clientSession.setNote(OpenIDConnect.RESPONSE_TYPE_PARAM, responseType);
-                if (loginHint != null) clientSession.setNote(OpenIDConnect.LOGIN_HINT_PARAM, loginHint);
-                if (prompt != null) clientSession.setNote(OpenIDConnect.PROMPT_PARAM, prompt);
             }
+            ClientModel client = realm.findClient(clientId);
+            if (client == null) {
+                event.error(Errors.CLIENT_NOT_FOUND);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
+            }
+
+            if (!client.isEnabled()) {
+                event.error(Errors.CLIENT_DISABLED);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
+            }
+            if ((client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
+                event.error(Errors.NOT_ALLOWED);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Bearer-only applications are not allowed to initiate browser login");
+            }
+            if (client.isDirectGrantsOnly()) {
+                event.error(Errors.NOT_ALLOWED);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
+            }
+            redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
+            if (redirect == null) {
+                event.error(Errors.INVALID_REDIRECT_URI);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
+            }
+            clientSession = session.sessions().createClientSession(realm, client);
+            clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);
+            clientSession.setRedirectUri(redirect);
+            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+            clientSession.setNote(OpenIDConnect.STATE_PARAM, state);
+            if (scopeParam != null) clientSession.setNote(OpenIDConnect.SCOPE_PARAM, scopeParam);
+            if (responseType != null) clientSession.setNote(OpenIDConnect.RESPONSE_TYPE_PARAM, responseType);
+            if (loginHint != null) clientSession.setNote(OpenIDConnect.LOGIN_HINT_PARAM, loginHint);
+            if (prompt != null) clientSession.setNote(OpenIDConnect.PROMPT_PARAM, prompt);
             return null;
         }
     }
@@ -726,7 +699,6 @@ public class OpenIDConnectService {
      * @See <a href="http://tools.ietf.org/html/rfc6749#section-4.1">http://tools.ietf.org/html/rfc6749#section-4.1</a>
      *
      *
-     * @param code
      * @param responseType
      * @param redirect
      * @param clientId
@@ -737,8 +709,7 @@ public class OpenIDConnectService {
      */
     @Path("login")
     @GET
-    public Response loginPage(@QueryParam("code") String code,
-                              @QueryParam(OpenIDConnect.RESPONSE_TYPE_PARAM) String responseType,
+    public Response loginPage(@QueryParam(OpenIDConnect.RESPONSE_TYPE_PARAM) String responseType,
                               @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirect,
                               @QueryParam(OpenIDConnect.CLIENT_ID_PARAM) String clientId,
                               @QueryParam(OpenIDConnect.SCOPE_PARAM) String scopeParam,
@@ -747,7 +718,6 @@ public class OpenIDConnectService {
                               @QueryParam(OpenIDConnect.LOGIN_HINT_PARAM) String loginHint) {
         event.event(EventType.LOGIN);
         FrontPageInitializer pageInitializer = new FrontPageInitializer();
-        pageInitializer.code = code;
         pageInitializer.responseType = responseType;
         pageInitializer.redirect = redirect;
         pageInitializer.clientId = clientId;
@@ -758,14 +728,6 @@ public class OpenIDConnectService {
         Response response = pageInitializer.processInput();
         if (response != null) return response;
         ClientSessionModel clientSession = pageInitializer.clientSession;
-        code = pageInitializer.code;
-        responseType = pageInitializer.responseType;
-        redirect = pageInitializer.redirect;
-        clientId = pageInitializer.clientId ;
-        scopeParam = pageInitializer.scopeParam;
-        state = pageInitializer.state;
-        prompt = pageInitializer.prompt;
-        loginHint = pageInitializer.loginHint;
 
 
 
@@ -822,8 +784,7 @@ public class OpenIDConnectService {
      */
     @Path("registrations")
     @GET
-    public Response registerPage(@QueryParam("code") String code,
-                                 @QueryParam(OpenIDConnect.RESPONSE_TYPE_PARAM) String responseType,
+    public Response registerPage(@QueryParam(OpenIDConnect.RESPONSE_TYPE_PARAM) String responseType,
                                  @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirect,
                                  @QueryParam(OpenIDConnect.CLIENT_ID_PARAM) String clientId,
                                  @QueryParam(OpenIDConnect.SCOPE_PARAM) String scopeParam,
@@ -835,7 +796,6 @@ public class OpenIDConnectService {
         }
 
         FrontPageInitializer pageInitializer = new FrontPageInitializer();
-        pageInitializer.code = code;
         pageInitializer.responseType = responseType;
         pageInitializer.redirect = redirect;
         pageInitializer.clientId = clientId;

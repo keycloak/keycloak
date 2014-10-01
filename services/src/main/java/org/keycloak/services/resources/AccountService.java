@@ -742,7 +742,7 @@ public class AccountService {
 
     private Response login(String path) {
         OAuthRedirect oauth = new OAuthRedirect();
-        String authUrl = Urls.realmLoginPage(uriInfo.getBaseUri(), realm.getName()).toString();
+        String authUrl = OpenIDConnectService.loginPageUrl(uriInfo).build(realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 
         oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_APP);
