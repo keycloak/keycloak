@@ -109,7 +109,7 @@ public class AuthorizationCodeTest {
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getText();
         keycloakRule.verifyCode(code);
 
-        String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/tokens/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
+        String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, code);
 
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
@@ -141,7 +141,7 @@ public class AuthorizationCodeTest {
 
         events.expectLogin().error("rejected_by_user").user((String) null).session((String) null)
                 .removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID)
-                .detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/tokens/oauth/oob")
+                .detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/protocol/openid-connect/oauth/oob")
                 .assertEvent().getDetails().get(Details.CODE_ID);
 
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {

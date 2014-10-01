@@ -27,10 +27,10 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
@@ -742,7 +742,7 @@ public class AccountService {
 
     private Response login(String path) {
         OAuthRedirect oauth = new OAuthRedirect();
-        String authUrl = Urls.realmLoginPage(uriInfo.getBaseUri(), realm.getName()).toString();
+        String authUrl = OpenIDConnectService.loginPageUrl(uriInfo).build(realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 
         oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_APP);

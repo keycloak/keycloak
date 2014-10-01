@@ -1,8 +1,5 @@
 package org.keycloak.testsuite.forms;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -20,8 +17,8 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testutils.DummyUserFederationProviderFactory;
@@ -29,6 +26,9 @@ import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.keycloak.timer.TimerProvider;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.model.basic.User;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

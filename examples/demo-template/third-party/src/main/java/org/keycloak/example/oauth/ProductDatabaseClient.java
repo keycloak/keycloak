@@ -5,7 +5,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.adapters.ServerRequest;
-import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;

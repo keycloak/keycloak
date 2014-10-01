@@ -3,9 +3,9 @@ package org.keycloak.events.mongo;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 
 import java.util.HashMap;

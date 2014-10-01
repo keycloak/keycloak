@@ -22,14 +22,15 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
@@ -44,12 +45,13 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.PasswordToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
@@ -61,6 +63,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -153,6 +156,15 @@ public class LoginActionsService {
         Response response;
 
         boolean check(String code, ClientSessionModel.Action requiredAction) {
+            if (!check(code)) return false;
+            if (!clientCode.isValid(requiredAction)) {
+                event.error(Errors.INVALID_CODE);
+                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
+            }
+            return true;
+        }
+
+        public boolean check(String code) {
             if (!checkSsl()) {
                 event.error(Errors.SSL_REQUIRED);
                 response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
@@ -169,12 +181,66 @@ public class LoginActionsService {
                 response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
                 return false;
             }
-            if (!clientCode.isValid(requiredAction)) {
-                event.error(Errors.INVALID_CODE);
-                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
-            }
             return true;
         }
+    }
+
+    /**
+     * protocol independent login page entry point
+     *
+     *
+     * @param code
+     * @return
+     */
+    @Path("login")
+    @GET
+    public Response loginPage(@QueryParam("code") String code) {
+        event.event(EventType.LOGIN);
+        Checks checks = new Checks();
+        if (!checks.check(code)) {
+            return checks.response;
+        }
+        event.detail(Details.CODE_ID, code);
+        ClientSessionCode clientSessionCode = checks.clientCode;
+        ClientSessionModel clientSession = clientSessionCode.getClientSession();
+
+
+
+        LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
+                .setClientSessionCode(clientSessionCode.getCode());
+
+        return forms.createLogin();
+    }
+
+    /**
+     * protocol independent registration page entry point
+     *
+     * @param code
+     * @return
+     */
+    @Path("registration")
+    @GET
+    public Response registerPage(@QueryParam("code") String code) {
+        event.event(EventType.REGISTER);
+        if (!realm.isRegistrationAllowed()) {
+            event.error(Errors.REGISTRATION_DISABLED);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Registration not allowed");
+        }
+
+        Checks checks = new Checks();
+        if (!checks.check(code)) {
+            return checks.response;
+        }
+        event.detail(Details.CODE_ID, code);
+        ClientSessionCode clientSessionCode = checks.clientCode;
+        ClientSessionModel clientSession = clientSessionCode.getClientSession();
+
+
+        authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
+
+        return Flows.forms(session, realm, clientSession.getClient(), uriInfo)
+                .setClientSessionCode(clientSessionCode.getCode())
+                .createRegistration();
     }
 
     /**

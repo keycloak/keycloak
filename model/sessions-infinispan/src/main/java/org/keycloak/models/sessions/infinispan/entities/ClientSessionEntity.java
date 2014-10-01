@@ -2,7 +2,6 @@ package org.keycloak.models.sessions.infinispan.entities;
 
 import org.keycloak.models.ClientSessionModel;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 

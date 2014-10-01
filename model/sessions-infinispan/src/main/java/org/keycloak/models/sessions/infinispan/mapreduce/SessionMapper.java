@@ -3,7 +3,6 @@ package org.keycloak.models.sessions.infinispan.mapreduce;
 import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import java.io.Serializable;
 

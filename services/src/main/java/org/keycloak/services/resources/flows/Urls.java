@@ -21,9 +21,10 @@
  */
 package org.keycloak.services.resources.flows;
 
+import org.keycloak.protocol.oidc.OpenIDConnect;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SocialResource;
 import org.keycloak.services.resources.ThemeResource;
@@ -137,10 +138,10 @@ public class Urls {
     }
 
     public static URI realmLoginPage(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(OpenIDConnectService.class, "loginPage").build(realmId);
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "loginPage").build(realmId);
     }
 
-    public static UriBuilder realmLogout(URI baseUri) {
+    private static UriBuilder realmLogout(URI baseUri) {
         return tokenBase(baseUri).path(OpenIDConnectService.class, "logout");
     }
 
@@ -149,7 +150,7 @@ public class Urls {
     }
 
     public static URI realmRegisterPage(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(OpenIDConnectService.class, "registerPage").build(realmId);
+        return requiredActionsBase(baseUri).path(LoginActionsService.class, "registerPage").build(realmId);
     }
 
     public static URI realmInstalledAppUrnCallback(URI baseUri, String realmId) {
@@ -158,10 +159,6 @@ public class Urls {
 
     public static URI realmOauthAction(URI baseUri, String realmId) {
         return requiredActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmId);
-    }
-
-    public static URI realmCode(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(OpenIDConnectService.class, "accessCodeToToken").build(realmId);
     }
 
     public static UriBuilder socialBase(URI baseUri) {
@@ -186,7 +183,7 @@ public class Urls {
     }
 
     private static UriBuilder tokenBase(URI baseUri) {
-        return realmBase(baseUri).path(RealmsResource.class, "getTokenService");
+        return realmBase(baseUri).path("{realm}/protocol/" + OpenIDConnect.LOGIN_PROTOCOL);
     }
 
     private static UriBuilder themeBase(URI baseUri) {

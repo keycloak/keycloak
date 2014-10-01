@@ -1,8 +1,8 @@
 package org.keycloak.account.freemarker.model;
 
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.keycloak.models.UserModel;
+
+import javax.ws.rs.core.MultivaluedMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

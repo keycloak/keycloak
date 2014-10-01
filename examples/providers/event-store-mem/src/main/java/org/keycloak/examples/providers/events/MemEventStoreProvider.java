@@ -1,8 +1,8 @@
 package org.keycloak.examples.providers.events;
 
-import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 
 import java.util.Iterator;

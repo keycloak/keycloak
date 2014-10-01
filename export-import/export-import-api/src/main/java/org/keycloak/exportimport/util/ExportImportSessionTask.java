@@ -1,9 +1,9 @@
 package org.keycloak.exportimport.util;
 
-import java.io.IOException;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTask;
+
+import java.io.IOException;
 
 /**
  * Just to wrap {@link IOException}

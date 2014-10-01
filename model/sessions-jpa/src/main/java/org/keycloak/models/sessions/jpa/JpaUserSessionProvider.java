@@ -9,7 +9,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
-import org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -17,10 +16,8 @@ import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

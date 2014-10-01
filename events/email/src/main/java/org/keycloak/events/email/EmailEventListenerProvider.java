@@ -1,11 +1,11 @@
 package org.keycloak.events.email;
 
 import org.jboss.logging.Logger;
-import org.keycloak.events.EventListenerProvider;
-import org.keycloak.events.Event;
-import org.keycloak.events.EventType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;

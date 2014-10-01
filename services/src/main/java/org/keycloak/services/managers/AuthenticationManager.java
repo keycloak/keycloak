@@ -23,6 +23,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.RealmsResource;
@@ -192,6 +193,23 @@ public class AuthenticationManager {
         authResult.getSession().setLastSessionRefresh(Time.currentTime());
         return authResult;
     }
+
+    public Response checkNonFormAuthentication(KeycloakSession session, ClientSessionModel clientSession, RealmModel realm, UriInfo uriInfo,
+                                               HttpRequest request,
+                                               ClientConnection clientConnection, HttpHeaders headers,
+                                               EventBuilder event) {
+        AuthResult authResult = authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, true);
+        if (authResult != null) {
+            UserModel user = authResult.getUser();
+            UserSessionModel userSession = authResult.getSession();
+            TokenManager.attachClientSession(userSession, clientSession);
+            event.user(user).session(userSession).detail(Details.AUTH_METHOD, "sso");
+            return nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
+        }
+        return null;
+    }
+
+
 
     public static Response redirectAfterSuccessfulFlow(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
                                                 ClientSessionModel clientSession,

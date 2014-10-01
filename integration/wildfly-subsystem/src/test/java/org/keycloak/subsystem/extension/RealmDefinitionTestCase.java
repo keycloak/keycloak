@@ -38,8 +38,8 @@ public class RealmDefinitionTestCase {
         model.get("realm").set("demo");
         model.get("resource").set("customer-portal");
         model.get("realm-public-key").set("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB");
-        model.get("auth-url").set("http://localhost:8080/auth-server/rest/realms/demo/tokens/login");
-        model.get("code-url").set("http://localhost:8080/auth-server/rest/realms/demo/tokens/access/codes");
+        model.get("auth-url").set("http://localhost:8080/auth-server/rest/realms/demo/protocol/openid-connect/login");
+        model.get("code-url").set("http://localhost:8080/auth-server/rest/realms/demo/protocol/openid-connect/access/codes");
         model.get("expose-token").set(true);
         ModelNode credential = new ModelNode();
         credential.get("password").set("password");
