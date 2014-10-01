@@ -88,7 +88,7 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
     }
 
     @Override
-    protected KeycloakUndertowAccount createAccount(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session) {
-        return new KeycloakUndertowAccount(principal, session, deployment);
+    protected KeycloakUndertowAccount createAccount(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
+        return new KeycloakUndertowAccount(principal);
     }
 }

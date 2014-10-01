@@ -63,8 +63,8 @@ public abstract class UndertowRequestAuthenticator extends RequestAuthenticator 
     }
 
     @Override
-    protected void completeOAuthAuthentication(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session) {
-        KeycloakUndertowAccount account = createAccount(principal, session);
+    protected void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
+        KeycloakUndertowAccount account = createAccount(principal);
         securityContext.authenticationComplete(account, "KEYCLOAK", false);
         propagateKeycloakContext(account);
         login(account);
@@ -80,8 +80,8 @@ public abstract class UndertowRequestAuthenticator extends RequestAuthenticator 
 
 
     @Override
-    protected void completeBearerAuthentication(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session) {
-        KeycloakUndertowAccount account = createAccount(principal, session);
+    protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
+        KeycloakUndertowAccount account = createAccount(principal);
         securityContext.authenticationComplete(account, "KEYCLOAK", false);
         propagateKeycloakContext(account);
     }
@@ -114,5 +114,5 @@ public abstract class UndertowRequestAuthenticator extends RequestAuthenticator 
      * Subclasses need to be able to create their own version of the KeycloakUndertowAccount
      * @return The account
      */
-    protected abstract KeycloakUndertowAccount createAccount(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session);
+    protected abstract KeycloakUndertowAccount createAccount(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
 }

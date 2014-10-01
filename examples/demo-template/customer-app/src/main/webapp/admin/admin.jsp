@@ -2,6 +2,7 @@
 <%@ page import="org.keycloak.representations.idm.RoleRepresentation" %>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
          pageEncoding="ISO-8859-1" %>
+<%@ page session="false" %>
 <html>
 <head>
     <title>Customer Admin Interface</title>

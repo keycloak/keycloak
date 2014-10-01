@@ -3,6 +3,7 @@
 <%@ page import="org.keycloak.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.example.oauth.ProductDatabaseClient" %>
 <%@ page import="org.keycloak.util.KeycloakUriBuilder" %>
+<%@ page session="false" %>
 <html>
 <head>
     <title>Product View Page</title>

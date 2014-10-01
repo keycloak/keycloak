@@ -53,7 +53,8 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     }
 
     @Override
-    protected void completeOAuthAuthentication(KeycloakPrincipal skp, RefreshableKeycloakSecurityContext securityContext) {
+    protected void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> skp) {
+        RefreshableKeycloakSecurityContext securityContext = skp.getKeycloakSecurityContext();
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
         Set<String> roles = getRolesFromToken(securityContext);
         GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skp, roles, securityContext);
@@ -67,7 +68,8 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     }
 
     @Override
-    protected void completeBearerAuthentication(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext securityContext) {
+    protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
+        RefreshableKeycloakSecurityContext securityContext = principal.getKeycloakSecurityContext();
         Set<String> roles = getRolesFromToken(securityContext);
         for (String role : roles) {
             log.info("Bearer role: " + role);
