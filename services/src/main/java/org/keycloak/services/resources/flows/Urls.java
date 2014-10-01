@@ -21,6 +21,7 @@
  */
 package org.keycloak.services.resources.flows;
 
+import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.LoginActionsService;
@@ -186,7 +187,7 @@ public class Urls {
     }
 
     private static UriBuilder tokenBase(URI baseUri) {
-        return realmBase(baseUri).path(RealmsResource.class, "getTokenService");
+        return realmBase(baseUri).path("{realm}/protocol/" + OpenIDConnect.LOGIN_PROTOCOL);
     }
 
     private static UriBuilder themeBase(URI baseUri) {

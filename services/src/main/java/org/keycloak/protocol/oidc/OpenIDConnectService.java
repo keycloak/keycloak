@@ -114,7 +114,7 @@ public class OpenIDConnectService {
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriBuilder baseUriBuilder) {
-        return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getTokenService");
+        return baseUriBuilder.path(RealmsResource.class).path("{realm}/protocol/" + OpenIDConnect.LOGIN_PROTOCOL);
     }
 
     public static UriBuilder accessCodeToTokenUrl(UriInfo uriInfo) {
