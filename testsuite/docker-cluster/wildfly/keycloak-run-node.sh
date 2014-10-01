@@ -3,6 +3,34 @@
 export MYHOST=node$(echo $MYSQL_NAME | awk -F"/dockercluster[^0-9]*|\/mysql" '{print  $2 }');
 echo "MYHOST is $MYHOST. MYSQL_NAME is $MYSQL_NAME";
 
+function prepareHost
+{
+  if [ -d /keycloak-docker-shared/keycloak-wildfly-$MYHOST ]; then
+    echo "Node $MYHOST already prepared. Skiping";
+    return;
+  fi
+
+  echo "Creating keycloak-wildfly-$MYHOST";
+
+  cd /opt/wildfly
+  cp -r /keycloak-docker-cluster/modules ./
+
+  # Deploy keycloak
+  cp -r /keycloak-docker-cluster/deployments/* /opt/wildfly/standalone/deployments/
+
+  # Enable Infinispan provider
+  sed -i "s|keycloak.userSessions.provider:mem|keycloak.userSessions.provider:infinispan|" /opt/wildfly/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
+
+  # Deploy and configure examples
+  /deploy-examples.sh
+
+  # Deploy to volume
+  rm -rf /keycloak-docker-shared/keycloak-wildfly-$MYHOST
+  cp -r /opt/wildfly-8.1.0.Final /keycloak-docker-shared/keycloak-wildfly-$MYHOST
+  chmod -R 777 /keycloak-docker-shared/keycloak-wildfly-$MYHOST
+  echo "keycloak-wildfly-$MYHOST prepared and copyied to volume";
+}
+
 function waitForPreviousNodeStart
 {
   myHostNumber=$(echo $MYHOST | awk -F"node" '{ print $2 }');
@@ -42,23 +70,7 @@ function waitForMySQLStart
   done;
 }
 
-echo "Creating keycloak-wildfly-$MYHOST";
-
-cd /opt/wildfly
-cp -r /keycloak-docker-cluster/modules ./
-
-# Deploy keycloak
-cp -r /keycloak-docker-cluster/deployments/* /opt/wildfly/standalone/deployments/
-
-# Deploy and configure examples
-/deploy-examples.sh
-
-# Deploy to volume
-rm -rf /keycloak-docker-shared/keycloak-wildfly-$MYHOST
-cp -r /opt/wildfly-8.1.0.Final /keycloak-docker-shared/keycloak-wildfly-$MYHOST
-chmod -R 777 /keycloak-docker-shared/keycloak-wildfly-$MYHOST
-echo "keycloak-wildfly-$MYHOST prepared and copyied to volume";
-
+prepareHost;
 
 waitForPreviousNodeStart;
 waitForMySQLStart;

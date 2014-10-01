@@ -68,5 +68,11 @@
             "dataSource": "java:jboss/datasources/KeycloakDS",
             "databaseSchema": "update"
         }
+    },
+
+    "connectionsInfinispan": {
+        "default": {
+            "cacheContainer" : "java:jboss/infinispan/Keycloak"
+        }
     }
 }
