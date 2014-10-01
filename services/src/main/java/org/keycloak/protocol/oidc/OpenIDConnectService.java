@@ -7,8 +7,10 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotAcceptableException;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
+import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
@@ -33,12 +35,14 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.StreamUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -46,8 +50,10 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -58,6 +64,8 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -167,6 +175,64 @@ public class OpenIDConnectService {
     public static UriBuilder refreshUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OpenIDConnectService.class, "refreshAccessToken");
+    }
+
+    /**
+     *
+     *
+     * @param client_id
+     * @param origin
+     * @return
+     */
+    @Path("login-status-iframe.html")
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    public Response getLoginStatusIframe(@QueryParam("client_id") String client_id,
+                                         @QueryParam("origin") String origin) {
+        ClientModel client = realm.findClient(client_id);
+        if (client == null) {
+            throw new NotFoundException("could not find client: " + client_id);
+        }
+
+        InputStream is = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
+        if (is == null) throw new NotFoundException("Could not find login-status-iframe.html ");
+
+        boolean valid = false;
+        for (String o : client.getWebOrigins()) {
+            if (o.equals("*") || o.equals(origin)) {
+                valid = true;
+                break;
+            }
+        }
+
+        for (String r : OpenIDConnectService.resolveValidRedirects(uriInfo, client.getRedirectUris())) {
+            int i = r.indexOf('/', 8);
+            if (i != -1) {
+                r = r.substring(0, i);
+            }
+
+            if (r.equals(origin)) {
+                valid = true;
+                break;
+            }
+        }
+
+        if (!valid) {
+            throw new BadRequestException("Invalid origin");
+        }
+
+        try {
+            String file = StreamUtil.readString(is);
+            file = file.replace("ORIGIN", origin);
+
+            CacheControl cacheControl = new CacheControl();
+            cacheControl.setNoTransform(false);
+            cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
+
+            return Response.ok(file).cacheControl(cacheControl).build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -730,15 +796,8 @@ public class OpenIDConnectService {
         ClientSessionModel clientSession = pageInitializer.clientSession;
 
 
-
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
-        if (authResult != null) {
-            UserModel user = authResult.getUser();
-            UserSessionModel userSession = authResult.getSession();
-            TokenManager.attachClientSession(userSession, clientSession);
-            event.user(user).session(userSession).detail(Details.AUTH_METHOD, "sso");
-            return authManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-        }
+        response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
+        if (response != null) return response;
 
         if (prompt != null && prompt.equals("none")) {
             OpenIDConnect oauth = new OpenIDConnect(session, realm, request, uriInfo, clientConnection);

@@ -14,6 +14,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
@@ -76,65 +77,25 @@ public class RealmsResource {
         return base.path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
     }
 
-    /**
-     *
-     *
-     * @param name
-     * @param client_id
-     * @return
-     */
     @Path("{realm}/login-status-iframe.html")
     @GET
     @Produces(MediaType.TEXT_HTML)
+    @Deprecated
     public Response getLoginStatusIframe(final @PathParam("realm") String name,
                                        @QueryParam("client_id") String client_id,
                                        @QueryParam("origin") String origin) {
+        // backward compatibility
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        ClientModel client = realm.findClient(client_id);
-        if (client == null) {
-            throw new NotFoundException("could not find client: " + client_id);
-        }
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        AuthenticationManager authManager = new AuthenticationManager(protector);
 
-        InputStream is = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
-        if (is == null) throw new NotFoundException("Could not find login-status-iframe.html ");
+        LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OpenIDConnect.LOGIN_PROTOCOL);
+        OpenIDConnectService endpoint = (OpenIDConnectService)factory.createProtocolEndpoint(realm, event, authManager);
 
-        boolean valid = false;
-        for (String o : client.getWebOrigins()) {
-            if (o.equals("*") || o.equals(origin)) {
-                valid = true;
-                break;
-            }
-        }
+        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
+        return endpoint.getLoginStatusIframe(client_id, origin);
 
-        for (String r : OpenIDConnectService.resolveValidRedirects(uriInfo, client.getRedirectUris())) {
-            int i = r.indexOf('/', 8);
-            if (i != -1) {
-                r = r.substring(0, i);
-            }
-
-            if (r.equals(origin)) {
-                valid = true;
-                break;
-            }
-        }
-
-        if (!valid) {
-            throw new BadRequestException("Invalid origin");
-        }
-
-        try {
-            String file = StreamUtil.readString(is);
-            file = file.replace("ORIGIN", origin);
-
-            CacheControl cacheControl = new CacheControl();
-            cacheControl.setNoTransform(false);
-            cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
-
-            return Response.ok(file).cacheControl(cacheControl).build();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Path("{realm}/protocol/{protocol}")
