@@ -31,6 +31,7 @@ import org.keycloak.subsystem.logging.KeycloakLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jboss.as.ee.component.EEModuleDescription;
 
 /**
  * Pass authentication data (keycloak.json) as a servlet context param so it can be read by the KeycloakServletExtension.
@@ -45,9 +46,9 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     // two places to avoid dependency between Keycloak Subsystem and Keyclaok Undertow Integration.
     public static final String AUTH_DATA_PARAM_NAME = "org.keycloak.json.adapterConfig";
 
-    public static final Phase PHASE = Phase.INSTALL;
-    // Seems wise to have this run after INSTALL_WAR_DEPLOYMENT
-    public static final int PRIORITY = Phase.INSTALL_WAR_DEPLOYMENT - 1;
+    public static final Phase PHASE = Phase.POST_MODULE;
+    // This needs to run just before bean validator factory
+    public static final int PRIORITY = Phase.POST_MODULE_VALIDATOR_FACTORY - 1;
 
     // not sure if we need this yet, keeping here just in case
     protected void addSecurityDomain(DeploymentUnit deploymentUnit, KeycloakAdapterConfigService service) {
@@ -73,6 +74,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
 
         String deploymentName = deploymentUnit.getName();
+        System.out.println(">>>>> deploymentName=" + deploymentName);
         KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
         //log.info("********* CHECK KEYCLOAK DEPLOYMENT: " + deploymentName);
         if (service.isKeycloakDeployment(deploymentName)) {
@@ -99,6 +101,15 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
             webMetaData = new JBossWebMetaData();
             warMetaData.setMergedJBossWebMetaData(webMetaData);
         }
+
+        if (service.isKeycloakServerDeployment(deploymentName)) {
+            final EEModuleDescription description = deploymentUnit.getAttachment(org.jboss.as.ee.component.Attachments.EE_MODULE_DESCRIPTION);
+            String webContext = service.getWebContext(deploymentName);
+            if (webContext == null) throw new DeploymentUnitProcessingException("Can't determine web context/module for Keycloak Auth Server");
+            description.setModuleName(webContext);
+            return;
+        }
+
         LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
         if (loginConfig == null) {
             loginConfig = new LoginConfigMetaData();

@@ -9,10 +9,11 @@
 .settings
 .classpath
 
-
 # NetBeans #
 ############
+nbactions.xml
 nb-configuration.xml
+catalog.xml
 
 # Compiled source #
 ###################

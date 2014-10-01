@@ -16,6 +16,7 @@
  */
 package org.keycloak.subsystem.extension;
 
+
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -27,6 +28,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 
 import java.util.List;
+import org.jboss.as.controller.registry.Resource;
 
 /**
  * The Keycloak subsystem add update handler.
@@ -38,8 +40,10 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
     static final KeycloakSubsystemAdd INSTANCE = new KeycloakSubsystemAdd();
 
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        model.setEmptyObject();
+    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        resource.getModel().setEmptyObject();
+
+
     }
 
     @Override
@@ -47,11 +51,12 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(DeploymentProcessorTarget processorTarget) {
+                processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME, Phase.STRUCTURE, 0, new KeycloakStructureProcessor());
                 processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, 0, new KeycloakDependencyProcessor());
                 processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME,
-                                                       KeycloakAdapterConfigDeploymentProcessor.PHASE,
-                                                       KeycloakAdapterConfigDeploymentProcessor.PRIORITY,
-                                                       new KeycloakAdapterConfigDeploymentProcessor());
+                        KeycloakAdapterConfigDeploymentProcessor.PHASE,
+                        KeycloakAdapterConfigDeploymentProcessor.PRIORITY,
+                        new KeycloakAdapterConfigDeploymentProcessor());
             }
         }, OperationContext.Stage.RUNTIME);
     }

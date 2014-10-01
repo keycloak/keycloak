@@ -53,6 +53,11 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     private Map<String, ModelNode> realms = new HashMap<String, ModelNode>();
     private Map<String, ModelNode> deployments = new HashMap<String, ModelNode>();
 
+    // key=server deployment name; value=json
+    private Map<String, String> serverDeployments = new HashMap<String, String>();
+    // key=server deployment name; value=web-context
+    private Map<String, String> webContexts = new HashMap<String, String>();
+
     private KeycloakAdapterConfigService() {
 
     }
@@ -70,6 +75,24 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     @Override
     public KeycloakAdapterConfigService getValue() throws IllegalStateException, IllegalArgumentException {
         return this;
+    }
+
+    public void addServerDeployment(String deploymentName, String json, String webContext) {
+        this.serverDeployments.put(deploymentName, json);
+        this.webContexts.put(deploymentName, webContext);
+    }
+
+    public String getWebContext(String deploymentName) {
+        return webContexts.get(deploymentName);
+    }
+
+    public void removeServerDeployment(String deploymentName) {
+        this.serverDeployments.remove(deploymentName);
+        this.webContexts.remove(deploymentName);
+    }
+
+    public boolean isWebContextUsed(String webContext) {
+        return webContexts.containsValue(webContext);
     }
 
     public void addRealm(ModelNode operation, ModelNode model) {
@@ -170,6 +193,10 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     }
 
     public String getJSON(String deploymentName) {
+        if (serverDeployments.containsKey(deploymentName)) {
+            return serverDeployments.get(deploymentName);
+        }
+
         ModelNode deployment = this.deployments.get(deploymentName);
         String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
         ModelNode realm = this.realms.get(realmName);
@@ -196,7 +223,11 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     public boolean isKeycloakDeployment(String deploymentName) {
         //log.info("********* CHECK KEYCLOAK DEPLOYMENT: deployments.size()" + deployments.size());
 
-        return this.deployments.containsKey(deploymentName);
+        return this.serverDeployments.containsKey(deploymentName) || this.deployments.containsKey(deploymentName);
+    }
+
+    public boolean isKeycloakServerDeployment(String deploymentName) {
+        return this.serverDeployments.containsKey(deploymentName);
     }
 
     static KeycloakAdapterConfigService find(ServiceRegistry registry) {
