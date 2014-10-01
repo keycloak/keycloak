@@ -9,8 +9,8 @@
     <title>Customer Session Page</title>
   </head>
   <body bgcolor="#E3F6CE">
-    <p>Your hostname: <%= UriUtils.getHostName() %></p>
-    <p>Your session ID: <%= request.getSession().getId() %></p>
+    <p>Your hostname: <b><%= UriUtils.getHostName() %></b></p>
+    <p>Your session ID: <b><%= request.getSession().getId() %></b></p>
     <p>You visited this page <b><%= CustomerDatabaseClient.increaseAndGetCounter(request) %></b> times.</p>
     <br><br>
   </body>
