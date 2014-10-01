@@ -1,9 +1,9 @@
 package org.keycloak.examples.providers.events;
 
 import org.keycloak.Config;
+import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventStoreProviderFactory;
-import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 

@@ -21,9 +21,9 @@
  */
 package org.keycloak.services.resources.flows;
 
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SocialResource;
 import org.keycloak.services.resources.ThemeResource;

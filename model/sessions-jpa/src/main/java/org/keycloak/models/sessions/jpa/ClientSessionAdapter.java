@@ -13,8 +13,6 @@ import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 import javax.persistence.EntityManager;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 /**

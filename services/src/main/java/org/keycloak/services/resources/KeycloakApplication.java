@@ -15,9 +15,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
@@ -69,12 +68,10 @@ public class KeycloakApplication extends Application {
         context.setAttribute(BruteForceProtector.class.getName(), protector);
         context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
-        TokenManager tokenManager = new TokenManager();
-
         singletons.add(new ServerVersionResource());
-        singletons.add(new RealmsResource(tokenManager));
+        singletons.add(new RealmsResource());
         singletons.add(new SocialResource());
-        singletons.add(new AdminRoot(tokenManager));
+        singletons.add(new AdminRoot());
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(QRCodeResource.class);
         classes.add(ThemeResource.class);

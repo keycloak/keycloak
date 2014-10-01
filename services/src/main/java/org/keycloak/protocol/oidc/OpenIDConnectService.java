@@ -33,7 +33,6 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
@@ -102,9 +101,9 @@ public class OpenIDConnectService {
     protected ResourceContext resourceContext;
     */
 
-    public OpenIDConnectService(RealmModel realm, TokenManager tokenManager, EventBuilder event, AuthenticationManager authManager) {
+    public OpenIDConnectService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
         this.realm = realm;
-        this.tokenManager = tokenManager;
+        this.tokenManager = new TokenManager();
         this.event = event;
         this.authManager = authManager;
     }
@@ -669,7 +668,7 @@ public class OpenIDConnectService {
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
                 }
                 clientSession = clientCode.getClientSession();
-                if (!clientSession.getAuthMethod().equals(OpenIDConnect.LOGIN_PAGE_PROTOCOL)) {
+                if (!clientSession.getAuthMethod().equals(OpenIDConnect.LOGIN_PROTOCOL)) {
                     event.error(Errors.INVALID_CODE);
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid protocol, please login again through your application.");
                 }
@@ -708,7 +707,7 @@ public class OpenIDConnectService {
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
                 }
                 clientSession = session.sessions().createClientSession(realm, client);
-                clientSession.setAuthMethod(OpenIDConnect.LOGIN_PAGE_PROTOCOL);
+                clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);
                 clientSession.setRedirectUri(redirect);
                 clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
                 clientSession.setNote(OpenIDConnect.STATE_PARAM, state);

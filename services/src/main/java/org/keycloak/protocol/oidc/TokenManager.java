@@ -1,10 +1,10 @@
-package org.keycloak.services.managers;
+package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -22,6 +22,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.UriInfo;

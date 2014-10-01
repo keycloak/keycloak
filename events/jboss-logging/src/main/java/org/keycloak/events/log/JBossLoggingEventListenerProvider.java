@@ -1,8 +1,8 @@
 package org.keycloak.events.log;
 
 import org.jboss.logging.Logger;
-import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventListenerProvider;
 
 import java.util.Map;
 

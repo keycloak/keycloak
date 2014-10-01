@@ -12,17 +12,16 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.Cors;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -58,8 +57,8 @@ public class AdminRoot {
     @Context
     protected KeycloakSession session;
 
-    public AdminRoot(TokenManager tokenManager) {
-        this.tokenManager = tokenManager;
+    public AdminRoot() {
+        this.tokenManager = new TokenManager();
         this.authManager = new AppAuthManager();
     }
 

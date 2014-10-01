@@ -18,7 +18,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.services.managers.RealmManager;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.UUID;

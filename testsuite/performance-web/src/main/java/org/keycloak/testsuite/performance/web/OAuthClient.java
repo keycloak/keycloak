@@ -16,9 +16,9 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.servlet.http.HttpServletRequest;

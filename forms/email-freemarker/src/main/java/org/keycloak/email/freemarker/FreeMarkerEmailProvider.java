@@ -1,10 +1,10 @@
 package org.keycloak.email.freemarker;
 
 import org.jboss.logging.Logger;
-import org.keycloak.events.Event;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.email.freemarker.beans.EventBean;
+import org.keycloak.events.Event;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;

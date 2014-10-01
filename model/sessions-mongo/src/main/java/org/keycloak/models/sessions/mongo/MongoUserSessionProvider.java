@@ -19,10 +19,8 @@ import org.keycloak.models.sessions.mongo.entities.MongoUsernameLoginFailureEnti
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.util.Time;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

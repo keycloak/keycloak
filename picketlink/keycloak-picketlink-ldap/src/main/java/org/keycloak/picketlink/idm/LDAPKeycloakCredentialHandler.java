@@ -1,18 +1,17 @@
 package org.keycloak.picketlink.idm;
 
-import javax.naming.directory.SearchResult;
-
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.config.LDAPMappingConfiguration;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.credential.storage.CredentialStorage;
 import org.picketlink.idm.ldap.internal.LDAPIdentityStore;
-import org.picketlink.idm.ldap.internal.LDAPOperationManager;
 import org.picketlink.idm.ldap.internal.LDAPPlainTextPasswordCredentialHandler;
 import org.picketlink.idm.model.Account;
 import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
 import org.picketlink.idm.spi.IdentityContext;
+
+import javax.naming.directory.SearchResult;
 
 import static org.picketlink.idm.IDMLog.CREDENTIAL_LOGGER;
 

@@ -7,16 +7,11 @@ import org.apache.http.client.methods.HttpGet;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;

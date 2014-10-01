@@ -12,12 +12,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
-import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.TokenManager;
 import org.keycloak.util.StreamUtil;
 
 import javax.ws.rs.GET;
@@ -62,12 +63,6 @@ public class RealmsResource {
 
     @Context
     protected BruteForceProtector protector;
-
-    protected TokenManager tokenManager;
-
-    public RealmsResource(TokenManager tokenManager) {
-        this.tokenManager = tokenManager;
-    }
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
@@ -142,16 +137,27 @@ public class RealmsResource {
         }
     }
 
-    @Path("{realm}/tokens")
-    public OpenIDConnectService getTokenService(final @PathParam("realm") String name) {
+    @Path("{realm}/protocol/{protocol}")
+    public Object getProtocol(final @PathParam("realm") String name,
+                                            final @PathParam("protocol") String protocol) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
         AuthenticationManager authManager = new AuthenticationManager(protector);
-        OpenIDConnectService tokenService = new OpenIDConnectService(realm, tokenManager, event, authManager);
-        ResteasyProviderFactory.getInstance().injectProperties(tokenService);
+
+        LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
+        Object endpoint = factory.createProtocolEndpoint(realm, event, authManager);
+
+        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         //resourceContext.initResource(tokenService);
-        return tokenService;
+        return endpoint;
+    }
+
+    @Path("{realm}/tokens")
+    @Deprecated
+    public Object getTokenService(final @PathParam("realm") String name) {
+        // for backward compatibility.
+        return getProtocol(name, "openid-connect");
     }
 
     @Path("{realm}/login-actions")

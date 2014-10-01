@@ -1,13 +1,9 @@
 package org.keycloak.services.resources.flows;
 
 import org.keycloak.ClientConnection;
-import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.resources.SocialResource;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;

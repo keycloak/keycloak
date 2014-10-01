@@ -3,9 +3,9 @@ package org.keycloak.events.jpa;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.jboss.logging.Logger;
-import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 
 import javax.persistence.EntityManager;

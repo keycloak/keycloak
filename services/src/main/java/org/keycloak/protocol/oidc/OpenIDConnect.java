@@ -29,8 +29,8 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.services.managers.ClientSessionCode;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -42,7 +42,7 @@ import javax.ws.rs.core.UriInfo;
  */
 public class OpenIDConnect implements LoginProtocol {
 
-    public static final String LOGIN_PAGE_PROTOCOL = "openid-connect";
+    public static final String LOGIN_PROTOCOL = "openid-connect";
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
     public static final String RESPONSE_TYPE_PARAM = "response_type";

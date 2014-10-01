@@ -4,10 +4,10 @@ import com.mongodb.DBCollection;
 import com.mongodb.WriteConcern;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventStoreProviderFactory;
 import org.keycloak.events.EventType;
-import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.HashSet;

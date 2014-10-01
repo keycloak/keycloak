@@ -1,7 +1,7 @@
 package org.keycloak.examples.providers.events;
 
-import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
 
 import java.util.Map;
