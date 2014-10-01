@@ -35,18 +35,17 @@ import java.util.Set;
 */
 public class KeycloakUndertowAccount implements Account, Serializable, KeycloakAccount {
     protected static Logger log = Logger.getLogger(KeycloakUndertowAccount.class);
-    protected RefreshableKeycloakSecurityContext session;
-    protected KeycloakPrincipal principal;
+    protected KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal;
     protected Set<String> accountRoles;
 
-    public KeycloakUndertowAccount(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session, KeycloakDeployment deployment) {
+    public KeycloakUndertowAccount(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
         this.principal = principal;
-        this.session = session;
-        setRoles(session.getToken());
+        setRoles(principal.getKeycloakSecurityContext().getToken());
     }
 
     protected void setRoles(AccessToken accessToken) {
         Set<String> roles = null;
+        RefreshableKeycloakSecurityContext session = getKeycloakSecurityContext();
         if (session.getDeployment().isUseResourceRoleMappings()) {
             if (log.isTraceEnabled()) {
                 log.trace("useResourceRoleMappings");
@@ -61,12 +60,13 @@ public class KeycloakUndertowAccount implements Account, Serializable, KeycloakA
             if (access != null) roles = access.getRoles();
         }
         if (roles == null) roles = Collections.emptySet();
-        /*
-        log.info("Setting roles: ");
-        for (String role : roles) {
-            log.info("   role: " + role);
+        if (log.isTraceEnabled()) {
+            log.trace("Setting roles: ");
+            for (String role : roles) {
+                log.trace("   role: " + role);
+            }
         }
-        */
+
         this.accountRoles = roles;
     }
 
@@ -82,15 +82,16 @@ public class KeycloakUndertowAccount implements Account, Serializable, KeycloakA
 
     @Override
     public RefreshableKeycloakSecurityContext getKeycloakSecurityContext() {
-        return session;
+        return principal.getKeycloakSecurityContext();
     }
 
     public void setDeployment(KeycloakDeployment deployment) {
-        session.setDeployment(deployment);
+        principal.getKeycloakSecurityContext().setDeployment(deployment);
     }
 
     public boolean isActive() {
         // this object may have been serialized, so we need to reset realm config/metadata
+        RefreshableKeycloakSecurityContext session = getKeycloakSecurityContext();
         if (session.isActive()) {
             log.debug("session is active");
             return true;
