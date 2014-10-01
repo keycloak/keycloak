@@ -9,7 +9,7 @@ for I in $(find . | grep .war$); do cp $I /opt/wildfly/standalone/deployments/; 
 # Explode wars
 cd /opt/wildfly/standalone/deployments/
 for I in $(ls -d *.war | grep -v auth-server.war); do
-  echo "Explode dir $I";
+  echo "Configuring $I";
   mkdir $I.tmp;
   cd $I.tmp;
   unzip -q ../$I;
@@ -25,7 +25,6 @@ sed -i -e 's/false/true/' admin-access.war/WEB-INF/web.xml
 
 # Configure other examples
 for I in *.war/WEB-INF/keycloak.json; do
-  echo "Configuring $I";
   sed -i -e 's/\"use-hostname-for-local-requests\": false/\"use-hostname-for-local-requests\": true/' $I;
 done;
 
