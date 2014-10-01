@@ -241,7 +241,8 @@ public class ResourceAdminManager {
             try {
                 response = request.body(MediaType.TEXT_PLAIN_TYPE, token).post(UserStats.class);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                logger.warn("Logout for application '" + resource.getName() + "' failed", e);
+                return false;
             }
             try {
                 boolean success = response.getStatus() == 204;
