@@ -7,16 +7,16 @@ import java.security.Principal;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class KeycloakPrincipal implements Principal, Serializable {
+public class KeycloakPrincipal<T extends KeycloakSecurityContext> implements Principal, Serializable {
     protected final String name;
-    protected final KeycloakSecurityContext context;
+    protected final T context;
 
-    public KeycloakPrincipal(String name, KeycloakSecurityContext context) {
+    public KeycloakPrincipal(String name, T context) {
         this.name = name;
         this.context = context;
     }
 
-    public KeycloakSecurityContext getKeycloakSecurityContext() {
+    public T getKeycloakSecurityContext() {
         return context;
     }
 

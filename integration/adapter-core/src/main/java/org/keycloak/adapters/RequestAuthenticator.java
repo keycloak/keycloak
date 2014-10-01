@@ -104,18 +104,18 @@ public abstract class RequestAuthenticator {
 
     protected void completeAuthentication(OAuthRequestAuthenticator oauth) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
-        final KeycloakPrincipal principal = new KeycloakPrincipal(oauth.getToken().getSubject(), session);
-        completeOAuthAuthentication(principal, session);
+        final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(oauth.getToken().getSubject(), session);
+        completeOAuthAuthentication(principal);
     }
 
-    protected abstract void completeOAuthAuthentication(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session);
-    protected abstract void completeBearerAuthentication(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session);
+    protected abstract void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
+    protected abstract void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
     protected abstract boolean isCached();
 
     protected void completeAuthentication(BearerTokenRequestAuthenticator bearer) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, bearer.getTokenString(), bearer.getToken(), null, null, null);
-        final KeycloakPrincipal principal = new KeycloakPrincipal(bearer.getToken().getSubject(), session);
-        completeBearerAuthentication(principal, session);
+        final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(bearer.getToken().getSubject(), session);
+        completeBearerAuthentication(principal);
     }
 
 }

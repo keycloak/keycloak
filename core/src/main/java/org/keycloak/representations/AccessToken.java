@@ -3,6 +3,7 @@ package org.keycloak.representations;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,7 +14,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class AccessToken extends IDToken {
-    public static class Access {
+    public static class Access implements Serializable {
         @JsonProperty("roles")
         protected Set<String> roles;
         @JsonProperty("verify_caller")

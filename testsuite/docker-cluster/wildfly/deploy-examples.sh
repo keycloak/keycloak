@@ -28,4 +28,7 @@ for I in *.war/WEB-INF/keycloak.json; do
   sed -i -e 's/\"use-hostname-for-local-requests\": false/\"use-hostname-for-local-requests\": true/' $I;
 done;
 
+# Enable distributable for customer-portal
+sed -i -e 's/<\/module-name>/&\n    <distributable \/>/' customer-portal.war/WEB-INF/web.xml
+
 
