@@ -395,7 +395,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                         throw new IllegalStateException("Can't remove session: task in progress for session");
                 }
             } else {
-                tasks.put(key, new CacheTask(cache, CacheOperation.ADD, key, value));
+                tasks.put(key, new CacheTask(cache, CacheOperation.REPLACE, key, value));
             }
         }
 
@@ -426,6 +426,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                         break;
                     case REPLACE:
                         cache.replace(key, value);
+                        break;
                 }
             }
         }
