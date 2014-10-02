@@ -57,13 +57,17 @@ public class ServletOAuthClientBuilder {
 
         String authUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(adapterConfig.getRealm()).toString();
 
-        KeycloakUriBuilder tokenUrlBuilder = serverBuilder.clone();
-        KeycloakUriBuilder refreshUrlBuilder = serverBuilder.clone();
+        KeycloakUriBuilder tokenUrlBuilder;
+        KeycloakUriBuilder refreshUrlBuilder;
 
         if (useRelative == RelativeUrlsUsed.BROWSER_ONLY) {
             // Use absolute URI for refreshToken and codeToToken requests
-            tokenUrlBuilder.scheme(adapterConfig.getLocalRequestsScheme()).host(UriUtils.getHostName()).port(adapterConfig.getLocalRequestsPort());
-            refreshUrlBuilder.scheme(adapterConfig.getLocalRequestsScheme()).host(UriUtils.getHostName()).port(adapterConfig.getLocalRequestsPort());
+            KeycloakUriBuilder nonBrowsersServerBuilder = KeycloakUriBuilder.fromUri(adapterConfig.getAuthServerUrlForBackendRequests());
+            tokenUrlBuilder = nonBrowsersServerBuilder.clone();
+            refreshUrlBuilder = nonBrowsersServerBuilder.clone();
+        } else {
+            tokenUrlBuilder = serverBuilder.clone();
+            refreshUrlBuilder = serverBuilder.clone();
         }
         String tokenUrl = tokenUrlBuilder.path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
         String refreshUrl = refreshUrlBuilder.path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(adapterConfig.getRealm()).toString();
@@ -74,7 +78,7 @@ public class ServletOAuthClientBuilder {
 
     private static RelativeUrlsUsed relativeUrls(KeycloakUriBuilder serverBuilder, AdapterConfig adapterConfig) {
         if (serverBuilder.clone().getHost() == null) {
-            return (adapterConfig.isUseHostnameForLocalRequests()) ? RelativeUrlsUsed.BROWSER_ONLY : RelativeUrlsUsed.ALL_REQUESTS;
+            return (adapterConfig.getAuthServerUrlForBackendRequests() != null) ? RelativeUrlsUsed.BROWSER_ONLY : RelativeUrlsUsed.ALL_REQUESTS;
         } else {
             return RelativeUrlsUsed.NEVER;
         }

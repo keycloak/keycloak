@@ -17,7 +17,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
         "connection-pool-size",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
-        "use-hostname-for-local-requests", "local-requests-scheme", "local-requests-port"
+        "auth-server-url-for-backend-requests"
 })
 public class AdapterConfig extends BaseAdapterConfig {
 
@@ -37,12 +37,8 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String clientKeyPassword;
     @JsonProperty("connection-pool-size")
     protected int connectionPoolSize = 20;
-    @JsonProperty("use-hostname-for-local-requests")
-    protected boolean useHostnameForLocalRequests;
-    @JsonProperty("local-requests-scheme")
-    protected String localRequestsScheme = "http";
-    @JsonProperty("local-requests-port")
-    protected int localRequestsPort = 8080;
+    @JsonProperty("auth-server-url-for-backend-requests")
+    protected String authServerUrlForBackendRequests;
 
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
@@ -108,27 +104,11 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.connectionPoolSize = connectionPoolSize;
     }
 
-    public boolean isUseHostnameForLocalRequests() {
-        return useHostnameForLocalRequests;
+    public String getAuthServerUrlForBackendRequests() {
+        return authServerUrlForBackendRequests;
     }
 
-    public void setUseHostnameForLocalRequests(boolean useHostnameForLocalRequests) {
-        this.useHostnameForLocalRequests = useHostnameForLocalRequests;
-    }
-
-    public String getLocalRequestsScheme() {
-        return localRequestsScheme;
-    }
-
-    public void setLocalRequestsScheme(String localRequestsScheme) {
-        this.localRequestsScheme = localRequestsScheme;
-    }
-
-    public int getLocalRequestsPort() {
-        return localRequestsPort;
-    }
-
-    public void setLocalRequestsPort(int localRequestsPort) {
-        this.localRequestsPort = localRequestsPort;
+    public void setAuthServerUrlForBackendRequests(String authServerUrlForBackendRequests) {
+        this.authServerUrlForBackendRequests = authServerUrlForBackendRequests;
     }
 }

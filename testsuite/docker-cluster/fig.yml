@@ -1,7 +1,7 @@
 httpd:
    build: httpd
    ports:
-      - "8000:8000"
+      - "8000:80"
       - "10001:10001"
    volumes_from:
       - mysql
