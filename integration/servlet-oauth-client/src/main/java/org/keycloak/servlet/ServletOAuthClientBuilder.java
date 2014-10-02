@@ -25,7 +25,7 @@ public class ServletOAuthClientBuilder {
 
     public static AdapterConfig getAdapterConfig(InputStream is) {
         try {
-            return JsonSerialization.readValue(is, AdapterConfig.class);
+            return JsonSerialization.readValueAndReplaceSysProperties(is, AdapterConfig.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

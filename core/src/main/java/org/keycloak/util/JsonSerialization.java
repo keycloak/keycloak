@@ -17,6 +17,7 @@ import java.io.OutputStream;
 public class JsonSerialization {
     public static final ObjectMapper mapper = new ObjectMapper();
     public static final ObjectMapper prettyMapper = new ObjectMapper();
+    public static final ObjectMapper sysPropertiesAwareMapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
 
     static {
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
@@ -47,6 +48,10 @@ public class JsonSerialization {
 
     public static <T> T readValue(InputStream bytes, Class<T> type) throws IOException {
         return mapper.readValue(bytes, type);
+    }
+
+    public static <T> T readValueAndReplaceSysProperties(InputStream bytes, Class<T> type) throws IOException {
+        return sysPropertiesAwareMapper.readValue(bytes, type);
     }
 
 

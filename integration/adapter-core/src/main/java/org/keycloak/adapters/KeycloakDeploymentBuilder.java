@@ -6,6 +6,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.PemUtils;
+import org.keycloak.util.SystemPropertiesJsonParserFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,7 +80,7 @@ public class KeycloakDeploymentBuilder {
     }
 
     public static KeycloakDeployment build(InputStream is) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
         AdapterConfig adapterConfig = null;
         try {

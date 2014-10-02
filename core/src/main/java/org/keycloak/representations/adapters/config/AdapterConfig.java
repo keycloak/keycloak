@@ -10,7 +10,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
  * @version $Revision: 1 $
  */
 @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-required",
-        "resource", "credentials",
+        "resource", "public-client", "credentials",
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods",
         "expose-token", "bearer-only",
