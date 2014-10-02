@@ -80,7 +80,9 @@ public class ClientSessionMapper implements Mapper<String, SessionEntity, String
                 collector.emit(key, entity);
                 break;
             case USER_SESSION_AND_TIMESTAMP:
-                collector.emit(entity.getUserSession(), entity.getTimestamp());
+                if (entity.getUserSession() != null) {
+                    collector.emit(entity.getUserSession(), entity.getTimestamp());
+                }
                 break;
         }
     }
