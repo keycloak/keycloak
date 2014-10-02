@@ -1,0 +1,9 @@
+{
+  "auth-server-url" : "http://${my.host}:8080/auth",
+  "ssl-required" : "external",
+  "resource" : "angular-product${non.existing}",
+  "public-client" : true,
+  "allow-any-hostname": "${allow.any.hostname}",
+  "cors-max-age": 100,
+  "connection-pool-size": "${con.pool.size}"
+}

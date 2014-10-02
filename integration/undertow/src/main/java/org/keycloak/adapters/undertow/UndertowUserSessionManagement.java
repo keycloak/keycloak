@@ -151,6 +151,7 @@ public class UndertowUserSessionManagement implements SessionListener {
     public void sessionDestroyed(Session session, HttpServerExchange exchange, SessionDestroyedReason reason) {
         // Look up the single session id associated with this session (if any)
         String username = getUsernameFromSession(session);
+        log.debugf("Session destroyed for user: %s, sessionId: %s", username, session.getId());
         if (username == null) return;
         String sessionId = session.getId();
         UserSessions userSessions = userSessionMap.get(username);

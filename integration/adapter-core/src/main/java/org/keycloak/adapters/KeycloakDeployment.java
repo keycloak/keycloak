@@ -7,7 +7,6 @@ import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.UriUtils;
 
 import java.net.URI;
 import java.security.PublicKey;
@@ -87,15 +86,18 @@ public class KeycloakDeployment {
 
         URI uri = URI.create(authServerBaseUrl);
         if (uri.getHost() == null) {
-            if (config.isUseHostnameForLocalRequests()) {
+            String authServerURLForBackendReqs = config.getAuthServerUrlForBackendRequests();
+            if (authServerURLForBackendReqs != null) {
                 relativeUrls = RelativeUrlsUsed.BROWSER_ONLY;
 
-                KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
-                serverBuilder.host(UriUtils.getHostName()).port(config.getLocalRequestsPort()).scheme(config.getLocalRequestsScheme());
+                KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerURLForBackendReqs);
+                if (serverBuilder.getHost() == null || serverBuilder.getScheme() == null) {
+                    throw new IllegalStateException("Relative URL not supported for auth-server-url-for-backend-requests option. URL used: "
+                            + authServerURLForBackendReqs + ", Client: " + config.getResource());
+                }
                 resolveNonBrowserUrls(serverBuilder);
             } else {
                 relativeUrls = RelativeUrlsUsed.ALL_REQUESTS;
-                return;
             }
         } else {
             // We have absolute URI in config
