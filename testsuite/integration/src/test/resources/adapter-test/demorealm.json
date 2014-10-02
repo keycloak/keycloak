@@ -105,6 +105,16 @@
                 "http://localhost:8081/secure-portal/*"
             ],
             "secret": "password"
+        },
+        {
+            "name": "session-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8081/session-portal",
+            "baseUrl": "http://localhost:8081/session-portal",
+            "redirectUris": [
+                "http://localhost:8081/session-portal/*"
+            ],
+            "secret": "password"
         }
     ],
     "oauthClients": [

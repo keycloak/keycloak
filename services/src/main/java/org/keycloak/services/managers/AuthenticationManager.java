@@ -86,7 +86,7 @@ public class AuthenticationManager {
         expireIdentityCookie(realm, uriInfo, connection);
         expireRememberMeCookie(realm, uriInfo, connection);
 
-        new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), userSession);
+        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, userSession);
 
         session.sessions().removeUserSession(realm, userSession);
     }

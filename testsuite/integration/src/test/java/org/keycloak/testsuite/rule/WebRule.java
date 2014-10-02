@@ -46,7 +46,7 @@ public class WebRule extends ExternalResource {
     }
 
     @Override
-    protected void before() throws Throwable {
+    public void before() throws Throwable {
         driver = createWebDriver();
         oauth = new OAuthClient(driver);
         initWebResources(test);
@@ -121,7 +121,7 @@ public class WebRule extends ExternalResource {
     }
 
     @Override
-    protected void after() {
+    public void after() {
         driver.manage().deleteAllCookies();
         driver.close();
     }
