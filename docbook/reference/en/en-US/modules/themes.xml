@@ -7,10 +7,36 @@
     </para>
 
     <section>
+        <title>Theme types</title>
+        <para>
+            There are several types of themes in Keycloak:
+            <itemizedlist>
+                <listitem>Account - Account management</listitem>
+                <listitem>Admin - Admin console</listitem>
+                <listitem>Common - Shared resources for themes</listitem>
+                <listitem>Email - Emails</listitem>
+                <listitem>Login - Login forms</listitem>
+                <listitem>Welcome - Welcome pages</listitem>
+            </itemizedlist>
+        </para>
+    </section>
+
+    <section>
         <title>Configure theme</title>
         <para>
-            To configure the theme used by a realm open the <literal>Keycloak Admin Console</literal>, select your realm
+            All theme types, except welcome, is configured through <literal>Keycloak Admin Console</literal>. To change
+            the theme used for a realm open the open the <literal>Keycloak Admin Console</literal>, select your realm
             from the drop-down box in the top left corner. Under <literal>Settings</literal> click on <literal>Theme</literal>.
+        </para>
+        <para>
+            To change the welcome theme you need to edit <literal>standalone/configuration/keycloak-server.json</literal>
+            and add <literal>welcomeTheme</literal> to the theme element, for example:
+<programlisting>
+"theme": {
+    ...
+    "welcomeTheme": "custom-theme"
+}
+</programlisting>
         </para>
     </section>
 
@@ -26,25 +52,14 @@
     <section>
         <title>Creating a theme</title>
         <para>
-            There are several types of themes in Keycloak:
-            <itemizedlist>
-                <listitem>Account - Account management</listitem>
-                <listitem>Admin - Admin console</listitem>
-                <listitem>Common - Shared resources for themes</listitem>
-                <listitem>Email - Emails</listitem>
-                <listitem>Login - Login forms</listitem>
-            </itemizedlist>
-        </para>
-
-        <para>
             A theme consists of:
             <itemizedlist>
-                <listitem><para><ulink url="http://freemarker.org">FreeMarker</ulink> templates</para></listitem>
-                <listitem><para>Stylesheets</para></listitem>
-                <listitem><para>Scripts</para></listitem>
-                <listitem><para>Images</para></listitem>
-                <listitem><para>Message bundles</para></listitem>
-                <listitem><para>Theme properties</para></listitem>
+                <listitem><ulink url="http://freemarker.org">FreeMarker</ulink> templates</listitem>
+                <listitem>Stylesheets</listitem>
+                <listitem>Scripts</listitem>
+                <listitem>Images</listitem>
+                <listitem>Message bundles</listitem>
+                <listitem>Theme properties</listitem>
             </itemizedlist>
         </para>
         <para>
@@ -132,10 +147,9 @@
         <section>
             <title>Theme SPI</title>
             <para>
-                The Theme SPI allows creating different mechanisms to providing themes for the default FreeMarker based
+                The Theme SPI allows creating different mechanisms to load themes for the default FreeMarker based
                 implementations of login forms and account management. To create a theme provider you will need to implement
-                <literal>org.keycloak.freemarker.ThemeProvider</literal> and <literal>org.keycloak.freemarker.Theme</literal> in
-                <literal>forms/common-freemarker</literal>.
+                <literal>org.keycloak.freemarker.ThemeProviderFactory</literal> and <literal>org.keycloak.freemarker.ThemeProvider</literal>.
             </para>
             <para>
                 Keycloak comes with two theme providers, one that loads themes from the classpath (used by default themes)
@@ -149,12 +163,15 @@
             <para>
                 The Account SPI allows implementing the account management pages using whatever web framework or templating
                 engine you want. To create an Account provider implement <literal>org.keycloak.account.AccountProviderFactory</literal>
-                and <literal>org.keycloak.account.AccountProvider</literal> in <literal>forms/account-api</literal>.
+                and <literal>org.keycloak.account.AccountProvider</literal>.
             </para>
             <para>
-                Keycloaks default account management provider is built on the FreeMarker template engine (<literal>forms/account-freemarker</literal>).
-                To make sure your provider is loaded you will either need to delete <literal>standalone/deployments/auth-server.war/WEB-INF/lib/keycloak-account-freemarker-&project.version;.jar</literal>
-                or disable it with the system property <literal>org.keycloak.account.freemarker.FreeMarkerAccountProviderFactory</literal>.
+                Once you have deployed your account provider to Keycloak you need to configure <literal>keycloak-server.json</literal>to specify which provider should be used:
+<programlisting>
+"account": {
+    "provider": "custom-provider"
+}
+</programlisting>
             </para>
         </section>
         <section>
@@ -165,9 +182,12 @@
                 and <literal>org.keycloak.login.LoginFormsProvider</literal> in <literal>forms/login-api</literal>.
             </para>
             <para>
-                Keycloaks default login forms provider is built on the FreeMarker template engine (<literal>forms/login-freemarker</literal>).
-                To make sure your provider is loaded you will either need to delete <literal>standalone/deployments/auth-server.war/WEB-INF/lib/keycloak-login-freemarker-&project.version;.jar</literal>
-                or disable it with the system property <literal>org.keycloak.login.freemarker.FreeMarkerLoginFormsProviderFactory</literal>.
+                Once you have deployed your account provider to Keycloak you need to configure <literal>keycloak-server.json</literal>to specify which provider should be used:
+<programlisting>
+"login": {
+    "provider": "custom-provider"
+}
+</programlisting>
             </para>
         </section>
     </section>
