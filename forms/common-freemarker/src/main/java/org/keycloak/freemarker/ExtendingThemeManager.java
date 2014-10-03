@@ -1,5 +1,6 @@
 package org.keycloak.freemarker;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 
@@ -21,17 +22,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ExtendingThemeManager implements ThemeProvider {
 
+    private static final Logger log = Logger.getLogger(ExtendingThemeManager.class);
+
     private final KeycloakSession session;
     private final ConcurrentHashMap<ExtendingThemeManagerFactory.ThemeKey, Theme> themeCache;
     private List<ThemeProvider> providers;
     private String defaultTheme;
-    private int staticMaxAge;
 
     public ExtendingThemeManager(KeycloakSession session, ConcurrentHashMap<ExtendingThemeManagerFactory.ThemeKey, Theme> themeCache) {
         this.session = session;
         this.themeCache = themeCache;
         this.defaultTheme = Config.scope("theme").get("default", "keycloak");
-        this.staticMaxAge = Config.scope("theme").getInt("staticMaxAge", -1);
     }
 
     private List<ThemeProvider> getProviders() {
@@ -57,10 +58,6 @@ public class ExtendingThemeManager implements ThemeProvider {
         return providers;
     }
 
-    public int getStaticMaxAge() {
-        return staticMaxAge;
-    }
-
     @Override
     public int getProviderPriority() {
         return 0;
@@ -77,7 +74,13 @@ public class ExtendingThemeManager implements ThemeProvider {
             Theme theme = themeCache.get(key);
             if (theme == null) {
                 theme = loadTheme(name, type);
-                if (themeCache.putIfAbsent(key, theme) != null) {
+                if (theme == null) {
+                    theme = loadTheme("keycloak", type);
+                    if (theme == null) {
+                        theme = loadTheme("base", type);
+                    }
+                    log.errorv("Failed to find {0} theme {1}, using built-in themes", type, name);
+                } else if (themeCache.putIfAbsent(key, theme) != null) {
                     theme = themeCache.get(key);
                 }
             }
@@ -89,7 +92,7 @@ public class ExtendingThemeManager implements ThemeProvider {
 
     private Theme loadTheme(String name, Theme.Type type) throws IOException {
         Theme theme = findTheme(name, type);
-        if (theme.getParentName() != null) {
+        if (theme != null && theme.getParentName() != null) {
             List<Theme> themes = new LinkedList<Theme>();
             themes.add(theme);
 
@@ -144,11 +147,11 @@ public class ExtendingThemeManager implements ThemeProvider {
                 try {
                     return p.getTheme(name, type);
                 } catch (IOException e) {
-                    throw new RuntimeException("Failed to create " + type.toString().toLowerCase() + " theme", e);
+                    log.errorv(e, p.getClass() + " failed to load theme, type={0}, name={1}", type, name);
                 }
             }
         }
-        throw new RuntimeException(type.toString().toLowerCase() + " theme '" + name + "' not found");
+        return null;
     }
 
     public static class ExtendingTheme implements Theme {
