@@ -19,6 +19,7 @@ package org.keycloak.adapters.undertow;
 import io.undertow.security.api.AuthenticatedSessionManager;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
+import io.undertow.server.session.SessionConfig;
 import io.undertow.server.session.SessionListener;
 import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler;
@@ -108,7 +109,7 @@ public class UndertowUserSessionManagement implements SessionListener {
             log.debug("invalidating session for user: " + user);
             String sessionId = entry.getKey();
             String keycloakSessionId = entry.getValue();
-            Session session = manager.getSession(sessionId);
+            Session session = getSessionById(manager, sessionId);
             try {
                 session.invalidate(null);
             } catch (Exception e) {
@@ -131,7 +132,7 @@ public class UndertowUserSessionManagement implements SessionListener {
 
         }
         sessions.httpSessionToKeycloakSession.remove(sessionId);
-        Session session = manager.getSession(sessionId);
+        Session session = getSessionById(manager, sessionId);
         try {
             session.invalidate(null);
         } catch (Exception e) {
@@ -139,6 +140,41 @@ public class UndertowUserSessionManagement implements SessionListener {
         }
         if (sessions.keycloakSessionToHttpSession.size() == 0) {
             userSessionMap.remove(sessions.user);
+        }
+    }
+
+    protected Session getSessionById(SessionManager manager, final String sessionId) {
+        // TODO: Workaround for WFLY-3345. Remove this once we move to wildfly 8.2
+        if (manager.getClass().getName().equals("org.wildfly.clustering.web.undertow.session.DistributableSessionManager")) {
+            return manager.getSession(null, new SessionConfig() {
+
+                @Override
+                public void setSessionId(HttpServerExchange exchange, String sessionId) {
+                }
+
+                @Override
+                public void clearSession(HttpServerExchange exchange, String sessionId) {
+                }
+
+                @Override
+                public String findSessionId(HttpServerExchange exchange) {
+                    return sessionId;
+                }
+
+                @Override
+                public SessionCookieSource sessionCookieSource(HttpServerExchange exchange) {
+                    return null;
+                }
+
+                @Override
+                public String rewriteUrl(String originalUrl, String sessionId) {
+                    return null;
+                }
+
+            });
+
+        } else {
+            return manager.getSession(sessionId);
         }
     }
 
