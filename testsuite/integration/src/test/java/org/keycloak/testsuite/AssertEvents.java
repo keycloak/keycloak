@@ -8,10 +8,10 @@ import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.Config;
-import org.keycloak.events.EventListenerProvider;
-import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -274,6 +274,11 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
             if (details != null) {
                 details.remove(key);
             }
+            return this;
+        }
+
+        public ExpectedEvent clearDetails() {
+            if (details != null) details.clear();
             return this;
         }
 

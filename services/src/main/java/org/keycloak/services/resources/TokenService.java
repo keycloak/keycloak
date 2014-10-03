@@ -244,7 +244,7 @@ public class TokenService {
         }
         event.detail(Details.USERNAME, username);
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
         if (user != null) event.user(user);
 
         ClientModel client = authorizeClient(authorizationHeader, form, event);

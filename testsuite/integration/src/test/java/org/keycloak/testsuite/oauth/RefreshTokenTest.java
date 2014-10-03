@@ -33,9 +33,11 @@ import org.keycloak.enums.SslRequired;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.resources.TokenService;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -56,6 +58,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
@@ -173,6 +177,54 @@ public class RefreshTokenTest {
         Event refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
+    }
+
+    PrivateKey privateKey;
+    PublicKey publicKey;
+
+    @Test
+    public void refreshTokenRealmKeysChanged() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        Event loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = response.getRefreshToken();
+        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+
+        events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        try {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    privateKey = appRealm.getPrivateKey();
+                    publicKey = appRealm.getPublicKey();
+                    KeycloakModelUtils.generateRealmKeys(appRealm);
+                }
+            });
+
+            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+
+            assertEquals(400, response.getStatusCode());
+            assertEquals("invalid_grant", response.getError());
+
+            events.expectRefresh(refreshToken.getId(), sessionId).user((String) null).session((String) null).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPrivateKey(privateKey);
+                    appRealm.setPublicKey(publicKey);
+                }
+            });
+
+        }
     }
 
     @Test
@@ -415,7 +467,6 @@ public class RefreshTokenTest {
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));
     }
-
 
 
 }
