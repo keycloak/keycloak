@@ -453,20 +453,24 @@ public class AccountTest {
 
         // Create second session
         WebDriver driver2 = WebRule.createWebDriver();
-        OAuthClient oauth2 = new OAuthClient(driver2);
-        oauth2.state("mystate");
-        oauth2.doLogin("view-sessions", "password");
+        try {
+            OAuthClient oauth2 = new OAuthClient(driver2);
+            oauth2.state("mystate");
+            oauth2.doLogin("view-sessions", "password");
 
-        Event login2Event = events.expectLogin().user(userId).detail(Details.USERNAME, "view-sessions").assertEvent();
+            Event login2Event = events.expectLogin().user(userId).detail(Details.USERNAME, "view-sessions").assertEvent();
 
-        sessionsPage.open();
-        sessions = sessionsPage.getSessions();
-        Assert.assertEquals(2, sessions.size());
+            sessionsPage.open();
+            sessions = sessionsPage.getSessions();
+            Assert.assertEquals(2, sessions.size());
 
-        sessionsPage.logoutAll();
+            sessionsPage.logoutAll();
 
-        events.expectLogout(registerEvent.getSessionId());
-        events.expectLogout(login2Event.getSessionId());
+            events.expectLogout(registerEvent.getSessionId());
+            events.expectLogout(login2Event.getSessionId());
+        } finally {
+            driver2.close();
+        }
     }
 
 }

@@ -51,6 +51,7 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.BasicAuthHelper;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -136,20 +137,16 @@ public class AdapterTest {
     public void testLoginSSOAndLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to("http://localhost:8081/customer-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
         String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         // test SSO
         driver.navigate().to("http://localhost:8081/product-portal");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/product-portal");
         pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
@@ -191,28 +188,22 @@ public class AdapterTest {
     public void testServletRequestLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to("http://localhost:8081/customer-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
         String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         // test SSO
         driver.navigate().to("http://localhost:8081/product-portal");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/product-portal");
         pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // back
         driver.navigate().to("http://localhost:8081/customer-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
         pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
         // test logout
 
@@ -233,13 +224,10 @@ public class AdapterTest {
     public void testLoginSSOIdle() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to("http://localhost:8081/customer-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
         String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         KeycloakSession session = keycloakRule.startSession();
@@ -267,13 +255,10 @@ public class AdapterTest {
     public void testLoginSSOIdleRemoveExpiredUserSessions() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to("http://localhost:8081/customer-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
         String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         KeycloakSession session = keycloakRule.startSession();
@@ -306,13 +291,10 @@ public class AdapterTest {
     public void testLoginSSOMax() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to("http://localhost:8081/customer-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
         String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         KeycloakSession session = keycloakRule.startSession();
@@ -404,13 +386,10 @@ public class AdapterTest {
     public void testAuthenticated() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to("http://localhost:8081/secure-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/secure-portal");
         String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         // test logout
@@ -458,11 +437,67 @@ public class AdapterTest {
         }
     }
 
+    @Test
+    public void testMultipleSessions() throws Exception {
+        WebDriver driver2 = WebRule.createWebDriver();
+        try {
+            // login session1
+            driver.navigate().to("http://localhost:8081/customer-portal");
+            Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+            loginPage.login("bburke@redhat.com", "password");
+            Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
+            Assert.assertTrue(driver.getPageSource().contains("Bill Burke"));
+
+            // sso session1
+            driver.navigate().to("http://localhost:8081/product-portal");
+            Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/product-portal");
+            Assert.assertTrue(driver.getPageSource().contains("iPhone"));
+
+            // login session2
+            driver2.navigate().to("http://localhost:8081/customer-portal");
+            Assert.assertTrue(driver2.getCurrentUrl().startsWith(LOGIN_URL));
+            driver2.findElement(By.id("username")).sendKeys("bburke@redhat.com");
+            driver2.findElement(By.id("password")).sendKeys("password");
+            driver2.findElement(By.name("login")).click();
+            Assert.assertEquals(driver2.getCurrentUrl(), "http://localhost:8081/customer-portal");
+            Assert.assertTrue(driver2.getPageSource().contains("Bill Burke"));
+
+            // logout session1
+            String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
+                    .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8081/customer-portal").build("demo").toString();
+            driver.navigate().to(logoutUri);
+            Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+            driver.navigate().to("http://localhost:8081/product-portal");
+            Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+            driver.navigate().to("http://localhost:8081/customer-portal");
+            Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+            // check session2 still logged in
+            driver2.navigate().to("http://localhost:8081/customer-portal");
+            Assert.assertEquals(driver2.getCurrentUrl(), "http://localhost:8081/customer-portal");
+            Assert.assertTrue(driver2.getPageSource().contains("Bill Burke"));
+
+            // sso session2
+            driver2.navigate().to("http://localhost:8081/product-portal");
+            Assert.assertEquals(driver2.getCurrentUrl(), "http://localhost:8081/product-portal");
+            Assert.assertTrue(driver2.getPageSource().contains("iPhone"));
+
+            // logout session2
+            driver2.navigate().to(logoutUri);
+            Assert.assertTrue(driver2.getCurrentUrl().startsWith(LOGIN_URL));
+            driver2.navigate().to("http://localhost:8081/product-portal");
+            Assert.assertTrue(driver2.getCurrentUrl().startsWith(LOGIN_URL));
+            driver2.navigate().to("http://localhost:8081/customer-portal");
+            Assert.assertTrue(driver2.getCurrentUrl().startsWith(LOGIN_URL));
+        } finally {
+            driver2.close();
+        }
+    }
+
     private static void loginAndCheckSession(WebDriver driver, LoginPage loginPage) {
         driver.navigate().to("http://localhost:8081/session-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/session-portal");
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Counter=1"));
