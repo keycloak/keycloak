@@ -108,7 +108,7 @@ public class TokenManager {
         RefreshToken refreshToken = null;
         try {
             if (!RSAProvider.verify(jws, realm.getPublicKey())) {
-                throw new RuntimeException("Invalid refresh token");
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
             }
             refreshToken = jws.readJsonContent(RefreshToken.class);
         } catch (IOException e) {
