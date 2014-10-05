@@ -23,6 +23,10 @@ done;
 # Configure admin-access.war
 sed -i -e 's/false/true/' admin-access.war/WEB-INF/web.xml
 
+# Enforce refreshing token for product-portal and customer-portal war
+sed -i -e 's/\"\/auth\",/&\n    \"always-refresh-token\": true,/' customer-portal.war/WEB-INF/keycloak.json;
+sed -i -e 's/\"\/auth\",/&\n    \"always-refresh-token\": true,/' product-portal.war/WEB-INF/keycloak.json;
+
 # Configure other examples
 for I in *.war/WEB-INF/keycloak.json; do
   sed -i -e 's/\"\/auth\",/&\n    \"auth-server-url-for-backend-requests\": \"http:\/\/\$\{jboss.host.name\}:8080\/auth\",/' $I;

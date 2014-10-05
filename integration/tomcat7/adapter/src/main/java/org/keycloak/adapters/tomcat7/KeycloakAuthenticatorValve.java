@@ -177,12 +177,12 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         if (session == null) return;
         // just in case session got serialized
         if (session.getDeployment() == null) session.setDeployment(deploymentContext.resolveDeployment(facade));
-        if (session.isActive()) return;
+        if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) return;
 
         // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will
         // not be updated
-        session.refreshExpiredToken();
-        if (session.isActive()) return;
+        boolean success = session.refreshExpiredToken(false);
+        if (success && session.isActive()) return;
 
         request.getSessionInternal().removeNote(KeycloakSecurityContext.class.getName());
         request.setUserPrincipal(null);
