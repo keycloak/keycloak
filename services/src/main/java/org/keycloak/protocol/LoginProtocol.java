@@ -18,15 +18,15 @@ import javax.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public interface LoginProtocol extends Provider {
-    OpenIDConnect setSession(KeycloakSession session);
+    LoginProtocol setSession(KeycloakSession session);
 
-    OpenIDConnect setRealm(RealmModel realm);
+    LoginProtocol setRealm(RealmModel realm);
 
-    OpenIDConnect setRequest(HttpRequest request);
+    LoginProtocol setRequest(HttpRequest request);
 
-    OpenIDConnect setUriInfo(UriInfo uriInfo);
+    LoginProtocol setUriInfo(UriInfo uriInfo);
 
-    OpenIDConnect setClientConnection(ClientConnection clientConnection);
+    LoginProtocol setClientConnection(ClientConnection clientConnection);
 
     Response cancelLogin(ClientSessionModel clientSession);
     Response invalidSessionError(ClientSessionModel clientSession);

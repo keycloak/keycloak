@@ -16,5 +16,8 @@
             <module name="org.keycloak.keycloak-undertow-adapter" />
             <module name="org.keycloak.keycloak-as7-adapter" />
         </exclusions>
+        <exclude-subsystems>
+            <subsystem name="webservices"/>
+        </exclude-subsystems>
     </deployment>
 </jboss-deployment-structure>
