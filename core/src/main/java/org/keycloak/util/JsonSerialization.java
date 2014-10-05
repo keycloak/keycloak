@@ -47,11 +47,15 @@ public class JsonSerialization {
     }
 
     public static <T> T readValue(InputStream bytes, Class<T> type) throws IOException {
-        return mapper.readValue(bytes, type);
+        return readValue(bytes, type, false);
     }
 
-    public static <T> T readValueAndReplaceSysProperties(InputStream bytes, Class<T> type) throws IOException {
-        return sysPropertiesAwareMapper.readValue(bytes, type);
+    public static <T> T readValue(InputStream bytes, Class<T> type, boolean replaceSystemProperties) throws IOException {
+        if (replaceSystemProperties) {
+            return sysPropertiesAwareMapper.readValue(bytes, type);
+        } else {
+            return mapper.readValue(bytes, type);
+        }
     }
 
 

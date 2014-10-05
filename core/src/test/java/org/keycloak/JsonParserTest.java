@@ -21,7 +21,7 @@ public class JsonParserTest {
 
         InputStream is = getClass().getClassLoader().getResourceAsStream("keycloak.json");
 
-        AdapterConfig config = JsonSerialization.readValueAndReplaceSysProperties(is, AdapterConfig.class);
+        AdapterConfig config = JsonSerialization.readValue(is, AdapterConfig.class, true);
         Assert.assertEquals("http://foo:8080/auth", config.getAuthServerUrl());
         Assert.assertEquals("external", config.getSslRequired());
         Assert.assertEquals("angular-product${non.existing}", config.getResource());
