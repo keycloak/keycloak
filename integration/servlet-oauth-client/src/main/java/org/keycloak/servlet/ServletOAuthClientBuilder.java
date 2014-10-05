@@ -7,7 +7,6 @@ import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.UriUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +24,7 @@ public class ServletOAuthClientBuilder {
 
     public static AdapterConfig getAdapterConfig(InputStream is) {
         try {
-            return JsonSerialization.readValueAndReplaceSysProperties(is, AdapterConfig.class);
+            return JsonSerialization.readValue(is, AdapterConfig.class, true);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
