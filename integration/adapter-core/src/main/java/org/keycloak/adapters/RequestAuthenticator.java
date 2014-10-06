@@ -111,6 +111,7 @@ public abstract class RequestAuthenticator {
     protected abstract void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
     protected abstract void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
     protected abstract boolean isCached();
+    protected abstract String getHttpSessionId(boolean create);
 
     protected void completeAuthentication(BearerTokenRequestAuthenticator bearer) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, bearer.getTokenString(), bearer.getToken(), null, null, null);

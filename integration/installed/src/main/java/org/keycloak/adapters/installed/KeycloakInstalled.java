@@ -227,7 +227,7 @@ public class KeycloakInstalled {
     }
 
     private void processCode(String code, String redirectUri) throws IOException, ServerRequest.HttpFailure, VerificationException {
-        AccessTokenResponse tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, redirectUri);
+        AccessTokenResponse tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, redirectUri, null);
         parseAccessToken(tokenResponse);
     }
 

@@ -41,7 +41,8 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     private AccessTokenResponse resolveBearerToken(HttpServletRequest request, String redirectUri, String code) throws IOException, ServerRequest.HttpFailure {
-        return ServerRequest.invokeAccessCodeToToken(client, publicClient, code, getUrl(request, codeUrl, false), redirectUri, clientId, credentials);
+        // Don't send sessionId in oauth clients for now
+        return ServerRequest.invokeAccessCodeToToken(client, publicClient, code, getUrl(request, codeUrl, false), redirectUri, clientId, credentials, null);
     }
 
     /**

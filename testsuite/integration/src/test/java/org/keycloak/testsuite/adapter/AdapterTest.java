@@ -23,10 +23,8 @@ package org.keycloak.testsuite.adapter;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runners.MethodSorters;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;
@@ -40,7 +38,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -158,17 +155,16 @@ public class AdapterTest {
         Client client = ClientBuilder.newClient();
         UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
         WebTarget adminTarget = client.target(AdminRoot.realmsUrl(authBase)).path("demo");
-        Map<String, SessionStats> stats = adminTarget.path("session-stats").request()
+        Map<String, Integer> stats = adminTarget.path("application-session-stats").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
-                .get(new GenericType<Map<String, SessionStats>>() {
+                .get(new GenericType<Map<String, Integer>>() {
                 });
-
-        SessionStats custStats = stats.get("customer-portal");
-        Assert.assertNotNull(custStats);
-        Assert.assertEquals(1, custStats.getActiveSessions());
-        SessionStats prodStats = stats.get("product-portal");
-        Assert.assertNotNull(prodStats);
-        Assert.assertEquals(1, prodStats.getActiveSessions());
+        Integer custSessionsCount = stats.get("customer-portal");
+        Assert.assertNotNull(custSessionsCount);
+        Assert.assertTrue(1 == custSessionsCount);
+        Integer prodStatsCount = stats.get("product-portal");
+        Assert.assertNotNull(prodStatsCount);
+        Assert.assertTrue(1 == prodStatsCount);
 
         client.close();
 
@@ -299,7 +295,7 @@ public class AdapterTest {
         realm = session.realms().getRealmByName("demo");
         // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
         UserModel user = session.users().getUserByUsername("bburke@redhat.com", realm);
-        new ResourceAdminManager().logoutUser(null, realm, user.getId(), null);
+        new ResourceAdminManager().logoutUser(null, realm, user, session);
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();

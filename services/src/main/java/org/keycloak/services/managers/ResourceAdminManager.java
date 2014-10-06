@@ -17,10 +17,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
-import org.keycloak.representations.adapters.action.SessionStats;
-import org.keycloak.representations.adapters.action.SessionStatsAction;
 import org.keycloak.representations.adapters.action.UserStats;
-import org.keycloak.representations.adapters.action.UserStatsAction;
 import org.keycloak.services.util.HttpClientBuilder;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.util.StringPropertyReplacer;
@@ -29,8 +26,9 @@ import org.keycloak.util.Time;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -41,65 +39,11 @@ import java.util.Map;
 public class ResourceAdminManager {
     protected static Logger logger = Logger.getLogger(ResourceAdminManager.class);
 
-    public SessionStats getSessionStats(URI requestUri, KeycloakSession session, RealmModel realm, ApplicationModel application, boolean users) {
-        ApacheHttpClient4Executor executor = createExecutor();
-
-        try {
-            return getSessionStats(requestUri, session, realm, application, users, executor);
-        } finally {
-            executor.getHttpClient().getConnectionManager().shutdown();
-        }
-
-    }
-
     public static ApacheHttpClient4Executor createExecutor() {
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager() // todo fix this, should have a trust manager or a good default
                 .build();
         return new ApacheHttpClient4Executor(client);
-    }
-
-    public SessionStats getSessionStats(URI requestUri, KeycloakSession session, RealmModel realm, ApplicationModel application, boolean users, ApacheHttpClient4Executor client) {
-        String managementUrl = getManagementUrl(requestUri, application);
-        if (managementUrl != null) {
-            SessionStatsAction adminAction = new SessionStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName());
-            adminAction.setListUsers(users);
-            String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.debugv("session stats for application: {0} url: {1}", application.getName(), managementUrl);
-            ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_GET_SESSION_STATS).build().toString());
-            ClientResponse<SessionStats> response = null;
-            try {
-                response = request.body(MediaType.TEXT_PLAIN_TYPE, token).post(SessionStats.class);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            try {
-                if (response.getStatus() != 200) {
-                    logger.warn("Failed to get stats: " + response.getStatus());
-                    return null;
-                }
-                SessionStats stats = response.getEntity();
-
-                // replace with username
-                if (users && stats.getUsers() != null) {
-                    Map<String, UserStats> newUsers = new HashMap<String, UserStats>();
-                    for (Map.Entry<String, UserStats> entry : stats.getUsers().entrySet()) {
-                        UserModel user = session.users().getUserById(entry.getKey(), realm);
-                        if (user == null) continue;
-                        newUsers.put(user.getUsername(), entry.getValue());
-
-                    }
-                    stats.setUsers(newUsers);
-                }
-                return stats;
-            } finally {
-                response.releaseConnection();
-            }
-        } else {
-            logger.debug("no management url.");
-            return null;
-        }
-
     }
 
     public static String getManagementUrl(URI requestUri, ApplicationModel application) {
@@ -111,77 +55,47 @@ public class ResourceAdminManager {
         // this is to support relative admin urls when keycloak and applications are deployed on the same machine
         String absoluteURI = ResolveRelative.resolveRelativeUri(requestUri, mgmtUrl);
 
-        // this is for resolving URI like "http://${jboss.home.name}:8080/..." in order to send request to same machine and avoid LB in cluster env
+        // this is for resolving URI like "http://${jboss.host.name}:8080/..." in order to send request to same machine and avoid request to LB in cluster environment
         return StringPropertyReplacer.replaceProperties(absoluteURI);
     }
 
-    public UserStats getUserStats(URI requestUri, RealmModel realm, ApplicationModel application, UserModel user) {
+    public void logoutUser(URI requestUri, RealmModel realm, UserModel user, KeycloakSession keycloakSession) {
+        List<UserSessionModel> userSessions = keycloakSession.sessions().getUserSessions(realm, user);
+        logoutUserSessions(requestUri, realm, userSessions);
+    }
+
+    protected void logoutUserSessions(URI requestUri, RealmModel realm, List<UserSessionModel> userSessions) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            return getUserStats(requestUri, realm, application, user, executor);
-        } finally {
-            executor.getHttpClient().getConnectionManager().shutdown();
-        }
-
-    }
-
-
-    public UserStats getUserStats(URI requestUri, RealmModel realm, ApplicationModel application, UserModel user, ApacheHttpClient4Executor client) {
-        String managementUrl = getManagementUrl(requestUri, application);
-        if (managementUrl != null) {
-            UserStatsAction adminAction = new UserStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName(), user.getId());
-            String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.debugv("session stats for application: {0} url: {1}", application.getName(), managementUrl);
-            ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_GET_USER_STATS).build().toString());
-            ClientResponse<UserStats> response = null;
-            try {
-                response = request.body(MediaType.TEXT_PLAIN_TYPE, token).post(UserStats.class);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            // Map from "app" to clientSessions for this app
+            Map<ApplicationModel, List<ClientSessionModel>> clientSessions = new HashMap<ApplicationModel, List<ClientSessionModel>>();
+            for (UserSessionModel userSession : userSessions) {
+                putClientSessions(clientSessions, userSession);
             }
 
-            try {
-                if (response.getStatus() != 200) {
-                    logger.warn("Failed to get stats: " + response.getStatus());
-                    return null;
-                }
-                UserStats stats = response.getEntity();
-                return stats;
-            } finally {
-                response.releaseConnection();
-            }
-        } else {
-            logger.debug("no management url.");
-            return null;
-        }
+            logger.debugv("logging out {0} resources ", clientSessions.size());
+            logger.infov("logging out resources: " + clientSessions);
 
-    }
-
-    public void logoutUser(URI requestUri, RealmModel realm, String user, UserSessionModel session) {
-        ApacheHttpClient4Executor executor = createExecutor();
-
-        try {
-            List<ApplicationModel> resources;
-            if (session != null) {
-                resources = new LinkedList<ApplicationModel>();
-
-                for (ClientSessionModel clientSession : session.getClientSessions()) {
-                    ClientModel client = clientSession.getClient();
-                    if (client instanceof ApplicationModel) {
-                        resources.add((ApplicationModel) client);
-                    }
-                }
-            } else {
-                resources = realm.getApplications();
-            }
-
-            logger.debugv("logging out {0} resources ", resources.size());
-            for (ApplicationModel resource : resources) {
-                logoutApplication(requestUri, realm, resource, user, session != null ? session.getId() : null, executor, 0);
+            for (Map.Entry<ApplicationModel, List<ClientSessionModel>> entry : clientSessions.entrySet()) {
+                logoutApplication(requestUri, realm, entry.getKey(), entry.getValue(), executor, 0);
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
+        }
+    }
+
+    private void putClientSessions(Map<ApplicationModel, List<ClientSessionModel>> clientSessions, UserSessionModel userSession) {
+        for (ClientSessionModel clientSession : userSession.getClientSessions()) {
+            ClientModel client = clientSession.getClient();
+            if (client instanceof ApplicationModel) {
+                List<ClientSessionModel> curClientSessions = clientSessions.get(client);
+                if (curClientSessions == null) {
+                    curClientSessions = new ArrayList<ClientSessionModel>();
+                    clientSessions.put((ApplicationModel)client, curClientSessions);
+                }
+                curClientSessions.add(clientSession);
+            }
         }
     }
 
@@ -189,17 +103,12 @@ public class ResourceAdminManager {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            List<ApplicationModel> resources = new LinkedList<ApplicationModel>();
-            for (ClientSessionModel clientSession : session.getClientSessions()) {
-                ClientModel client = clientSession.getClient();
-                if (client instanceof ApplicationModel) {
-                    resources.add((ApplicationModel) client);
-                }
-            }
+            Map<ApplicationModel, List<ClientSessionModel>> clientSessions = new HashMap<ApplicationModel, List<ClientSessionModel>>();
+            putClientSessions(clientSessions, session);
 
-            logger.debugv("logging out {0} resources ", resources.size());
-            for (ApplicationModel resource : resources) {
-                logoutApplication(requestUri, realm, resource, null, session.getId(), executor, 0);
+            logger.debugv("logging out {0} resources ", clientSessions.size());
+            for (Map.Entry<ApplicationModel, List<ClientSessionModel>> entry : clientSessions.entrySet()) {
+                logoutApplication(requestUri, realm, entry.getKey(), entry.getValue(), executor, 0);
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
@@ -214,32 +123,57 @@ public class ResourceAdminManager {
             List<ApplicationModel> resources = realm.getApplications();
             logger.debugv("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
-                logoutApplication(requestUri, realm, resource, null, null, executor, realm.getNotBefore());
+                logoutApplication(requestUri, realm, resource, (List<ClientSessionModel>)null, executor, realm.getNotBefore());
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
     }
 
-    public void logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user, String session) {
+    public void logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, List<UserSessionModel> userSessions) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
             resource.setNotBefore(Time.currentTime());
-            logoutApplication(requestUri, realm, resource, user, session, executor, resource.getNotBefore());
+
+            List<ClientSessionModel> ourAppClientSessions = null;
+            if (userSessions != null) {
+                Map<ApplicationModel, List<ClientSessionModel>> clientSessions = new HashMap<ApplicationModel, List<ClientSessionModel>>();
+                for (UserSessionModel userSession : userSessions) {
+                    putClientSessions(clientSessions, userSession);
+                }
+                ourAppClientSessions = clientSessions.get(resource);
+            }
+
+            logoutApplication(requestUri, realm, resource, ourAppClientSessions, executor, resource.getNotBefore());
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
 
     }
 
+    public boolean logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, ClientSessionModel clientSession, ApacheHttpClient4Executor client, int notBefore) {
+        return logoutApplication(requestUri, realm, resource, Arrays.asList(clientSession), client, notBefore);
+    }
 
-    public boolean logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user, String session, ApacheHttpClient4Executor client, int notBefore) {
+    protected boolean logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, List<ClientSessionModel> clientSessions, ApacheHttpClient4Executor client, int notBefore) {
         String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
-            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), user, session, notBefore);
+
+            List<String> adapterSessionIds = null;
+            if (clientSessions != null && clientSessions.size() > 0) {
+                adapterSessionIds = new ArrayList<String>();
+                for (ClientSessionModel clientSession : clientSessions) {
+                    String adapterSessionId = clientSession.getNote(AdapterConstants.HTTP_SESSION_ID);
+                    if (adapterSessionId != null) {
+                        adapterSessionIds.add(adapterSessionId);
+                    }
+                }
+            }
+
+            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), adapterSessionIds, notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.debugv("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
+            logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());
             ClientResponse response;
             try {
@@ -292,7 +226,7 @@ public class ResourceAdminManager {
             String token = new TokenManager().encodeToken(realm, adminAction);
             logger.debugv("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build().toString());
-            ClientResponse response = null;
+            ClientResponse response;
             try {
                 response = request.body(MediaType.TEXT_PLAIN_TYPE, token).post();
             } catch (Exception e) {

@@ -13,8 +13,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.representations.adapters.action.SessionStats;
-import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -27,7 +25,6 @@ import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -286,35 +283,6 @@ public class ApplicationResource {
     }
 
     /**
-     * If the application has an admin URL, query it directly for session stats.
-     *
-     * @param users whether to include users logged in.
-     * @return
-     */
-    @Path("session-stats")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public SessionStats getSessionStats(@QueryParam("users") @DefaultValue("false") boolean users) {
-        logger.info("session-stats");
-        auth.requireView();
-        if (application.getManagementUrl() == null || application.getManagementUrl().trim().equals("")) {
-            logger.info("sending empty stats");
-            SessionStats stats = new SessionStats();
-            if (users) stats.setUsers(new HashMap<String, UserStats>());
-            return stats;
-        }
-        SessionStats stats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), session, realm, application, users);
-        if (stats == null) {
-            logger.info("app returned null stats");
-        } else {
-            logger.info("activeUsers: " + stats.getActiveUsers());
-            logger.info("activeSessions: " + stats.getActiveSessions());
-        }
-        return stats;
-    }
-
-    /**
      * Number of user sessions associated with this application
      *
      * {
@@ -363,7 +331,7 @@ public class ApplicationResource {
     @POST
     public void logoutAll() {
         auth.requireManage();
-        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application, null, null);
+        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application, null);
     }
 
     /**
@@ -378,7 +346,9 @@ public class ApplicationResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application, user.getId(), null);
+
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
+        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application, userSessions);
     }
 
 

@@ -5,6 +5,7 @@ import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
@@ -127,7 +128,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
                 log.trace("invoke");
             }
             CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
-            PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deploymentContext, facade);
+            Manager sessionManager = request.getContext().getManager();
+            CatalinaUserSessionManagementWrapper sessionManagementWrapper = new CatalinaUserSessionManagementWrapper(userSessionManagement, sessionManager);
+            PreAuthActionsHandler handler = new PreAuthActionsHandler(sessionManagementWrapper, deploymentContext, facade);
             if (handler.handleRequest()) {
                 return;
             }

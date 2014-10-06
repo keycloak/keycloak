@@ -24,7 +24,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
@@ -218,36 +217,6 @@ public class UsersResource {
     }
 
     /**
-     * For each application with an admin URL, query them for the set of users logged in.  This not as reliable
-     * as getSessions().
-     *
-     * @See getSessions
-     *
-     * @param username
-     * @return
-     */
-    @Path("{username}/session-stats")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, UserStats> getSessionStats(final @PathParam("username") String username) {
-        logger.info("session-stats");
-        auth.requireView();
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-        Map<String, UserStats> stats = new HashMap<String, UserStats>();
-        for (ApplicationModel applicationModel : realm.getApplications()) {
-            if (applicationModel.getManagementUrl() == null) continue;
-            UserStats appStats = new ResourceAdminManager().getUserStats(uriInfo.getRequestUri(), realm, applicationModel, user);
-            if (appStats == null) continue;
-            if (appStats.isLoggedIn()) stats.put(applicationModel.getName(), appStats);
-        }
-        return stats;
-    }
-
-    /**
      * List set of sessions associated with this user.
      *
      * @param username
@@ -345,8 +314,8 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
+        new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user, session);
         session.sessions().removeUserSessions(realm, user);
-        new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), null);
     }
 
     /**
