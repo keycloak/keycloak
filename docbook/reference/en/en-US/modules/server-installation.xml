@@ -122,7 +122,7 @@ keycloak-war-dist-all-&project.version;/
         </para>
     </section>
     <section>
-        <title>Configuring the Server</title>
+        <title id="configure-server">Configuring the Server</title>
         <para>
             Although the Keycloak Server is designed to run out of the box, there's some things you'll need
             to configure before you go into production.  Specifically:
