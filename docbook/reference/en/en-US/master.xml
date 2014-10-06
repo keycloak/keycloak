@@ -32,6 +32,7 @@
                 <!ENTITY ExportImport SYSTEM "modules/export-import.xml">
                 <!ENTITY ServerCache SYSTEM "modules/cache.xml">
                 <!ENTITY SecurityVulnerabilities SYSTEM "modules/security-vulnerabilities.xml">
+                <!ENTITY Clustering SYSTEM "modules/clustering.xml">
                 ]>
 
 <book>
@@ -121,6 +122,7 @@ This one is short
     &ExportImport;
     &ServerCache;
     &SecurityVulnerabilities;
+    &Clustering;
     &Migration;
 
 </book>
