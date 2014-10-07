@@ -23,8 +23,20 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>target/modules</directory>
-            <outputDirectory>modules</outputDirectory>
+            <directory>target/wildfly-adapter</directory>
+            <outputDirectory>wildfly-adapter</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>target/as7-adapter</directory>
+            <outputDirectory>as7-adapter</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>target/eap63-adapter</directory>
+            <outputDirectory>eap63-adapter</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>shared-files</directory>
+            <outputDirectory>shared-files</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>
