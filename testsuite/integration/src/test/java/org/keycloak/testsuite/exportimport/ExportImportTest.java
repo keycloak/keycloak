@@ -64,7 +64,7 @@ public class ExportImportTest {
                 propsHelper.pushProperty(JPA_CONNECTION_URL, "jdbc:h2:file:" + dbDir + ";DB_CLOSE_DELAY=-1");
                 connectionURLSet = true;
             }
-            propsHelper.pushProperty(JPA_DB_SCHEMA, "create");
+            propsHelper.pushProperty(JPA_DB_SCHEMA, "update");
         }
 
         @Override
@@ -98,7 +98,6 @@ public class ExportImportTest {
             addUser(manager.getSession().users(), appRealm, "user1", "password");
             addUser(manager.getSession().users(), appRealm, "user2", "password");
             addUser(manager.getSession().users(), appRealm, "user3", "password");
-            addUser(manager.getSession().users(), adminstrationRealm, "admin2", "admin2");
 
             // Import "test-realm" realm
             try {
@@ -128,6 +127,10 @@ public class ExportImportTest {
             for (String propToRemove : propsToRemove) {
                 systemProps.remove(propToRemove);
             }
+        }
+
+        protected String[] getTestRealms() {
+            return new String[]{"test", "demo", "test-realm"};
         }
     };
 
@@ -222,10 +225,6 @@ public class ExportImportTest {
             new RealmManager(session).removeRealm(realmProvider.getRealmByName("test"));
             Assert.assertEquals(2, realmProvider.getRealms().size());
 
-            RealmModel master = realmProvider.getRealmByName(Config.getAdminRealm());
-            UserModel admin2 = session.users().getUserByUsername("admin2", master);
-            session.users().removeUser(master, admin2);
-            assertNotAuthenticated(userProvider, realmProvider, Config.getAdminRealm(), "admin2", "admin2");
             assertNotAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");
             assertNotAuthenticated(userProvider, realmProvider, "test", "user1", "password");
             assertNotAuthenticated(userProvider, realmProvider, "test", "user2", "password");
@@ -247,7 +246,6 @@ public class ExportImportTest {
             UserProvider userProvider = session.users();
             Assert.assertEquals(3, model.getRealms().size());
 
-            assertAuthenticated(userProvider, model, Config.getAdminRealm(), "admin2", "admin2");
             assertAuthenticated(userProvider, model, "test", "test-user@localhost", "password");
             assertAuthenticated(userProvider, model, "test", "user1", "password");
             assertAuthenticated(userProvider, model, "test", "user2", "password");
@@ -275,11 +273,6 @@ public class ExportImportTest {
             new RealmManager(session).removeRealm(realmProvider.getRealmByName("test"));
             Assert.assertEquals(2, realmProvider.getRealms().size());
 
-            RealmModel master = realmProvider.getRealmByName(Config.getAdminRealm());
-            UserModel admin2 = session.users().getUserByUsername("admin2", master);
-            session.users().removeUser(master, admin2);
-
-            assertNotAuthenticated(userProvider, realmProvider, Config.getAdminRealm(), "admin2", "admin2");
             assertNotAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");
             assertNotAuthenticated(userProvider, realmProvider, "test", "user1", "password");
             assertNotAuthenticated(userProvider, realmProvider, "test", "user2", "password");
@@ -301,13 +294,10 @@ public class ExportImportTest {
             UserProvider userProvider = session.users();
             Assert.assertEquals(3, realmProvider.getRealms().size());
 
-            assertNotAuthenticated(userProvider, realmProvider, Config.getAdminRealm(), "admin2", "admin2");
             assertAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");
             assertAuthenticated(userProvider, realmProvider, "test", "user1", "password");
             assertAuthenticated(userProvider, realmProvider, "test", "user2", "password");
             assertAuthenticated(userProvider, realmProvider, "test", "user3", "password");
-
-            addUser(userProvider, realmProvider.getRealmByName(Config.getAdminRealm()), "admin2", "admin2");
         } finally {
             keycloakRule.stopSession(session, true);
         }

@@ -11,8 +11,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoEntity;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
-import org.keycloak.connections.mongo.api.MongoIndex;
-import org.keycloak.connections.mongo.api.MongoIndexes;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.connections.mongo.api.context.MongoTask;
@@ -57,7 +55,7 @@ public class MongoStoreImpl implements MongoStore {
             new ConcurrentHashMap<Class<?>, EntityInfo>();
 
 
-    public MongoStoreImpl(DB database, boolean clearCollectionsOnStartup, Class<?>[] managedEntityTypes) {
+    public MongoStoreImpl(DB database, Class<?>[] managedEntityTypes) {
         this.database = database;
 
         mapperRegistry = new MapperRegistry();
@@ -86,75 +84,11 @@ public class MongoStoreImpl implements MongoStore {
             mapperRegistry.addAppObjectMapper(new MongoEntityMapper(this, mapperRegistry, type));
             mapperRegistry.addDBObjectMapper(new BasicDBObjectMapper(this, mapperRegistry, type));
         }
-
-        if (clearCollectionsOnStartup) {
-            // dropDatabase();
-            clearManagedCollections(managedEntityTypes);
-        }
-
-        initManagedCollections(managedEntityTypes);
     }
 
     protected void dropDatabase() {
         this.database.dropDatabase();
         logger.info("Database " + this.database.getName() + " dropped in MongoDB");
-    }
-
-    // Don't drop database, but just clear all data in managed collections (useful for export/import or during development)
-    protected void clearManagedCollections(Class<?>[] managedEntityTypes) {
-        for (Class<?> clazz : managedEntityTypes) {
-            DBCollection dbCollection = getDBCollectionForType(clazz);
-            if (dbCollection != null) {
-                dbCollection.remove(new BasicDBObject());
-                logger.debug("Collection " + dbCollection.getName() + " cleared from " + this.database.getName());
-            }
-        }
-    }
-
-    protected void initManagedCollections(Class<?>[] managedEntityTypes) {
-        for (Class<?> clazz : managedEntityTypes) {
-            EntityInfo entityInfo = getEntityInfo(clazz);
-            String dbCollectionName = entityInfo.getDbCollectionName();
-            if (dbCollectionName != null && !database.collectionExists(dbCollectionName)) {
-                DBCollection dbCollection = database.getCollection(dbCollectionName);
-
-                logger.debug("Created collection " + dbCollection.getName() + " in " + this.database.getName());
-
-                MongoIndex index = clazz.getAnnotation(MongoIndex.class);
-                if (index != null) {
-                    createIndex(dbCollection, index);
-                }
-
-                MongoIndexes indexes = clazz.getAnnotation(MongoIndexes.class);
-                if (indexes != null) {
-                    for (MongoIndex i : indexes.value()) {
-                        createIndex(dbCollection, i);
-                    }
-                }
-            }
-        }
-    }
-
-    protected void createIndex(DBCollection dbCollection, MongoIndex index) {
-        BasicDBObject fields = new BasicDBObject();
-        for (String f : index.fields()) {
-            fields.put(f, 1);
-        }
-
-        boolean unique = index.unique();
-        boolean sparse = index.sparse();
-
-        BasicDBObject options = new BasicDBObject();
-        if (unique) {
-            options.put("unique", unique);
-        }
-        if (sparse) {
-            options.put("sparse", sparse);
-        }
-
-        dbCollection.ensureIndex(fields, options);
-
-        logger.debug("Created index " + fields + "(options: " + options + ") on " + dbCollection.getName() + " in " + this.database.getName());
     }
 
     @Override

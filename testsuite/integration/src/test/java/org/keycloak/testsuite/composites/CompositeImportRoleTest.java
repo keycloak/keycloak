@@ -54,7 +54,7 @@ public class CompositeImportRoleTest {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/testcomposite.json"), RealmRepresentation.class);
-            representation.setId("Test");
+            representation.setId("test");
             RealmModel realm = manager.importRealm(representation);
 
             realmPublicKey = realm.getPublicKey();
@@ -78,7 +78,7 @@ public class CompositeImportRoleTest {
 
     @Test
     public void testAppCompositeUser() throws Exception {
-        oauth.realm("Test");
+        oauth.realm("test");
         oauth.realmPublicKey(realmPublicKey);
         oauth.clientId("APP_COMPOSITE_APPLICATION");
         oauth.doLogin("APP_COMPOSITE_USER", "password");
@@ -92,7 +92,7 @@ public class CompositeImportRoleTest {
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals(keycloakRule.getUser("Test", "APP_COMPOSITE_USER").getId(), token.getSubject());
+        Assert.assertEquals(keycloakRule.getUser("test", "APP_COMPOSITE_USER").getId(), token.getSubject());
 
         Assert.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
@@ -103,7 +103,7 @@ public class CompositeImportRoleTest {
 
     @Test
     public void testRealmAppCompositeUser() throws Exception {
-        oauth.realm("Test");
+        oauth.realm("test");
         oauth.realmPublicKey(realmPublicKey);
         oauth.clientId("APP_ROLE_APPLICATION");
         oauth.doLogin("REALM_APP_COMPOSITE_USER", "password");
@@ -117,7 +117,7 @@ public class CompositeImportRoleTest {
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals(keycloakRule.getUser("Test", "REALM_APP_COMPOSITE_USER").getId(), token.getSubject());
+        Assert.assertEquals(keycloakRule.getUser("test", "REALM_APP_COMPOSITE_USER").getId(), token.getSubject());
 
         Assert.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assert.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
@@ -127,7 +127,7 @@ public class CompositeImportRoleTest {
 
     @Test
     public void testRealmOnlyWithUserCompositeAppComposite() throws Exception {
-        oauth.realm("Test");
+        oauth.realm("test");
         oauth.realmPublicKey(realmPublicKey);
         oauth.clientId("REALM_COMPOSITE_1_APPLICATION");
         oauth.doLogin("REALM_COMPOSITE_1_USER", "password");
@@ -141,7 +141,7 @@ public class CompositeImportRoleTest {
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals(keycloakRule.getUser("Test", "REALM_COMPOSITE_1_USER").getId(), token.getSubject());
+        Assert.assertEquals(keycloakRule.getUser("test", "REALM_COMPOSITE_1_USER").getId(), token.getSubject());
 
         Assert.assertEquals(2, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_COMPOSITE_1"));
@@ -150,7 +150,7 @@ public class CompositeImportRoleTest {
 
     @Test
     public void testRealmOnlyWithUserCompositeAppRole() throws Exception {
-        oauth.realm("Test");
+        oauth.realm("test");
         oauth.realmPublicKey(realmPublicKey);
         oauth.clientId("REALM_ROLE_1_APPLICATION");
         oauth.doLogin("REALM_COMPOSITE_1_USER", "password");
@@ -164,7 +164,7 @@ public class CompositeImportRoleTest {
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals(keycloakRule.getUser("Test", "REALM_COMPOSITE_1_USER").getId(), token.getSubject());
+        Assert.assertEquals(keycloakRule.getUser("test", "REALM_COMPOSITE_1_USER").getId(), token.getSubject());
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
@@ -172,7 +172,7 @@ public class CompositeImportRoleTest {
 
     @Test
     public void testRealmOnlyWithUserRoleAppComposite() throws Exception {
-        oauth.realm("Test");
+        oauth.realm("test");
         oauth.realmPublicKey(realmPublicKey);
         oauth.clientId("REALM_COMPOSITE_1_APPLICATION");
         oauth.doLogin("REALM_ROLE_1_USER", "password");
@@ -186,13 +186,10 @@ public class CompositeImportRoleTest {
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals(keycloakRule.getUser("Test", "REALM_ROLE_1_USER").getId(), token.getSubject());
+        Assert.assertEquals(keycloakRule.getUser("test", "REALM_ROLE_1_USER").getId(), token.getSubject());
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
     }
-
-
-
 
 }
