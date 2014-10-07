@@ -86,7 +86,17 @@ public class AuthenticationManager {
         expireIdentityCookie(realm, uriInfo, connection);
         expireRememberMeCookie(realm, uriInfo, connection);
 
-        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, userSession);
+        for (ClientSessionModel clientSession : userSession.getClientSessions()) {
+            ClientModel client = clientSession.getClient();
+            if (client instanceof ApplicationModel) {
+                String authMethod = clientSession.getAuthMethod();
+                if (authMethod == null) continue; // must be a keycloak service like account
+                LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
+                protocol.setRealm(realm)
+                        .setUriInfo(uriInfo);
+                protocol.backchannelLogout(userSession, clientSession);
+            }
+        }
 
         session.sessions().removeUserSession(realm, userSession);
     }
@@ -235,9 +245,7 @@ public class AuthenticationManager {
         if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
         protocol.setRealm(realm)
-                .setRequest(request)
-                .setUriInfo(uriInfo)
-                .setClientConnection(clientConnection);
+                .setUriInfo(uriInfo);
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
     }

@@ -40,8 +40,10 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -71,7 +73,6 @@ import java.util.Map;
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AdapterTest {
 
     public static final String LOGIN_URL = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
@@ -157,17 +158,17 @@ public class AdapterTest {
         Client client = ClientBuilder.newClient();
         UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
         WebTarget adminTarget = client.target(AdminRoot.realmsUrl(authBase)).path("demo");
-        Map<String, Integer> stats = adminTarget.path("application-session-stats").request()
+        Map<String, SessionStats> stats = adminTarget.path("session-stats").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
-                .get(new GenericType<Map<String, Integer>>() {
+                .get(new GenericType<Map<String, SessionStats>>() {
                 });
 
-        Integer custSessionsCount = stats.get("customer-portal");
-        Assert.assertNotNull(custSessionsCount);
-        Assert.assertTrue(1 == custSessionsCount);
-        Integer prodStatsCount = stats.get("product-portal");
-        Assert.assertNotNull(prodStatsCount);
-        Assert.assertTrue(1 == prodStatsCount);
+        SessionStats custStats = stats.get("customer-portal");
+        Assert.assertNotNull(custStats);
+        Assert.assertEquals(1, custStats.getActiveSessions());
+        SessionStats prodStats = stats.get("product-portal");
+        Assert.assertNotNull(prodStats);
+        Assert.assertEquals(1, prodStats.getActiveSessions());
 
         client.close();
 
@@ -296,6 +297,9 @@ public class AdapterTest {
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
+        // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
+        UserModel user = session.users().getUserByUsername("bburke@redhat.com", realm);
+        new ResourceAdminManager().logoutUser(null, realm, user.getId(), null);
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();

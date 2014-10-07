@@ -801,7 +801,7 @@ public class OpenIDConnectService {
         if (response != null) return response;
 
         if (prompt != null && prompt.equals("none")) {
-            OpenIDConnect oauth = new OpenIDConnect(session, realm, request, uriInfo, clientConnection);
+            OpenIDConnect oauth = new OpenIDConnect(session, realm, uriInfo);
             return oauth.cancelLogin(clientSession);
         }
 

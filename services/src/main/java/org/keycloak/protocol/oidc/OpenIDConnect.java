@@ -22,15 +22,18 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.ResourceAdminManager;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -56,19 +59,12 @@ public class OpenIDConnect implements LoginProtocol {
 
     protected RealmModel realm;
 
-    protected HttpRequest request;
-
     protected UriInfo uriInfo;
 
-    protected ClientConnection clientConnection;
-
-    public OpenIDConnect(KeycloakSession session, RealmModel realm, HttpRequest request, UriInfo uriInfo,
-                         ClientConnection clientConnection) {
+    public OpenIDConnect(KeycloakSession session, RealmModel realm, UriInfo uriInfo) {
         this.session = session;
         this.realm = realm;
-        this.request = request;
         this.uriInfo = uriInfo;
-        this.clientConnection = clientConnection;
     }
 
     public OpenIDConnect() {
@@ -87,20 +83,8 @@ public class OpenIDConnect implements LoginProtocol {
     }
 
     @Override
-    public OpenIDConnect setRequest(HttpRequest request) {
-        this.request = request;
-        return this;
-    }
-
-    @Override
     public OpenIDConnect setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
-        return this;
-    }
-
-    @Override
-    public OpenIDConnect setClientConnection(ClientConnection clientConnection) {
-        this.clientConnection = clientConnection;
         return this;
     }
 
@@ -149,6 +133,19 @@ public class OpenIDConnect implements LoginProtocol {
             redirectUri.queryParam(OAuth2Constants.STATE, state);
         }
         return Response.status(302).location(redirectUri.build()).build();
+    }
+
+    @Override
+    public void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
+        if (!(clientSession.getClient() instanceof ApplicationModel)) return;
+        ApplicationModel app = (ApplicationModel)clientSession.getClient();
+        ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
+
+        try {
+            new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, app, null, userSession.getId(), executor, 0);
+        } finally {
+            executor.getHttpClient().getConnectionManager().shutdown();
+        }
     }
 
     @Override

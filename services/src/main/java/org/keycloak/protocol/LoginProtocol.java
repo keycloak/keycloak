@@ -22,14 +22,12 @@ public interface LoginProtocol extends Provider {
 
     LoginProtocol setRealm(RealmModel realm);
 
-    LoginProtocol setRequest(HttpRequest request);
-
     LoginProtocol setUriInfo(UriInfo uriInfo);
-
-    LoginProtocol setClientConnection(ClientConnection clientConnection);
 
     Response cancelLogin(ClientSessionModel clientSession);
     Response invalidSessionError(ClientSessionModel clientSession);
     Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode);
     Response consentDenied(ClientSessionModel clientSession);
+
+    void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession);
 }
