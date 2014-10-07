@@ -8,6 +8,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.RealmManager;
@@ -32,6 +34,14 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
             ApplicationModel app = appRealm.addApplication("resource-owner");
             app.setSecret("secret");
             appRealm.setPasswordCredentialGrantAllowed(true);
+
+            UserModel user = session.users().addUser(appRealm, "direct-login");
+            user.setEmail("direct-login@localhost");
+            user.setEnabled(true);
+
+            userId = user.getId();
+
+            session.users().updateCredential(appRealm, user, UserCredentialModel.password("password"));
         }
     });
 
@@ -47,11 +57,22 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
     @WebResource
     protected OAuthClient oauth;
 
+    private static String userId;
+
     @Test
-    public void grantAccessToken() throws Exception {
+    public void grantAccessTokenUsername() throws Exception {
+        grantAccessToken("direct-login");
+    }
+
+    @Test
+    public void grantAccessTokenEmail() throws Exception {
+        grantAccessToken("direct-login@localhost");
+    }
+
+    private void grantAccessToken(String login) throws Exception {
         oauth.clientId("resource-owner");
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", login, "password");
 
         assertEquals(200, response.getStatusCode());
 
@@ -60,11 +81,13 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
 
         events.expectLogin()
                 .client("resource-owner")
+                .user(userId)
                 .session(accessToken.getSessionState())
                 .detail(Details.AUTH_METHOD, "oauth_credentials")
                 .detail(Details.RESPONSE_TYPE, "token")
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .detail(Details.USERNAME, login)
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
@@ -79,7 +102,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).client("resource-owner").assertEvent();
+        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client("resource-owner").assertEvent();
     }
 
     @Test
@@ -181,6 +204,29 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .session((String) null)
                 .detail(Details.AUTH_METHOD, "oauth_credentials")
                 .detail(Details.RESPONSE_TYPE, "token")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .error(Errors.INVALID_USER_CREDENTIALS)
+                .assertEvent();
+    }
+
+    @Test
+    public void grantAccessTokenUserNotFound() throws Exception {
+        oauth.clientId("resource-owner");
+
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "invalid", "invalid");
+
+        assertEquals(400, response.getStatusCode());
+
+        assertEquals("invalid_grant", response.getError());
+
+        events.expectLogin()
+                .client("resource-owner")
+                .user((String) null)
+                .session((String) null)
+                .detail(Details.AUTH_METHOD, "oauth_credentials")
+                .detail(Details.RESPONSE_TYPE, "token")
+                .detail(Details.USERNAME, "invalid")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .error(Errors.INVALID_USER_CREDENTIALS)

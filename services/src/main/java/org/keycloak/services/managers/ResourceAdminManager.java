@@ -23,6 +23,7 @@ import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.adapters.action.UserStatsAction;
 import org.keycloak.services.util.HttpClientBuilder;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.util.StringPropertyReplacer;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.MediaType;
@@ -108,8 +109,10 @@ public class ResourceAdminManager {
         }
 
         // this is to support relative admin urls when keycloak and applications are deployed on the same machine
-        return ResolveRelative.resolveRelativeUri(requestUri, mgmtUrl);
+        String absoluteURI = ResolveRelative.resolveRelativeUri(requestUri, mgmtUrl);
 
+        // this is for resolving URI like "http://${jboss.home.name}:8080/..." in order to send request to same machine and avoid LB in cluster env
+        return StringPropertyReplacer.replaceProperties(absoluteURI);
     }
 
     public UserStats getUserStats(URI requestUri, RealmModel realm, ApplicationModel application, UserModel user) {
@@ -242,7 +245,8 @@ public class ResourceAdminManager {
             try {
                 response = request.body(MediaType.TEXT_PLAIN_TYPE, token).post(UserStats.class);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                logger.warn("Logout for application '" + resource.getName() + "' failed", e);
+                return false;
             }
             try {
                 boolean success = response.getStatus() == 204;

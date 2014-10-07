@@ -28,6 +28,7 @@ import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
@@ -276,7 +277,7 @@ public class OpenIDConnectService {
         }
         event.detail(Details.USERNAME, username);
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
         if (user != null) event.user(user);
 
         ClientModel client = authorizeClient(authorizationHeader, form, event);

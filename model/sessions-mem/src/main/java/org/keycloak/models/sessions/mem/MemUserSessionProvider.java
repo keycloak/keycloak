@@ -121,7 +121,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
         for (ClientSessionEntity s : clientSessions.values()) {
             String realmId = realm.getId();
             String clientId = client.getId();
-            if (s.getSession().getRealm().equals(realmId) && s.getClientId().equals(clientId)) {
+            if (s.getSession() != null && s.getSession().getRealm().equals(realmId) && s.getClientId().equals(clientId)) {
                 if (!userSessionEntities.contains(s.getSession())) {
                     userSessionEntities.add(s.getSession());
                 }

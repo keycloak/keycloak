@@ -3,7 +3,7 @@ How to test Keycloak cluster with Docker
 Docker+Fig allows to easily setup and test the whole environment with:
 * Apache HTTPD 2.4 + modcluster 1.3 as Load Balancer
 * MySQL 5.6.1 as database
-* Various number of Keycloak cluster nodes running on WildFly (with "demo" examples deployed)
+* Various number of Keycloak cluster nodes running on WildFly with "demo" examples deployed. (See below for EAP 6.3 and AS7)
 
 You don't need to setup Apache with modcluster + MySQL on your laptop as Docker will do it for you and all will run in Docker containers.
 
@@ -42,7 +42,6 @@ be able to access Apache modCluster status page: [http://localhost:10001/mod_clu
 with deployed "auth-server.war" and few other WARs (keycloak demo). 
 
 Also you can access Keycloak admin console via loadBalancer on [http://localhost:8000/auth/admin](http://localhost:8000/auth/admin) and similarly Account mgmt. 
-TODO: Examples currently doesn't work and I am looking at it..
 
 MySQL can be directly accessed from your machine (if you have MySQL client installed):
 ```shell
@@ -74,7 +73,7 @@ Scale / more cluster nodes
 
 Run this in separate terminal to add more (in this case 2) cluster nodes:
 ```shell
-$ fig scale node=2
+$ fig scale wfnode=2
 ````
 
 Now it should be visible on mod_cluster_manager page that they are 2 nodes.
@@ -89,7 +88,7 @@ to see output of MySql and Keycloak server consoles.
 
 To see Apache and debug logs of keycloak server:
 ```shell
-$ fig run node /bin/bash
+$ fig run wfnode /bin/bash
 ````
   
 Then you're in shell inside docker container, which has some mounted volumes with apache logs and keycloak nodes. Apache logs are at:
@@ -133,3 +132,26 @@ In this case you might need to stop and remove existing containers. Then start f
 changed jars, then rebuild distribution and testsuite/docker-cluster 
 (or just copy changed JAR into $KEYCLOAK_HOME/testsuite/docker-cluster/target/keycloak-docker-cluster/deployments/auth-server.war/WEB-INF/lib if it's not adapter stuff. 
 But 'fig rm' is safer to call anyway)
+
+Test with Keycloak and examples on EAP 6.3
+------------------------------------------
+Steps are quite similar like for WildFly but we need to pass different file "fig-eap63.yml" instead of default "fig.yml" which is used for WildFly. 
+Also name of the node is "eapnode" instead of "wfnode". 
+ 
+So your commands will look like
+```shell 
+$ fig -f fig-eap63.yml build
+$ fig -f fig-eap63.yml up
+$ fig -f fig-eap63.yml scale eapnode=2
+```` 
+and viceversa.
+ 
+Test with Keycloak and examples on AS 7.1.1
+-------------------------------------------
+Also arguments need to be passed with different fig file and node name: TODO: AS7 cluster setup doesn't work correctly yet
+ 
+ ```shell 
+$ fig -f fig-as7.yml build
+$ fig -f fig-as7.yml up
+$ fig -f fig-as7.yml scale asnode=2
+````

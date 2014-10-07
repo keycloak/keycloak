@@ -23,8 +23,10 @@ package org.keycloak.testsuite.adapter;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;
@@ -93,6 +95,10 @@ public class AdapterTest {
             url = getClass().getResource("/adapter-test/product-keycloak.json");
             deployApplication("product-portal", "/product-portal", ProductServlet.class, url.getPath(), "user");
 
+            // Test that replacing system properties works for adapters
+            System.setProperty("my.host.name", "localhost");
+            url = getClass().getResource("/adapter-test/session-keycloak.json");
+            deployApplication("session-portal", "/session-portal", SessionServlet.class, url.getPath(), "user");
         }
     };
 
@@ -289,8 +295,6 @@ public class AdapterTest {
         driver.navigate().to("http://localhost:8081/product-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
-
-
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
         // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
@@ -299,8 +303,6 @@ public class AdapterTest {
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();
-
-
     }
 
     @Test
@@ -424,6 +426,55 @@ public class AdapterTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
     }
 
+    @Test
+    public void testSingleSessionInvalidated() throws Throwable {
+        AdapterTest browser1 = this;
+        AdapterTest browser2 = new AdapterTest();
 
+        loginAndCheckSession(browser1.driver, browser1.loginPage);
+
+        // Open browser2
+        browser2.webRule.before();
+        try {
+            browser2.loginAndCheckSession(browser2.driver, browser2.loginPage);
+
+            // Logout in browser1
+            String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
+                    .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8081/session-portal").build("demo").toString();
+            browser1.driver.navigate().to(logoutUri);
+            Assert.assertTrue(browser1.driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+            // Assert that I am logged out in browser1
+            browser1.driver.navigate().to("http://localhost:8081/session-portal");
+            Assert.assertTrue(browser1.driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+            // Assert that I am still logged in browser2 and same session is still preserved
+            browser2.driver.navigate().to("http://localhost:8081/session-portal");
+            Assert.assertEquals(browser2.driver.getCurrentUrl(), "http://localhost:8081/session-portal");
+            String pageSource = browser2.driver.getPageSource();
+            Assert.assertTrue(pageSource.contains("Counter=3"));
+
+            browser2.driver.navigate().to(logoutUri);
+            Assert.assertTrue(browser2.driver.getCurrentUrl().startsWith(LOGIN_URL));
+        } finally {
+            browser2.webRule.after();
+        }
+    }
+
+    private static void loginAndCheckSession(WebDriver driver, LoginPage loginPage) {
+        driver.navigate().to("http://localhost:8081/session-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/session-portal");
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Counter=1"));
+
+        // Counter increased now
+        driver.navigate().to("http://localhost:8081/session-portal");
+        pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Counter=2"));
+
+    }
 
 }

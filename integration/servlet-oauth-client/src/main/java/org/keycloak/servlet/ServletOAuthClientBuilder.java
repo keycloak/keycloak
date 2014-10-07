@@ -7,7 +7,6 @@ import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.UriUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +24,7 @@ public class ServletOAuthClientBuilder {
 
     public static AdapterConfig getAdapterConfig(InputStream is) {
         try {
-            return JsonSerialization.readValue(is, AdapterConfig.class);
+            return JsonSerialization.readValue(is, AdapterConfig.class, true);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -57,13 +56,17 @@ public class ServletOAuthClientBuilder {
 
         String authUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(adapterConfig.getRealm()).toString();
 
-        KeycloakUriBuilder tokenUrlBuilder = serverBuilder.clone();
-        KeycloakUriBuilder refreshUrlBuilder = serverBuilder.clone();
+        KeycloakUriBuilder tokenUrlBuilder;
+        KeycloakUriBuilder refreshUrlBuilder;
 
         if (useRelative == RelativeUrlsUsed.BROWSER_ONLY) {
             // Use absolute URI for refreshToken and codeToToken requests
-            tokenUrlBuilder.scheme(adapterConfig.getLocalRequestsScheme()).host(UriUtils.getHostName()).port(adapterConfig.getLocalRequestsPort());
-            refreshUrlBuilder.scheme(adapterConfig.getLocalRequestsScheme()).host(UriUtils.getHostName()).port(adapterConfig.getLocalRequestsPort());
+            KeycloakUriBuilder nonBrowsersServerBuilder = KeycloakUriBuilder.fromUri(adapterConfig.getAuthServerUrlForBackendRequests());
+            tokenUrlBuilder = nonBrowsersServerBuilder.clone();
+            refreshUrlBuilder = nonBrowsersServerBuilder.clone();
+        } else {
+            tokenUrlBuilder = serverBuilder.clone();
+            refreshUrlBuilder = serverBuilder.clone();
         }
         String tokenUrl = tokenUrlBuilder.path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
         String refreshUrl = refreshUrlBuilder.path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(adapterConfig.getRealm()).toString();
@@ -74,7 +77,7 @@ public class ServletOAuthClientBuilder {
 
     private static RelativeUrlsUsed relativeUrls(KeycloakUriBuilder serverBuilder, AdapterConfig adapterConfig) {
         if (serverBuilder.clone().getHost() == null) {
-            return (adapterConfig.isUseHostnameForLocalRequests()) ? RelativeUrlsUsed.BROWSER_ONLY : RelativeUrlsUsed.ALL_REQUESTS;
+            return (adapterConfig.getAuthServerUrlForBackendRequests() != null) ? RelativeUrlsUsed.BROWSER_ONLY : RelativeUrlsUsed.ALL_REQUESTS;
         } else {
             return RelativeUrlsUsed.NEVER;
         }
