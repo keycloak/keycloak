@@ -19,10 +19,10 @@
   "expose-token" : true,
    "credentials" : {
       "secret" : "234234-234234-234234"
-   }
+   },
 
    "connection-pool-size" : 20,
-   "disable-trust-manager" false,
+   "disable-trust-manager": false,
    "allow-any-hostname" : false,
    "truststore" : "path/to/truststore.jks",
    "truststore-password" : "geheim",
