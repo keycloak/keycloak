@@ -41,6 +41,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -288,11 +289,18 @@ public class AdapterTest {
         driver.navigate().to("http://localhost:8081/product-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
+
+
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
+        // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
+        UserModel user = session.users().getUserByUsername("bburke@redhat.com", realm);
+        new ResourceAdminManager().logoutUser(null, realm, user.getId(), null);
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();
+
+
     }
 
     @Test

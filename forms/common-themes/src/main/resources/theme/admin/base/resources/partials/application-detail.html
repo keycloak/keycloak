@@ -68,12 +68,12 @@
                     <span tooltip-placement="right" tooltip="Valid URI pattern a browser can redirect to after a successful login or logout.  Simple wildcards are allowed i.e. 'http://example.com/*'.  Relative path can be specified too i.e. /my/relative/path/*.  Relative paths will generate a redirect URI using the request's host and port." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-show="!application.bearerOnly && !create">
-                    <label class="col-sm-2 control-label" for="baseUrl">Base URL</label>
+                    <label class="col-sm-2 control-label" for="baseUrl">Default Redirect URL</label>
                     <div class="col-sm-6">
                         <input class="form-control" type="text" name="baseUrl" id="baseUrl"
                                data-ng-model="application.baseUrl">
                     </div>
-                    <span tooltip-placement="right" tooltip="Optional URL to use when linking to this application. i.e. the welcome page." class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Default URL to use when no redirect URI is specified.  This URL will also be used when the auth server needs to link to the application for any reason." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-hide="create">
                     <label class="col-sm-2 control-label" for="adminUrl">Admin URL</label>

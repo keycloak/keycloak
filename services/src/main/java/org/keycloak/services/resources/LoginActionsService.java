@@ -309,9 +309,7 @@ public class LoginActionsService {
             event.error(Errors.REJECTED_BY_USER);
             LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
             protocol.setRealm(realm)
-                    .setRequest(request)
-                    .setUriInfo(uriInfo)
-                    .setClientConnection(clientConnection);
+                    .setUriInfo(uriInfo);
             return protocol.cancelLogin(clientSession);
         }
 
@@ -565,9 +563,7 @@ public class LoginActionsService {
 
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
         protocol.setRealm(realm)
-                .setRequest(request)
-                .setUriInfo(uriInfo)
-                .setClientConnection(clientConnection);
+                .setUriInfo(uriInfo);
         if (formData.containsKey("cancel")) {
             event.error(Errors.REJECTED_BY_USER);
             return protocol.consentDenied(clientSession);

@@ -32,6 +32,8 @@
             "name": "http://localhost:8080/sales-post/",
             "enabled": true,
             "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8080/sales-post/",
+            "adminUrl": "http://localhost:8080/sales-post/",
             "redirectUris": [
                 "http://localhost:8080/sales-post/*"
             ]

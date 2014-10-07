@@ -101,7 +101,7 @@ public class ResourceAdminManager {
 
     }
 
-    protected String getManagementUrl(URI requestUri, ApplicationModel application) {
+    public static String getManagementUrl(URI requestUri, ApplicationModel application) {
         String mgmtUrl = application.getManagementUrl();
         if (mgmtUrl == null || mgmtUrl.equals("")) {
             return null;
@@ -231,7 +231,7 @@ public class ResourceAdminManager {
     }
 
 
-    protected boolean logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user, String session, ApacheHttpClient4Executor client, int notBefore) {
+    public boolean logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user, String session, ApacheHttpClient4Executor client, int notBefore) {
         String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
             LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), user, session, notBefore);

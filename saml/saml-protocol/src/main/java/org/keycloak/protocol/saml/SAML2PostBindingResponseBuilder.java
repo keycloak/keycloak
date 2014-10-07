@@ -146,7 +146,7 @@ public class SAML2PostBindingResponseBuilder {
         return this;
     }
 
-    public Response error(String status)  throws ConfigurationException, ProcessingException, IOException {
+    public Response buildErrorResponse(String status)  throws ConfigurationException, ProcessingException, IOException {
         Document doc = getErrorResponse(status);
         return buildResponse(doc);
 
@@ -207,7 +207,7 @@ public class SAML2PostBindingResponseBuilder {
         return samlResponse;
     }
 
-    public Response build() throws ConfigurationException, ProcessingException, IOException {
+    public Response buildLoginResponse() throws ConfigurationException, ProcessingException, IOException {
         Document responseDoc = getResponse();
         return buildResponse(responseDoc);
     }
