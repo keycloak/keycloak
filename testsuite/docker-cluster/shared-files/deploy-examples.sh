@@ -4,10 +4,10 @@
 
 # Deploy examples
 cd /keycloak-docker-cluster/examples
-for I in $(find . | grep .war$); do cp $I /opt/wildfly/standalone/deployments/; done;
+for I in $(find . | grep .war$); do cp $I $JBOSS_HOME/standalone/deployments/; done;
 
 # Explode wars
-cd /opt/wildfly/standalone/deployments/
+cd $JBOSS_HOME/standalone/deployments/
 for I in $(ls -d *.war | grep -v auth-server.war); do
   echo "Configuring $I";
   mkdir $I.tmp;

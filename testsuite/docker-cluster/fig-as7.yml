@@ -15,9 +15,9 @@ mysql:
       - /apachelogs
    ports:
       - "33306:3306"
-wfnode:
-   build: wildfly
-   command: /keycloak-wildfly-trigger.sh
+asnode:
+   build: as7
+   command: /keycloak-as7-trigger.sh
    volumes:
       - target/keycloak-docker-cluster:/keycloak-docker-cluster
    volumes_from:

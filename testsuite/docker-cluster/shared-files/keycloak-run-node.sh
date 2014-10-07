@@ -1,47 +1,51 @@
 #!/bin/bash
 
-export MYHOST=node$(echo $MYSQL_NAME | awk -F"/dockercluster[^0-9]*|\/mysql" '{print  $2 }');
+export MYHOST="$NODE_PREFIX"node$(echo $MYSQL_NAME | awk -F"/dockercluster[^0-9]*|\/mysql" '{print  $2 }');
 echo "MYHOST is $MYHOST. MYSQL_NAME is $MYSQL_NAME";
 
 function prepareHost
 {
-  if [ -d /keycloak-docker-shared/keycloak-wildfly-$MYHOST ]; then
+  if [ -d /keycloak-docker-shared/keycloak-$JBOSS_TYPE-$MYHOST ]; then
     echo "Node $MYHOST already prepared. Skiping";
     return;
   fi
 
-  echo "Creating keycloak-wildfly-$MYHOST";
+  echo "Creating keycloak-$JBOSS_TYPE-$MYHOST";
 
-  cd /opt/wildfly
-  cp -r /keycloak-docker-cluster/modules ./
+  /keycloak-docker-cluster/shared-files/keycloak-base-prepare.sh
+
+  echo "Base prepare finished";
+
+  cd $JBOSS_HOME
+  cp -r /keycloak-docker-cluster/$JBOSS_TYPE-adapter/modules ./
 
   # Deploy keycloak
-  cp -r /keycloak-docker-cluster/deployments/* /opt/wildfly/standalone/deployments/
+  cp -r /keycloak-docker-cluster/deployments/* $JBOSS_HOME/standalone/deployments/
 
   # Enable Infinispan provider
-  sed -i "s|keycloak.userSessions.provider:mem|keycloak.userSessions.provider:infinispan|" /opt/wildfly/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
+  sed -i "s|keycloak.userSessions.provider:mem|keycloak.userSessions.provider:infinispan|" $JBOSS_HOME/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
 
   # Deploy and configure examples
-  /deploy-examples.sh
+  /keycloak-docker-cluster/shared-files/deploy-examples.sh
 
   # Deploy to volume
-  rm -rf /keycloak-docker-shared/keycloak-wildfly-$MYHOST
-  cp -r /opt/wildfly-8.1.0.Final /keycloak-docker-shared/keycloak-wildfly-$MYHOST
-  chmod -R 777 /keycloak-docker-shared/keycloak-wildfly-$MYHOST
-  echo "keycloak-wildfly-$MYHOST prepared and copyied to volume";
+  rm -rf /keycloak-docker-shared/keycloak-$JBOSS_TYPE-$MYHOST
+  cp -r $JBOSS_HOME /keycloak-docker-shared/keycloak-$JBOSS_TYPE-$MYHOST
+  chmod -R 777 /keycloak-docker-shared/keycloak-$JBOSS_TYPE-$MYHOST
+  echo "keycloak-$JBOSS_TYPE-$MYHOST prepared and copyied to volume";
 }
 
 function waitForPreviousNodeStart
 {
   myHostNumber=$(echo $MYHOST | awk -F"node" '{ print $2 }');
   if [ $myHostNumber -eq 1 ]; then
-    echo "Our host is node1. No need to wait for previous server";
+    echo "Our host is $MYHOST. No need to wait for previous server";
   else 
-    previous=node$(($myHostNumber-1));
+    previous="$NODE_PREFIX"node$(($myHostNumber-1));
     echo "Waiting for host $previous to start";
     
     for I in $(seq 1 10); do
-      cat /keycloak-docker-shared/keycloak-wildfly-$previous/standalone/log/server.log | grep "\(INFO\|ERROR\).*WildFly.*started";
+      cat /keycloak-docker-shared/keycloak-$JBOSS_TYPE-$previous/standalone/log/server.log | grep "\(INFO\|ERROR\).*\(WildFly\|JBoss AS\|JBoss EAP\).*started";
       if [ 0 -eq $? ]; then
         echo "Host $previous started. Going to start $MYHOST";
         return;
@@ -77,7 +81,7 @@ waitForMySQLStart;
 
 echo "Running keycloak node $MYHOST. Additional arguments: $@";
 cd /keycloak-docker-shared
-export JBOSS_HOME=/keycloak-docker-shared/keycloak-wildfly-$MYHOST;
+export JBOSS_HOME=/keycloak-docker-shared/keycloak-$JBOSS_TYPE-$MYHOST;
 
 cd $JBOSS_HOME/bin/
 
