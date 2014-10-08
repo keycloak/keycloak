@@ -8,7 +8,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>1.0.2-RC1-SNAPSHOT</version>
+    <version>1.0.2.Final</version>
     <packaging>pom</packaging>
 
     <properties>

@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.0.2-RC1-SNAPSHOT</version>
+        <version>1.0.2.Final</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Aerogear UPS Parent</name>
