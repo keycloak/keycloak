@@ -10,8 +10,10 @@ import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -246,5 +248,39 @@ public abstract class ClientAdapter implements ClientModel {
     @Override
     public int hashCode() {
         return entity.getId().hashCode();
+    }
+
+    @Override
+    public String getProtocol() {
+        return entity.getProtocol();
+    }
+
+    @Override
+    public void setProtocol(String protocol) {
+        entity.setProtocol(protocol);
+
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        entity.getAttributes().put(name, value);
+
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+       entity.getAttributes().remove(name);
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        return entity.getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        Map<String, String> copy = new HashMap<String, String>();
+        copy.putAll(entity.getAttributes());
+        return copy;
     }
 }

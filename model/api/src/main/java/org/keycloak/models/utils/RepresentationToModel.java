@@ -368,6 +368,7 @@ public class RepresentationToModel {
         applicationModel.setBaseUrl(resourceRep.getBaseUrl());
         if (resourceRep.isBearerOnly() != null) applicationModel.setBearerOnly(resourceRep.isBearerOnly());
         if (resourceRep.isPublicClient() != null) applicationModel.setPublicClient(resourceRep.isPublicClient());
+        if (resourceRep.getProtocol() != null) applicationModel.setProtocol(resourceRep.getProtocol());
         if (resourceRep.isFullScopeAllowed() != null) applicationModel.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
         else applicationModel.setFullScopeAllowed(true);
         applicationModel.updateApplication();
@@ -379,6 +380,12 @@ public class RepresentationToModel {
         applicationModel.setSecret(resourceRep.getSecret());
         if (applicationModel.getSecret() == null) {
             KeycloakModelUtils.generateSecret(applicationModel);
+        }
+
+        if (resourceRep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
+                applicationModel.setAttribute(entry.getKey(), entry.getValue());
+            }
         }
 
 
@@ -437,6 +444,14 @@ public class RepresentationToModel {
         if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
         resource.updateApplication();
+
+        if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                resource.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+
 
         if (rep.getNotBefore() != null) {
             resource.setNotBefore(rep.getNotBefore());
@@ -564,6 +579,12 @@ public class RepresentationToModel {
 
         if (rep.getNotBefore() != null) {
             model.setNotBefore(rep.getNotBefore());
+        }
+        if (rep.getProtocol() != null) model.setProtocol(rep.getProtocol());
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                model.setAttribute(entry.getKey(), entry.getValue());
+            }
         }
 
     }

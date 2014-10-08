@@ -1,7 +1,9 @@
 package org.keycloak.models.entities;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -11,12 +13,15 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private String name;
     private boolean enabled;
     private String secret;
+    private String protocol;
     private long allowedClaimsMask;
     private int notBefore;
     private boolean publicClient;
     private boolean fullScopeAllowed;
 
     private String realmId;
+    private Map<String, String> attributes = new HashMap<String, String>();
+
 
     private List<String> webOrigins = new ArrayList<String>();
     private List<String> redirectUris = new ArrayList<String>();
@@ -108,5 +113,21 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setFullScopeAllowed(boolean fullScopeAllowed) {
         this.fullScopeAllowed = fullScopeAllowed;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
     }
 }

@@ -12,8 +12,10 @@ import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -239,5 +241,43 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     public void deleteScopeMapping(RoleModel role) {
         getMongoStore().pullItemFromList(this.getMongoEntity(), "scopeIds", role.getId(), invocationContext);
     }
+
+    @Override
+    public String getProtocol() {
+        return getMongoEntityAsClient().getProtocol();
+    }
+
+    @Override
+    public void setProtocol(String protocol) {
+        getMongoEntityAsClient().setProtocol(protocol);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        getMongoEntityAsClient().getAttributes().put(name, value);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getMongoEntityAsClient().getAttributes().remove(name);
+        updateMongoEntity();
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        return getMongoEntityAsClient().getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        Map<String, String> copy = new HashMap<String, String>();
+        copy.putAll(getMongoEntityAsClient().getAttributes());
+        return copy;
+    }
+
 
 }

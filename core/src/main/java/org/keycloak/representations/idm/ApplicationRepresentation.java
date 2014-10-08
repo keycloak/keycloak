@@ -1,6 +1,7 @@
 package org.keycloak.representations.idm;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -21,6 +22,8 @@ public class ApplicationRepresentation {
     protected Integer notBefore;
     protected Boolean bearerOnly;
     protected Boolean publicClient;
+    protected String protocol;
+    protected Map<String, String> attributes;
     protected Boolean fullScopeAllowed;
 
 
@@ -142,5 +145,21 @@ public class ApplicationRepresentation {
 
     public void setFullScopeAllowed(Boolean fullScopeAllowed) {
         this.fullScopeAllowed = fullScopeAllowed;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
     }
 }
