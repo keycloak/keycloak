@@ -187,11 +187,15 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         boolean success = session.refreshExpiredToken(false);
         if (success && session.isActive()) return;
 
-        request.getSessionInternal().removeNote(KeycloakSecurityContext.class.getName());
+        // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
+        Session catalinaSession = request.getSessionInternal();
+        log.fine("Cleanup and expire session " + catalinaSession + " after failed refresh");
+        catalinaSession.removeNote(KeycloakSecurityContext.class.getName());
         request.setUserPrincipal(null);
         request.setAuthType(null);
-        request.getSessionInternal().setPrincipal(null);
-        request.getSessionInternal().setAuthType(null);
+        catalinaSession.setPrincipal(null);
+        catalinaSession.setAuthType(null);
+        catalinaSession.expire();
     }
 
     public void keycloakSaveRequest(Request request) throws IOException {

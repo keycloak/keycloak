@@ -63,10 +63,12 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
             securityContext.authenticationComplete(account, "KEYCLOAK", false);
             propagateKeycloakContext( account);
             return true;
+        } else {
+            log.debug("Refresh failed. Account was not active. Returning null and invalidating Http session");
+            session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
+            session.invalidate();
+            return false;
         }
-        log.debug("Account was not active, returning null");
-        session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
-        return false;
     }
 
     @Override
@@ -100,6 +102,6 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
     protected HttpSession getSession(boolean create) {
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        return req.getSession(true);
+        return req.getSession(create);
     }
 }

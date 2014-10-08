@@ -88,24 +88,26 @@ public abstract class UndertowRequestAuthenticator extends RequestAuthenticator 
     protected boolean isCached() {
         Session session = Sessions.getSession(exchange);
         if (session == null) {
-            log.info("session was null, returning null");
+            log.debug("session was null, returning null");
             return false;
         }
         KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
         if (account == null) {
-            log.info("Account was not in session, returning null");
+            log.debug("Account was not in session, returning null");
             return false;
         }
         account.setDeployment(deployment);
         if (account.isActive()) {
-            log.info("Cached account found");
+            log.debug("Cached account found");
             securityContext.authenticationComplete(account, "KEYCLOAK", false);
             propagateKeycloakContext( account);
             return true;
+        } else {
+            log.debug("Account was not active, returning false");
+            session.removeAttribute(KeycloakUndertowAccount.class.getName());
+            session.invalidate(exchange);
+            return false;
         }
-        log.info("Account was not active, returning false");
-        session.removeAttribute(KeycloakUndertowAccount.class.getName());
-        return false;
     }
 
     @Override
