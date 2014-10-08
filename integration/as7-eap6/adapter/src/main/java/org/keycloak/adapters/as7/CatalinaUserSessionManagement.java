@@ -39,7 +39,7 @@ public class CatalinaUserSessionManagement implements SessionListener {
     }
 
     protected void logoutSession(Manager manager, String httpSessionId) {
-        log.info("logoutHttpSession: " + httpSessionId);
+        log.debug("logoutHttpSession: " + httpSessionId);
 
         Session session;
         try {

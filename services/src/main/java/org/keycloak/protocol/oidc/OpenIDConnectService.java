@@ -614,7 +614,7 @@ public class OpenIDConnectService {
 
         String httpSessionId = formData.getFirst(AdapterConstants.HTTP_SESSION_ID);
         if (httpSessionId != null) {
-            logger.infof("Http Session '%s' saved in ClientSession for client '%s'", httpSessionId, client.getClientId());
+            logger.debugf("Http Session '%s' saved in ClientSession for client '%s'", httpSessionId, client.getClientId());
             event.detail(AdapterConstants.HTTP_SESSION_ID, httpSessionId);
             clientSession.setNote(AdapterConstants.HTTP_SESSION_ID, httpSessionId);
         }

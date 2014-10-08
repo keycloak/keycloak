@@ -227,7 +227,6 @@ public class UsersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getSessions(final @PathParam("username") String username) {
-        logger.info("sessions");
         auth.requireView();
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
