@@ -18,6 +18,8 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
 
+import javax.servlet.http.HttpSession;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -40,7 +42,7 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
 
     @Override
     protected OAuthRequestAuthenticator createOAuthAuthenticator() {
-        return new OAuthRequestAuthenticator(facade, deployment, sslRedirectPort) {
+        return new OAuthRequestAuthenticator(this, facade, deployment, sslRedirectPort) {
             @Override
             protected void saveRequest() {
                 try {
@@ -64,15 +66,15 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
         session.setNote(KeycloakSecurityContext.class.getName(), securityContext);
         String username = securityContext.getToken().getSubject();
         log.debug("userSessionManage.login: " + username);
-        userSessionManagement.login(session, username, securityContext.getToken().getSessionState());
+        userSessionManagement.login(session);
     }
 
     @Override
     protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
         RefreshableKeycloakSecurityContext securityContext = principal.getKeycloakSecurityContext();
         Set<String> roles = getRolesFromToken(securityContext);
-        for (String role : roles) {
-            log.info("Bearer role: " + role);
+        if (log.isDebugEnabled()) {
+            log.debug("Completing bearer authentication. Bearer roles: " + roles);
         }
         Principal generalPrincipal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), principal, roles, securityContext);
         request.setUserPrincipal(generalPrincipal);
@@ -122,5 +124,11 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
                 throw new RuntimeException("Restore of original request failed");
             }
         }
+    }
+
+    @Override
+    protected String getHttpSessionId(boolean create) {
+        HttpSession session = request.getSession(create);
+        return session != null ? session.getId() : null;
     }
 }

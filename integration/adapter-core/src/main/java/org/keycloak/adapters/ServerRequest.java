@@ -84,21 +84,24 @@ public class ServerRequest {
         if (is != null) is.close();
     }
 
-    public static AccessTokenResponse invokeAccessCodeToToken(KeycloakDeployment deployment, String code, String redirectUri) throws HttpFailure, IOException {
+    public static AccessTokenResponse invokeAccessCodeToToken(KeycloakDeployment deployment, String code, String redirectUri, String sessionId) throws HttpFailure, IOException {
         String codeUrl = deployment.getCodeUrl();
         String client_id = deployment.getResourceName();
         Map<String, String> credentials = deployment.getResourceCredentials();
         HttpClient client = deployment.getClient();
 
-        return invokeAccessCodeToToken(client, deployment.isPublicClient(), code, codeUrl, redirectUri, client_id, credentials);
+        return invokeAccessCodeToToken(client, deployment.isPublicClient(), code, codeUrl, redirectUri, client_id, credentials, sessionId);
     }
 
-    public static AccessTokenResponse invokeAccessCodeToToken(HttpClient client, boolean publicClient, String code, String codeUrl, String redirectUri, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
+    public static AccessTokenResponse invokeAccessCodeToToken(HttpClient client, boolean publicClient, String code, String codeUrl, String redirectUri, String client_id, Map<String, String> credentials, String sessionId) throws IOException, HttpFailure {
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
         redirectUri = stripOauthParametersFromRedirect(redirectUri);
         formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "authorization_code"));
         formparams.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
         formparams.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
+        if (sessionId != null) {
+            formparams.add(new BasicNameValuePair(AdapterConstants.HTTP_SESSION_ID, sessionId));
+        }
         HttpResponse response = null;
         HttpPost post = new HttpPost(codeUrl);
         if (!publicClient) {

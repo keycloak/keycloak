@@ -17,7 +17,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
         "connection-pool-size",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
-        "auth-server-url-for-backend-requests"
+        "auth-server-url-for-backend-requests", "always-refresh-token"
 })
 public class AdapterConfig extends BaseAdapterConfig {
 
@@ -39,6 +39,8 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected int connectionPoolSize = 20;
     @JsonProperty("auth-server-url-for-backend-requests")
     protected String authServerUrlForBackendRequests;
+    @JsonProperty("always-refresh-token")
+    protected boolean alwaysRefreshToken = false;
 
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
@@ -110,5 +112,13 @@ public class AdapterConfig extends BaseAdapterConfig {
 
     public void setAuthServerUrlForBackendRequests(String authServerUrlForBackendRequests) {
         this.authServerUrlForBackendRequests = authServerUrlForBackendRequests;
+    }
+
+    public boolean isAlwaysRefreshToken() {
+        return alwaysRefreshToken;
+    }
+
+    public void setAlwaysRefreshToken(boolean alwaysRefreshToken) {
+        this.alwaysRefreshToken = alwaysRefreshToken;
     }
 }

@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public abstract class OAuthRequestAuthenticator {
     private static final Logger log = Logger.getLogger(OAuthRequestAuthenticator.class);
     protected KeycloakDeployment deployment;
+    protected RequestAuthenticator reqAuthenticator;
     protected int sslRedirectPort;
     protected String tokenString;
     protected String idTokenString;
@@ -31,7 +32,8 @@ public abstract class OAuthRequestAuthenticator {
     protected String refreshToken;
     protected String strippedOauthParametersRequestUri;
 
-    public OAuthRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort) {
+    public OAuthRequestAuthenticator(RequestAuthenticator requestAuthenticator, HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort) {
+        this.reqAuthenticator = requestAuthenticator;
         this.facade = facade;
         this.deployment = deployment;
         this.sslRedirectPort = sslRedirectPort;
@@ -253,7 +255,8 @@ public abstract class OAuthRequestAuthenticator {
         AccessTokenResponse tokenResponse = null;
         strippedOauthParametersRequestUri = stripOauthParametersFromRedirect();
         try {
-            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, strippedOauthParametersRequestUri);
+            String httpSessionId = reqAuthenticator.getHttpSessionId(true);
+            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, strippedOauthParametersRequestUri, httpSessionId);
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());

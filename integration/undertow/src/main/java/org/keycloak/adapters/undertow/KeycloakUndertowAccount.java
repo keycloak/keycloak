@@ -92,14 +92,14 @@ public class KeycloakUndertowAccount implements Account, Serializable, KeycloakA
     public boolean isActive() {
         // this object may have been serialized, so we need to reset realm config/metadata
         RefreshableKeycloakSecurityContext session = getKeycloakSecurityContext();
-        if (session.isActive()) {
+        if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) {
             log.debug("session is active");
             return true;
         }
 
-        log.debug("session is not active try refresh");
-        session.refreshExpiredToken();
-        if (!session.isActive()) {
+        log.debug("session is not active or refresh is enforced. Try refresh");
+        boolean success = session.refreshExpiredToken(false);
+        if (!success || !session.isActive()) {
             log.debug("session is not active return with failure");
 
             return false;
