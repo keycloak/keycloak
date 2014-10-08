@@ -140,7 +140,7 @@ public class UsersResource {
         if (session.users().getUserByUsername(rep.getUsername(), realm) != null) {
             return Flows.errors().exists("User exists with same username");
         }
-        if (session.users().getUserByEmail(rep.getEmail(), realm) != null) {
+        if (rep.getEmail() != null && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
             return Flows.errors().exists("User exists with same email");
         }
 
@@ -187,10 +187,10 @@ public class UsersResource {
                 user.setAttribute(attr.getKey(), attr.getValue());
             }
 
-            for (String key : user.getAttributes().keySet()) {
-                if (!rep.getAttributes().containsKey(key)) {
-                    user.removeAttribute(key);
-                }
+            Set<String> attrToRemove = new HashSet<String>(user.getAttributes().keySet());
+            attrToRemove.removeAll(rep.getAttributes().keySet());
+            for (String attr : attrToRemove) {
+                user.removeAttribute(attr);
             }
         }
     }
