@@ -35,6 +35,7 @@ import org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler;
 import org.picketlink.identity.federation.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -195,10 +196,22 @@ public class SamlLogin implements LoginProtocol {
             ClientResponse response = null;
             try {
                 response = request.post();
+                response.releaseConnection();
+                // Undertow will redirect root urls not ending in "/" to root url + "/".  Test for this weird behavior
+                if (response.getStatus() == 302  && !adminUrl.endsWith("/")) {
+                    String redirect = (String)response.getHeaders().getFirst(HttpHeaders.LOCATION);
+                    String withSlash = adminUrl + "/";
+                    if (withSlash.equals(redirect)) {
+                        request = executor.createRequest(withSlash);
+                        request.formParameter(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString);
+                        request.formParameter(SAML2LogOutHandler.BACK_CHANNEL_LOGOUT, SAML2LogOutHandler.BACK_CHANNEL_LOGOUT);
+                        response = request.post();
+                        response.releaseConnection();
+                    }
+                }
             } catch (Exception e) {
                 logger.warn("failed to send saml logout", e);
             }
-            response.releaseConnection();
 
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
