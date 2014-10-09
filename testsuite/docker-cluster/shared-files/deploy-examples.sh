@@ -25,17 +25,18 @@ sed -i -e 's/false/true/' admin-access.war/WEB-INF/web.xml
 
 # Enforce refreshing token for product-portal and customer-portal war
 # sed -i -e 's/\"\/auth\",/&\n    \"always-refresh-token\": true,/' customer-portal.war/WEB-INF/keycloak.json;
-sed -i -e 's/\"\/auth\",/&\n    \"always-refresh-token\": true,/' product-portal.war/WEB-INF/keycloak.json;
+# sed -i -e 's/\"\/auth\",/&\n    \"always-refresh-token\": true,/' product-portal.war/WEB-INF/keycloak.json;
 
 # Configure other examples
 for I in *.war/WEB-INF/keycloak.json; do
-  sed -i -e 's/\"\/auth\",/&\n    \"auth-server-url-for-backend-requests\": \"http:\/\/\$\{jboss.host.name\}:8080\/auth\",/' $I;
+  sed -i -e 's/\"auth-server-url\".*: \"\/auth\",/&\n    \"auth-server-url-for-backend-requests\": \"http:\/\/\$\{jboss.host.name\}:8080\/auth\",/' $I;
 done;
 
 # Enable distributable for customer-portal
 sed -i -e 's/<\/module-name>/&\n    <distributable \/>/' customer-portal.war/WEB-INF/web.xml
 
 # Configure testrealm.json - Enable adminUrl to access adapters on local machine
-sed -i -e 's/\"adminUrl\": \"/&http:\/\/\$\{jboss.host.name\}:8080/' /keycloak-docker-cluster/examples/testrealm.json
+sed -i -e 's/\"adminUrl\": \"\/customer-portal/\"adminUrl\": \"http:\/\/\$\{jboss.host.name\}:8080\/customer-portal/' /keycloak-docker-cluster/examples/testrealm.json
+sed -i -e 's/\"adminUrl\": \"\/product-portal/\"adminUrl\": \"http:\/\/\$\{jboss.host.name\}:8080\/product-portal/' /keycloak-docker-cluster/examples/testrealm.json
 
 
