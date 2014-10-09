@@ -83,6 +83,25 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         }
     }
 
+    public void update(KeycloakRule.KeycloakSetup configurer, String realmId) {
+        KeycloakSession session = server.getSessionFactory().create();
+        session.getTransaction().begin();
+
+        try {
+            RealmManager manager = new RealmManager(session);
+
+            RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
+            RealmModel appRealm = manager.getRealm(realmId);
+
+            configurer.session = session;
+            configurer.config(manager, adminstrationRealm, appRealm);
+
+            session.getTransaction().commit();
+        } finally {
+            session.close();
+        }
+    }
+
     protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
 
     }

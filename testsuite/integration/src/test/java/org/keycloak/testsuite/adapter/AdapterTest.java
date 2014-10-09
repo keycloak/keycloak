@@ -32,6 +32,7 @@ import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -45,6 +46,7 @@ import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
+import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.testutils.KeycloakServer;
@@ -64,6 +66,7 @@ import java.net.URI;
 import java.net.URL;
 import java.security.PublicKey;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Tests Undertow Adapter
@@ -422,6 +425,11 @@ public class AdapterTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
     }
 
+    /**
+     * KEYCLOAK-732
+     *
+     * @throws Throwable
+     */
     @Test
     public void testSingleSessionInvalidated() throws Throwable {
         AdapterTest browser1 = this;
@@ -455,6 +463,57 @@ public class AdapterTest {
         } finally {
             browser2.webRule.after();
         }
+    }
+
+    /**
+     * KEYCLOAK-741
+     */
+    @Test
+    public void testSessionInvalidatedAfterFailedRefresh() throws Throwable {
+        final AtomicInteger origTokenLifespan = new AtomicInteger();
+
+        // Delete adminUrl and set short accessTokenLifespan
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel demoRealm) {
+                ApplicationModel sessionPortal = demoRealm.getApplicationByName("session-portal");
+                sessionPortal.setManagementUrl(null);
+
+                origTokenLifespan.set(demoRealm.getAccessTokenLifespan());
+                demoRealm.setAccessTokenLifespan(1);
+            }
+        }, "demo");
+
+        // Login
+        loginAndCheckSession(driver, loginPage);
+
+        // Logout
+        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
+                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8081/session-portal").build("demo").toString();
+        driver.navigate().to(logoutUri);
+
+        // Wait until accessToken is expired
+        Thread.sleep(2000);
+
+        // Assert that http session was invalidated
+        driver.navigate().to("http://localhost:8081/session-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/session-portal");
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Counter=1"));
+
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel demoRealm) {
+                ApplicationModel sessionPortal = demoRealm.getApplicationByName("session-portal");
+                sessionPortal.setManagementUrl("http://localhost:8081/session-portal");
+
+                demoRealm.setAccessTokenLifespan(origTokenLifespan.get());
+            }
+
+        }, "demo");
     }
 
     private static void loginAndCheckSession(WebDriver driver, LoginPage loginPage) {
