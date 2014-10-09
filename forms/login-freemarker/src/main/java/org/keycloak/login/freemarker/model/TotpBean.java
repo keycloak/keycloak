@@ -35,19 +35,19 @@ import java.util.Random;
  */
 public class TotpBean {
 
-    private String totpSecret;
-    private String totpSecretEncoded;
-    private boolean enabled;
-    private String contextUrl;
-    private String realmName;
+    private final String totpSecret;
+    private final String totpSecretEncoded;
+    private final boolean enabled;
+    private final String contextUrl;
+    private final String realmName;
 
     public TotpBean(RealmModel realm, UserModel user, URI baseUri) {
         this.realmName = realm.getName();
         this.enabled = user.isTotp();
         this.contextUrl = baseUri.getPath();
-
-        totpSecret = randomString(20);
-        totpSecretEncoded = Base32.encode(totpSecret.getBytes());
+        
+        this.totpSecret = randomString(20);
+        this.totpSecretEncoded = Base32.encode(totpSecret.getBytes());
     }
 
     private static String randomString(int length) {
