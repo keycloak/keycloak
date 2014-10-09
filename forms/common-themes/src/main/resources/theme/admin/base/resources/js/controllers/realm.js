@@ -541,7 +541,7 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
 
         // Populate available roles for selected application
         if ($scope.application) {
-            var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.realm, application: $scope.application.name}, function () {
+            var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.realm, application: $scope.application.id}, function () {
 
                 if (!$scope.application.hasOwnProperty('defaultRoles') || $scope.application.defaultRoles === null) {
                     $scope.application.defaultRoles = [];
@@ -582,7 +582,7 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
         // Update/save the selected application with new default roles.
         Application.update({
             realm: $scope.realm.realm,
-            application: $scope.application.name
+            application: $scope.application.id
         }, $scope.application, function () {
             Notifications.success("Your changes have been saved to the application.");
         });
@@ -606,7 +606,7 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
         // Update/save the selected application with new default roles.
         Application.update({
             realm: $scope.realm.realm,
-            application: $scope.application.name
+            application: $scope.application.id
         }, $scope.application, function () {
             Notifications.success("Your changes have been saved to the application.");
         });

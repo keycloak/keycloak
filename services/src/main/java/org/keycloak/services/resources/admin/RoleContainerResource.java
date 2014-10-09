@@ -2,6 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -222,7 +223,40 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        return getApplicationRoleComposites(appName, role);
+        ApplicationModel app = realm.getApplicationByName(appName);
+        if (app == null) {
+            throw new NotFoundException("Could not find application: " + appName);
+
+        }
+        return getApplicationRoleComposites(app, role);
+    }
+
+
+    /**
+     * An app-level roles for a specific app for this role's composite
+     *
+     * @param roleName role's name (not id!)
+     * @param appId
+     * @return
+     */
+    @Path("{role-name}/composites/application-by-id/{appId}")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Set<RoleRepresentation> getApplicationByIdRoleComposites(final @PathParam("role-name") String roleName,
+                                                                final @PathParam("appId") String appId) {
+        auth.requireManage();
+
+        RoleModel role = roleContainer.getRole(roleName);
+        if (role == null) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        ApplicationModel app = realm.getApplicationById(appId);
+        if (app == null) {
+            throw new NotFoundException("Could not find application: " + appId);
+
+        }
+        return getApplicationRoleComposites(app, role);
     }
 
 

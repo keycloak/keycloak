@@ -6,7 +6,9 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.RealmCache;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -21,6 +23,8 @@ public class CachedClient {
     protected Set<String> redirectUris = new HashSet<String>();
     protected boolean enabled;
     protected String secret;
+    protected String protocol;
+    protected Map<String, String> attributes = new HashMap<String, String>();
     protected boolean publicClient;
     protected boolean fullScopeAllowed;
     protected boolean directGrantsOnly;
@@ -34,6 +38,8 @@ public class CachedClient {
         name = model.getClientId();
         this.realm = realm.getId();
         enabled = model.isEnabled();
+        protocol = model.getProtocol();
+        attributes.putAll(model.getAttributes());
         notBefore = model.getNotBefore();
         directGrantsOnly = model.isDirectGrantsOnly();
         publicClient = model.isPublicClient();
@@ -97,5 +103,13 @@ public class CachedClient {
 
     public boolean isFullScopeAllowed() {
         return fullScopeAllowed;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
     }
 }

@@ -169,7 +169,35 @@ public class RoleByIdResource extends RoleResource {
                                                                 final @PathParam("app") String appName) {
         RoleModel role = getRoleModel(id);
         auth.requireView();
-        return getApplicationRoleComposites(appName, role);
+        ApplicationModel app = realm.getApplicationByName(appName);
+        if (app == null) {
+            throw new NotFoundException("Could not find application: " + appName);
+
+        }
+        return getApplicationRoleComposites(app, role);
+    }
+
+    /**
+     * Return a set of application-level roles for a specific app that are in the role's composite
+     *
+     * @param id
+     * @param appId
+     * @return
+     */
+    @Path("{role-id}/composites/applications-by-id/{appId}")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Set<RoleRepresentation> getApplicationByIdRoleComposites(final @PathParam("role-id") String id,
+                                                                final @PathParam("appId") String appId) {
+        RoleModel role = getRoleModel(id);
+        auth.requireView();
+        ApplicationModel app = realm.getApplicationById(appId);
+        if (app == null) {
+            throw new NotFoundException("Could not find application: " + appId);
+
+        }
+        return getApplicationRoleComposites(app, role);
     }
 
     /**

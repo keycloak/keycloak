@@ -10,9 +10,12 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -38,6 +41,8 @@ public abstract class ClientEntity {
     private int notBefore;
     @Column(name="PUBLIC_CLIENT")
     private boolean publicClient;
+    @Column(name="PROTOCOL")
+    private String protocol;
     @Column(name="FULL_SCOPE_ALLOWED")
     private boolean fullScopeAllowed;
 
@@ -54,6 +59,12 @@ public abstract class ClientEntity {
     @Column(name="VALUE")
     @CollectionTable(name = "REDIRECT_URIS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Set<String> redirectUris = new HashSet<String>();
+
+    @ElementCollection
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE", length = 2048)
+    @CollectionTable(name="CLIENT_ATTRIBUTES", joinColumns={ @JoinColumn(name="CLIENT_ID") })
+    protected Map<String, String> attributes = new HashMap<String, String>();
 
     public RealmEntity getRealm() {
         return realm;
@@ -141,5 +152,21 @@ public abstract class ClientEntity {
 
     public void setFullScopeAllowed(boolean fullScopeAllowed) {
         this.fullScopeAllowed = fullScopeAllowed;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 }

@@ -120,10 +120,10 @@ public class ScopeMappedResource {
         auth.requireView();
 
         Set<RoleModel> roles = realm.getRoles();
-        return getAvailable(roles);
+        return getAvailable(client, roles);
     }
 
-    private List<RoleRepresentation> getAvailable(Set<RoleModel> roles) {
+    public static List<RoleRepresentation> getAvailable(ClientModel client, Set<RoleModel> roles) {
         List<RoleRepresentation> available = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
             if (client.hasScope(roleModel)) continue;
@@ -147,10 +147,10 @@ public class ScopeMappedResource {
         auth.requireView();
 
         Set<RoleModel> roles = realm.getRoles();
-        return getComposite(roles);
+        return getComposite(client, roles);
     }
 
-    private List<RoleRepresentation> getComposite(Set<RoleModel> roles) {
+    public static List<RoleRepresentation> getComposite(ClientModel client, Set<RoleModel> roles) {
         List<RoleRepresentation> composite = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
             if (client.hasScope(roleModel)) composite.add(ModelToRepresentation.toRepresentation(roleModel));
@@ -201,146 +201,32 @@ public class ScopeMappedResource {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = realm.getRoleById(role.getId());
                 if (roleModel == null) {
-                    throw new NotFoundException("Role not found");
+                    throw new NotFoundException("Application not found");
                 }
                 client.deleteScopeMapping(roleModel);
             }
         }
     }
 
-    /**
-     * Get the roles associated with a client's scope for a specific application.
-     *
-     * @param appName roles associated with client's scope for a specific application
-     * @return
-     */
     @Path("applications/{app}")
-    @GET
-    @Produces("application/json")
-    @NoCache
-    public List<RoleRepresentation> getApplicationScopeMappings(@PathParam("app") String appName) {
-        auth.requireView();
-
+    public ScopeMappedApplicationResource getApplicationScopeMappings(@PathParam("app") String appName) {
         ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
             throw new NotFoundException("Role not found");
         }
 
-        Set<RoleModel> mappings = app.getApplicationScopeMappings(client);
-        List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : mappings) {
-            mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
-        }
-        return mapRep;
+        return new ScopeMappedApplicationResource(realm, auth, client, session, app);
     }
 
-    /**
-     * The available application-level roles that can be associated with the client's scope
-     *
-     * @param appName available roles for a specific application
-     * @return
-     */
-    @Path("applications/{app}/available")
-    @GET
-    @Produces("application/json")
-    @NoCache
-    public List<RoleRepresentation> getAvailableApplicationScopeMappings(@PathParam("app") String appName) {
-        auth.requireView();
-
-        ApplicationModel app = realm.getApplicationByName(appName);
-
-        if (app == null) {
-            throw new NotFoundException("Role not found");
-        }
-
-        Set<RoleModel> roles = app.getRoles();
-        return getAvailable(roles);
-    }
-
-    /**
-     * Get effective application roles that are associated with the client's scope for a specific application.
-     *
-     * @param appName effective roles for a specific app
-     * @return
-     */
-    @Path("applications/{app}/composite")
-    @GET
-    @Produces("application/json")
-    @NoCache
-    public List<RoleRepresentation> getCompositeApplicationScopeMappings(@PathParam("app") String appName) {
-        auth.requireView();
-
-        ApplicationModel app = realm.getApplicationByName(appName);
-
-        if (app == null) {
-            throw new NotFoundException("Role not found");
-        }
-
-        Set<RoleModel> roles = app.getRoles();
-        return getComposite(roles);
-    }
-
-    /**
-     * Add application-level roles to the client's scope
-     *
-     * @param appName
-     * @param roles
-     */
-    @Path("applications/{app}")
-    @POST
-    @Consumes("application/json")
-    public void addApplicationScopeMapping(@PathParam("app") String appName, List<RoleRepresentation> roles) {
-        auth.requireManage();
-
-        ApplicationModel app = realm.getApplicationByName(appName);
+    @Path("applications-by-id/{appId}")
+    public ScopeMappedApplicationResource getApplicationByIdScopeMappings(@PathParam("appId") String appId) {
+        ApplicationModel app = realm.getApplicationById(appId);
 
         if (app == null) {
             throw new NotFoundException("Application not found");
         }
 
-        for (RoleRepresentation role : roles) {
-            RoleModel roleModel = app.getRole(role.getName());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
-            }
-            client.addScopeMapping(roleModel);
-        }
-
-    }
-
-    /**
-     * Remove application-level roles from the client's scope.
-     *
-     * @param appName
-     * @param roles
-     */
-    @Path("applications/{app}")
-    @DELETE
-    @Consumes("application/json")
-    public void deleteApplicationScopeMapping(@PathParam("app") String appName, List<RoleRepresentation> roles) {
-        auth.requireManage();
-
-        ApplicationModel app = realm.getApplicationByName(appName);
-
-        if (app == null) {
-            throw new NotFoundException("Application not found");
-        }
-
-        if (roles == null) {
-            Set<RoleModel> roleModels = app.getApplicationScopeMappings(client);
-            for (RoleModel roleModel : roleModels) {
-                client.deleteScopeMapping(roleModel);
-            }
-
-        } else {
-            for (RoleRepresentation role : roles) {
-                RoleModel roleModel = app.getRole(role.getName());
-                if (roleModel == null) {
-                    throw new NotFoundException("Role not found");
-                }
-                client.deleteScopeMapping(roleModel);
-            }
-        }
+        return new ScopeMappedApplicationResource(realm, auth, client, session, app);
     }
 }

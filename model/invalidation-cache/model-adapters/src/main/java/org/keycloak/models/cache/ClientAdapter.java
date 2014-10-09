@@ -6,7 +6,9 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.entities.CachedClient;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -208,4 +210,43 @@ public abstract class ClientAdapter implements ClientModel {
         updatedClient.setNotBefore(notBefore);
     }
 
+    @Override
+    public String getProtocol() {
+        if (updatedClient != null) return updatedClient.getProtocol();
+        return cachedClient.getProtocol();
+    }
+
+    @Override
+    public void setProtocol(String protocol) {
+        getDelegateForUpdate();
+        updatedClient.setProtocol(protocol);
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        getDelegateForUpdate();
+        updatedClient.setAttribute(name, value);
+
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getDelegateForUpdate();
+        updatedClient.removeAttribute(name);
+
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        if (updatedClient != null) return updatedClient.getAttribute(name);
+        return cachedClient.getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        if (updatedClient != null) return updatedClient.getAttributes();
+        Map<String, String> copy = new HashMap<String, String>();
+        copy.putAll(cachedClient.getAttributes());
+        return copy;
+    }
 }

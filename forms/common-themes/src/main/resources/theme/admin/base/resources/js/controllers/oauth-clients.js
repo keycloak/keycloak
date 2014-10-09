@@ -224,9 +224,9 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     function updateAppRoles() {
         if ($scope.targetApp) {
             console.debug($scope.targetApp.name);
-            $scope.applicationRoles = OAuthClientAvailableApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.name, targetApp : $scope.targetApp.name});
-            $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.name, targetApp : $scope.targetApp.name});
-            $scope.applicationComposite = OAuthClientCompositeApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.name, targetApp : $scope.targetApp.name});
+            $scope.applicationRoles = OAuthClientAvailableApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.name, targetApp : $scope.targetApp.id});
+            $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.name, targetApp : $scope.targetApp.id});
+            $scope.applicationComposite = OAuthClientCompositeApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.name, targetApp : $scope.targetApp.id});
         } else {
             $scope.applicationRoles = null;
             $scope.applicationMappings = null;
@@ -256,7 +256,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.addApplicationRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.name +  '/scope-mappings/applications-by-id/' + $scope.targetApp.id,
             $scope.selectedApplicationRoles).success(function () {
                 updateAppRoles();
                 Notifications.success("Scope mappings updated.");
@@ -265,7 +265,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteApplicationRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.name +  '/scope-mappings/applications-by-id/' + $scope.targetApp.id,
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function () {
                 updateAppRoles();
                 Notifications.success("Scope mappings updated.");

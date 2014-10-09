@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -52,6 +53,15 @@ public interface ClientModel {
 
     boolean isFullScopeAllowed();
     void setFullScopeAllowed(boolean value);
+
+    String getProtocol();
+    void setProtocol(String protocol);
+
+    void setAttribute(String name, String value);
+    void removeAttribute(String name);
+    String getAttribute(String name);
+    Map<String, String> getAttributes();
+
 
     boolean isPublicClient();
     void setPublicClient(boolean flag);

@@ -519,7 +519,7 @@ public class UsersResource {
         }
 
         Set<RoleModel> available = realm.getRoles();
-        return getAvailableRoles(user, available);
+        return UserApplicationRoleMappingsResource.getAvailableRoles(user, available);
     }
 
     /**
@@ -586,22 +586,8 @@ public class UsersResource {
         }
     }
 
-    /**
-     * Get application-level role mappings for this user for a specific app
-     *
-     * @param username username (not id!)
-     * @param appName app name (not id!)
-     * @return
-     */
     @Path("{username}/role-mappings/applications/{app}")
-    @GET
-    @Produces("application/json")
-    @NoCache
-    public List<RoleRepresentation> getApplicationRoleMappings(@PathParam("username") String username, @PathParam("app") String appName) {
-        auth.requireView();
-
-        logger.debug("getApplicationRoleMappings");
-
+    public UserApplicationRoleMappingsResource getUserApplicationRoleMappingsResource(@PathParam("username") String username, @PathParam("app") String appName) {
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -613,175 +599,25 @@ public class UsersResource {
             throw new NotFoundException("Application not found");
         }
 
-        Set<RoleModel> mappings = user.getApplicationRoleMappings(application);
-        List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : mappings) {
-            mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
-        }
-        logger.debugv("getApplicationRoleMappings.size() = {0}", mapRep.size());
-        return mapRep;
+        return new UserApplicationRoleMappingsResource(realm, auth, user, application);
+
     }
-
-    /**
-     * Get effective application-level role mappings.  This recurses any composite roles
-     *
-     * @param username username (not id!)
-     * @param appName app name (not id!)
-     * @return
-     */
-    @Path("{username}/role-mappings/applications/{app}/composite")
-    @GET
-    @Produces("application/json")
-    @NoCache
-    public List<RoleRepresentation> getCompositeApplicationRoleMappings(@PathParam("username") String username, @PathParam("app") String appName) {
-        auth.requireView();
-
-        logger.debug("getCompositeApplicationRoleMappings");
-
+    @Path("{username}/role-mappings/applications-by-id/{appId}")
+    public UserApplicationRoleMappingsResource getUserApplicationRoleMappingsResourceById(@PathParam("username") String username, @PathParam("appId") String appId) {
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
 
-        ApplicationModel application = realm.getApplicationByName(appName);
+        ApplicationModel application = realm.getApplicationById(appId);
 
         if (application == null) {
             throw new NotFoundException("Application not found");
         }
 
-        Set<RoleModel> roles = application.getRoles();
-        List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : roles) {
-            if (user.hasRole(roleModel)) mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
-        }
-        logger.debugv("getCompositeApplicationRoleMappings.size() = {0}", mapRep.size());
-        return mapRep;
-    }
-
-    /**
-     * Get available application-level roles that can be mapped to the user
-     *
-     * @param username username (not id!)
-     * @param appName app name (not id!)
-     * @return
-     */
-    @Path("{username}/role-mappings/applications/{app}/available")
-    @GET
-    @Produces("application/json")
-    @NoCache
-    public List<RoleRepresentation> getAvailableApplicationRoleMappings(@PathParam("username") String username, @PathParam("app") String appName) {
-        auth.requireView();
-
-        logger.debug("getApplicationRoleMappings");
-
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        ApplicationModel application = realm.getApplicationByName(appName);
-
-        if (application == null) {
-            throw new NotFoundException("Application not found");
-        }
-        Set<RoleModel> available = application.getRoles();
-        return getAvailableRoles(user, available);
-    }
-
-    protected List<RoleRepresentation> getAvailableRoles(UserModel user, Set<RoleModel> available) {
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (RoleModel roleModel : available) {
-            if (user.hasRole(roleModel)) continue;
-            roles.add(roleModel);
-        }
-
-        List<RoleRepresentation> mappings = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : roles) {
-            mappings.add(ModelToRepresentation.toRepresentation(roleModel));
-        }
-        return mappings;
-    }
-
-    /**
-     * Add applicaiton-level roles to the user role mapping.
-     *
-     * @param username username (not id!)
-     * @param appName app name (not id!)
-     * @param roles
-     */
-    @Path("{username}/role-mappings/applications/{app}")
-    @POST
-    @Consumes("application/json")
-    public void addApplicationRoleMapping(@PathParam("username") String username, @PathParam("app") String appName, List<RoleRepresentation> roles) {
-        auth.requireManage();
-
-        logger.debug("addApplicationRoleMapping");
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        ApplicationModel application = realm.getApplicationByName(appName);
-
-        if (application == null) {
-            throw new NotFoundException("Application not found");
-        }
-
-        for (RoleRepresentation role : roles) {
-            RoleModel roleModel = application.getRole(role.getName());
-            if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                throw new NotFoundException("Role not found");
-            }
-            user.grantRole(roleModel);
-        }
+        return new UserApplicationRoleMappingsResource(realm, auth, user, application);
 
     }
-
-    /**
-     * Delete application-level roles from user role mapping.
-     *
-     * @param username username (not id!)
-     * @param appName app name (not id!)
-     * @param roles
-     */
-    @Path("{username}/role-mappings/applications/{app}")
-    @DELETE
-    @Consumes("application/json")
-    public void deleteApplicationRoleMapping(@PathParam("username") String username, @PathParam("app") String appName, List<RoleRepresentation> roles) {
-        auth.requireManage();
-
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        ApplicationModel application = realm.getApplicationByName(appName);
-
-        if (application == null) {
-            throw new NotFoundException("Application not found");
-        }
-
-        if (roles == null) {
-            Set<RoleModel> roleModels = user.getApplicationRoleMappings(application);
-            for (RoleModel roleModel : roleModels) {
-                if (!(roleModel.getContainer() instanceof ApplicationModel)) {
-                    ApplicationModel app = (ApplicationModel) roleModel.getContainer();
-                    if (!app.getId().equals(application.getId())) continue;
-                }
-                user.deleteRoleMapping(roleModel);
-            }
-
-        } else {
-            for (RoleRepresentation role : roles) {
-                RoleModel roleModel = application.getRole(role.getName());
-                if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                    throw new NotFoundException("Role not found");
-                }
-                user.deleteRoleMapping(roleModel);
-            }
-        }
-    }
-
     /**
      *  Set up a temporary password for this user.  User will have to reset this temporary password when they log
      *  in next.

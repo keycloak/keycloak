@@ -4,15 +4,15 @@
     <div id="content">
         <ol class="breadcrumb" data-ng-show="create">
             <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/roles">Roles</a></li>
             <li class="active">Add role</li>
         </ol>
 
         <ol class="breadcrumb" data-ng-hide="create">
             <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/roles">Roles</a></li>
             <li class="active">{{role.name}}</li>
         </ol>
 

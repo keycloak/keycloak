@@ -43,7 +43,7 @@
             </tfoot>-->
             <tbody>
             <tr ng-repeat="app in applications | filter:search">
-                <td><a href="#/realms/{{realm.realm}}/applications/{{app.name}}">{{app.name}}</a></td>
+                <td><a href="#/realms/{{realm.realm}}/applications/{{app.id}}">{{app.name}}</a></td>
                 <td>{{app.enabled}}</td>
                 <td ng-class="{'text-muted': !app.baseUrl}">
                     <a href="{{app.baseUrl}}" data-ng-show="app.baseUrl">{{app.baseUrl}}</a>

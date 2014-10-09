@@ -197,7 +197,7 @@ public class ModelToRepresentation {
         for (ClientSessionModel clientSession : session.getClientSessions()) {
             ClientModel client = clientSession.getClient();
             if (client instanceof ApplicationModel) {
-                rep.getApplications().add(client.getClientId());
+                rep.getApplications().put(client.getId(), client.getClientId());
             } else if (client instanceof OAuthClientModel) {
                 rep.getClients().put(client.getId(), client.getClientId());
             }
@@ -212,6 +212,8 @@ public class ModelToRepresentation {
         rep.setEnabled(applicationModel.isEnabled());
         rep.setAdminUrl(applicationModel.getManagementUrl());
         rep.setPublicClient(applicationModel.isPublicClient());
+        rep.setProtocol(applicationModel.getProtocol());
+        rep.setAttributes(applicationModel.getAttributes());
         rep.setFullScopeAllowed(applicationModel.isFullScopeAllowed());
         rep.setBearerOnly(applicationModel.isBearerOnly());
         rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
@@ -241,6 +243,8 @@ public class ModelToRepresentation {
         rep.setName(model.getClientId());
         rep.setEnabled(model.isEnabled());
         rep.setPublicClient(model.isPublicClient());
+        rep.setProtocol(model.getProtocol());
+        rep.setAttributes(model.getAttributes());
         rep.setFullScopeAllowed(model.isFullScopeAllowed());
         rep.setDirectGrantsOnly(model.isDirectGrantsOnly());
         Set<String> redirectUris = model.getRedirectUris();
