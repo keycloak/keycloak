@@ -38,8 +38,8 @@
                 <td>{{session.start | date:'medium'}}</td>
                 <td>{{session.lastAccess | date:'medium'}}</td>
                 <td>
-                    <div data-ng-repeat="app in session.applications">
-                        <a href="#/realms/{{realm.realm}}/applications/{{app}}/sessions">{{app}}</a>
+                    <div data-ng-repeat="(id, name) in session.applications">
+                        <a href="#/realms/{{realm.realm}}/applications/{{id}}">{{name}}</a>
                     </div>
                 </ul>
                 </td>

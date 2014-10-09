@@ -197,7 +197,7 @@ public class ModelToRepresentation {
         for (ClientSessionModel clientSession : session.getClientSessions()) {
             ClientModel client = clientSession.getClient();
             if (client instanceof ApplicationModel) {
-                rep.getApplications().add(client.getClientId());
+                rep.getApplications().put(client.getId(), client.getClientId());
             } else if (client instanceof OAuthClientModel) {
                 rep.getClients().put(client.getId(), client.getClientId());
             }

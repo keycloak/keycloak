@@ -1,10 +1,10 @@
 <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
-    <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">Settings</a></li>
-    <li ng-class="{active: path[4] == 'credentials'}" data-ng-show="!application.bearerOnly && !application.publicClient"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/credentials">Credentials</a></li>
-    <li ng-class="{active: path[4] == 'roles'}"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
-    <li ng-class="{active: path[4] == 'claims'}" data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/claims">Claims</a></li>
-    <li ng-class="{active: path[4] == 'scope-mappings'}" data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/scope-mappings">Scope</a></li>
-    <li ng-class="{active: path[4] == 'revocation'}"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/revocation">Revocation</a></li>
-    <li ng-class="{active: path[4] == 'sessions'}" data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
-    <li ng-class="{active: path[4] == 'installation'}"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/installation">Installation</a></li>
+    <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">Settings</a></li>
+    <li ng-class="{active: path[4] == 'credentials'}" data-ng-show="!application.bearerOnly && !application.publicClient && application.protocol != 'saml'"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/credentials">Credentials</a></li>
+    <li ng-class="{active: path[4] == 'roles'}"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/roles">Roles</a></li>
+    <li ng-class="{active: path[4] == 'claims'}" data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/claims">Claims</a></li>
+    <li ng-class="{active: path[4] == 'scope-mappings'}" data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/scope-mappings">Scope</a></li>
+    <li ng-class="{active: path[4] == 'revocation'}"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/revocation">Revocation</a></li>
+    <li ng-class="{active: path[4] == 'sessions'}" data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/sessions">Sessions</a></li>
+    <li ng-class="{active: path[4] == 'installation'}"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/installation">Installation</a></li>
 </ul>

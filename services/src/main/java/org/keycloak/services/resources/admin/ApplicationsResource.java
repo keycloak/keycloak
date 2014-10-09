@@ -102,7 +102,7 @@ public class ApplicationsResource {
      */
     @Path("{app-name}")
     public ApplicationResource getApplication(final @PathParam("app-name") String name) {
-        ApplicationModel applicationModel = realm.getApplicationByName(name);
+        ApplicationModel applicationModel = getApplicationByPathParam(name);
         if (applicationModel == null) {
             throw new NotFoundException("Could not find application: " + name);
         }
@@ -110,6 +110,10 @@ public class ApplicationsResource {
         ResteasyProviderFactory.getInstance().injectProperties(applicationResource);
         //resourceContext.initResource(applicationResource);
         return applicationResource;
+    }
+
+    protected ApplicationModel getApplicationByPathParam(String name) {
+        return realm.getApplicationByName(name);
     }
 
 }

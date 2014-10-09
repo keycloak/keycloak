@@ -72,7 +72,7 @@ module.factory('RealmSessionStatsLoader', function(Loader, RealmSessionStats, $r
 });
 
 module.factory('RealmApplicationSessionStatsLoader', function(Loader, RealmApplicationSessionStats, $route, $q) {
-    return Loader.get(RealmApplicationSessionStats, function() {
+    return Loader.query(RealmApplicationSessionStats, function() {
         return {
             realm : $route.current.params.realm
         }
@@ -213,6 +213,8 @@ module.factory('ApplicationRoleListLoader', function(Loader, ApplicationRole, $r
 
 module.factory('ApplicationLoader', function(Loader, Application, $route, $q) {
     return Loader.get(Application, function() {
+        console.log('application loader****');
+        console.log($route.current.params.application);
         return {
             realm : $route.current.params.realm,
             application : $route.current.params.application

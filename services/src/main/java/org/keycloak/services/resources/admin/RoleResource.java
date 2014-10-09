@@ -69,14 +69,8 @@ public abstract class RoleResource {
         return composites;
     }
 
-    protected Set<RoleRepresentation> getApplicationRoleComposites(String appName, RoleModel role) {
+    protected Set<RoleRepresentation> getApplicationRoleComposites(ApplicationModel app, RoleModel role) {
         if (!role.isComposite() || role.getComposites().size() == 0) return Collections.emptySet();
-
-        ApplicationModel app = realm.getApplicationByName(appName);
-        if (app == null) {
-            throw new NotFoundException("Could not find application: " + appName);
-
-        }
 
         Set<RoleRepresentation> composites = new HashSet<RoleRepresentation>(role.getComposites().size());
         for (RoleModel composite : role.getComposites()) {

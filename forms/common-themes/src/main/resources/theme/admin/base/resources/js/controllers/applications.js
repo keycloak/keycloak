@@ -17,14 +17,14 @@ module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, 
 module.controller('ApplicationCredentialsCtrl', function($scope, $location, realm, application, ApplicationCredentials, Notifications) {
     $scope.realm = realm;
     $scope.application = application;
-    var secret = ApplicationCredentials.get({ realm : realm.realm, application : application.name },
+    var secret = ApplicationCredentials.get({ realm : realm.realm, application : application.id },
         function() {
             $scope.secret = secret.value;
         }
     );
 
     $scope.changePassword = function() {
-        var secret = ApplicationCredentials.update({ realm : realm.realm, application : application.name },
+        var secret = ApplicationCredentials.update({ realm : realm.realm, application : application.id },
             function() {
                 Notifications.success('The secret has been changed.');
                 $scope.secret = secret.value;
@@ -54,7 +54,7 @@ module.controller('ApplicationSessionsCtrl', function($scope, realm, sessionCoun
 
     $scope.query = {
         realm : realm.realm,
-        application: $scope.application.name,
+        application: $scope.application.id,
         max : 5,
         first : 0
     }
@@ -110,7 +110,7 @@ module.controller('ApplicationClaimsCtrl', function($scope, realm, application, 
     $scope.save = function () {
         ApplicationClaims.update({
             realm: realm.realm,
-            application: application.name
+            application: application.id
         }, $scope.claims, function () {
             $scope.changed = false;
             claims = angular.copy($scope.claims);
@@ -120,7 +120,7 @@ module.controller('ApplicationClaimsCtrl', function($scope, realm, application, 
     };
 
     $scope.reset = function () {
-        $location.url("/realms/" + realm.realm + "/applications/" + application.name + "/claims");
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/claims");
     };
 
 });
@@ -140,14 +140,14 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
         if ($scope.create) {
             ApplicationRole.save({
                 realm: realm.realm,
-                application : application.name
+                application : application.id
             }, $scope.role, function (data, headers) {
                 $scope.changed = false;
                 role = angular.copy($scope.role);
 
                 var l = headers().location;
                 var id = l.substring(l.lastIndexOf("/") + 1);
-                $location.url("/realms/" + realm.realm + "/applications/" + application.name + "/roles/" + id);
+                $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/roles/" + id);
                 Notifications.success("The role has been created.");
             });
         } else {
@@ -159,17 +159,17 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
         Dialog.confirmDelete($scope.role.name, 'role', function() {
             $scope.role.$remove({
                 realm : realm.realm,
-                application : application.name,
+                application : application.id,
                 role : $scope.role.name
             }, function() {
-                $location.url("/realms/" + realm.realm + "/applications/" + application.name + "/roles");
+                $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/roles");
                 Notifications.success("The role has been deleted.");
             });
         });
     };
 
     $scope.cancel = function () {
-        $location.url("/realms/" + realm.realm + "/applications/" + application.name + "/roles");
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/roles");
     };
 
 
@@ -180,7 +180,6 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
 });
 
 module.controller('ApplicationListCtrl', function($scope, realm, applications, Application, $location) {
-    console.log('ApplicationListCtrl');
     $scope.realm = realm;
     $scope.applications = applications;
     $scope.$watch(function() {
@@ -234,9 +233,20 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         "bearer-only"
     ];
 
+    $scope.protocols = [
+        "openid-connect",
+        "saml"
+    ];
+
     $scope.realm = realm;
     $scope.create = !application.name;
+    $scope.samlServerSignature = false;
+    $scope.samlClientSignature = false;
+    $scope.samlServerEncrypt = false;
     if (!$scope.create) {
+        if (!application.attributes) {
+            application.attributes = {};
+        }
         $scope.application= angular.copy(application);
         $scope.accessType = $scope.accessTypes[0];
         if (application.bearerOnly) {
@@ -244,10 +254,38 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         } else if (application.publicClient) {
             $scope.accessType = $scope.accessTypes[1];
         }
+        if (application.protocol == 'openid-connect') {
+            $scope.protocol = $scope.protocols[0];
+        } else if (application.protocol == 'saml') {
+            $scope.protocol = $scope.protocols[1];
+        } else { // protocol could be null due to older keycloak installs
+            $scope.protocol = $scope.protocols[0];
+        }
     } else {
-        $scope.application = { enabled: true };
+        $scope.application = { enabled: true, attributes: {}};
         $scope.application.redirectUris = [];
         $scope.accessType = $scope.accessTypes[0];
+        $scope.protocol = $scope.protocols[0];
+    }
+
+    if ($scope.application.attributes["samlServerSignature"]) {
+        if ($scope.application.attributes["samlServerSignature"] == "true") {
+            $scope.samlServerSignature = true;
+        }
+    }
+    if ($scope.application.attributes["samlClientSignature"]) {
+        if ($scope.application.attributes["samlClientSignature"] == "true") {
+            $scope.samlClientSignature = true;
+        }
+    }
+    if ($scope.application.attributes["samlServerEncrypt"]) {
+        if ($scope.application.attributes["samlServerEncrypt"] == "true") {
+            $scope.samlServerEncrypt = true;
+        }
+    }
+
+    $scope.switchChange = function() {
+        $scope.changed = true;
     }
 
     $scope.changeAccessType = function() {
@@ -260,6 +298,14 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         } else if ($scope.accessType == "bearer-only") {
             $scope.application.bearerOnly = true;
             $scope.application.publicClient = false;
+        }
+    };
+
+    $scope.changeProtocol = function() {
+        if ($scope.protocol == "openid-connect") {
+            $scope.application.protocol = "openid-connect";
+        } else if ($scope.accessType == "saml") {
+            $scope.application.protocol = "saml";
         }
     };
 
@@ -291,6 +337,18 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     }
 
     $scope.save = function() {
+        if ($scope.samlServerSignature == true) {
+            $scope.application.attributes["samlServerSignature"] = "true";
+        }
+        if ($scope.samlClientSignature == true) {
+            $scope.application.attributes["samlClientSignature"] = "true";
+        }
+        if ($scope.samlServerEncrypt == true) {
+            $scope.application.attributes["samlServerEncrypt"] = "true";
+        }
+
+        $scope.application.protocol = $scope.protocol;
+
         if (!$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
@@ -308,11 +366,11 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             } else {
                 Application.update({
                     realm : realm.realm,
-                    application : application.name
+                    application : application.id
                 }, $scope.application, function() {
                     $scope.changed = false;
                     application = angular.copy($scope.application);
-                    $location.url("/realms/" + realm.realm + "/applications/" + application.name);
+                    $location.url("/realms/" + realm.realm + "/applications/" + application.id);
                     Notifications.success("Your changes have been saved to the application.");
                 });
             }
@@ -332,7 +390,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         Dialog.confirmDelete($scope.application.name, 'application', function() {
             $scope.application.$remove({
                 realm : realm.realm,
-                application : $scope.application.name
+                application : $scope.application.id
             }, function() {
                 $location.url("/realms/" + realm.realm + "/applications");
                 Notifications.success("The application has been deleted.");
@@ -366,7 +424,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
         console.log('change full scope');
         Application.update({
             realm : realm.realm,
-            application : application.name
+            application : application.id
         }, $scope.application, function() {
             $scope.changed = false;
             application = angular.copy($scope.application);
@@ -378,17 +436,17 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
 
 
     function updateRealmRoles() {
-        $scope.realmRoles = ApplicationAvailableRealmScopeMapping.query({realm : realm.realm, application : application.name});
-        $scope.realmMappings = ApplicationRealmScopeMapping.query({realm : realm.realm, application : application.name});
-        $scope.realmComposite = ApplicationCompositeRealmScopeMapping.query({realm : realm.realm, application : application.name});
+        $scope.realmRoles = ApplicationAvailableRealmScopeMapping.query({realm : realm.realm, application : application.id});
+        $scope.realmMappings = ApplicationRealmScopeMapping.query({realm : realm.realm, application : application.id});
+        $scope.realmComposite = ApplicationCompositeRealmScopeMapping.query({realm : realm.realm, application : application.id});
     }
 
     function updateAppRoles() {
         if ($scope.targetApp) {
             console.debug($scope.targetApp.name);
-            $scope.applicationRoles = ApplicationAvailableApplicationScopeMapping.query({realm : realm.realm, application : application.name, targetApp : $scope.targetApp.name});
-            $scope.applicationMappings = ApplicationApplicationScopeMapping.query({realm : realm.realm, application : application.name, targetApp : $scope.targetApp.name});
-            $scope.applicationComposite = ApplicationCompositeApplicationScopeMapping.query({realm : realm.realm, application : application.name, targetApp : $scope.targetApp.name});
+            $scope.applicationRoles = ApplicationAvailableApplicationScopeMapping.query({realm : realm.realm, application : application.id, targetApp : $scope.targetApp.id});
+            $scope.applicationMappings = ApplicationApplicationScopeMapping.query({realm : realm.realm, application : application.id, targetApp : $scope.targetApp.id});
+            $scope.applicationComposite = ApplicationCompositeApplicationScopeMapping.query({realm : realm.realm, application : application.id, targetApp : $scope.targetApp.id});
         } else {
             $scope.applicationRoles = null;
             $scope.applicationMappings = null;
@@ -401,7 +459,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.addRealmRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name + '/scope-mappings/realm',
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/scope-mappings/realm',
                 $scope.selectedRealmRoles).success(function() {
                 updateRealmRoles();
                 Notifications.success("Scope mappings updated.");
@@ -409,7 +467,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteRealmRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/realm',
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id +  '/scope-mappings/realm',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function () {
                 updateRealmRoles();
                 Notifications.success("Scope mappings updated.");
@@ -417,7 +475,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.addApplicationRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id +  '/scope-mappings/applications-by-id/' + $scope.targetApp.id,
                 $scope.selectedApplicationRoles).success(function () {
                 updateAppRoles();
                 Notifications.success("Scope mappings updated.");
@@ -425,7 +483,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteApplicationRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id +  '/scope-mappings/applications-by-id/' + $scope.targetApp.id,
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function () {
                 updateAppRoles();
                 Notifications.success("Scope mappings updated.");
@@ -450,7 +508,7 @@ module.controller('ApplicationRevocationCtrl', function($scope, realm, applicati
     setNotBefore();
 
     var refresh = function() {
-        Application.get({ realm : realm.realm, application: $scope.application.name }, function(updated) {
+        Application.get({ realm : realm.realm, application: $scope.application.id }, function(updated) {
             $scope.application = updated;
             setNotBefore();
         })
@@ -459,7 +517,7 @@ module.controller('ApplicationRevocationCtrl', function($scope, realm, applicati
 
     $scope.clear = function() {
         $scope.application.notBefore = 0;
-        Application.update({ realm : realm.realm, application: application.name}, $scope.application, function () {
+        Application.update({ realm : realm.realm, application: application.id}, $scope.application, function () {
             $scope.notBefore = "None";
             Notifications.success('Not Before cleared for application.');
             refresh();
@@ -467,13 +525,13 @@ module.controller('ApplicationRevocationCtrl', function($scope, realm, applicati
     }
     $scope.setNotBeforeNow = function() {
         $scope.application.notBefore = new Date().getTime()/1000;
-        Application.update({ realm : realm.realm, application: $scope.application.name}, $scope.application, function () {
+        Application.update({ realm : realm.realm, application: $scope.application.id}, $scope.application, function () {
             Notifications.success('Not Before cleared for application.');
             refresh();
         });
     }
     $scope.pushRevocation = function() {
-        ApplicationPushRevocation.save({realm : realm.realm, application: $scope.application.name}, function () {
+        ApplicationPushRevocation.save({realm : realm.realm, application: $scope.application.id}, function () {
             Notifications.success('Push sent for application.');
         });
     }

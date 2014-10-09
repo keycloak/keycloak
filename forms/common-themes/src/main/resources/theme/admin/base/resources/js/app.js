@@ -57,7 +57,6 @@ module.factory('authInterceptor', function($q, Auth) {
 
 
 module.config([ '$routeProvider', function($routeProvider) {
-
     $routeProvider
         /*
         .when('/create/realm', {

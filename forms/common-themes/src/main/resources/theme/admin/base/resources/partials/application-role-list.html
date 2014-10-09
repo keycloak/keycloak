@@ -5,7 +5,7 @@
     <div id="content">
         <ol class="breadcrumb" data-ng-hide="create">
             <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
             <li class="active">Roles</li>
         </ol>
         <h2><span>{{application.name}}</span> Application Roles</h2>
@@ -14,7 +14,7 @@
             <tr>
                 <th class="kc-table-actions" colspan="3" data-ng-show="access.manageApplications">
                     <div class="pull-right">
-                        <a class="btn btn-primary" href="#/create/role/{{realm.realm}}/applications/{{application.name}}">Add Role</a>
+                        <a class="btn btn-primary" href="#/create/role/{{realm.realm}}/applications/{{application.id}}">Add Role</a>
                         <!-- <button class="remove disabled">Remove</button> -->
                     </div>
                 </th>
@@ -52,7 +52,7 @@
             -->
             <tbody>
             <tr ng-repeat="role in roles">
-                <td><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles/{{role.name}}">{{role.name}}</a></td>
+                <td><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/roles/{{role.name}}">{{role.name}}</a></td>
                 <td>{{role.composite}}</td>
                 <td>{{role.description}}</td>
             </tr>

@@ -43,6 +43,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -80,6 +81,19 @@ public class RealmAdminResource {
     @Path("applications")
     public ApplicationsResource getApplications() {
         ApplicationsResource applicationsResource = new ApplicationsResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(applicationsResource);
+        //resourceContext.initResource(applicationsResource);
+        return applicationsResource;
+    }
+
+    /**
+     * Base path for managing applications under this realm.
+     *
+     * @return
+     */
+    @Path("applications-by-id")
+    public ApplicationsByIdResource getApplicationsById() {
+        ApplicationsByIdResource applicationsResource = new ApplicationsByIdResource(realm, auth);
         ResteasyProviderFactory.getInstance().injectProperties(applicationsResource);
         //resourceContext.initResource(applicationsResource);
         return applicationsResource;
@@ -272,6 +286,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Deprecated
     public Map<String, Integer> getApplicationSessionStats() {
         auth.requireView();
         Map<String, Integer> stats = new HashMap<String, Integer>();
@@ -281,6 +296,31 @@ public class RealmAdminResource {
             stats.put(application.getName(), size);
         }
         return stats;
+    }
+
+    /**
+     * Returns a JSON map.  The key is the application id, the value is the number of sessions that currently are active
+     * with that application.  Only application's that actually have a session associated with them will be in this map.
+     *
+     * @return
+     */
+    @Path("application-by-id-session-stats")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Map<String, String>> getApplicationByIdSessionStats() {
+        auth.requireView();
+        List<Map<String, String>> data = new LinkedList<Map<String, String>>();
+        for (ApplicationModel application : realm.getApplications()) {
+            int size = session.sessions().getActiveUserSessions(application.getRealm(), application);
+            if (size == 0) continue;
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("id", application.getId());
+            map.put("name", application.getName());
+            map.put("active", size + "");
+            data.add(map);
+        }
+        return data;
     }
 
     /**

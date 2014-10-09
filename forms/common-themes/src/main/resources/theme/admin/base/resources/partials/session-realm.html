@@ -23,9 +23,9 @@
             </tr>
             </thead>
             <tbody>
-            <tr data-ng-repeat="(application, data) in stats">
-                <td><a href="#/realms/{{realm.realm}}/applications/{{application}}/sessions">{{application}}</a></td>
-                <td>{{data}}</td>
+            <tr data-ng-repeat="data in stats">
+                <td><a href="#/realms/{{realm.realm}}/applications/{{data.id}}/sessions">{{data.name}}</a></td>
+                <td>{{data.active}}</td>
             </tr>
             </tbody>
         </table>

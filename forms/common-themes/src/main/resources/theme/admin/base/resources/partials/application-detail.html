@@ -4,7 +4,7 @@
     <div id="content">
         <ol class="breadcrumb" data-ng-hide="create">
             <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
             <li class="active">Settings</li>
         </ol>
         <ol class="breadcrumb" data-ng-show="create">
@@ -31,6 +31,19 @@
                     <span tooltip-placement="right" tooltip="Disabled applications cannot initiate a login or have obtain access tokens." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group">
+                    <label class="col-sm-2 control-label" for="protocol">Client Protocol</label>
+                    <div class="col-sm-6">
+                        <div class="select-kc">
+                            <select id="protocol"
+                                    ng-change="changeProtocol()"
+                                    ng-model="protocol"
+                                    ng-options="aProtocol for aProtocol in protocols">
+                            </select>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="'Confidential' applications require a secret to initiate login protocol.  'Public' clients do not require a secret.  'Bearer-only' applications are web services that never initiate a login." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="protocol == 'openid-connect'">
                     <label class="col-sm-2 control-label" for="accessType">Access Type</label>
                     <div class="col-sm-6">
                         <div class="select-kc">
@@ -43,6 +56,28 @@
                     </div>
                     <span tooltip-placement="right" tooltip="'Confidential' applications require a secret to initiate login protocol.  'Public' clients do not require a secret.  'Bearer-only' applications are web services that never initiate a login." class="fa fa-info-circle"></span>
                 </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlServerSignature">Server Signatures</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlServerSignature" ng-click="switchChange()" name="samlServerSignature" id="samlServerSignature" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Should server sent SAML requests and responses be signed by the realm?" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlServerEncrypt">Server Encryption</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlServerEncrypt" ng-click="switchChange()" name="samlServerEncrypt" id="samlServerEncrypt" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Should server sent SAML requests and responses be encrypted by the realm?" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlClientSignature">Client Signatures</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlClientSignature" ng-click="switchChange()" name="samlClientSignature" id="samlClientSignature" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Will the client sign their saml requests and responses?  And should they be validated?" class="fa fa-info-circle"></span>
+                </div>
+
                 <div class="form-group" data-ng-show="!application.bearerOnly">
                     <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI <span class="required" data-ng-show="create">*</span></label>
                     <div class="col-sm-6 multiple" ng-repeat="redirectUri in application.redirectUris">
