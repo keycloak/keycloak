@@ -128,6 +128,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
         DBObject query = new QueryBuilder()
                 .and("clientId").is(client.getId())
+                .and("sessionId").notEquals(null)
                 .get();
         DBObject sort = new BasicDBObject("timestamp", 1).append("id", 1);
 
@@ -142,7 +143,11 @@ public class MongoUserSessionProvider implements UserSessionProvider {
 
     @Override
     public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        return getUserSessions(realm, client).size();
+        DBObject query = new QueryBuilder()
+                .and("clientId").is(client.getId())
+                .and("sessionId").notEquals(null)
+                .get();
+        return mongoStore.countEntities(MongoClientSessionEntity.class, query, invocationContext);
     }
 
     @Override
