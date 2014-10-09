@@ -37,6 +37,6 @@ sed -i -e 's/<\/module-name>/&\n    <distributable \/>/' customer-portal.war/WEB
 
 # Configure testrealm.json - Enable adminUrl to access adapters on local machine
 sed -i -e 's/\"adminUrl\": \"\/customer-portal/\"adminUrl\": \"http:\/\/\$\{jboss.host.name\}:8080\/customer-portal/' /keycloak-docker-cluster/examples/testrealm.json
-sed -i -e 's/\"adminUrl\": \"\/product-portal/\"adminUrl\": \"http:\/\/\$\{jboss.host.name\}:8080\/product-portal/' /keycloak-docker-cluster/examples/testrealm.json
+sed -i -e 's/\"adminUrl\": \"\/product-portal/\"adminUrl\": \"http:\/\/\$\{kc_session_host\}:8080\/product-portal/' /keycloak-docker-cluster/examples/testrealm.json
 
 

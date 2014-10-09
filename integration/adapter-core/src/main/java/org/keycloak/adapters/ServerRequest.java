@@ -11,6 +11,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.HostUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.StreamUtil;
@@ -101,6 +102,7 @@ public class ServerRequest {
         formparams.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
         if (sessionId != null) {
             formparams.add(new BasicNameValuePair(AdapterConstants.HTTP_SESSION_ID, sessionId));
+            formparams.add(new BasicNameValuePair(AdapterConstants.HTTP_SESSION_HOST, HostUtils.getIpAddress()));
         }
         HttpResponse response = null;
         HttpPost post = new HttpPost(codeUrl);
