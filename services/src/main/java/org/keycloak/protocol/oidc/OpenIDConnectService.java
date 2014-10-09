@@ -614,9 +614,13 @@ public class OpenIDConnectService {
 
         String httpSessionId = formData.getFirst(AdapterConstants.HTTP_SESSION_ID);
         if (httpSessionId != null) {
-            logger.debugf("Http Session '%s' saved in ClientSession for client '%s'", httpSessionId, client.getClientId());
+            String httpSessionHost = formData.getFirst(AdapterConstants.HTTP_SESSION_HOST);
+            logger.infof("Http Session '%s' saved in ClientSession for client '%s'. Host is '%s'", httpSessionId, client.getClientId(), httpSessionHost);
+
             event.detail(AdapterConstants.HTTP_SESSION_ID, httpSessionId);
             clientSession.setNote(AdapterConstants.HTTP_SESSION_ID, httpSessionId);
+            event.detail(AdapterConstants.HTTP_SESSION_HOST, httpSessionHost);
+            clientSession.setNote(AdapterConstants.HTTP_SESSION_HOST, httpSessionHost);
         }
 
         AccessToken token = tokenManager.createClientAccessToken(accessCode.getRequestedRoles(), realm, client, user, userSession);

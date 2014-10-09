@@ -19,6 +19,9 @@ public interface AdapterConstants {
     // two places to avoid dependency between Keycloak Subsystem and Keyclaok Undertow Integration.
     String AUTH_DATA_PARAM_NAME = "org.keycloak.json.adapterConfig";
 
-    // Attribute passed in codeToToken request from adapter to Keycloak and saved in ClientSession.
+    // Attribute passed in codeToToken request from adapter to Keycloak and saved in ClientSession. Contains ID of HttpSession on adapter
     public static final String HTTP_SESSION_ID = "http_session_id";
+
+    // Attribute passed in codeToToken request from adapter to Keycloak and saved in ClientSession. Contains hostname of adapter where HttpSession is served
+    public static final String HTTP_SESSION_HOST = "http_session_host";
 }

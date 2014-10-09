@@ -20,6 +20,7 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.services.util.HttpClientBuilder;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.StringPropertyReplacer;
 import org.keycloak.util.Time;
 
@@ -31,6 +32,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,6 +41,7 @@ import java.util.Map;
  */
 public class ResourceAdminManager {
     protected static Logger logger = Logger.getLogger(ResourceAdminManager.class);
+    private static final String KC_SESSION_HOST = "${kc_session_host}";
 
     public static ApacheHttpClient4Executor createExecutor() {
         HttpClient client = new HttpClientBuilder()
@@ -69,7 +73,7 @@ public class ResourceAdminManager {
 
         try {
             // Map from "app" to clientSessions for this app
-            Map<ApplicationModel, List<ClientSessionModel>> clientSessions = new HashMap<ApplicationModel, List<ClientSessionModel>>();
+            MultivaluedHashMap<ApplicationModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ApplicationModel, ClientSessionModel>();
             for (UserSessionModel userSession : userSessions) {
                 putClientSessions(clientSessions, userSession);
             }
@@ -85,16 +89,11 @@ public class ResourceAdminManager {
         }
     }
 
-    private void putClientSessions(Map<ApplicationModel, List<ClientSessionModel>> clientSessions, UserSessionModel userSession) {
+    private void putClientSessions(MultivaluedHashMap<ApplicationModel, ClientSessionModel> clientSessions, UserSessionModel userSession) {
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
             ClientModel client = clientSession.getClient();
             if (client instanceof ApplicationModel) {
-                List<ClientSessionModel> curClientSessions = clientSessions.get(client);
-                if (curClientSessions == null) {
-                    curClientSessions = new ArrayList<ClientSessionModel>();
-                    clientSessions.put((ApplicationModel)client, curClientSessions);
-                }
-                curClientSessions.add(clientSession);
+                clientSessions.add((ApplicationModel)client, clientSession);
             }
         }
     }
@@ -103,7 +102,8 @@ public class ResourceAdminManager {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            Map<ApplicationModel, List<ClientSessionModel>> clientSessions = new HashMap<ApplicationModel, List<ClientSessionModel>>();
+            // Map from "app" to clientSessions for this app
+            MultivaluedHashMap<ApplicationModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ApplicationModel, ClientSessionModel>();
             putClientSessions(clientSessions, session);
 
             logger.debugv("logging out {0} resources ", clientSessions.size());
@@ -138,7 +138,7 @@ public class ResourceAdminManager {
 
             List<ClientSessionModel> ourAppClientSessions = null;
             if (userSessions != null) {
-                Map<ApplicationModel, List<ClientSessionModel>> clientSessions = new HashMap<ApplicationModel, List<ClientSessionModel>>();
+                MultivaluedHashMap<ApplicationModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ApplicationModel, ClientSessionModel>();
                 for (UserSessionModel userSession : userSessions) {
                     putClientSessions(clientSessions, userSession);
                 }
@@ -160,38 +160,65 @@ public class ResourceAdminManager {
         String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
 
-            List<String> adapterSessionIds = null;
+            // Key is host, value is list of http sessions for this host
+            MultivaluedHashMap<String, String> adapterSessionIds = null;
             if (clientSessions != null && clientSessions.size() > 0) {
-                adapterSessionIds = new ArrayList<String>();
+                adapterSessionIds = new MultivaluedHashMap<String, String>();
                 for (ClientSessionModel clientSession : clientSessions) {
                     String adapterSessionId = clientSession.getNote(AdapterConstants.HTTP_SESSION_ID);
                     if (adapterSessionId != null) {
-                        adapterSessionIds.add(adapterSessionId);
+                        String host = clientSession.getNote(AdapterConstants.HTTP_SESSION_HOST);
+                        adapterSessionIds.add(host, adapterSessionId);
                     }
                 }
             }
 
-            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), adapterSessionIds, notBefore);
-            String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getName(), managementUrl);
-            ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());
-            ClientResponse response;
-            try {
-                response = request.body(MediaType.TEXT_PLAIN_TYPE, token).post(UserStats.class);
-            } catch (Exception e) {
-                logger.warn("Logout for application '" + resource.getName() + "' failed", e);
-                return false;
-            }
-            try {
-                boolean success = response.getStatus() == 204;
-                logger.debug("logout success.");
-                return success;
-            } finally {
-                response.releaseConnection();
+            if (managementUrl.contains(KC_SESSION_HOST) && adapterSessionIds != null) {
+                boolean allPassed = true;
+                // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps - KEYCLOAK-748)
+                for (Map.Entry<String, List<String>> entry : adapterSessionIds.entrySet()) {
+                    String host = entry.getKey();
+                    List<String> sessionIds = entry.getValue();
+                    String currentHostMgmtUrl = managementUrl.replace(KC_SESSION_HOST, host);
+                    allPassed = logoutApplicationOnHost(realm, resource, sessionIds, client, notBefore, currentHostMgmtUrl) && allPassed;
+                }
+
+                return allPassed;
+            } else {
+                // Send single logout request
+                List<String> allSessionIds = null;
+                if (adapterSessionIds != null) {
+                    allSessionIds = new ArrayList<String>();
+                    for (List<String> currentIds : adapterSessionIds.values()) {
+                        allSessionIds.addAll(currentIds);
+                    }
+                }
+                return logoutApplicationOnHost(realm, resource, allSessionIds, client, notBefore, managementUrl);
             }
         } else {
             logger.debugv("Can't logout {0}: no management url", resource.getName());
             return false;
+        }
+    }
+
+    protected boolean logoutApplicationOnHost(RealmModel realm, ApplicationModel resource, List<String> adapterSessionIds, ApacheHttpClient4Executor client, int notBefore, String managementUrl) {
+        LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), adapterSessionIds, notBefore);
+        String token = new TokenManager().encodeToken(realm, adminAction);
+        logger.infov("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getName(), managementUrl);
+        ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());
+        ClientResponse response;
+        try {
+            response = request.body(MediaType.TEXT_PLAIN_TYPE, token).post(UserStats.class);
+        } catch (Exception e) {
+            logger.warn("Logout for application '" + resource.getName() + "' failed", e);
+            return false;
+        }
+        try {
+            boolean success = response.getStatus() == 204;
+            logger.debug("logout success.");
+            return success;
+        } finally {
+            response.releaseConnection();
         }
     }
 
@@ -224,7 +251,7 @@ public class ResourceAdminManager {
         if (managementUrl != null) {
             PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.debugv("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
+            logger.infov("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build().toString());
             ClientResponse response;
             try {
