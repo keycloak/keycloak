@@ -19,7 +19,6 @@ import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
@@ -321,28 +320,6 @@ public class RealmAdminResource {
             data.add(map);
         }
         return data;
-    }
-
-    /**
-     * Any application that has an admin URL will be asked directly how many sessions they have active and what users
-     * are involved with those sessions.
-     *
-     * @return
-     */
-    @Path("session-stats")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, SessionStats> getSessionStats() {
-        logger.info("session-stats");
-        auth.requireView();
-        Map<String, SessionStats> stats = new HashMap<String, SessionStats>();
-        for (ApplicationModel applicationModel : realm.getApplications()) {
-            if (applicationModel.getManagementUrl() == null) continue;
-            SessionStats appStats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), this.session, realm, applicationModel, false);
-            stats.put(applicationModel.getName(), appStats);
-        }
-        return stats;
     }
 
     /**

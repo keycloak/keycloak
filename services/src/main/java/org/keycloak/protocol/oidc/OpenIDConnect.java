@@ -142,7 +142,7 @@ public class OpenIDConnect implements LoginProtocol {
         ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
 
         try {
-            new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, app, null, userSession.getId(), executor, 0);
+            new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, app, clientSession, executor, 0);
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }

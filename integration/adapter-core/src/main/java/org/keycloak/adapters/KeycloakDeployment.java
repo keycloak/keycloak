@@ -47,6 +47,7 @@ public class KeycloakDeployment {
     protected String corsAllowedHeaders;
     protected String corsAllowedMethods;
     protected boolean exposeToken;
+    protected boolean alwaysRefreshToken;
     protected volatile int notBefore;
 
     public KeycloakDeployment() {
@@ -281,4 +282,11 @@ public class KeycloakDeployment {
         this.notBefore = notBefore;
     }
 
+    public boolean isAlwaysRefreshToken() {
+        return alwaysRefreshToken;
+    }
+
+    public void setAlwaysRefreshToken(boolean alwaysRefreshToken) {
+        this.alwaysRefreshToken = alwaysRefreshToken;
+    }
 }

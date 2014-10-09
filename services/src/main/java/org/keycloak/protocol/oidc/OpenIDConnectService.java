@@ -14,6 +14,7 @@ import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -609,6 +610,17 @@ public class OpenIDConnectService {
             event.error(Errors.INVALID_CODE);
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
+        }
+
+        String httpSessionId = formData.getFirst(AdapterConstants.HTTP_SESSION_ID);
+        if (httpSessionId != null) {
+            String httpSessionHost = formData.getFirst(AdapterConstants.HTTP_SESSION_HOST);
+            logger.infof("Http Session '%s' saved in ClientSession for client '%s'. Host is '%s'", httpSessionId, client.getClientId(), httpSessionHost);
+
+            event.detail(AdapterConstants.HTTP_SESSION_ID, httpSessionId);
+            clientSession.setNote(AdapterConstants.HTTP_SESSION_ID, httpSessionId);
+            event.detail(AdapterConstants.HTTP_SESSION_HOST, httpSessionHost);
+            clientSession.setNote(AdapterConstants.HTTP_SESSION_HOST, httpSessionHost);
         }
 
         AccessToken token = tokenManager.createClientAccessToken(accessCode.getRequestedRoles(), realm, client, user, userSession);

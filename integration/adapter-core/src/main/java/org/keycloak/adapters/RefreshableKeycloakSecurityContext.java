@@ -32,13 +32,13 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
 
     @Override
     public AccessToken getToken() {
-        refreshExpiredToken();
+        refreshExpiredToken(true);
         return super.getToken();
     }
 
     @Override
     public String getTokenString() {
-        refreshExpiredToken();
+        refreshExpiredToken(true);
         return super.getTokenString();
     }
 
@@ -62,12 +62,19 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         this.deployment = deployment;
     }
 
-    public void refreshExpiredToken() {
-        if (log.isTraceEnabled()) {
-            log.trace("checking whether to refresh.");
+    /**
+     * @param checkActive if true, then we won't send refresh request if current accessToken is still active.
+     * @return true if accessToken is active or was successfully refreshed
+     */
+    public boolean refreshExpiredToken(boolean checkActive) {
+        if (checkActive) {
+            if (log.isTraceEnabled()) {
+                log.trace("checking whether to refresh.");
+            }
+            if (isActive()) return true;
         }
-        if (isActive()) return;
-        if (this.deployment == null || refreshToken == null) return; // Might be serialized in HttpSession?
+
+        if (this.deployment == null || refreshToken == null) return false; // Might be serialized in HttpSession?
 
         if (log.isTraceEnabled()) {
             log.trace("Doing refresh");
@@ -77,10 +84,10 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             response = ServerRequest.invokeRefresh(deployment, refreshToken);
         } catch (IOException e) {
             log.error("Refresh token failure", e);
-            return;
+            return false;
         } catch (ServerRequest.HttpFailure httpFailure) {
             log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
-            return;
+            return false;
         }
         if (log.isTraceEnabled()) {
             log.trace("received refresh response");
@@ -100,7 +107,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         this.token = token;
         this.refreshToken = response.getRefreshToken();
         this.tokenString = tokenString;
-
+        return true;
     }
 
 

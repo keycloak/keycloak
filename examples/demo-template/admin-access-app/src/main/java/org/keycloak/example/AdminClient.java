@@ -13,6 +13,7 @@ import org.keycloak.ServiceUrlConstants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.util.HostUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.UriUtils;
@@ -161,7 +162,7 @@ public class AdminClient {
     public static String getBaseUrl(HttpServletRequest request) {
         String useHostname = request.getServletContext().getInitParameter("useHostname");
         if (useHostname != null && "true".equalsIgnoreCase(useHostname)) {
-            return "http://" + UriUtils.getHostName() + ":8080";
+            return "http://" + HostUtils.getHostName() + ":8080";
         } else {
             return UriUtils.getOrigin(request.getRequestURL().toString());
         }

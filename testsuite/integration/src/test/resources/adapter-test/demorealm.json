@@ -1,4 +1,5 @@
 {
+    "id": "demo",
     "realm": "demo",
     "enabled": true,
     "accessTokenLifespan": 3000,

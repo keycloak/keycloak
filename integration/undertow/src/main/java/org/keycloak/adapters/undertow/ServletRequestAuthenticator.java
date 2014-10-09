@@ -18,7 +18,9 @@ package org.keycloak.adapters.undertow;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.session.Session;
 import io.undertow.servlet.handlers.ServletRequestContext;
+import io.undertow.util.Sessions;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpFacade;
@@ -45,9 +47,7 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
 
     @Override
     protected boolean isCached() {
-        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
-        HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        HttpSession session = req.getSession(false);
+        HttpSession session = getSession(false);
         if (session == null) {
             log.debug("session was null, returning null");
             return false;
@@ -63,10 +63,12 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
             securityContext.authenticationComplete(account, "KEYCLOAK", false);
             propagateKeycloakContext( account);
             return true;
+        } else {
+            log.debug("Refresh failed. Account was not active. Returning null and invalidating Http session");
+            session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
+            session.invalidate();
+            return false;
         }
-        log.debug("Account was not active, returning null");
-        session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
-        return false;
     }
 
     @Override
@@ -80,15 +82,26 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
     @Override
     protected void login(KeycloakAccount account) {
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
-        HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        HttpSession session = req.getSession(true);
+        HttpSession session = getSession(true);
         session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
-        userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session.getId(), account.getPrincipal().getName(), account.getKeycloakSecurityContext().getToken().getSessionState());
+        userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager());
 
     }
 
     @Override
     protected KeycloakUndertowAccount createAccount(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
         return new KeycloakUndertowAccount(principal);
+    }
+
+    @Override
+    protected String getHttpSessionId(boolean create) {
+        HttpSession session = getSession(create);
+        return session != null ? session.getId() : null;
+    }
+
+    protected HttpSession getSession(boolean create) {
+        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
+        return req.getSession(create);
     }
 }

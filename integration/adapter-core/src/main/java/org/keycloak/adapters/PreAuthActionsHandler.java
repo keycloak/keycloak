@@ -7,10 +7,6 @@ import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
-import org.keycloak.representations.adapters.action.SessionStats;
-import org.keycloak.representations.adapters.action.SessionStatsAction;
-import org.keycloak.representations.adapters.action.UserStats;
-import org.keycloak.representations.adapters.action.UserStatsAction;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.StreamUtil;
 
@@ -59,14 +55,6 @@ public class PreAuthActionsHandler {
         } else if (requestUri.endsWith(AdapterConstants.K_PUSH_NOT_BEFORE)) {
             if (!resolveDeployment()) return true;
             handlePushNotBefore();
-            return true;
-        } else if (requestUri.endsWith(AdapterConstants.K_GET_SESSION_STATS)) {
-            if (!resolveDeployment()) return true;
-            handleGetSessionStats();
-            return true;
-        } else if (requestUri.endsWith(AdapterConstants.K_GET_USER_STATS)) {
-            if (!resolveDeployment()) return true;
-            handleGetUserStats();
             return true;
         } else if (requestUri.endsWith(AdapterConstants.K_VERSION)) {
             handleVersion();
@@ -123,14 +111,10 @@ public class PreAuthActionsHandler {
             }
             LogoutAction action = JsonSerialization.readValue(token.getContent(), LogoutAction.class);
             if (!validateAction(action)) return;
-            String user = action.getUser();
-            if (user != null) {
-                log.debug("logout of session for: " + user);
-                userSessionManagement.logoutUser(user);
-            } else if (action.getSession() != null) {
-                userSessionManagement.logoutKeycloakSession(action.getSession());
+            if (action.getAdapterSessionIds() != null) {
+                userSessionManagement.logoutHttpSessions(action.getAdapterSessionIds());
             } else {
-                log.debug("logout of all sessions");
+                log.infof("logout of all sessions for application '%s'", action.getResource());
                 if (action.getNotBefore() > deployment.getNotBefore()) {
                     deployment.setNotBefore(action.getNotBefore());
                 }
@@ -208,50 +192,6 @@ public class PreAuthActionsHandler {
         return true;
     }
 
-    protected void handleGetSessionStats()  {
-        if (log.isTraceEnabled()) {
-            log.trace("K_GET_SESSION_STATS sent");
-        }
-        try {
-            JWSInput token = verifyAdminRequest();
-            if (token == null) return;
-            SessionStatsAction action = JsonSerialization.readValue(token.getContent(), SessionStatsAction.class);
-            if (!validateAction(action)) return;
-            SessionStats stats = new SessionStats();
-            stats.setActiveSessions(userSessionManagement.getActiveSessions());
-            stats.setActiveUsers(userSessionManagement.getActiveUsers().size());
-            if (action.isListUsers() && userSessionManagement.getActiveSessions() > 0) {
-                Map<String, UserStats> list = new HashMap<String, UserStats>();
-                for (String user : userSessionManagement.getActiveUsers()) {
-                    list.put(user, getUserStats(user));
-                }
-                stats.setUsers(list);
-            }
-            facade.getResponse().setStatus(200);
-            facade.getResponse().setHeader("Content-Type", "application/json");
-            JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), stats);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-    protected void handleGetUserStats()  {
-        if (log.isTraceEnabled()) {
-            log.trace("K_GET_USER_STATS sent");
-        }
-        try {
-            JWSInput token = verifyAdminRequest();
-            if (token == null) return;
-            UserStatsAction action = JsonSerialization.readValue(token.getContent(), UserStatsAction.class);
-            if (!validateAction(action)) return;
-            String user = action.getUser();
-            UserStats stats = getUserStats(user);
-            facade.getResponse().setStatus(200);
-            facade.getResponse().setHeader("Content-Type", "application/json");
-            JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), stats);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
     protected void handleVersion()  {
         try {
             facade.getResponse().setStatus(200);
@@ -262,15 +202,4 @@ public class PreAuthActionsHandler {
         }
     }
 
-    protected UserStats getUserStats(String user) {
-        UserStats stats = new UserStats();
-        Long loginTime = userSessionManagement.getUserLoginTime(user);
-        if (loginTime != null) {
-            stats.setLoggedIn(true);
-            stats.setWhenLoggedIn(loginTime);
-        } else {
-            stats.setLoggedIn(false);
-        }
-        return stats;
-    }
 }

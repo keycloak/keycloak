@@ -5,6 +5,7 @@ import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
@@ -133,7 +134,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
             CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
-            PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deploymentContext, facade);
+            Manager sessionManager = request.getContext().getManager();
+            CatalinaUserSessionManagementWrapper sessionManagementWrapper = new CatalinaUserSessionManagementWrapper(userSessionManagement, sessionManager);
+            PreAuthActionsHandler handler = new PreAuthActionsHandler(sessionManagementWrapper, deploymentContext, facade);
             if (handler.handleRequest()) {
                 return;
             }
@@ -177,18 +180,22 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         if (session == null) return;
         // just in case session got serialized
         if (session.getDeployment() == null) session.setDeployment(deploymentContext.resolveDeployment(facade));
-        if (session.isActive()) return;
+        if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) return;
 
         // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will
         // not be updated
-        session.refreshExpiredToken();
-        if (session.isActive()) return;
+        boolean success = session.refreshExpiredToken(false);
+        if (success && session.isActive()) return;
 
-        request.getSessionInternal().removeNote(KeycloakSecurityContext.class.getName());
+        // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
+        Session catalinaSession = request.getSessionInternal();
+        log.fine("Cleanup and expire session " + catalinaSession + " after failed refresh");
+        catalinaSession.removeNote(KeycloakSecurityContext.class.getName());
         request.setUserPrincipal(null);
         request.setAuthType(null);
-        request.getSessionInternal().setPrincipal(null);
-        request.getSessionInternal().setAuthType(null);
+        catalinaSession.setPrincipal(null);
+        catalinaSession.setAuthType(null);
+        catalinaSession.expire();
     }
 
     public void keycloakSaveRequest(Request request) throws IOException {

@@ -326,6 +326,16 @@ public class AdapterDeploymentContext {
         public void setCorsAllowedHeaders(String corsAllowedHeaders) {
             delegate.setCorsAllowedHeaders(corsAllowedHeaders);
         }
+
+        @Override
+        public boolean isAlwaysRefreshToken() {
+            return delegate.isAlwaysRefreshToken();
+        }
+
+        @Override
+        public void setAlwaysRefreshToken(boolean alwaysRefreshToken) {
+            delegate.setAlwaysRefreshToken(alwaysRefreshToken);
+        }
     }
 
     protected KeycloakUriBuilder getBaseBuilder(HttpFacade facade, String base) {

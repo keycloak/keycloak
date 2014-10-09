@@ -35,7 +35,7 @@ public class KeycloakDeploymentBuilder {
 
         String realmKeyPem = adapterConfig.getRealmKey();
         if (realmKeyPem != null) {
-            PublicKey realmKey = null;
+            PublicKey realmKey;
             try {
                 realmKey = PemUtils.decodePublicKey(realmKeyPem);
             } catch (Exception e) {
@@ -60,9 +60,7 @@ public class KeycloakDeploymentBuilder {
         }
 
         deployment.setBearerOnly(adapterConfig.isBearerOnly());
-
-        if (adapterConfig.isBearerOnly()) {
-        }
+        deployment.setAlwaysRefreshToken(adapterConfig.isAlwaysRefreshToken());
 
         if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
@@ -82,7 +80,7 @@ public class KeycloakDeploymentBuilder {
     public static KeycloakDeployment build(InputStream is) {
         ObjectMapper mapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
-        AdapterConfig adapterConfig = null;
+        AdapterConfig adapterConfig;
         try {
             adapterConfig = mapper.readValue(is, AdapterConfig.class);
         } catch (IOException e) {
