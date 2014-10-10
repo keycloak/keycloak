@@ -749,7 +749,7 @@ module.factory('ApplicationOrigins', function($resource) {
 });
 
 module.factory('OAuthClient', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth', {
         realm : '@realm',
         oauth : '@oauth'
     },  {
@@ -760,7 +760,7 @@ module.factory('OAuthClient', function($resource) {
 });
 
 module.factory('OAuthClientClaims', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/claims', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/claims', {
         realm : '@realm',
         oauth : "@oauth"
     },  {
@@ -772,7 +772,7 @@ module.factory('OAuthClientClaims', function($resource) {
 
 
 module.factory('OAuthClientCredentials', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/client-secret', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/client-secret', {
         realm : '@realm',
         oauth : '@oauth'
     },  {
@@ -784,28 +784,28 @@ module.factory('OAuthClientCredentials', function($resource) {
 });
 
 module.factory('OAuthClientRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/realm', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/scope-mappings/realm', {
         realm : '@realm',
         oauth : '@oauth'
     });
 });
 
 module.factory('OAuthClientCompositeRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/realm/composite', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/scope-mappings/realm/composite', {
         realm : '@realm',
         oauth : '@oauth'
     });
 });
 
 module.factory('OAuthClientAvailableRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/realm/available', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/scope-mappings/realm/available', {
         realm : '@realm',
         oauth : '@oauth'
     });
 });
 
 module.factory('OAuthClientApplicationScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/applications-by-id/:targetApp', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/scope-mappings/applications-by-id/:targetApp', {
         realm : '@realm',
         oauth : '@oauth',
         targetApp : '@targetApp'
@@ -813,7 +813,7 @@ module.factory('OAuthClientApplicationScopeMapping', function($resource) {
 });
 
 module.factory('OAuthClientCompositeApplicationScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/applications-by-id/:targetApp/composite', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/scope-mappings/applications-by-id/:targetApp/composite', {
         realm : '@realm',
         oauth : '@oauth',
         targetApp : '@targetApp'
@@ -821,7 +821,7 @@ module.factory('OAuthClientCompositeApplicationScopeMapping', function($resource
 });
 
 module.factory('OAuthClientAvailableApplicationScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/applications-by-id/:targetApp/available', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/scope-mappings/applications-by-id/:targetApp/available', {
         realm : '@realm',
         oauth : '@oauth',
         targetApp : '@targetApp'
@@ -831,8 +831,8 @@ module.factory('OAuthClientAvailableApplicationScopeMapping', function($resource
 
 
 module.factory('OAuthClientInstallation', function($resource) {
-    var url = authUrl + '/admin/realms/:realm/oauth-clients/:oauth/installation';
-    var resource = $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/installation', {
+    var url = authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/installation';
+    var resource = $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/installation', {
         realm : '@realm',
         oauth : '@oauth'
     },  {

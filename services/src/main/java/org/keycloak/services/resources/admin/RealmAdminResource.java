@@ -99,13 +99,26 @@ public class RealmAdminResource {
     }
 
     /**
-     * base path for managing oauth clients in this realm
+     * base path for managing oauth clients in this realm uses name of client
      *
      * @return
      */
     @Path("oauth-clients")
     public OAuthClientsResource getOAuthClients() {
         OAuthClientsResource oauth = new OAuthClientsResource(realm, auth, session);
+        ResteasyProviderFactory.getInstance().injectProperties(oauth);
+        //resourceContext.initResource(oauth);
+        return oauth;
+    }
+
+    /**
+     * base path for managing oauth clients in this realm uses ids
+     *
+     * @return
+     */
+    @Path("oauth-clients-by-id")
+    public OAuthClientsByIdResource getOAuthClientsById() {
+        OAuthClientsByIdResource oauth = new OAuthClientsByIdResource(realm, auth, session);
         ResteasyProviderFactory.getInstance().injectProperties(oauth);
         //resourceContext.initResource(oauth);
         return oauth;

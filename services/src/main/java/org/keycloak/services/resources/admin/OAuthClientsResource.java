@@ -106,7 +106,7 @@ public class OAuthClientsResource {
     public OAuthClientResource getOAuthClient(final @PathParam("clientId") String clientId) {
         auth.requireView();
 
-        OAuthClientModel oauth = realm.getOAuthClient(clientId);
+        OAuthClientModel oauth = getOAuthClientModel(clientId);
         if (oauth == null) {
             throw new NotFoundException("OAuth Client not found");
         }
@@ -114,6 +114,10 @@ public class OAuthClientsResource {
         ResteasyProviderFactory.getInstance().injectProperties(oAuthClientResource);
         //resourceContext.initResource(oAuthClientResource);
         return oAuthClientResource;
+    }
+
+    protected OAuthClientModel getOAuthClientModel(String clientId) {
+        return realm.getOAuthClient(clientId);
     }
 
 }
