@@ -1,8 +1,8 @@
 <ul class="nav nav-tabs nav-tabs-pf" data-ng-show="!create">
-    <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}">Settings</a></li>
-    <li ng-class="{active: path[4] == 'credentials'}" data-ng-show="!oauth.publicClient"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/credentials">Credentials</a></li>
-    <li ng-class="{active: path[4] == 'claims'}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/claims">Claims</a></li>
-    <li ng-class="{active: path[4] == 'scope-mappings'}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/scope-mappings">Scope</a></li>
-    <li ng-class="{active: path[4] == 'revocation'}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/revocation">Revocation</a></li>
-    <li ng-class="{active: path[4] == 'installation'}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.name}}/installation">Installation</a></li>
+    <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}">Settings</a></li>
+    <li ng-class="{active: path[4] == 'credentials'}" data-ng-show="!oauth.publicClient"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/credentials">Credentials</a></li>
+    <li ng-class="{active: path[4] == 'claims'}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/claims">Claims</a></li>
+    <li ng-class="{active: path[4] == 'scope-mappings'}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/scope-mappings">Scope</a></li>
+    <li ng-class="{active: path[4] == 'revocation'}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/revocation">Revocation</a></li>
+    <li ng-class="{active: path[4] == 'installation'}"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/installation">Installation</a></li>
 </ul>

@@ -43,7 +43,7 @@
             -->
             <tbody>
             <tr ng-repeat="client in oauthClients | filter:search">
-                <td><a href="#/realms/{{realm.realm}}/oauth-clients/{{client.name}}">{{client.name}}</a></td>
+                <td><a href="#/realms/{{realm.realm}}/oauth-clients/{{client.id}}">{{client.name}}</a></td>
                 <td>{{client.enabled}}</td>
             </tr>
             <tr data-ng-show="oauthClients.length == 0">
