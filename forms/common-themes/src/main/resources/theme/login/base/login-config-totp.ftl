@@ -30,7 +30,7 @@
     <#elseif section = "info" >
         <ol id="kc-totp-settings">
             <li>
-                <p>${rb.loginTotpStep1_1} <a href="http://code.google.com/p/google-authenticator/" target="_blank">${rb.loginTotpStep1_2}</a> ${rb.loginTotpStep1_3}</p>
+                <p>${rb.loginTotpStep1_1} <a href="https://fedorahosted.org/freeotp/" target="_blank">${rb.loginTotpStep1_2}</a> ${rb.loginTotpStep1_3}</p>
             </li>
             <li>
                 <p>${rb.loginTotpStep2}</p>

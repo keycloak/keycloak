@@ -12,7 +12,7 @@
             </thead>
             <tbody>
             <tr>
-                <td class="provider"><span class="social googleplus">Google</span></td>
+                <td class="provider"><span class="social googleplus">FreeOTP</span></td>
                 <td class="action">
                     <a id="remove-google" href="${url.totpRemoveUrl}"><i class="pficon pficon-delete"></i></a>
                 </td>
@@ -25,12 +25,12 @@
         <hr/>
 
         <ol>
-            <li>Download the <a href="http://code.google.com/p/google-authenticator/" target="_blank">Google Authenticator app</a> in your device.</li>
-            <li>Create an account in Google Authenticator and scan the barcode or the provided key below.<br/>
+            <li>Download the <a href="https://fedorahosted.org/freeotp/" target="_blank">FreeOTP app</a> in your device.</li>
+            <li>Create an account in FreeOTP and scan the barcode or type in the provided key below.<br/>
                 <img src="${totp.totpSecretQrCodeUrl}" alt="Figure: Barcode"><br/>
                 <span class="code">${totp.totpSecretEncoded}</span>
             </li>
-            <li>Enter the one-time-password provided by Google Authenticator below and click Submit to finish the setup.</li>
+            <li>Enter the one-time-password provided by FreeOTP below and click Submit to finish the setup.</li>
         </ol>
 
         <hr/>
