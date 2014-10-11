@@ -12,6 +12,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.util.CertificateUtils;
 import org.keycloak.util.PemUtils;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.UUID;
 
@@ -51,6 +53,19 @@ public final class KeycloakModelUtils {
         }
     }
 
+    public static X509Certificate getCertificate(String cert) {
+        if (cert != null) {
+            try {
+                return PemUtils.decodeCertificate(cert);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+
     public static PrivateKey getPrivateKey(String privateKeyPem) {
         if (privateKeyPem != null) {
             try {
@@ -75,6 +90,19 @@ public final class KeycloakModelUtils {
         return PemUtils.removeBeginEnd(s);
     }
 
+    public static String getPemFromCertificate(X509Certificate certificate) {
+        StringWriter writer = new StringWriter();
+        PEMWriter pemWriter = new PEMWriter(writer);
+        try {
+            pemWriter.writeObject(certificate);
+            pemWriter.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        String s = writer.toString();
+        return PemUtils.removeBeginEnd(s);
+    }
+
     public static void generateRealmKeys(RealmModel realm) {
         KeyPair keyPair = null;
         try {
@@ -84,6 +112,23 @@ public final class KeycloakModelUtils {
         }
         realm.setPrivateKey(keyPair.getPrivate());
         realm.setPublicKey(keyPair.getPublic());
+        X509Certificate certificate = null;
+        try {
+            certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        realm.setCertificate(certificate);
+    }
+
+    public static void generateRealmCertificate(RealmModel realm) {
+        X509Certificate certificate = null;
+        try {
+            certificate = CertificateUtils.generateV1SelfSignedCertificate(new KeyPair(realm.getPublicKey(), realm.getPrivateKey()), realm.getName());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        realm.setCertificate(certificate);
     }
 
     public static UserCredentialModel generateSecret(ClientModel app) {

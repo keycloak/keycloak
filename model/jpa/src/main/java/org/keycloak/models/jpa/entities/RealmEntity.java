@@ -80,6 +80,8 @@ public class RealmEntity {
     protected String publicKeyPem;
     @Column(name="PRIVATE_KEY", length = 2048)
     protected String privateKeyPem;
+    @Column(name="CERTIFICATE", length = 2048)
+    protected String certificatePem;
 
     @Column(name="LOGIN_THEME")
     protected String loginTheme;
@@ -431,6 +433,14 @@ public class RealmEntity {
 
     public void setAttributes(Collection<RealmAttributeEntity> attributes) {
         this.attributes = attributes;
+    }
+
+    public String getCertificatePem() {
+        return certificatePem;
+    }
+
+    public void setCertificatePem(String certificatePem) {
+        this.certificatePem = certificatePem;
     }
 }
 

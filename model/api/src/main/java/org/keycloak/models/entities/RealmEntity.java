@@ -40,6 +40,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     private String publicKeyPem;
     private String privateKeyPem;
+    private String certificatePem;
 
     private String loginTheme;
     private String accountTheme;
@@ -380,5 +381,13 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setUserFederationProviders(List<UserFederationProviderEntity> userFederationProviders) {
         this.userFederationProviders = userFederationProviders;
+    }
+
+    public String getCertificatePem() {
+        return certificatePem;
+    }
+
+    public void setCertificatePem(String certificatePem) {
+        this.certificatePem = certificatePem;
     }
 }

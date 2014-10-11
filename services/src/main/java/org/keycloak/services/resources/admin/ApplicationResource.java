@@ -94,7 +94,6 @@ public class ApplicationResource {
     public Response update(final ApplicationRepresentation rep) {
         auth.requireManage();
 
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
         try {
             RepresentationToModel.updateApplication(rep, application);
             return Response.noContent().build();
