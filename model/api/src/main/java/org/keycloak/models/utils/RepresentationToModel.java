@@ -84,6 +84,11 @@ public class RepresentationToModel {
             newRealm.setPrivateKeyPem(rep.getPrivateKey());
             newRealm.setPublicKeyPem(rep.getPublicKey());
         }
+        if (rep.getCertificate() == null) {
+            KeycloakModelUtils.generateRealmCertificate(newRealm);
+        } else {
+            newRealm.setCertificatePem(rep.getCertificate());
+        }
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());

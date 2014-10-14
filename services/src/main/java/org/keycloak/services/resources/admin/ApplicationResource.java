@@ -94,7 +94,6 @@ public class ApplicationResource {
     public Response update(final ApplicationRepresentation rep) {
         auth.requireManage();
 
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
         try {
             RepresentationToModel.updateApplication(rep, application);
             return Response.noContent().build();
@@ -116,6 +115,11 @@ public class ApplicationResource {
         auth.requireView();
 
         return ModelToRepresentation.toRepresentation(application);
+    }
+
+    @Path("certificates")
+    public ClientCertificateResource getCertficateResource() {
+        return new ClientCertificateResource(realm, auth, application, session);
     }
 
 

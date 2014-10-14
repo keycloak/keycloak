@@ -72,6 +72,13 @@ public class OAuthClientResource  {
         return new ClaimResource(oauthClient, auth);
     }
 
+    @Path("certificates")
+    public ClientCertificateResource getCertficateResource() {
+        return new ClientCertificateResource(realm, auth, oauthClient, session);
+    }
+
+
+
     /**
      * Update the oauth client
      *

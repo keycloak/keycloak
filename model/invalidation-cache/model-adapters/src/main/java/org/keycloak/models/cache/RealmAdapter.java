@@ -15,6 +15,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -33,6 +34,7 @@ public class RealmAdapter implements RealmModel {
     protected RealmCache cache;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
+    protected volatile transient X509Certificate certificate;
 
     public RealmAdapter(CachedRealm cached, CacheRealmProvider cacheSession) {
         this.cached = cached;
@@ -332,6 +334,33 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public X509Certificate getCertificate() {
+        if (certificate != null) return certificate;
+        certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
+        return certificate;
+    }
+
+    @Override
+    public void setCertificate(X509Certificate certificate) {
+        this.certificate = certificate;
+        String certPem = KeycloakModelUtils.getPemFromCertificate(certificate);
+        setCertificatePem(certPem);
+    }
+
+    @Override
+    public String getCertificatePem() {
+        if (updated != null) return updated.getCertificatePem();
+        return cached.getCertificatePem();
+    }
+
+    @Override
+    public void setCertificatePem(String certificate) {
+        getDelegateForUpdate();
+        updated.setCertificatePem(certificate);
+
+    }
+
+    @Override
     public PrivateKey getPrivateKey() {
         if (privateKey != null) return privateKey;
         privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
@@ -344,6 +373,8 @@ public class RealmAdapter implements RealmModel {
         String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
         setPrivateKeyPem(privateKeyPem);
     }
+
+
 
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {

@@ -23,6 +23,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,6 +45,7 @@ public class RealmAdapter implements RealmModel {
     protected EntityManager em;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
+    protected volatile transient X509Certificate certificate;
     protected KeycloakSession session;
     private PasswordPolicy passwordPolicy;
 
@@ -365,6 +367,32 @@ public class RealmAdapter implements RealmModel {
     public void setPublicKeyPem(String publicKeyPem) {
         realm.setPublicKeyPem(publicKeyPem);
         em.flush();
+    }
+
+    @Override
+    public X509Certificate getCertificate() {
+        if (certificate != null) return certificate;
+        certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
+        return certificate;
+    }
+
+    @Override
+    public void setCertificate(X509Certificate certificate) {
+        this.certificate = certificate;
+        String certificatePem = KeycloakModelUtils.getPemFromCertificate(certificate);
+        setCertificatePem(certificatePem);
+
+    }
+
+    @Override
+    public String getCertificatePem() {
+        return realm.getCertificatePem();
+    }
+
+    @Override
+    public void setCertificatePem(String certificate) {
+        realm.setCertificatePem(certificate);
+
     }
 
     @Override

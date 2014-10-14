@@ -5,6 +5,9 @@
     <div id="content">
         <h2><span>{{realm.realm}}</span> Realm Public Key <span tooltip-placement="right" tooltip="Realm's public key.  This is used to verify any signed tokens or documents created by the realm." class="fa fa-info-circle"></span></h2>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+            <div class="pull-right form-actions" data-ng-show="access.manageRealm">
+                <button class="btn btn-primary btn-lg" type="submit" data-ng-click="generate()">Generate new keys</button>
+            </div>
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="publicKey">Public key</label>
@@ -14,10 +17,15 @@
                                   kc-select-action="click" readonly>{{realm.publicKey}}</textarea>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="publicKey">Certificate</label>
+
+                    <div class="col-sm-10">
+                        <textarea type="text" id="certificate" name="certificate" class="form-control" rows="5"
+                                  kc-select-action="click" readonly>{{realm.certificate}}</textarea>
+                    </div>
+                </div>
             </fieldset>
-            <div class="pull-right form-actions" data-ng-show="access.manageRealm">
-                <button class="btn btn-primary btn-lg" type="submit" data-ng-click="generate()">Generate new keys</button>
-            </div>
         </form>
     </div>
 </div>

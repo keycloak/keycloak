@@ -86,6 +86,11 @@ public class ModelToRepresentation {
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
         rep.setPublicKey(realm.getPublicKeyPem());
         rep.setPrivateKey(realm.getPrivateKeyPem());
+        String privateKeyPem = realm.getPrivateKeyPem();
+        if (realm.getCertificatePem() == null && privateKeyPem != null) {
+            KeycloakModelUtils.generateRealmCertificate(realm);
+        }
+        rep.setCertificate(realm.getCertificatePem());
         rep.setPasswordCredentialGrantAllowed(realm.isPasswordCredentialGrantAllowed());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRememberMe(realm.isRememberMe());
@@ -113,8 +118,6 @@ public class ModelToRepresentation {
         if (realm.getPasswordPolicy() != null) {
             rep.setPasswordPolicy(realm.getPasswordPolicy().toString());
         }
-
-        ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {

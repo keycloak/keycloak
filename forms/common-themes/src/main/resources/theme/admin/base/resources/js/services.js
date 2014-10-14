@@ -693,7 +693,37 @@ module.factory('ApplicationPushRevocation', function($resource) {
     });
 });
 
+module.factory('ApplicationCertificate', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates', {
+            realm : '@realm',
+            application : "@application"
+        });
+});
 
+module.factory('ApplicationCertificateGenerate', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates/generate', {
+            realm : '@realm',
+            application : "@application"
+        },
+        {
+            generate : {
+                method : 'POST'
+            }
+        });
+});
+
+module.factory('ApplicationCertificateDownload', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates/download', {
+        realm : '@realm',
+        application : "@application"
+    },
+        {
+            download : {
+                method : 'POST',
+                responseType: 'arraybuffer'
+            }
+        });
+});
 
 module.factory('Application', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application', {
@@ -782,6 +812,21 @@ module.factory('OAuthClientCredentials', function($resource) {
     });
 
 });
+
+module.factory('OAuthCertificate', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/certificates', {
+        realm : '@realm',
+        oauth : '@oauth'
+    });
+});
+
+module.factory('OAuthCertificateDownload', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/certificates/download', {
+        realm : '@realm',
+        oauth : '@oauth'
+    });
+});
+
 
 module.factory('OAuthClientRealmScopeMapping', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/scope-mappings/realm', {

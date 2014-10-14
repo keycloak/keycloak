@@ -25,6 +25,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,6 +50,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
+    protected volatile transient X509Certificate certificate;
 
     private volatile transient PasswordPolicy passwordPolicy;
     private volatile transient KeycloakSession session;
@@ -349,6 +351,33 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         this.publicKey = null;
         updateRealm();
     }
+
+    @Override
+    public X509Certificate getCertificate() {
+        if (certificate != null) return certificate;
+        certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
+        return certificate;
+    }
+
+    @Override
+    public void setCertificate(X509Certificate certificate) {
+        this.certificate = certificate;
+        String certificatePem = KeycloakModelUtils.getPemFromCertificate(certificate);
+        setCertificatePem(certificatePem);
+
+    }
+
+    @Override
+    public String getCertificatePem() {
+        return realm.getCertificatePem();
+    }
+
+    @Override
+    public void setCertificatePem(String certificate) {
+        realm.setCertificatePem(certificate);
+
+    }
+
 
     @Override
     public String getPrivateKeyPem() {

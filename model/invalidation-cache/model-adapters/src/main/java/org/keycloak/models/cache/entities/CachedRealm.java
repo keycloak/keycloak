@@ -56,6 +56,7 @@ public class CachedRealm {
 
     private String publicKeyPem;
     private String privateKeyPem;
+    private String certificatePem;
 
     private String loginTheme;
     private String accountTheme;
@@ -113,6 +114,7 @@ public class CachedRealm {
 
         publicKeyPem = model.getPublicKeyPem();
         privateKeyPem = model.getPrivateKeyPem();
+        certificatePem = model.getCertificatePem();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -327,5 +329,9 @@ public class CachedRealm {
 
     public List<UserFederationProviderModel> getUserFederationProviders() {
         return userFederationProviders;
+    }
+
+    public String getCertificatePem() {
+        return certificatePem;
     }
 }
