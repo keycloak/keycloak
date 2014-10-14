@@ -97,9 +97,25 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     private Liquibase getLiquibase(Connection connection) throws Exception {
+        ServiceLocator sl = ServiceLocator.getInstance();
+
         if (!System.getProperties().containsKey("liquibase.scan.packages")) {
-            System.setProperty("liquibase.scan.packages", "liquibase.change,liquibase.changelog,liquibase.database,liquibase.parser,liquibase.precondition,liquibase.datatype,liquibase.serializer,liquibase.sqlgenerator,liquibase.executor,liquibase.snapshot,liquibase.logging,liquibase.diff,liquibase.structure,liquibase.structurecompare,liquibase.lockservice");
+            if (sl.getPackages().remove("liquibase.core")) {
+                sl.addPackageToScan("liquibase.core.xml");
+            }
+
+            if (sl.getPackages().remove("liquibase.parser")) {
+                sl.addPackageToScan("liquibase.parser.core.xml");
+            }
+
+            if (sl.getPackages().remove("liquibase.serializer")) {
+                sl.addPackageToScan("liquibase.serializer.core.xml");
+            }
+
+            sl.getPackages().remove("liquibase.ext");
+            sl.getPackages().remove("liquibase.sdk");
         }
+
         LogFactory.setInstance(new LogWrapper());
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
         return new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
