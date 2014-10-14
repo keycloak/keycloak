@@ -145,7 +145,21 @@ public class AuthenticationManager {
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         // remember me cookie should be persistent (hardcoded to 365 days for now)
         //NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly);// todo httponly , true);
-        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, username, path, null, null, 31536000, secureOnly, true);
+        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, "username:" + username, path, null, null, 31536000, secureOnly, true);
+    }
+
+    public static String getRememberMeUsername(RealmModel realm, HttpHeaders headers) {
+        if (realm.isRememberMe()) {
+            Cookie cookie = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
+            if (cookie != null) {
+                String value = cookie.getValue();
+                String[] s = value.split(":");
+                if (s[0].equals("username") && s.length == 2) {
+                    return s[1];
+                }
+            }
+        }
+        return null;
     }
 
     protected static String encodeToken(RealmModel realm, Object token) {
