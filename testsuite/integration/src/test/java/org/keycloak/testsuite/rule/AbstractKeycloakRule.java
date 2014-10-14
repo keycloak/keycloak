@@ -30,11 +30,14 @@ import java.net.Socket;
  * @version $Revision: 1 $
  */
 public abstract class AbstractKeycloakRule extends ExternalResource {
+
     protected KeycloakServer server;
 
     protected void before() throws Throwable {
         server = new KeycloakServer();
         server.start();
+
+        removeTestRealms();
 
         setupKeycloak();
     }
@@ -123,6 +126,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         deploymentInfo.addServlet(servlet);
         return deploymentInfo;
     }
+
     public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role) {
         deployApplication(name, contextPath, servletClass, adapterConfigPath, role, true);
 
@@ -147,7 +151,25 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     @Override
     protected void after() {
+        removeTestRealms();
         stopServer();
+    }
+
+    protected void removeTestRealms() {
+        KeycloakSession session = server.getSessionFactory().create();
+        try {
+            session.getTransaction().begin();
+            RealmManager realmManager = new RealmManager(session);
+            for (String realmName : getTestRealms()) {
+                RealmModel realm = realmManager.getRealmByName(realmName);
+                if (realm != null) {
+                    realmManager.removeRealm(realm);
+                }
+            }
+            session.getTransaction().commit();
+        } finally {
+            session.close();
+        }
     }
 
     public RealmRepresentation loadJson(String path) throws IOException {
@@ -169,7 +191,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     public void stopSession(KeycloakSession session, boolean commit) {
         KeycloakTransaction transaction = session.getTransaction();
-        if (commit) {
+        if (commit && !transaction.getRollbackOnly()) {
             transaction.commit();
         } else {
             transaction.rollback();
@@ -208,4 +230,9 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
             Thread.currentThread().interrupt();
         }
     }
+
+    protected String[] getTestRealms() {
+        return new String[]{"test", "demo"};
+    }
+
 }

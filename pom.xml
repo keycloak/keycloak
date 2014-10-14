@@ -44,6 +44,7 @@
         <selenium.version>2.35.0</selenium.version>
         <javax.mail.version>1.4.5</javax.mail.version>
         <infinispan.version>6.0.2.Final</infinispan.version>
+        <liquibase.version>3.2.2</liquibase.version>
 
         <!-- maven-compiler-plugin -->
         <maven.compiler.target>1.6</maven.compiler.target>
@@ -448,6 +449,11 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
                 <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-core</artifactId>
+                <version>${liquibase.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

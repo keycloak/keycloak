@@ -67,7 +67,7 @@
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
             "user": "${keycloak.connectionsJpa.user:sa}",
             "password": "${keycloak.connectionsJpa.password:}",
-            "databaseSchema": "${keycloak.connectionsJpa.databaseSchema:create-drop}",
+            "databaseSchema": "${keycloak.connectionsJpa.databaseSchema:update}",
             "showSql": "${keycloak.connectionsJpa.showSql:false}",
             "formatSql": "${keycloak.connectionsJpa.formatSql:true}"
         }
@@ -78,7 +78,7 @@
             "host": "${keycloak.connectionsMongo.host:127.0.0.1}",
             "port": "${keycloak.connectionsMongo.port:27017}",
             "db": "${keycloak.connectionsMongo.db:keycloak}",
-            "clearOnStartup": "${keycloak.connectionsMongo.clearOnStartup:false}"
+            "databaseSchema": "${keycloak.connectionsMongo.databaseSchema:update}"
         }
     }
 }

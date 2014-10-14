@@ -253,7 +253,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
         for (ClientSessionEntity e : clientSessions.values()) {
-            if (e.getSession().getRealm().equals(realm.getId()) && e.getClientId().equals(client.getId())) {
+            if (e.getRealmId().equals(realm.getId()) && e.getClientId().equals(client.getId())) {
                 clientSessions.remove(e.getId());
                 e.getSession().removeClientSession(e);
             }
