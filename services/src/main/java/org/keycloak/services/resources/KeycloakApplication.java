@@ -37,6 +37,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -118,7 +120,14 @@ public class KeycloakApplication extends Application {
 
             if (config != null) {
                 JsonNode node = new ObjectMapper().readTree(config);
-                Config.init(new JsonConfigProvider(node));
+
+                Properties properties = new Properties();
+                properties.putAll(System.getProperties());
+                for(Map.Entry<String, String> e : System.getenv().entrySet()) {
+                    properties.put("env." + e.getKey(), e.getValue());
+                }
+
+                Config.init(new JsonConfigProvider(node, properties));
 
                 log.info("Loaded config from " + config);
                 return;

@@ -4,21 +4,26 @@ import org.codehaus.jackson.JsonNode;
 import org.keycloak.Config;
 import org.keycloak.util.StringPropertyReplacer;
 
+import java.util.Properties;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JsonConfigProvider implements Config.ConfigProvider {
 
+    private Properties properties;
+
     private JsonNode config;
 
-    public JsonConfigProvider(JsonNode config) {
+    public JsonConfigProvider(JsonNode config, Properties properties) {
         this.config = config;
+        this.properties = properties;
     }
 
     @Override
     public String getProvider(String spi) {
         JsonNode n = getNode(config, spi, "provider");
-        return n != null ? StringPropertyReplacer.replaceProperties(n.getTextValue()) : null;
+        return n != null ? replaceProperties(n.getTextValue()) : null;
     }
 
     @Override
@@ -38,6 +43,10 @@ public class JsonConfigProvider implements Config.ConfigProvider {
             }
         }
         return n;
+    }
+
+    private String replaceProperties(String value) {
+        return StringPropertyReplacer.replaceProperties(value, properties);
     }
 
     public class JsonScope implements Config.Scope {
@@ -62,7 +71,7 @@ public class JsonConfigProvider implements Config.ConfigProvider {
             if (n == null) {
                 return defaultValue;
             }
-            return StringPropertyReplacer.replaceProperties(n.getTextValue());
+            return replaceProperties(n.getTextValue());
         }
 
         @Override
@@ -77,11 +86,11 @@ public class JsonConfigProvider implements Config.ConfigProvider {
             } else if (n.isArray()) {
                 String[] a = new String[n.size()];
                 for (int i = 0; i < a.length; i++) {
-                    a[i] = StringPropertyReplacer.replaceProperties(n.get(i).getTextValue());
+                    a[i] = replaceProperties(n.get(i).getTextValue());
                 }
                 return a;
             } else {
-               return new String[] { StringPropertyReplacer.replaceProperties(n.getTextValue()) };
+               return new String[] { replaceProperties(n.getTextValue()) };
             }
         }
 
@@ -100,7 +109,7 @@ public class JsonConfigProvider implements Config.ConfigProvider {
                 return defaultValue;
             }
             if (n.isTextual()) {
-                return Integer.parseInt(StringPropertyReplacer.replaceProperties(n.getTextValue()));
+                return Integer.parseInt(replaceProperties(n.getTextValue()));
             } else {
                 return n.getIntValue();
             }
@@ -121,7 +130,7 @@ public class JsonConfigProvider implements Config.ConfigProvider {
                 return defaultValue;
             }
             if (n.isTextual()) {
-                return Long.parseLong(StringPropertyReplacer.replaceProperties(n.getTextValue()));
+                return Long.parseLong(replaceProperties(n.getTextValue()));
             } else {
                 return n.getLongValue();
             }
@@ -142,7 +151,7 @@ public class JsonConfigProvider implements Config.ConfigProvider {
                 return defaultValue;
             }
             if (n.isTextual()) {
-                return Boolean.parseBoolean(StringPropertyReplacer.replaceProperties(n.getTextValue()));
+                return Boolean.parseBoolean(replaceProperties(n.getTextValue()));
             } else {
                 return n.getBooleanValue();
             }
@@ -152,6 +161,7 @@ public class JsonConfigProvider implements Config.ConfigProvider {
         public Config.Scope scope(String... path) {
             return new JsonScope(getNode(config, path));
         }
+
     }
 
 }

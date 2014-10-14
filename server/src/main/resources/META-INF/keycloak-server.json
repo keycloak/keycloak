@@ -15,19 +15,19 @@
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:jpa}"
+        "provider": "jpa"
     },
 
     "userSessions": {
-        "provider" : "${keycloak.userSessions.provider:mem}"
+        "provider" : "mem"
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:mem}"
+        "provider": "mem"
     },
 
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:mem}",
+        "provider": "mem",
         "mem": {
             "maxSize": 20000
         }
@@ -67,12 +67,6 @@
         "default": {
             "dataSource": "java:jboss/datasources/KeycloakDS",
             "databaseSchema": "update"
-        }
-    },
-
-    "connectionsInfinispan": {
-        "default": {
-            "cacheContainer" : "java:jboss/infinispan/Keycloak"
         }
     }
 }
