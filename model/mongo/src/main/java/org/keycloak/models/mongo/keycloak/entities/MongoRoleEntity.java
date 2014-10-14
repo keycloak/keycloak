@@ -6,7 +6,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoField;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
-import org.keycloak.connections.mongo.api.MongoIndex;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.entities.RoleEntity;
@@ -17,7 +16,6 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "roles")
-@MongoIndex(fields = "nameIndex", unique = true)
 public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEntity {
 
     private static final Logger logger = Logger.getLogger(MongoRoleEntity.class);

@@ -9,6 +9,7 @@ import org.keycloak.Config;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.impl.MongoStoreImpl;
 import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocationContext;
+import org.keycloak.connections.mongo.updater.DefaultMongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Collections;
@@ -64,7 +65,6 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
                         String host = config.get("host", ServerAddress.defaultHost());
                         int port = config.getInt("port", ServerAddress.defaultPort());
                         String dbName = config.get("db", "keycloak");
-                        boolean clearOnStartup = config.getBoolean("clearOnStartup", false);
 
                         String user = config.get("user");
                         String password = config.get("password");
@@ -77,9 +77,18 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
                         this.db = client.getDB(dbName);
 
-                        this.mongoStore = new MongoStoreImpl(db, clearOnStartup, getManagedEntities());
+                        String databaseSchema = config.get("databaseSchema");
+                        if (databaseSchema != null) {
+                            if (databaseSchema.equals("update")) {
+                                new DefaultMongoUpdaterProvider().update(db);
+                            } else {
+                                throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
+                            }
+                        }
 
-                        logger.infof("Initialized mongo model. host: %s, port: %d, db: %s, clearOnStartup: %b", host, port, dbName, clearOnStartup);
+                        this.mongoStore = new MongoStoreImpl(db, getManagedEntities());
+
+                        logger.debugv("Initialized mongo model. host: %s, port: %d, db: %s", host, port, dbName);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

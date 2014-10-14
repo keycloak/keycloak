@@ -1,6 +1,6 @@
 {
-    "id": "Test",
-    "realm": "Test",
+    "id": "test",
+    "realm": "test",
     "enabled": true,
     "accessTokenLifespan": 600,
     "accessCodeLifespan": 600,

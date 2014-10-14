@@ -50,6 +50,9 @@
                 <listitem>
                     <literal>view-clients</literal> - View clients in the realm
                 </listitem>
+                <listitem>
+                    <literal>view-events</literal> - View events in the realm
+                </listitem>
 
                 <listitem>
                     <literal>manage-realm</literal> - Modify the realm configuration (and delete the realm)
@@ -62,6 +65,9 @@
                 </listitem>
                 <listitem>
                     <literal>manage-clients</literal> - Create, modify and delete clients in the realm
+                </listitem>
+                <listitem>
+                    <literal>manage-events</literal> - Enable/disable events, clear logged events and manage event listeners
                 </listitem>
             </itemizedlist>
             Manage roles includes permissions to view (for example a user with manage-realm role can also view the realm configuration).
