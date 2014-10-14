@@ -820,13 +820,7 @@ public class OpenIDConnectService {
         LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
                 .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode());
 
-        String rememberMeUsername = null;
-        if (realm.isRememberMe()) {
-            Cookie rememberMeCookie = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
-            if (rememberMeCookie != null && !"".equals(rememberMeCookie.getValue())) {
-                rememberMeUsername = rememberMeCookie.getValue();
-            }
-        }
+        String rememberMeUsername = AuthenticationManager.getRememberMeUsername(realm, headers);
 
         if (loginHint != null || rememberMeUsername != null) {
             MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
