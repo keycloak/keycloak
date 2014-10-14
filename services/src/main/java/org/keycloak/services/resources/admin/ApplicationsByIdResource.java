@@ -16,4 +16,10 @@ public class ApplicationsByIdResource extends ApplicationsResource {
     protected ApplicationModel getApplicationByPathParam(String id) {
         return realm.getApplicationById(id);
     }
+
+    @Override
+    protected String getApplicationPath(ApplicationModel applicationModel) {
+        return applicationModel.getId();
+    }
+
 }

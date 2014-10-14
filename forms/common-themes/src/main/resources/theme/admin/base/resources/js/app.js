@@ -440,6 +440,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationCredentialsCtrl'
         })
+        .when('/realms/:realm/applications/:application/certificate', {
+            templateUrl : 'partials/application-keys.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                }
+            },
+            controller : 'ApplicationCertificateCtrl'
+        })
         .when('/realms/:realm/applications/:application/roles', {
             templateUrl : 'partials/application-role-list.html',
             resolve : {

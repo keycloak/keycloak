@@ -88,10 +88,14 @@ public class ApplicationsResource {
 
         try {
             ApplicationModel applicationModel = RepresentationToModel.createApplication(realm, rep, true);
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getName()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(getApplicationPath(applicationModel)).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Application " + rep.getName() + " already exists");
         }
+    }
+
+    protected String getApplicationPath(ApplicationModel applicationModel) {
+        return applicationModel.getName();
     }
 
     /**

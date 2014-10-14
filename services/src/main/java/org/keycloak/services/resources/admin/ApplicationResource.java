@@ -117,6 +117,11 @@ public class ApplicationResource {
         return ModelToRepresentation.toRepresentation(application);
     }
 
+    @Path("certificates")
+    public ClientCertificateResource getCertficateResource() {
+        return new ClientCertificateResource(realm, auth, application, session);
+    }
+
 
     /**
      * Return keycloak.json file for this application to be used to configure the adapter of that application.

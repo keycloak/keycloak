@@ -43,6 +43,63 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
+module.controller('ApplicationCertificateCtrl', function($scope, $location, $http, realm, application,
+                                                         ApplicationCertificate, ApplicationCertificateGenerate,
+                                                         ApplicationCertificateDownload, Notifications) {
+    $scope.realm = realm;
+    $scope.application = application;
+    var jks = {
+        keyAlias: application.name,
+        realmAlias: realm.realm
+    };
+
+    $scope.jks = jks;
+
+    var keyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id },
+        function() {
+            $scope.keyInfo = keyInfo;
+        }
+    );
+
+    $scope.generate = function() {
+        var keyInfo = ApplicationCertificateGenerate.generate({ realm : realm.realm, application : application.id },
+            function() {
+                Notifications.success('Client keypair and cert has been changed.');
+                $scope.keyInfo = keyInfo;
+            },
+            function() {
+                Notifications.error("Client keypair and cert was not changed due to a problem.");
+            }
+        );
+    };
+
+    $scope.downloadJKS = function() {
+        $http({
+            url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/download',
+            method: 'POST',
+            responseType: 'arraybuffer',
+            data: $scope.jks,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/octet-stream'
+            }
+        }).success(function(data){
+            var blob = new Blob([data], {
+                type: 'application/octet-stream'
+            });
+            saveAs(blob, 'keystore' + '.jks');
+        }).error(function(){
+            Notifications.error("Error downloading.");
+        });
+    }
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
+
 module.controller('ApplicationSessionsCtrl', function($scope, realm, sessionCount, application,
                                                       ApplicationUserSessions) {
     $scope.realm = realm;
@@ -339,12 +396,21 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     $scope.save = function() {
         if ($scope.samlServerSignature == true) {
             $scope.application.attributes["samlServerSignature"] = "true";
+        } else {
+            $scope.application.attributes["samlServerSignature"] = "false";
+
         }
         if ($scope.samlClientSignature == true) {
             $scope.application.attributes["samlClientSignature"] = "true";
+        } else {
+            $scope.application.attributes["samlClientSignature"] = "false";
+
         }
         if ($scope.samlServerEncrypt == true) {
             $scope.application.attributes["samlServerEncrypt"] = "true";
+        } else {
+            $scope.application.attributes["samlServerEncrypt"] = "false";
+
         }
 
         $scope.application.protocol = $scope.protocol;

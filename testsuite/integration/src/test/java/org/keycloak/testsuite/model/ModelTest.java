@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
@@ -24,8 +25,7 @@ public class ModelTest extends AbstractModelTest {
         realm.setPasswordPolicy(new PasswordPolicy("length"));
         realm.setAccessCodeLifespan(1001);
         realm.setAccessCodeLifespanUserAction(1002);
-        realm.setPublicKeyPem("0234234");
-        realm.setPrivateKeyPem("1234234");
+        KeycloakModelUtils.generateRealmKeys(realm);
         realm.addDefaultRole("default-role");
 
         HashMap<String, String> smtp = new HashMap<String,String>();

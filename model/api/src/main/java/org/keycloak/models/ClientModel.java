@@ -8,6 +8,13 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface ClientModel {
+
+    // COMMON ATTRIBUTES
+
+    String PRIVATE_KEY = "privateKey";
+    String PUBLIC_KEY = "publicKey";
+    String X509CERTIFICATE = "X509Certificate";
+
     /**
      * Internal database key
      *

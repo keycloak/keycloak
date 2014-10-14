@@ -131,6 +131,29 @@ public final class KeycloakModelUtils {
         realm.setCertificate(certificate);
     }
 
+    public static void generateClientKeyPairCertificate(ClientModel client) {
+        KeyPair keyPair = null;
+        try {
+            keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        X509Certificate certificate = null;
+        try {
+            certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, client.getClientId());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        String privateKeyPem = KeycloakModelUtils.getPemFromKey(keyPair.getPrivate());
+        String publicKeyPem = KeycloakModelUtils.getPemFromKey(keyPair.getPublic());
+        String certPem = KeycloakModelUtils.getPemFromCertificate(certificate);
+
+        client.setAttribute(ClientModel.PRIVATE_KEY, privateKeyPem);
+        client.setAttribute(ClientModel.PUBLIC_KEY, publicKeyPem);
+        client.setAttribute(ClientModel.X509CERTIFICATE, certPem);
+
+    }
+
     public static UserCredentialModel generateSecret(ClientModel app) {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
         app.setSecret(secret.getValue());

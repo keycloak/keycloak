@@ -35,8 +35,14 @@ public class OAuthClientsByIdResource extends OAuthClientsResource {
         super(realm, auth, session);
     }
 
+    @Override
     protected OAuthClientModel getOAuthClientModel(String id) {
         return realm.getOAuthClientById(id);
+    }
+
+    @Override
+    protected String getClientPath(OAuthClientModel oauth) {
+        return oauth.getId();
     }
 
 }
