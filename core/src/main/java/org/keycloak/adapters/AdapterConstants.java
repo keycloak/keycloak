@@ -20,8 +20,11 @@ public interface AdapterConstants {
     String AUTH_DATA_PARAM_NAME = "org.keycloak.json.adapterConfig";
 
     // Attribute passed in codeToToken request from adapter to Keycloak and saved in ClientSession. Contains ID of HttpSession on adapter
-    public static final String HTTP_SESSION_ID = "http_session_id";
+    public static final String APPLICATION_SESSION_STATE = "application_session_state";
 
     // Attribute passed in codeToToken request from adapter to Keycloak and saved in ClientSession. Contains hostname of adapter where HttpSession is served
-    public static final String HTTP_SESSION_HOST = "http_session_host";
+    public static final String APPLICATION_SESSION_HOST = "application_session_host";
+
+    // Attribute passed in registerNode request for register new application cluster node once he joined cluster
+    public static final String APPLICATION_CLUSTER_HOST = "application_cluster_host";
 }

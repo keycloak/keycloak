@@ -43,7 +43,7 @@ public class AdminClient {
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet(AdapterUtils.getBaseUrl(req.getRequestURL().toString(), session) + "/auth/admin/realms/demo/roles");
+            HttpGet get = new HttpGet(AdapterUtils.getOrigin(req.getRequestURL().toString(), session) + "/auth/admin/realms/demo/roles");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);

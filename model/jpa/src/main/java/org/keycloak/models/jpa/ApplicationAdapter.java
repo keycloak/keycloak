@@ -9,6 +9,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -257,6 +259,35 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
                 addDefaultRole(roleName);
             }
         }
+        em.flush();
+    }
+
+    @Override
+    public int getNodeReRegistrationTimeout() {
+        return applicationEntity.getNodeReRegistrationTimeout();
+    }
+
+    @Override
+    public void setNodeReRegistrationTimeout(int timeout) {
+        applicationEntity.setNodeReRegistrationTimeout(timeout);
+    }
+
+    @Override
+    public Map<String, Integer> getRegisteredNodes() {
+        return applicationEntity.getRegisteredNodes();
+    }
+
+    @Override
+    public void registerNode(String nodeHost, int registrationTime) {
+        Map<String, Integer> currentNodes = getRegisteredNodes();
+        currentNodes.put(nodeHost, registrationTime);
+        em.flush();
+    }
+
+    @Override
+    public void unregisterNode(String nodeHost) {
+        Map<String, Integer> currentNodes = getRegisteredNodes();
+        currentNodes.remove(nodeHost);
         em.flush();
     }
 

@@ -25,7 +25,8 @@ public class ApplicationRepresentation {
     protected String protocol;
     protected Map<String, String> attributes;
     protected Boolean fullScopeAllowed;
-
+    protected Integer nodeReRegistrationTimeout;
+    protected Map<String, Integer> registeredNodes;
 
     public String getId() {
         return id;
@@ -161,5 +162,21 @@ public class ApplicationRepresentation {
 
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
+    }
+
+    public Integer getNodeReRegistrationTimeout() {
+        return nodeReRegistrationTimeout;
+    }
+
+    public void setNodeReRegistrationTimeout(Integer nodeReRegistrationTimeout) {
+        this.nodeReRegistrationTimeout = nodeReRegistrationTimeout;
+    }
+
+    public Map<String, Integer> getRegisteredNodes() {
+        return registeredNodes;
+    }
+
+    public void setRegisteredNodes(Map<String, Integer> registeredNodes) {
+        this.registeredNodes = registeredNodes;
     }
 }

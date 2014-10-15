@@ -374,8 +374,16 @@ public class RepresentationToModel {
         if (resourceRep.isBearerOnly() != null) applicationModel.setBearerOnly(resourceRep.isBearerOnly());
         if (resourceRep.isPublicClient() != null) applicationModel.setPublicClient(resourceRep.isPublicClient());
         if (resourceRep.getProtocol() != null) applicationModel.setProtocol(resourceRep.getProtocol());
-        if (resourceRep.isFullScopeAllowed() != null) applicationModel.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
-        else applicationModel.setFullScopeAllowed(true);
+        if (resourceRep.isFullScopeAllowed() != null) {
+            applicationModel.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
+        } else {
+            applicationModel.setFullScopeAllowed(true);
+        }
+        if (resourceRep.getNodeReRegistrationTimeout() != null) {
+            applicationModel.setNodeReRegistrationTimeout(resourceRep.getNodeReRegistrationTimeout());
+        } else {
+            applicationModel.setNodeReRegistrationTimeout(-1);
+        }
         applicationModel.updateApplication();
 
         if (resourceRep.getNotBefore() != null) {
@@ -426,6 +434,12 @@ public class RepresentationToModel {
             }
         }
 
+        if (resourceRep.getRegisteredNodes() != null) {
+            for (Map.Entry<String, Integer> entry : resourceRep.getRegisteredNodes().entrySet()) {
+                applicationModel.registerNode(entry.getKey(), entry.getValue());
+            }
+        }
+
         if (addDefaultRoles && resourceRep.getDefaultRoles() != null) {
             applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
         }
@@ -448,6 +462,7 @@ public class RepresentationToModel {
         if (rep.getAdminUrl() != null) resource.setManagementUrl(rep.getAdminUrl());
         if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
+        if (rep.getNodeReRegistrationTimeout() != null) resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
         resource.updateApplication();
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
@@ -473,6 +488,12 @@ public class RepresentationToModel {
         List<String> webOrigins = rep.getWebOrigins();
         if (webOrigins != null) {
             resource.setWebOrigins(new HashSet<String>(webOrigins));
+        }
+
+        if (rep.getRegisteredNodes() != null) {
+            for (Map.Entry<String, Integer> entry : rep.getRegisteredNodes().entrySet()) {
+                resource.registerNode(entry.getKey(), entry.getValue());
+            }
         }
 
         if (rep.getClaims() != null) {

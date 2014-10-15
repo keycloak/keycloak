@@ -37,7 +37,6 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
@@ -52,12 +51,10 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -612,15 +609,15 @@ public class OpenIDConnectService {
                     .build();
         }
 
-        String httpSessionId = formData.getFirst(AdapterConstants.HTTP_SESSION_ID);
-        if (httpSessionId != null) {
-            String httpSessionHost = formData.getFirst(AdapterConstants.HTTP_SESSION_HOST);
-            logger.infof("Http Session '%s' saved in ClientSession for client '%s'. Host is '%s'", httpSessionId, client.getClientId(), httpSessionHost);
+        String adapterSessionId = formData.getFirst(AdapterConstants.APPLICATION_SESSION_STATE);
+        if (adapterSessionId != null) {
+            String adapterSessionHost = formData.getFirst(AdapterConstants.APPLICATION_SESSION_HOST);
+            logger.infof("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
 
-            event.detail(AdapterConstants.HTTP_SESSION_ID, httpSessionId);
-            clientSession.setNote(AdapterConstants.HTTP_SESSION_ID, httpSessionId);
-            event.detail(AdapterConstants.HTTP_SESSION_HOST, httpSessionHost);
-            clientSession.setNote(AdapterConstants.HTTP_SESSION_HOST, httpSessionHost);
+            event.detail(AdapterConstants.APPLICATION_SESSION_STATE, adapterSessionId);
+            clientSession.setNote(AdapterConstants.APPLICATION_SESSION_STATE, adapterSessionId);
+            event.detail(AdapterConstants.APPLICATION_SESSION_HOST, adapterSessionHost);
+            clientSession.setNote(AdapterConstants.APPLICATION_SESSION_HOST, adapterSessionHost);
         }
 
         AccessToken token = tokenManager.createClientAccessToken(accessCode.getRequestedRoles(), realm, client, user, userSession);
@@ -646,6 +643,21 @@ public class OpenIDConnectService {
     }
 
     protected ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData, EventBuilder event) {
+        ClientModel client = authorizeClientBase(authorizationHeader, formData, event, realm);
+
+        if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put(OAuth2Constants.ERROR, "invalid_client");
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Bearer-only not allowed");
+            event.error(Errors.INVALID_CLIENT);
+            throw new BadRequestException("Bearer-only not allowed", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+        }
+
+        return client;
+    }
+
+    // Just authorize client without further checking about client type
+    public static ClientModel authorizeClientBase(String authorizationHeader, MultivaluedMap<String, String> formData, EventBuilder event, RealmModel realm) {
         String client_id;
         String clientSecret;
         if (authorizationHeader != null) {
@@ -686,14 +698,6 @@ public class OpenIDConnectService {
             throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
-        if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
-            Map<String, String> error = new HashMap<String, String>();
-            error.put(OAuth2Constants.ERROR, "invalid_client");
-            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Bearer-only not allowed");
-            event.error(Errors.INVALID_CLIENT);
-            throw new BadRequestException("Bearer-only not allowed", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
-        }
-
         if (!client.isPublicClient()) {
             if (clientSecret == null || !client.validateSecret(clientSecret)) {
                 Map<String, String> error = new HashMap<String, String>();
@@ -702,6 +706,7 @@ public class OpenIDConnectService {
                 throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
             }
         }
+
         return client;
     }
 

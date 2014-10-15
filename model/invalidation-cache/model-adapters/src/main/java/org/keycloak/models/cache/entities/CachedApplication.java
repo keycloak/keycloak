@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -22,6 +23,8 @@ public class CachedApplication extends CachedClient {
     private List<String> defaultRoles = new LinkedList<String>();
     private boolean bearerOnly;
     private Map<String, String> roles = new HashMap<String, String>();
+    private int nodeReRegistrationTimeout;
+    private Map<String, Integer> registeredNodes;
 
     public CachedApplication(RealmCache cache, RealmProvider delegate, RealmModel realm, ApplicationModel model) {
         super(cache, delegate, realm, model);
@@ -35,7 +38,8 @@ public class CachedApplication extends CachedClient {
             cache.addCachedRole(new CachedApplicationRole(id, role, realm));
         }
 
-
+        nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
+        registeredNodes = new TreeMap<String, Integer>(model.getRegisteredNodes());
     }
 
     public boolean isSurrogateAuthRequired() {
@@ -62,4 +66,11 @@ public class CachedApplication extends CachedClient {
         return roles;
     }
 
+    public int getNodeReRegistrationTimeout() {
+        return nodeReRegistrationTimeout;
+    }
+
+    public Map<String, Integer> getRegisteredNodes() {
+        return registeredNodes;
+    }
 }

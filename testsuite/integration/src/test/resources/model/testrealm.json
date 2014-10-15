@@ -94,7 +94,12 @@
     "applications": [
         {
             "name": "Application",
-            "enabled": true
+            "enabled": true,
+            "nodeReRegistrationTimeout": 50,
+            "registeredNodes": {
+                "node1": 10,
+                "172.10.15.20": 20
+            }
         },
         {
             "name": "OtherApp",
