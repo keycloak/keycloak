@@ -45,9 +45,7 @@ public class SAML2PostBindingErrorResponseBuilder extends SAML2PostBindingBuilde
         responseType.setStatus(JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status));
         responseType.setDestination(destination);
 
-       if (signed) {
-            signDocument(samlResponse);
-        }
+        encryptAndSign(samlResponse);
         return samlResponse;
     }
 

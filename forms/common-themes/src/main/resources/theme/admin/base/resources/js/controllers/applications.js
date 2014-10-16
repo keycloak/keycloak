@@ -299,7 +299,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     $scope.create = !application.name;
     $scope.samlServerSignature = false;
     $scope.samlClientSignature = false;
-    $scope.samlServerEncrypt = false;
+    $scope.samlEncrypt = false;
     if (!$scope.create) {
         if (!application.attributes) {
             application.attributes = {};
@@ -335,9 +335,9 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             $scope.samlClientSignature = true;
         }
     }
-    if ($scope.application.attributes["samlServerEncrypt"]) {
-        if ($scope.application.attributes["samlServerEncrypt"] == "true") {
-            $scope.samlServerEncrypt = true;
+    if ($scope.application.attributes["samlEncrypt"]) {
+        if ($scope.application.attributes["samlEncrypt"] == "true") {
+            $scope.samlEncrypt = true;
         }
     }
 
@@ -406,10 +406,10 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             $scope.application.attributes["samlClientSignature"] = "false";
 
         }
-        if ($scope.samlServerEncrypt == true) {
-            $scope.application.attributes["samlServerEncrypt"] = "true";
+        if ($scope.samlEncrypt == true) {
+            $scope.application.attributes["samlEncrypt"] = "true";
         } else {
-            $scope.application.attributes["samlServerEncrypt"] = "false";
+            $scope.application.attributes["samlEncrypt"] = "false";
 
         }
 

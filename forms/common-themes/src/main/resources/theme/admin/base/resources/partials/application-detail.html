@@ -57,18 +57,18 @@
                     <span tooltip-placement="right" tooltip="'Confidential' applications require a secret to initiate login protocol.  'Public' clients do not require a secret.  'Bearer-only' applications are web services that never initiate a login." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="samlServerSignature">Server Signatures</label>
+                    <label class="col-sm-2 control-label" for="samlServerSignature">Sign SAML Documents</label>
                     <div class="col-sm-6">
                         <input ng-model="samlServerSignature" ng-click="switchChange()" name="samlServerSignature" id="samlServerSignature" onoffswitch />
                     </div>
-                    <span tooltip-placement="right" tooltip="Should server sent SAML requests and responses be signed by the realm?" class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Should SAML documents be signed by the realm?" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="samlServerEncrypt">Server Encryption</label>
+                    <label class="col-sm-2 control-label" for="samlEncrypt">Encrypt SAML Documents</label>
                     <div class="col-sm-6">
-                        <input ng-model="samlServerEncrypt" ng-click="switchChange()" name="samlServerEncrypt" id="samlServerEncrypt" onoffswitch />
+                        <input ng-model="samlEncrypt" ng-click="switchChange()" name="samlEncrypt" id="samlEncrypt" onoffswitch />
                     </div>
-                    <span tooltip-placement="right" tooltip="Should server sent SAML requests and responses be encrypted by the realm?" class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Should SAML asserts be encrypted with client's public key?" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="samlClientSignature">Client Signatures</label>

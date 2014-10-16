@@ -18,6 +18,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.util.PemUtils;
 import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.identity.federation.core.saml.v2.constants.X500SAMLProfileConstants;
@@ -26,6 +27,7 @@ import org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -125,6 +127,16 @@ public class SalmProtocol implements LoginProtocol {
         if (requiresRealmSignature(client)) {
             builder.sign(realm.getPrivateKey(), realm.getPublicKey());
         }
+        if (requiresEncryption(client)) {
+            PublicKey publicKey = null;
+            try {
+                publicKey = PemUtils.decodePublicKey(client.getAttribute(ClientModel.PUBLIC_KEY));
+            } catch (Exception e) {
+                logger.error("failed", e);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
+            }
+            builder.encrypt(publicKey);
+        }
         try {
             return builder.buildLoginResponse();
         } catch (Exception e) {
@@ -135,6 +147,10 @@ public class SalmProtocol implements LoginProtocol {
 
     private boolean requiresRealmSignature(ClientModel client) {
         return "true".equals(client.getAttribute("samlServerSignature"));
+    }
+
+    private boolean requiresEncryption(ClientModel client) {
+        return "true".equals(client.getAttribute("samlEncrypt"));
     }
 
     public void initClaims(SALM2PostBindingLoginResponseBuilder builder, ClientModel model, UserModel user) {
@@ -166,6 +182,19 @@ public class SalmProtocol implements LoginProtocol {
         if (requiresRealmSignature(client)) {
             logoutBuilder.sign(realm.getPrivateKey(), realm.getPublicKey());
         }
+        /*
+        if (requiresEncryption(client)) {
+            PublicKey publicKey = null;
+            try {
+                publicKey = PemUtils.decodePublicKey(client.getAttribute(ClientModel.PUBLIC_KEY));
+            } catch (Exception e) {
+                logger.error("failed", e);
+                return;
+            }
+            logoutBuilder.encrypt(publicKey);
+        }
+        */
+
         String logoutRequestString = null;
         try {
             logoutRequestString = logoutBuilder.buildRequestString();

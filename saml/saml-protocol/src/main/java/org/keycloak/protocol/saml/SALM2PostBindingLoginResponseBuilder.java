@@ -174,9 +174,8 @@ public class SALM2PostBindingLoginResponseBuilder extends SAML2PostBindingBuilde
             throw logger.samlAssertionMarshallError(e);
         }
 
-        if (signed) {
-            signDocument(samlResponseDocument);
-        }
+        encryptAndSign(samlResponseDocument);
+
         return samlResponseDocument;
     }
 

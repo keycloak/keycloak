@@ -1,15 +1,23 @@
 package org.keycloak.protocol.saml;
 
 import org.picketlink.common.constants.GeneralConstants;
+import org.picketlink.common.constants.JBossSAMLConstants;
+import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.util.DocumentUtil;
+import org.picketlink.identity.federation.core.util.XMLEncryptionUtil;
+import org.picketlink.identity.federation.core.wstrust.WSTrustUtil;
 import org.picketlink.identity.federation.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -31,6 +39,10 @@ public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
     protected String relayState;
     protected String destination;
     protected String responseIssuer;
+    protected int encryptionKeySize = 128;
+    protected PublicKey encryptionPublicKey;
+    protected String encryptionAlgorithm = "AES";
+    protected boolean encrypt;
 
     public T sign(KeyPair keyPair) {
         this.signingKeyPair = keyPair;
@@ -51,6 +63,29 @@ public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
         return (T)this;
     }
 
+    public T sign(PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
+        this.signingKeyPair = new KeyPair(publicKey, privateKey);
+        this.signingCertificate = cert;
+        this.signed = true;
+        return (T)this;
+    }
+
+    public T encrypt(PublicKey publicKey) {
+        encrypt = true;
+        encryptionPublicKey = publicKey;
+        return (T)this;
+    }
+
+    public T encryptionAlgorithm(String alg) {
+        this.encryptionAlgorithm = alg;
+        return (T)this;
+    }
+
+    public T encryptionKeySize(int size) {
+        this.encryptionKeySize = size;
+        return (T)this;
+    }
+
     public T signatureDigestMethod(String method) {
         this.signatureDigestMethod = method;
         return (T)this;
@@ -58,13 +93,6 @@ public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
 
     public T signatureMethod(String method) {
         this.signatureMethod = method;
-        return (T)this;
-    }
-
-    public T sign(PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
-        this.signingKeyPair = new KeyPair(publicKey, privateKey);
-        this.signingCertificate = cert;
-        this.signed = true;
         return (T)this;
     }
 
@@ -83,7 +111,48 @@ public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
         return (T)this;
     }
 
+    private String getSAMLNSPrefix(Document samlResponseDocument) {
+        Node assertionElement = samlResponseDocument.getDocumentElement()
+                .getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get()).item(0);
 
+        if (assertionElement == null) {
+            throw new IllegalStateException("Unable to find assertion in saml response document");
+        }
+
+        return assertionElement.getPrefix();
+    }
+
+    protected void encryptDocument(Document samlDocument) throws ProcessingException {
+        String samlNSPrefix = getSAMLNSPrefix(samlDocument);
+
+        try {
+            QName encryptedAssertionElementQName = new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
+                    JBossSAMLConstants.ENCRYPTED_ASSERTION.get(), samlNSPrefix);
+
+            byte[] secret = WSTrustUtil.createRandomSecret(128 / 8);
+            SecretKey secretKey = new SecretKeySpec(secret, encryptionAlgorithm);
+
+            // encrypt the Assertion element and replace it with a EncryptedAssertion element.
+            XMLEncryptionUtil.encryptElement(new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
+                            JBossSAMLConstants.ASSERTION.get(), samlNSPrefix), samlDocument, encryptionPublicKey,
+                    secretKey, encryptionKeySize, encryptedAssertionElementQName, true);
+        } catch (Exception e) {
+            throw new ProcessingException("failed to encrypt", e);
+        }
+
+    }
+
+    protected void encryptAndSign(Document samlDocument) throws ProcessingException {
+        if (encrypt) {
+            encryptDocument(samlDocument);
+            signDocument(samlDocument);
+            return;
+        }
+        if (signed) {
+            signDocument(samlDocument);
+            return;
+        }
+    }
 
     protected void signDocument(Document samlDocument) throws ProcessingException {
         SamlProtocolUtils.signDocument(samlDocument, signingKeyPair, signatureMethod, signatureDigestMethod, signingCertificate);
