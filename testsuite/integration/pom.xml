@@ -437,5 +437,33 @@
             </dependencies>
         </profile>
 
+        <profile>
+            <id>clean-jpa</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.liquibase</groupId>
+                        <artifactId>liquibase-maven-plugin</artifactId>
+                        <configuration>
+                            <changeLogFile>META-INF/jpa-changelog-master.xml</changeLogFile>
+
+                            <url>${keycloak.connectionsJpa.url}</url>
+                            <driver>${keycloak.connectionsJpa.driver}</driver>
+                            <username>${keycloak.connectionsJpa.user}</username>
+                            <password>${keycloak.connectionsJpa.password}</password>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>clean-jpa</id>
+                                <phase>clean</phase>
+                                <goals>
+                                    <goal>dropAll</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>
