@@ -1,13 +1,11 @@
 package org.keycloak.protocol.saml;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.ClientConnection;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.events.Details;
+import org.keycloak.VerificationException;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -27,15 +25,14 @@ import org.picketlink.identity.federation.core.saml.v2.common.SAMLDocumentHolder
 import org.picketlink.identity.federation.saml.v2.SAML2Object;
 import org.picketlink.identity.federation.saml.v2.protocol.AuthnRequestType;
 import org.picketlink.identity.federation.saml.v2.protocol.LogoutRequestType;
+import org.picketlink.identity.federation.saml.v2.protocol.RequestAbstractType;
+import org.w3c.dom.Document;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -45,8 +42,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -137,24 +132,7 @@ public class SamlService {
 
         SAML2Object samlObject = documentHolder.getSamlObject();
 
-        if (samlObject instanceof AuthnRequestType) {
-            event.event(EventType.LOGIN);
-            // Get the SAML Request Message
-            AuthnRequestType requestAbstractType = (AuthnRequestType) samlObject;
-            return loginRequest(relayState, requestAbstractType);
-        } else if (samlObject instanceof LogoutRequestType) {
-            event.event(EventType.LOGOUT);
-            LogoutRequestType requestAbstractType = (LogoutRequestType) samlObject;
-            return logoutRequest(relayState, requestAbstractType);
-
-        } else {
-            event.event(EventType.LOGIN_ERROR);
-            event.error(Errors.INVALID_TOKEN);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
-        }
-    }
-
-    protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType) {
+        RequestAbstractType requestAbstractType = (RequestAbstractType)samlObject;
         String issuer = requestAbstractType.getIssuer().getValue();
         ClientModel client = realm.findClient(issuer);
 
@@ -176,6 +154,32 @@ public class SamlService {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
         }
 
+        try {
+            SamlProtocolUtils.verifyPostBindingSignature(client, documentHolder.getSamlDocument());
+        } catch (VerificationException e) {
+            logger.error("request validation failed", e);
+            event.error(Errors.INVALID_CLIENT);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid requester.");
+        }
+        if (samlObject instanceof AuthnRequestType) {
+            event.event(EventType.LOGIN);
+            // Get the SAML Request Message
+            AuthnRequestType authn = (AuthnRequestType) samlObject;
+            return loginRequest(relayState, authn, client);
+        } else if (samlObject instanceof LogoutRequestType) {
+            event.event(EventType.LOGOUT);
+            LogoutRequestType logout = (LogoutRequestType) samlObject;
+            return logoutRequest(logout, client);
+
+        } else {
+            event.event(EventType.LOGIN_ERROR);
+            event.error(Errors.INVALID_TOKEN);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
+        }
+    }
+
+    protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
+
         URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
         String redirect = OpenIDConnectService.verifyRedirectUri(uriInfo, redirectUri.toString(), realm, client);
 
@@ -186,10 +190,10 @@ public class SamlService {
 
 
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(SamlLogin.LOGIN_PROTOCOL);
+        clientSession.setAuthMethod(SalmProtocol.LOGIN_PROTOCOL);
         clientSession.setRedirectUri(redirect);
         clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
-        clientSession.setNote(SamlLogin.SAML_BINDING, SamlLogin.SAML_POST_BINDING);
+        clientSession.setNote(SalmProtocol.SAML_BINDING, SalmProtocol.SAML_POST_BINDING);
         clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
         clientSession.setNote("REQUEST_ID", requestAbstractType.getID());
 
@@ -212,28 +216,7 @@ public class SamlService {
         return forms.createLogin();
     }
 
-    protected Response logoutRequest(String relayState, LogoutRequestType requestAbstractType) {
-        String issuer = requestAbstractType.getIssuer().getValue();
-        ClientModel client = realm.findClient(issuer);
-
-        if (client == null) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
-        }
-
-        if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
-        }
-        if ((client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
-            event.error(Errors.NOT_ALLOWED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Bearer-only applications are not allowed to initiate browser login");
-        }
-        if (client.isDirectGrantsOnly()) {
-            event.error(Errors.NOT_ALLOWED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
-        }
-
+    protected Response logoutRequest(LogoutRequestType requestAbstractType, ClientModel client) {
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
         if (authResult != null) {

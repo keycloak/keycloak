@@ -8,7 +8,6 @@ import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
-import org.picketlink.identity.federation.api.saml.v2.sig.SAML2Signature;
 import org.picketlink.identity.federation.core.saml.v2.common.IDGenerator;
 import org.picketlink.identity.federation.core.saml.v2.factories.JBossSAMLAuthnResponseFactory;
 import org.picketlink.identity.federation.core.saml.v2.holders.IDPInfoHolder;
@@ -43,7 +42,7 @@ import static org.picketlink.common.util.StringUtil.isNotNull;
  * @author Anil.Saldhana@redhat.com
  * @author bburke@redhat.com
 */
-public class SAML2PostBindingResponseBuilder {
+public class SALM2PostBindingLoginResponseBuilder extends SAML2PostBindingBuilder<SALM2PostBindingLoginResponseBuilder> {
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     protected List<String> roles = new LinkedList<String>();
@@ -51,186 +50,66 @@ public class SAML2PostBindingResponseBuilder {
     protected boolean multiValuedRoles;
     protected boolean disableAuthnStatement;
     protected String requestID;
-    protected String responseIssuer;
     protected String authMethod;
-    protected String relayState;
-    protected String destination;
     protected String requestIssuer;
     protected Map<String, Object> attributes = new HashMap<String, Object>();
 
 
-    public SAML2PostBindingResponseBuilder attributes(Map<String, Object> attributes) {
+    public SALM2PostBindingLoginResponseBuilder attributes(Map<String, Object> attributes) {
         this.attributes = attributes;
         return this;
     }
 
-    public SAML2PostBindingResponseBuilder attribute(String name, Object value) {
+    public SALM2PostBindingLoginResponseBuilder attribute(String name, Object value) {
         this.attributes.put(name, value);
         return this;
     }
 
-    public SAML2PostBindingResponseBuilder requestID(String requestID) {
+    public SALM2PostBindingLoginResponseBuilder requestID(String requestID) {
         this.requestID =requestID;
         return this;
     }
 
-    public SAML2PostBindingResponseBuilder requestIssuer(String requestIssuer) {
+    public SALM2PostBindingLoginResponseBuilder requestIssuer(String requestIssuer) {
         this.requestIssuer =requestIssuer;
         return this;
     }
 
-    public SAML2PostBindingResponseBuilder responseIssuer(String issuer) {
-        this.responseIssuer = issuer;
-        return this;
-    }
-
-    public SAML2PostBindingResponseBuilder roles(List<String> roles) {
+    public SALM2PostBindingLoginResponseBuilder roles(List<String> roles) {
         this.roles = roles;
         return this;
     }
 
-    public SAML2PostBindingResponseBuilder roles(String... roles) {
+    public SALM2PostBindingLoginResponseBuilder roles(String... roles) {
         for (String role : roles) {
             this.roles.add(role);
         }
         return this;
     }
 
-    public SAML2PostBindingResponseBuilder authMethod(String authMethod) {
+    public SALM2PostBindingLoginResponseBuilder authMethod(String authMethod) {
         this.authMethod = authMethod;
         return this;
     }
 
-    public SAML2PostBindingResponseBuilder userPrincipal(String userPrincipal) {
+    public SALM2PostBindingLoginResponseBuilder userPrincipal(String userPrincipal) {
         this.userPrincipal = userPrincipal;
         return this;
     }
 
-    public SAML2PostBindingResponseBuilder relayState(String relayState) {
-        this.relayState = relayState;
-        return this;
-    }
-
-    public SAML2PostBindingResponseBuilder destination(String destination) {
-        this.destination = destination;
-        return this;
-    }
-
-    public SAML2PostBindingResponseBuilder multiValuedRoles(boolean multiValuedRoles) {
+   public SALM2PostBindingLoginResponseBuilder multiValuedRoles(boolean multiValuedRoles) {
         this.multiValuedRoles = multiValuedRoles;
         return this;
     }
 
-    public SAML2PostBindingResponseBuilder disableAuthnStatement(boolean disableAuthnStatement) {
+    public SALM2PostBindingLoginResponseBuilder disableAuthnStatement(boolean disableAuthnStatement) {
         this.disableAuthnStatement = disableAuthnStatement;
         return this;
-    }
-
-    public Response buildErrorResponse(String status)  throws ConfigurationException, ProcessingException, IOException {
-        Document doc = getErrorResponse(status);
-        return buildResponse(doc);
-
-
-    }
-
-    public Document getErrorResponse(String status) {
-        Document samlResponse = null;
-        ResponseType responseType = null;
-
-        SAML2Response saml2Response = new SAML2Response();
-
-        // Create a response type
-        String id = IDGenerator.create("ID_");
-
-        IssuerInfoHolder issuerHolder = new IssuerInfoHolder(responseIssuer);
-        issuerHolder.setStatusCode(status);
-
-        IDPInfoHolder idp = new IDPInfoHolder();
-        idp.setNameIDFormatValue(null);
-        idp.setNameIDFormat(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
-
-        SPInfoHolder sp = new SPInfoHolder();
-        sp.setResponseDestinationURI(destination);
-
-        responseType = saml2Response.createResponseType(id);
-        responseType.setStatus(JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status));
-        responseType.setDestination(destination);
-
-        // Lets see how the response looks like
-        if (logger.isTraceEnabled()) {
-            StringWriter sw = new StringWriter();
-            try {
-                saml2Response.marshall(responseType, sw);
-            } catch (ProcessingException e) {
-                logger.trace(e);
-            }
-            logger.trace("SAML Response Document: " + sw.toString());
-        }
-
-        /*
-        if (supportSignature) {
-            try {
-                SAML2Signature ss = new SAML2Signature();
-                samlResponse = ss.sign(responseType, keyManager.getSigningKeyPair());
-            } catch (Exception e) {
-                logger.trace(e);
-                throw new RuntimeException(logger.signatureError(e));
-            }
-        } else
-            try {
-                samlResponse = saml2Response.convert(responseType);
-            } catch (Exception e) {
-                logger.trace(e);
-            }
-            */
-
-        return samlResponse;
     }
 
     public Response buildLoginResponse() throws ConfigurationException, ProcessingException, IOException {
         Document responseDoc = getResponse();
         return buildResponse(responseDoc);
-    }
-
-    protected Response buildResponse(Document responseDoc) throws ProcessingException, ConfigurationException, IOException {
-        byte[] responseBytes = DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
-        String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes));
-
-        if (destination == null) {
-            throw logger.nullValueError("Destination is null");
-        }
-
-        StringBuilder builder = new StringBuilder();
-
-        String key = GeneralConstants.SAML_RESPONSE_KEY;
-        builder.append("<HTML>");
-        builder.append("<HEAD>");
-
-        builder.append("<TITLE>HTTP Post Binding Response (Response)</TITLE>");
-        builder.append("</HEAD>");
-        builder.append("<BODY Onload=\"document.forms[0].submit()\">");
-
-        builder.append("<FORM METHOD=\"POST\" ACTION=\"" + destination + "\">");
-        builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"" + key + "\"" + " VALUE=\"" + samlResponse + "\"/>");
-
-        if (isNotNull(relayState)) {
-            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"RelayState\" " + "VALUE=\"" + relayState + "\"/>");
-        }
-
-        builder.append("<NOSCRIPT>");
-        builder.append("<P>JavaScript is disabled. We strongly recommend to enable it. Click the button below to continue.</P>");
-        builder.append("<INPUT TYPE=\"SUBMIT\" VALUE=\"CONTINUE\" />");
-        builder.append("</NOSCRIPT>");
-
-        builder.append("</FORM></BODY></HTML>");
-
-        String str = builder.toString();
-
-        CacheControl cacheControl = new CacheControl();
-        cacheControl.setNoCache(true);
-        return Response.ok(str, MediaType.TEXT_HTML_TYPE)
-                       .header("Pragma", "no-cache")
-                       .header("Cache-Control", "no-cache, no-store").build();
     }
 
     public Document getResponse() throws ConfigurationException, ProcessingException {
@@ -295,6 +174,10 @@ public class SAML2PostBindingResponseBuilder {
             throw logger.samlAssertionMarshallError(e);
         }
 
+        if (signed) {
+            signDocument(samlResponseDocument);
+        }
         return samlResponseDocument;
     }
+
 }

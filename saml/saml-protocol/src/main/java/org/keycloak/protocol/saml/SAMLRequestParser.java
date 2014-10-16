@@ -43,6 +43,5 @@ public class SAMLRequestParser {
             logger.samlBase64DecodingError(e);
         }
         return null;
-
     }
 }
