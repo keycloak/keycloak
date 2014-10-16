@@ -63,7 +63,7 @@
             </column>
             <column name="DEVICE" type="VARCHAR(255)"/>
             <column name="HASH_ITERATIONS" type="INT(10)"/>
-            <column name="SALT" type="BINARY(255)"/>
+            <column name="SALT" type="VARBINARY(16)"/>
             <column name="TYPE" type="VARCHAR(255)"/>
             <column name="VALUE" type="VARCHAR(255)"/>
             <column name="USER_ID" type="VARCHAR(36)"/>
