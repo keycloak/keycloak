@@ -451,6 +451,8 @@
                             <driver>${keycloak.connectionsJpa.driver}</driver>
                             <username>${keycloak.connectionsJpa.user}</username>
                             <password>${keycloak.connectionsJpa.password}</password>
+
+                            <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
                         </configuration>
                         <executions>
                             <execution>
