@@ -40,9 +40,7 @@ public class SAML2PostBindingLogoutResponseBuilder extends SAML2PostBindingBuild
     public String buildRequestString() {
         try {
             Document logoutRequestDocument = new SAML2Request().convert(createLogoutRequest());
-            if (signed) {
-                signDocument(logoutRequestDocument);
-            }
+            encryptAndSign(logoutRequestDocument);
             byte[] responseBytes = DocumentUtil.getDocumentAsString(logoutRequestDocument).getBytes("UTF-8");
             return PostBindingUtil.base64Encode(new String(responseBytes));
         } catch (Exception e) {
