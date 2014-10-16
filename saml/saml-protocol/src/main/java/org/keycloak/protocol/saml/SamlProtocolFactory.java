@@ -13,7 +13,7 @@ import org.picketlink.identity.federation.core.sts.PicketLinkCoreSTS;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SamlLoginFactory implements LoginProtocolFactory {
+public class SamlProtocolFactory implements LoginProtocolFactory {
 
     @Override
     public Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
@@ -22,7 +22,7 @@ public class SamlLoginFactory implements LoginProtocolFactory {
 
     @Override
     public LoginProtocol create(KeycloakSession session) {
-        return new SamlLogin().setSession(session);
+        return new SalmProtocol().setSession(session);
     }
 
     @Override

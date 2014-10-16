@@ -20,34 +20,19 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
-import org.picketlink.common.exceptions.ConfigurationException;
-import org.picketlink.common.exceptions.ParsingException;
-import org.picketlink.common.exceptions.ProcessingException;
-import org.picketlink.common.util.StringUtil;
-import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
 import org.picketlink.identity.federation.core.saml.v2.constants.X500SAMLProfileConstants;
-import org.picketlink.identity.federation.core.saml.v2.util.DocumentUtil;
-import org.picketlink.identity.federation.core.saml.v2.util.XMLTimeUtil;
-import org.picketlink.identity.federation.core.sts.PicketLinkCoreSTS;
-import org.picketlink.identity.federation.saml.v2.assertion.NameIDType;
-import org.picketlink.identity.federation.saml.v2.protocol.LogoutRequestType;
 import org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler;
-import org.picketlink.identity.federation.web.util.PostBindingUtil;
-import org.w3c.dom.Document;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.net.URI;
-import java.security.Principal;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SamlLogin implements LoginProtocol {
-    protected static final Logger logger = Logger.getLogger(SamlLogin.class);
+public class SalmProtocol implements LoginProtocol {
+    protected static final Logger logger = Logger.getLogger(SalmProtocol.class);
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_POST_BINDING = "post";
@@ -61,19 +46,19 @@ public class SamlLogin implements LoginProtocol {
 
 
     @Override
-    public SamlLogin setSession(KeycloakSession session) {
+    public SalmProtocol setSession(KeycloakSession session) {
         this.session = session;
         return this;
     }
 
     @Override
-    public SamlLogin setRealm(RealmModel realm) {
+    public SalmProtocol setRealm(RealmModel realm) {
         this.realm = realm;
         return this;
     }
 
     @Override
-    public SamlLogin setUriInfo(UriInfo uriInfo) {
+    public SalmProtocol setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
         return this;
     }
@@ -93,15 +78,11 @@ public class SamlLogin implements LoginProtocol {
     }
 
     protected Response getErrorResponse(ClientSessionModel clientSession, String status) {
-        String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
-        String redirectUri = clientSession.getRedirectUri();
-        SAML2PostBindingResponseBuilder builder = new SAML2PostBindingResponseBuilder();
-        String responseIssuer = getResponseIssuer(realm);
-        builder .relayState(relayState)
-                .destination(redirectUri)
-                .responseIssuer(responseIssuer)
-                .requestIssuer(clientSession.getClient().getClientId());
-        try {
+        SAML2PostBindingErrorResponseBuilder builder = new SAML2PostBindingErrorResponseBuilder()
+                .relayState(clientSession.getNote(GeneralConstants.RELAY_STATE))
+                .destination(clientSession.getRedirectUri())
+                .responseIssuer(getResponseIssuer(realm));
+      try {
             return builder.buildErrorResponse(status);
         } catch (Exception e) {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
@@ -111,7 +92,7 @@ public class SamlLogin implements LoginProtocol {
     @Override
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
-        if (SamlLogin.SAML_POST_BINDING.equals(clientSession.getNote(SamlLogin.SAML_BINDING))) {
+        if (SalmProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SalmProtocol.SAML_BINDING))) {
             return postBinding(userSession, clientSession);
         }
         throw new RuntimeException("still need to implement redirect binding");
@@ -123,7 +104,7 @@ public class SamlLogin implements LoginProtocol {
         String redirectUri = clientSession.getRedirectUri();
         String responseIssuer = getResponseIssuer(realm);
 
-        SAML2PostBindingResponseBuilder builder = new SAML2PostBindingResponseBuilder();
+        SALM2PostBindingLoginResponseBuilder builder = new SALM2PostBindingLoginResponseBuilder();
         builder.requestID(requestID)
                .relayState(relayState)
                .destination(redirectUri)
@@ -140,7 +121,10 @@ public class SamlLogin implements LoginProtocol {
                 builder.roles(roleModel.getName());
             }
         }
-
+        ClientModel client = clientSession.getClient();
+        if (requiresRealmSignature(client)) {
+            builder.sign(realm.getPrivateKey(), realm.getPublicKey());
+        }
         try {
             return builder.buildLoginResponse();
         } catch (Exception e) {
@@ -149,7 +133,11 @@ public class SamlLogin implements LoginProtocol {
         }
     }
 
-    public void initClaims(SAML2PostBindingResponseBuilder builder, ClientModel model, UserModel user) {
+    private boolean requiresRealmSignature(ClientModel client) {
+        return "true".equals(client.getAttribute("samlServerSignature"));
+    }
+
+    public void initClaims(SALM2PostBindingLoginResponseBuilder builder, ClientModel model, UserModel user) {
         if (ClaimMask.hasEmail(model.getAllowedClaimsMask())) {
             builder.attribute(X500SAMLProfileConstants.EMAIL_ADDRESS.getFriendlyName(), user.getEmail());
         }
@@ -172,15 +160,18 @@ public class SamlLogin implements LoginProtocol {
         ApplicationModel app = (ApplicationModel)client;
         if (app.getManagementUrl() == null) return;
 
+        SAML2PostBindingLogoutResponseBuilder logoutBuilder = new SAML2PostBindingLogoutResponseBuilder()
+                                         .userPrincipal(userSession.getUser().getUsername())
+                                         .destination(client.getClientId());
+        if (requiresRealmSignature(client)) {
+            logoutBuilder.sign(realm.getPrivateKey(), realm.getPublicKey());
+        }
         String logoutRequestString = null;
         try {
-            LogoutRequestType logoutRequest = createLogoutRequest(userSession.getUser(), client);
-            Document logoutRequestDocument = new SAML2Request().convert(logoutRequest);
-
-            byte[] responseBytes = DocumentUtil.getDocumentAsString(logoutRequestDocument).getBytes("UTF-8");
-            logoutRequestString = PostBindingUtil.base64Encode(new String(responseBytes));
+            logoutRequestString = logoutBuilder.buildRequestString();
         } catch (Exception e) {
             logger.warn("failed to send saml logout", e);
+            return;
         }
 
 
@@ -218,24 +209,6 @@ public class SamlLogin implements LoginProtocol {
         }
 
     }
-
-    private LogoutRequestType createLogoutRequest(UserModel user, ClientModel client) throws ConfigurationException, ProcessingException {
-        LogoutRequestType lort = new SAML2Request().createLogoutRequest(getResponseIssuer(realm));
-
-        NameIDType nameID = new NameIDType();
-        nameID.setValue(user.getUsername());
-        //Deal with NameID Format
-        String nameIDFormat = JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
-        nameID.setFormat(URI.create(nameIDFormat));
-        lort.setNameID(nameID);
-
-        long assertionValidity = PicketLinkCoreSTS.instance().getConfiguration().getIssuedTokenTimeout();
-
-        lort.setNotOnOrAfter(XMLTimeUtil.add(lort.getIssueInstant(), assertionValidity));
-        lort.setDestination(URI.create(client.getClientId()));
-        return lort;
-    }
-
 
     @Override
     public void close() {
