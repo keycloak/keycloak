@@ -31,6 +31,8 @@ public class KeycloakDeployment {
     protected String refreshUrl;
     protected KeycloakUriBuilder logoutUrl;
     protected String accountUrl;
+    protected String registerNodeUrl;
+    protected String unregisterNodeUrl;
 
     protected String resourceName;
     protected boolean bearerOnly;
@@ -48,6 +50,8 @@ public class KeycloakDeployment {
     protected String corsAllowedMethods;
     protected boolean exposeToken;
     protected boolean alwaysRefreshToken;
+    protected boolean registerNodeAtStartup;
+    protected int registerNodePeriod;
     protected volatile int notBefore;
 
     public KeycloakDeployment() {
@@ -136,6 +140,8 @@ public class KeycloakDeployment {
         accountUrl = authUrlBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
         realmInfoUrl = authUrlBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
         codeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(getRealm()).toString();
+        registerNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
+        unregisterNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
     }
 
     public RelativeUrlsUsed getRelativeUrls() {
@@ -164,6 +170,14 @@ public class KeycloakDeployment {
 
     public String getAccountUrl() {
         return accountUrl;
+    }
+
+    public String getRegisterNodeUrl() {
+        return registerNodeUrl;
+    }
+
+    public String getUnregisterNodeUrl() {
+        return unregisterNodeUrl;
     }
 
     public void setResourceName(String resourceName) {
@@ -288,5 +302,21 @@ public class KeycloakDeployment {
 
     public void setAlwaysRefreshToken(boolean alwaysRefreshToken) {
         this.alwaysRefreshToken = alwaysRefreshToken;
+    }
+
+    public boolean isRegisterNodeAtStartup() {
+        return registerNodeAtStartup;
+    }
+
+    public void setRegisterNodeAtStartup(boolean registerNodeAtStartup) {
+        this.registerNodeAtStartup = registerNodeAtStartup;
+    }
+
+    public int getRegisterNodePeriod() {
+        return registerNodePeriod;
+    }
+
+    public void setRegisterNodePeriod(int registerNodePeriod) {
+        this.registerNodePeriod = registerNodePeriod;
     }
 }

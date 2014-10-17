@@ -13,5 +13,7 @@ public interface ServiceUrlConstants {
     public static final String TOKEN_SERVICE_DIRECT_GRANT_PATH = "/realms/{realm-name}/protocol/openid-connect/grants/access";
     public static final String ACCOUNT_SERVICE_PATH = "/realms/{realm-name}/account";
     public static final String REALM_INFO_PATH = "/realms/{realm-name}";
+    public static final String CLIENTS_MANAGEMENT_REGISTER_NODE_PATH = "/realms/{realm-name}/clients-managements/register-node";
+    public static final String CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH = "/realms/{realm-name}/clients-managements/unregister-node";
 
 }

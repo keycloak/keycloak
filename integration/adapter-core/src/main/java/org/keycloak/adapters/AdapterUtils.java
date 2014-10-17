@@ -8,7 +8,7 @@ import org.keycloak.util.UriUtils;
  */
 public class AdapterUtils {
 
-    public static String getBaseUrl(String browserRequestURL, KeycloakSecurityContext session) {
+    public static String getOrigin(String browserRequestURL, KeycloakSecurityContext session) {
         if (session instanceof RefreshableKeycloakSecurityContext) {
             KeycloakDeployment deployment = ((RefreshableKeycloakSecurityContext)session).getDeployment();
             switch (deployment.getRelativeUrls()) {
@@ -16,10 +16,9 @@ public class AdapterUtils {
                     // Resolve baseURI from the request
                     return UriUtils.getOrigin(browserRequestURL);
                 case BROWSER_ONLY:
+                case NEVER:
                     // Resolve baseURI from the codeURL (This is already non-relative and based on our hostname)
                     return UriUtils.getOrigin(deployment.getCodeUrl());
-                case NEVER:
-                    return "";
                 default:
                     return "";
             }

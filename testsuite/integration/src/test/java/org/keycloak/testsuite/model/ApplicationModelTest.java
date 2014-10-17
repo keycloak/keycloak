@@ -45,6 +45,9 @@ public class ApplicationModelTest extends AbstractModelTest {
         application.addWebOrigin("origin-1");
         application.addWebOrigin("origin-2");
 
+        application.registerNode("node1", 10);
+        application.registerNode("10.20.30.40", 50);
+
         application.updateApplication();
     }
 
@@ -84,6 +87,7 @@ public class ApplicationModelTest extends AbstractModelTest {
 
         Assert.assertTrue(expected.getRedirectUris().containsAll(actual.getRedirectUris()));
         Assert.assertTrue(expected.getWebOrigins().containsAll(actual.getWebOrigins()));
+        Assert.assertTrue(expected.getRegisteredNodes().equals(actual.getRegisteredNodes()));
     }
 
     public static void assertEquals(List<RoleModel> expected, List<RoleModel> actual) {

@@ -20,6 +20,7 @@ import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.adapters.NodesRegistrationLifecycle;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.ServerRequest;
@@ -47,6 +48,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 	private final static Logger log = Logger.getLogger(""+KeycloakAuthenticatorValve.class);
 	protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
     protected AdapterDeploymentContext deploymentContext;
+    protected NodesRegistrationLifecycle nodesRegistrationLifecycle;
 
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
@@ -58,6 +60,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             }
         } else if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
         	initInternal();
+        } else if (event.getType() == Lifecycle.BEFORE_STOP_EVENT) {
+            beforeStop();
         }
     }
     
@@ -99,6 +103,13 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         context.getServletContext().setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
         AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer(), getObjectName());
         setNext(actions);
+
+        nodesRegistrationLifecycle = new NodesRegistrationLifecycle(kd);
+        nodesRegistrationLifecycle.start();
+    }
+
+    protected void beforeStop() {
+        nodesRegistrationLifecycle.stop();
     }
 
     private static InputStream getJSONFromServletContext(ServletContext servletContext) {

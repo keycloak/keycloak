@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * For now, we support just convert from Map<String, String>
+ * For now, we support just convert from Map<String, simpleType>
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -31,7 +31,7 @@ public class MapMapper<T extends Map> implements Mapper<T, BasicDBObject> {
         Set<Map.Entry> entries = objectToConvert.entrySet();
         for (Map.Entry entry : entries) {
             String key = (String)entry.getKey();
-            String value = (String)entry.getValue();
+            Object value = entry.getValue();
 
             if (key.contains(".")) {
                 key = key.replaceAll("\\.", DOT_PLACEHOLDER);

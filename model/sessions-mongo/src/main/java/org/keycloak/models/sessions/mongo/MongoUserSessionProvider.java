@@ -250,6 +250,12 @@ public class MongoUserSessionProvider implements UserSessionProvider {
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
         removeUserSessions(realm, user);
+
+        DBObject query = new QueryBuilder()
+                .or(new BasicDBObject("username", user.getUsername()), new BasicDBObject("username", user.getEmail()))
+                .and("realmId").is(realm.getId())
+                .get();
+        mongoStore.removeEntities(MongoUsernameLoginFailureEntity.class, query, invocationContext);
     }
 
     @Override

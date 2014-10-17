@@ -9,10 +9,16 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.util.Time;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,6 +50,38 @@ public class ApplicationManager {
         } else {
             return false;
         }
+    }
+
+    public Set<String> validateRegisteredNodes(ApplicationModel application) {
+        Map<String, Integer> registeredNodes = application.getRegisteredNodes();
+        if (registeredNodes == null || registeredNodes.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        int currentTime = Time.currentTime();
+
+        Set<String> validatedNodes = new TreeSet<String>();
+        if (application.getNodeReRegistrationTimeout() > 0) {
+            List<String> toRemove = new LinkedList<String>();
+            for (Map.Entry<String, Integer> entry : registeredNodes.entrySet()) {
+                Integer lastReRegistration = entry.getValue();
+                if (lastReRegistration + application.getNodeReRegistrationTimeout() < currentTime) {
+                    toRemove.add(entry.getKey());
+                } else {
+                    validatedNodes.add(entry.getKey());
+                }
+            }
+
+            // Remove time-outed nodes
+            for (String node : toRemove) {
+                application.unregisterNode(node);
+            }
+        } else {
+            // Periodic node reRegistration is disabled, so allow all nodes
+            validatedNodes.addAll(registeredNodes.keySet());
+        }
+
+        return validatedNodes;
     }
 
     @JsonPropertyOrder({"realm", "realm-public-key", "bearer-only", "auth-server-url", "ssl-required",

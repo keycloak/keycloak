@@ -25,13 +25,18 @@ import io.undertow.server.handlers.form.FormParserFactory;
 import io.undertow.servlet.ServletExtension;
 import io.undertow.servlet.api.AuthMethodConfig;
 import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.InstanceFactory;
+import io.undertow.servlet.api.InstanceHandle;
+import io.undertow.servlet.api.ListenerInfo;
 import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.ServletSessionConfig;
+import io.undertow.servlet.util.ImmediateInstanceHandle;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.adapters.NodesRegistrationLifecycle;
 
 import javax.servlet.ServletContext;
 import java.io.ByteArrayInputStream;
@@ -96,7 +101,7 @@ public class KeycloakServletExtension implements ServletExtension {
         }
         log.debug("KeycloakServletException initialization");
         InputStream is = getConfigInputStream(servletContext);
-        KeycloakDeployment deployment = null;
+        final KeycloakDeployment deployment;
         if (is == null) {
             log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
             deployment = new KeycloakDeployment();
@@ -143,6 +148,17 @@ public class KeycloakServletExtension implements ServletExtension {
         ServletSessionConfig cookieConfig = new ServletSessionConfig();
         cookieConfig.setPath(deploymentInfo.getContextPath());
         deploymentInfo.setServletSessionConfig(cookieConfig);
+
+        deploymentInfo.addListener(new ListenerInfo(UndertowNodesRegistrationLifecycleWrapper.class, new InstanceFactory<UndertowNodesRegistrationLifecycleWrapper>() {
+
+            @Override
+            public InstanceHandle<UndertowNodesRegistrationLifecycleWrapper> createInstance() throws InstantiationException {
+                NodesRegistrationLifecycle nodesRegistration = new NodesRegistrationLifecycle(deployment);
+                UndertowNodesRegistrationLifecycleWrapper listener = new UndertowNodesRegistrationLifecycleWrapper(nodesRegistration);
+                return new ImmediateInstanceHandle<UndertowNodesRegistrationLifecycleWrapper>(listener);
+            }
+
+        }));
     }
 
     protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement) {

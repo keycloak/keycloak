@@ -3,6 +3,7 @@ package org.keycloak.models.sessions.infinispan;
 import org.infinispan.Cache;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -10,12 +11,14 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 public class UsernameLoginFailureAdapter implements UsernameLoginFailureModel {
 
     private InfinispanUserSessionProvider provider;
-    private Cache<String, LoginFailureEntity> cache;
+    private Cache<LoginFailureKey, LoginFailureEntity> cache;
+    private LoginFailureKey key;
     private LoginFailureEntity entity;
 
-    public UsernameLoginFailureAdapter(InfinispanUserSessionProvider provider, Cache<String, LoginFailureEntity> cache, LoginFailureEntity entity) {
+    public UsernameLoginFailureAdapter(InfinispanUserSessionProvider provider, Cache<LoginFailureKey, LoginFailureEntity> cache, LoginFailureKey key, LoginFailureEntity entity) {
         this.provider = provider;
         this.cache = cache;
+        this.key = key;
         this.entity = entity;
     }
 
@@ -75,7 +78,7 @@ public class UsernameLoginFailureAdapter implements UsernameLoginFailureModel {
     }
 
     void update() {
-        provider.getTx().replace(cache, entity.getId(), entity);
+        provider.getTx().replace(cache, key, entity);
     }
 
 }

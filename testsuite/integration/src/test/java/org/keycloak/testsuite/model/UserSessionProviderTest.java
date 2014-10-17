@@ -12,6 +12,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.protocol.oidc.OpenIDConnect;
+import org.keycloak.services.managers.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.util.Time;
 
@@ -38,8 +39,8 @@ public class UserSessionProviderTest {
     public void before() {
         session = kc.startSession();
         realm = session.realms().getRealm("test");
-        session.users().addUser(realm, "user1");
-        session.users().addUser(realm, "user2");
+        session.users().addUser(realm, "user1").setEmail("user1@localhost");
+        session.users().addUser(realm, "user2").setEmail("user2@localhost");
     }
 
     @After
@@ -48,8 +49,10 @@ public class UserSessionProviderTest {
         session.sessions().removeUserSessions(realm);
         UserModel user1 = session.users().getUserByUsername("user1", realm);
         UserModel user2 = session.users().getUserByUsername("user2", realm);
-        session.users().removeUser(realm, user1);
-        session.users().removeUser(realm, user2);
+
+        UserManager um = new UserManager(session);
+        um.removeUser(realm, user1);
+        um.removeUser(realm, user2);
         kc.stopSession(session, true);
     }
 
@@ -358,6 +361,28 @@ public class UserSessionProviderTest {
 
         failure1 = session.sessions().getUserLoginFailure(realm, "user1");
         assertEquals(0, failure1.getNumFailures());
+    }
+
+    @Test
+    public void testOnUserRemoved() {
+        createSessions();
+
+        session.sessions().addUserLoginFailure(realm, "user1");
+        session.sessions().addUserLoginFailure(realm, "user1@localhost");
+        session.sessions().addUserLoginFailure(realm, "user2");
+
+        resetSession();
+
+        session.sessions().onUserRemoved(realm, session.users().getUserByUsername("user1", realm));
+
+        resetSession();
+
+        assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)).isEmpty());
+        assertFalse(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)).isEmpty());
+
+        assertNull(session.sessions().getUserLoginFailure(realm, "user1"));
+        assertNull(session.sessions().getUserLoginFailure(realm, "user1@localhost"));
+        assertNotNull(session.sessions().getUserLoginFailure(realm, "user2"));
     }
 
     private ClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles) {
