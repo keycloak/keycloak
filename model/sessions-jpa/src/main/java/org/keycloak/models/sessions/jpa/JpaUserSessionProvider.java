@@ -243,7 +243,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
         removeUserSessions(realm, user);
-        em.createNamedQuery("removeLoginFailuresByUser").setParameter("username", user.getUsername()).executeUpdate();
+        em.createNamedQuery("removeLoginFailuresByUser").setParameter("realmId", realm.getId()).setParameter("username", user.getUsername()).setParameter("email", user.getEmail()).executeUpdate();
     }
 
     @Override

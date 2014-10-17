@@ -207,13 +207,13 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public UsernameLoginFailureModel getUserLoginFailure(RealmModel realm, String username) {
-        UsernameLoginFailureEntity entity = loginFailures.get(new UsernameLoginFailureKey(username, realm.getId()));
+        UsernameLoginFailureEntity entity = loginFailures.get(new UsernameLoginFailureKey(realm.getId(), username));
         return entity != null ? new UsernameLoginFailureAdapter(entity) : null;
     }
 
     @Override
     public UsernameLoginFailureModel addUserLoginFailure(RealmModel realm, String username) {
-        UsernameLoginFailureKey key = new UsernameLoginFailureKey(username, realm.getId());
+        UsernameLoginFailureKey key = new UsernameLoginFailureKey(realm.getId(), username);
         UsernameLoginFailureEntity entity = new UsernameLoginFailureEntity(username, realm.getId());
         if (loginFailures.putIfAbsent(key, entity) != null) {
             throw new ModelDuplicateException();
@@ -259,6 +259,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
         removeUserSessions(realm, user);
 
         loginFailures.remove(new UsernameLoginFailureKey(realm.getId(), user.getUsername()));
+        loginFailures.remove(new UsernameLoginFailureKey(realm.getId(), user.getEmail()));
     }
 
     @Override
