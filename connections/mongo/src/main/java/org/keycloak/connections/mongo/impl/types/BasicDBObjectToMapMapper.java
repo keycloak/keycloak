@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * For now, there is support just for convert to Map<String, String>
+ * For now, there is support just for convert to Map<String, simpleType>
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -18,10 +18,10 @@ public class BasicDBObjectToMapMapper implements Mapper<BasicDBObject, Map> {
     public Map convertObject(MapperContext<BasicDBObject, Map> context) {
         BasicDBObject dbObjectToConvert = context.getObjectToConvert();
 
-        HashMap<String, String> result = new HashMap<String, String>();
+        HashMap<String, Object> result = new HashMap<String, Object>();
         for (Map.Entry<String, Object> entry : dbObjectToConvert.entrySet()) {
             String key = entry.getKey();
-            String value = (String)entry.getValue();
+            Object value = entry.getValue();
 
             if (key.contains(MapMapper.DOT_PLACEHOLDER)) {
                 key = key.replaceAll(MapMapper.DOT_PLACEHOLDER, ".");

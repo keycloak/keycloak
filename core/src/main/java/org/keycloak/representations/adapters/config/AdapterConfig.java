@@ -17,7 +17,8 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
         "connection-pool-size",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
-        "auth-server-url-for-backend-requests", "always-refresh-token"
+        "auth-server-url-for-backend-requests", "always-refresh-token",
+        "register-node-at-startup", "register-node-period"
 })
 public class AdapterConfig extends BaseAdapterConfig {
 
@@ -41,6 +42,10 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String authServerUrlForBackendRequests;
     @JsonProperty("always-refresh-token")
     protected boolean alwaysRefreshToken = false;
+    @JsonProperty("register-node-at-startup")
+    protected boolean registerNodeAtStartup = false;
+    @JsonProperty("register-node-period")
+    protected int registerNodePeriod = -1;
 
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
@@ -120,5 +125,21 @@ public class AdapterConfig extends BaseAdapterConfig {
 
     public void setAlwaysRefreshToken(boolean alwaysRefreshToken) {
         this.alwaysRefreshToken = alwaysRefreshToken;
+    }
+
+    public boolean isRegisterNodeAtStartup() {
+        return registerNodeAtStartup;
+    }
+
+    public void setRegisterNodeAtStartup(boolean registerNodeAtStartup) {
+        this.registerNodeAtStartup = registerNodeAtStartup;
+    }
+
+    public int getRegisterNodePeriod() {
+        return registerNodePeriod;
+    }
+
+    public void setRegisterNodePeriod(int registerNodePeriod) {
+        this.registerNodePeriod = registerNodePeriod;
     }
 }

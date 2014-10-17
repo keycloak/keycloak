@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,5 +37,21 @@ public interface ApplicationModel extends RoleContainerModel, ClientModel {
 
     boolean isBearerOnly();
     void setBearerOnly(boolean only);
+
+    int getNodeReRegistrationTimeout();
+
+    void setNodeReRegistrationTimeout(int timeout);
+
+    Map<String, Integer> getRegisteredNodes();
+
+    /**
+     * Register node or just update the 'lastReRegistration' time if this node is already registered
+     *
+     * @param nodeHost
+     * @param registrationTime
+     */
+    void registerNode(String nodeHost, int registrationTime);
+
+    void unregisterNode(String nodeHost);
 
 }

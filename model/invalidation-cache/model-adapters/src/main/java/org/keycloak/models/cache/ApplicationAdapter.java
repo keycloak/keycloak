@@ -9,6 +9,7 @@ import org.keycloak.models.cache.entities.CachedApplication;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -183,6 +184,36 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
             roles.add(roleById);
         }
         return roles;
+    }
+
+    @Override
+    public int getNodeReRegistrationTimeout() {
+        if (updated != null) return updated.getNodeReRegistrationTimeout();
+        return cached.getNodeReRegistrationTimeout();
+    }
+
+    @Override
+    public void setNodeReRegistrationTimeout(int timeout) {
+        getDelegateForUpdate();
+        updated.setNodeReRegistrationTimeout(timeout);
+    }
+
+    @Override
+    public Map<String, Integer> getRegisteredNodes() {
+        if (updated != null) return updated.getRegisteredNodes();
+        return cached.getRegisteredNodes();
+    }
+
+    @Override
+    public void registerNode(String nodeHost, int registrationTime) {
+        getDelegateForUpdate();
+        updated.registerNode(nodeHost, registrationTime);
+    }
+
+    @Override
+    public void unregisterNode(String nodeHost) {
+        getDelegateForUpdate();
+        updated.unregisterNode(nodeHost);
     }
 
     @Override

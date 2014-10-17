@@ -134,6 +134,16 @@ public class RealmsResource {
         return service;
     }
 
+    @Path("{realm}/clients-managements")
+    public ClientsManagementService getClientsManagementService(final @PathParam("realm") String name) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = locateRealm(name, realmManager);
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        ClientsManagementService service = new ClientsManagementService(realm, event);
+        ResteasyProviderFactory.getInstance().injectProperties(service);
+        return service;
+    }
+
 
     protected RealmModel locateRealm(String name, RealmManager realmManager) {
         RealmModel realm = realmManager.getRealmByName(name);

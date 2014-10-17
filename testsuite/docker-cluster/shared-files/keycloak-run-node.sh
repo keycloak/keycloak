@@ -23,9 +23,8 @@ function prepareHost
   cp -r /keycloak-docker-cluster/deployments/* $JBOSS_HOME/standalone/deployments/
 
   # Enable Infinispan provider
-  sed -i "s|keycloak.userSessions.provider:mem|keycloak.userSessions.provider:infinispan|" $JBOSS_HOME/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
-  sed -i "s|keycloak.realm.cache.provider:mem|keycloak.realm.cache.provider:infinispan|" $JBOSS_HOME/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
-  sed -i "s|keycloak.user.cache.provider:mem|keycloak.user.cache.provider:infinispan|" $JBOSS_HOME/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
+  sed -i "s|\"provider\".*: \"mem\"|\"provider\": \"infinispan\"|" $JBOSS_HOME/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
+  sed -i -e "s/\"connectionsJpa\"/\n \"connectionsInfinispan\": \{\n  \"default\" : \{\n   \"cacheContainer\" : \"java:jboss\/infinispan\/Keycloak\"\n  \}\n \},\n     &/" $JBOSS_HOME/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
 
   # Deploy and configure examples
   /keycloak-docker-cluster/shared-files/deploy-examples.sh

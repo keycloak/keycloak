@@ -101,8 +101,8 @@ public class ServerRequest {
         formparams.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
         formparams.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
         if (sessionId != null) {
-            formparams.add(new BasicNameValuePair(AdapterConstants.HTTP_SESSION_ID, sessionId));
-            formparams.add(new BasicNameValuePair(AdapterConstants.HTTP_SESSION_HOST, HostUtils.getIpAddress()));
+            formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_SESSION_STATE, sessionId));
+            formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_SESSION_HOST, HostUtils.getIpAddress()));
         }
         HttpResponse response = null;
         HttpPost post = new HttpPost(codeUrl);
@@ -209,6 +209,46 @@ public class ServerRequest {
             } catch (IOException ignored) {
 
             }
+        }
+    }
+
+    public static void invokeRegisterNode(KeycloakDeployment deployment, String host) throws HttpFailure, IOException {
+        String registerNodeUrl = deployment.getRegisterNodeUrl();
+        String client_id = deployment.getResourceName();
+        Map<String, String> credentials = deployment.getResourceCredentials();
+        HttpClient client = deployment.getClient();
+
+        invokeClientManagementRequest(client, host, registerNodeUrl, client_id, credentials);
+    }
+
+    public static void invokeUnregisterNode(KeycloakDeployment deployment, String host) throws HttpFailure, IOException {
+        String unregisterNodeUrl = deployment.getUnregisterNodeUrl();
+        String client_id = deployment.getResourceName();
+        Map<String, String> credentials = deployment.getResourceCredentials();
+        HttpClient client = deployment.getClient();
+
+        invokeClientManagementRequest(client, host, unregisterNodeUrl, client_id, credentials);
+    }
+
+    public static void invokeClientManagementRequest(HttpClient client, String host, String endpointUrl, String clientId, Map<String, String> credentials) throws HttpFailure, IOException {
+        List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+        formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_CLUSTER_HOST, host));
+
+        HttpPost post = new HttpPost(endpointUrl);
+
+        String clientSecret = credentials.get(CredentialRepresentation.SECRET);
+        if (clientSecret != null) {
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+        }
+
+        UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+        post.setEntity(form);
+        HttpResponse response = client.execute(post);
+        int status = response.getStatusLine().getStatusCode();
+        if (status != 204) {
+            HttpEntity entity = response.getEntity();
+            error(status, entity);
         }
     }
 

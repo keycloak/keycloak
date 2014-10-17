@@ -50,7 +50,7 @@ public class CustomerDatabaseClient {
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet(AdapterUtils.getBaseUrl(req.getRequestURL().toString(), session) + "/database/customers");
+            HttpGet get = new HttpGet(AdapterUtils.getOrigin(req.getRequestURL().toString(), session) + "/database/customers");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);

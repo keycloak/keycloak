@@ -335,7 +335,7 @@ public class ApplicationResource {
     @POST
     public void logoutAll() {
         auth.requireManage();
-        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application, null);
+        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application);
     }
 
     /**
@@ -351,8 +351,7 @@ public class ApplicationResource {
             throw new NotFoundException("User not found");
         }
 
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application, userSessions);
+        new ResourceAdminManager().logoutUserFromApplication(uriInfo.getRequestUri(), realm, application, user, session);
     }
 
 

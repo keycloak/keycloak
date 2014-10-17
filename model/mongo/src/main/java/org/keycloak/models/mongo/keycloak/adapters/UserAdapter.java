@@ -137,7 +137,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
     @Override
     public Map<String, String> getAttributes() {
-        return user.getAttributes()==null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(user.getAttributes());
+        return user.getAttributes()==null ? Collections.<String, String>emptyMap() : Collections.unmodifiableMap(user.getAttributes());
     }
 
     public MongoUserEntity getUser() {

@@ -222,6 +222,7 @@ public class ModelToRepresentation {
         rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
         rep.setBaseUrl(applicationModel.getBaseUrl());
         rep.setNotBefore(applicationModel.getNotBefore());
+        rep.setNodeReRegistrationTimeout(applicationModel.getNodeReRegistrationTimeout());
 
         Set<String> redirectUris = applicationModel.getRedirectUris();
         if (redirectUris != null) {
@@ -235,6 +236,10 @@ public class ModelToRepresentation {
 
         if (!applicationModel.getDefaultRoles().isEmpty()) {
             rep.setDefaultRoles(applicationModel.getDefaultRoles().toArray(new String[0]));
+        }
+
+        if (!applicationModel.getRegisteredNodes().isEmpty()) {
+            rep.setRegisteredNodes(new HashMap<String, Integer>(applicationModel.getRegisteredNodes()));
         }
 
         return rep;

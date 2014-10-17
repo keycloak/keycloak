@@ -11,10 +11,14 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
+import org.keycloak.util.Time;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -218,6 +222,41 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
         updateMongoEntity();
     }
 
+    @Override
+    public int getNodeReRegistrationTimeout() {
+        return getMongoEntity().getNodeReRegistrationTimeout();
+    }
+
+    @Override
+    public void setNodeReRegistrationTimeout(int timeout) {
+        getMongoEntity().setNodeReRegistrationTimeout(timeout);
+        updateMongoEntity();
+    }
+
+    @Override
+    public Map<String, Integer> getRegisteredNodes() {
+        return getMongoEntity().getRegisteredNodes() == null ? Collections.<String, Integer>emptyMap() : Collections.unmodifiableMap(getMongoEntity().getRegisteredNodes());
+    }
+
+    @Override
+    public void registerNode(String nodeHost, int registrationTime) {
+        MongoApplicationEntity entity = getMongoEntity();
+        if (entity.getRegisteredNodes() == null) {
+            entity.setRegisteredNodes(new HashMap<String, Integer>());
+        }
+
+        entity.getRegisteredNodes().put(nodeHost, registrationTime);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void unregisterNode(String nodeHost) {
+        MongoApplicationEntity entity = getMongoEntity();
+        if (entity.getRegisteredNodes() == null) return;
+
+        entity.getRegisteredNodes().remove(nodeHost);
+        updateMongoEntity();
+    }
 
     @Override
     public boolean equals(Object o) {

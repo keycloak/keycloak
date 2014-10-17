@@ -158,6 +158,16 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public String getRegisterNodeUrl() {
+            return (this.registerNodeUrl != null) ? this.registerNodeUrl : delegate.getRegisterNodeUrl();
+        }
+
+        @Override
+        public String getUnregisterNodeUrl() {
+            return (this.unregisterNodeUrl != null) ? this.unregisterNodeUrl : delegate.getUnregisterNodeUrl();
+        }
+
+        @Override
         public String getResourceName() {
             return delegate.getResourceName();
         }
@@ -335,6 +345,26 @@ public class AdapterDeploymentContext {
         @Override
         public void setAlwaysRefreshToken(boolean alwaysRefreshToken) {
             delegate.setAlwaysRefreshToken(alwaysRefreshToken);
+        }
+
+        @Override
+        public int getRegisterNodePeriod() {
+            return delegate.getRegisterNodePeriod();
+        }
+
+        @Override
+        public void setRegisterNodePeriod(int registerNodePeriod) {
+            delegate.setRegisterNodePeriod(registerNodePeriod);
+        }
+
+        @Override
+        public void setRegisterNodeAtStartup(boolean registerNodeAtStartup) {
+            delegate.setRegisterNodeAtStartup(registerNodeAtStartup);
+        }
+
+        @Override
+        public boolean isRegisterNodeAtStartup() {
+            return delegate.isRegisterNodeAtStartup();
         }
     }
 

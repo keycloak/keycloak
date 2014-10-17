@@ -23,8 +23,6 @@ package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientSessionModel;
@@ -142,7 +140,7 @@ public class OpenIDConnect implements LoginProtocol {
         ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
 
         try {
-            new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, app, clientSession, executor, 0);
+            new ResourceAdminManager().logoutClientSession(uriInfo.getRequestUri(), realm, app, clientSession, executor);
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
