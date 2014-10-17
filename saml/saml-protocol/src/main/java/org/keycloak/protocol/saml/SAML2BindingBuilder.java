@@ -9,6 +9,7 @@ import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.identity.federation.core.util.XMLEncryptionUtil;
 import org.picketlink.identity.federation.core.wstrust.WSTrustUtil;
 import org.picketlink.identity.federation.web.util.PostBindingUtil;
+import org.picketlink.identity.federation.web.util.RedirectBindingUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -17,11 +18,14 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.net.URI;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Signature;
 import java.security.cert.X509Certificate;
 
 import static org.picketlink.common.util.StringUtil.isNotNull;
@@ -30,12 +34,11 @@ import static org.picketlink.common.util.StringUtil.isNotNull;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
+public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
     protected boolean signed;
-    protected String signatureDigestMethod;
-    protected String signatureMethod;
+    protected SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.RSA_SHA1;
     protected String relayState;
     protected String destination;
     protected String responseIssuer;
@@ -70,6 +73,11 @@ public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
         return (T)this;
     }
 
+    public T signatureAlgorithm(SignatureAlgorithm alg) {
+        this.signatureAlgorithm = alg;
+        return (T)this;
+    }
+
     public T encrypt(PublicKey publicKey) {
         encrypt = true;
         encryptionPublicKey = publicKey;
@@ -83,16 +91,6 @@ public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
 
     public T encryptionKeySize(int size) {
         this.encryptionKeySize = size;
-        return (T)this;
-    }
-
-    public T signatureDigestMethod(String method) {
-        this.signatureDigestMethod = method;
-        return (T)this;
-    }
-
-    public T signatureMethod(String method) {
-        this.signatureMethod = method;
         return (T)this;
     }
 
@@ -110,6 +108,37 @@ public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
         this.relayState = relayState;
         return (T)this;
     }
+
+    public class BindingBuilder {
+        protected Document document;
+
+        public BindingBuilder(Document document) {
+            this.document = document;
+        }
+
+        public Document getDocument() {
+            return document;
+        }
+        public Response postResponse() throws ConfigurationException, ProcessingException, IOException {
+            return buildResponse(document);
+        }
+
+        public URI redirectResponseUri() throws ConfigurationException, ProcessingException, IOException {
+            return generateRedirectUri("SAMLResponse", document);
+        }
+
+        public Response redirectResponse() throws ProcessingException, ConfigurationException, IOException {
+            URI uri = redirectResponseUri();
+
+            CacheControl cacheControl = new CacheControl();
+            cacheControl.setNoCache(true);
+            return Response.status(302).location(uri)
+                    .header("Pragma", "no-cache")
+                    .header("Cache-Control", "no-cache, no-store").build();
+        }
+
+    }
+
 
     private String getSAMLNSPrefix(Document samlResponseDocument) {
         Node assertionElement = samlResponseDocument.getDocumentElement()
@@ -155,15 +184,25 @@ public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
     }
 
     protected void signDocument(Document samlDocument) throws ProcessingException {
-        SamlProtocolUtils.signDocument(samlDocument, signingKeyPair, signatureMethod, signatureDigestMethod, signingCertificate);
+        SamlProtocolUtils.signDocument(samlDocument, signingKeyPair, signatureAlgorithm.getXmlSignatureMethod(), signatureAlgorithm.getXmlSignatureDigestMethod(), signingCertificate);
     }
 
     protected Response buildResponse(Document responseDoc) throws ProcessingException, ConfigurationException, IOException {
+        String str = buildHtmlPostResponse(responseDoc);
+
+        CacheControl cacheControl = new CacheControl();
+        cacheControl.setNoCache(true);
+        return Response.ok(str, MediaType.TEXT_HTML_TYPE)
+                       .header("Pragma", "no-cache")
+                       .header("Cache-Control", "no-cache, no-store").build();
+    }
+
+    protected String buildHtmlPostResponse(Document responseDoc) throws ProcessingException, ConfigurationException, IOException {
         byte[] responseBytes = DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
         String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes));
 
         if (destination == null) {
-            throw SALM2PostBindingLoginResponseBuilder.logger.nullValueError("Destination is null");
+            throw SALM2LoginResponseBuilder.logger.nullValueError("Destination is null");
         }
 
         StringBuilder builder = new StringBuilder();
@@ -190,13 +229,42 @@ public class SAML2PostBindingBuilder<T extends SAML2PostBindingBuilder> {
 
         builder.append("</FORM></BODY></HTML>");
 
-        String str = builder.toString();
-
-        CacheControl cacheControl = new CacheControl();
-        cacheControl.setNoCache(true);
-        return Response.ok(str, MediaType.TEXT_HTML_TYPE)
-                       .header("Pragma", "no-cache")
-                       .header("Cache-Control", "no-cache, no-store").build();
+        return builder.toString();
     }
+
+    protected String base64Encoded(Document document) throws ConfigurationException, ProcessingException, IOException  {
+        byte[] responseBytes = org.picketlink.identity.federation.core.saml.v2.util.DocumentUtil.getDocumentAsString(document).getBytes("UTF-8");
+
+        return RedirectBindingUtil.deflateBase64URLEncode(responseBytes);
+    }
+
+
+    protected URI generateRedirectUri(String samlParameterName, Document document) throws ConfigurationException, ProcessingException, IOException {
+        UriBuilder builder = UriBuilder.fromUri(destination)
+                .replaceQuery(null)
+                .queryParam(samlParameterName, base64Encoded(document));
+        if (relayState != null) {
+            builder.queryParam("RelayState", relayState);
+        }
+
+        if (signed) {
+            builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getJavaSignatureAlgorithm());
+            URI uri = builder.build();
+            String rawQuery = uri.getRawQuery();
+            Signature signature = signatureAlgorithm.createSignature();
+            byte[] sig = new byte[0];
+            try {
+                signature.initSign(signingKeyPair.getPrivate());
+                signature.update(rawQuery.getBytes("UTF-8"));
+                sig = signature.sign();
+            } catch (Exception e) {
+                throw new ProcessingException(e);
+            }
+            String encodedSig = RedirectBindingUtil.base64URLEncode(sig);
+            builder.queryParam(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY, encodedSig);
+        }
+        return builder.build();
+    }
+
 
 }

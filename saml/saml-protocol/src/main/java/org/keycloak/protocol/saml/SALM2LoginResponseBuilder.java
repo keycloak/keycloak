@@ -2,14 +2,12 @@ package org.keycloak.protocol.saml;
 
 import org.picketlink.common.PicketLinkLogger;
 import org.picketlink.common.PicketLinkLoggerFactory;
-import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
 import org.picketlink.identity.federation.core.saml.v2.common.IDGenerator;
-import org.picketlink.identity.federation.core.saml.v2.factories.JBossSAMLAuthnResponseFactory;
 import org.picketlink.identity.federation.core.saml.v2.holders.IDPInfoHolder;
 import org.picketlink.identity.federation.core.saml.v2.holders.IssuerInfoHolder;
 import org.picketlink.identity.federation.core.saml.v2.holders.SPInfoHolder;
@@ -19,14 +17,8 @@ import org.picketlink.identity.federation.saml.v2.assertion.AssertionType;
 import org.picketlink.identity.federation.saml.v2.assertion.AttributeStatementType;
 import org.picketlink.identity.federation.saml.v2.assertion.AuthnStatementType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
-import org.picketlink.identity.federation.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,7 +34,7 @@ import static org.picketlink.common.util.StringUtil.isNotNull;
  * @author Anil.Saldhana@redhat.com
  * @author bburke@redhat.com
 */
-public class SALM2PostBindingLoginResponseBuilder extends SAML2PostBindingBuilder<SALM2PostBindingLoginResponseBuilder> {
+public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginResponseBuilder> {
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     protected List<String> roles = new LinkedList<String>();
@@ -55,65 +47,66 @@ public class SALM2PostBindingLoginResponseBuilder extends SAML2PostBindingBuilde
     protected Map<String, Object> attributes = new HashMap<String, Object>();
 
 
-    public SALM2PostBindingLoginResponseBuilder attributes(Map<String, Object> attributes) {
+    public SALM2LoginResponseBuilder attributes(Map<String, Object> attributes) {
         this.attributes = attributes;
         return this;
     }
 
-    public SALM2PostBindingLoginResponseBuilder attribute(String name, Object value) {
+    public SALM2LoginResponseBuilder attribute(String name, Object value) {
         this.attributes.put(name, value);
         return this;
     }
 
-    public SALM2PostBindingLoginResponseBuilder requestID(String requestID) {
+    public SALM2LoginResponseBuilder requestID(String requestID) {
         this.requestID =requestID;
         return this;
     }
 
-    public SALM2PostBindingLoginResponseBuilder requestIssuer(String requestIssuer) {
+    public SALM2LoginResponseBuilder requestIssuer(String requestIssuer) {
         this.requestIssuer =requestIssuer;
         return this;
     }
 
-    public SALM2PostBindingLoginResponseBuilder roles(List<String> roles) {
+    public SALM2LoginResponseBuilder roles(List<String> roles) {
         this.roles = roles;
         return this;
     }
 
-    public SALM2PostBindingLoginResponseBuilder roles(String... roles) {
+    public SALM2LoginResponseBuilder roles(String... roles) {
         for (String role : roles) {
             this.roles.add(role);
         }
         return this;
     }
 
-    public SALM2PostBindingLoginResponseBuilder authMethod(String authMethod) {
+    public SALM2LoginResponseBuilder authMethod(String authMethod) {
         this.authMethod = authMethod;
         return this;
     }
 
-    public SALM2PostBindingLoginResponseBuilder userPrincipal(String userPrincipal) {
+    public SALM2LoginResponseBuilder userPrincipal(String userPrincipal) {
         this.userPrincipal = userPrincipal;
         return this;
     }
 
-   public SALM2PostBindingLoginResponseBuilder multiValuedRoles(boolean multiValuedRoles) {
+   public SALM2LoginResponseBuilder multiValuedRoles(boolean multiValuedRoles) {
         this.multiValuedRoles = multiValuedRoles;
         return this;
     }
 
-    public SALM2PostBindingLoginResponseBuilder disableAuthnStatement(boolean disableAuthnStatement) {
+    public SALM2LoginResponseBuilder disableAuthnStatement(boolean disableAuthnStatement) {
         this.disableAuthnStatement = disableAuthnStatement;
         return this;
     }
 
-    public Response buildLoginResponse() throws ConfigurationException, ProcessingException, IOException {
-        Document responseDoc = getResponse();
-        return buildResponse(responseDoc);
+    public BindingBuilder binding() throws ConfigurationException, ProcessingException {
+
+        Document samlResponseDocument = buildDocument();
+
+        return new BindingBuilder(samlResponseDocument);
     }
 
-    public Document getResponse() throws ConfigurationException, ProcessingException {
-
+    public Document buildDocument() throws ConfigurationException, ProcessingException {
         Document samlResponseDocument = null;
 
         ResponseType responseType = null;
@@ -175,7 +168,6 @@ public class SALM2PostBindingLoginResponseBuilder extends SAML2PostBindingBuilde
         }
 
         encryptAndSign(samlResponseDocument);
-
         return samlResponseDocument;
     }
 

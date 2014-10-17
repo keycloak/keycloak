@@ -75,6 +75,24 @@
                 "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDb7kwJPkGdU34hicplwfp6/WmNcaLh94TSc7Jyr9Undp5pkyLgb0DE7EIE+6kSs4LsqCb8HDkB0nLD5DXbBJFd8n0WGoKstelvtg6FtVJMnwN7k7yZbfkPECWH9zF70VeOo9vbzrApNRnct8ZhH5fbflRB4JMA9L9R+LbURdoSKQIDAQAB",
                 "X509Certificate": "MIIB1DCCAT0CBgFJGVacCDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1lbmMvMB4XDTE0MTAxNjE0MjA0NloXDTI0MTAxNjE0MjIyNlowMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3QtZW5jLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEikCAwEAATANBgkqhkiG9w0BAQsFAAOBgQBMrfGD9QFfx5v7ld/OAto5rjkTe3R1Qei8XRXfcs83vLaqEzjEtTuLGrJEi55kXuJgBpVmQpnwCCkkjSy0JxbqLDdVi9arfWUxEGmOr01ZHycELhDNaQcFqVMPr5kRHIHgktT8hK2IgCvd3Fy9/JCgUgCPxKfhwecyEOKxUc857g=="
             }
+        },
+        {
+            "name": "http://localhost:8080/employee-sig/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8080/employee-sig",
+            "adminUrl": "http://localhost:8080/employee-sig",
+            "redirectUris": [
+                "http://localhost:8080/employee-sig/*"
+            ],
+            "attributes": {
+                "samlServerSignature": "true",
+                "samlClientSignature": "true",
+                "privateKey": "MIICXQIBAAKBgQC+9kVgPFpshjS2aT2g52lqTv2lqb1jgvXZVk7iFF4LAO6SdCXKXRZI4SuzIRkVNpE1a42V1kQRlaozoFklgvX5sje8tkpa9ylq+bxGXM9RRycqRu2B+oWUV7Aqq7Bs0Xud0WeHQYRcEoCjqsFKGy65qkLRDdT70FTJgpSHts+gDwIDAQABAoGANU1efgc6ojIvwn7Lsf8GAKN9z2D6uS0T3I9nw1k2CtI+xWhgKAUltEANx5lEfBRYIdYclidRpqrk8DYgzASrDYTHXzqVBJfAk1VrAGpqyRq+TNMLUHkXiTiSDOQ6WqhX93UGMmAgQm1RsLa6+fy1BO/B2y85+Yf2OUylsKS6avECQQDslRDiNFdtEjdvyOL20tQ7+W+eKVxVxKAyQ3gFjIIDizELZt+Jq1Wz6XV9NhK1JFtlVugeD1tlW/+K16fEmDYXAkEAzqKoN/JeGb20rfQldAUWdQbb0jrQAYlgoSU/9fYH9YVJT8vnkfhPBTwIw9H9euf1//lRP/jHltHd5ch4230YyQJBAN3rOkoltPiABPZbpuLGgwS7BwOCYrWlWmurtBLoaTCvyVKbrgXybNL1pBrOtR+rufvGWLeRyja65Gs1vY6BBQMCQQCTsNq/MjJj/522f7yNUl2cw4w2lOa7Um+IflFbAcDqkZu2ty0Kvgns2d4B6INeZ5ECpjaWnMA7YkFRzZnkd2NRAkB8lEY56ScnNigoZkkjtEUd2ejdhZPYuS9SKfv9zHwN+I+DE2vVFZz8GPq/iLcMx13PkZaYaJNQ4FtQY/hRLSn5",
+                "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+9kVgPFpshjS2aT2g52lqTv2lqb1jgvXZVk7iFF4LAO6SdCXKXRZI4SuzIRkVNpE1a42V1kQRlaozoFklgvX5sje8tkpa9ylq+bxGXM9RRycqRu2B+oWUV7Aqq7Bs0Xud0WeHQYRcEoCjqsFKGy65qkLRDdT70FTJgpSHts+gDwIDAQAB",
+                "X509Certificate": "MIIB0DCCATkCBgFJH5u0EDANBgkqhkiG9w0BAQsFADAuMSwwKgYDVQQDEyNodHRwOi8vbG9jYWxob3N0OjgwODAvZW1wbG95ZWUtc2lnLzAeFw0xNDEwMTcxOTMzNThaFw0yNDEwMTcxOTM1MzhaMC4xLDAqBgNVBAMTI2h0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9lbXBsb3llZS1zaWcvMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+9kVgPFpshjS2aT2g52lqTv2lqb1jgvXZVk7iFF4LAO6SdCXKXRZI4SuzIRkVNpE1a42V1kQRlaozoFklgvX5sje8tkpa9ylq+bxGXM9RRycqRu2B+oWUV7Aqq7Bs0Xud0WeHQYRcEoCjqsFKGy65qkLRDdT70FTJgpSHts+gDwIDAQABMA0GCSqGSIb3DQEBCwUAA4GBACKyPLGqMX8GsIrCfJU8eVnpaqzTXMglLVo/nTcfAnWe9UAdVe8N3a2PXpDBvuqNA/DEAhVcQgxdlOTWnB6s8/yLTRuH0bZgb3qGdySif+lU+E7zZ/SiDzavAvn+ABqemnzHcHyhYO+hNRGHvUbW5OAii9Vdjhm8BI32YF1NwhKp"
+            }
         }
     ],
     "roles" : {

@@ -24,6 +24,7 @@ public interface Errors {
     String INVALID_REDIRECT_URI = "invalid_redirect_uri";
     String INVALID_CODE = "invalid_code";
     String INVALID_TOKEN = "invalid_token";
+    String INVALID_SIGNATURE = "invalid_signature";
     String INVALID_REGISTRATION = "invalid_registration";
     String INVALID_FORM = "invalid_form";
 
