@@ -7,6 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 /**
@@ -21,7 +22,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public UserSessionProvider create(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache<String, SessionEntity> cache = connections.getCache(SESSION_CACHE_NAME);
-        Cache<String, LoginFailureEntity> loginFailures = connections.getCache(LOGIN_FAILURE_CACHE_NAME);
+        Cache<LoginFailureKey, LoginFailureEntity> loginFailures = connections.getCache(LOGIN_FAILURE_CACHE_NAME);
         return new InfinispanUserSessionProvider(session, cache, loginFailures);
     }
 

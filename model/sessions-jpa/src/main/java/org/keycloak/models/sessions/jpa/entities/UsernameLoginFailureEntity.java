@@ -18,7 +18,7 @@ import java.io.Serializable;
 @NamedQueries({
         @NamedQuery(name="getAllFailures", query="select failure from UsernameLoginFailureEntity failure"),
         @NamedQuery(name = "removeLoginFailuresByRealm", query = "delete from UsernameLoginFailureEntity f where f.realmId = :realmId"),
-        @NamedQuery(name = "removeLoginFailuresByUser", query = "delete from UsernameLoginFailureEntity f where f.realmId = :realmId and f.username = :username")
+        @NamedQuery(name = "removeLoginFailuresByUser", query = "delete from UsernameLoginFailureEntity f where f.realmId = :realmId and (f.username = :username or f.username = :email)")
 })
 @IdClass(UsernameLoginFailureEntity.Key.class)
 public class UsernameLoginFailureEntity {

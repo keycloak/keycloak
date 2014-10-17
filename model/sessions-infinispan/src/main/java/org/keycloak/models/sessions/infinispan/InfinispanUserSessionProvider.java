@@ -13,6 +13,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.mapreduce.ClientSessionMapper;
@@ -39,10 +40,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     private final KeycloakSession session;
     private final Cache<String, SessionEntity> sessionCache;
-    private final Cache<String, LoginFailureEntity> loginFailureCache;
+    private final Cache<LoginFailureKey, LoginFailureEntity> loginFailureCache;
     private final InfinispanKeycloakTransaction tx;
 
-    public InfinispanUserSessionProvider(KeycloakSession session, Cache<String, SessionEntity> sessionCache, Cache<String, LoginFailureEntity> loginFailureCache) {
+    public InfinispanUserSessionProvider(KeycloakSession session, Cache<String, SessionEntity> sessionCache, Cache<LoginFailureKey, LoginFailureEntity> loginFailureCache) {
         this.session = session;
         this.sessionCache = sessionCache;
         this.loginFailureCache = loginFailureCache;
@@ -225,16 +226,18 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public UsernameLoginFailureModel getUserLoginFailure(RealmModel realm, String username) {
-        return wrap(loginFailureCache.get(realm.getId() + ":" + username));
+        LoginFailureKey key = new LoginFailureKey(realm.getId(), username);
+        return wrap(key, loginFailureCache.get(key));
     }
 
     @Override
     public UsernameLoginFailureModel addUserLoginFailure(RealmModel realm, String username) {
+        LoginFailureKey key = new LoginFailureKey(realm.getId(), username);
         LoginFailureEntity entity = new LoginFailureEntity();
         entity.setRealm(realm.getId());
         entity.setUsername(username);
-        tx.put(loginFailureCache, entity.getId(), entity);
-        return wrap(entity);
+        tx.put(loginFailureCache, key, entity);
+        return wrap(key, entity);
     }
 
     @Override
@@ -257,6 +260,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
         removeUserSessions(realm, user);
+
+        loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getUsername()));
+        loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getEmail()));
     }
 
     @Override
@@ -321,8 +327,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
 
-    UsernameLoginFailureModel wrap(LoginFailureEntity entity) {
-        return entity != null ? new UsernameLoginFailureAdapter(this, loginFailureCache, entity) : null;
+    UsernameLoginFailureModel wrap(LoginFailureKey key, LoginFailureEntity entity) {
+        return entity != null ? new UsernameLoginFailureAdapter(this, loginFailureCache, key, entity) : null;
     }
 
     List<ClientSessionModel> wrapClientSessions(RealmModel realm, Collection<ClientSessionEntity> entities) {
@@ -337,7 +343,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         private boolean active;
         private boolean rollback;
-        private Map<String, CacheTask> tasks = new HashMap<String, CacheTask>();
+        private Map<Object, CacheTask> tasks = new HashMap<Object, CacheTask>();
 
         @Override
         public void begin() {
@@ -375,7 +381,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             return active;
         }
 
-        public void put(Cache cache, String key, Object value) {
+        public void put(Cache cache, Object key, Object value) {
             if (tasks.containsKey(key)) {
                 throw new IllegalStateException("Can't add session: task in progress for session");
             } else {
@@ -383,7 +389,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             }
         }
 
-        public void replace(Cache cache, String key, Object value) {
+        public void replace(Cache cache, Object key, Object value) {
             CacheTask current = tasks.get(key);
             if (current != null) {
                 switch (current.operation) {
@@ -406,10 +412,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         public class CacheTask {
             private Cache cache;
             private CacheOperation operation;
-            private String key;
+            private Object key;
             private Object value;
 
-            public CacheTask(Cache cache, CacheOperation operation, String key, Object value) {
+            public CacheTask(Cache cache, CacheOperation operation, Object key, Object value) {
                 this.cache = cache;
                 this.operation = operation;
                 this.key = key;

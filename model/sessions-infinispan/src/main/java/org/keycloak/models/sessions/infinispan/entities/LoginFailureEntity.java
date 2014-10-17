@@ -12,10 +12,6 @@ public class LoginFailureEntity {
     private long lastFailure;
     private String lastIPFailure;
 
-    public String getId() {
-        return realm + ":" + username;
-    }
-
     public String getUsername() {
         return username;
     }
