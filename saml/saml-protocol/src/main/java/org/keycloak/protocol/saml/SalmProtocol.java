@@ -38,6 +38,7 @@ public class SalmProtocol implements LoginProtocol {
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_POST_BINDING = "post";
+    public static final String SAML_GET_BINDING = "get";
 
     protected KeycloakSession session;
 
@@ -80,33 +81,34 @@ public class SalmProtocol implements LoginProtocol {
     }
 
     protected Response getErrorResponse(ClientSessionModel clientSession, String status) {
-        SAML2PostBindingErrorResponseBuilder builder = new SAML2PostBindingErrorResponseBuilder()
+        SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
                 .relayState(clientSession.getNote(GeneralConstants.RELAY_STATE))
                 .destination(clientSession.getRedirectUri())
                 .responseIssuer(getResponseIssuer(realm));
       try {
-            return builder.buildErrorResponse(status);
+          if (isPostBinding(clientSession)) {
+              return builder.binding(status).postResponse();
+          } else {
+              return builder.binding(status).redirectResponse();
+          }
         } catch (Exception e) {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
         }
     }
 
+    protected boolean isPostBinding(ClientSessionModel clientSession) {
+        return SalmProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SalmProtocol.SAML_BINDING));
+    }
+
     @Override
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
-        if (SalmProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SalmProtocol.SAML_BINDING))) {
-            return postBinding(userSession, clientSession);
-        }
-        throw new RuntimeException("still need to implement redirect binding");
-    }
-
-    protected Response postBinding(UserSessionModel userSession, ClientSessionModel clientSession) {
         String requestID = clientSession.getNote("REQUEST_ID");
         String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
         String redirectUri = clientSession.getRedirectUri();
         String responseIssuer = getResponseIssuer(realm);
 
-        SALM2PostBindingLoginResponseBuilder builder = new SALM2PostBindingLoginResponseBuilder();
+        SALM2LoginResponseBuilder builder = new SALM2LoginResponseBuilder();
         builder.requestID(requestID)
                .relayState(relayState)
                .destination(redirectUri)
@@ -138,7 +140,11 @@ public class SalmProtocol implements LoginProtocol {
             builder.encrypt(publicKey);
         }
         try {
-            return builder.buildLoginResponse();
+            if (isPostBinding(clientSession)) {
+                return builder.binding().postResponse();
+            } else {
+                return builder.binding().redirectResponse();
+            }
         } catch (Exception e) {
             logger.error("failed", e);
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
@@ -153,7 +159,7 @@ public class SalmProtocol implements LoginProtocol {
         return "true".equals(client.getAttribute("samlEncrypt"));
     }
 
-    public void initClaims(SALM2PostBindingLoginResponseBuilder builder, ClientModel model, UserModel user) {
+    public void initClaims(SALM2LoginResponseBuilder builder, ClientModel model, UserModel user) {
         if (ClaimMask.hasEmail(model.getAllowedClaimsMask())) {
             builder.attribute(X500SAMLProfileConstants.EMAIL_ADDRESS.getFriendlyName(), user.getEmail());
         }
@@ -176,7 +182,7 @@ public class SalmProtocol implements LoginProtocol {
         ApplicationModel app = (ApplicationModel)client;
         if (app.getManagementUrl() == null) return;
 
-        SAML2PostBindingLogoutResponseBuilder logoutBuilder = new SAML2PostBindingLogoutResponseBuilder()
+        SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                                          .userPrincipal(userSession.getUser().getUsername())
                                          .destination(client.getClientId());
         if (requiresRealmSignature(client)) {

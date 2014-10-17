@@ -12,17 +12,13 @@ import org.picketlink.identity.federation.core.saml.v2.holders.SPInfoHolder;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.StringWriter;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2PostBindingErrorResponseBuilder extends SAML2PostBindingBuilder<SAML2PostBindingErrorResponseBuilder> {
+public class SAML2ErrorResponseBuilder extends SAML2BindingBuilder<SAML2ErrorResponseBuilder> {
 
-    public Document getErrorResponse(String status) throws ProcessingException {
+    public Document buildDocument(String status) throws ProcessingException {
         Document samlResponse = null;
         ResponseType responseType = null;
 
@@ -49,7 +45,11 @@ public class SAML2PostBindingErrorResponseBuilder extends SAML2PostBindingBuilde
         return samlResponse;
     }
 
-    public Response buildErrorResponse(String status)  throws ConfigurationException, ProcessingException, IOException {
-        Document doc = getErrorResponse(status);
-        return buildResponse(doc);
-    }}
+    public BindingBuilder binding(String status) throws ConfigurationException, ProcessingException {
+
+        Document samlResponseDocument = buildDocument(status);
+
+        return new BindingBuilder(samlResponseDocument);
+    }
+
+}

@@ -18,11 +18,22 @@ import java.security.cert.X509Certificate;
  */
 public class SamlProtocolUtils {
 
-    public static void verifyPostBindingSignature(ClientModel client, Document document) throws VerificationException {
+    public static void verifyDocumentSignature(ClientModel client, Document document) throws VerificationException {
         if (!"true".equals(client.getAttribute("samlClientSignature"))) {
             return;
         }
         SAML2Signature saml2Signature = new SAML2Signature();
+        PublicKey publicKey = getPublicKey(client);
+        try {
+            if (!saml2Signature.validate(document, publicKey)) {
+                throw new VerificationException("Invalid signature on document");
+            }
+        } catch (ProcessingException e) {
+            throw new VerificationException("Error validating signature", e);
+        }
+    }
+
+    public static PublicKey getPublicKey(ClientModel client) throws VerificationException {
         String publicKeyPem = client.getAttribute(ClientModel.PUBLIC_KEY);
         if (publicKeyPem == null) throw new VerificationException("Client does not have a public key.");
         PublicKey publicKey = null;
@@ -31,13 +42,7 @@ public class SamlProtocolUtils {
         } catch (Exception e) {
             throw new VerificationException("Could not decode public key", e);
         }
-        try {
-            if (!saml2Signature.validate(document, publicKey)) {
-                throw new VerificationException("Invalid signature on document");
-            }
-        } catch (ProcessingException e) {
-            throw new VerificationException("Error validating signature", e);
-        }
+        return publicKey;
     }
 
     public static void signDocument(Document samlDocument, KeyPair signingKeyPair, String signatureMethod, String signatureDigestMethod, X509Certificate signingCertificate) throws ProcessingException {
