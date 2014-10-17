@@ -16,29 +16,29 @@
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="ALLOWED_CLAIMS_MASK" type="BIGINT(19)"/>
-            <column name="ENABLED" type="BOOLEAN(1)"/>
-            <column name="FULL_SCOPE_ALLOWED" type="BOOLEAN(1)"/>
+            <column name="ALLOWED_CLAIMS_MASK" type="BIGINT"/>
+            <column name="ENABLED" type="BOOLEAN"/>
+            <column name="FULL_SCOPE_ALLOWED" type="BOOLEAN"/>
             <column name="NAME" type="VARCHAR(255)"/>
-            <column name="NOT_BEFORE" type="INT(10)"/>
-            <column name="PUBLIC_CLIENT" type="BOOLEAN(1)"/>
+            <column name="NOT_BEFORE" type="INT"/>
+            <column name="PUBLIC_CLIENT" type="BOOLEAN"/>
             <column name="SECRET" type="VARCHAR(255)"/>
             <column name="BASE_URL" type="VARCHAR(255)"/>
-            <column name="BEARER_ONLY" type="BOOLEAN(1)"/>
+            <column name="BEARER_ONLY" type="BOOLEAN"/>
             <column name="MANAGEMENT_URL" type="VARCHAR(255)"/>
-            <column name="SURROGATE_AUTH_REQUIRED" type="BOOLEAN(1)"/>
-            <column name="DIRECT_GRANTS_ONLY" type="BOOLEAN(1)"/>
+            <column name="SURROGATE_AUTH_REQUIRED" type="BOOLEAN"/>
+            <column name="DIRECT_GRANTS_ONLY" type="BOOLEAN"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
         </createTable>
         <createTable tableName="CLIENT_SESSION">
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="ACTION" type="INT(10)"/>
+            <column name="ACTION" type="INT"/>
             <column name="CLIENT_ID" type="VARCHAR(36)"/>
             <column name="REDIRECT_URI" type="VARCHAR(255)"/>
             <column name="STATE" type="VARCHAR(255)"/>
-            <column name="TIMESTAMP" type="INT(10)"/>
+            <column name="TIMESTAMP" type="INT"/>
             <column name="SESSION_ID" type="VARCHAR(36)"/>
         </createTable>
         <createTable tableName="CLIENT_SESSION_ROLE">
@@ -62,7 +62,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="DEVICE" type="VARCHAR(255)"/>
-            <column name="HASH_ITERATIONS" type="INT(10)"/>
+            <column name="HASH_ITERATIONS" type="INT"/>
             <column name="SALT" type="VARBINARY(16)"/>
             <column name="TYPE" type="VARCHAR(255)"/>
             <column name="VALUE" type="VARCHAR(255)"/>
@@ -78,7 +78,7 @@
             <column name="IP_ADDRESS" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(255)"/>
             <column name="SESSION_ID" type="VARCHAR(255)"/>
-            <column name="TIME" type="BIGINT(19)"/>
+            <column name="TIME" type="BIGINT"/>
             <column name="TYPE" type="VARCHAR(255)"/>
             <column name="USER_ID" type="VARCHAR(255)"/>
         </createTable>
@@ -95,7 +95,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="APP_REALM_CONSTRAINT" type="VARCHAR(36)"/>
-            <column name="APPLICATION_ROLE" type="BOOLEAN(1)"/>
+            <column name="APPLICATION_ROLE" type="BOOLEAN"/>
             <column name="DESCRIPTION" type="VARCHAR(255)"/>
             <column name="NAME" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(255)"/>
@@ -106,31 +106,31 @@
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="ACCESS_CODE_LIFESPAN" type="INT(10)"/>
-            <column name="USER_ACTION_LIFESPAN" type="INT(10)"/>
-            <column name="ACCESS_TOKEN_LIFESPAN" type="INT(10)"/>
+            <column name="ACCESS_CODE_LIFESPAN" type="INT"/>
+            <column name="USER_ACTION_LIFESPAN" type="INT"/>
+            <column name="ACCESS_TOKEN_LIFESPAN" type="INT"/>
             <column name="ACCOUNT_THEME" type="VARCHAR(255)"/>
             <column name="ADMIN_THEME" type="VARCHAR(255)"/>
             <column name="EMAIL_THEME" type="VARCHAR(255)"/>
-            <column name="ENABLED" type="BOOLEAN(1)"/>
-            <column name="EVENTS_ENABLED" type="BOOLEAN(1)"/>
-            <column name="EVENTS_EXPIRATION" type="BIGINT(19)"/>
+            <column name="ENABLED" type="BOOLEAN"/>
+            <column name="EVENTS_ENABLED" type="BOOLEAN"/>
+            <column name="EVENTS_EXPIRATION" type="BIGINT"/>
             <column name="LOGIN_THEME" type="VARCHAR(255)"/>
             <column name="NAME" type="VARCHAR(255)"/>
-            <column name="NOT_BEFORE" type="INT(10)"/>
-            <column name="PASSWORD_CRED_GRANT_ALLOWED" type="BOOLEAN(1)"/>
+            <column name="NOT_BEFORE" type="INT"/>
+            <column name="PASSWORD_CRED_GRANT_ALLOWED" type="BOOLEAN"/>
             <column name="PASSWORD_POLICY" type="VARCHAR(255)"/>
             <column name="PRIVATE_KEY" type="VARCHAR(2048)"/>
             <column name="PUBLIC_KEY" type="VARCHAR(2048)"/>
-            <column name="REGISTRATION_ALLOWED" type="BOOLEAN(1)"/>
-            <column name="REMEMBER_ME" type="BOOLEAN(1)"/>
-            <column name="RESET_PASSWORD_ALLOWED" type="BOOLEAN(1)"/>
-            <column name="SOCIAL" type="BOOLEAN(1)"/>
+            <column name="REGISTRATION_ALLOWED" type="BOOLEAN"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="RESET_PASSWORD_ALLOWED" type="BOOLEAN"/>
+            <column name="SOCIAL" type="BOOLEAN"/>
             <column name="SSL_REQUIRED" type="VARCHAR(255)"/>
-            <column name="SSO_IDLE_TIMEOUT" type="INT(10)"/>
-            <column name="SSO_MAX_LIFESPAN" type="INT(10)"/>
-            <column name="UPDATE_PROFILE_ON_SOC_LOGIN" type="BOOLEAN(1)"/>
-            <column name="VERIFY_EMAIL" type="BOOLEAN(1)"/>
+            <column name="SSO_IDLE_TIMEOUT" type="INT"/>
+            <column name="SSO_MAX_LIFESPAN" type="INT"/>
+            <column name="UPDATE_PROFILE_ON_SOC_LOGIN" type="BOOLEAN"/>
+            <column name="VERIFY_EMAIL" type="BOOLEAN"/>
             <column name="MASTER_ADMIN_APP" type="VARCHAR(36)"/>
         </createTable>
         <createTable tableName="REALM_APPLICATION">
@@ -169,8 +169,8 @@
                 <constraints nullable="false"/>
             </column>
             <column name="FORM_LABEL" type="VARCHAR(255)"/>
-            <column name="INPUT" type="BOOLEAN(1)"/>
-            <column name="SECRET" type="BOOLEAN(1)"/>
+            <column name="INPUT" type="BOOLEAN"/>
+            <column name="SECRET" type="BOOLEAN"/>
             <column name="REALM_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
@@ -214,10 +214,10 @@
             <column name="USERNAME" type="VARCHAR(200)">
                 <constraints nullable="false"/>
             </column>
-            <column name="FAILED_LOGIN_NOT_BEFORE" type="INT(10)"/>
-            <column name="LAST_FAILURE" type="BIGINT(19)"/>
+            <column name="FAILED_LOGIN_NOT_BEFORE" type="INT"/>
+            <column name="LAST_FAILURE" type="BIGINT"/>
             <column name="LAST_IP_FAILURE" type="VARCHAR(255)"/>
-            <column name="NUM_FAILURES" type="INT(10)"/>
+            <column name="NUM_FAILURES" type="INT"/>
         </createTable>
         <createTable tableName="USER_ATTRIBUTE">
             <column name="NAME" type="VARCHAR(255)">
@@ -234,13 +234,13 @@
             </column>
             <column name="EMAIL" type="VARCHAR(255)"/>
             <column name="EMAIL_CONSTRAINT" type="VARCHAR(255)"/>
-            <column name="EMAIL_VERIFIED" type="BOOLEAN(1)"/>
-            <column name="ENABLED" type="BOOLEAN(1)"/>
+            <column name="EMAIL_VERIFIED" type="BOOLEAN"/>
+            <column name="ENABLED" type="BOOLEAN"/>
             <column name="FEDERATION_LINK" type="VARCHAR(255)"/>
             <column name="FIRST_NAME" type="VARCHAR(255)"/>
             <column name="LAST_NAME" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(255)"/>
-            <column name="TOTP" type="BOOLEAN(1)"/>
+            <column name="TOTP" type="BOOLEAN"/>
             <column name="USERNAME" type="VARCHAR(255)"/>
         </createTable>
         <createTable tableName="USER_FEDERATION_CONFIG">
@@ -256,16 +256,16 @@
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="CHANGED_SYNC_PERIOD" type="INT(10)"/>
+            <column name="CHANGED_SYNC_PERIOD" type="INT"/>
             <column name="DISPLAY_NAME" type="VARCHAR(255)"/>
-            <column name="FULL_SYNC_PERIOD" type="INT(10)"/>
-            <column name="LAST_SYNC" type="INT(10)"/>
-            <column name="PRIORITY" type="INT(10)"/>
+            <column name="FULL_SYNC_PERIOD" type="INT"/>
+            <column name="LAST_SYNC" type="INT"/>
+            <column name="PRIORITY" type="INT"/>
             <column name="PROVIDER_NAME" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
         </createTable>
         <createTable tableName="USER_REQUIRED_ACTION">
-            <column name="ACTION" type="INT(10)">
+            <column name="ACTION" type="INT">
                 <constraints nullable="false"/>
             </column>
             <column name="USER_ID" type="VARCHAR(36)">
@@ -286,11 +286,11 @@
             </column>
             <column name="AUTH_METHOD" type="VARCHAR(255)"/>
             <column name="IP_ADDRESS" type="VARCHAR(255)"/>
-            <column name="LAST_SESSION_REFRESH" type="INT(10)"/>
+            <column name="LAST_SESSION_REFRESH" type="INT"/>
             <column name="LOGIN_USERNAME" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(255)"/>
-            <column name="REMEMBER_ME" type="BOOLEAN(1)"/>
-            <column name="STARTED" type="INT(10)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="STARTED" type="INT"/>
             <column name="USER_ID" type="VARCHAR(255)"/>
         </createTable>
         <createTable tableName="USER_SOCIAL_LINK">
