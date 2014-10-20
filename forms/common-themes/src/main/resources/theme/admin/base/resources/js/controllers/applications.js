@@ -592,15 +592,134 @@ module.controller('ApplicationRevocationCtrl', function($scope, realm, applicati
     $scope.setNotBeforeNow = function() {
         $scope.application.notBefore = new Date().getTime()/1000;
         Application.update({ realm : realm.realm, application: $scope.application.id}, $scope.application, function () {
-            Notifications.success('Not Before cleared for application.');
+            Notifications.success('Not Before set for application.');
             refresh();
         });
     }
     $scope.pushRevocation = function() {
-        ApplicationPushRevocation.save({realm : realm.realm, application: $scope.application.id}, function () {
-            Notifications.success('Push sent for application.');
+        ApplicationPushRevocation.save({realm : realm.realm, application: $scope.application.id}, function (globalReqResult) {
+            var successCount = globalReqResult.successRequests ? globalReqResult.successRequests.length : 0;
+            var failedCount  = globalReqResult.failedRequests ? globalReqResult.failedRequests.length : 0;
+
+            if (successCount==0 && failedCount==0) {
+                Notifications.warn('No push sent. No admin URI configured or no registered cluster nodes available');
+            } else if (failedCount > 0) {
+                var msgStart = successCount>0 ? 'Successfully push notBefore to: ' + globalReqResult.successRequests + ' . ' : '';
+                Notifications.error(msgStart + 'Failed to push notBefore to: ' + globalReqResult.failedRequests + '. Verify availability of failed hosts and try again');
+            } else {
+                Notifications.success('Successfully push notBefore to: ' + globalReqResult.successRequests);
+            }
         });
     }
 
+});
+
+module.controller('ApplicationClusteringCtrl', function($scope, application, Application, ApplicationTestNodesAvailable, realm, $location, $route, Notifications, TimeUnit) {
+    $scope.application = application;
+    $scope.realm = realm;
+
+    var oldCopy = angular.copy($scope.application);
+    $scope.changed = false;
+
+    $scope.$watch('application', function() {
+        if (!angular.equals($scope.application, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.application.nodeReRegistrationTimeoutUnit = TimeUnit.autoUnit(application.nodeReRegistrationTimeout);
+    $scope.application.nodeReRegistrationTimeout = TimeUnit.toUnit(application.nodeReRegistrationTimeout, $scope.application.nodeReRegistrationTimeoutUnit);
+    $scope.$watch('application.nodeReRegistrationTimeoutUnit', function(to, from) {
+        $scope.application.nodeReRegistrationTimeout = TimeUnit.convert($scope.application.nodeReRegistrationTimeout, from, to);
+    });
+
+    $scope.save = function() {
+        var appCopy = angular.copy($scope.application);
+        delete appCopy['nodeReRegistrationTimeoutUnit'];
+        appCopy.nodeReRegistrationTimeout = TimeUnit.toSeconds($scope.application.nodeReRegistrationTimeout, $scope.application.nodeReRegistrationTimeoutUnit)
+        Application.update({ realm : realm.realm, application : application.id }, appCopy, function () {
+            $route.reload();
+            Notifications.success('Your changes have been saved to the application.');
+        });
+    };
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+
+    $scope.testNodesAvailable = function() {
+        console.log('testNodesAvailable');
+        ApplicationTestNodesAvailable.get({ realm : realm.realm, application : application.id }, function(globalReqResult) {
+            $route.reload();
+
+            var successCount = globalReqResult.successRequests ? globalReqResult.successRequests.length : 0;
+            var failedCount  = globalReqResult.failedRequests ? globalReqResult.failedRequests.length : 0;
+
+            if (successCount==0 && failedCount==0) {
+                Notifications.warn('No requests sent. No admin URI configured or no registered cluster nodes available');
+            } else if (failedCount > 0) {
+                var msgStart = successCount>0 ? 'Successfully verify availability for ' + globalReqResult.successRequests + ' . ' : '';
+                Notifications.error(msgStart + 'Failed to verify availability for: ' + globalReqResult.failedRequests + '. Fix or unregister failed cluster nodes and try again');
+            } else {
+                Notifications.success('Successfully sent requests to: ' + globalReqResult.successRequests);
+            }
+        });
+    };
+
+    if (application.registeredNodes) {
+        var nodeRegistrations = [];
+        for (node in application.registeredNodes) {
+            reg = {
+                host: node,
+                lastRegistration: new Date(application.registeredNodes[node] * 1000)
+            }
+            nodeRegistrations.push(reg);
+        }
+
+        $scope.nodeRegistrations = nodeRegistrations;
+    };
+});
+
+module.controller('ApplicationClusteringNodeCtrl', function($scope, application, Application, ApplicationClusterNode, realm, $location, $routeParams, Notifications) {
+    $scope.application = application;
+    $scope.realm = realm;
+    $scope.create = !$routeParams.node;
+
+    $scope.save = function() {
+        console.log('registerNode: ' + $scope.node.host);
+        ApplicationClusterNode.save({ realm : realm.realm, application : application.id , node: $scope.node.host }, function() {
+            Notifications.success('Node ' + $scope.node.host + ' registered successfully.');
+            $location.url('/realms/' + realm.realm + '/applications/' + application.id +  '/clustering');
+        });
+    }
+
+    $scope.unregisterNode = function() {
+        console.log('unregisterNode: ' + $scope.node.host);
+        ApplicationClusterNode.remove({ realm : realm.realm, application : application.id , node: $scope.node.host }, function() {
+            Notifications.success('Node ' + $scope.node.host + ' unregistered successfully.');
+            $location.url('/realms/' + realm.realm + '/applications/' + application.id +  '/clustering');
+        });
+    }
+
+    if ($scope.create) {
+        $scope.node = {}
+        $scope.registered = false;
+    } else {
+        var lastRegTime = application.registeredNodes[$routeParams.node];
+
+        if (lastRegTime) {
+            $scope.registered = true;
+            $scope.node = {
+                host: $routeParams.node,
+                lastRegistration: new Date(lastRegTime * 1000)
+            }
+
+        } else {
+            $scope.registered = false;
+            $scope.node = {
+                host: $routeParams.node
+            }
+        }
+    }
 });
 

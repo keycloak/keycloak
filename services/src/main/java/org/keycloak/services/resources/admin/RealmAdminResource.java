@@ -19,6 +19,7 @@ import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
@@ -255,9 +256,9 @@ public class RealmAdminResource {
      */
     @Path("push-revocation")
     @POST
-    public void pushRevocation() {
+    public GlobalRequestResult pushRevocation() {
         auth.requireManage();
-        new ResourceAdminManager().pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
+        return new ResourceAdminManager().pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
     }
 
     /**
@@ -267,10 +268,10 @@ public class RealmAdminResource {
      */
     @Path("logout-all")
     @POST
-    public void logoutAll() {
+    public GlobalRequestResult logoutAll() {
         auth.requireManage();
         session.sessions().removeUserSessions(realm);
-        new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
+        return new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
     }
 
     /**

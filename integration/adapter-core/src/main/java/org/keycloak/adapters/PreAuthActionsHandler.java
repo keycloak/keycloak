@@ -7,11 +7,9 @@ import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.StreamUtil;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,6 +56,9 @@ public class PreAuthActionsHandler {
             return true;
         } else if (requestUri.endsWith(AdapterConstants.K_VERSION)) {
             handleVersion();
+            return true;
+        } else if (requestUri.endsWith(AdapterConstants.K_TEST_AVAILABLE)) {
+            handleTestAvailable();
             return true;
         }
         return false;
@@ -139,6 +140,22 @@ public class PreAuthActionsHandler {
             PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
             if (!validateAction(action)) return;
             deployment.setNotBefore(action.getNotBefore());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void handleTestAvailable()  {
+        if (log.isTraceEnabled()) {
+            log.trace("K_TEST_AVAILABLE sent");
+        }
+        try {
+            JWSInput token = verifyAdminRequest();
+            if (token == null) {
+                return;
+            }
+            TestAvailabilityAction action = JsonSerialization.readValue(token.getContent(), TestAvailabilityAction.class);
+            validateAction(action);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

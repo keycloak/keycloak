@@ -766,10 +766,18 @@ module.controller('RealmSessionStatsCtrl', function($scope, realm, stats, RealmA
     console.log(stats);
 
     $scope.logoutAll = function() {
-        RealmLogoutAll.save({realm : realm.realm}, function () {
-            Notifications.success('Logged out all users');
-            RealmApplicationSessionStats.get({realm: realm.realm}, function(updated) {
-                Notifications.success('Logged out all users');
+        RealmLogoutAll.save({realm : realm.realm}, function (globalReqResult) {
+            var successCount = globalReqResult.successRequests ? globalReqResult.successRequests.length : 0;
+            var failedCount  = globalReqResult.failedRequests ? globalReqResult.failedRequests.length : 0;
+
+            if (failedCount > 0) {
+                var msgStart = successCount>0 ? 'Successfully logout all users under: ' + globalReqResult.successRequests + ' . ' : '';
+                Notifications.error(msgStart + 'Failed to logout users under: ' + globalReqResult.failedRequests + '. Verify availability of failed hosts and try again');
+            } else {
+                Notifications.success('Successfully logout all users from the realm');
+            }
+
+            RealmApplicationSessionStats.query({realm: realm.realm}, function(updated) {
                 $scope.stats = updated;
             })
         });
@@ -809,13 +817,23 @@ module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevoca
     }
     $scope.setNotBeforeNow = function() {
         Realm.update({ realm: realm.realm, notBefore : new Date().getTime()/1000}, function () {
-            Notifications.success('Not Before cleared for realm.');
+            Notifications.success('Not Before set for realm.');
             reset();
         });
     }
     $scope.pushRevocation = function() {
-        RealmPushRevocation.save({ realm: realm.realm}, function () {
-            Notifications.success('Push sent for realm.');
+        RealmPushRevocation.save({ realm: realm.realm}, function (globalReqResult) {
+            var successCount = globalReqResult.successRequests ? globalReqResult.successRequests.length : 0;
+            var failedCount  = globalReqResult.failedRequests ? globalReqResult.failedRequests.length : 0;
+
+            if (successCount==0 && failedCount==0) {
+                Notifications.warn('No push sent. No admin URI configured or no registered cluster nodes available');
+            } else if (failedCount > 0) {
+                var msgStart = successCount>0 ? 'Successfully push notBefore to: ' + globalReqResult.successRequests + ' . ' : '';
+                Notifications.error(msgStart + 'Failed to push notBefore to: ' + globalReqResult.failedRequests + '. Verify availability of failed hosts and try again');
+            } else {
+                Notifications.success('Successfully push notBefore to all configured applications');
+            }
         });
     }
 

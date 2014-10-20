@@ -23,6 +23,11 @@ public class BasicDBObjectToMapMapper implements Mapper<BasicDBObject, Map> {
             String key = entry.getKey();
             Object value = entry.getValue();
 
+            // Workaround as manually inserted numbers into mongo may be treated as "Double"
+            if (value instanceof Double && context.getGenericTypes().get(1) == Integer.class) {
+                value = ((Double)value).intValue();
+            }
+
             if (key.contains(MapMapper.DOT_PLACEHOLDER)) {
                 key = key.replaceAll(MapMapper.DOT_PLACEHOLDER, ".");
             }
