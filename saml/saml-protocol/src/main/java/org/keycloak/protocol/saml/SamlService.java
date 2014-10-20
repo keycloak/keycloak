@@ -93,7 +93,7 @@ public class SamlService {
     public abstract class BindingProtocol {
         protected Response basicChecks(String samlRequest, String samlResponse) {
             if (!checkSsl()) {
-                event.event(EventType.LOGIN_ERROR);
+                event.event(EventType.LOGIN);
                 event.error(Errors.SSL_REQUIRED);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
             }
@@ -104,7 +104,7 @@ public class SamlService {
             }
 
             if (samlRequest == null && samlResponse == null) {
-                event.event(EventType.LOGIN_ERROR);
+                event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_TOKEN);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
 
@@ -113,7 +113,7 @@ public class SamlService {
         }
 
         protected Response handleSamlResponse(String samleResponse, String relayState) {
-            event.event(EventType.LOGIN_ERROR);
+            event.event(EventType.LOGIN);
             event.error(Errors.INVALID_TOKEN);
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
         }
@@ -121,7 +121,7 @@ public class SamlService {
         protected Response handleSamlRequest(String samlRequest, String relayState) {
             SAMLDocumentHolder documentHolder = extractDocument(samlRequest);
             if (documentHolder == null) {
-                event.event(EventType.LOGIN_ERROR);
+                event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_TOKEN);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
             }
@@ -133,23 +133,23 @@ public class SamlService {
             ClientModel client = realm.findClient(issuer);
 
             if (client == null) {
-                event.event(EventType.LOGIN_ERROR);
+                event.event(EventType.LOGIN);
                 event.error(Errors.CLIENT_NOT_FOUND);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
             }
 
             if (!client.isEnabled()) {
-                event.event(EventType.LOGIN_ERROR);
+                event.event(EventType.LOGIN);
                 event.error(Errors.CLIENT_DISABLED);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
             }
             if ((client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
-                event.event(EventType.LOGIN_ERROR);
+                event.event(EventType.LOGIN);
                 event.error(Errors.NOT_ALLOWED);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Bearer-only applications are not allowed to initiate browser login");
             }
             if (client.isDirectGrantsOnly()) {
-                event.event(EventType.LOGIN_ERROR);
+                event.event(EventType.LOGIN);
                 event.error(Errors.NOT_ALLOWED);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
             }
@@ -158,7 +158,7 @@ public class SamlService {
                 verifySignature(documentHolder, client);
             } catch (VerificationException e) {
                 SamlService.logger.error("request validation failed", e);
-                event.event(EventType.LOGIN_ERROR);
+                event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_SIGNATURE);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid requester.");
             }
@@ -173,7 +173,7 @@ public class SamlService {
                 return logoutRequest(logout, client);
 
             } else {
-                event.event(EventType.LOGIN_ERROR);
+                event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_TOKEN);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
             }
