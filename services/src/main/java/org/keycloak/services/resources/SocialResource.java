@@ -31,6 +31,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -106,9 +107,11 @@ public class SocialResource {
     @GET
     @Path("callback")
     public Response callback(@QueryParam("state") String encodedState) throws URISyntaxException, IOException {
+        JWSInput jwsInput;
         State initialRequest;
         try {
-            initialRequest = new JWSInput(encodedState).readJsonContent(State.class);
+            jwsInput = new JWSInput(encodedState);
+            initialRequest = jwsInput.readJsonContent(State.class);
         } catch (Throwable t) {
             logger.error("Invalid social callback", t);
             return Flows.forms(session, null, null, uriInfo).setError("Unexpected callback").createErrorPage();
@@ -126,6 +129,11 @@ public class SocialResource {
                 .event(EventType.LOGIN)
                 .detail(Details.RESPONSE_TYPE, initialRequest.get(OAuth2Constants.RESPONSE_TYPE))
                 .detail(Details.AUTH_METHOD, authMethod);
+
+        if (!RSAProvider.verify(jwsInput, realm.getPublicKey())) {
+            logger.error("Invalid social callback");
+            return Flows.forms(session, null, null, uriInfo).setError("Unexpected callback").createErrorPage();
+        }
 
         AuthenticationManager authManager = new AuthenticationManager();
         OAuthFlows oauth = Flows.oauth(session, realm, request, uriInfo, clientConnection, authManager, tokenManager);
