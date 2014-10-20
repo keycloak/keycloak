@@ -208,6 +208,17 @@
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox-ldap</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-wildlfy-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-undertow</artifactId>
+            <version>${wildfly.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>

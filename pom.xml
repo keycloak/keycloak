@@ -238,6 +238,11 @@
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
+                <artifactId>picketlink-wildlfy-common</artifactId>
+                <version>${picketlink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-idm-simple-schema</artifactId>
                 <version>${picketlink.version}</version>
             </dependency>
