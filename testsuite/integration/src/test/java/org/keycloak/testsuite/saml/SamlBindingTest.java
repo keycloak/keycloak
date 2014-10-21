@@ -14,17 +14,20 @@ import org.openqa.selenium.WebDriver;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SamlSignedPostBindingTest {
+public class SamlBindingTest {
 
     @ClassRule
     public static SamlKeycloakRule keycloakRule = new SamlKeycloakRule() {
         @Override
         public void initWars() {
-             ClassLoader classLoader = SamlSignedPostBindingTest.class.getClassLoader();
+             ClassLoader classLoader = SamlBindingTest.class.getClassLoader();
 
+            initializeSamlSecuredWar("/saml/simple-post", "/sales-post",  "post.war", classLoader);
             initializeSamlSecuredWar("/saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
+            initializeSamlSecuredWar("/saml/signed-get", "/employee-sig",  "employee-sig.war", classLoader);
             initializeSamlSecuredWar("/saml/bad-client-signed-post", "/bad-client-sales-post-sig",  "bad-client-post-sig.war", classLoader);
             initializeSamlSecuredWar("/saml/bad-realm-signed-post", "/bad-realm-sales-post-sig",  "bad-realm-post-sig.war", classLoader);
+            initializeSamlSecuredWar("/saml/encrypted-post", "/sales-post-enc",  "post-enc.war", classLoader);
 
         }
 
@@ -49,7 +52,18 @@ public class SamlSignedPostBindingTest {
 
 
     @Test
-    public void testSignedLoginLogout() {
+    public void testPostSimpleLoginLogout() {
+        driver.navigate().to("http://localhost:8081/sales-post/");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        loginPage.login("bburke", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post/");
+        Assert.assertTrue(driver.getPageSource().contains("bburke"));
+        driver.navigate().to("http://localhost:8081/sales-post?GLO=true");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+
+    }
+    @Test
+    public void testPostSignedLoginLogout() {
         driver.navigate().to("http://localhost:8081/sales-post-sig/");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
@@ -60,7 +74,30 @@ public class SamlSignedPostBindingTest {
 
     }
     @Test
-    public void testBadClientSignature() {
+    public void testRedirectSignedLoginLogout() {
+        driver.navigate().to("http://localhost:8081/employee-sig/");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        loginPage.login("bburke", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee-sig/");
+        Assert.assertTrue(driver.getPageSource().contains("bburke"));
+        driver.navigate().to("http://localhost:8081/employee-sig?GLO=true");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+
+    }
+
+    @Test
+    public void testPostEncryptedLoginLogout() {
+        driver.navigate().to("http://localhost:8081/sales-post-enc/");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        loginPage.login("bburke", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-enc/");
+        Assert.assertTrue(driver.getPageSource().contains("bburke"));
+        driver.navigate().to("http://localhost:8081/sales-post-enc?GLO=true");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+
+    }
+    @Test
+    public void testPostBadClientSignature() {
         driver.navigate().to("http://localhost:8081/bad-client-sales-post-sig/");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
         Assert.assertEquals(driver.getTitle(), "We're sorry...");
@@ -68,7 +105,7 @@ public class SamlSignedPostBindingTest {
     }
 
     @Test
-    public void testBadRealmSignature() {
+    public void testPostBadRealmSignature() {
         driver.navigate().to("http://localhost:8081/bad-realm-sales-post-sig/");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
