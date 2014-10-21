@@ -94,6 +94,12 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
         }
 
         RefreshableKeycloakSecurityContext session = principal.getKeycloakSecurityContext();
+
+        if (!deployment.getRealm().equals(session.getDeployment().getRealm())) {
+            log.fine("Account from cookie is from a different realm than for the request.");
+            return null;
+        }
+
         if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) return principal;
         boolean success = session.refreshExpiredToken(false);
         if (success && session.isActive()) return principal;

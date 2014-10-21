@@ -45,6 +45,11 @@ public class UndertowCookieTokenStore implements AdapterTokenStore {
         }
         KeycloakUndertowAccount account = new KeycloakUndertowAccount(principal);
 
+        if (!deployment.getRealm().equals(account.getKeycloakSecurityContext().getDeployment().getRealm())) {
+            log.debug("Account in session belongs to a different realm than for this request.");
+            return false;
+        }
+
         if (account.checkActive()) {
             log.debug("Cached account found");
             securityContext.authenticationComplete(account, "KEYCLOAK", false);

@@ -1,0 +1,58 @@
+<div class="row" ng-show="!submitted">
+    <div class="col-sm-12">
+        <div id="brand">
+            New Account Registration
+        </div><!--/#brand-->
+    </div><!--/.col-*-->
+    <div class="col-sm-7 col-md-6 col-lg-5 login">
+        <form class="form-horizontal" role="form">
+            <div class="form-group">
+                <label for="accountName" class="col-sm-2 col-md-2 control-label">Account name</label>
+                <div class="col-sm-10 col-md-10">
+                    <input type="text" class="form-control" id="accountName" data-ng-model="registration.accountName" placeholder="acme" tabindex="1">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="adminUsername" class="col-sm-2 col-md-2 control-label">Admin username</label>
+                <div class="col-sm-10 col-md-10">
+                    <input type="text" class="form-control" id="adminUsername" data-ng-model="registration.adminUsername" placeholder="jdoe" tabindex="1">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="adminPassword" class="col-sm-2 col-md-2 control-label">Admin Password</label>
+                <div class="col-sm-10 col-md-10">
+                    <input type="password" class="form-control" id="adminPassword" data-ng-model="registration.adminPassword" placeholder="************" tabindex="2">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-offset-8 col-xs-4 col-sm-4 col-md-4 submit">
+                    <button type="submit" class="btn btn-primary btn-lg" tabindex="4" data-ng-click="register()">Create account</button>
+                </div>
+            </div>
+        </form>
+    </div><!--/.col-*-->
+    <div class="col-sm-5 col-md-6 col-lg-7 details">
+        <p><strong>New Account Registration</strong><br/>
+            Enter a name for your account, an username for your admin user and a password for this user.
+
+    </div><!--/.col-*-->
+</div><!--/.row-->
+
+<div class="row" ng-show="submitted">
+    <div class="col-sm-5 col-md-6 col-lg-7 details" ng-show="loading">
+        <p><strong>Please wait, registering...</strong><br/>
+    </div><!--/.col-*-->
+    <div class="col-sm-5 col-md-6 col-lg-7 details" ng-show="!loading && success">
+        <p><strong>Registration successful</strong><br/>
+            The OAuth secret for your nodes is: {{registration.oauthSecret}}<br/>
+            The username for your nodes is: {{registration.nodeUsername}}<br/>
+            The password for your nodes is: {{registration.nodePassword}}<br/>
+            The application's keycloak.json: {{registration.keycloakJson}}<br/>
+        <p>You can change the password at anytime at the Keycloak user interface.
+    </div><!--/.col-*-->
+    <div class="col-sm-5 col-md-6 col-lg-7 details" ng-show="!loading && !success">
+        <p><strong>Registration was NOT successful</strong><br/>
+        <p>{{registration.errorMessage}}
+        <p><button type="submit" class="btn btn-primary btn-lg" tabindex="4" data-ng-click="load()">Start again</button>
+    </div><!--/.col-*-->
+</div><!--/.row-->

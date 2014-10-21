@@ -1,0 +1,85 @@
+{
+    "realm": "%s",
+    "enabled": true,
+    "registrationAllowed": false,
+    "requiredCredentials": [ "password" ],
+    "passwordCredentialGrantAllowed": true,
+    "users" : [
+        {
+            "username" : "%s",
+            "enabled": true,
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "%s" }
+            ],
+            "realmRoles": ["user"]
+        },
+        {
+            "username" : "%s",
+            "enabled": true,
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "%s" }
+            ],
+            "realmRoles": ["agent"]
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "composites": {
+                    "application": {
+                        "metrics" :[
+                            "user"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "agent",
+                "composites": {
+                    "application": {
+                        "metrics" :[
+                            "agent"
+                        ]
+                    }
+                }
+            }
+        ],
+        "application" : {
+            "metrics" : [
+                {
+                    "name": "user"
+                },
+                {
+                    "name": "agent"
+                }
+            ]
+        }
+    },
+    "scopeMappings": [
+        {
+            "client": "metrics-collector",
+            "roles": ["agent"]
+        }
+    ],
+    "applications": [
+        {
+            "name": "metrics",
+            "enabled": true,
+            "bearerOnly": true
+        }
+    ],
+    "oauthClients": [
+        {
+            "name": "metrics-collector",
+            "enabled": true,
+            "secret": "%s",
+            "directGrantsOnly": true,
+            "claims": {
+              "username": true
+            }
+        }
+    ]
+}
