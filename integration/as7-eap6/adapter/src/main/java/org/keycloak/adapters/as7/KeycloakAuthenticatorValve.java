@@ -21,7 +21,7 @@ import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.adapters.NodesRegistrationLifecycle;
+import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 
@@ -47,7 +47,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
     private static final Logger log = Logger.getLogger(KeycloakAuthenticatorValve.class);
     protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
     protected AdapterDeploymentContext deploymentContext;
-    protected NodesRegistrationLifecycle nodesRegistrationLifecycle;
+    protected NodesRegistrationManagement nodesRegistrationManagement;
 
 
     @Override
@@ -127,12 +127,12 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer(), getController());
         setNext(actions);
 
-        nodesRegistrationLifecycle = new NodesRegistrationLifecycle(kd);
-        nodesRegistrationLifecycle.start();
+        nodesRegistrationManagement = new NodesRegistrationManagement(kd);
+        nodesRegistrationManagement.start();
     }
 
     protected void beforeStop() {
-        nodesRegistrationLifecycle.stop();
+        nodesRegistrationManagement.stop();
     }
 
     @Override
@@ -165,6 +165,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             log.info("*** deployment isn't configured return false");
             return false;
         }
+
+        nodesRegistrationManagement.tryRegister(deployment);
 
         CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, this, userSessionManagement, facade, request);
         AuthOutcome outcome = authenticator.authenticate();

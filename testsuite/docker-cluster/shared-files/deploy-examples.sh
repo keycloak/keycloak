@@ -29,15 +29,19 @@ sed -i -e 's/false/true/' admin-access.war/WEB-INF/web.xml
 
 # Configure other examples
 for I in *.war/WEB-INF/keycloak.json; do
-  sed -i -e 's/\"auth-server-url\".*: \"\/auth\",/&\n    \"auth-server-url-for-backend-requests\": \"http:\/\/\$\{jboss.host.name\}:8080\/auth\",\
-  \n    \"register-node-at-startup\": false,\n    \"register-node-period\": 30,/' $I;
+  sed -i -e 's/\"resource\".*: \".*\",/&\n    \"auth-server-url-for-backend-requests\": \"http:\/\/\$\{jboss.host.name\}:8080\/auth\",\n    \"register-node-at-startup\": true,\n    \"register-node-period\": 150,/' $I;
+  sed -i -e 's/\"bearer-only\" : true,/&\n    \"credentials\" : \{ \"secret\": \"password\" \},/' $I;
 done;
 
 # Enable distributable for customer-portal
 sed -i -e 's/<\/module-name>/&\n    <distributable \/>/' customer-portal.war/WEB-INF/web.xml
 
-# Configure testrealm.json - Enable adminUrl to access adapters on local machine
-sed -i -e 's/\"adminUrl\": \"\/customer-portal/\"adminUrl\": \"http:\/\/\$\{jboss.host.name\}:8080\/customer-portal/' /keycloak-docker-cluster/examples/testrealm.json
-sed -i -e 's/\"adminUrl\": \"\/product-portal/\"adminUrl\": \"http:\/\/\$\{application.session.host\}:8080\/product-portal/' /keycloak-docker-cluster/examples/testrealm.json
+# Configure testrealm.json - Enable adminUrl to access adapters on local machine, add jboss-logging listener and add secret for database-service application
+TEST_REALM=/keycloak-docker-cluster/examples/testrealm.json
+sed -i -e 's/\"adminUrl\": \"\/customer-portal/\"adminUrl\": \"http:\/\/\$\{jboss.host.name\}:8080\/customer-portal/' $TEST_REALM
+sed -i -e 's/\"adminUrl\": \"\/product-portal/\"adminUrl\": \"http:\/\/\$\{application.session.host\}:8080\/product-portal/' $TEST_REALM
+sed -i -e 's/\"adminUrl\": \"\/database/\"adminUrl\": \"http:\/\/\$\{jboss.host.name\}:8080\/database/' $TEST_REALM
+sed -i -e 's/\"bearerOnly\": true/&,\n     \"secret\": \"password\"/' $TEST_REALM
+sed -i -e 's/\"sslRequired\": \"external\",/&\n    \"eventsListeners\": \[ \"jboss-logging\" \],/' $TEST_REALM
 
 

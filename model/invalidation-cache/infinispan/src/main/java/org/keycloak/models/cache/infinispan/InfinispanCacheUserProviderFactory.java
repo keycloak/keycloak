@@ -59,7 +59,7 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
     }
 
     @Listener
-    private class CacheListener {
+    public class CacheListener {
 
         @CacheEntryCreated
         public void userCreated(CacheEntryCreatedEvent<String, CachedUser> event) {

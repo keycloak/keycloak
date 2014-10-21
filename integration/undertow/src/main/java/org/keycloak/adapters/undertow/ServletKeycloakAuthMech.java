@@ -26,6 +26,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.RequestAuthenticator;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,11 +41,13 @@ public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
     private static final Logger log = Logger.getLogger(ServletKeycloakAuthMech.class);
 
     protected UndertowUserSessionManagement userSessionManagement;
+    protected NodesRegistrationManagement nodesRegistrationManagement;
     protected ConfidentialPortManager portManager;
 
-    public ServletKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement, ConfidentialPortManager portManager) {
+    public ServletKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement, NodesRegistrationManagement nodesRegistrationManagement, ConfidentialPortManager portManager) {
         super(deploymentContext);
         this.userSessionManagement = userSessionManagement;
+        this.nodesRegistrationManagement = nodesRegistrationManagement;
         this.portManager = portManager;
     }
 
@@ -55,6 +58,8 @@ public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
         if (!deployment.isConfigured()) {
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
+
+        nodesRegistrationManagement.tryRegister(deployment);
 
         RequestAuthenticator authenticator = createRequestAuthenticator(deployment, exchange, securityContext, facade);
 

@@ -1,5 +1,6 @@
 package org.keycloak.services.resources;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,6 +23,7 @@ import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -106,9 +108,12 @@ public class ClientsManagementService {
         ApplicationModel application = authorizeApplication(authorizationHeader, formData);
         String nodeHost = getApplicationClusterHost(formData);
 
+        event.client(application).detail(Details.NODE_HOST, nodeHost);
         logger.infof("Registering cluster host '%s' for client '%s'", nodeHost, application.getName());
 
         application.registerNode(nodeHost, Time.currentTime());
+
+        event.success();
 
         return Response.noContent().build();
     }
@@ -139,9 +144,12 @@ public class ClientsManagementService {
         ApplicationModel application = authorizeApplication(authorizationHeader, formData);
         String nodeHost = getApplicationClusterHost(formData);
 
+        event.client(application).detail(Details.NODE_HOST, nodeHost);
         logger.infof("Unregistering cluster host '%s' for client '%s'", nodeHost, application.getName());
 
         application.unregisterNode(nodeHost);
+
+        event.success();
 
         return Response.noContent().build();
     }

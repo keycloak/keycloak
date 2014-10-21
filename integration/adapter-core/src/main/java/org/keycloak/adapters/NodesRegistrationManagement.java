@@ -11,9 +11,9 @@ import org.keycloak.util.HostUtils;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class NodesRegistrationLifecycle {
+public class NodesRegistrationManagement {
 
-    private static final Logger log = Logger.getLogger(NodesRegistrationLifecycle.class);
+    private static final Logger log = Logger.getLogger(NodesRegistrationManagement.class);
 
     private final KeycloakDeployment deployment;
     private final Timer timer;
@@ -21,31 +21,34 @@ public class NodesRegistrationLifecycle {
     // True if at least one event was successfully sent
     private volatile boolean registered = false;
 
-    public NodesRegistrationLifecycle(KeycloakDeployment deployment) {
+    public NodesRegistrationManagement(KeycloakDeployment deployment) {
         this.deployment = deployment;
         this.timer =  new Timer();
     }
 
+    // Register listener for periodic sending of re-registration event
     public void start() {
-        if (!deployment.isRegisterNodeAtStartup() && deployment.getRegisterNodePeriod() <= 0) {
-            log.info("Skip registration of cluster nodes at startup");
+        if (deployment.getRegisterNodePeriod() <= 0) {
+            log.infof("Skip periodic registration of cluster nodes at startup for application %s", deployment.getResourceName());
             return;
         }
 
-        if (deployment.getRelativeUrls() == RelativeUrlsUsed.ALL_REQUESTS) {
-            log.warn("Skip registration of cluster nodes at startup as Keycloak node can't be contacted. Make sure to not use relative URI in adapters configuration!");
+        if (deployment.getRelativeUrls() == null || deployment.getRelativeUrls() == RelativeUrlsUsed.ALL_REQUESTS) {
+            log.errorf("Skip periodic registration of cluster nodes at startup for application %s as Keycloak node can't be contacted. Make sure to provide some non-relative URI in adapters configuration.", deployment.getResourceName());
             return;
         }
 
-        if (deployment.isRegisterNodeAtStartup()) {
-            boolean success = sendRegistrationEvent();
-            if (!success) {
-                throw new IllegalStateException("Failed to register node to keycloak at startup");
+        addPeriodicListener();
+    }
+
+    // Sending registration event during first request to application
+    public void tryRegister(KeycloakDeployment resolvedDeployment) {
+        if (resolvedDeployment.isRegisterNodeAtStartup() && !registered) {
+            synchronized (this) {
+                if (!registered) {
+                    sendRegistrationEvent(resolvedDeployment);
+                }
             }
-        }
-
-        if (deployment.getRegisterNodePeriod() > 0) {
-            addPeriodicListener();
         }
     }
 
@@ -61,7 +64,7 @@ public class NodesRegistrationLifecycle {
 
             @Override
             public void run() {
-                sendRegistrationEvent();
+                sendRegistrationEvent(deployment);
             }
         };
 
@@ -74,7 +77,7 @@ public class NodesRegistrationLifecycle {
         timer.cancel();
     }
 
-    protected boolean sendRegistrationEvent() {
+    protected void sendRegistrationEvent(KeycloakDeployment deployment) {
         log.info("Sending registration event right now");
 
         String host = HostUtils.getIpAddress();
@@ -82,22 +85,19 @@ public class NodesRegistrationLifecycle {
             ServerRequest.invokeRegisterNode(deployment, host);
             log.infof("Node '%s' successfully registered in Keycloak", host);
             registered = true;
-            return true;
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to register node to keycloak");
             log.error("status from server: " + failure.getStatus());
             if (failure.getError() != null) {
                 log.error("   " + failure.getError());
             }
-            return false;
         } catch (IOException e) {
             log.error("failed to register node to keycloak", e);
-            return false;
         }
     }
 
     protected boolean sendUnregistrationEvent() {
-        log.info("Sending UNregistration event right now");
+        log.info("Sending Unregistration event right now");
 
         String host = HostUtils.getIpAddress();
         try {
