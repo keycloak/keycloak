@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import org.keycloak.adapters.KeycloakConfigResolver;
 
 /**
  * Web deployment whose security is managed by a remote OAuth Skeleton Key authentication server
@@ -60,6 +61,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     @Override
     public void logout(Request request) throws ServletException {
+        CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
         KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
         if (ksc != null) {
             request.removeAttribute(KeycloakSecurityContext.class.getName());
@@ -67,7 +69,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             if (session != null) {
                 session.removeNote(KeycloakSecurityContext.class.getName());
                 if (ksc instanceof RefreshableKeycloakSecurityContext) {
-                    ((RefreshableKeycloakSecurityContext)ksc).logout(deploymentContext.getDeployment());
+                    ((RefreshableKeycloakSecurityContext)ksc).logout(deploymentContext.getDeployment(facade.getRequest()));
                 }
             }
         }
@@ -113,21 +115,51 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
 
     protected void init() {
-        InputStream configInputStream = getConfigInputStream(context);
-        KeycloakDeployment kd = null;
-        if (configInputStream == null) {
-            log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
-            kd = new KeycloakDeployment();
-        } else {
-            kd = KeycloakDeploymentBuilder.build(configInputStream);
+        KeycloakConfigResolver configResolver = null;
+        String configResolverClass = (String) context.getServletContext().getAttribute("keycloak.config.resolver");
+        if (configResolverClass != null) {
+            try {
+                configResolver = (KeycloakConfigResolver) context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
+                log.info("Using " + configResolverClass + " to resolve Keycloak configuration on a per-request basis.");
+            } catch (Exception ex) {
+                // TODO: should it re-throw the exception?
+                //
+                // Reasoning: if the explicitly defined `resolver` wasn't found, it *will* behave differently
+                // than the user expects!
+                //
+                // Counter-reasoning: the original code doesn't throws an exception if keycloak is unconfigured, ie,
+                // it's already not doing what the user would generally expect, but might be OK for development environments
+                // so, we probably shouldn't block the deployment of the user's application because of keycloak's configuration
+                // problem
+                log.warn("The specified resolver " + configResolverClass + " could NOT be loaded. Falling back to standard behavior. Reason: " + ex.getMessage());
+            }
         }
-        deploymentContext = new AdapterDeploymentContext(kd);
+
+        if (configResolver != null) {
+            deploymentContext = new AdapterDeploymentContext(configResolver);
+            log.debug("Keycloak is using a per-request configuration resolver.");
+        } else {
+            InputStream configInputStream = getConfigInputStream(context);
+            KeycloakDeployment kd;
+            if (configInputStream == null) {
+                log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
+                kd = new KeycloakDeployment();
+            } else {
+                kd = KeycloakDeploymentBuilder.build(configInputStream);
+            }
+            deploymentContext = new AdapterDeploymentContext(kd);
+            log.debug("Keycloak is using a per-deployment configuration.");
+
+            // TODO: got this during a rebase, so, need to figure out what to do with it
+            // one option is to require a generic keycloak.json, with no realm information
+            // and use it for the node registration, but needs some testing
+            nodesRegistrationLifecycle = new NodesRegistrationLifecycle(kd);
+            nodesRegistrationLifecycle.start();
+        }
+
         context.getServletContext().setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
         AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer(), getController());
         setNext(actions);
-
-        nodesRegistrationLifecycle = new NodesRegistrationLifecycle(kd);
-        nodesRegistrationLifecycle.start();
     }
 
     protected void beforeStop() {

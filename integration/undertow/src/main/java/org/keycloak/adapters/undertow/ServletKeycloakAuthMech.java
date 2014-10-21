@@ -67,6 +67,7 @@ public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
         final NotificationReceiver logoutReceiver = new NotificationReceiver() {
             @Override
             public void handleNotification(SecurityNotification notification) {
+                UndertowHttpFacade facade = new UndertowHttpFacade(notification.getExchange());
                 if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
                 final ServletRequestContext servletRequestContext = notification.getExchange().getAttachment(ServletRequestContext.ATTACHMENT_KEY);
                 HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
@@ -79,7 +80,7 @@ public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
                 session.removeAttribute(KeycloakSecurityContext.class.getName());
                 session.removeAttribute(KeycloakUndertowAccount.class.getName());
                 if (account.getKeycloakSecurityContext() != null) {
-                    account.getKeycloakSecurityContext().logout(deploymentContext.getDeployment());
+                    account.getKeycloakSecurityContext().logout(deploymentContext.getDeployment(facade.getRequest()));
                 }
             }
         };

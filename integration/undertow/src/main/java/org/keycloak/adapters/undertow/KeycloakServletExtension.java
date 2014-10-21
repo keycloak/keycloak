@@ -44,6 +44,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Map;
+import org.keycloak.adapters.KeycloakConfigResolver;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -94,22 +95,65 @@ public class KeycloakServletExtension implements ServletExtension {
 
 
     @Override
+    @SuppressWarnings("UseSpecificCatch")
     public void handleDeployment(DeploymentInfo deploymentInfo, ServletContext servletContext) {
         if (!isAuthenticationMechanismPresent(deploymentInfo, "KEYCLOAK")) {
             log.debug("auth-method is not keycloak!");
             return;
         }
         log.debug("KeycloakServletException initialization");
-        InputStream is = getConfigInputStream(servletContext);
-        final KeycloakDeployment deployment;
-        if (is == null) {
-            log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
-            deployment = new KeycloakDeployment();
-        } else {
-            deployment = KeycloakDeploymentBuilder.build(is);
 
+        KeycloakConfigResolver configResolver = null;
+        String configResolverClass = servletContext.getInitParameter("keycloak.config.resolver");
+        if (configResolverClass != null) {
+            try {
+                configResolver = (KeycloakConfigResolver) deploymentInfo.getClassLoader().loadClass(configResolverClass).newInstance();
+                log.info("Using " + configResolverClass + " to resolve Keycloak configuration on a per-request basis.");
+            } catch (Exception ex) {
+                // TODO: should it re-throw the exception?
+                //
+                // Reasoning: if the explicitly defined `resolver` wasn't found, it *will* behave differently
+                // than the user expects!
+                //
+                // Counter-reasoning: the original code doesn't throws an exception if keycloak is unconfigured, ie,
+                // it's already not doing what the user would generally expect, but might be OK for development environments
+                // so, we probably shouldn't block the deployment of the user's application because of keycloak's configuration
+                // problem
+                log.warn("The specified resolver " + configResolverClass + " could NOT be loaded. Falling back to standard behavior. Reason: " + ex.getMessage());
+            }
         }
-        AdapterDeploymentContext deploymentContext = new AdapterDeploymentContext(deployment);
+
+        AdapterDeploymentContext deploymentContext;
+        if (configResolver != null) {
+            deploymentContext = new AdapterDeploymentContext(configResolver);
+            log.debug("Keycloak is using a per-request configuration resolver.");
+        } else {
+            InputStream is = getConfigInputStream(servletContext);
+            final KeycloakDeployment deployment;
+            if (is == null) {
+                log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
+                deployment = new KeycloakDeployment();
+            } else {
+                deployment = KeycloakDeploymentBuilder.build(is);
+            }
+            deploymentContext = new AdapterDeploymentContext(deployment);
+            log.debug("Keycloak is using a per-deployment configuration.");
+
+            deploymentInfo.addListener(new ListenerInfo(UndertowNodesRegistrationLifecycleWrapper.class, new InstanceFactory<UndertowNodesRegistrationLifecycleWrapper>() {
+
+                // TODO: got this during a rebase, so, need to figure out what to do with it
+                // one option is to require a generic keycloak.json, with no realm information
+                // and use it for the node registration, but needs some testing
+                @Override
+                public InstanceHandle<UndertowNodesRegistrationLifecycleWrapper> createInstance() throws InstantiationException {
+                    NodesRegistrationLifecycle nodesRegistration = new NodesRegistrationLifecycle(deployment);
+                    UndertowNodesRegistrationLifecycleWrapper listener = new UndertowNodesRegistrationLifecycleWrapper(nodesRegistration);
+                    return new ImmediateInstanceHandle<UndertowNodesRegistrationLifecycleWrapper>(listener);
+                }
+
+            }));
+        }
+
         servletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement();
         final ServletKeycloakAuthMech mech = createAuthenticationMechanism(deploymentInfo, deploymentContext, userSessionManagement);
@@ -148,17 +192,6 @@ public class KeycloakServletExtension implements ServletExtension {
         ServletSessionConfig cookieConfig = new ServletSessionConfig();
         cookieConfig.setPath(deploymentInfo.getContextPath());
         deploymentInfo.setServletSessionConfig(cookieConfig);
-
-        deploymentInfo.addListener(new ListenerInfo(UndertowNodesRegistrationLifecycleWrapper.class, new InstanceFactory<UndertowNodesRegistrationLifecycleWrapper>() {
-
-            @Override
-            public InstanceHandle<UndertowNodesRegistrationLifecycleWrapper> createInstance() throws InstantiationException {
-                NodesRegistrationLifecycle nodesRegistration = new NodesRegistrationLifecycle(deployment);
-                UndertowNodesRegistrationLifecycleWrapper listener = new UndertowNodesRegistrationLifecycleWrapper(nodesRegistration);
-                return new ImmediateInstanceHandle<UndertowNodesRegistrationLifecycleWrapper>(listener);
-            }
-
-        }));
     }
 
     protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement) {
