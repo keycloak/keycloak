@@ -127,6 +127,7 @@ public class SalmProtocol implements LoginProtocol {
         }
         ClientModel client = clientSession.getClient();
         if (requiresRealmSignature(client)) {
+            builder.signatureAlgorithm(getSignatureAlgorithm(client));
             builder.sign(realm.getPrivateKey(), realm.getPublicKey());
         }
         if (requiresEncryption(client)) {
@@ -152,11 +153,20 @@ public class SalmProtocol implements LoginProtocol {
     }
 
     private boolean requiresRealmSignature(ClientModel client) {
-        return "true".equals(client.getAttribute("samlServerSignature"));
+        return "true".equals(client.getAttribute("saml.server.signature"));
+    }
+
+    private SignatureAlgorithm getSignatureAlgorithm(ClientModel client) {
+        String alg = client.getAttribute("saml.signature.algorithm");
+        if (alg != null) {
+            SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(alg);
+            if (algorithm != null) return algorithm;
+        }
+        return SignatureAlgorithm.RSA_SHA256;
     }
 
     private boolean requiresEncryption(ClientModel client) {
-        return "true".equals(client.getAttribute("samlEncrypt"));
+        return "true".equals(client.getAttribute("saml.encrypt"));
     }
 
     public void initClaims(SALM2LoginResponseBuilder builder, ClientModel model, UserModel user) {
@@ -186,6 +196,7 @@ public class SalmProtocol implements LoginProtocol {
                                          .userPrincipal(userSession.getUser().getUsername())
                                          .destination(client.getClientId());
         if (requiresRealmSignature(client)) {
+            logoutBuilder.signatureAlgorithm(getSignatureAlgorithm(client));
             logoutBuilder.sign(realm.getPrivateKey(), realm.getPublicKey());
         }
         /*

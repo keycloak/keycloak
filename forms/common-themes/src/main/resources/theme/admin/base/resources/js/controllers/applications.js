@@ -294,6 +294,12 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         "openid-connect",
         "saml"
     ];
+    $scope.signatureAlgorithms = [
+        "RSA_SHA1",
+        "RSA_SHA256",
+        "RSA_SHA512",
+        "DSA_SHA1"
+    ];
 
     $scope.realm = realm;
     $scope.create = !application.name;
@@ -318,25 +324,35 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         } else { // protocol could be null due to older keycloak installs
             $scope.protocol = $scope.protocols[0];
         }
+        if (application.attributes['saml.signature.algorithm'] == 'RSA_SHA1') {
+            $scope.signatureAlgorithm = $scope.signatureAlgorithms[0];
+        } else if (application.attributes['saml.signature.algorithm'] == 'RSA_SHA256') {
+            $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
+        } else if (application.attributes['saml.signature.algorithm'] == 'RSA_SHA512') {
+            $scope.signatureAlgorithm = $scope.signatureAlgorithms[2];
+        } else if (application.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
+            $scope.signatureAlgorithm = $scope.signatureAlgorithms[3];
+        }
     } else {
         $scope.application = { enabled: true, attributes: {}};
         $scope.application.redirectUris = [];
         $scope.accessType = $scope.accessTypes[0];
         $scope.protocol = $scope.protocols[0];
+        $scope.signatureAlgorithm = $scope.algorithms[1];
     }
 
-    if ($scope.application.attributes["samlServerSignature"]) {
-        if ($scope.application.attributes["samlServerSignature"] == "true") {
+    if ($scope.application.attributes["saml.server.signature"]) {
+        if ($scope.application.attributes["saml.server.signature"] == "true") {
             $scope.samlServerSignature = true;
         }
     }
-    if ($scope.application.attributes["samlClientSignature"]) {
-        if ($scope.application.attributes["samlClientSignature"] == "true") {
+    if ($scope.application.attributes["saml.client.signature"]) {
+        if ($scope.application.attributes["saml.client.signature"] == "true") {
             $scope.samlClientSignature = true;
         }
     }
-    if ($scope.application.attributes["samlEncrypt"]) {
-        if ($scope.application.attributes["samlEncrypt"] == "true") {
+    if ($scope.application.attributes["saml.encrypt"]) {
+        if ($scope.application.attributes["saml.encrypt"] == "true") {
             $scope.samlEncrypt = true;
         }
     }
@@ -364,6 +380,10 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         } else if ($scope.accessType == "saml") {
             $scope.application.protocol = "saml";
         }
+    };
+
+    $scope.changeAlgorithm = function() {
+        $scope.application.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
     };
 
     $scope.$watch(function() {
@@ -395,25 +415,26 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
 
     $scope.save = function() {
         if ($scope.samlServerSignature == true) {
-            $scope.application.attributes["samlServerSignature"] = "true";
+            $scope.application.attributes["saml.server.signature"] = "true";
         } else {
-            $scope.application.attributes["samlServerSignature"] = "false";
+            $scope.application.attributes["saml.server.signature"] = "false";
 
         }
         if ($scope.samlClientSignature == true) {
-            $scope.application.attributes["samlClientSignature"] = "true";
+            $scope.application.attributes["saml.client.signature"] = "true";
         } else {
-            $scope.application.attributes["samlClientSignature"] = "false";
+            $scope.application.attributes["saml.client.signature"] = "false";
 
         }
         if ($scope.samlEncrypt == true) {
-            $scope.application.attributes["samlEncrypt"] = "true";
+            $scope.application.attributes["saml.encrypt"] = "true";
         } else {
-            $scope.application.attributes["samlEncrypt"] = "false";
+            $scope.application.attributes["saml.encrypt"] = "false";
 
         }
 
         $scope.application.protocol = $scope.protocol;
+        $scope.application.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
 
         if (!$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");

@@ -63,6 +63,19 @@
                     </div>
                     <span tooltip-placement="right" tooltip="Should SAML documents be signed by the realm?" class="fa fa-info-circle"></span>
                 </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="protocol">Signature Algorithm</label>
+                    <div class="col-sm-6">
+                        <div class="select-kc">
+                            <select id="signatureAlgorithm"
+                                    ng-change="changeAlgorithm()"
+                                    ng-model="signatureAlgorithm"
+                                    ng-options="alg for alg in signatureAlgorithms">
+                            </select>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="The signature algorithm to use to sign documents." class="fa fa-info-circle"></span>
+                </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="samlEncrypt">Encrypt SAML Documents</label>
                     <div class="col-sm-6">
@@ -118,7 +131,7 @@
                     </div>
                     <span tooltip-placement="right" tooltip="URL to the admin interface of the application.  Set this if the application supports the adapter REST API.  This REST API allows the auth server to push revocation policies and other adminstrative tasks.  Usually this is set to the base URL of the application." class="fa fa-info-circle"></span>
                 </div>
-                <div class="form-group" data-ng-show="!application.bearerOnly && !create">
+                <div class="form-group" data-ng-show="!application.bearerOnly && !create && protocol == 'openid-connect'">
                     <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
                     <div class="col-sm-6 multiple" ng-repeat="webOrigin in application.webOrigins">
                         <div class="input-group kc-item-deletable">
@@ -130,7 +143,7 @@
                             </span>
                         </div>
                     </div>
-                    <div class="col-sm-6 multiple">
+                    <div class="col-sm-6 multiple" >
                         <div class="input-group">
                             <input class="form-control" type="text" name="newWebOrigin" id="newWebOrigin"
                                    placeholder="New Web Origin..." data-ng-model="newWebOrigin"

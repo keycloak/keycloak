@@ -295,7 +295,7 @@ public class SamlService {
 
         @Override
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
-            if (!"true".equals(client.getAttribute("samlClientSignature"))) {
+            if (!"true".equals(client.getAttribute("saml.client.signature"))) {
                 return;
             }
             MultivaluedMap<String, String> encodedParams = uriInfo.getQueryParameters(false);
