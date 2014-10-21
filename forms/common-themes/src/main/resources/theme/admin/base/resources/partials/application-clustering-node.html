@@ -1,0 +1,36 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <kc-navigation-application></kc-navigation-application>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/clustering">Clustering</a></li>
+            <li class="active">{{node.host}}</li>
+        </ol>
+        <h2 data-ng-show="create || registered"><span>{{application.name}} Clustering</span></h2>
+        <h2 data-ng-hide="create || registered">Cluster node on host <span>{{node.host}}</span> not registered!</h2>
+        <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageApplications" data-ng-show="create || registered">
+            <fieldset >
+                <legend><span class="text">Configuration of cluster node</span></legend>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="host">Host</label>
+                    <div class="col-sm-6">
+                        <input ng-disabled="!create" class="form-control" type="text" id="host" name="host" data-ng-model="node.host">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="lastRegistration">Last Registration</label>
+                    <div class="col-sm-6">
+                        <input ng-disabled="true" class="form-control" type="text" id="lastRegistration" name="lastRegistration" data-ng-model="node.lastRegistration">
+                    </div>
+                </div>
+            </fieldset>
+            <div class="pull-right form-actions" data-ng-show="access.manageRealm">
+                <button data-kc-save   data-ng-show="create">Register node</button>
+                <button data-kc-delete data-ng-hide="create" data-ng-click="unregisterNode()">Unregister node</button>
+            </div>
+
+        </form>
+    </div>
+</div>

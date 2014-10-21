@@ -2,6 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
@@ -13,6 +14,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -22,6 +24,7 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -281,9 +284,9 @@ public class ApplicationResource {
      */
     @Path("push-revocation")
     @POST
-    public void pushRevocation() {
+    public GlobalRequestResult pushRevocation() {
         auth.requireManage();
-        new ResourceAdminManager().pushApplicationRevocationPolicy(uriInfo.getRequestUri(), realm, application);
+        return new ResourceAdminManager().pushApplicationRevocationPolicy(uriInfo.getRequestUri(), realm, application);
     }
 
     /**
@@ -333,9 +336,9 @@ public class ApplicationResource {
      */
     @Path("logout-all")
     @POST
-    public void logoutAll() {
+    public GlobalRequestResult logoutAll() {
         auth.requireManage();
-        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application);
+        return new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application);
     }
 
     /**
@@ -354,10 +357,58 @@ public class ApplicationResource {
         new ResourceAdminManager().logoutUserFromApplication(uriInfo.getRequestUri(), realm, application, user, session);
     }
 
+    /**
+     * Manually register cluster node to this application - usually it's not needed to call this directly as adapter should handle
+     * by sending registration request to Keycloak
+     *
+     * @param formParams
+     */
+    @Path("nodes")
+    @POST
+    @Consumes("application/json")
+    public void registerNode(Map<String, String> formParams) {
+        auth.requireManage();
+        String node = formParams.get("node");
+        if (node == null) {
+            throw new BadRequestException("Node not found in params");
+        }
+        logger.info("Register node: " + node);
+        application.registerNode(node, Time.currentTime());
+    }
 
+    /**
+     * Unregister cluster node from this application
+     *
+     * @param node
+     */
+    @Path("nodes/{node}")
+    @DELETE
+    @NoCache
+    public void unregisterNode(final @PathParam("node") String node) {
+        auth.requireManage();
+        logger.info("Unregister node: " + node);
 
+        Integer time = application.getRegisteredNodes().get(node);
+        if (time == null) {
+            throw new NotFoundException("Application does not have a node " + node);
+        }
 
+        application.unregisterNode(node);
+    }
 
+    /**
+     * Test if registered cluster nodes are available by sending 'ping' request to all of them
+     *
+     * @return
+     */
+    @Path("test-nodes-available")
+    @GET
+    @NoCache
+    public GlobalRequestResult testNodesAvailable() {
+        auth.requireManage();
+        logger.info("Test availability of cluster nodes");
 
+        return new ResourceAdminManager().testNodesAvailability(uriInfo.getRequestUri(), realm, application);
+    }
 
 }

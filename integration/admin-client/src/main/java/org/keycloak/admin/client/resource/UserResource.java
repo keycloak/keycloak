@@ -1,6 +1,5 @@
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -17,7 +16,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -50,10 +48,6 @@ public interface UserResource {
     @PUT
     @Path("reset-password-email")
     public void resetPasswordEmail();
-
-    @GET
-    @Path("session-stats")
-    public Map<String, UserStats> getUserStats();
 
     @GET
     @Path("sessions")
