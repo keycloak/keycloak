@@ -81,6 +81,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Variant;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -95,6 +96,16 @@ import java.util.UUID;
 public class AccountService {
 
     private static final Logger logger = Logger.getLogger(AccountService.class);
+
+    private static Set<String> VALID_PATHS = new HashSet<String>();
+    static {
+        for (Method m : AccountService.class.getMethods()) {
+            Path p = m.getAnnotation(Path.class);
+            if (p != null) {
+                VALID_PATHS.add(p.value());
+            }
+        }
+    }
 
     private static final EventType[] LOG_EVENTS = {EventType.LOGIN, EventType.LOGOUT, EventType.REGISTER, EventType.REMOVE_SOCIAL_LINK, EventType.REMOVE_TOTP, EventType.SEND_RESET_PASSWORD,
             EventType.SEND_VERIFY_EMAIL, EventType.SOCIAL_LINK, EventType.UPDATE_EMAIL, EventType.UPDATE_PASSWORD, EventType.UPDATE_PROFILE, EventType.UPDATE_TOTP, EventType.VERIFY_EMAIL};
@@ -705,6 +716,9 @@ public class AccountService {
             if (error != null) {
                 logger.debug("error from oauth");
                 throw new ForbiddenException("error");
+            }
+            if (path != null && !VALID_PATHS.contains(path)) {
+                throw new BadRequestException("Invalid path");
             }
             if (!realm.isEnabled()) {
                 logger.debug("realm not enabled");

@@ -19,6 +19,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.util.StreamUtil;
+import org.keycloak.util.UriUtils;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -94,6 +95,10 @@ public class RealmsResource {
     public Response getLoginStatusIframe(final @PathParam("realm") String name,
                                        @QueryParam("client_id") String client_id,
                                        @QueryParam("origin") String origin) {
+        if (!UriUtils.isOrigin(origin)) {
+            throw new BadRequestException("Invalid origin");
+        }
+
         AuthenticationManager auth = new AuthenticationManager();
 
         RealmManager realmManager = new RealmManager(session);
