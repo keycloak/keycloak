@@ -90,10 +90,9 @@ public class AccessCode {
         Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
         for (String roleId : clientSession.getRoles()) {
             RoleModel role = realm.getRoleById(roleId);
-            if (role == null) {
-                new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid role " + roleId);
+            if (role != null) {
+                requestedRoles.add(realm.getRoleById(roleId));
             }
-            requestedRoles.add(realm.getRoleById(roleId));
         }
         return requestedRoles;
     }
