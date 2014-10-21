@@ -44,6 +44,7 @@ import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.StreamUtil;
+import org.keycloak.util.UriUtils;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -188,6 +189,10 @@ public class OpenIDConnectService {
     @Produces(MediaType.TEXT_HTML)
     public Response getLoginStatusIframe(@QueryParam("client_id") String client_id,
                                          @QueryParam("origin") String origin) {
+        if (!UriUtils.isOrigin(origin)) {
+            throw new BadRequestException("Invalid origin");
+        }
+
         ClientModel client = realm.findClient(client_id);
         if (client == null) {
             throw new NotFoundException("could not find client: " + client_id);
