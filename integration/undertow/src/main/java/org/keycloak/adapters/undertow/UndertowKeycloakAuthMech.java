@@ -59,6 +59,7 @@ public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanis
         final NotificationReceiver logoutReceiver = new NotificationReceiver() {
             @Override
             public void handleNotification(SecurityNotification notification) {
+                UndertowHttpFacade facade = new UndertowHttpFacade(notification.getExchange());
                 if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
                 Session session = Sessions.getSession(notification.getExchange());
                 if (session == null) return;
@@ -66,7 +67,7 @@ public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanis
                 if (account == null) return;
                 session.removeAttribute(KeycloakUndertowAccount.class.getName());
                 if (account.getKeycloakSecurityContext() != null) {
-                    account.getKeycloakSecurityContext().logout(deploymentContext.getDeployment());
+                    account.getKeycloakSecurityContext().logout(deploymentContext.getDeployment(facade.getRequest()));
                 }
             }
         };

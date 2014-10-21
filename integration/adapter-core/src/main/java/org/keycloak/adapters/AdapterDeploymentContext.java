@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.Map;
+import org.keycloak.adapters.HttpFacade.Request;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -26,6 +27,7 @@ import java.util.Map;
 public class AdapterDeploymentContext {
     private static final Logger log = Logger.getLogger(AdapterDeploymentContext.class);
     protected KeycloakDeployment deployment;
+    protected KeycloakConfigResolver configResolver;
 
     public AdapterDeploymentContext() {
     }
@@ -34,7 +36,14 @@ public class AdapterDeploymentContext {
         this.deployment = deployment;
     }
 
-    public KeycloakDeployment getDeployment() {
+    public AdapterDeploymentContext(KeycloakConfigResolver configResolver) {
+        this.configResolver = configResolver;
+    }
+
+    public KeycloakDeployment getDeployment(Request request) {
+        if (null != configResolver) {
+            return configResolver.resolve(request);
+        }
         return deployment;
     }
 
@@ -46,6 +55,10 @@ public class AdapterDeploymentContext {
      * @return
      */
     public KeycloakDeployment resolveDeployment(HttpFacade facade) {
+        if (null != configResolver) {
+            return configResolver.resolve(facade.getRequest());
+        }
+
         KeycloakDeployment deployment = this.deployment;
         if (deployment == null) return null;
         if (deployment.getAuthServerBaseUrl() == null) return deployment;

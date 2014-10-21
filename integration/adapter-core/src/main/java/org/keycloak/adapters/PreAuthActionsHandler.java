@@ -65,7 +65,7 @@ public class PreAuthActionsHandler {
 
     public boolean preflightCors() {
         // don't need to resolve deployment on cors requests.  Just need to know local cors config.
-        KeycloakDeployment deployment = deploymentContext.getDeployment();
+        KeycloakDeployment deployment = deploymentContext.getDeployment(facade.getRequest());
         if (!deployment.isCors()) return false;
         log.debugv("checkCorsPreflight {0}", facade.getRequest().getURI());
         if (!facade.getRequest().getMethod().equalsIgnoreCase("OPTIONS")) {
