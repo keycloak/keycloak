@@ -19,7 +19,7 @@ import java.security.cert.X509Certificate;
 public class SamlProtocolUtils {
 
     public static void verifyDocumentSignature(ClientModel client, Document document) throws VerificationException {
-        if (!"true".equals(client.getAttribute("samlClientSignature"))) {
+        if (!"true".equals(client.getAttribute("saml.client.signature"))) {
             return;
         }
         SAML2Signature saml2Signature = new SAML2Signature();
