@@ -158,7 +158,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
             QName encryptedAssertionElementQName = new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
                     JBossSAMLConstants.ENCRYPTED_ASSERTION.get(), samlNSPrefix);
 
-            byte[] secret = WSTrustUtil.createRandomSecret(128 / 8);
+            byte[] secret = WSTrustUtil.createRandomSecret(encryptionKeySize / 8);
             SecretKey secretKey = new SecretKeySpec(secret, encryptionAlgorithm);
 
             // encrypt the Assertion element and replace it with a EncryptedAssertion element.

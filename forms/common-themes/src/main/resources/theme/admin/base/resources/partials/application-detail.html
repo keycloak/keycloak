@@ -63,7 +63,7 @@
                     </div>
                     <span tooltip-placement="right" tooltip="Should SAML documents be signed by the realm?" class="fa fa-info-circle"></span>
                 </div>
-                <div class="form-group">
+                <div class="form-group" data-ng-show="samlServerSignature && protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="protocol">Signature Algorithm</label>
                     <div class="col-sm-6">
                         <div class="select-kc">

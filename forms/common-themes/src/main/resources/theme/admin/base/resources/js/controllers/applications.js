@@ -43,7 +43,7 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
-module.controller('ApplicationCertificateCtrl', function($scope, $location, $http, realm, application,
+module.controller('ApplicationCertificateCtrl', function($scope, $location, $http, $upload, realm, application,
                                                          ApplicationCertificate, ApplicationCertificateGenerate,
                                                          ApplicationCertificateDownload, Notifications) {
     $scope.realm = realm;
@@ -53,7 +53,59 @@ module.controller('ApplicationCertificateCtrl', function($scope, $location, $htt
         realmAlias: realm.realm
     };
 
+    $scope.files = [];
+
+    $scope.onFileSelect = function($files) {
+        $scope.files = $files;
+    };
+
+    $scope.clearFileSelect = function() {
+        $scope.files = null;
+    }
+
+    $scope.keyFormats = [
+        "JKS",
+        "PKCS12"
+    ];
+
     $scope.jks = jks;
+    $scope.jks.format = $scope.keyFormats[0];
+    $scope.uploadKeyFormat = $scope.keyFormats[0];
+
+    $scope.uploadFile = function() {
+        //$files: an array of files selected, each file has name, size, and type.
+        for (var i = 0; i < $scope.files.length; i++) {
+            var $file = $scope.files[i];
+            $scope.upload = $upload.upload({
+                url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/upload/jks',
+                // method: POST or PUT,
+                // headers: {'headerKey': 'headerValue'}, withCredential: true,
+                data: {keystoreFormat: $scope.uploadKeyFormat,
+                       keyAlias: $scope.uploadKeyAlias,
+                       keyPassword: $scope.uploadKeyPassword,
+                       storePassword: $scope.uploadStorePassword
+                },
+                file: $file
+                /* set file formData name for 'Content-Desposition' header. Default: 'file' */
+                //fileFormDataName: myFile,
+                /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
+                //formDataAppender: function(formData, key, val){}
+            }).progress(function(evt) {
+                console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
+            }).success(function(data, status, headers) {
+                $scope.keyInfo = data;
+                Notifications.success("Keystore uploaded successfully.");
+            })
+                .error(function() {
+                    Notifications.error("The key store can not be uploaded. Please verify the file.");
+
+                });
+            //.then(success, error, progress);
+        }
+    };
+
+
+
 
     var keyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id },
         function() {
@@ -87,7 +139,9 @@ module.controller('ApplicationCertificateCtrl', function($scope, $location, $htt
             var blob = new Blob([data], {
                 type: 'application/octet-stream'
             });
-            saveAs(blob, 'keystore' + '.jks');
+            var ext = ".jks";
+            if ($scope.jks.format == 'PKCS12') ext = ".p12";
+            saveAs(blob, 'keystore' + ext);
         }).error(function(){
             Notifications.error("Error downloading.");
         });
@@ -338,7 +392,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         $scope.application.redirectUris = [];
         $scope.accessType = $scope.accessTypes[0];
         $scope.protocol = $scope.protocols[0];
-        $scope.signatureAlgorithm = $scope.algorithms[1];
+        $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
     }
 
     if ($scope.application.attributes["saml.server.signature"]) {
