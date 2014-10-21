@@ -43,11 +43,19 @@ public class QRCodeResource {
 
         if (size != null) {
             String[] s = size.split("x");
-            width = Integer.parseInt(s[0]);
-            height = Integer.parseInt(s[1]);
+            try {
+                width = Integer.parseInt(s[0]);
+                height = Integer.parseInt(s[1]);
+            } catch (Throwable t) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
         }
 
         if (contents == null) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        if (width > 1000 || height > 1000 || contents.length() > 1000) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 

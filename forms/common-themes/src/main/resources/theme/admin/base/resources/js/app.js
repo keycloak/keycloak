@@ -440,6 +440,42 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationCredentialsCtrl'
         })
+        .when('/realms/:realm/applications/:application/clustering', {
+            templateUrl : 'partials/application-clustering.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                }
+            },
+            controller : 'ApplicationClusteringCtrl'
+        })
+        .when('/register-node/realms/:realm/applications/:application/clustering', {
+            templateUrl : 'partials/application-clustering-node.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                }
+            },
+            controller : 'ApplicationClusteringNodeCtrl'
+        })
+        .when('/realms/:realm/applications/:application/clustering/:node', {
+            templateUrl : 'partials/application-clustering-node.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                }
+            },
+            controller : 'ApplicationClusteringNodeCtrl'
+        })
         .when('/realms/:realm/applications/:application/certificate', {
             templateUrl : 'partials/application-keys.html',
             resolve : {

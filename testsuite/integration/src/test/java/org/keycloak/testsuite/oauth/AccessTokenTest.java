@@ -34,6 +34,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.representations.AccessToken;
@@ -232,6 +233,42 @@ public class AccessTokenTest {
                 appRealm.setAccessCodeLifespan(60);
             }
         });
+    }
+
+    @Test
+    public void accessTokenCodeRoleMissing() {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                RoleModel role = appRealm.addRole("tmp-role");
+                session.users().getUserByUsername("test-user@localhost", appRealm).grantRole(role);
+            }
+        });
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        Event loginEvent = events.expectLogin().assertEvent();
+
+        loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.removeRole(appRealm.getRole("tmp-role"));
+            }
+        });
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        Assert.assertEquals(200, response.getStatusCode());
+
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+        Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
+        Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));
+
+        events.clear();
     }
 
     @Test

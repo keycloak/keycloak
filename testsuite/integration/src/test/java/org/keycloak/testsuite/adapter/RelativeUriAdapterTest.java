@@ -158,4 +158,27 @@ public class RelativeUriAdapterTest {
 
 
     }
+
+    @Test
+    public void testServletRequestLogout() throws Exception {
+        driver.navigate().to("http://localhost:8081/customer-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
+        Assert.assertTrue(driver.getPageSource().contains("Bill Burke"));
+
+        driver.navigate().to("http://localhost:8081/product-portal");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/product-portal");
+        Assert.assertTrue(driver.getPageSource().contains("iPhone"));
+
+        // test logout
+        driver.navigate().to("http://localhost:8081/customer-portal/logout");
+
+        driver.navigate().to("http://localhost:8081/customer-portal");
+        String currentUrl = driver.getCurrentUrl();
+        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
+        driver.navigate().to("http://localhost:8081/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+    }
+
 }

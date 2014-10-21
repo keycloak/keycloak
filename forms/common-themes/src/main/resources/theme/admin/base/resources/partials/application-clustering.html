@@ -1,0 +1,75 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <kc-navigation-application></kc-navigation-application>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li class="active">Clustering</li>
+        </ol>
+        <h2 data-ng-hide="create"><span>{{application.name}}</span> Clustering</h2>
+        <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageApplications">
+            <legend><span class="text">Basic configuration</span></legend>
+            <fieldset >
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="nodeReRegistrationTimeout">Node Re-registration Timeout</label>
+                    <div class="col-sm-5">
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <input class="form-control" type="number" required
+                                       max="31536000" data-ng-model="application.nodeReRegistrationTimeout"
+                                       id="nodeReRegistrationTimeout" name="nodeReRegistrationTimeout"/>
+                            </div>
+                            <div class="col-sm-4 select-kc">
+                                <select name="nodeReRegistrationTimeoutUnit" data-ng-model="application.nodeReRegistrationTimeoutUnit" >
+                                    <option data-ng-selected="!application.nodeReRegistrationTimeoutUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Interval to specify max time for registered application cluster nodes to re-register. If cluster node won't send re-registration request to Keycloak within this time, it will be unregistered from Keycloak" class="fa fa-info-circle"></span>
+                </div>
+                <div class="pull-right form-actions" data-ng-show="access.manageRealm">
+                    <button data-kc-reset data-ng-show="changed">Clear changes</button>
+                    <button data-kc-save data-ng-show="changed">Save</button>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend><span class="text">Registered cluster nodes</span></legend>
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th class="kc-table-actions" colspan="3" data-ng-show="access.manageApplications">
+                                <div class="pull-right">
+                                    <a class="btn btn-primary" tooltip="Manually register cluster node. This is usually not needed as cluster node should be registered automatically by adapter"
+                                       tooltip-placement="bottom" href="#/register-node/realms/{{realm.realm}}/applications/{{application.id}}/clustering">Register node manually</a>
+                                </div>
+                            </th>
+                        </tr>
+                        <tr data-ng-hide="!nodeRegistrations || nodeRegistrations.length == 0">
+                            <th>Node host</th>
+                            <th>Last registration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="node in nodeRegistrations">
+                            <td><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/clustering/{{node.host}}">{{node.host}}</a></td>
+                            <td>{{node.lastRegistration}}</td>
+                        </tr>
+                        <tr data-ng-show="!nodeRegistrations || nodeRegistrations.length == 0">
+                            <td>No registered cluster nodes available</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="pull-right form-actions" data-ng-show="access.manageRealm && nodeRegistrations && nodeRegistrations.length > 0">
+                    <a class="btn btn-primary" data-ng-click="testNodesAvailable()">Test cluster availability</a>
+                </div>
+            </fieldset>
+        </form>
+
+    </div>
+</div>

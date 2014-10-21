@@ -67,7 +67,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             if (session != null) {
                 session.removeNote(KeycloakSecurityContext.class.getName());
                 if (ksc instanceof RefreshableKeycloakSecurityContext) {
-                    ((RefreshableKeycloakSecurityContext)ksc).logout(deploymentContext.getDeployment());
+                    CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
+                    ((RefreshableKeycloakSecurityContext)ksc).logout(deploymentContext.resolveDeployment(facade));
                 }
             }
         }

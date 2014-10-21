@@ -141,6 +141,14 @@
                 "/product-portal/*"
             ],
             "secret": "password"
+        },
+        {
+            "name": "database-service",
+            "enabled": true,
+            "adminUrl": "/database",
+            "baseUrl": "/database",
+            "bearerOnly": true,
+            "secret": "password"
         }
     ],
     "oauthClients": [

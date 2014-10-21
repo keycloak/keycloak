@@ -693,6 +693,20 @@ module.factory('ApplicationPushRevocation', function($resource) {
     });
 });
 
+module.factory('ApplicationClusterNode', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/nodes/:node', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+
+module.factory('ApplicationTestNodesAvailable', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/test-nodes-available', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+
 module.factory('ApplicationCertificate', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates', {
             realm : '@realm',
