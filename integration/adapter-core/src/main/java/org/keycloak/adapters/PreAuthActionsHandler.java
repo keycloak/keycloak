@@ -58,6 +58,7 @@ public class PreAuthActionsHandler {
             handleVersion();
             return true;
         } else if (requestUri.endsWith(AdapterConstants.K_TEST_AVAILABLE)) {
+            if (!resolveDeployment()) return true;
             handleTestAvailable();
             return true;
         }

@@ -36,7 +36,7 @@ import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.adapters.NodesRegistrationLifecycle;
+import org.keycloak.adapters.NodesRegistrationManagement;
 
 import javax.servlet.ServletContext;
 import java.io.ByteArrayInputStream;
@@ -112,7 +112,8 @@ public class KeycloakServletExtension implements ServletExtension {
         AdapterDeploymentContext deploymentContext = new AdapterDeploymentContext(deployment);
         servletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement();
-        final ServletKeycloakAuthMech mech = createAuthenticationMechanism(deploymentInfo, deploymentContext, userSessionManagement);
+        final NodesRegistrationManagement nodesRegistrationManagement = new NodesRegistrationManagement(deployment);
+        final ServletKeycloakAuthMech mech = createAuthenticationMechanism(deploymentInfo, deploymentContext, userSessionManagement, nodesRegistrationManagement);
 
         UndertowAuthenticatedActionsHandler.Wrapper actions = new UndertowAuthenticatedActionsHandler.Wrapper(deploymentContext);
 
@@ -149,20 +150,20 @@ public class KeycloakServletExtension implements ServletExtension {
         cookieConfig.setPath(deploymentInfo.getContextPath());
         deploymentInfo.setServletSessionConfig(cookieConfig);
 
-        deploymentInfo.addListener(new ListenerInfo(UndertowNodesRegistrationLifecycleWrapper.class, new InstanceFactory<UndertowNodesRegistrationLifecycleWrapper>() {
+        deploymentInfo.addListener(new ListenerInfo(UndertowNodesRegistrationManagementWrapper.class, new InstanceFactory<UndertowNodesRegistrationManagementWrapper>() {
 
             @Override
-            public InstanceHandle<UndertowNodesRegistrationLifecycleWrapper> createInstance() throws InstantiationException {
-                NodesRegistrationLifecycle nodesRegistration = new NodesRegistrationLifecycle(deployment);
-                UndertowNodesRegistrationLifecycleWrapper listener = new UndertowNodesRegistrationLifecycleWrapper(nodesRegistration);
-                return new ImmediateInstanceHandle<UndertowNodesRegistrationLifecycleWrapper>(listener);
+            public InstanceHandle<UndertowNodesRegistrationManagementWrapper> createInstance() throws InstantiationException {
+                UndertowNodesRegistrationManagementWrapper listener = new UndertowNodesRegistrationManagementWrapper(nodesRegistrationManagement);
+                return new ImmediateInstanceHandle<UndertowNodesRegistrationManagementWrapper>(listener);
             }
 
         }));
     }
 
-    protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement) {
+    protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement,
+                                                                    NodesRegistrationManagement nodesRegistrationManagement) {
        log.debug("creating ServletKeycloakAuthMech");
-       return new ServletKeycloakAuthMech(deploymentContext, userSessionManagement, deploymentInfo.getConfidentialPortManager());
+       return new ServletKeycloakAuthMech(deploymentContext, userSessionManagement, nodesRegistrationManagement, deploymentInfo.getConfidentialPortManager());
     }
 }

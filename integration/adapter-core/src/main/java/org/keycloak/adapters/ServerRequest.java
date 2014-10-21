@@ -231,6 +231,10 @@ public class ServerRequest {
     }
 
     public static void invokeClientManagementRequest(HttpClient client, String host, String endpointUrl, String clientId, Map<String, String> credentials) throws HttpFailure, IOException {
+        if (endpointUrl == null) {
+            throw new IOException("You need to configure URI for register/unregister node for application " + clientId);
+        }
+
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
         formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_CLUSTER_HOST, host));
 
@@ -240,6 +244,8 @@ public class ServerRequest {
         if (clientSecret != null) {
             String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
             post.setHeader("Authorization", authorization);
+        }  else {
+            throw new IOException("You need to configure clientSecret for register/unregister node for application " + clientId);
         }
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");

@@ -147,8 +147,7 @@
             "enabled": true,
             "adminUrl": "/database",
             "baseUrl": "/database",
-            "bearerOnly": true,
-            "secret": "password"
+            "bearerOnly": true
         }
     ],
     "oauthClients": [

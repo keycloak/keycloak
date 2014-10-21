@@ -3,16 +3,16 @@ package org.keycloak.adapters.undertow;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-import org.keycloak.adapters.NodesRegistrationLifecycle;
+import org.keycloak.adapters.NodesRegistrationManagement;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UndertowNodesRegistrationLifecycleWrapper implements ServletContextListener {
+public class UndertowNodesRegistrationManagementWrapper implements ServletContextListener {
 
-    private final NodesRegistrationLifecycle delegate;
+    private final NodesRegistrationManagement delegate;
 
-    public UndertowNodesRegistrationLifecycleWrapper(NodesRegistrationLifecycle delegate) {
+    public UndertowNodesRegistrationManagementWrapper(NodesRegistrationManagement delegate) {
         this.delegate = delegate;
     }
 

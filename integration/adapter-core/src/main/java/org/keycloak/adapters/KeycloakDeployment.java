@@ -85,12 +85,16 @@ public class KeycloakDeployment {
         return authServerBaseUrl;
     }
 
-    public void setAuthServerBaseUrl(String authServerBaseUrl, AdapterConfig config) {
-        this.authServerBaseUrl = authServerBaseUrl;
-        if (authServerBaseUrl == null) return;
+    public void setAuthServerBaseUrl(AdapterConfig config) {
+        this.authServerBaseUrl = config.getAuthServerUrl();
+        if (authServerBaseUrl == null && config.getAuthServerUrlForBackendRequests() == null) return;
 
-        URI uri = URI.create(authServerBaseUrl);
-        if (uri.getHost() == null) {
+        URI authServerUri = null;
+        if (authServerBaseUrl != null) {
+            authServerUri = URI.create(authServerBaseUrl);
+        }
+
+        if (authServerUri == null || authServerUri.getHost() == null) {
             String authServerURLForBackendReqs = config.getAuthServerUrlForBackendRequests();
             if (authServerURLForBackendReqs != null) {
                 relativeUrls = RelativeUrlsUsed.BROWSER_ONLY;

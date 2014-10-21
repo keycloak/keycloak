@@ -436,6 +436,9 @@ public class OpenIDConnectService {
                     .build();
 
         }
+
+        event.success();
+
         return Response.ok(token, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
