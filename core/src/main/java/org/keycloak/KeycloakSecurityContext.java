@@ -17,6 +17,7 @@ import java.io.Serializable;
 public class KeycloakSecurityContext implements Serializable {
     protected String tokenString;
     protected String idTokenString;
+    protected String realm;
 
     // Don't store parsed tokens into HTTP session
     protected transient AccessToken token;
@@ -25,11 +26,12 @@ public class KeycloakSecurityContext implements Serializable {
     public KeycloakSecurityContext() {
     }
 
-    public KeycloakSecurityContext(String tokenString, AccessToken token, String idTokenString, IDToken idToken) {
+    public KeycloakSecurityContext(String tokenString, AccessToken token, String idTokenString, IDToken idToken, String realm) {
         this.tokenString = tokenString;
         this.token = token;
         this.idToken = idToken;
         this.idTokenString = idTokenString;
+        this.realm = realm;
     }
 
     public AccessToken getToken() {
@@ -48,6 +50,9 @@ public class KeycloakSecurityContext implements Serializable {
         return idTokenString;
     }
 
+    public String getRealm() {
+        return realm;
+    }
 
     // SERIALIZATION
 

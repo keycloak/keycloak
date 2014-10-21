@@ -1,0 +1,10 @@
+{
+  "realm" : "tenant2",
+  "resource" : "multi-tenant",
+  "realm-public-key" : "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA0oJjgPQJhnVhOo51KauQGfLLreMFu64OJdKXRnfvAQJQTuKNwc5JrR63l/byyW1B6FgclABF818TtLvMCAkn4EuFwQZCZhg3x3+lFGiB/IzC6UAt4Bi0JQrTbdh83/U97GIPegvaDqiqEiQESEkbCZWxM6sh/34hQaAhCaFpMwIDAQAB",
+  "auth-server-url" : "http://localhost:8080/auth",
+  "ssl-required" : "external",
+  "credentials" : {
+      "secret": "password"
+   }
+}
