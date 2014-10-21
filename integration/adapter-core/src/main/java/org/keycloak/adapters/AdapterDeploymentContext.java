@@ -27,27 +27,54 @@ import java.util.Map;
 public class AdapterDeploymentContext {
     private static final Logger log = Logger.getLogger(AdapterDeploymentContext.class);
     protected KeycloakDeployment deployment;
+    protected KeycloakConfigResolver configResolver;
 
     public AdapterDeploymentContext() {
     }
 
+    /**
+     * For single-tenant deployments, this constructor is to be used, as a
+     * full KeycloakDeployment is known at deployment time and won't change
+     * during the application deployment's life cycle.
+     *
+     * @param deployment A KeycloakConfigResolver, possibly missing the Auth
+     *                   Server URL and/or Realm Public Key
+     */
     public AdapterDeploymentContext(KeycloakDeployment deployment) {
         this.deployment = deployment;
     }
 
-    public KeycloakDeployment getDeployment() {
-        return deployment;
+    /**
+     * For multi-tenant deployments, this constructor is to be used, as a
+     * KeycloakDeployment is not known at deployment time. It defers the
+     * resolution of a KeycloakDeployment to a KeycloakConfigResolver,
+     * to be implemented by the target application.
+     *
+     * @param configResolver A KeycloakConfigResolver that will be used
+     *                       to resolve a KeycloakDeployment
+     */
+    public AdapterDeploymentContext(KeycloakConfigResolver configResolver) {
+        this.configResolver = configResolver;
     }
 
     /**
-     * Resolve adapter deployment based on partial adapter configuration.
-     * This will resolve a relative auth server url based on the current request
-     * This will lazily resolve the public key of the realm if it is not set already.
+     * For single-tenant deployments, it complements KeycloakDeployment
+     * by resolving a relative Auth Server's URL based on the current request
+     * and, if needed, will lazily resolve the Realm's Public Key.
      *
+     * For multi-tenant deployments, defers the resolution of KeycloakDeployment
+     * to the KeycloakConfigResolver .
+     *
+     * @param facade the Request/Response Façade , used to either determine
+     *               the Auth Server URL (single tenant) or pass thru to the
+     *               KeycloakConfigResolver.
      * @return
      */
     public KeycloakDeployment resolveDeployment(HttpFacade facade) {
-        KeycloakDeployment deployment = this.deployment;
+        if (null != configResolver) {
+            return configResolver.resolve(facade.getRequest());
+        }
+
         if (deployment == null) return null;
         if (deployment.getAuthServerBaseUrl() == null) return deployment;
 
@@ -411,6 +438,9 @@ public class AdapterDeploymentContext {
     }
 
     public void updateDeployment(AdapterConfig config) {
+        if (null != configResolver) {
+            throw new IllegalStateException("Cannot parse an adapter config and build an updated deployment when on a multi-tenant scenario.");
+        }
         deployment = KeycloakDeploymentBuilder.build(config);
     }
 }

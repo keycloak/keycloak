@@ -29,5 +29,6 @@
         <module>demo-template</module>
         <module>providers</module>
         <module>js-console</module>
+        <module>multi-tenant</module>
     </modules>
 </project>
