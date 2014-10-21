@@ -1,0 +1,20 @@
+<PicketLink xmlns="urn:picketlink:identity-federation:config:2.1">
+	<PicketLinkSP xmlns="urn:picketlink:identity-federation:config:2.1"
+		ServerEnvironment="tomcat" BindingType="REDIRECT" RelayState="someURL">
+		<IdentityURL>${idp.url::http://localhost:8081/auth/realms/demo/protocol/saml}</IdentityURL>
+		<ServiceURL>${employee.url::http://localhost:8081/employee/}
+		</ServiceURL>
+	</PicketLinkSP>
+	<Handlers xmlns="urn:picketlink:identity-federation:handler:config:2.1">
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2AuthenticationHandler">
+			
+			<Option Key="ASSERTION_SESSION_ATTRIBUTE_NAME" Value="org.picketlink.sp.assertion"/>
+			
+		</Handler>
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.RolesGenerationHandler" />
+	</Handlers>
+</PicketLink>
