@@ -79,7 +79,8 @@ public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
                 session.removeAttribute(KeycloakSecurityContext.class.getName());
                 session.removeAttribute(KeycloakUndertowAccount.class.getName());
                 if (account.getKeycloakSecurityContext() != null) {
-                    account.getKeycloakSecurityContext().logout(deploymentContext.getDeployment());
+                    UndertowHttpFacade facade = new UndertowHttpFacade(notification.getExchange());
+                    account.getKeycloakSecurityContext().logout(deploymentContext.resolveDeployment(facade));
                 }
             }
         };

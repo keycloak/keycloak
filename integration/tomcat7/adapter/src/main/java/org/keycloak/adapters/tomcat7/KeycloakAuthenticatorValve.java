@@ -69,7 +69,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             if (session != null) {
                 session.removeNote(KeycloakSecurityContext.class.getName());
                 try {
-                    ServerRequest.invokeLogout(deploymentContext.getDeployment(), ksc.getToken().getSessionState());
+                    CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
+                    ServerRequest.invokeLogout(deploymentContext.resolveDeployment(facade), ksc.getToken().getSessionState());
                 } catch (Exception e) {
                 	log.severe("failed to invoke remote logout. " + e.getMessage());
                 }
