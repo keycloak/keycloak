@@ -21,14 +21,19 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 
 import java.util.List;
-import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.dmr.ModelNode;
+import org.keycloak.subsystem.extension.KeycloakAdapterConfigService;
 
 /**
  * Update an attribute on an Auth Server.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public class AuthServerWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
+public class AuthServerWriteAttributeHandler extends ModelOnlyWriteAttributeHandler { //extends ReloadRequiredWriteAttributeHandler {
 
     public AuthServerWriteAttributeHandler(List<SimpleAttributeDefinition> definitions) {
         this(definitions.toArray(new AttributeDefinition[definitions.size()]));
@@ -36,6 +41,58 @@ public class AuthServerWriteAttributeHandler extends ReloadRequiredWriteAttribut
 
     public AuthServerWriteAttributeHandler(AttributeDefinition... definitions) {
         super(definitions);
+    }
+
+    @Override
+    protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue, ModelNode oldValue, Resource model) throws OperationFailedException {
+        if (!context.isNormalServer() || attribNotChanging(attributeName, newValue, oldValue)) {
+            super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
+            return;
+        }
+
+        System.out.println("**** finishModelStage *****");
+        System.out.println("** operation **");
+        System.out.println(operation.toString());
+        System.out.println("** attributeName=" + attributeName);
+        System.out.println("** oldValue=" + oldValue);
+        System.out.println("** newValue=" + newValue);
+
+        AuthServerUtil authServerUtil = new AuthServerUtil(operation);
+        boolean isEnabled = isEnabled(model); // is server currently enabled?
+
+        if (attributeName.equals(AuthServerDefinition.WEB_CONTEXT.getName())) {
+            String deploymentName = AuthServerUtil.getDeploymentName(operation);
+            KeycloakAdapterConfigService.INSTANCE.removeServerDeployment(deploymentName);
+            KeycloakAdapterConfigService.INSTANCE.addServerDeployment(deploymentName, newValue.asString());
+            if (isEnabled) {
+                authServerUtil.addStepToRedeployAuthServer(context);
+            }
+        }
+
+        if (attributeName.equals(AuthServerDefinition.ENABLED.getName())) {
+            if (!isEnabled) { // we are disabling
+                authServerUtil.addStepToUndeployAuthServer(context);
+            } else { // we are enabling
+                authServerUtil.addStepToDeployAuthServer(context);
+            }
+        }
+
+        super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
+    }
+
+    // Is auth server currently enabled?
+    private boolean isEnabled(Resource model) {
+        ModelNode authServer = model.getModel();
+        ModelNode isEnabled = authServer.get(AuthServerDefinition.ENABLED.getName());
+        if (!isEnabled.isDefined()) isEnabled = AuthServerDefinition.ENABLED.getDefaultValue();
+        return isEnabled.asBoolean();
+    }
+
+    private boolean attribNotChanging(String attributeName, ModelNode newValue, ModelNode oldValue) {
+        SimpleAttributeDefinition attribDef = AuthServerDefinition.lookup(attributeName);
+        if (!oldValue.isDefined()) oldValue = attribDef.getDefaultValue();
+        if (!newValue.isDefined()) newValue = attribDef.getDefaultValue();
+        return newValue.equals(oldValue);
     }
 
 }

@@ -51,11 +51,11 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     public static final KeycloakAdapterConfigService INSTANCE = new KeycloakAdapterConfigService();
 
     private Map<String, ModelNode> realms = new HashMap<String, ModelNode>();
-    private Map<String, ModelNode> deployments = new HashMap<String, ModelNode>();
 
-    // key=server deployment name; value=json
-    private Map<String, String> serverDeployments = new HashMap<String, String>();
-    // key=server deployment name; value=web-context
+    // keycloak-secured deployments
+    private Map<String, ModelNode> secureDeployments = new HashMap<String, ModelNode>();
+
+    // key=auth-server deployment name; value=web-context
     private Map<String, String> webContexts = new HashMap<String, String>();
 
     private KeycloakAdapterConfigService() {
@@ -77,8 +77,8 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
         return this;
     }
 
-    public void addServerDeployment(String deploymentName, String json, String webContext) {
-        this.serverDeployments.put(deploymentName, json);
+    public void addServerDeployment(String deploymentName, String webContext) {
+        System.out.println("**** adding Server deployment=" + deploymentName);
         this.webContexts.put(deploymentName, webContext);
     }
 
@@ -87,7 +87,6 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     }
 
     public void removeServerDeployment(String deploymentName) {
-        this.serverDeployments.remove(deploymentName);
         this.webContexts.remove(deploymentName);
     }
 
@@ -110,16 +109,16 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
 
     public void addSecureDeployment(ModelNode operation, ModelNode model) {
         ModelNode deployment = model.clone();
-        this.deployments.put(deploymentNameFromOp(operation), deployment);
+        this.secureDeployments.put(deploymentNameFromOp(operation), deployment);
     }
 
     public void updateSecureDeployment(ModelNode operation, String attrName, ModelNode resolvedValue) {
-        ModelNode deployment = this.deployments.get(deploymentNameFromOp(operation));
+        ModelNode deployment = this.secureDeployments.get(deploymentNameFromOp(operation));
         deployment.get(attrName).set(resolvedValue);
     }
 
     public void removeSecureDeployment(ModelNode operation) {
-        this.deployments.remove(deploymentNameFromOp(operation));
+        this.secureDeployments.remove(deploymentNameFromOp(operation));
     }
 
     public void addCredential(ModelNode operation, ModelNode model) {
@@ -131,7 +130,7 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
         String credentialName = credentialNameFromOp(operation);
         credentials.get(credentialName).set(model.get("value").asString());
 
-        ModelNode deployment = this.deployments.get(deploymentNameFromOp(operation));
+        ModelNode deployment = this.secureDeployments.get(deploymentNameFromOp(operation));
         deployment.get(CREDENTIALS_JSON_NAME).set(credentials);
     }
 
@@ -156,7 +155,7 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     }
 
     private ModelNode credentialsFromOp(ModelNode operation) {
-        ModelNode deployment = this.deployments.get(deploymentNameFromOp(operation));
+        ModelNode deployment = this.secureDeployments.get(deploymentNameFromOp(operation));
         return deployment.get(CREDENTIALS_JSON_NAME);
     }
 
@@ -187,17 +186,13 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     }
 
     public String getRealmName(String deploymentName) {
-        ModelNode deployment = this.deployments.get(deploymentName);
+        ModelNode deployment = this.secureDeployments.get(deploymentName);
         return deployment.get(RealmDefinition.TAG_NAME).asString();
 
     }
 
     public String getJSON(String deploymentName) {
-        if (serverDeployments.containsKey(deploymentName)) {
-            return serverDeployments.get(deploymentName);
-        }
-
-        ModelNode deployment = this.deployments.get(deploymentName);
+        ModelNode deployment = this.secureDeployments.get(deploymentName);
         String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
         ModelNode realm = this.realms.get(realmName);
 
@@ -220,14 +215,14 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
         }
     }
 
-    public boolean isKeycloakDeployment(String deploymentName) {
+    public boolean isSecureDeployment(String deploymentName) {
         //log.info("********* CHECK KEYCLOAK DEPLOYMENT: deployments.size()" + deployments.size());
 
-        return this.serverDeployments.containsKey(deploymentName) || this.deployments.containsKey(deploymentName);
+        return this.secureDeployments.containsKey(deploymentName);
     }
 
     public boolean isKeycloakServerDeployment(String deploymentName) {
-        return this.serverDeployments.containsKey(deploymentName);
+        return this.webContexts.containsKey(deploymentName);
     }
 
     static KeycloakAdapterConfigService find(ServiceRegistry registry) {

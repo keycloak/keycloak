@@ -20,15 +20,33 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
-        <version>1.1.0.Beta2-SNAPSHOT</version>
+        <version>1.1.0-Alpha1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-wildfly-subsystem</artifactId>
-    <name>Keycloak Wildfly Subsystem</name>
+    <artifactId>keycloak-feature-pack</artifactId>
+    <name>Keycloak Feature Pack</name>
     <description/>
     <packaging>jar</packaging>
 
+    
+    <dependencies>
+        <!-- feature pack dependencies -->
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-core-feature-pack</artifactId>
+            <type>zip</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <!-- module and copy artifact dependencies -->
+    </dependencies>
+    
     <build>
         <plugins>
             <plugin>
@@ -42,9 +60,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.8.1</version>
                 <configuration>
                     <redirectTestOutputToFile>false</redirectTestOutputToFile>
                     <enableAssertions>true</enableAssertions>
+                    <argLine>-Xmx512m</argLine>
                     <systemProperties>
                         <property>
                             <name>jboss.home</name>
@@ -54,61 +74,10 @@
                     <includes>
                         <include>**/*TestCase.java</include>
                     </includes>
+                    <forkMode>once</forkMode>
                 </configuration>
-            </plugin>            
+            </plugin>
         </plugins>
     </build>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-controller</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-server</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-ee</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-undertow</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging-annotations</artifactId>
-            <version>${jboss-logging-tools.version}</version>
-            <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
-            projects that depend on this project.-->
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging-processor</artifactId>
-            <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
-            projects that depend on this project.-->
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-subsystem-test</artifactId>
-            <type>pom</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 </project>

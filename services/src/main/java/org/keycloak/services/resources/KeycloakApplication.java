@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
-import org.keycloak.adapters.AdapterConstants;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,7 +57,7 @@ public class KeycloakApplication extends Application {
     protected String contextPath;
 
     public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
-        loadConfig(context);
+        loadConfig();
 
         this.sessionFactory = createSessionFactory();
 
@@ -101,26 +100,6 @@ public class KeycloakApplication extends Application {
      */
     public URI getBaseUri(UriInfo uriInfo) {
         return uriInfo.getBaseUriBuilder().replacePath(getContextPath()).build();
-    }
-
-    private static void loadConfig(ServletContext context) {
-        String json = context.getInitParameter(AdapterConstants.AUTH_DATA_PARAM_NAME);
-        if (json == null) {
-            loadConfig(); // from file
-        } else {
-            loadConfig(json); // from ServletContext/Keycloak subsystem
-        }
-    }
-
-    private static void loadConfig(String json) {
-        try {
-            JsonNode node = new ObjectMapper().readTree(json);
-            Config.init(new JsonConfigProvider(node));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load config", e);
-        }
-
-        log.info("Loaded config from Keycloak subsystem");
     }
 
     public static void loadConfig() {

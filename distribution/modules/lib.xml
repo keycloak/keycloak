@@ -52,7 +52,12 @@
 
             <!-- Process the resource -->
             <resources/>
-
+            
+            <!-- Add keycloak version property to module xml -->
+            <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}"
+                     token="$${project.version}"
+                     value="${project.version}"/>
+            
             <!-- Some final cleanup -->
             <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}">
                 <replacetoken>

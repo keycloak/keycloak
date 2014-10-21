@@ -21,11 +21,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-
-import java.util.List;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -41,7 +37,8 @@ public final class AuthServerAddHandler extends AbstractAddStepHandler {
 
     public static AuthServerAddHandler INSTANCE = new AuthServerAddHandler();
 
-    private AuthServerAddHandler() {}
+    private AuthServerAddHandler() {
+    }
 
     @Override
     protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
@@ -55,12 +52,6 @@ public final class AuthServerAddHandler extends AbstractAddStepHandler {
             attr.validateAndSet(operation, model);
         }
 
-/*        String serverJsonAttrName = AuthServerDefinition.KEYCLOAK_SERVER_JSON.getName();
-        ModelNode keycloakServerJson = model.get(serverJsonAttrName);
-        if (!keycloakServerJson.isDefined()) {
-            model.get(serverJsonAttrName).set(AuthServerUtil.getDefaultAuthServerJson());
-        } */
-
         System.out.println("**************************");
         System.out.println("operation");
         System.out.println(operation.toString());
@@ -69,20 +60,27 @@ public final class AuthServerAddHandler extends AbstractAddStepHandler {
         System.out.println(model.toString());
         System.out.println("**************************");
 
-        if (!requiresRuntime(context)) return; // not sure I really need this
+        // returns early if on domain controller
+        if (!requiresRuntime(context)) return;
+
+        // don't want to try to start server on host controller
+        if (!context.isNormalServer()) return;
+
+
+        ModelNode webContextNode = model.get(AuthServerDefinition.WEB_CONTEXT.getName());
+        if (!webContextNode.isDefined()) webContextNode = AuthServerDefinition.WEB_CONTEXT.getDefaultValue();
+        String webContext = webContextNode.asString();
 
         ModelNode isEnabled = model.get("enabled");
-        if (!isEnabled.isDefined() || isEnabled.asBoolean()) {
-            String deploymentName = AuthServerUtil.addStepToStartAuthServer(context, operation);
-            //String json = model.get(serverJsonAttrName).asString();
-            ModelNode webContextNode = model.get(AuthServerDefinition.WEB_CONTEXT.getName());
-            if (!webContextNode.isDefined()) webContextNode = AuthServerDefinition.WEB_CONTEXT.getDefaultValue();
-            String webContext = webContextNode.asString();
-            KeycloakAdapterConfigService.INSTANCE.addServerDeployment(deploymentName, json, webContext);
-        }
+        boolean enabled = isEnabled.isDefined() && isEnabled.asBoolean();
+
+        AuthServerUtil authServerUtil = new AuthServerUtil(operation);
+        authServerUtil.addStepToUploadAuthServer(context, enabled);
+        KeycloakAdapterConfigService.INSTANCE.addServerDeployment(authServerUtil.getDeploymentName(), webContext);
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected boolean requiresRuntimeVerification() {
+        return false;
     }
 }

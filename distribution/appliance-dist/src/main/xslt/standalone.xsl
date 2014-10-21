@@ -34,7 +34,12 @@
     <xsl:template match="node()[name(.)='profile']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
-            <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
+            <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
+                <auth-server name="main-auth-server">
+                    <enabled>true</enabled>
+                    <web-context>auth</web-context>
+                </auth-server>
+            </subsystem>
         </xsl:copy>
     </xsl:template>
 
@@ -56,7 +61,7 @@
 
 
     <!-- for some reason, Wildfly 8 final decided to turn off management-native which means jboss-as-maven-plugin no
-         longer works -->
+    longer works -->
     <xsl:template match="node()[name(.)='management-interfaces']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
@@ -67,11 +72,22 @@
     </xsl:template>
 
     <!-- for some reason, Wildfly 8 final decided to turn off management-native which means jboss-as-maven-plugin no
-         longer works -->
+    longer works -->
     <xsl:template match="node()[name(.)='socket-binding-group']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             <socket-binding name="management-native" interface="management" port="9999"/>
+        </xsl:copy>
+    </xsl:template>
+    
+    <xsl:template match="node()[name(.)='server' and name(..) != 'subsystem' ]">
+        <xsl:copy>
+            <xsl:apply-templates select="node()|@*"/>
+            <deployment-overlays>
+                <deployment-overlay name="main-auth-server.war-keycloak-overlay">
+                    <deployment name="main-auth-server.war"/>
+                </deployment-overlay>
+            </deployment-overlays>
         </xsl:copy>
     </xsl:template>
 

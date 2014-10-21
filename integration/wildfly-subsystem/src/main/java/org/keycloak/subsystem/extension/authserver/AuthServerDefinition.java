@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.keycloak.subsystem.extension.KeycloakAdapterConfigService;
@@ -49,7 +50,7 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder("enabled", ModelType.BOOLEAN, true)
             .setXmlName("enabled")
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(new ModelNode(false))
             .setRestartAllServices()
             .build();
 
@@ -62,18 +63,12 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
- /*   protected static final SimpleAttributeDefinition KEYCLOAK_SERVER_JSON =
-            new SimpleAttributeDefinitionBuilder("keycloak-server-json", ModelType.STRING, true)
-            .setXmlName("keycloak-server-json")
-            .setAllowExpression(true)
-            .setRestartAllServices()
-            .build(); */
+    protected static final ResourceDescriptionResolver rscDescriptionResolver = KeycloakExtension.getResourceDescriptionResolver(TAG_NAME);
 
     public static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
         ALL_ATTRIBUTES.add(ENABLED);
         ALL_ATTRIBUTES.add(WEB_CONTEXT);
-        //ALL_ATTRIBUTES.add(KEYCLOAK_SERVER_JSON);
     }
 
     private static final Map<String, SimpleAttributeDefinition> DEFINITION_LOOKUP = new HashMap<String, SimpleAttributeDefinition>();
@@ -87,7 +82,7 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
 
     public AuthServerDefinition() {
         super(PathElement.pathElement(TAG_NAME),
-                KeycloakExtension.getResourceDescriptionResolver(TAG_NAME),
+                rscDescriptionResolver,
                 AuthServerAddHandler.INSTANCE,
                 AuthServerRemoveHandler.INSTANCE,
                 null,
@@ -98,6 +93,7 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(ManageOverlayHandler.DEFINITION, ManageOverlayHandler.INSTANCE);
     }
 
     @Override

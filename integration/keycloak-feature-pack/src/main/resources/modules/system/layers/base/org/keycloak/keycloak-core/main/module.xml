@@ -2,7 +2,7 @@
 
 <!--
   ~ JBoss, Home of Professional Open Source.
-  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ Copyright 2014, Red Hat, Inc., and individual contributors
   ~ as indicated by the @author tags. See the copyright.txt file in the
   ~ distribution for a full listing of individual contributors.
   ~
@@ -22,28 +22,17 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-wildfly-subsystem">
-    <properties>
-        <property name="keycloak-version" value="${project.version}"/>
-    </properties>
-
+<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-core">
     <resources>
-        <resource-root path="auth-server"/>
-        <resource-root path="overlays"/>
-        <!-- Insert resources here -->
+        <artifact name="${org.keycloak:keycloak-core}"/>
     </resources>
-
     <dependencies>
+        <module name="org.codehaus.jackson.jackson-core-asl"/>
+        <module name="org.codehaus.jackson.jackson-mapper-asl"/>
+        <module name="org.codehaus.jackson.jackson-xc"/>
+        <module name="org.bouncycastle"/>
+        <module name="net.iharder.base64"/>
         <module name="javax.api"/>
-        <module name="org.jboss.staxmapper"/>
-        <module name="org.jboss.as.controller"/>
-        <module name="org.jboss.as.ee"/>
-        <module name="org.jboss.as.server"/>
-        <module name="org.jboss.modules"/>
-        <module name="org.jboss.msc"/>
-        <module name="org.jboss.logging"/>
-        <module name="org.jboss.vfs"/>
-        <module name="org.jboss.as.web-common"/>
-        <module name="org.jboss.metadata"/>
     </dependencies>
+
 </module>
