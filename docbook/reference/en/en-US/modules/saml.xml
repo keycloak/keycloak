@@ -1,0 +1,97 @@
+<chapter id="saml">
+    <title>SAML SSO</title>
+    <para>
+        Keycloak supports SAML 2.0 for registered applications.  Both POST and Redirect bindings are supported.  You can choose
+        to require client signature validation and can have the server sign and/or encrypt responses as well.  We do not
+        yet support logout via redirects.  All logouts happen via a background POST binding request to the application
+        that will be logged out.  We do not support SAML 1.1 either.  If you want support for either of those, please
+        log a JIRA request and we'll schedule it.
+    </para>
+    <para>
+        When you create an application in the admin console, you can choose which protocol the application will log in with.
+        In the application create screen, choose <literal>saml</literal> from the protocol list.  After that there
+        are a bunch of configuration options.  Here is a description of each item:
+    </para>
+    <para>
+        <variablelist>
+            <varlistentry>
+                <term>Include AuthnStatement</term>
+                <listitem>
+                    <para>
+                        SAML login responses may specify the authenticaiton method used (password, etc.) as well as
+                        a timestamp of the login.  Setting this to on will include that statement in the response document.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Multi-valued Roles</term>
+                <listitem>
+                    <para>
+                        If this switch is off, any user role mapings will have a corresponding attribute created for it.
+                        If this switch is turn on, only one role attribute will be created, but it will have
+                        multiple values within in.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Sign Documents</term>
+                <listitem>
+                    <para>
+                        When turned on, Keycloak will sign the document using the realm's private key.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Sign Assertions</term>
+                <listitem>
+                    <para>
+                        With the <literal>Sign Documents</literal> switch signs the whole document.  With this setting
+                        you just assign the assertions of the document.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Signature Algorithm</term>
+                <listitem>
+                    <para>
+                        Choose between a variety of algorithms for signing SAML documents.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Encrypt Assertions</term>
+                <listitem>
+                    <para>
+                        Encrypt assertions in SAML documents with the realm's private key.  The AES algorithm is used
+                        with a key size of 128 bits.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Client Signature Required</term>
+                <listitem>
+                    <para>
+                        Expect that documents coming from a client are signed.  Keycloak will validate this signature
+                        using the client keys set up in the <literal>Application Keys</literal> submenu item.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Force POST Binding</term>
+                <listitem>
+                    <para>
+                        By default, Keycloak will respond using the initial SAML binding of the original request.  By turning
+                        on this switch, you will force Keycloak to always respond using the SAML POST Binding even if the
+                        original request was a the Redirect binding.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </para>
+    <para>
+        One thing to note is that roles are not treated as a hierarchy.  So, any role mappings will just be added
+        to the role attributes in the SAML document using their basic name.  So, if you have multiple applicaiton roles
+        you might have name collisions.  You can use the Scope Mapping menu item to control which role mappings are set
+        in the response.
+    </para>
+</chapter>

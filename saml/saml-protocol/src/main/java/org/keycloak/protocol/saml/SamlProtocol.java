@@ -39,6 +39,14 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_POST_BINDING = "post";
     public static final String SAML_GET_BINDING = "get";
+    public static final String SAML_SERVER_SIGNATURE = "saml.server.signature";
+    public static final String SAML_ASSERTION_SIGNATURE = "saml.assertion.signature";
+    public static final String SAML_AUTHNSTATEMENT = "saml.authnstatement";
+    public static final String SAML_MULTIVALUED_ROLES = "saml.multivalued.roles";
+    public static final String SAML_SIGNATURE_ALGORITHM = "saml.signature.algorithm";
+    public static final String SAML_ENCRYPT = "saml.encrypt";
+    public static final String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
+    public static final String REQUEST_ID = "REQUEST_ID";
 
     protected KeycloakSession session;
 
@@ -98,14 +106,15 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     protected boolean isPostBinding(ClientSessionModel clientSession) {
-        return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING));
+        ClientModel client = clientSession.getClient();
+        return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING)) || "true".equals(client.getAttribute(SAML_FORCE_POST_BINDING));
     }
 
     @Override
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
         ClientModel client = clientSession.getClient();
-        String requestID = clientSession.getNote("REQUEST_ID");
+        String requestID = clientSession.getNote(REQUEST_ID);
         String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
         String redirectUri = clientSession.getRedirectUri();
         String responseIssuer = getResponseIssuer(realm);
@@ -166,23 +175,23 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     private boolean requiresRealmSignature(ClientModel client) {
-        return "true".equals(client.getAttribute("saml.server.signature"));
+        return "true".equals(client.getAttribute(SAML_SERVER_SIGNATURE));
     }
 
     private boolean requiresAssertionSignature(ClientModel client) {
-        return "true".equals(client.getAttribute("saml.assertion.signature"));
+        return "true".equals(client.getAttribute(SAML_ASSERTION_SIGNATURE));
     }
 
     private boolean includeAuthnStatement(ClientModel client) {
-        return "true".equals(client.getAttribute("saml.authnstatement"));
+        return "true".equals(client.getAttribute(SAML_AUTHNSTATEMENT));
     }
 
     private boolean multivaluedRoles(ClientModel client) {
-        return "true".equals(client.getAttribute("saml.multivalued.roles"));
+        return "true".equals(client.getAttribute(SAML_MULTIVALUED_ROLES));
     }
 
     public static SignatureAlgorithm getSignatureAlgorithm(ClientModel client) {
-        String alg = client.getAttribute("saml.signature.algorithm");
+        String alg = client.getAttribute(SAML_SIGNATURE_ALGORITHM);
         if (alg != null) {
             SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(alg);
             if (algorithm != null) return algorithm;
@@ -191,7 +200,7 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     private boolean requiresEncryption(ClientModel client) {
-        return "true".equals(client.getAttribute("saml.encrypt"));
+        return "true".equals(client.getAttribute(SAML_ENCRYPT));
     }
 
     public void initClaims(SALM2LoginResponseBuilder builder, ClientModel model, UserModel user) {

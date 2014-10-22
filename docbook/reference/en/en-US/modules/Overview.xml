@@ -74,6 +74,9 @@
                 OpenID Connect Support.
             </listitem>
             <listitem>
+                SAML Support.
+            </listitem>
+            <listitem>
                 CORS Support
             </listitem>
             <listitem>
@@ -89,13 +92,13 @@
                 Account Management console that allows users to manage their own account, view their open sessions, reset passwords, etc.
             </listitem>
             <listitem>
-                Deployable as a WAR, appliance, or on Openshift.
+                Deployable as a WAR, appliance, or on Openshift.  Completely clusterable.
             </listitem>
             <listitem>
                 Multitenancy support.  You can host and manage multiple realms for multiple organizations.
             </listitem>
             <listitem>
-                Supports JBoss AS7, EAP 6.x, Wildfly and JavaScript applications.  Plans to support Node.js, RAILS, GRAILS, and other non-Java deployments
+                Supports JBoss AS7, EAP 6.x, Wildfly and Pure JavaScript applications.  Plans to support Node.js, RAILS, GRAILS, and other non-Java deployments
             </listitem>
         </itemizedlist>
     </para>

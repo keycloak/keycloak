@@ -111,6 +111,13 @@
                     </div>
                     <span tooltip-placement="right" tooltip="Will the client sign their saml requests and responses?  And should they be validated?" class="fa fa-info-circle"></span>
                 </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlForcePostBinding">Force POST Binding</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlForcePostBinding" ng-click="switchChange()" name="samlForcePostBinding" id="samlForcePostBinding" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Always use POST binding for responses." class="fa fa-info-circle"></span>
+                </div>
 
                 <div class="form-group" data-ng-show="!application.bearerOnly">
                     <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI <span class="required" data-ng-show="create">*</span></label>
