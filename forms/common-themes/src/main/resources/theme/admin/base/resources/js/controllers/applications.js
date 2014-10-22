@@ -357,7 +357,10 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
 
     $scope.realm = realm;
     $scope.create = !application.name;
+    $scope.samlAuthnStatement = false;
+    $scope.samlMultiValuedRoles = false;
     $scope.samlServerSignature = false;
+    $scope.samlAssertionSignature = false;
     $scope.samlClientSignature = false;
     $scope.samlEncrypt = false;
     if (!$scope.create) {
@@ -393,21 +396,50 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         $scope.accessType = $scope.accessTypes[0];
         $scope.protocol = $scope.protocols[0];
         $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
+        $scope.samlAuthnStatement = true;
     }
 
     if ($scope.application.attributes["saml.server.signature"]) {
         if ($scope.application.attributes["saml.server.signature"] == "true") {
             $scope.samlServerSignature = true;
+        } else {
+            $scope.samlServerSignature = false;
+
+        }
+    }
+    if ($scope.application.attributes["saml.assertion.signature"]) {
+        if ($scope.application.attributes["saml.assertion.signature"] == "true") {
+            $scope.samlAssertionSignature = true;
+        } else {
+            $scope.samlAssertionSignature = false;
         }
     }
     if ($scope.application.attributes["saml.client.signature"]) {
         if ($scope.application.attributes["saml.client.signature"] == "true") {
             $scope.samlClientSignature = true;
+        } else {
+            $scope.samlClientSignature = false;
         }
     }
     if ($scope.application.attributes["saml.encrypt"]) {
         if ($scope.application.attributes["saml.encrypt"] == "true") {
             $scope.samlEncrypt = true;
+        } else {
+            $scope.samlEncrypt = false;
+        }
+    }
+    if ($scope.application.attributes["saml.authnstatement"]) {
+        if ($scope.application.attributes["saml.authnstatement"] == "true") {
+            $scope.samlAuthnStatement = true;
+        } else {
+            $scope.samlAuthnStatement = false;
+        }
+    }
+    if ($scope.application.attributes["saml.multivalued.roles"]) {
+        if ($scope.application.attributes["saml.multivalued.roles"] == "true") {
+            $scope.samlMultiValuedRoles = true;
+        } else {
+            $scope.samlMultiValuedRoles = false;
         }
     }
 
@@ -474,6 +506,11 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             $scope.application.attributes["saml.server.signature"] = "false";
 
         }
+        if ($scope.samlAssertionSignature == true) {
+            $scope.application.attributes["saml.assertion.signature"] = "true";
+        } else {
+            $scope.application.attributes["saml.assertion.signature"] = "false";
+        }
         if ($scope.samlClientSignature == true) {
             $scope.application.attributes["saml.client.signature"] = "true";
         } else {
@@ -484,6 +521,18 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             $scope.application.attributes["saml.encrypt"] = "true";
         } else {
             $scope.application.attributes["saml.encrypt"] = "false";
+
+        }
+        if ($scope.samlAuthnStatement == true) {
+            $scope.application.attributes["saml.authnstatement"] = "true";
+        } else {
+            $scope.application.attributes["saml.authnstatement"] = "false";
+
+        }
+        if ($scope.samlMultiValuedRoles == true) {
+            $scope.application.attributes["saml.multivalued.roles"] = "true";
+        } else {
+            $scope.application.attributes["saml.multivalued.roles"] = "false";
 
         }
 

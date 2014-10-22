@@ -57,13 +57,34 @@
                     <span tooltip-placement="right" tooltip="'Confidential' applications require a secret to initiate login protocol.  'Public' clients do not require a secret.  'Bearer-only' applications are web services that never initiate a login." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="samlServerSignature">Sign SAML Documents</label>
+                    <label class="col-sm-2 control-label" for="samlServerSignature">Include AuthnStatement</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlAuthnStatement" ng-click="switchChange()" name="samlAuthnStatement" id="samlAuthnStatement" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Should a statement specifying the method and timestamp be included in login responses?" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlMultiValuedRoles">Multi-valued Roles</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlMultiValuedRoles" ng-click="switchChange()" name="samlMultiValuedRoles" id="samlMultiValuedRoles" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="'On' means that there will be one role attribute with multiple values for each role in SAML response.  'Off' means that there will be an attribute defined for each role." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlServerSignature">Sign Documents</label>
                     <div class="col-sm-6">
                         <input ng-model="samlServerSignature" ng-click="switchChange()" name="samlServerSignature" id="samlServerSignature" onoffswitch />
                     </div>
                     <span tooltip-placement="right" tooltip="Should SAML documents be signed by the realm?" class="fa fa-info-circle"></span>
                 </div>
-                <div class="form-group" data-ng-show="samlServerSignature && protocol == 'saml'">
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlAssertionSignature">Sign Assertions</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlAssertionSignature" ng-click="switchChange()" name="samlAssertionSignature" id="samlAssertionSignature" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Should assertions inside SAML documents be signed?  This setting isn't needed if document is already being signed." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="(samlAssertionSignature || samlServerSignature) && protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="protocol">Signature Algorithm</label>
                     <div class="col-sm-6">
                         <div class="select-kc">
@@ -77,11 +98,11 @@
                     <span tooltip-placement="right" tooltip="The signature algorithm to use to sign documents." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="samlEncrypt">Encrypt SAML Documents</label>
+                    <label class="col-sm-2 control-label" for="samlEncrypt">Encrypt Assertions</label>
                     <div class="col-sm-6">
                         <input ng-model="samlEncrypt" ng-click="switchChange()" name="samlEncrypt" id="samlEncrypt" onoffswitch />
                     </div>
-                    <span tooltip-placement="right" tooltip="Should SAML asserts be encrypted with client's public key?" class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Should SAML assertions be encrypted with client's public key using AES?" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="samlClientSignature">Client Signature Required</label>

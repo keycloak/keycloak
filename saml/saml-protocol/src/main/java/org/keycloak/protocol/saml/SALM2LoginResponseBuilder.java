@@ -143,7 +143,7 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
 
         // Create an AuthnStatementType
         if (!disableAuthnStatement) {
-            String authContextRef = JBossSAMLURIConstants.AC_PASSWORD.get();
+            String authContextRef = JBossSAMLURIConstants.AC_UNSPECIFIED.get();
             if (isNotNull(authMethod))
                 authContextRef = authMethod;
 
