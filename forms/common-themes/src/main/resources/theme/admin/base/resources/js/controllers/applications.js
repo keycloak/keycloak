@@ -363,6 +363,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     $scope.samlAssertionSignature = false;
     $scope.samlClientSignature = false;
     $scope.samlEncrypt = false;
+    $scope.samlForcePostBinding = false;
     if (!$scope.create) {
         if (!application.attributes) {
             application.attributes = {};
@@ -440,6 +441,13 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             $scope.samlMultiValuedRoles = true;
         } else {
             $scope.samlMultiValuedRoles = false;
+        }
+    }
+    if ($scope.application.attributes["saml.force.post.binding"]) {
+        if ($scope.application.attributes["saml.force.post.binding"] == "true") {
+            $scope.samlForcePostBinding = true;
+        } else {
+            $scope.samlForcePostBinding = false;
         }
     }
 
@@ -533,6 +541,12 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             $scope.application.attributes["saml.multivalued.roles"] = "true";
         } else {
             $scope.application.attributes["saml.multivalued.roles"] = "false";
+
+        }
+        if ($scope.samlForcePostBinding == true) {
+            $scope.application.attributes["saml.force.post.binding"] = "true";
+        } else {
+            $scope.application.attributes["saml.force.post.binding"] = "false";
 
         }
 

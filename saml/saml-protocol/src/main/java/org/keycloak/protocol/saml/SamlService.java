@@ -198,7 +198,7 @@ public class SamlService {
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
             clientSession.setNote(SamlProtocol.SAML_BINDING, getBindingType());
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
-            clientSession.setNote("REQUEST_ID", requestAbstractType.getID());
+            clientSession.setNote(SamlProtocol.REQUEST_ID, requestAbstractType.getID());
 
             Response response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
             if (response != null) return response;
