@@ -19,5 +19,5 @@ public interface Details {
     String REFRESH_TOKEN_ID = "refresh_token_id";
     String VALIDATE_ACCESS_TOKEN = "validate_access_token";
     String UPDATED_REFRESH_TOKEN_ID = "updated_refresh_token_id";
-
+    String NODE_HOST = "node_host";
 }
