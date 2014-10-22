@@ -152,4 +152,13 @@
             At this point in time, there is no knowledge of any SQL injection vulnerabilities in Keycloak
         </para>
     </section>
+    <section>
+        <title>Limiting Scope</title>
+        <para>
+            Using the <literal>Scope</literal> menu in the admin console for oauth clients or applications, you can control
+            exactly which role mappings will be included within the token sent back to the client or application.  This
+            allows you to limit the scope of permissions given to the application or client which is great if the client isn't
+            very trusted and is known to not being very careful with its tokens.
+        </para>
+    </section>
 </chapter>
