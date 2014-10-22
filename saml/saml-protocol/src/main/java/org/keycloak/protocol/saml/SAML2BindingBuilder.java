@@ -109,26 +109,49 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         return (T)this;
     }
 
-    public class BindingBuilder {
+    public class PostBindingBuilder {
         protected Document document;
 
-        public BindingBuilder(Document document) {
+        public PostBindingBuilder(Document document) throws ProcessingException {
+            this.document = document;
+            if (signed) {
+                signDocument(document);
+            }
+        }
+
+        public String encoded() throws ProcessingException, ConfigurationException, IOException {
+            byte[] responseBytes = org.picketlink.identity.federation.core.saml.v2.util.DocumentUtil.getDocumentAsString(document).getBytes("UTF-8");
+            return PostBindingUtil.base64Encode(new String(responseBytes));
+        }
+        public Document getDocument() {
+            return document;
+        }
+
+        public String htmlResponse() throws ProcessingException, ConfigurationException, IOException {
+            return buildHtml(encoded());
+
+        }
+        public Response response() throws ConfigurationException, ProcessingException, IOException {
+            return buildResponse(document);
+        }
+    }
+
+
+    public class RedirectBindingBuilder {
+        protected Document document;
+
+        public RedirectBindingBuilder(Document document) {
             this.document = document;
         }
 
         public Document getDocument() {
             return document;
         }
-        public Response postResponse() throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document);
-        }
-
-        public URI redirectResponseUri() throws ConfigurationException, ProcessingException, IOException {
+        public URI responseUri() throws ConfigurationException, ProcessingException, IOException {
             return generateRedirectUri("SAMLResponse", document);
         }
-
-        public Response redirectResponse() throws ProcessingException, ConfigurationException, IOException {
-            URI uri = redirectResponseUri();
+        public Response response() throws ProcessingException, ConfigurationException, IOException {
+            URI uri = responseUri();
 
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoCache(true);
@@ -138,6 +161,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         }
 
     }
+
 
 
     private String getSAMLNSPrefix(Document samlResponseDocument) {
@@ -171,18 +195,6 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
 
     }
 
-    protected void encryptAndSign(Document samlDocument) throws ProcessingException {
-        if (encrypt) {
-            encryptDocument(samlDocument);
-            signDocument(samlDocument);
-            return;
-        }
-        if (signed) {
-            signDocument(samlDocument);
-            return;
-        }
-    }
-
     protected void signDocument(Document samlDocument) throws ProcessingException {
         SamlProtocolUtils.signDocument(samlDocument, signingKeyPair, signatureAlgorithm.getXmlSignatureMethod(), signatureAlgorithm.getXmlSignatureDigestMethod(), signingCertificate);
     }
@@ -201,6 +213,10 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         byte[] responseBytes = DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
         String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes));
 
+        return buildHtml(samlResponse);
+    }
+
+    protected String buildHtml(String samlResponse) {
         if (destination == null) {
             throw SALM2LoginResponseBuilder.logger.nullValueError("Destination is null");
         }

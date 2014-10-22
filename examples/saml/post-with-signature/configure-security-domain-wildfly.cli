@@ -1,0 +1,16 @@
+# Batch script to add and configure the quickstart-domain security domain in the JBoss server
+
+# Start batching commands
+batch
+
+# Add and configure the security domain, then add the PicketLink SAML2LoginModule. Which wil be used to extract user's information from the SAML Assertion and authenticate the user.
+/subsystem=security/security-domain=sp:add(cache-type=default)
+/subsystem=security/security-domain=sp/authentication=classic:add
+/subsystem=security/security-domain=sp/authentication=classic/login-module=org.picketlink.identity.federation.bindings.wildfly.SAML2LoginModule:add(code=org.picketlink.identity.federation.bindings.wildfly.SAML2LoginModule,flag=required)
+
+# Run the batch commands
+run-batch
+
+# Reload the server configuration
+:reload
+

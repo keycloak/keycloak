@@ -33,8 +33,8 @@ import java.security.PublicKey;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SalmProtocol implements LoginProtocol {
-    protected static final Logger logger = Logger.getLogger(SalmProtocol.class);
+public class SamlProtocol implements LoginProtocol {
+    protected static final Logger logger = Logger.getLogger(SamlProtocol.class);
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_POST_BINDING = "post";
@@ -49,19 +49,19 @@ public class SalmProtocol implements LoginProtocol {
 
 
     @Override
-    public SalmProtocol setSession(KeycloakSession session) {
+    public SamlProtocol setSession(KeycloakSession session) {
         this.session = session;
         return this;
     }
 
     @Override
-    public SalmProtocol setRealm(RealmModel realm) {
+    public SamlProtocol setRealm(RealmModel realm) {
         this.realm = realm;
         return this;
     }
 
     @Override
-    public SalmProtocol setUriInfo(UriInfo uriInfo) {
+    public SamlProtocol setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
         return this;
     }
@@ -84,12 +84,13 @@ public class SalmProtocol implements LoginProtocol {
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
                 .relayState(clientSession.getNote(GeneralConstants.RELAY_STATE))
                 .destination(clientSession.getRedirectUri())
-                .responseIssuer(getResponseIssuer(realm));
+                .responseIssuer(getResponseIssuer(realm))
+                .status(status);
       try {
           if (isPostBinding(clientSession)) {
-              return builder.binding(status).postResponse();
+              return builder.postBinding().response();
           } else {
-              return builder.binding(status).redirectResponse();
+              return builder.redirectBinding().response();
           }
         } catch (Exception e) {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
@@ -97,7 +98,7 @@ public class SalmProtocol implements LoginProtocol {
     }
 
     protected boolean isPostBinding(ClientSessionModel clientSession) {
-        return SalmProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SalmProtocol.SAML_BINDING));
+        return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING));
     }
 
     @Override
@@ -142,9 +143,9 @@ public class SalmProtocol implements LoginProtocol {
         }
         try {
             if (isPostBinding(clientSession)) {
-                return builder.binding().postResponse();
+                return builder.postBinding().response();
             } else {
-                return builder.binding().redirectResponse();
+                return builder.redirectBinding().response();
             }
         } catch (Exception e) {
             logger.error("failed", e);
@@ -156,7 +157,7 @@ public class SalmProtocol implements LoginProtocol {
         return "true".equals(client.getAttribute("saml.server.signature"));
     }
 
-    private SignatureAlgorithm getSignatureAlgorithm(ClientModel client) {
+    public static SignatureAlgorithm getSignatureAlgorithm(ClientModel client) {
         String alg = client.getAttribute("saml.signature.algorithm");
         if (alg != null) {
             SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(alg);
@@ -214,7 +215,7 @@ public class SalmProtocol implements LoginProtocol {
 
         String logoutRequestString = null;
         try {
-            logoutRequestString = logoutBuilder.buildRequestString();
+            logoutRequestString = logoutBuilder.postBinding().encoded();
         } catch (Exception e) {
             logger.warn("failed to send saml logout", e);
             return;

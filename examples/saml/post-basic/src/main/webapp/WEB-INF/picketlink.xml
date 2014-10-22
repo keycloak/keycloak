@@ -1,0 +1,20 @@
+<PicketLink xmlns="urn:picketlink:identity-federation:config:2.1">
+	<PicketLinkSP xmlns="urn:picketlink:identity-federation:config:2.1"
+		ServerEnvironment="tomcat" BindingType="POST">
+		<IdentityURL>${idp.url::http://localhost:8080/auth/realms/saml-demo/protocol/saml}</IdentityURL>
+		<ServiceURL>${sales-post.url::http://localhost:8080/sales-post/}</ServiceURL>
+        <Trust>
+			<Domains>localhost,jboss.com,jboss.org,amazonaws.com</Domains>
+		</Trust>
+	</PicketLinkSP>
+	<Handlers xmlns="urn:picketlink:identity-federation:handler:config:2.1">
+        <Handler
+            class="org.picketlink.identity.federation.web.handlers.saml2.SAML2IssuerTrustHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2AuthenticationHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.RolesGenerationHandler" />
+	</Handlers>
+</PicketLink>

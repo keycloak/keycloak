@@ -21,6 +21,7 @@
             <excludes>
                 <exclude>**/*.sh</exclude>
                 <exclude>welcome-content/*</exclude>
+                <exclude>**/modules/system/layers/base/org/picketlink/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -30,6 +31,13 @@
                 <include>**/*.sh</include>
             </includes>
             <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/modules</directory>
+            <outputDirectory>keycloak/modules/system/layers/base</outputDirectory>
+            <includes>
+                <include>org/picketlink/**</include>
+            </includes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/deployments</directory>

@@ -46,6 +46,11 @@
                     <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule" flag="required"/>
                 </authentication>
             </security-domain>
+            <security-domain name="sp" cache-type="default">
+                <authentication>
+                    <login-module code="org.picketlink.identity.federation.bindings.wildfly.SAML2LoginModule" flag="required"/>
+                </authentication>
+            </security-domain>
         </xsl:copy>
     </xsl:template>
 

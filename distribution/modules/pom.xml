@@ -83,6 +83,42 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk16</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-idm-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-idm-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-federation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-wildlfy-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-idm-simple-schema</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-impl</artifactId>
+        </dependency>
 
     </dependencies>
 

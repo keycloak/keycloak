@@ -22,7 +22,7 @@ public class SamlProtocolFactory implements LoginProtocolFactory {
 
     @Override
     public LoginProtocol create(KeycloakSession session) {
-        return new SalmProtocol().setSession(session);
+        return new SamlProtocol().setSession(session);
     }
 
     @Override

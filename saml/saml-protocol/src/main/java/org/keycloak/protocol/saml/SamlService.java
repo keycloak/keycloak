@@ -42,11 +42,9 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-import java.io.IOException;
 import java.net.URI;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.security.SignatureException;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -195,10 +193,10 @@ public class SamlService {
 
 
             ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-            clientSession.setAuthMethod(SalmProtocol.LOGIN_PROTOCOL);
+            clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
             clientSession.setRedirectUri(redirect);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
-            clientSession.setNote(SalmProtocol.SAML_BINDING, getBindingType());
+            clientSession.setNote(SamlProtocol.SAML_BINDING, getBindingType());
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
             clientSession.setNote("REQUEST_ID", requestAbstractType.getID());
 
@@ -278,7 +276,7 @@ public class SamlService {
 
         @Override
         protected String getBindingType() {
-            return SalmProtocol.SAML_POST_BINDING;
+            return SamlProtocol.SAML_POST_BINDING;
         }
 
 
@@ -307,7 +305,9 @@ public class SamlService {
             if (algorithm == null) throw new VerificationException("SigAlg as null");
             if (signature == null) throw new VerificationException("Signature as null");
 
-            SamlProtocolUtils.verifyDocumentSignature(client, documentHolder.getSamlDocument());
+            // Shibboleth doesn't sign the document for redirect binding.
+            // todo maybe a flag?
+            // SamlProtocolUtils.verifyDocumentSignature(client, documentHolder.getSamlDocument());
 
             PublicKey publicKey = SamlProtocolUtils.getPublicKey(client);
 
@@ -323,7 +323,8 @@ public class SamlService {
             try {
                 byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
 
-                Signature validator = SignatureAlgorithm.RSA_SHA1.createSignature(); // todo plugin signature alg
+                SignatureAlgorithm signatureAlgorithm = SamlProtocol.getSignatureAlgorithm(client);
+                Signature validator = signatureAlgorithm.createSignature(); // todo plugin signature alg
                 validator.initVerify(publicKey);
                 validator.update(rawQuery.getBytes("UTF-8"));
                 if (!validator.verify(decodedSignature)) {
@@ -343,7 +344,7 @@ public class SamlService {
 
         @Override
         protected String getBindingType() {
-            return SalmProtocol.SAML_GET_BINDING;
+            return SamlProtocol.SAML_GET_BINDING;
         }
 
 

@@ -1,0 +1,31 @@
+<PicketLink xmlns="urn:picketlink:identity-federation:config:2.1">
+	<PicketLinkSP xmlns="urn:picketlink:identity-federation:config:2.1"
+		ServerEnvironment="tomcat" BindingType="POST" SupportsSignatures="true">
+		<IdentityURL>${idp-sig.url::http://localhost:8080/auth/realms/saml-demo/protocol/saml}
+		</IdentityURL>
+		<ServiceURL>${sales-post-sig.url::http://localhost:8080/sales-post-sig/}
+		</ServiceURL>
+		<KeyProvider
+			ClassName="org.picketlink.identity.federation.core.impl.KeyStoreKeyManager">
+			<Auth Key="KeyStoreURL" Value="/keystore.jks" />
+			<Auth Key="KeyStorePass" Value="store123" />
+			<Auth Key="SigningKeyPass" Value="test123" />
+			<Auth Key="SigningKeyAlias" Value="http://localhost:8080/sales-post-sig/" />
+			<ValidatingAlias Key="localhost" Value="saml-demo" />
+			<ValidatingAlias Key="127.0.0.1" Value="saml-demo" />
+		</KeyProvider>
+
+	</PicketLinkSP>
+	<Handlers xmlns="urn:picketlink:identity-federation:handler:config:2.1">
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2AuthenticationHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.RolesGenerationHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2SignatureGenerationHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2SignatureValidationHandler" />
+	</Handlers>
+</PicketLink>

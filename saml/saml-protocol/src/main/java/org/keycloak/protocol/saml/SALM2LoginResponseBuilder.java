@@ -53,7 +53,11 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
     }
 
     public SALM2LoginResponseBuilder attribute(String name, Object value) {
-        this.attributes.put(name, value);
+        if (value == null) {
+            attributes.remove(name);
+        } else {
+            this.attributes.put(name, value);
+        }
         return this;
     }
 
@@ -99,11 +103,16 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
         return this;
     }
 
-    public BindingBuilder binding() throws ConfigurationException, ProcessingException {
-
+    public RedirectBindingBuilder redirectBinding()  throws ConfigurationException, ProcessingException {
         Document samlResponseDocument = buildDocument();
+        return new RedirectBindingBuilder(samlResponseDocument);
 
-        return new BindingBuilder(samlResponseDocument);
+    }
+
+    public PostBindingBuilder postBinding()  throws ConfigurationException, ProcessingException {
+        Document samlResponseDocument = buildDocument();
+        return new PostBindingBuilder(samlResponseDocument);
+
     }
 
     public Document buildDocument() throws ConfigurationException, ProcessingException {
@@ -167,7 +176,7 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
             throw logger.samlAssertionMarshallError(e);
         }
 
-        encryptAndSign(samlResponseDocument);
+        if (encrypt) encryptDocument(samlResponseDocument);
         return samlResponseDocument;
     }
 

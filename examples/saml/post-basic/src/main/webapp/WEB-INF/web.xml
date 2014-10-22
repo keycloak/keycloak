@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	version="2.5">
+
+    <display-name>PicketLink Sales Service Provider</display-name>
+
+    <description>PicketLink Service Provider With a Basic Configuration using SAML HTTP POST Binding</description>
+
+	<!-- Define a Security Constraint on this Application -->
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>SALES Application</web-resource-name>
+			<url-pattern>/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>manager</role-name>
+		</auth-constraint>
+	</security-constraint>
+
+	<!-- Define a security constraint that gives unlimted access to freezone -->
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>freezone</web-resource-name>
+			<url-pattern>/freezone/*</url-pattern>
+		</web-resource-collection>
+		<web-resource-collection>
+			<web-resource-name>images</web-resource-name>
+			<url-pattern>/images/*</url-pattern>
+		</web-resource-collection>
+		<web-resource-collection>
+			<web-resource-name>css</web-resource-name>
+			<url-pattern>/css/*</url-pattern>
+		</web-resource-collection>
+	</security-constraint>
+
+    <!-- Define the Login Configuration for this Application -->
+    <login-config>
+		<auth-method>FORM</auth-method>
+		<realm-name>Tomcat SALES Application</realm-name>
+		<form-login-config>
+			<form-login-page>/jsp/login.jsp</form-login-page>
+			<form-error-page>/jsp/loginerror.jsp</form-error-page>
+		</form-login-config>
+	</login-config>
+
+	<!-- Security roles referenced by this web application -->
+	<security-role>
+		<description>The role that is required to log in to the Manager Application</description>
+		<role-name>manager</role-name>
+	</security-role>
+</web-app>

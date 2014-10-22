@@ -13,6 +13,7 @@
                 <exclude>org/keycloak/keycloak-as7-adapter/**</exclude>
                 <exclude>org/keycloak/keycloak-as7-subsystem/**</exclude>
                 <exclude>org/bouncycastle/**</exclude>
+                <exclude>org/picketlink/**</exclude>
             </excludes>
             <outputDirectory>modules/system/layers/base</outputDirectory>
         </fileSet>
