@@ -6,11 +6,13 @@ import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.util.DocumentUtil;
+import org.picketlink.identity.federation.api.saml.v2.sig.SAML2Signature;
 import org.picketlink.identity.federation.core.util.XMLEncryptionUtil;
 import org.picketlink.identity.federation.core.wstrust.WSTrustUtil;
 import org.picketlink.identity.federation.web.util.PostBindingUtil;
 import org.picketlink.identity.federation.web.util.RedirectBindingUtil;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.crypto.SecretKey;
@@ -37,7 +39,8 @@ import static org.picketlink.common.util.StringUtil.isNotNull;
 public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
-    protected boolean signed;
+    protected boolean sign;
+    protected boolean signAssertions;
     protected SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.RSA_SHA1;
     protected String relayState;
     protected String destination;
@@ -47,29 +50,35 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     protected String encryptionAlgorithm = "AES";
     protected boolean encrypt;
 
-    public T sign(KeyPair keyPair) {
+    public T signDocument() {
+        this.sign = true;
+        return (T)this;
+    }
+
+    public T signAssertions() {
+        this.signAssertions = true;
+        return (T)this;
+    }
+
+    public T signWith(KeyPair keyPair) {
         this.signingKeyPair = keyPair;
-        this.signed = true;
         return (T)this;
     }
 
-    public T sign(PrivateKey privateKey, PublicKey publicKey) {
+    public T signWith(PrivateKey privateKey, PublicKey publicKey) {
         this.signingKeyPair = new KeyPair(publicKey, privateKey);
-        this.signed = true;
         return (T)this;
     }
 
-    public T sign(KeyPair keyPair, X509Certificate cert) {
+    public T signWith(KeyPair keyPair, X509Certificate cert) {
         this.signingKeyPair = keyPair;
         this.signingCertificate = cert;
-        this.signed = true;
         return (T)this;
     }
 
-    public T sign(PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
+    public T signWith(PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
         this.signingKeyPair = new KeyPair(publicKey, privateKey);
         this.signingCertificate = cert;
-        this.signed = true;
         return (T)this;
     }
 
@@ -114,7 +123,10 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
 
         public PostBindingBuilder(Document document) throws ProcessingException {
             this.document = document;
-            if (signed) {
+            if (signAssertions) {
+                signAssertion(document);
+            }
+            if (sign) {
                 signDocument(document);
             }
         }
@@ -140,8 +152,11 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     public class RedirectBindingBuilder {
         protected Document document;
 
-        public RedirectBindingBuilder(Document document) {
+        public RedirectBindingBuilder(Document document) throws ProcessingException {
             this.document = document;
+            if (signAssertions) {
+                signAssertion(document);
+            }
         }
 
         public Document getDocument() {
@@ -196,8 +211,53 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     }
 
     protected void signDocument(Document samlDocument) throws ProcessingException {
-        SamlProtocolUtils.signDocument(samlDocument, signingKeyPair, signatureAlgorithm.getXmlSignatureMethod(), signatureAlgorithm.getXmlSignatureDigestMethod(), signingCertificate);
+        String signatureMethod = signatureAlgorithm.getXmlSignatureMethod();
+        String signatureDigestMethod = signatureAlgorithm.getXmlSignatureDigestMethod();
+        SAML2Signature samlSignature = new SAML2Signature();
+
+        if (signatureMethod != null) {
+            samlSignature.setSignatureMethod(signatureMethod);
+        }
+
+        if (signatureDigestMethod != null) {
+            samlSignature.setDigestMethod(signatureDigestMethod);
+        }
+
+        Node nextSibling = samlSignature.getNextSiblingOfIssuer(samlDocument);
+
+        samlSignature.setNextSibling(nextSibling);
+
+        if (signingCertificate != null) {
+            samlSignature.setX509Certificate(signingCertificate);
+        }
+
+        samlSignature.signSAMLDocument(samlDocument, signingKeyPair);
     }
+
+    protected void signAssertion(Document samlDocument) throws ProcessingException {
+        Element originalAssertionElement = DocumentUtil.getChildElement(samlDocument.getDocumentElement(), new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get()));
+        if (originalAssertionElement == null) return;
+        Node clonedAssertionElement = originalAssertionElement.cloneNode(true);
+        Document temporaryDocument;
+
+        try {
+            temporaryDocument = DocumentUtil.createDocument();
+        } catch (ConfigurationException e) {
+            throw new ProcessingException(e);
+        }
+
+        temporaryDocument.adoptNode(clonedAssertionElement);
+        temporaryDocument.appendChild(clonedAssertionElement);
+
+        signDocument(temporaryDocument);
+
+        samlDocument.adoptNode(clonedAssertionElement);
+
+        Element parentNode = (Element) originalAssertionElement.getParentNode();
+
+        parentNode.replaceChild(clonedAssertionElement, originalAssertionElement);
+    }
+
 
     protected Response buildResponse(Document responseDoc) throws ProcessingException, ConfigurationException, IOException {
         String str = buildHtmlPostResponse(responseDoc);
@@ -263,7 +323,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
             builder.queryParam("RelayState", relayState);
         }
 
-        if (signed) {
+        if (sign) {
             builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getJavaSignatureAlgorithm());
             URI uri = builder.build();
             String rawQuery = uri.getRawQuery();

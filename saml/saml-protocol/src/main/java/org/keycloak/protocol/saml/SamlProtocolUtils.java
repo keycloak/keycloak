@@ -45,27 +45,5 @@ public class SamlProtocolUtils {
         return publicKey;
     }
 
-    public static void signDocument(Document samlDocument, KeyPair signingKeyPair, String signatureMethod, String signatureDigestMethod, X509Certificate signingCertificate) throws ProcessingException {
-        SAML2Signature samlSignature = new SAML2Signature();
-
-        if (signatureMethod != null) {
-            samlSignature.setSignatureMethod(signatureMethod);
-        }
-
-        if (signatureDigestMethod != null) {
-            samlSignature.setDigestMethod(signatureDigestMethod);
-        }
-
-        Node nextSibling = samlSignature.getNextSiblingOfIssuer(samlDocument);
-
-        samlSignature.setNextSibling(nextSibling);
-
-        if (signingCertificate != null) {
-            samlSignature.setX509Certificate(signingCertificate);
-        }
-
-        samlSignature.signSAMLDocument(samlDocument, signingKeyPair);
-    }
-
 
 }

@@ -104,6 +104,7 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
+        ClientModel client = clientSession.getClient();
         String requestID = clientSession.getNote("REQUEST_ID");
         String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
         String redirectUri = clientSession.getRedirectUri();
@@ -120,16 +121,27 @@ public class SamlProtocol implements LoginProtocol {
                .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
         initClaims(builder, clientSession.getClient(), userSession.getUser());
         if (clientSession.getRoles() != null) {
+            if (multivaluedRoles(client)) {
+                builder.multiValuedRoles(true);
+            }
             for (String roleId : clientSession.getRoles()) {
                 // todo need a role mapping
                 RoleModel roleModel = clientSession.getRealm().getRoleById(roleId);
                 builder.roles(roleModel.getName());
             }
         }
-        ClientModel client = clientSession.getClient();
         if (requiresRealmSignature(client)) {
-            builder.signatureAlgorithm(getSignatureAlgorithm(client));
-            builder.sign(realm.getPrivateKey(), realm.getPublicKey());
+            builder.signatureAlgorithm(getSignatureAlgorithm(client))
+                   .signWith(realm.getPrivateKey(), realm.getPublicKey())
+                   .signDocument();
+        }
+        if (requiresAssertionSignature(client)) {
+            builder.signatureAlgorithm(getSignatureAlgorithm(client))
+                    .signWith(realm.getPrivateKey(), realm.getPublicKey())
+                    .signAssertions();
+        }
+        if (!includeAuthnStatement(client)) {
+            builder.disableAuthnStatement(true);
         }
         if (requiresEncryption(client)) {
             PublicKey publicKey = null;
@@ -155,6 +167,18 @@ public class SamlProtocol implements LoginProtocol {
 
     private boolean requiresRealmSignature(ClientModel client) {
         return "true".equals(client.getAttribute("saml.server.signature"));
+    }
+
+    private boolean requiresAssertionSignature(ClientModel client) {
+        return "true".equals(client.getAttribute("saml.assertion.signature"));
+    }
+
+    private boolean includeAuthnStatement(ClientModel client) {
+        return "true".equals(client.getAttribute("saml.authnstatement"));
+    }
+
+    private boolean multivaluedRoles(ClientModel client) {
+        return "true".equals(client.getAttribute("saml.multivalued.roles"));
     }
 
     public static SignatureAlgorithm getSignatureAlgorithm(ClientModel client) {
@@ -197,8 +221,9 @@ public class SamlProtocol implements LoginProtocol {
                                          .userPrincipal(userSession.getUser().getUsername())
                                          .destination(client.getClientId());
         if (requiresRealmSignature(client)) {
-            logoutBuilder.signatureAlgorithm(getSignatureAlgorithm(client));
-            logoutBuilder.sign(realm.getPrivateKey(), realm.getPublicKey());
+            logoutBuilder.signatureAlgorithm(getSignatureAlgorithm(client))
+                         .signWith(realm.getPrivateKey(), realm.getPublicKey())
+                         .signDocument();
         }
         /*
         if (requiresEncryption(client)) {
