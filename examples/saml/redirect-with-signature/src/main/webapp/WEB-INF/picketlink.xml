@@ -1,0 +1,36 @@
+<PicketLink xmlns="urn:picketlink:identity-federation:config:2.1">
+	<PicketLinkSP xmlns="urn:picketlink:identity-federation:config:2.1"
+		ServerEnvironment="tomcat" BindingType="REDIRECT" SupportsSignatures="true">
+		<IdentityURL>${idp-sig.url::http://localhost:8080/auth/realms/saml-demo/protocol/saml}
+		</IdentityURL>
+		<ServiceURL>${employee-sig.url::http://localhost:8080/employee-sig/}
+		</ServiceURL>
+		<KeyProvider
+			ClassName="org.picketlink.identity.federation.core.impl.KeyStoreKeyManager">
+			<Auth Key="KeyStoreURL" Value="/keystore.jks" />
+			<Auth Key="KeyStorePass" Value="store123" />
+			<Auth Key="SigningKeyPass" Value="test123" />
+			<Auth Key="SigningKeyAlias" Value="http://localhost:8080/employee-sig/" />
+			<ValidatingAlias Key="localhost" Value="saml-demo" />
+			<ValidatingAlias Key="127.0.0.1" Value="saml-demo" />
+		</KeyProvider>
+	</PicketLinkSP>
+	<Handlers xmlns="urn:picketlink:identity-federation:handler:config:2.1">
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2AuthenticationHandler" />
+		<Handler
+			class="org.picketlink.identity.federation.web.handlers.saml2.RolesGenerationHandler" />
+		<Handler
+            class="org.picketlink.identity.federation.web.handlers.saml2.SAML2SignatureGenerationHandler">
+            <!--
+                This is a optional configuration. By default, method http://www.w3.org/2000/09/xmldsig#rsa-sha1
+                and digest http://www.w3.org/2000/09/xmldsig#sha1 are used. -->
+            <Option Key="SIGN_METHOD" Value="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+            <Option Key="SIGN_DIGEST" Value="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        </Handler>
+        <Handler
+            class="org.picketlink.identity.federation.web.handlers.saml2.SAML2SignatureValidationHandler" />
+	</Handlers>
+</PicketLink>

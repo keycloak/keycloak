@@ -26,6 +26,14 @@
                 <exclude name="**/subsystem-config.xml"/>
             </fileset>
         </copy>
+        <copy todir="target/examples/saml" overwrite="true">
+            <fileset dir="../../examples/saml">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+            </fileset>
+        </copy>
         <copy todir="target/examples/js-console" overwrite="true">
             <fileset dir="../../examples/js-console">
                 <exclude name="**/target/**"/>

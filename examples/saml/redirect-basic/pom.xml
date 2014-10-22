@@ -1,0 +1,102 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.picketlink.quickstarts</groupId>
+    <artifactId>picketlink-federation-saml-sp-redirect-basic</artifactId>
+    <version>2.7.0.Beta2</version>
+
+    <packaging>war</packaging>
+
+    <name>PicketLink Quickstart: picketlink-federation-saml-sp-redirect-basic</name>
+    <description>PicketLink Quickstart: PicketLink Service Provider With a Basic Configuration using SAML HTTP Redirect Binding</description>
+
+    <url>http://www.picketlink.org</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <distribution>repo</distribution>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <!-- JBoss AS dependency versions -->
+        <version.jboss.maven.plugin>7.4.Final</version.jboss.maven.plugin>
+
+        <!-- WildFly dependency versions -->
+        <version.wildfly.maven.plugin>1.0.1.Final</version.wildfly.maven.plugin>
+
+        <!-- PicketLink dependency versions -->
+        <version.picketlink.javaee.bom>2.7.0.Beta2</version.picketlink.javaee.bom>
+
+        <!-- Default target container. -->
+        <target.container>jboss-eap</target.container>
+
+        <!-- maven-war-plugin -->
+        <version.war.plugin>2.1.1</version.war.plugin>
+
+        <!-- maven-compiler-plugin -->
+        <version.compiler.plugin>3.1</version.compiler.plugin>
+        <maven.compiler.target>1.6</maven.compiler.target>
+        <maven.compiler.source>1.6</maven.compiler.source>
+    </properties>
+
+    <build>
+        <!-- Set the name of the war, used as the context root when the app is deployed -->
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>${version.war.plugin}</version>
+                <configuration>
+                    <!-- Java EE 6 doesn't require web.xml, Maven needs to catch up! -->
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+
+                    <!-- We need to get the configuration resources for the provided target container. -->
+                    <classifier>${target.container}</classifier>
+
+                    <!-- Instead of duplicating resources for each example application, we just reuse all resources from the
+                    base application. -->
+                    <webResources>
+						<resource>
+							<directory>${basedir}/conf/${target.container}</directory>
+						</resource>
+                    </webResources>
+                </configuration>
+            </plugin>
+            <!-- JBoss AS plugin to deploy war -->
+            <plugin>
+                <groupId>org.jboss.as.plugins</groupId>
+                <artifactId>jboss-as-maven-plugin</artifactId>
+                <version>${version.jboss.maven.plugin}</version>
+                <configuration>
+                    <filename>${project.build.finalName}-${target.container}.${project.packaging}</filename>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>wildfly</id>
+            <properties>
+                <target.container>wildfly</target.container>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-maven-plugin</artifactId>
+                        <version>${version.wildfly.maven.plugin}</version>
+                        <configuration>
+                            <filename>${project.build.finalName}-${target.container}.${project.packaging}</filename>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

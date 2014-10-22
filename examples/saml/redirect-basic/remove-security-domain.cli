@@ -1,0 +1,13 @@
+# Batch script to remove the quickstart-domain security domain from the JBoss server
+
+# Start batching commands
+batch
+
+# Remove the security domain
+/subsystem=security/security-domain=sp:remove
+
+# Run the batch commands
+run-batch
+
+# Reload the server configuration
+:reload

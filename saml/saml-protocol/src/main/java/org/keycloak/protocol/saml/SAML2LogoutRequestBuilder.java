@@ -2,6 +2,8 @@ package org.keycloak.protocol.saml;
 
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ConfigurationException;
+import org.picketlink.common.exceptions.ParsingException;
+import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
 import org.picketlink.identity.federation.core.saml.v2.util.DocumentUtil;
 import org.picketlink.identity.federation.core.saml.v2.util.XMLTimeUtil;
@@ -11,6 +13,7 @@ import org.picketlink.identity.federation.saml.v2.protocol.LogoutRequestType;
 import org.picketlink.identity.federation.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
 
+import java.io.IOException;
 import java.net.URI;
 
 /**
@@ -25,15 +28,21 @@ public class SAML2LogoutRequestBuilder extends SAML2BindingBuilder<SAML2LogoutRe
         return this;
     }
 
-    public String buildRequestString() {
-        try {
-            Document logoutRequestDocument = new SAML2Request().convert(createLogoutRequest());
-            encryptAndSign(logoutRequestDocument);
-            byte[] responseBytes = DocumentUtil.getDocumentAsString(logoutRequestDocument).getBytes("UTF-8");
-            return PostBindingUtil.base64Encode(new String(responseBytes));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public RedirectBindingBuilder redirectBinding()  throws ConfigurationException, ProcessingException, ParsingException {
+        Document samlResponseDocument = buildDocument();
+        return new RedirectBindingBuilder(samlResponseDocument);
+
+    }
+
+    public PostBindingBuilder postBinding()  throws ConfigurationException, ProcessingException, ParsingException {
+        Document samlResponseDocument = buildDocument();
+        return new PostBindingBuilder(samlResponseDocument);
+
+    }
+    public Document buildDocument() throws ProcessingException, ConfigurationException, ParsingException {
+        Document document = new SAML2Request().convert(createLogoutRequest());
+        if (encrypt) encryptDocument(document);
+        return document;
     }
 
     private LogoutRequestType createLogoutRequest() throws ConfigurationException {

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jboss-web>
+    <!-- You must have a security-domain configured in your JBoss EAP instance. The security-domain is necessary to provide user
+    authentication and roles mappings. In this case,we need a specific JAAS LoginModule that knows how to extract user's information from a SAML Assertion previously
+    issued by the Identity Provider. -->
+    <security-domain>sp</security-domain>
+
+    <!-- Here we just define the context path of the deployment. -->
+    <context-root>sales-post</context-root>
+</jboss-web>

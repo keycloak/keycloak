@@ -90,6 +90,13 @@
                                     <outputDirectory>${project.build.directory}/unpacked/js-adapter</outputDirectory>
                                     <includes>*.js</includes>                                    
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-jboss-modules</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}/unpacked/modules</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                             <excludes>**/welcome-content/*</excludes>
                         </configuration>
