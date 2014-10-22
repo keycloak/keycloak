@@ -5,7 +5,7 @@ Please visit [http://keycloak.org](http://keycloak.org) for more information on 
 and video tutorials.  
 
 Keycloak is an SSO Service for web apps and REST services.
-It can be used for social applications as well as enterprise applications.  It is based on OpenID Connect with SAML support in the works.
+It can be used for social applications as well as enterprise applications.  It is based on OpenID Connect with support for SAML 2.0 as well.
 Here's some of the features:
 
 * SSO and Single Log Out for browser applications
@@ -30,6 +30,7 @@ Here's some of the features:
 * Revocation policies
 * Password policies
 * OpenID Connect Support
+* SAML Support
 
 Please visit [http://keycloak.org](http://keycloak.org) for more information on Keycloak including how to download, documentation,
 and video tutorials.
