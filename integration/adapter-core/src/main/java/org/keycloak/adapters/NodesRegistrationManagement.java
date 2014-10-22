@@ -1,12 +1,15 @@
 package org.keycloak.adapters;
 
 import java.io.IOException;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import org.jboss.logging.Logger;
-import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.util.HostUtils;
+import org.keycloak.util.Time;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -15,66 +18,47 @@ public class NodesRegistrationManagement {
 
     private static final Logger log = Logger.getLogger(NodesRegistrationManagement.class);
 
-    private final KeycloakDeployment deployment;
-    private final Timer timer;
+    private final Map<String, NodeRegistrationContext> nodeRegistrations = new ConcurrentHashMap<String, NodeRegistrationContext>();
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
-    // True if at least one event was successfully sent
-    private volatile boolean registered = false;
+    // Sending registration event during first request to application or if re-registration is needed
+    public void tryRegister(final KeycloakDeployment resolvedDeployment) {
+        if (resolvedDeployment.isRegisterNodeAtStartup()) {
+            final String registrationUri = resolvedDeployment.getRegisterNodeUrl();
+            if (needRefreshRegistration(registrationUri, resolvedDeployment)) {
+                Runnable runnable = new Runnable() {
 
-    public NodesRegistrationManagement(KeycloakDeployment deployment) {
-        this.deployment = deployment;
-        this.timer =  new Timer();
-    }
-
-    // Register listener for periodic sending of re-registration event
-    public void start() {
-        if (deployment.getRegisterNodePeriod() <= 0) {
-            log.infof("Skip periodic registration of cluster nodes at startup for application %s", deployment.getResourceName());
-            return;
-        }
-
-        if (deployment.getRelativeUrls() == null || deployment.getRelativeUrls() == RelativeUrlsUsed.ALL_REQUESTS) {
-            log.errorf("Skip periodic registration of cluster nodes at startup for application %s as Keycloak node can't be contacted. Make sure to provide some non-relative URI in adapters configuration.", deployment.getResourceName());
-            return;
-        }
-
-        addPeriodicListener();
-    }
-
-    // Sending registration event during first request to application
-    public void tryRegister(KeycloakDeployment resolvedDeployment) {
-        if (resolvedDeployment.isRegisterNodeAtStartup() && !registered) {
-            synchronized (this) {
-                if (!registered) {
-                    sendRegistrationEvent(resolvedDeployment);
-                }
+                    @Override
+                    public void run() {
+                        // Need to check it again in case that executor triggered by other thread already finished computation in the meantime
+                        if (needRefreshRegistration(registrationUri, resolvedDeployment)) {
+                            sendRegistrationEvent(resolvedDeployment);
+                        }
+                    }
+                };
+                executor.execute(runnable);
             }
         }
     }
 
+    private boolean needRefreshRegistration(String registrationUri, KeycloakDeployment resolvedDeployment) {
+        NodeRegistrationContext currentRegistration = nodeRegistrations.get(registrationUri);
+        /// We don't yet have any registration for this node
+        if (currentRegistration == null) {
+            return true;
+        }
+
+        return currentRegistration.lastRegistrationTime + resolvedDeployment.getRegisterNodePeriod() < Time.currentTime();
+    }
+
+    /**
+     * Called during undeployment or server stop. De-register from all previously registered deployments
+     */
     public void stop() {
-        removePeriodicListener();
-        if (registered) {
-            sendUnregistrationEvent();
+        Collection<NodeRegistrationContext> allRegistrations = nodeRegistrations.values();
+        for (NodeRegistrationContext registration : allRegistrations) {
+            sendUnregistrationEvent(registration.resolvedDeployment);
         }
-    }
-
-    protected void addPeriodicListener() {
-        TimerTask task = new TimerTask() {
-
-            @Override
-            public void run() {
-                sendRegistrationEvent(deployment);
-            }
-        };
-
-        long interval = deployment.getRegisterNodePeriod() * 1000;
-        log.info("Setup of periodic re-registration event sending each " + interval + " ms");
-        timer.schedule(task, interval, interval);
-    }
-
-    protected void removePeriodicListener() {
-        timer.cancel();
     }
 
     protected void sendRegistrationEvent(KeycloakDeployment deployment) {
@@ -83,8 +67,9 @@ public class NodesRegistrationManagement {
         String host = HostUtils.getIpAddress();
         try {
             ServerRequest.invokeRegisterNode(deployment, host);
+            NodeRegistrationContext regContext = new NodeRegistrationContext(Time.currentTime(), deployment);
+            nodeRegistrations.put(deployment.getRegisterNodeUrl(), regContext);
             log.infof("Node '%s' successfully registered in Keycloak", host);
-            registered = true;
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to register node to keycloak");
             log.error("status from server: " + failure.getStatus());
@@ -96,7 +81,7 @@ public class NodesRegistrationManagement {
         }
     }
 
-    protected boolean sendUnregistrationEvent() {
+    protected boolean sendUnregistrationEvent(KeycloakDeployment deployment) {
         log.info("Sending Unregistration event right now");
 
         String host = HostUtils.getIpAddress();
@@ -114,6 +99,18 @@ public class NodesRegistrationManagement {
         } catch (IOException e) {
             log.error("failed to unregister node from keycloak", e);
             return false;
+        }
+    }
+
+    public static class NodeRegistrationContext {
+
+        private final Integer lastRegistrationTime;
+        // deployment instance used for registration request
+        private final KeycloakDeployment resolvedDeployment;
+
+        public NodeRegistrationContext(Integer lastRegTime, KeycloakDeployment deployment) {
+            this.lastRegistrationTime = lastRegTime;
+            this.resolvedDeployment = deployment;
         }
     }
 

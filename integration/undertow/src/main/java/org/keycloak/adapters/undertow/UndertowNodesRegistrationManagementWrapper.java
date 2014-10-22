@@ -18,7 +18,6 @@ public class UndertowNodesRegistrationManagementWrapper implements ServletContex
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        delegate.start();
     }
 
     @Override

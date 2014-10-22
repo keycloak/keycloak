@@ -127,8 +127,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer(), getController());
         setNext(actions);
 
-        nodesRegistrationManagement = new NodesRegistrationManagement(kd);
-        nodesRegistrationManagement.start();
+        nodesRegistrationManagement = new NodesRegistrationManagement();
     }
 
     protected void beforeStop() {

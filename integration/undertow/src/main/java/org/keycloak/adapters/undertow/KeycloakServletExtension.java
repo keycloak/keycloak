@@ -112,7 +112,7 @@ public class KeycloakServletExtension implements ServletExtension {
         AdapterDeploymentContext deploymentContext = new AdapterDeploymentContext(deployment);
         servletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement();
-        final NodesRegistrationManagement nodesRegistrationManagement = new NodesRegistrationManagement(deployment);
+        final NodesRegistrationManagement nodesRegistrationManagement = new NodesRegistrationManagement();
         final ServletKeycloakAuthMech mech = createAuthenticationMechanism(deploymentInfo, deploymentContext, userSessionManagement, nodesRegistrationManagement);
 
         UndertowAuthenticatedActionsHandler.Wrapper actions = new UndertowAuthenticatedActionsHandler.Wrapper(deploymentContext);
