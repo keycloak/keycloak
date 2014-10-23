@@ -18,13 +18,11 @@ package org.keycloak.adapters.undertow;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.server.session.Session;
 import io.undertow.servlet.handlers.ServletRequestContext;
-import io.undertow.util.Sessions;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 
@@ -41,34 +39,8 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
 
     public ServletRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort,
                                        SecurityContext securityContext, HttpServerExchange exchange,
-                                       UndertowUserSessionManagement userSessionManagement) {
-        super(facade, deployment, sslRedirectPort, securityContext, exchange, userSessionManagement);
-    }
-
-    @Override
-    protected boolean isCached() {
-        HttpSession session = getSession(false);
-        if (session == null) {
-            log.debug("session was null, returning null");
-            return false;
-        }
-        KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
-        if (account == null) {
-            log.debug("Account was not in session, returning null");
-            return false;
-        }
-        account.setDeployment(deployment);
-        if (account.isActive()) {
-            log.debug("Cached account found");
-            securityContext.authenticationComplete(account, "KEYCLOAK", false);
-            propagateKeycloakContext( account);
-            return true;
-        } else {
-            log.debug("Refresh failed. Account was not active. Returning null and invalidating Http session");
-            session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
-            session.invalidate();
-            return false;
-        }
+                                       AdapterTokenStore tokenStore) {
+        super(facade, deployment, sslRedirectPort, securityContext, exchange, tokenStore);
     }
 
     @Override
@@ -77,15 +49,6 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
         req.setAttribute(KeycloakSecurityContext.class.getName(), account.getKeycloakSecurityContext());
-    }
-
-    @Override
-    protected void login(KeycloakAccount account) {
-        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
-        HttpSession session = getSession(true);
-        session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
-        userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager());
-
     }
 
     @Override

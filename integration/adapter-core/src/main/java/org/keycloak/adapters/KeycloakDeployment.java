@@ -5,6 +5,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.ServiceUrlConstants;
 import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.KeycloakUriBuilder;
 
@@ -42,6 +43,7 @@ public class KeycloakDeployment {
 
     protected String scope;
     protected SslRequired sslRequired = SslRequired.ALL;
+    protected TokenStore tokenStore = TokenStore.SESSION;
     protected String stateCookieName = "OAuth_Token_Request_State";
     protected boolean useResourceRoleMappings;
     protected boolean cors;
@@ -234,6 +236,14 @@ public class KeycloakDeployment {
 
     public void setSslRequired(SslRequired sslRequired) {
         this.sslRequired = sslRequired;
+    }
+
+    public TokenStore getTokenStore() {
+        return tokenStore;
+    }
+
+    public void setTokenStore(TokenStore tokenStore) {
+        this.tokenStore = tokenStore;
     }
 
     public String getStateCookieName() {

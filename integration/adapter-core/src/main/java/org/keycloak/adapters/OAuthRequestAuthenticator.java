@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.enums.TokenStore;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -255,7 +256,8 @@ public abstract class OAuthRequestAuthenticator {
         AccessTokenResponse tokenResponse = null;
         strippedOauthParametersRequestUri = stripOauthParametersFromRedirect();
         try {
-            String httpSessionId = reqAuthenticator.getHttpSessionId(true);
+            // For COOKIE store we don't have httpSessionId and single sign-out won't be available
+            String httpSessionId = deployment.getTokenStore() == TokenStore.SESSION ? reqAuthenticator.getHttpSessionId(true) : null;
             tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, strippedOauthParametersRequestUri, httpSessionId);
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");

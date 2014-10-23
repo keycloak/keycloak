@@ -69,6 +69,15 @@
             "secret": "password"
         },
         {
+            "name": "customer-cookie-portal",
+            "enabled": true,
+            "baseUrl": "http://localhost:8081/customer-cookie-portal",
+            "redirectUris": [
+                "http://localhost:8081/customer-cookie-portal/*"
+            ],
+            "secret": "password"
+        },
+        {
             "name": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
