@@ -6,6 +6,7 @@
         ${rb.loginTitle} <strong>${realm.name}</strong>
     <#elseif section = "form">
         <form id="kc-totp-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+            <input id="stateChecker" name="stateChecker" value="${stateChecker}" type="hidden" />
             <input id="username" name="username" value="${login.username!''}" type="hidden" />
             <input id="password-token" name="password-token" value="${login.passwordToken!''}" type="hidden" />
 

@@ -222,7 +222,7 @@ public class AccessTokenPerfTest {
         }
     }
 
-    @Test
+//    @Test
     public void perfJaxrsClientLogin()
     {
         long ITERATIONS = 3;
@@ -236,7 +236,7 @@ public class AccessTokenPerfTest {
         System.out.println("took: " + end);
     }
 
-    @Test
+//    @Test
     public void perfBrowserLogin()
     {
         long ITERATIONS = 3;
@@ -250,7 +250,7 @@ public class AccessTokenPerfTest {
         System.out.println("took: " + end);
     }
 
-    @Test
+//    @Test
     public void multiThread() throws Exception {
         int num_threads = 20;
         Thread[] threads = new Thread[num_threads];

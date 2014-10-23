@@ -6,6 +6,8 @@
         ${rb.registerWith} <strong>${realm.name}</strong>
     <#elseif section = "form">
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
+            <input id="stateChecker" name="stateChecker" value="${stateChecker}" type="hidden" />
+
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="username" class="${properties.kcLabelClass!}">${rb.username}</label>

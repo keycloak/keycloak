@@ -48,6 +48,7 @@ import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.util.CsrfHelper;
 import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.Consumes;
@@ -263,7 +264,8 @@ public class RequiredActionsService {
 
             return Flows.forms(session, realm, null, uriInfo).setAccessCode(accessCode.getCode()).createResponse(RequiredAction.UPDATE_PASSWORD);
         } else {
-            return Flows.forms(session, realm, null, uriInfo).createPasswordReset();
+            MultivaluedMap<String, String> formData = CsrfHelper.initStateChecker(realm, headers, uriInfo, clientConnection);
+            return Flows.forms(session, realm, null, uriInfo).setFormData(formData).createPasswordReset();
         }
     }
 
@@ -271,6 +273,8 @@ public class RequiredActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response sendPasswordReset(final MultivaluedMap<String, String> formData) {
+        CsrfHelper.csrfCheck(headers, formData);
+
         String username = formData.getFirst("username");
 
         String scopeParam = uriInfo.getQueryParameters().getFirst(OAuth2Constants.SCOPE);
@@ -326,7 +330,7 @@ public class RequiredActionsService {
             }
         }
 
-        return Flows.forms(session, realm, client,  uriInfo).setSuccess("emailSent").createPasswordReset();
+        return Flows.forms(session, realm, client,  uriInfo).setFormData(formData).setSuccess("emailSent").createPasswordReset();
     }
 
     private AccessCode getAccessCodeEntry(RequiredAction requiredAction) {

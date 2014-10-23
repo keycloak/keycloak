@@ -6,6 +6,8 @@
         ${rb.emailForgotHeader}
     <#elseif section = "form">
         <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginPasswordResetUrl}" method="post">
+            <input id="stateChecker" name="stateChecker" value="${stateChecker}" type="hidden" />
+
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="username" class="${properties.kcLabelClass!}">${rb.usernameOrEmail}</label>

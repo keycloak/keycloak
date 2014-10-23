@@ -15,6 +15,8 @@
     <#elseif section = "form">
         <#if realm.password>
             <form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+                <input id="stateChecker" name="stateChecker" value="${stateChecker}" type="hidden" />
+
                 <div class="${properties.kcFormGroupClass!}">
                     <div class="${properties.kcLabelWrapperClass!}">
                         <label for="username" class="${properties.kcLabelClass!}">${rb.usernameOrEmail}</label>

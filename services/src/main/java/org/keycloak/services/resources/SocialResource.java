@@ -49,6 +49,7 @@ import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.util.CsrfHelper;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.SocialAccessDeniedException;
 import org.keycloak.social.SocialLoader;
@@ -183,7 +184,9 @@ public class SocialResource {
             queryParms.putSingle(OAuth2Constants.RESPONSE_TYPE, responseType);
 
             event.error(Errors.REJECTED_BY_USER);
-            return  Flows.forms(session, realm, client, uriInfo).setQueryParams(queryParms).setWarning("Access denied").createLogin();
+
+            MultivaluedMap<String, String> formData = CsrfHelper.initStateChecker(realm, headers, uriInfo, clientConnection);
+            return  Flows.forms(session, realm, client, uriInfo).setQueryParams(queryParms).setWarning("Access denied").setFormData(formData).createLogin();
         } catch (SocialProviderException e) {
             logger.error("Failed to process social callback", e);
             return oauth.forwardToSecurityFailure("Failed to process social callback");
@@ -328,9 +331,11 @@ public class SocialResource {
         for (Entry<String, String> e : attributes.entrySet()) {
             q.add(e.getKey(), e.getValue());
         }
+        MultivaluedMap<String, String> formData = CsrfHelper.initStateChecker(realm, headers, uriInfo, clientConnection);
         return Flows.forms(session, realm, client, uriInfo)
                 .setQueryParams(q)
                 .setError(error)
+                .setFormData(formData)
                 .createLogin();
     }
 

@@ -46,6 +46,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.util.CsrfHelper;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.BasicAuthHelper;
@@ -475,6 +476,8 @@ public class TokenService {
     public Response processLogin(@QueryParam("client_id") final String clientId, @QueryParam("scope") final String scopeParam,
                                  @QueryParam("state") final String state, @QueryParam("redirect_uri") String redirect,
                                  final MultivaluedMap<String, String> formData) {
+        CsrfHelper.csrfCheck(headers, formData);
+
         String username = formData.getFirst(AuthenticationManager.FORM_USERNAME);
 
         String rememberMe = formData.getFirst("rememberMe");
@@ -588,6 +591,7 @@ public class TokenService {
     public Response processRegister(@QueryParam("client_id") final String clientId,
                                     @QueryParam("scope") final String scopeParam, @QueryParam("state") final String state,
                                     @QueryParam("redirect_uri") String redirect, final MultivaluedMap<String, String> formData) {
+        CsrfHelper.csrfCheck(headers, formData);
 
         String username = formData.getFirst("username");
         String email = formData.getFirst("email");
@@ -971,17 +975,16 @@ public class TokenService {
             }
         }
 
-        if (loginHint != null || rememberMeUsername != null) {
-            MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
+        MultivaluedMap<String, String> formData = CsrfHelper.initStateChecker(realm, headers, uriInfo, clientConnection);
+        forms.setFormData(formData);
 
+        if (loginHint != null || rememberMeUsername != null) {
             if (loginHint != null) {
                 formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
             } else {
                 formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
                 formData.add("rememberMe", "on");
             }
-
-            forms.setFormData(formData);
         }
 
         return forms.createLogin();
@@ -1038,7 +1041,8 @@ public class TokenService {
 
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return Flows.forms(session, realm, client, uriInfo).createRegistration();
+        MultivaluedMap<String, String> formData = CsrfHelper.initStateChecker(realm, headers, uriInfo, clientConnection);
+        return Flows.forms(session, realm, client, uriInfo).setFormData(formData).createRegistration();
     }
 
     /**

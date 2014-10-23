@@ -215,6 +215,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
         }
 
+        if (formData != null && formData.containsKey("stateChecker")) {
+            attributes.put("stateChecker", formData.getFirst("stateChecker"));
+        }
+
         try {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
