@@ -11,7 +11,7 @@
                     <label for="email" class="${properties.kcLabelClass!}">${rb.email}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="email" name="email" value="${user.email!''}" class="${properties.kcInputClass!}" />
+                    <input type="text" id="email" name="email" value="${(user.email!'')?html}" class="${properties.kcInputClass!}" />
                 </div>
             </div>
 
@@ -20,7 +20,7 @@
                     <label for="firstName" class="${properties.kcLabelClass!}">${rb.firstName}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="firstName" name="firstName" value="${user.firstName!''}" class="${properties.kcInputClass!}" />
+                    <input type="text" id="firstName" name="firstName" value="${(user.firstName!'')?html}" class="${properties.kcInputClass!}" />
                 </div>
             </div>
 
@@ -29,7 +29,7 @@
                     <label for="lastName" class="${properties.kcLabelClass!}">${rb.lastName}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="lastName" name="lastName" value="${user.lastName!''}" class="${properties.kcInputClass!}" />
+                    <input type="text" id="lastName" name="lastName" value="${(user.lastName!'')?html}" class="${properties.kcInputClass!}" />
                 </div>
             </div>
 
