@@ -43,6 +43,7 @@
         <twitter4j.version>3.0.5</twitter4j.version>
         <selenium.version>2.35.0</selenium.version>
         <javax.mail.version>1.4.5</javax.mail.version>
+        <liquibase.version>3.2.2</liquibase.version>
 
         <!-- maven-compiler-plugin -->
         <maven.compiler.target>1.6</maven.compiler.target>
@@ -437,6 +438,11 @@
                 <artifactId>jboss-logging-processor</artifactId>
                 <version>${jboss-logging-tools.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-core</artifactId>
+                <version>${liquibase.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -563,6 +569,12 @@
                     <groupId>com.samaxes.maven</groupId>
                     <artifactId>minify-maven-plugin</artifactId>
                     <version>1.7.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.liquibase</groupId>
+                    <artifactId>liquibase-maven-plugin</artifactId>
+                    <!-- set to ${liquibase.version} once Liquibase 3.2.3 is released (https://liquibase.jira.com/browse/CORE-1987) -->
+                    <version>3.1.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
