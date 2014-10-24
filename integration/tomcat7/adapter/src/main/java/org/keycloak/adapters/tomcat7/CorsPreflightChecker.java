@@ -2,17 +2,17 @@ package org.keycloak.adapters.tomcat7;
 
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
+import org.jboss.logging.Logger;
 import org.keycloak.adapters.KeycloakDeployment;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class CorsPreflightChecker {
-    private static final Logger log = Logger.getLogger(""+CorsPreflightChecker.class);
+    private static final Logger log = Logger.getLogger(CorsPreflightChecker.class);
     protected KeycloakDeployment deployment;
 
     public CorsPreflightChecker(KeycloakDeployment deployment) {
@@ -20,17 +20,17 @@ public class CorsPreflightChecker {
     }
 
     public boolean checkCorsPreflight(Request request, Response response) {
-        log.finer("checkCorsPreflight " + request.getRequestURI());
+        log.debugv("checkCorsPreflight {0}", request.getRequestURI());
         if (!request.getMethod().equalsIgnoreCase("OPTIONS")) {
-            log.finer("checkCorsPreflight: not options ");
+            log.debug("checkCorsPreflight: not options ");
             return false;
 
         }
         if (request.getHeader("Origin") == null) {
-            log.finer("checkCorsPreflight: no origin header");
+            log.debug("checkCorsPreflight: no origin header");
             return false;
         }
-        log.finer("Preflight request returning");
+        log.debug("Preflight request returning");
         response.setStatus(HttpServletResponse.SC_OK);
         String origin = request.getHeader("Origin");
         response.setHeader("Access-Control-Allow-Origin", origin);

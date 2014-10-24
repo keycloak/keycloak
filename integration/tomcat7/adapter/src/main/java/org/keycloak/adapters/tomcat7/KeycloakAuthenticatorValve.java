@@ -12,6 +12,7 @@ import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
+import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
@@ -23,7 +24,6 @@ import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.adapters.ServerRequest;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -33,20 +33,19 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Logger;
 
 /**
  * Web deployment whose security is managed by a remote OAuth Skeleton Key authentication server
  * <p/>
  * Redirects browser to remote authentication server if not logged in.  Also allows OAuth Bearer Token requests
  * that contain a Skeleton Key bearer tokens.
- * 
- * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>
+ *
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class KeycloakAuthenticatorValve extends FormAuthenticator implements LifecycleListener {
-	private final static Logger log = Logger.getLogger(""+KeycloakAuthenticatorValve.class);
-	protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
+    private static final Logger log = Logger.getLogger(KeycloakAuthenticatorValve.class);
+    protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
     protected AdapterDeploymentContext deploymentContext;
     protected NodesRegistrationManagement nodesRegistrationManagement;
 
@@ -56,33 +55,15 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             try {
                 startDeployment();
             } catch (LifecycleException e) {
-            	log.severe("Error starting deployment. " + e.getMessage());
+                log.error("Error starting deployment. " + e.getMessage());
             }
         } else if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
-        	initInternal();
+            initInternal();
         } else if (event.getType() == Lifecycle.BEFORE_STOP_EVENT) {
             beforeStop();
         }
     }
-    
-    @Override
-    public void logout(Request request) throws ServletException {
-        KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
-        if (ksc != null) {
-            request.removeAttribute(KeycloakSecurityContext.class.getName());
-            Session session = request.getSessionInternal(false);
-            if (session != null) {
-                session.removeNote(KeycloakSecurityContext.class.getName());
-                try {
-                    CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
-                    ServerRequest.invokeLogout(deploymentContext.resolveDeployment(facade), ksc.getToken().getSessionState());
-                } catch (Exception e) {
-                	log.severe("failed to invoke remote logout. " + e.getMessage());
-                }
-            }
-        }
-        super.logout(request);
-    }
+
 
     public void startDeployment() throws LifecycleException {
         super.start();
@@ -91,28 +72,24 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         cache = false;
     }
 
-    public void initInternal() {
-        InputStream configInputStream = getConfigInputStream(context);
-        KeycloakDeployment kd = null;
-        if (configInputStream == null) {
-            log.warning("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
-            kd = new KeycloakDeployment();
-        } else {
-            kd = KeycloakDeploymentBuilder.build(configInputStream);
+    @Override
+    public void logout(Request request) throws ServletException {
+        KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
+        if (ksc != null) {
+            request.removeAttribute(KeycloakSecurityContext.class.getName());
+            Session session = request.getSessionInternal(false);
+            if (session != null) {
+                session.removeNote(KeycloakSecurityContext.class.getName());
+                if (ksc instanceof RefreshableKeycloakSecurityContext) {
+                    CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
+                    ((RefreshableKeycloakSecurityContext)ksc).logout(deploymentContext.resolveDeployment(facade));
+                }
+            }
         }
-        deploymentContext = new AdapterDeploymentContext(kd);
-        context.getServletContext().setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
-        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer(), getObjectName());
-        setNext(actions);
-
-        nodesRegistrationManagement = new NodesRegistrationManagement();
+        super.logout(request);
     }
 
-    protected void beforeStop() {
-        nodesRegistrationManagement.stop();
-    }
-
-    private static InputStream getJSONFromServletContext(ServletContext servletContext) {
+   private static InputStream getJSONFromServletContext(ServletContext servletContext) {
         String json = servletContext.getInitParameter(AdapterConstants.AUTH_DATA_PARAM_NAME);
         if (json == null) {
             return null;
@@ -127,13 +104,12 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         if (is == null) {
             String path = context.getServletContext().getInitParameter("keycloak.config.file");
             if (path == null) {
-                log.info("**** using /WEB-INF/keycloak.json");
+                log.debug("**** using /WEB-INF/keycloak.json");
                 is = context.getServletContext().getResourceAsStream("/WEB-INF/keycloak.json");
             } else {
                 try {
                     is = new FileInputStream(path);
                 } catch (FileNotFoundException e) {
-                	log.severe("NOT FOUND /WEB-INF/keycloak.json");
                     throw new RuntimeException(e);
                 }
             }
@@ -141,9 +117,34 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         return is;
     }
 
+
+    public void initInternal() {
+        InputStream configInputStream = getConfigInputStream(context);
+        KeycloakDeployment kd = null;
+        if (configInputStream == null) {
+            log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
+            kd = new KeycloakDeployment();
+        } else {
+            kd = KeycloakDeploymentBuilder.build(configInputStream);
+        }
+        deploymentContext = new AdapterDeploymentContext(kd);
+        context.getServletContext().setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
+        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer());
+        setNext(actions);
+
+        nodesRegistrationManagement = new NodesRegistrationManagement();
+    }
+
+    protected void beforeStop() {
+        nodesRegistrationManagement.stop();
+    }
+
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
+            if (log.isTraceEnabled()) {
+                log.trace("invoke");
+            }
             CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
             Manager sessionManager = request.getContext().getManager();
             CatalinaUserSessionManagementWrapper sessionManagementWrapper = new CatalinaUserSessionManagementWrapper(userSessionManagement, sessionManager);
@@ -159,9 +160,13 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     @Override
     public boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException {
+        if (log.isTraceEnabled()) {
+            log.trace("*** authenticate");
+        }
         CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
+            log.info("*** deployment isn't configured return false");
             return false;
         }
 
@@ -188,7 +193,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
      * @param request
      */
     protected void checkKeycloakSession(Request request, HttpFacade facade) {
-        if (request.getSessionInternal(false) == null || request.getPrincipal() == null) return;
+        if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null) return;
         RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (session == null) return;
         // just in case session got serialized
@@ -202,7 +207,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
         // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
         Session catalinaSession = request.getSessionInternal();
-        log.fine("Cleanup and expire session " + catalinaSession + " after failed refresh");
+        log.debugf("Cleanup and expire session %s after failed refresh", catalinaSession.getId());
         catalinaSession.removeNote(KeycloakSecurityContext.class.getName());
         request.setUserPrincipal(null);
         request.setAuthType(null);

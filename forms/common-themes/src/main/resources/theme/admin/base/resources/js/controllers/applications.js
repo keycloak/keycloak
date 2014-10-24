@@ -43,6 +43,193 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
+module.controller('ApplicationSamlKeyCtrl', function($scope, $location, $http, $upload, realm, application,
+                                                         ApplicationCertificate, ApplicationCertificateGenerate,
+                                                         ApplicationCertificateDownload, Notifications) {
+    $scope.realm = realm;
+    $scope.application = application;
+
+    var signingKeyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id, attribute: 'saml.signing' },
+        function() {
+            $scope.signingKeyInfo = signingKeyInfo;
+        }
+    );
+
+    $scope.generateSigningKey = function() {
+        var keyInfo = ApplicationCertificateGenerate.generate({ realm : realm.realm, application : application.id, attribute: 'saml.signing' },
+            function() {
+                Notifications.success('Signing key has been regenerated.');
+                $scope.signingKeyInfo = keyInfo;
+            },
+            function() {
+                Notifications.error("Signing key was not regenerated.");
+            }
+        );
+    };
+
+    $scope.importSigningKey = function() {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Signing/import/saml.signing");
+    };
+
+    $scope.exportSigningKey = function() {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Signing/export/saml.signing");
+    };
+
+    var encryptionKeyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id, attribute: 'saml.encryption' },
+        function() {
+            $scope.encryptionKeyInfo = encryptionKeyInfo;
+        }
+    );
+
+    $scope.generateEncryptionKey = function() {
+        var keyInfo = ApplicationCertificateGenerate.generate({ realm : realm.realm, application : application.id, attribute: 'saml.encryption' },
+            function() {
+                Notifications.success('Encryption key has been regenerated.');
+                $scope.encryptionKeyInfo = keyInfo;
+            },
+            function() {
+                Notifications.error("Encryption key was not regenerated.");
+            }
+        );
+    };
+
+    $scope.importEncryptionKey = function() {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Encryption/import/saml.encryption");
+    };
+
+    $scope.exportEncryptionKey = function() {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Encryption/export/saml.encryption");
+    };
+
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
+
+module.controller('ApplicationCertificateImportCtrl', function($scope, $location, $http, $upload, realm, application, $routeParams,
+                                                         ApplicationCertificate, ApplicationCertificateGenerate,
+                                                         ApplicationCertificateDownload, Notifications) {
+
+    var keyType = $routeParams.keyType;
+    var attribute = $routeParams.attribute;
+    $scope.realm = realm;
+    $scope.application = application;
+    $scope.keyType = keyType;
+
+    $scope.files = [];
+
+    $scope.onFileSelect = function($files) {
+        $scope.files = $files;
+    };
+
+    $scope.clearFileSelect = function() {
+        $scope.files = null;
+    }
+
+    $scope.keyFormats = [
+        "JKS",
+        "PKCS12"
+    ];
+
+    $scope.uploadKeyFormat = $scope.keyFormats[0];
+
+    $scope.uploadFile = function() {
+        //$files: an array of files selected, each file has name, size, and type.
+        for (var i = 0; i < $scope.files.length; i++) {
+            var $file = $scope.files[i];
+            $scope.upload = $upload.upload({
+                url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/' + attribute + '/upload',
+                // method: POST or PUT,
+                // headers: {'headerKey': 'headerValue'}, withCredential: true,
+                data: {keystoreFormat: $scope.uploadKeyFormat,
+                    keyAlias: $scope.uploadKeyAlias,
+                    keyPassword: $scope.uploadKeyPassword,
+                    storePassword: $scope.uploadStorePassword
+                },
+                file: $file
+                /* set file formData name for 'Content-Desposition' header. Default: 'file' */
+                //fileFormDataName: myFile,
+                /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
+                //formDataAppender: function(formData, key, val){}
+            }).progress(function(evt) {
+                console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
+            }).success(function(data, status, headers) {
+                Notifications.success("Keystore uploaded successfully.");
+                $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/keys");
+            })
+                .error(function() {
+                    Notifications.error("The key store can not be uploaded. Please verify the file.");
+
+                });
+            //.then(success, error, progress);
+        }
+    };
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
+
+module.controller('ApplicationCertificateExportCtrl', function($scope, $location, $http, $upload, realm, application, $routeParams,
+                                                         ApplicationCertificate, ApplicationCertificateGenerate,
+                                                         ApplicationCertificateDownload, Notifications) {
+    var keyType = $routeParams.keyType;
+    var attribute = $routeParams.attribute;
+    $scope.realm = realm;
+    $scope.application = application;
+    $scope.keyType = keyType;
+    var jks = {
+        keyAlias: application.name,
+        realmAlias: realm.realm
+    };
+
+    $scope.keyFormats = [
+        "JKS",
+        "PKCS12"
+    ];
+
+    var keyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id, attribute: attribute },
+        function() {
+            $scope.keyInfo = keyInfo;
+        }
+    );
+    $scope.jks = jks;
+    $scope.jks.format = $scope.keyFormats[0];
+
+    $scope.download = function() {
+        $http({
+            url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/' + attribute + '/download',
+            method: 'POST',
+            responseType: 'arraybuffer',
+            data: $scope.jks,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/octet-stream'
+            }
+        }).success(function(data){
+            var blob = new Blob([data], {
+                type: 'application/octet-stream'
+            });
+            var ext = ".jks";
+            if ($scope.jks.format == 'PKCS12') ext = ".p12";
+            saveAs(blob, 'keystore' + ext);
+        }).error(function(){
+            Notifications.error("Error downloading.");
+        });
+    }
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
+
 module.controller('ApplicationCertificateCtrl', function($scope, $location, $http, $upload, realm, application,
                                                          ApplicationCertificate, ApplicationCertificateGenerate,
                                                          ApplicationCertificateDownload, Notifications) {

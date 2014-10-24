@@ -89,8 +89,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         if (json == null) {
             return null;
         }
-        log.info("**** using " + AdapterConstants.AUTH_DATA_PARAM_NAME);
-        log.info(json);
+        log.debug("**** using " + AdapterConstants.AUTH_DATA_PARAM_NAME);
+        log.debug(json);
         return new ByteArrayInputStream(json.getBytes());
     }
 
@@ -99,7 +99,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         if (is == null) {
             String path = context.getServletContext().getInitParameter("keycloak.config.file");
             if (path == null) {
-                log.info("**** using /WEB-INF/keycloak.json");
+                log.debug("**** using /WEB-INF/keycloak.json");
                 is = context.getServletContext().getResourceAsStream("/WEB-INF/keycloak.json");
             } else {
                 try {
@@ -161,7 +161,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
-            log.info("*** deployment isn't configured return false");
+            log.debug("*** deployment isn't configured return false");
             return false;
         }
 

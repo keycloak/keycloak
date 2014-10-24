@@ -4,6 +4,7 @@ import org.apache.catalina.Session;
 import org.apache.catalina.authenticator.Constants;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.realm.GenericPrincipal;
+import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -16,17 +17,15 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.servlet.http.HttpSession;
 
 /**
- * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class CatalinaRequestAuthenticator extends RequestAuthenticator {
-    private static final Logger log = Logger.getLogger(""+CatalinaRequestAuthenticator.class);
+    private static final Logger log = Logger.getLogger(CatalinaRequestAuthenticator.class);
     protected KeycloakAuthenticatorValve valve;
     protected CatalinaUserSessionManagement userSessionManagement;
     protected Request request;
@@ -59,14 +58,14 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     protected void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> skp) {
         RefreshableKeycloakSecurityContext securityContext = skp.getKeycloakSecurityContext();
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
-    	Set<String> roles = getRolesFromToken(securityContext);
+        Set<String> roles = getRolesFromToken(securityContext);
         GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skp, roles, securityContext);
         Session session = request.getSessionInternal(true);
         session.setPrincipal(principal);
         session.setAuthType("OAUTH");
         session.setNote(KeycloakSecurityContext.class.getName(), securityContext);
         String username = securityContext.getToken().getSubject();
-        log.finer("userSessionManagement.login: " + username);
+        log.debug("userSessionManage.login: " + username);
         userSessionManagement.login(session);
     }
 
@@ -74,8 +73,8 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
         RefreshableKeycloakSecurityContext securityContext = principal.getKeycloakSecurityContext();
         Set<String> roles = getRolesFromToken(securityContext);
-        if (log.isLoggable(Level.FINE)) {
-            log.fine("Completing bearer authentication. Bearer roles: " + roles);
+        if (log.isDebugEnabled()) {
+            log.debug("Completing bearer authentication. Bearer roles: " + roles);
         }
         Principal generalPrincipal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), principal, roles, securityContext);
         request.setUserPrincipal(generalPrincipal);
@@ -100,7 +99,7 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     protected boolean isCached() {
         if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null)
             return false;
-        log.finer("remote logged in already");
+        log.debug("remote logged in already");
         GenericPrincipal principal = (GenericPrincipal) request.getSessionInternal().getPrincipal();
         request.setUserPrincipal(principal);
         request.setAuthType("KEYCLOAK");
@@ -119,9 +118,9 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     protected void restoreRequest() {
         if (request.getSessionInternal().getNote(Constants.FORM_REQUEST_NOTE) != null) {
             if (valve.keycloakRestoreRequest(request)) {
-                log.finer("restoreRequest");
+                log.debug("restoreRequest");
             } else {
-                log.finer("Restore of original request failed");
+                log.debug("Restore of original request failed");
                 throw new RuntimeException("Restore of original request failed");
             }
         }

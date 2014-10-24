@@ -1,0 +1,59 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+    <kc-navigation-application></kc-navigation-application>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/saml/keys">SAML Keys</a></li>
+            <li class="active">SAML {{keyType}} Key Import</li>
+        </ol>
+        <h2><span>{{application.name}}</span> SAML {{keyType}} Key Import <span tooltip-placement="right" tooltip="Upload Key." class="fa fa-info-circle"></span></h2>
+        <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
+            <fieldset>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="uploadKeyFormat">Archive Format</label>
+                    <div class="col-sm-6">
+                        <div class="select-kc">
+                            <select id="uploadKeyFormat"
+                                    ng-model="uploadKeyFormat"
+                                    ng-options="f for f in keyFormats">
+                            </select>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Java keystore or PKCS12 archive format." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="uploadKeyAlias">Key Alias</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="uploadKeyAlias" name="uploadKeyAlias" data-ng-model="uploadKeyAlias" autofocus required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Archive alias for your certificate." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="uploadStorePassword">Store Password</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="password" id="uploadStorePassword" name="uploadStorePassword" data-ng-model="uploadStorePassword" autofocus required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Password to access the archive itself" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Import File </label>
+                    <div class="col-sm-4">
+                        <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
+                            <a href="#" class="btn btn-default"><span class="kc-icon-upload">Icon: Upload</span>Choose a File...</a>
+                            <input id="import-file" type="file" class="transparent" ng-file-select="onFileSelect($files)">
+                        </div>
+                        <span class="kc-uploaded-file" data-ng-show="files.length > 0">
+                            {{files[0].name}}
+                        </span>
+                    </div>
+                </div>
+                <div class="pull-right form-actions" data-ng-show="files.length > 0">
+                    <button type="submit" data-ng-click="clearFileSelect()" class="btn btn-lg btn-default">Cancel</button>
+                    <button type="submit" data-ng-click="uploadFile()" class="btn btn-lg btn-primary">Import</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>

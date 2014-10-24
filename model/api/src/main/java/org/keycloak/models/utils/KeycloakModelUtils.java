@@ -132,6 +132,7 @@ public final class KeycloakModelUtils {
     }
 
     public static void generateClientKeyPairCertificate(ClientModel client) {
+        String subject = client.getClientId();
         KeyPair keyPair = null;
         try {
             keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
@@ -140,7 +141,7 @@ public final class KeycloakModelUtils {
         }
         X509Certificate certificate = null;
         try {
-            certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, client.getClientId());
+            certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

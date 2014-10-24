@@ -1,0 +1,62 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+    <kc-navigation-application></kc-navigation-application>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/saml/keys">SAML Keys</a></li>
+            <li class="active">SAML {{keyType}} Key Export</li>
+        </ol>
+        <h2><span>{{application.name}}</span> SAML {{keyType}} Key Export <span tooltip-placement="right" tooltip="Export Appliations key and certificate to file." class="fa fa-info-circle"></span></h2>
+        <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
+            <fieldset class="form-group col-sm-10">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="downloadKeyFormat">Archive Format</label>
+                    <div class="col-sm-6">
+                        <div class="select-kc">
+                            <select id="downloadKeyFormat"
+                                    ng-model="jks.format"
+                                    ng-options="f for f in keyFormats">
+                            </select>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Java keystore or PKCS12 archive format." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="keyAlias">Key Alias</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="keyAlias" name="keyAlias" data-ng-model="jks.keyAlias" autofocus required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Archive alias for your private key and certificate." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-hide="!keyInfo.privateKey">
+                    <label class="col-sm-2 control-label" for="keyPassword">Key Password</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="password" id="keyPassword" name="keyPassword" data-ng-model="jks.keyPassword" autofocus required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Password to access the private key in the archive" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="realmAlias">Realm Certificate Alias</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="realmAlias" name="realmAlias" data-ng-model="jks.realmAlias" autofocus required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Realm certificate is stored in archive too.  This is the alias to it." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="storePassword">Store Password</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="password" id="storePassword" name="storePassword" data-ng-model="jks.storePassword" autofocus required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Password to access the archive itself" class="fa fa-info-circle"></span>
+               </div>
+                <div class="form-group" data-ng-show="access.manageRealm">
+                    <div class="pull-right">
+                        <button class="btn btn-primary" type="submit" data-ng-click="download()">Download</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>

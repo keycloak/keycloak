@@ -708,16 +708,18 @@ module.factory('ApplicationTestNodesAvailable', function($resource) {
 });
 
 module.factory('ApplicationCertificate', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates', {
+    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates/:attribute', {
             realm : '@realm',
-            application : "@application"
+            application : "@application",
+            attribute: "@attribute"
         });
 });
 
 module.factory('ApplicationCertificateGenerate', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates/generate', {
+    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates/:attribute/generate', {
             realm : '@realm',
-            application : "@application"
+            application : "@application",
+            attribute: "@attribute"
         },
         {
             generate : {
@@ -727,9 +729,10 @@ module.factory('ApplicationCertificateGenerate', function($resource) {
 });
 
 module.factory('ApplicationCertificateDownload', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates/download', {
+    return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/certificates/:attribute/download', {
         realm : '@realm',
-        application : "@application"
+        application : "@application",
+        attribute: "@attribute"
     },
         {
             download : {

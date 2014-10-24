@@ -155,7 +155,7 @@ public class SamlProtocol implements LoginProtocol {
         if (requiresEncryption(client)) {
             PublicKey publicKey = null;
             try {
-                publicKey = PemUtils.decodePublicKey(client.getAttribute(ClientModel.PUBLIC_KEY));
+                publicKey = SamlProtocolUtils.getEncryptionValidationKey(client);
             } catch (Exception e) {
                 logger.error("failed", e);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");

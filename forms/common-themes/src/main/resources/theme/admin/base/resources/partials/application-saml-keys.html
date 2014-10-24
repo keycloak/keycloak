@@ -1,0 +1,66 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+    <kc-navigation-application></kc-navigation-application>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li class="active">SAML Keys</li>
+        </ol>
+        <h2><span>{{application.name}}</span> SAML Keys <span tooltip-placement="right" tooltip="Application certificates used to sign and encrypt documents." class="fa fa-info-circle"></span></h2>
+        <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
+            <fieldset class="form-group col-sm-10" data-ng-show="application.attributes['saml.client.signature'] == 'true'">
+                <legend uncollapsed><span class="text">Signing Key</span>  <span tooltip-placement="right" tooltip="SAML Signing Key." class="fa fa-info-circle"></span></legend>
+                <div class="form-group" data-ng-hide="!signingKeyInfo.privateKey">
+                    <label class="col-sm-2 control-label" for="signingPrivateKey">Private key</label>
+
+                    <div class="col-sm-10">
+                        <textarea type="text" id="signingPrivateKey" name="signingPrivateKey" class="form-control" rows="5"
+                                  kc-select-action="click" readonly>{{signingKeyInfo.privateKey}}</textarea>
+                    </div>
+                </div>
+                <div class="form-group" data-ng-hide="!signingKeyInfo.certificate">
+                    <label class="col-sm-2 control-label" for="signingCert">Certificate</label>
+
+                    <div class="col-sm-10">
+                        <textarea type="text" id="signingCert" name="signingCert" class="form-control" rows="5"
+                                  kc-select-action="click" readonly>{{signingKeyInfo.certificate}}</textarea>
+                    </div>
+                </div>
+                <div class="form-group" data-ng-show="access.manageRealm">
+                    <div class="pull-right">
+                        <button class="btn btn-primary" type="submit" data-ng-click="generateSigningKey()">Generate new keys</button>
+                        <button class="btn btn-primary" type="submit" data-ng-click="importSigningKey()">Import</button>
+                        <button class="btn btn-primary" type="submit" data-ng-hide="!signingKeyInfo.certificate" data-ng-click="exportSigningKey()">Export</button>
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset class="form-group col-sm-10" data-ng-show="application.attributes['saml.encrypt'] == 'true'">
+                <legend uncollapsed><span class="text">Encryption Key</span>  <span tooltip-placement="right" tooltip="SAML Encryption Key." class="fa fa-info-circle"></span></legend>
+                <div class="form-group" data-ng-hide="!encryptionKeyInfo.privateKey">
+                    <label class="col-sm-2 control-label" for="encryptionPrivateKey">Private key</label>
+
+                    <div class="col-sm-10">
+                        <textarea type="text" id="encryptionPrivateKey" name="encryptionPrivateKey" class="form-control" rows="5"
+                                  kc-select-action="click" readonly>{{encryptionKeyInfo.privateKey}}</textarea>
+                    </div>
+                </div>
+                <div class="form-group" data-ng-hide="!encryptionKeyInfo.certificate">
+                    <label class="col-sm-2 control-label" for="encryptionCert">Certificate</label>
+
+                    <div class="col-sm-10">
+                        <textarea type="text" id="encryptionCert" name="encryptionCert" class="form-control" rows="5"
+                                  kc-select-action="click" readonly>{{encryptionKeyInfo.certificate}}</textarea>
+                    </div>
+                </div>
+                <div class="form-group" data-ng-show="access.manageRealm">
+                    <div class="pull-right">
+                        <button class="btn btn-primary" type="submit" data-ng-click="generateEncryptionKey()">Generate new keys</button>
+                        <button class="btn btn-primary" type="submit" data-ng-click="importEncryptionKey()">Import</button>
+                        <button class="btn btn-primary" type="submit" data-ng-hide="!encryptionKeyInfo.certificate" data-ng-click="exportEncryptionKey()">Export</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>

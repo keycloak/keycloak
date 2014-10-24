@@ -309,7 +309,7 @@ public class SamlService {
             // todo maybe a flag?
             // SamlProtocolUtils.verifyDocumentSignature(client, documentHolder.getSamlDocument());
 
-            PublicKey publicKey = SamlProtocolUtils.getPublicKey(client);
+            PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
 
 
             UriBuilder builder = UriBuilder.fromPath("/")
