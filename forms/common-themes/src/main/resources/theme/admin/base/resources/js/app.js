@@ -577,6 +577,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 application : function() {
                     return {};
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'ApplicationDetailCtrl'
@@ -592,6 +595,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 application : function(ApplicationLoader) {
                     return ApplicationLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'ApplicationDetailCtrl'

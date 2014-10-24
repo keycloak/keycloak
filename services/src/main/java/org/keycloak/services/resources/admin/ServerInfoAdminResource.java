@@ -5,6 +5,9 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.util.ProviderLoader;
 
@@ -37,6 +40,7 @@ public class ServerInfoAdminResource {
         setSocialProviders(info);
         setThemes(info);
         setEventListeners(info);
+        setProtocols(info);
         return info;
     }
 
@@ -69,6 +73,17 @@ public class ServerInfoAdminResource {
         }
     }
 
+
+    private void setProtocols(ServerInfoRepresentation info) {
+        info.protocols = new LinkedList<String>();
+        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
+            info.protocols.add(p.getId());
+        }
+        Collections.sort(info.protocols);
+    }
+
+
+
     public static class ServerInfoRepresentation {
 
         private String version;
@@ -76,6 +91,8 @@ public class ServerInfoAdminResource {
         private Map<String, List<String>> themes;
 
         private List<String> socialProviders;
+        private List<String> protocols;
+        private List<String> applicationImporters;
 
 
         private List<String> eventListeners;
@@ -101,6 +118,14 @@ public class ServerInfoAdminResource {
 
         public List<String> getEventListeners() {
             return eventListeners;
+        }
+
+        public List<String> getProtocols() {
+            return protocols;
+        }
+
+        public List<String> getApplicationImporters() {
+            return applicationImporters;
         }
     }
 

@@ -411,7 +411,7 @@ module.controller('ApplicationInstallationCtrl', function($scope, realm, applica
     }
 });
 
-module.controller('ApplicationDetailCtrl', function($scope, realm, application, Application, $location, Dialog, Notifications) {
+module.controller('ApplicationDetailCtrl', function($scope, realm, application, serverInfo, Application, $location, Dialog, Notifications) {
     console.log('ApplicationDetailCtrl');
 
     $scope.accessTypes = [
@@ -420,10 +420,8 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         "bearer-only"
     ];
 
-    $scope.protocols = [
-        "openid-connect",
-        "saml"
-    ];
+    $scope.protocols = serverInfo.protocols;
+
     $scope.signatureAlgorithms = [
         "RSA_SHA1",
         "RSA_SHA256",
@@ -451,11 +449,9 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         } else if (application.publicClient) {
             $scope.accessType = $scope.accessTypes[1];
         }
-        if (application.protocol == 'openid-connect') {
-            $scope.protocol = $scope.protocols[0];
-        } else if (application.protocol == 'saml') {
-            $scope.protocol = $scope.protocols[1];
-        } else { // protocol could be null due to older keycloak installs
+        if (application.protocol) {
+            $scope.protocol = $scope.protocols[$scope.protocols.indexOf(application.protocol)];
+        } else {
             $scope.protocol = $scope.protocols[0];
         }
         if (application.attributes['saml.signature.algorithm'] == 'RSA_SHA1') {
