@@ -27,6 +27,9 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
     protected final RealmLookup emailLookup = new RealmLookup();
 
+    // Method CacheEntryCreatedEvent.getValue is available from ispn 6 (EAP6 and AS7 are on ispn 5)
+    private boolean isNewInfinispan;
+
     @Override
     public CacheUserProvider create(KeycloakSession session) {
         lazyInit(session);
@@ -37,11 +40,21 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
         if (userCache == null) {
             synchronized (this) {
                 if (userCache == null) {
+                    checkIspnVersion();
                     Cache<String, CachedUser> cache = session.getProvider(InfinispanConnectionProvider.class).getCache("users");
                     cache.addListener(new CacheListener());
                     userCache = new InfinispanUserCache(cache, usernameLookup, emailLookup);
                 }
             }
+        }
+    }
+
+    protected void checkIspnVersion() {
+        try {
+            CacheEntryCreatedEvent.class.getMethod("getValue");
+            isNewInfinispan = true;
+        } catch (NoSuchMethodException nsme) {
+            isNewInfinispan = false;
         }
     }
 
@@ -63,12 +76,24 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
         @CacheEntryCreated
         public void userCreated(CacheEntryCreatedEvent<String, CachedUser> event) {
-            if (!event.isPre() && event.getValue() != null) {
-                CachedUser cachedUser = event.getValue();
-                String realm = cachedUser.getRealm();
-                usernameLookup.put(realm, cachedUser.getUsername(), cachedUser.getId());
-                if (cachedUser.getEmail() != null) {
-                    emailLookup.put(realm, cachedUser.getEmail(), cachedUser.getId());
+            if (!event.isPre()) {
+
+                CachedUser cachedUser;
+
+                // Try optimized version if available
+                if (isNewInfinispan) {
+                    cachedUser = event.getValue();
+                } else {
+                    String userId = event.getKey();
+                    cachedUser = event.getCache().get(userId);
+                }
+
+                if (cachedUser != null) {
+                    String realm = cachedUser.getRealm();
+                    usernameLookup.put(realm, cachedUser.getUsername(), cachedUser.getId());
+                    if (cachedUser.getEmail() != null) {
+                        emailLookup.put(realm, cachedUser.getEmail(), cachedUser.getId());
+                    }
                 }
             }
         }
