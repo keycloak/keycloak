@@ -33,7 +33,7 @@
             in that it allow you to force a relogin after a set timeframe.
         </para>
     </section>
-    <section>
+    <section id="token-timeouts">
         <title>Token Timeouts</title>
         <para>
             The <literal>Access Token Lifespan</literal> is how long an access token is valid for.  An access token contains everything

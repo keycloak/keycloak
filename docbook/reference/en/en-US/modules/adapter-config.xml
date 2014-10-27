@@ -291,6 +291,51 @@
                     </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+                <term>auth-server-url-for-backend-requests</term>
+                <listitem>
+                    <para>
+                        Alternative location of auth-server-url used just for backend requests. It must be absolute URI. Useful
+                        especially in cluster (see <link linkend="relative-uri-optimization">Relative URI Optimization</link>) or if you would like to use <emphasis>https</emphasis> for browser requests
+                        but stick with <emphasis>http</emphasis> for backend requests etc.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>always-refresh-token</term>
+                <listitem>
+                    <para>
+                        If <emphasis>true</emphasis>, Keycloak will refresh token in every request. More info in <link linkend="refresh-token-each-req">Refresh token in each request</link> .
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>register-node-at-startup</term>
+                <listitem>
+                    <para>
+                        If <emphasis>true</emphasis>, then adapter will send registration request to Keycloak. It's <emphasis>false</emphasis>
+                        by default as useful just in cluster (See <link linkend="registration-app-nodes">Registration of application nodes to Keycloak</link>)
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>register-node-period</term>
+                <listitem>
+                    <para>
+                        Period for re-registration adapter to Keycloak. Useful in cluster. See <link linkend="registration-app-nodes">Registration of application nodes to Keycloak</link> for details.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>token-store</term>
+                <listitem>
+                    <para>
+                        Possible values are <emphasis>session</emphasis> and <emphasis>cookie</emphasis>. Default is <emphasis>session</emphasis>,
+                        which means that adapter stores account info in HTTP Session. Alternative <emphasis>cookie</emphasis> means storage of info in cookie.
+                        See <link linkend="stateless-token-store">Stateless token store</link> for details.
+                    </para>
+                </listitem>
+            </varlistentry>
         </variablelist>
     </para>
 </section>
