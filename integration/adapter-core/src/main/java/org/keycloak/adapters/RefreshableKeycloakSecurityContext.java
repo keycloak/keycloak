@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
-import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -117,12 +116,5 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         this.tokenString = tokenString;
         tokenStore.refreshCallback(this);
         return true;
-    }
-
-
-    protected void updateTokenCookie(KeycloakDeployment deployment, HttpFacade facade) {
-        if (deployment.getTokenStore() == TokenStore.COOKIE) {
-            CookieTokenStore.setTokenCookie(deployment, facade, this);
-        }
     }
 }

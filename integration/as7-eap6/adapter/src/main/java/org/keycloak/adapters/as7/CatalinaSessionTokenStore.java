@@ -14,7 +14,7 @@ import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 
 /**
- * per-request object
+ * Handle storage of token info in HTTP Session. Per-request object
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
