@@ -78,8 +78,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
     @Override
     public UsernameLoginFailureModel getUserLoginFailure(RealmModel realm, String username) {
-        String id = username + "-" + realm;
-        UsernameLoginFailureEntity entity = em.find(UsernameLoginFailureEntity.class, id);
+        UsernameLoginFailureEntity entity = em.find(UsernameLoginFailureEntity.class, new UsernameLoginFailureEntity.Key(realm.getId(), username));
         if (entity == null) return null;
         return new UsernameLoginFailureAdapter(entity);
     }
