@@ -15,7 +15,7 @@ import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 
 /**
- * Per-request object. Storage of tokens in servlet session.
+ * Per-request object. Storage of tokens in servlet HTTP session.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
