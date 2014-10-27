@@ -18,7 +18,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "auth-server-url-for-backend-requests", "always-refresh-token",
-        "register-node-at-startup", "register-node-period"
+        "register-node-at-startup", "register-node-period", "token-store"
 })
 public class AdapterConfig extends BaseAdapterConfig {
 
@@ -46,6 +46,8 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected boolean registerNodeAtStartup = false;
     @JsonProperty("register-node-period")
     protected int registerNodePeriod = -1;
+    @JsonProperty("token-store")
+    protected String tokenStore;
 
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
@@ -141,5 +143,13 @@ public class AdapterConfig extends BaseAdapterConfig {
 
     public void setRegisterNodePeriod(int registerNodePeriod) {
         this.registerNodePeriod = registerNodePeriod;
+    }
+
+    public String getTokenStore() {
+        return tokenStore;
+    }
+
+    public void setTokenStore(String tokenStore) {
+        this.tokenStore = tokenStore;
     }
 }

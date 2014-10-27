@@ -21,8 +21,8 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.util.Sessions;
 import org.keycloak.KeycloakPrincipal;
+import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OAuthRequestAuthenticator;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
@@ -36,16 +36,14 @@ import org.keycloak.adapters.RequestAuthenticator;
 public abstract class UndertowRequestAuthenticator extends RequestAuthenticator {
     protected SecurityContext securityContext;
     protected HttpServerExchange exchange;
-    protected UndertowUserSessionManagement userSessionManagement;
 
 
     public UndertowRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort,
                                         SecurityContext securityContext, HttpServerExchange exchange,
-                                        UndertowUserSessionManagement userSessionManagement) {
-        super(facade, deployment, sslRedirectPort);
+                                        AdapterTokenStore tokenStore) {
+        super(facade, deployment, tokenStore, sslRedirectPort);
         this.securityContext = securityContext;
         this.exchange = exchange;
-        this.userSessionManagement = userSessionManagement;
     }
 
     protected void propagateKeycloakContext(KeycloakUndertowAccount account) {
@@ -67,47 +65,14 @@ public abstract class UndertowRequestAuthenticator extends RequestAuthenticator 
         KeycloakUndertowAccount account = createAccount(principal);
         securityContext.authenticationComplete(account, "KEYCLOAK", false);
         propagateKeycloakContext(account);
-        login(account);
+        tokenStore.saveAccountInfo(account);
     }
-
-    protected void login(KeycloakAccount account) {
-        Session session = Sessions.getOrCreateSession(exchange);
-        session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
-        userSessionManagement.login(session.getSessionManager());
-    }
-
 
     @Override
     protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
         KeycloakUndertowAccount account = createAccount(principal);
         securityContext.authenticationComplete(account, "KEYCLOAK", false);
         propagateKeycloakContext(account);
-    }
-
-    @Override
-    protected boolean isCached() {
-        Session session = Sessions.getSession(exchange);
-        if (session == null) {
-            log.debug("session was null, returning null");
-            return false;
-        }
-        KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
-        if (account == null) {
-            log.debug("Account was not in session, returning null");
-            return false;
-        }
-        account.setDeployment(deployment);
-        if (account.isActive()) {
-            log.debug("Cached account found");
-            securityContext.authenticationComplete(account, "KEYCLOAK", false);
-            propagateKeycloakContext( account);
-            return true;
-        } else {
-            log.debug("Account was not active, returning false");
-            session.removeAttribute(KeycloakUndertowAccount.class.getName());
-            session.invalidate(exchange);
-            return false;
-        }
     }
 
     @Override

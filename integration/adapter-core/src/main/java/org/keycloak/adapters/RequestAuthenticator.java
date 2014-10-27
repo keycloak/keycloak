@@ -12,12 +12,14 @@ public abstract class RequestAuthenticator {
 
     protected HttpFacade facade;
     protected KeycloakDeployment deployment;
+    protected AdapterTokenStore tokenStore;
     protected AuthChallenge challenge;
     protected int sslRedirectPort;
 
-    public RequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort) {
+    public RequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore, int sslRedirectPort) {
         this.facade = facade;
         this.deployment = deployment;
+        this.tokenStore = tokenStore;
         this.sslRedirectPort = sslRedirectPort;
     }
 
@@ -58,7 +60,7 @@ public abstract class RequestAuthenticator {
             log.trace("try oauth");
         }
 
-        if (isCached()) {
+        if (tokenStore.isCached(this)) {
             if (verifySSL()) return AuthOutcome.FAILED;
             log.debug("AUTHENTICATED: was cached");
             return AuthOutcome.AUTHENTICATED;
@@ -103,18 +105,17 @@ public abstract class RequestAuthenticator {
     }
 
     protected void completeAuthentication(OAuthRequestAuthenticator oauth) {
-        RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
+        RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, tokenStore, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
         final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(oauth.getToken().getSubject(), session);
         completeOAuthAuthentication(principal);
     }
 
     protected abstract void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
     protected abstract void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
-    protected abstract boolean isCached();
     protected abstract String getHttpSessionId(boolean create);
 
     protected void completeAuthentication(BearerTokenRequestAuthenticator bearer) {
-        RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, bearer.getTokenString(), bearer.getToken(), null, null, null);
+        RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, null, bearer.getTokenString(), bearer.getToken(), null, null, null);
         final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(bearer.getToken().getSubject(), session);
         completeBearerAuthentication(principal);
     }
