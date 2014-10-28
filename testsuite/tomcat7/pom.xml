@@ -109,17 +109,17 @@
             <artifactId>keycloak-ldap-federation</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>federation-properties-example</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
+       <dependency>
+           <groupId>org.keycloak</groupId>
+           <artifactId>keycloak-undertow-adapter</artifactId>
+           <version>${project.version}</version>
+       </dependency>
+       <dependency>
+           <groupId>org.keycloak</groupId>
+           <artifactId>keycloak-tomcat7-adapter</artifactId>
+           <version>${project.version}</version>
+       </dependency>
+       <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
         </dependency>
@@ -188,19 +188,6 @@
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-chrome-driver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox-ldap</artifactId>
-            <type>test-jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox-ldap</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-wildlfy-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
