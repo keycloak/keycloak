@@ -36,6 +36,10 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
             resp.setContentType("text/plain");
             OutputStream stream = resp.getOutputStream();
             Principal principal = req.getUserPrincipal();
+            if (principal == null) {
+                stream.write("null".getBytes());
+                return;
+            }
             String name = principal.getName();
             stream.write(name.getBytes());
         }

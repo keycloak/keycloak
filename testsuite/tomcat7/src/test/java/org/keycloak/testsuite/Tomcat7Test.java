@@ -21,263 +21,155 @@
  */
 package org.keycloak.testsuite;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.apache.catalina.startup.Tomcat;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
-import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.testsuite.Constants;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
-import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.admin.AdminRoot;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.rule.AbstractKeycloakRule;
+import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.testutils.KeycloakServer;
 import org.openqa.selenium.WebDriver;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URL;
+import java.security.Principal;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Tomcat7Test {
+    static String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
+            .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8080/customer-portal").build("demo").toString();
 
     @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
-
-    public static class BrowserLogin implements Runnable
-    {
-
-        private WebDriver driver;
-
-        public BrowserLogin() {
-            driver = WebRule.createWebDriver();
-        }
-
+    public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
-        public void run() {
-            driver.manage().deleteAllCookies();
-            OAuthClient oauth = new OAuthClient(driver);
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
-            Assert.assertEquals(200, response.getStatusCode());
-            count.incrementAndGet();
+        protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
+            RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/tomcat-test/demorealm.json"), RealmRepresentation.class);
+            RealmModel realm = manager.importRealm(representation);
+       }
+    };
 
+    public static class SendUsernameServlet extends HttpServlet {
+        @Override
+        protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+            resp.setContentType("text/plain");
+            OutputStream stream = resp.getOutputStream();
+            Principal principal = req.getUserPrincipal();
+            if (principal == null) {
+                stream.write("null".getBytes());
+                return;
+            }
+            String name = principal.getName();
+            stream.write(name.getBytes());
+            stream.write("\n".getBytes());
+            KeycloakSecurityContext context = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
+            stream.write(context.getIdToken().getName().getBytes());
+            stream.write("\n".getBytes());
+            stream.write(logoutUri.getBytes());
+
+        }
+        @Override
+        protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+            doGet(req, resp);
         }
     }
 
-    public static AtomicLong count = new AtomicLong(0);
+    static Tomcat tomcat = null;
 
-    public static class JaxrsClientLogin implements Runnable
-    {
-        ResteasyClient client;
+    @BeforeClass
+    public static void initTomcat() throws Exception {
 
-        private String baseUrl = Constants.AUTH_SERVER_ROOT;
+        String webappDirLocation = "src/test/resources/tomcat-test/webapp/";
+        URL dir = Tomcat7Test.class.getResource("/tomcat-test/webapp/META-INF/context.xml");
+        File webappDir = new File(dir.getFile()).getParentFile().getParentFile();
+        tomcat = new Tomcat();
 
-        private String realm = "test";
+        tomcat.setPort(8080);
 
-        private String responseType = OAuth2Constants.CODE;
+        tomcat.addWebapp("/customer-portal", webappDir.toString());
+        System.out.println("configuring app with basedir: " + webappDir.toString());
 
-        private String grantType = "authorization_code";
+        tomcat.start();
+        //tomcat.getServer().await();
+    }
 
-        private String clientId = "test-app";
+    @AfterClass
+    public static void shutdownTomcat() throws Exception {
+        tomcat.stop();
+        tomcat.destroy();
+    }
 
-        private String redirectUri = "http://localhost:8081/app/auth";
+    @Rule
+    public WebRule webRule = new WebRule(this);
+    @WebResource
+    protected WebDriver driver;
+    @WebResource
+    protected LoginPage loginPage;
 
+    public static final String LOGIN_URL = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
+    @Test
+    public void testLoginSSOAndLogout() throws Exception {
+        driver.navigate().to("http://localhost:8080/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke"));
 
-        public JaxrsClientLogin() {
-            DefaultHttpClient httpClient = (DefaultHttpClient) new HttpClientBuilder().build();
-            httpClient.setCookieStore(new CookieStore() {
-                @Override
-                public void addCookie(Cookie cookie) {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
+        // test logout
 
-                @Override
-                public List<Cookie> getCookies() {
-                    return Collections.emptyList();
-                }
-
-                @Override
-                public boolean clearExpired(Date date) {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                @Override
-                public void clear() {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-            });
-            ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
-            this.client = new ResteasyClientBuilder().httpEngine(engine).build();
-        }
-
-        public String getLoginFormUrl(String state) {
-            UriBuilder b = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri(baseUrl));
-            if (responseType != null) {
-                b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
-            }
-            if (clientId != null) {
-                b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
-            }
-            if (redirectUri != null) {
-                b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
-            }
-            if (state != null) {
-                b.queryParam(OAuth2Constants.STATE, state);
-            }
-            return b.build(realm).toString();
-        }
-
-        public String getProcessLoginUrl(String state) {
-            UriBuilder b = LoginActionsService.processLoginUrl(UriBuilder.fromUri(baseUrl));
-            if (clientId != null) {
-                b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
-            }
-            if (redirectUri != null) {
-                b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
-            }
-            if (state != null) {
-                b.queryParam(OAuth2Constants.STATE, state);
-            }
-            return b.build(realm).toString();
-        }
-
-        static Pattern actionParser = Pattern.compile("action=\"([^\"]+)\"");
-
-        public void run() {
-            //this.client = new ResteasyClientBuilder().build();
-            String state = "42";
-            String loginFormUrl = getLoginFormUrl(state);
-            String html = client.target(loginFormUrl).request().get(String.class);
-            Matcher matcher = actionParser.matcher(html);
-            matcher.find();
-            String actionUrl = matcher.group(1);
-            if (!actionUrl.startsWith("http")) {
-                actionUrl = UriBuilder.fromUri(actionUrl).scheme("http").host("localhost").port(8081).build().toString();
-            }
-            Form form = new Form();
-            form.param("username", "test-user@localhost");
-            form.param("password", "password");
-            Response response = client.target(actionUrl).request().post(Entity.form(form));
-            URI uri = null;
-            Assert.assertEquals(302, response.getStatus());
-            uri = response.getLocation();
-            for (String header : response.getHeaders().keySet()) {
-                for (Object value : response.getHeaders().get(header)) {
-                    System.out.println(header + ": " + value);
-                }
-            }
-            response.close();
-
-            Assert.assertNotNull(uri);
-            String code = getCode(uri);
-            Assert.assertNotNull(code);
-
-            form = new Form();
-            form.param(OAuth2Constants.GRANT_TYPE, grantType)
-                    .param(OAuth2Constants.CODE, code)
-                    .param(OAuth2Constants.REDIRECT_URI, redirectUri);
-
-            String authorization = BasicAuthHelper.createHeader(clientId, "password");
-
-            String res = client.target(OpenIDConnectService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl)).build(realm)).request()
-                    .header(HttpHeaders.AUTHORIZATION, authorization)
-                    .post(Entity.form(form), String.class);
-            count.incrementAndGet();
-            //client.close();
-        }
-
-        public String getCode(URI uri) {
-            Map<String, String> m = new HashMap<String, String>();
-            List<NameValuePair> pairs = URLEncodedUtils.parse(uri, "UTF-8");
-            for (NameValuePair p : pairs) {
-                if (p.getName().equals("code")) return p.getValue();
-                m.put(p.getName(), p.getValue());
-            }
-            return null;
-        }
+        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
+                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8080/customer-portal").build("demo").toString();
+        driver.navigate().to(logoutUri);
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to("http://localhost:8080/customer-portal");
+        String currentUrl = driver.getCurrentUrl();
+        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
 
 
-        public void close()
-        {
-            client.close();
-        }
     }
 
     @Test
-    public void perfJaxrsClientLogin()
-    {
-        long ITERATIONS = 3;
-        JaxrsClientLogin login = new JaxrsClientLogin();
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < ITERATIONS; i++) {
-            //System.out.println("*************************");
-            login.run();
-        }
-        long end = System.currentTimeMillis() - start;
-        System.out.println("took: " + end);
+    @Ignore
+    public void runit() throws Exception {
+        Thread.sleep(10000000);
     }
 
-    @Test
-    public void perfBrowserLogin()
-    {
-        long ITERATIONS = 3;
-        long start = System.currentTimeMillis();
-        BrowserLogin login = new BrowserLogin();
-        for (int i = 0; i < ITERATIONS; i++) {
-            //System.out.println("----------------------------------");
-            login.run();
-        }
-        long end = System.currentTimeMillis() - start;
-        System.out.println("took: " + end);
-    }
 
-    @Test
-    public void multiThread() throws Exception {
-        int num_threads = 20;
-        Thread[] threads = new Thread[num_threads];
-        for (int i = 0; i < num_threads; i++) {
-            threads[i] = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    perfJaxrsClientLogin();
-                }
-            });
-        }
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < num_threads; i++) {
-            threads[i].start();
-        }
-        for (int i = 0; i < num_threads; i++) {
-            threads[i].join();
-        }
-        long end = System.currentTimeMillis() - start;
-        System.out.println(count.toString() + " took: " + end);
-        System.out.println(count.floatValue() / ((float)end) * 1000+ " logins/s");
-    }
+
+
+
+
 
 }
