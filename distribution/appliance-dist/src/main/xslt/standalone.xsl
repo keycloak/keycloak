@@ -80,17 +80,6 @@
         </xsl:copy>
     </xsl:template>
     
-    <xsl:template match="node()[name(.)='server' and name(..) != 'subsystem' ]">
-        <xsl:copy>
-            <xsl:apply-templates select="node()|@*"/>
-            <deployment-overlays>
-                <deployment-overlay name="main-auth-server.war-keycloak-overlay">
-                    <deployment name="main-auth-server.war"/>
-                </deployment-overlay>
-            </deployment-overlays>
-        </xsl:copy>
-    </xsl:template>
-
     <xsl:template match="@*|node()">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()" />

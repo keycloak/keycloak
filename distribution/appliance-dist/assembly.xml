@@ -40,13 +40,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/deployments</directory>
-            <outputDirectory>keycloak/standalone/deployments</outputDirectory>
-            <excludes>
-                <exclude>keycloak-ds.xml</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
             <directory>${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF</directory>
             <outputDirectory>keycloak/standalone/configuration</outputDirectory>
             <includes>
