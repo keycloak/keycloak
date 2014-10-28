@@ -89,9 +89,22 @@
         </variablelist>
     </para>
     <para>
+        You have to specify an admin URL if you want logout to work.  This should be a URL that will except single logout
+        requests from the Keycloak server.  You should also specify a default redirect url.  Keycloak will redirect to this
+        url after single logout is complete.
+    </para>
+    <para>
         One thing to note is that roles are not treated as a hierarchy.  So, any role mappings will just be added
-        to the role attributes in the SAML document using their basic name.  So, if you have multiple applicaiton roles
+        to the role attributes in the SAML document using their basic name.  So, if you have multiple application roles
         you might have name collisions.  You can use the Scope Mapping menu item to control which role mappings are set
         in the response.
     </para>
+    <section>
+        <title>SAML Entity Descriptor Import</title>
+        <para>
+            If you go into the admin console in the application list menu page you will see an <literal>Import</literal>
+            button.  If you click on that you can import SAML Service Provider definitions using the <ulink url="http://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf">Entity Descriptor</ulink>
+            format described in SAML 2.0.  You should review all the information there to make sure everything is set up correctly.
+        </para>
+    </section>
 </chapter>
