@@ -48,7 +48,7 @@ public class LoginConfigTotpPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("FreeOTP Authenticator Setup");
+        return driver.getTitle().equals("Mobile Authenticator Setup");
     }
 
     public void open() {
