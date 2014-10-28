@@ -100,11 +100,14 @@
         in the response.
     </para>
     <section>
-        <title>SAML Entity Descriptor Import</title>
+        <title>SAML Entity Descriptor</title>
         <para>
             If you go into the admin console in the application list menu page you will see an <literal>Import</literal>
             button.  If you click on that you can import SAML Service Provider definitions using the <ulink url="http://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf">Entity Descriptor</ulink>
             format described in SAML 2.0.  You should review all the information there to make sure everything is set up correctly.
+        </para>
+        <para>
+            Each realm has a URL where you can view the XML entity descriptor for the IDP.  <literal>root/realms/{realm}/protocol/saml/descriptor</literal>
         </para>
     </section>
 </chapter>

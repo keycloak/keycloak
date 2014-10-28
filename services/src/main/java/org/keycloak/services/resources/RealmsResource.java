@@ -77,6 +77,14 @@ public class RealmsResource {
         return base.path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
     }
 
+    public static UriBuilder protocolUrl(UriBuilder base) {
+        return base.path(RealmsResource.class).path(RealmsResource.class, "getProtocol");
+    }
+
+    public static UriBuilder protocolUrl(UriInfo uriInfo) {
+        return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getProtocol");
+    }
+
     @Path("{realm}/login-status-iframe.html")
     @GET
     @Produces(MediaType.TEXT_HTML)
