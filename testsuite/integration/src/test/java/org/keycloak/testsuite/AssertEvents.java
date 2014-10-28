@@ -125,7 +125,7 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
     }
 
     public ExpectedEvent expectSocialLogin() {
-        return expect(EventType.SOCIAL_LOGIN)
+        return expect(EventType.LOGIN)
                 .detail(Details.CODE_ID, isCodeId())
                 .detail(Details.USERNAME, DEFAULT_USERNAME)
                 .detail(Details.AUTH_METHOD, "form")

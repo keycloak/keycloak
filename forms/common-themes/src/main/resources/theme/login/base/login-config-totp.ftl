@@ -30,12 +30,15 @@
     <#elseif section = "info" >
         <ol id="kc-totp-settings">
             <li>
-                <p>${rb.loginTotpStep1_1} <a href="https://fedorahosted.org/freeotp/" target="_blank">${rb.loginTotpStep1_2}</a> ${rb.loginTotpStep1_3}</p>
+                <p>${rb.loginTotpStep1}</p>
             </li>
             <li>
                 <p>${rb.loginTotpStep2}</p>
                 <img src="${totp.totpSecretQrCodeUrl}" alt="Figure: Barcode"><br/>
                 <span class="code">${totp.totpSecretEncoded}</span>
+            </li>
+            <li>
+                <p>${rb.loginTotpStep3}</p>
             </li>
         </ol>
     </#if>

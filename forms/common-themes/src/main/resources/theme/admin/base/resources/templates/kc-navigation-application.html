@@ -1,4 +1,4 @@
-<ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
+<ul class="nav nav-tabs nav-tabs-pf"  data-ng-hide="create && !path[4]">
     <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">Settings</a></li>
     <li ng-class="{active: path[4] == 'credentials'}" data-ng-show="!application.publicClient && application.protocol != 'saml'"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/credentials">Credentials</a></li>
     <li ng-class="{active: path[4] == 'saml'}" data-ng-show="application.protocol == 'saml' && (application.attributes['saml.client.signature'] == 'true' || application.attributes['saml.encrypt'] == 'true')"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/saml/keys">SAML Keys</a></li>

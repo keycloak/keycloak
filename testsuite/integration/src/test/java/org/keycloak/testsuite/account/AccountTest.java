@@ -348,7 +348,7 @@ public class AccountTest {
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        Assert.assertEquals("Google authenticator configured.", profilePage.getSuccess());
+        Assert.assertEquals("Mobile authenticator configured.", profilePage.getSuccess());
 
         events.expectAccount(EventType.UPDATE_TOTP).assertEvent();
 
