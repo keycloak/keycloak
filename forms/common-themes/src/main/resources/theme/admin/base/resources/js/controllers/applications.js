@@ -43,15 +43,81 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
-module.controller('ApplicationCertificateCtrl', function($scope, $location, $http, $upload, realm, application,
+module.controller('ApplicationSamlKeyCtrl', function($scope, $location, $http, $upload, realm, application,
                                                          ApplicationCertificate, ApplicationCertificateGenerate,
                                                          ApplicationCertificateDownload, Notifications) {
     $scope.realm = realm;
     $scope.application = application;
-    var jks = {
-        keyAlias: application.name,
-        realmAlias: realm.realm
+
+    var signingKeyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id, attribute: 'saml.signing' },
+        function() {
+            $scope.signingKeyInfo = signingKeyInfo;
+        }
+    );
+
+    $scope.generateSigningKey = function() {
+        var keyInfo = ApplicationCertificateGenerate.generate({ realm : realm.realm, application : application.id, attribute: 'saml.signing' },
+            function() {
+                Notifications.success('Signing key has been regenerated.');
+                $scope.signingKeyInfo = keyInfo;
+            },
+            function() {
+                Notifications.error("Signing key was not regenerated.");
+            }
+        );
     };
+
+    $scope.importSigningKey = function() {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Signing/import/saml.signing");
+    };
+
+    $scope.exportSigningKey = function() {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Signing/export/saml.signing");
+    };
+
+    var encryptionKeyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id, attribute: 'saml.encryption' },
+        function() {
+            $scope.encryptionKeyInfo = encryptionKeyInfo;
+        }
+    );
+
+    $scope.generateEncryptionKey = function() {
+        var keyInfo = ApplicationCertificateGenerate.generate({ realm : realm.realm, application : application.id, attribute: 'saml.encryption' },
+            function() {
+                Notifications.success('Encryption key has been regenerated.');
+                $scope.encryptionKeyInfo = keyInfo;
+            },
+            function() {
+                Notifications.error("Encryption key was not regenerated.");
+            }
+        );
+    };
+
+    $scope.importEncryptionKey = function() {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Encryption/import/saml.encryption");
+    };
+
+    $scope.exportEncryptionKey = function() {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Encryption/export/saml.encryption");
+    };
+
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
+
+module.controller('ApplicationCertificateImportCtrl', function($scope, $location, $http, $upload, realm, application, $routeParams,
+                                                         ApplicationCertificate, ApplicationCertificateGenerate,
+                                                         ApplicationCertificateDownload, Notifications) {
+
+    var keyType = $routeParams.keyType;
+    var attribute = $routeParams.attribute;
+    $scope.realm = realm;
+    $scope.application = application;
+    $scope.keyType = keyType;
 
     $scope.files = [];
 
@@ -68,8 +134,6 @@ module.controller('ApplicationCertificateCtrl', function($scope, $location, $htt
         "PKCS12"
     ];
 
-    $scope.jks = jks;
-    $scope.jks.format = $scope.keyFormats[0];
     $scope.uploadKeyFormat = $scope.keyFormats[0];
 
     $scope.uploadFile = function() {
@@ -77,13 +141,13 @@ module.controller('ApplicationCertificateCtrl', function($scope, $location, $htt
         for (var i = 0; i < $scope.files.length; i++) {
             var $file = $scope.files[i];
             $scope.upload = $upload.upload({
-                url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/upload/jks',
+                url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/' + attribute + '/upload',
                 // method: POST or PUT,
                 // headers: {'headerKey': 'headerValue'}, withCredential: true,
                 data: {keystoreFormat: $scope.uploadKeyFormat,
-                       keyAlias: $scope.uploadKeyAlias,
-                       keyPassword: $scope.uploadKeyPassword,
-                       storePassword: $scope.uploadStorePassword
+                    keyAlias: $scope.uploadKeyAlias,
+                    keyPassword: $scope.uploadKeyPassword,
+                    storePassword: $scope.uploadStorePassword
                 },
                 file: $file
                 /* set file formData name for 'Content-Desposition' header. Default: 'file' */
@@ -93,8 +157,8 @@ module.controller('ApplicationCertificateCtrl', function($scope, $location, $htt
             }).progress(function(evt) {
                 console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
             }).success(function(data, status, headers) {
-                $scope.keyInfo = data;
                 Notifications.success("Keystore uploaded successfully.");
+                $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/keys");
             })
                 .error(function() {
                     Notifications.error("The key store can not be uploaded. Please verify the file.");
@@ -104,30 +168,42 @@ module.controller('ApplicationCertificateCtrl', function($scope, $location, $htt
         }
     };
 
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
 
+module.controller('ApplicationCertificateExportCtrl', function($scope, $location, $http, $upload, realm, application, $routeParams,
+                                                         ApplicationCertificate, ApplicationCertificateGenerate,
+                                                         ApplicationCertificateDownload, Notifications) {
+    var keyType = $routeParams.keyType;
+    var attribute = $routeParams.attribute;
+    $scope.realm = realm;
+    $scope.application = application;
+    $scope.keyType = keyType;
+    var jks = {
+        keyAlias: application.name,
+        realmAlias: realm.realm
+    };
 
+    $scope.keyFormats = [
+        "JKS",
+        "PKCS12"
+    ];
 
-    var keyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id },
+    var keyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id, attribute: attribute },
         function() {
             $scope.keyInfo = keyInfo;
         }
     );
+    $scope.jks = jks;
+    $scope.jks.format = $scope.keyFormats[0];
 
-    $scope.generate = function() {
-        var keyInfo = ApplicationCertificateGenerate.generate({ realm : realm.realm, application : application.id },
-            function() {
-                Notifications.success('Client keypair and cert has been changed.');
-                $scope.keyInfo = keyInfo;
-            },
-            function() {
-                Notifications.error("Client keypair and cert was not changed due to a problem.");
-            }
-        );
-    };
-
-    $scope.downloadJKS = function() {
+    $scope.download = function() {
         $http({
-            url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/download',
+            url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/' + attribute + '/download',
             method: 'POST',
             responseType: 'arraybuffer',
             data: $scope.jks,
@@ -290,9 +366,62 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
 
 });
 
-module.controller('ApplicationListCtrl', function($scope, realm, applications, Application, $location) {
+module.controller('ApplicationImportCtrl', function($scope, $location, $upload, realm, serverInfo, Notifications) {
+
+    $scope.realm = realm;
+    $scope.configFormats = serverInfo.applicationImporters;
+    $scope.configFormat = null;
+
+    $scope.files = [];
+
+    $scope.onFileSelect = function($files) {
+        $scope.files = $files;
+    };
+
+    $scope.clearFileSelect = function() {
+        $scope.files = null;
+    }
+
+    $scope.uploadFile = function() {
+        //$files: an array of files selected, each file has name, size, and type.
+        for (var i = 0; i < $scope.files.length; i++) {
+            var $file = $scope.files[i];
+            $scope.upload = $upload.upload({
+                url: authUrl + '/admin/realms/' + realm.realm + '/application-importers/' + $scope.configFormat.id + '/upload',
+                // method: POST or PUT,
+                // headers: {'headerKey': 'headerValue'}, withCredential: true,
+                data: {myObj: ""},
+                file: $file
+                /* set file formData name for 'Content-Desposition' header. Default: 'file' */
+                //fileFormDataName: myFile,
+                /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
+                //formDataAppender: function(formData, key, val){}
+            }).progress(function(evt) {
+                console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
+            }).success(function(data, status, headers) {
+                Notifications.success("Uploaded successfully.");
+                $location.url("/realms/" + realm.realm + "/applications");
+            })
+                .error(function() {
+                    Notifications.error("The file can not be uploaded. Please verify the file.");
+
+                });
+            //.then(success, error, progress);
+        }
+    };
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
+
+
+module.controller('ApplicationListCtrl', function($scope, realm, applications, Application, serverInfo, $location) {
     $scope.realm = realm;
     $scope.applications = applications;
+    $scope.importButton = serverInfo.applicationImporters.length > 0;
     $scope.$watch(function() {
         return $location.path();
     }, function() {
@@ -335,7 +464,7 @@ module.controller('ApplicationInstallationCtrl', function($scope, realm, applica
     }
 });
 
-module.controller('ApplicationDetailCtrl', function($scope, realm, application, Application, $location, Dialog, Notifications) {
+module.controller('ApplicationDetailCtrl', function($scope, realm, application, serverInfo, Application, $location, Dialog, Notifications) {
     console.log('ApplicationDetailCtrl');
 
     $scope.accessTypes = [
@@ -344,10 +473,8 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         "bearer-only"
     ];
 
-    $scope.protocols = [
-        "openid-connect",
-        "saml"
-    ];
+    $scope.protocols = serverInfo.protocols;
+
     $scope.signatureAlgorithms = [
         "RSA_SHA1",
         "RSA_SHA256",
@@ -375,11 +502,9 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         } else if (application.publicClient) {
             $scope.accessType = $scope.accessTypes[1];
         }
-        if (application.protocol == 'openid-connect') {
-            $scope.protocol = $scope.protocols[0];
-        } else if (application.protocol == 'saml') {
-            $scope.protocol = $scope.protocols[1];
-        } else { // protocol could be null due to older keycloak installs
+        if (application.protocol) {
+            $scope.protocol = $scope.protocols[$scope.protocols.indexOf(application.protocol)];
+        } else {
             $scope.protocol = $scope.protocols[0];
         }
         if (application.attributes['saml.signature.algorithm'] == 'RSA_SHA1') {

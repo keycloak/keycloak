@@ -9,21 +9,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-testsuite-integration</artifactId>
-    <name>Keycloak Integration TestSuite</name>
+    <artifactId>keycloak-testsuite-tomcat7</artifactId>
+    <name>Keycloak Tomcat 7Integration TestSuite</name>
     <description />
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-as7-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <dependencies>
+   <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-dependencies-server-all</artifactId>
@@ -218,6 +208,35 @@
             <version>${wildfly.version}</version>
             <scope>test</scope>
         </dependency>
+       <dependency>
+           <groupId>org.keycloak</groupId>
+           <artifactId>keycloak-testsuite-integration</artifactId>
+           <version>${project.version}</version>
+           <scope>test</scope>
+       </dependency>
+       <dependency>
+           <groupId>org.keycloak</groupId>
+           <artifactId>keycloak-testsuite-integration</artifactId>
+           <version>${project.version}</version>
+           <type>test-jar</type>
+           <scope>test</scope>
+       </dependency>
+
+       <dependency>
+           <groupId>org.apache.tomcat</groupId>
+           <artifactId>tomcat-catalina</artifactId>
+           <version>7.0.54</version>
+       </dependency>
+       <dependency>
+           <groupId>org.apache.tomcat</groupId>
+           <artifactId>tomcat-util</artifactId>
+           <version>7.0.54</version>
+       </dependency>
+       <dependency>
+           <groupId>org.apache.tomcat.embed</groupId>
+           <artifactId>tomcat-embed-core</artifactId>
+           <version>7.0.54</version>
+       </dependency>
 
     </dependencies>
     <build>

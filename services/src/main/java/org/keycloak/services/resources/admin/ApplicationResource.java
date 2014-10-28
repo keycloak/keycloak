@@ -120,9 +120,9 @@ public class ApplicationResource {
         return ModelToRepresentation.toRepresentation(application);
     }
 
-    @Path("certificates")
-    public ClientCertificateResource getCertficateResource() {
-        return new ClientCertificateResource(realm, auth, application, session);
+    @Path("certificates/{attr}")
+    public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix) {
+        return new ClientAttributeCertificateResource(realm, auth, application, session, attributePrefix);
     }
 
 

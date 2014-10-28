@@ -26,6 +26,7 @@
     </build>
     <modules>
         <module>integration</module>
+        <module>tomcat7</module>
         <module>performance</module>
         <module>tools</module>
         <module>performance-web</module>

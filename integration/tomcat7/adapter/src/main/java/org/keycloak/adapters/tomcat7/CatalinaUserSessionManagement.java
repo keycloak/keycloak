@@ -5,20 +5,19 @@ import org.apache.catalina.Session;
 import org.apache.catalina.SessionEvent;
 import org.apache.catalina.SessionListener;
 import org.apache.catalina.realm.GenericPrincipal;
+import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Manages relationship to users and sessions so that forced admin logout can be implemented
  *
- * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class CatalinaUserSessionManagement implements SessionListener {
-
-    private static final Logger log = Logger.getLogger(""+CatalinaUserSessionManagement.class);
+    private static final Logger log = Logger.getLogger(CatalinaUserSessionManagement.class);
 
     public void login(Session session) {
         session.addSessionListener(this);
@@ -32,7 +31,7 @@ public class CatalinaUserSessionManagement implements SessionListener {
     }
 
     public void logoutHttpSessions(Manager sessionManager, List<String> sessionIds) {
-        log.fine("logoutHttpSessions: " + sessionIds);
+        log.debug("logoutHttpSessions: " + sessionIds);
 
         for (String sessionId : sessionIds) {
             logoutSession(sessionManager, sessionId);
@@ -40,14 +39,13 @@ public class CatalinaUserSessionManagement implements SessionListener {
     }
 
     protected void logoutSession(Manager manager, String httpSessionId) {
-        log.fine("logoutHttpSession: " + httpSessionId);
+        log.debug("logoutHttpSession: " + httpSessionId);
 
         Session session;
         try {
             session = manager.findSession(httpSessionId);
         } catch (IOException ioe) {
-            log.warning("IO exception when looking for session " + httpSessionId);
-            ioe.printStackTrace();
+            log.warn("IO exception when looking for session " + httpSessionId, ioe);
             return;
         }
 
@@ -58,7 +56,7 @@ public class CatalinaUserSessionManagement implements SessionListener {
         try {
             session.expire();
         } catch (Exception e) {
-            log.warning("Session not present or already invalidated.");
+            log.warnf("Session not present or already invalidated.");
         }
     }
 
@@ -70,7 +68,7 @@ public class CatalinaUserSessionManagement implements SessionListener {
 
         // Look up the single session id associated with this session (if any)
         Session session = event.getSession();
-        log.fine("Session " + session.getId() + " destroyed");
+        log.debugf("Session %s destroyed", session.getId());
 
         GenericPrincipal principal = (GenericPrincipal) session.getPrincipal();
         if (principal == null) return;

@@ -24,6 +24,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -72,9 +73,9 @@ public class OAuthClientResource  {
         return new ClaimResource(oauthClient, auth);
     }
 
-    @Path("certificates")
-    public ClientCertificateResource getCertficateResource() {
-        return new ClientCertificateResource(realm, auth, oauthClient, session);
+    @Path("certificates/{attr}")
+    public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix) {
+        return new ClientAttributeCertificateResource(realm, auth, oauthClient, session, attributePrefix);
     }
 
 
