@@ -19,7 +19,8 @@
                         </button>
                     </div>
                     <div class="pull-right">
-                        <a class="btn btn-primary" href="#/create/application/{{realm.realm}}">Add Application</a>
+                        <a class="btn btn-primary" href="#/import/application/{{realm.realm}}" data-ng-show="importButton">Import</a>
+                        <a class="btn btn-primary" href="#/create/application/{{realm.realm}}">Create</a>
                     </div>
                 </th>
             </tr>

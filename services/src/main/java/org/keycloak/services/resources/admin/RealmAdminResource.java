@@ -8,6 +8,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.exportimport.ApplicationImporter;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -71,6 +72,17 @@ public class RealmAdminResource {
         this.tokenManager = tokenManager;
 
         auth.init(RealmAuth.Resource.REALM);
+    }
+
+    /**
+     * Base path for importing applications under this realm.
+     *
+     * @return
+     */
+    @Path("application-importers/{formatId}")
+    public Object getApplicationImporter(@PathParam("formatId") String formatId) {
+        ApplicationImporter importer = session.getProvider(ApplicationImporter.class, formatId);
+        return importer.createJaxrsService(realm, auth);
     }
 
     /**

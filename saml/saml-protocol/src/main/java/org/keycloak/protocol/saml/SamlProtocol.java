@@ -17,8 +17,8 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.admin.ClientAttributeCertificateResource;
 import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.util.PemUtils;
 import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.identity.federation.core.saml.v2.constants.X500SAMLProfileConstants;
@@ -35,6 +35,13 @@ import java.security.PublicKey;
  */
 public class SamlProtocol implements LoginProtocol {
     protected static final Logger logger = Logger.getLogger(SamlProtocol.class);
+
+
+    public static final String ATTRIBUTE_TRUE_VALUE = "true";
+    public static final String ATTRIBUTE_FALSE_VALUE = "false";
+    public static final String SAML_SIGNING_CERTIFICATE_ATTRIBUTE = "saml.signing." + ClientAttributeCertificateResource.X509CERTIFICATE;
+    public static final String SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE = "saml.encryption." + ClientAttributeCertificateResource.X509CERTIFICATE;
+    public static final String SAML_CLIENT_SIGNATURE_ATTRIBUTE = "saml.client.signature";
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_POST_BINDING = "post";
@@ -46,7 +53,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_SIGNATURE_ALGORITHM = "saml.signature.algorithm";
     public static final String SAML_ENCRYPT = "saml.encrypt";
     public static final String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
-    public static final String REQUEST_ID = "REQUEST_ID";
+    public static final String SAML_REQUEST_ID = "SAML_REQUEST_ID";
 
     protected KeycloakSession session;
 
@@ -114,7 +121,7 @@ public class SamlProtocol implements LoginProtocol {
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
         ClientModel client = clientSession.getClient();
-        String requestID = clientSession.getNote(REQUEST_ID);
+        String requestID = clientSession.getNote(SAML_REQUEST_ID);
         String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
         String redirectUri = clientSession.getRedirectUri();
         String responseIssuer = getResponseIssuer(realm);

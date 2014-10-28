@@ -2,6 +2,8 @@ package org.keycloak.services.resources.admin;
 
 import org.keycloak.Version;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.exportimport.ApplicationImporter;
+import org.keycloak.exportimport.ApplicationImporterFactory;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
@@ -41,6 +43,7 @@ public class ServerInfoAdminResource {
         setThemes(info);
         setEventListeners(info);
         setProtocols(info);
+        setApplicationImporters(info);
         return info;
     }
 
@@ -82,7 +85,16 @@ public class ServerInfoAdminResource {
         Collections.sort(info.protocols);
     }
 
-
+    private void setApplicationImporters(ServerInfoRepresentation info) {
+        info.applicationImporters = new LinkedList<Map<String, String>>();
+        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ApplicationImporter.class)) {
+            ApplicationImporterFactory factory = (ApplicationImporterFactory)p;
+            Map<String, String> data = new HashMap<String, String>();
+            data.put("id", factory.getId());
+            data.put("name", factory.getDisplayName());
+            info.applicationImporters.add(data);
+        }
+    }
 
     public static class ServerInfoRepresentation {
 
@@ -92,7 +104,7 @@ public class ServerInfoAdminResource {
 
         private List<String> socialProviders;
         private List<String> protocols;
-        private List<String> applicationImporters;
+        private List<Map<String, String>> applicationImporters;
 
 
         private List<String> eventListeners;
@@ -124,7 +136,7 @@ public class ServerInfoAdminResource {
             return protocols;
         }
 
-        public List<String> getApplicationImporters() {
+        public List<Map<String, String>> getApplicationImporters() {
             return applicationImporters;
         }
     }

@@ -366,9 +366,62 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
 
 });
 
-module.controller('ApplicationListCtrl', function($scope, realm, applications, Application, $location) {
+module.controller('ApplicationImportCtrl', function($scope, $location, $upload, realm, serverInfo, Notifications) {
+
+    $scope.realm = realm;
+    $scope.configFormats = serverInfo.applicationImporters;
+    $scope.configFormat = null;
+
+    $scope.files = [];
+
+    $scope.onFileSelect = function($files) {
+        $scope.files = $files;
+    };
+
+    $scope.clearFileSelect = function() {
+        $scope.files = null;
+    }
+
+    $scope.uploadFile = function() {
+        //$files: an array of files selected, each file has name, size, and type.
+        for (var i = 0; i < $scope.files.length; i++) {
+            var $file = $scope.files[i];
+            $scope.upload = $upload.upload({
+                url: authUrl + '/admin/realms/' + realm.realm + '/application-importers/' + $scope.configFormat.id + '/upload',
+                // method: POST or PUT,
+                // headers: {'headerKey': 'headerValue'}, withCredential: true,
+                data: {myObj: ""},
+                file: $file
+                /* set file formData name for 'Content-Desposition' header. Default: 'file' */
+                //fileFormDataName: myFile,
+                /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
+                //formDataAppender: function(formData, key, val){}
+            }).progress(function(evt) {
+                console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
+            }).success(function(data, status, headers) {
+                Notifications.success("Uploaded successfully.");
+                $location.url("/realms/" + realm.realm + "/applications");
+            })
+                .error(function() {
+                    Notifications.error("The file can not be uploaded. Please verify the file.");
+
+                });
+            //.then(success, error, progress);
+        }
+    };
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
+
+
+module.controller('ApplicationListCtrl', function($scope, realm, applications, Application, serverInfo, $location) {
     $scope.realm = realm;
     $scope.applications = applications;
+    $scope.importButton = serverInfo.applicationImporters.length > 0;
     $scope.$watch(function() {
         return $location.path();
     }, function() {

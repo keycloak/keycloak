@@ -610,9 +610,25 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 applications : function(ApplicationListLoader) {
                     return ApplicationListLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
+
             },
             controller : 'ApplicationListCtrl'
+        })
+        .when('/import/application/:realm', {
+            templateUrl : 'partials/application-import.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ApplicationImportCtrl'
         })
 
         // OAUTH Client
