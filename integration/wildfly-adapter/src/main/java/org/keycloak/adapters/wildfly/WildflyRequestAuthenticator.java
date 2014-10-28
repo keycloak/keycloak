@@ -8,6 +8,7 @@ import org.jboss.security.SecurityConstants;
 import org.jboss.security.SecurityContextAssociation;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
+import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.undertow.KeycloakUndertowAccount;
@@ -31,8 +32,8 @@ public class WildflyRequestAuthenticator extends ServletRequestAuthenticator {
 
     public WildflyRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort,
                                        SecurityContext securityContext, HttpServerExchange exchange,
-                                       UndertowUserSessionManagement userSessionManagement) {
-        super(facade, deployment, sslRedirectPort, securityContext, exchange, userSessionManagement);
+                                       AdapterTokenStore tokenStore) {
+        super(facade, deployment, sslRedirectPort, securityContext, exchange, tokenStore);
     }
 
     @Override

@@ -29,8 +29,10 @@ public class CustomerServlet extends HttpServlet {
         if (req.getRequestURI().toString().endsWith("logout")) {
             resp.setStatus(200);
             pw.println("ok");
-            pw.flush();
+
+            // Call logout before pw.flush
             req.logout();
+            pw.flush();
             return;
         }
         KeycloakSecurityContext context = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());

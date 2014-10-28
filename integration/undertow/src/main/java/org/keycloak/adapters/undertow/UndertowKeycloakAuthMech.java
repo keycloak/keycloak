@@ -24,10 +24,17 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Sessions;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
+import org.keycloak.adapters.CookieTokenStore;
+import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.enums.TokenStore;
 
 /**
  * Abstract base class for a Keycloak-enabled Undertow AuthenticationMechanism.
@@ -37,9 +44,11 @@ import org.keycloak.adapters.RequestAuthenticator;
 public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanism {
     public static final AttachmentKey<AuthChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(AuthChallenge.class);
     protected AdapterDeploymentContext deploymentContext;
+    protected UndertowUserSessionManagement sessionManagement;
 
-    public UndertowKeycloakAuthMech(AdapterDeploymentContext deploymentContext) {
+    public UndertowKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement) {
         this.deploymentContext = deploymentContext;
+        this.sessionManagement = sessionManagement;
     }
 
     @Override
@@ -54,21 +63,17 @@ public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanis
         return new ChallengeResult(false);
     }
 
-    protected void registerNotifications(SecurityContext securityContext) {
+    protected void registerNotifications(final SecurityContext securityContext) {
 
         final NotificationReceiver logoutReceiver = new NotificationReceiver() {
             @Override
             public void handleNotification(SecurityNotification notification) {
                 if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
-                Session session = Sessions.getSession(notification.getExchange());
-                if (session == null) return;
-                KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
-                if (account == null) return;
-                session.removeAttribute(KeycloakUndertowAccount.class.getName());
-                if (account.getKeycloakSecurityContext() != null) {
-                    UndertowHttpFacade facade = new UndertowHttpFacade(notification.getExchange());
-                    account.getKeycloakSecurityContext().logout(deploymentContext.resolveDeployment(facade));
-                }
+
+                UndertowHttpFacade facade = new UndertowHttpFacade(notification.getExchange());
+                KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+                AdapterTokenStore tokenStore = getTokenStore(notification.getExchange(), facade, deployment, securityContext);
+                tokenStore.logout();
             }
         };
 
@@ -94,6 +99,14 @@ public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanis
         }
 
         return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
+    }
+
+    protected AdapterTokenStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, KeycloakDeployment deployment, SecurityContext securityContext) {
+        if (deployment.getTokenStore() == TokenStore.SESSION) {
+            return new UndertowSessionTokenStore(exchange, deployment, sessionManagement, securityContext);
+        } else {
+            return new UndertowCookieTokenStore(facade, deployment, securityContext);
+        }
     }
 
 }

@@ -34,6 +34,7 @@
                 <!ENTITY ServerCache SYSTEM "modules/cache.xml">
                 <!ENTITY SecurityVulnerabilities SYSTEM "modules/security-vulnerabilities.xml">
                 <!ENTITY Clustering SYSTEM "modules/clustering.xml">
+                <!ENTITY ApplicationClustering SYSTEM "modules/application-clustering.xml">
                 ]>
 
 <book>
@@ -125,6 +126,7 @@ This one is short
     &SAML;
     &SecurityVulnerabilities;
     &Clustering;
+    &ApplicationClustering;
     &Migration;
 
 </book>

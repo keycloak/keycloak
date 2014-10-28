@@ -26,4 +26,7 @@ public interface AdapterConstants {
 
     // Attribute passed in registerNode request for register new application cluster node once he joined cluster
     public static final String APPLICATION_CLUSTER_HOST = "application_cluster_host";
+
+    // Cookie used on adapter side to store token info. Used only when tokenStore is 'COOKIE'
+    public static final String KEYCLOAK_ADAPTER_STATE_COOKIE = "KEYCLOAK_ADAPTER_STATE";
 }

@@ -32,7 +32,6 @@ import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -112,7 +111,7 @@ public class AdapterTest {
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", false);
-            AccessToken token = tm.createClientAccessToken(tm.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession);
+            AccessToken token = tm.createClientAccessToken(TokenManager.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession);
             return tm.encodeToken(adminRealm, token);
         } finally {
             keycloakRule.stopSession(session, true);
@@ -440,7 +439,7 @@ public class AdapterTest {
         // Open browser2
         browser2.webRule.before();
         try {
-            browser2.loginAndCheckSession(browser2.driver, browser2.loginPage);
+            loginAndCheckSession(browser2.driver, browser2.loginPage);
 
             // Logout in browser1
             String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))

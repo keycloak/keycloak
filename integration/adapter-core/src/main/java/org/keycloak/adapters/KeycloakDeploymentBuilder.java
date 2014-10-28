@@ -4,6 +4,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jboss.logging.Logger;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.PemUtils;
 import org.keycloak.util.SystemPropertiesJsonParserFactory;
@@ -47,6 +48,11 @@ public class KeycloakDeploymentBuilder {
             deployment.setSslRequired(SslRequired.valueOf(adapterConfig.getSslRequired().toUpperCase()));
         } else {
             deployment.setSslRequired(SslRequired.EXTERNAL);
+        }
+        if (adapterConfig.getTokenStore() != null) {
+            deployment.setTokenStore(TokenStore.valueOf(adapterConfig.getTokenStore().toUpperCase()));
+        } else {
+            deployment.setTokenStore(TokenStore.SESSION);
         }
         deployment.setResourceCredentials(adapterConfig.getCredentials());
         deployment.setPublicClient(adapterConfig.isPublicClient());

@@ -13,17 +13,21 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.jboss.logging.Logger;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
+import org.keycloak.adapters.CookieTokenStore;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.enums.TokenStore;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -44,6 +48,9 @@ import java.io.InputStream;
  * @version $Revision: 1 $
  */
 public class KeycloakAuthenticatorValve extends FormAuthenticator implements LifecycleListener {
+
+    public static final String TOKEN_STORE_NOTE = "TOKEN_STORE_NOTE";
+
     private static final Logger log = Logger.getLogger(KeycloakAuthenticatorValve.class);
     protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
     protected AdapterDeploymentContext deploymentContext;
@@ -63,14 +70,11 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
         if (ksc != null) {
             request.removeAttribute(KeycloakSecurityContext.class.getName());
-            Session session = request.getSessionInternal(false);
-            if (session != null) {
-                session.removeNote(KeycloakSecurityContext.class.getName());
-                if (ksc instanceof RefreshableKeycloakSecurityContext) {
-                    CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
-                    ((RefreshableKeycloakSecurityContext)ksc).logout(deploymentContext.resolveDeployment(facade));
-                }
-            }
+            CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
+            KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+
+            AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
+            tokenStore.logout();
         }
         super.logout(request);
     }
@@ -164,10 +168,11 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             log.debug("*** deployment isn't configured return false");
             return false;
         }
+        AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
 
         nodesRegistrationManagement.tryRegister(deployment);
 
-        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, this, userSessionManagement, facade, request);
+        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, this, tokenStore, facade, request);
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             if (facade.isEnded()) {
@@ -188,27 +193,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
      * @param request
      */
     protected void checkKeycloakSession(Request request, HttpFacade facade) {
-        if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null) return;
-        RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
-        if (session == null) return;
-        // just in case session got serialized
-        if (session.getDeployment() == null) session.setDeployment(deploymentContext.resolveDeployment(facade));
-        if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) return;
-
-        // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will
-        // not be updated
-        boolean success = session.refreshExpiredToken(false);
-        if (success && session.isActive()) return;
-
-        // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
-        Session catalinaSession = request.getSessionInternal();
-        log.debugf("Cleanup and expire session %s after failed refresh", catalinaSession.getId());
-        catalinaSession.removeNote(KeycloakSecurityContext.class.getName());
-        request.setUserPrincipal(null);
-        request.setAuthType(null);
-        catalinaSession.setPrincipal(null);
-        catalinaSession.setAuthType(null);
-        catalinaSession.expire();
+        KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+        AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
+        tokenStore.checkCurrentToken();
     }
 
     public void keycloakSaveRequest(Request request) throws IOException {
@@ -221,6 +208,22 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected AdapterTokenStore getTokenStore(Request request, HttpFacade facade, KeycloakDeployment resolvedDeployment) {
+        AdapterTokenStore store = (AdapterTokenStore)request.getNote(TOKEN_STORE_NOTE);
+        if (store != null) {
+            return store;
+        }
+
+        if (resolvedDeployment.getTokenStore() == TokenStore.SESSION) {
+            store = new CatalinaSessionTokenStore(request, resolvedDeployment, userSessionManagement);
+        } else {
+            store = new CatalinaCookieTokenStore(request, facade, resolvedDeployment);
+        }
+
+        request.setNote(TOKEN_STORE_NOTE, store);
+        return store;
     }
 
 }

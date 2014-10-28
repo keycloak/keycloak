@@ -25,9 +25,12 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.AdapterTokenStore;
+import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.enums.TokenStore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -40,13 +43,11 @@ import javax.servlet.http.HttpSession;
 public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
     private static final Logger log = Logger.getLogger(ServletKeycloakAuthMech.class);
 
-    protected UndertowUserSessionManagement userSessionManagement;
     protected NodesRegistrationManagement nodesRegistrationManagement;
     protected ConfidentialPortManager portManager;
 
     public ServletKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement, NodesRegistrationManagement nodesRegistrationManagement, ConfidentialPortManager portManager) {
-        super(deploymentContext);
-        this.userSessionManagement = userSessionManagement;
+        super(deploymentContext, userSessionManagement);
         this.nodesRegistrationManagement = nodesRegistrationManagement;
         this.portManager = portManager;
     }
@@ -66,40 +67,12 @@ public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
         return keycloakAuthenticate(exchange, securityContext, authenticator);
     }
 
-    @Override
-    protected void registerNotifications(SecurityContext securityContext) {
-
-        final NotificationReceiver logoutReceiver = new NotificationReceiver() {
-            @Override
-            public void handleNotification(SecurityNotification notification) {
-                if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
-                final ServletRequestContext servletRequestContext = notification.getExchange().getAttachment(ServletRequestContext.ATTACHMENT_KEY);
-                HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-                req.removeAttribute(KeycloakUndertowAccount.class.getName());
-                req.removeAttribute(KeycloakSecurityContext.class.getName());
-                HttpSession session = req.getSession(false);
-                if (session == null) return;
-                KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
-                if (account == null) return;
-                session.removeAttribute(KeycloakSecurityContext.class.getName());
-                session.removeAttribute(KeycloakUndertowAccount.class.getName());
-                if (account.getKeycloakSecurityContext() != null) {
-                    UndertowHttpFacade facade = new UndertowHttpFacade(notification.getExchange());
-                    account.getKeycloakSecurityContext().logout(deploymentContext.resolveDeployment(facade));
-                }
-            }
-        };
-
-        securityContext.registerNotificationReceiver(logoutReceiver);
-    }
-
-
-
     protected RequestAuthenticator createRequestAuthenticator(KeycloakDeployment deployment, HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
 
         int confidentialPort = getConfidentilPort(exchange);
+        AdapterTokenStore tokenStore = getTokenStore(exchange, facade, deployment, securityContext);
         return new ServletRequestAuthenticator(facade, deployment,
-                confidentialPort, securityContext, exchange, userSessionManagement);
+                confidentialPort, securityContext, exchange, tokenStore);
     }
 
     protected int getConfidentilPort(HttpServerExchange exchange) {
@@ -110,6 +83,15 @@ public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
             confidentialPort = portManager.getConfidentialPort(exchange);
         }
         return confidentialPort;
+    }
+
+    @Override
+    protected AdapterTokenStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, KeycloakDeployment deployment, SecurityContext securityContext) {
+        if (deployment.getTokenStore() == TokenStore.SESSION) {
+            return new ServletSessionTokenStore(exchange, deployment, sessionManagement, securityContext);
+        } else {
+            return new UndertowCookieTokenStore(facade, deployment, securityContext);
+        }
     }
 
 }

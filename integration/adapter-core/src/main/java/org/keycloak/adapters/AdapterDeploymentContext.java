@@ -7,6 +7,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
 import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -255,6 +256,16 @@ public class AdapterDeploymentContext {
         @Override
         public void setSslRequired(SslRequired sslRequired) {
             delegate.setSslRequired(sslRequired);
+        }
+
+        @Override
+        public TokenStore getTokenStore() {
+            return delegate.getTokenStore();
+        }
+
+        @Override
+        public void setTokenStore(TokenStore tokenStore) {
+            delegate.setTokenStore(tokenStore);
         }
 
         @Override

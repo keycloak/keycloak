@@ -19,14 +19,16 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
     protected static Logger log = Logger.getLogger(RefreshableKeycloakSecurityContext.class);
 
     protected transient KeycloakDeployment deployment;
+    protected transient AdapterTokenStore tokenStore;
     protected String refreshToken;
 
     public RefreshableKeycloakSecurityContext() {
     }
 
-    public RefreshableKeycloakSecurityContext(KeycloakDeployment deployment, String tokenString, AccessToken token, String idTokenString, IDToken idToken, String refreshToken) {
+    public RefreshableKeycloakSecurityContext(KeycloakDeployment deployment, AdapterTokenStore tokenStore, String tokenString, AccessToken token, String idTokenString, IDToken idToken, String refreshToken) {
         super(tokenString, token, idTokenString, idToken);
         this.deployment = deployment;
+        this.tokenStore = tokenStore;
         this.refreshToken = refreshToken;
     }
 
@@ -40,6 +42,10 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
     public String getTokenString() {
         refreshExpiredToken(true);
         return super.getTokenString();
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
     }
 
     public void logout(KeycloakDeployment deployment) {
@@ -58,8 +64,9 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         return deployment;
     }
 
-    public void setDeployment(KeycloakDeployment deployment) {
+    public void setCurrentRequestInfo(KeycloakDeployment deployment, AdapterTokenStore tokenStore) {
         this.deployment = deployment;
+        this.tokenStore = tokenStore;
     }
 
     /**
@@ -107,8 +114,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         this.token = token;
         this.refreshToken = response.getRefreshToken();
         this.tokenString = tokenString;
+        tokenStore.refreshCallback(this);
         return true;
     }
-
-
 }

@@ -4,6 +4,7 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.undertow.ServletKeycloakAuthMech;
@@ -27,7 +28,8 @@ public class WildflyAuthenticationMechanism extends ServletKeycloakAuthMech {
     @Override
     protected ServletRequestAuthenticator createRequestAuthenticator(KeycloakDeployment deployment, HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
         int confidentialPort = getConfidentilPort(exchange);
+        AdapterTokenStore tokenStore = getTokenStore(exchange, facade, deployment, securityContext);
         return new WildflyRequestAuthenticator(facade, deployment,
-                confidentialPort, securityContext, exchange, userSessionManagement);
+                confidentialPort, securityContext, exchange, tokenStore);
     }
 }
