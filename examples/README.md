@@ -46,3 +46,9 @@ Themes
 ------
 
 Example themes to change the look and feel of login forms, account management console and admin console. For more information look at `themes/README.md`.
+
+
+Multi tenancy
+-------------
+
+A complete application, showing how to achieve multi tenancy of web applications by using one realm per account. For more information look at `multi-tenant/README.md`

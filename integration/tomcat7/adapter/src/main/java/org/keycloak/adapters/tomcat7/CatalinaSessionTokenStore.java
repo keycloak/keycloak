@@ -35,8 +35,20 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
         if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null) return;
         RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (session == null) return;
-        // just in case session got serialized
-        if (session.getDeployment() == null) session.setCurrentRequestInfo(deployment, this);
+
+        if (session.getDeployment() == null) {
+            // if the session was serialized, there's no way for us to be sure that
+            // the session belonged to the same realm as the one we are working for
+            // this request, so, better be conservative
+            log.fine("Session was found, but was probably serialized. Cannot determine the realm for the session cookie.");
+            return;
+        }
+
+        if (!deployment.getRealm().equals(session.getDeployment().getRealm())) {
+            log.fine("Account from cookie is from a different realm than for the request.");
+            return;
+        }
+
         if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) return;
 
         // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will

@@ -53,6 +53,12 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
             log.debug("Account was not in session, returning null");
             return false;
         }
+
+        if (!deployment.getRealm().equals(account.getKeycloakSecurityContext().getDeployment().getRealm())) {
+            log.debug("Account in session belongs to a different realm than for this request.");
+            return false;
+        }
+
         account.setCurrentRequestInfo(deployment, this);
         if (account.checkActive()) {
             log.debug("Cached account found");
