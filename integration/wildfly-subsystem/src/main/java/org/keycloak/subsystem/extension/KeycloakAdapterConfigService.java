@@ -78,7 +78,6 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     }
 
     public void addServerDeployment(String deploymentName, String webContext) {
-        System.out.println("**** adding Server deployment=" + deploymentName);
         this.webContexts.put(deploymentName, webContext);
     }
 

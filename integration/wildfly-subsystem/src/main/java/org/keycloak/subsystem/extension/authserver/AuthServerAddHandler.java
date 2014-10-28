@@ -52,14 +52,6 @@ public final class AuthServerAddHandler extends AbstractAddStepHandler {
             attr.validateAndSet(operation, model);
         }
 
-        System.out.println("**************************");
-        System.out.println("operation");
-        System.out.println(operation.toString());
-        System.out.println("**************************");
-        System.out.println("model");
-        System.out.println(model.toString());
-        System.out.println("**************************");
-
         // returns early if on domain controller
         if (!requiresRuntime(context)) return;
 

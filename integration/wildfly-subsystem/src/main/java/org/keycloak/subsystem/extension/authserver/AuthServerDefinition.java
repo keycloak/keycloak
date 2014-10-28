@@ -93,7 +93,8 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
-        resourceRegistration.registerOperationHandler(ManageOverlayHandler.DEFINITION, ManageOverlayHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(AddProviderHandler.DEFINITION, AddProviderHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(OverlayKeycloakServerJsonHandler.DEFINITION, OverlayKeycloakServerJsonHandler.INSTANCE);
     }
 
     @Override

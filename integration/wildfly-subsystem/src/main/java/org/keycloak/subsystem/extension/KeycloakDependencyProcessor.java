@@ -52,9 +52,6 @@ public class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
     }
 
     private void addModules(DeploymentUnit deploymentUnit) {
-        System.out.println("**************************");
-        System.out.println("* Adding Keycloak dependencies to " + deploymentUnit.getName());
-        System.out.println("**************************");
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
 

@@ -2,7 +2,7 @@
 
 <!--
   ~ JBoss, Home of Professional Open Source.
-  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ Copyright 2014, Red Hat, Inc., and individual contributors
   ~ as indicated by the @author tags. See the copyright.txt file in the
   ~ distribution for a full listing of individual contributors.
   ~
@@ -25,11 +25,11 @@
 <module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-wildfly-subsystem">
     <properties>
         <property name="keycloak-version" value="${project.version}"/>
+        <property name="auth-server-exploded" value="false"/>
     </properties>
 
     <resources>
-        <resource-root path="auth-server"/>
-        <resource-root path="overlays"/>
+        <resource-root path="."/>
         <!-- Insert resources here -->
     </resources>
 

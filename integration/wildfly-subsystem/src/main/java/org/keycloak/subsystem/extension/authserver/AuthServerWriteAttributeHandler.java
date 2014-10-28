@@ -50,13 +50,6 @@ public class AuthServerWriteAttributeHandler extends ModelOnlyWriteAttributeHand
             return;
         }
 
-        System.out.println("**** finishModelStage *****");
-        System.out.println("** operation **");
-        System.out.println(operation.toString());
-        System.out.println("** attributeName=" + attributeName);
-        System.out.println("** oldValue=" + oldValue);
-        System.out.println("** newValue=" + newValue);
-
         AuthServerUtil authServerUtil = new AuthServerUtil(operation);
         boolean isEnabled = isEnabled(model); // is server currently enabled?
 

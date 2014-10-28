@@ -44,12 +44,6 @@ public final class AuthServerRemoveHandler extends AbstractRemoveStepHandler {
 
     @Override
     protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        //KeycloakAdapterConfigService.INSTANCE.removeAuthServer()
-        System.out.println("*** performRuntime ** operation");
-        System.out.println(operation.toString());
-        System.out.println("*** performRuntime ** model");
-        System.out.println(model.toString());
-
         String deploymentName = AuthServerUtil.getDeploymentName(operation);
         KeycloakAdapterConfigService.INSTANCE.removeServerDeployment(deploymentName);
 
@@ -63,8 +57,6 @@ public final class AuthServerRemoveHandler extends AbstractRemoveStepHandler {
     private void addStepToRemoveAuthServer(OperationContext context, String deploymentName) {
         PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT, deploymentName));
         ModelNode op = Util.createOperation(REMOVE, deploymentAddress);
-        System.out.println("**** Removing deployment *****");
-        System.out.println(op.toString());
         context.addStep(op, getRemoveHandler(context, deploymentAddress), OperationContext.Stage.MODEL);
     }
 

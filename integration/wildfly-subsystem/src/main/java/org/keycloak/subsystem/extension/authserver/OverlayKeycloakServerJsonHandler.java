@@ -17,43 +17,27 @@
 
 package org.keycloak.subsystem.extension.authserver;
 
-import java.io.File;
 import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 
 /**
- * Operation to add a provider jar to WEB-INF/lib.
+ * Operation to overlay keycloak-server.json.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public class AddProviderHandler extends AbstractAddOverlayHandler {
+public class OverlayKeycloakServerJsonHandler extends AbstractAddOverlayHandler {
 
-    public static final String OP = "add-provider";
+    public static final String OP = "update-server-config";
 
-    public static final AddProviderHandler INSTANCE = new AddProviderHandler();
-
-    protected static final SimpleAttributeDefinition UPLOADED_FILE_NAME =
-            new SimpleAttributeDefinitionBuilder(UPLOADED_FILE_OP_NAME, ModelType.STRING, false)
-            .setAllowExpression(false)
-            .setAllowNull(false)
-            .setDefaultValue(new ModelNode().set("myprovider.jar"))
-            .build();
+    public static final OverlayKeycloakServerJsonHandler INSTANCE = new OverlayKeycloakServerJsonHandler();
 
     public static OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OP, AuthServerDefinition.rscDescriptionResolver)
             .addParameter(BYTES_TO_UPLOAD)
-            .addParameter(UPLOADED_FILE_NAME)
             .build();
 
     @Override
     String getOverlayPath(String fileName) {
-        if (!fileName.toLowerCase().endsWith(".jar")) {
-            throw new IllegalArgumentException("Uploaded file name must end with .jar");
-        }
-        return "/WEB-INF/lib/" + fileName;
+        return "/WEB-INF/classes/META-INF/keycloak-server.json";
     }
 
 }

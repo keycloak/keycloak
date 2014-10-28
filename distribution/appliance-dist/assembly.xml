@@ -48,7 +48,7 @@
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF</directory>
-            <outputDirectory>keycloak/modules/system/layers/base/org/keycloak/keycloak-wildfly-subsystem/main/overlays</outputDirectory>
+            <outputDirectory>keycloak/standalone/configuration</outputDirectory>
             <includes>
                 <include>keycloak-server.json</include>
             </includes>
