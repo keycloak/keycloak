@@ -102,7 +102,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         }
         deploymentContext = new AdapterDeploymentContext(kd);
         context.getServletContext().setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
-        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer(), getObjectName());
+        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer());
         setNext(actions);
 
         nodesRegistrationManagement = new NodesRegistrationManagement();

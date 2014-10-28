@@ -19,7 +19,9 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.util.StreamUtil;
 import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.identity.federation.core.saml.v2.common.SAMLDocumentHolder;
 import org.picketlink.identity.federation.saml.v2.SAML2Object;
@@ -32,6 +34,8 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -42,6 +46,7 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -377,6 +382,21 @@ public class SamlService {
                                 @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                 @FormParam(GeneralConstants.RELAY_STATE) String relayState) {
         return new PostBindingProtocol().execute(samlRequest, samlResponse, relayState);
+    }
+
+    @GET
+    @Path("descriptor")
+    @Produces(MediaType.APPLICATION_XML)
+    public String getDescriptor() throws Exception {
+        InputStream is = getClass().getResourceAsStream("/idp-metadata-template.xml");
+        String template = StreamUtil.readString(is);
+        template = template.replace("${idp.entityID}", RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
+        template = template.replace("${idp.sso.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
+        template = template.replace("${idp.sso.HTTP-Redirect}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
+        template = template.replace("${idp.sls.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
+        template = template.replace("${idp.signing.certificate}", realm.getCertificatePem());
+        return template;
+
     }
 
 }
