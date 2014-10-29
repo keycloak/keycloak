@@ -282,7 +282,7 @@ module.controller('OAuthClientInstallationCtrl', function($scope, realm, install
     $scope.installation = installation;
 
     $scope.download = function() {
-        saveAs(new Blob([$scope.installation], { type: $scope.type }), 'keycloak.json');
+        saveAs(new Blob([angular.toJson($scope.installation, true)], { type: 'application/json' }), 'keycloak.json');
     }
 });
 
