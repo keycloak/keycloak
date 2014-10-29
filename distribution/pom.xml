@@ -27,6 +27,7 @@
     <modules>
         <module>modules</module>
         <module>as7-adapter-zip</module>
+        <module>tomcat7-adapter-zip</module>
         <module>eap6-adapter-zip</module>
         <module>wildfly-adapter-zip</module>
         <module>examples-docs-zip</module>

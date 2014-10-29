@@ -1,0 +1,20 @@
+<assembly>
+    <id>war-dist</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <unpack>false</unpack>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <includes>
+                <include>org.keycloak:keycloak-tomcat7-adapter</include>
+            </includes>
+            <outputDirectory></outputDirectory>
+        </dependencySet>
+    </dependencySets>
+</assembly>
