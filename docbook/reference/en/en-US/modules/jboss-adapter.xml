@@ -10,7 +10,7 @@
     <section id="jboss-adapter-installation">
         <title>Adapter Installation</title>
     <para>
-        This is a adapter zip file for AS7, EAP, and Wildfly in the <literal>adapters/</literal> directory in the Keycloak
+        There is a adapter zip file for AS7, EAP, and Wildfly in the <literal>adapters/</literal> directory in the Keycloak
         distribution.
     </para>
     <para>
@@ -135,7 +135,7 @@ public class CustomerService {
 
     </section>
     <section>
-        <title>Per WAR Configuration</title>
+        <title>Required Per WAR Configuration</title>
         <para>
             This section describes how to secure a WAR directly by adding config and editing files within your WAR package.
         </para>

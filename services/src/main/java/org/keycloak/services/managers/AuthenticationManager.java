@@ -107,7 +107,7 @@ public class AuthenticationManager {
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
         token.subject(user.getId());
-        token.audience(realm.getName());
+        token.issuer(realm.getName());
         if (session != null) {
             token.setSessionState(session.getId());
         }

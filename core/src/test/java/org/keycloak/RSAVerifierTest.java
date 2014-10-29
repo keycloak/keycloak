@@ -72,7 +72,7 @@ public class RSAVerifierTest {
 
         token = new AccessToken();
         token.subject("CN=Client")
-                .audience("domain")
+                .issuer("domain")
                 .addAccess("service").addRole("admin");
     }
 
@@ -213,7 +213,7 @@ public class RSAVerifierTest {
     public void testTokenAuth() throws Exception {
         token = new AccessToken();
         token.subject("CN=Client")
-                .audience("domain")
+                .issuer("domain")
                 .addAccess("service").addRole("admin").verifyCaller(true);
 
         String encoded = new JWSBuilder()
