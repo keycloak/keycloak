@@ -35,6 +35,7 @@
                 <!ENTITY SecurityVulnerabilities SYSTEM "modules/security-vulnerabilities.xml">
                 <!ENTITY Clustering SYSTEM "modules/clustering.xml">
                 <!ENTITY ApplicationClustering SYSTEM "modules/application-clustering.xml">
+                <!ENTITY MultiTenancy SYSTEM "modules/multi-tenancy.xml">
                 ]>
 
 <book>
@@ -86,6 +87,7 @@ This one is short
         &JavascriptAdapter;
         &InstalledApplications;
         &Logout;
+        &MultiTenancy;
     </chapter>
 
     <chapter>

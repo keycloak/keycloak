@@ -1,0 +1,29 @@
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+    <display-name>Multi Tenant Example</display-name>
+
+    <context-param>
+        <param-name>keycloak.config.resolver</param-name>
+        <param-value>org.keycloak.example.multitenant.control.PathBasedKeycloakConfigResolver</param-value>
+    </context-param>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>REST endpoints</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>*</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <login-config>
+        <auth-method>KEYCLOAK</auth-method>
+        <realm-name>not-important</realm-name>
+    </login-config>
+    <security-role>
+        <role-name>user</role-name>
+    </security-role>
+</web-app>
