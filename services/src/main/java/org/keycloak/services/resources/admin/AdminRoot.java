@@ -140,7 +140,7 @@ public class AdminRoot {
         } catch (IOException e) {
             throw new UnauthorizedException("Bearer token format error");
         }
-        String realmName = token.getAudience();
+        String realmName = token.getIssuer();
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
         if (realm == null) {

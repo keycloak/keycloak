@@ -35,7 +35,7 @@ public class RSATokenVerifier {
         if (user == null) {
             throw new VerificationException("Token user was null.");
         }
-        if (!realm.equals(token.getAudience())) {
+        if (!realm.equals(token.getIssuer())) {
             throw new VerificationException("Token audience doesn't match domain.");
 
         }

@@ -222,7 +222,7 @@ public class TokenManager {
         IDToken token = new IDToken();
         token.id(KeycloakModelUtils.generateId());
         token.subject(user.getId());
-        token.audience(realm.getName());
+        token.audience(claimer.getClientId());
         token.issuedNow();
         token.issuedFor(client.getUsername());
         token.issuer(realm.getName());
@@ -239,7 +239,7 @@ public class TokenManager {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.subject(user.getId());
-        token.audience(realm.getName());
+        token.audience(client.getClientId());
         token.issuedNow();
         token.issuedFor(client.getClientId());
         token.issuer(realm.getName());
@@ -343,7 +343,7 @@ public class TokenManager {
             idToken = new IDToken();
             idToken.id(KeycloakModelUtils.generateId());
             idToken.subject(accessToken.getSubject());
-            idToken.audience(realm.getName());
+            idToken.audience(client.getClientId());
             idToken.issuedNow();
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());

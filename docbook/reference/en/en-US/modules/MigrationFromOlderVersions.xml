@@ -5,8 +5,8 @@
         <itemizedlist>
             <listitem>UserSessionModel JPA and Mongo storage schema has changed as these interfaces have been refactored</listitem>
             <listitem>
-                Upgrade your adapters as REST API has changed.  We're still supporting older adapters for now, but in future
-                versions this backward compatibility will be removed.
+                Upgrade your adapters.  We interpreted JSON Web Token and OIDC ID Token specification incorrectly.  'aud'
+                claim must be the client id, we were storing the realm name in there and validating it.
             </listitem>
         </itemizedlist>
     </sect1>
