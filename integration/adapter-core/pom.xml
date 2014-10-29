@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-adapter-core</artifactId>
-    <name>Keycloak AS7 Integration</name>
+    <name>Keycloak Adapter Core</name>
     <description/>
 
     <dependencies>
