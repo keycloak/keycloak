@@ -516,6 +516,29 @@
                         <excludePackageNames>
                             com.restfully.*:org.jboss.resteasy.examples.*:se.unlogic.*:org.jboss.resteasy.tests.*
                         </excludePackageNames>
+                        <archive>
+                            <index>true</index>
+                            <manifest>
+                              <addDefaultSpecificationEntries>
+                                true
+                              </addDefaultSpecificationEntries>
+                              <addDefaultImplementationEntries>
+                                true
+                              </addDefaultImplementationEntries>
+                            </manifest>
+                            <manifestEntries>
+                              <Implementation-URL>${project.url}</Implementation-URL>
+                              <Java-Version>${java.version}</Java-Version>
+                              <Java-Vendor>${java.vendor}</Java-Vendor>
+                              <Os-Name>${os.name}</Os-Name>
+                              <Os-Arch>${os.arch}</Os-Arch>
+                              <Os-Version>${os.version}</Os-Version>
+                              <Scm-Url>${project.scm.url}</Scm-Url>
+                              <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                              <Scm-Revision>${buildNumber}</Scm-Revision>
+                              <Build-Timestamp>${build.datetime}</Build-Timestamp>
+                            </manifestEntries>
+                        </archive>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -530,6 +553,31 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>2.1.2</version>
+                    <configuration>
+                      <archive>
+                        <index>true</index>
+                        <manifest>
+                          <addDefaultSpecificationEntries>
+                            true
+                          </addDefaultSpecificationEntries>
+                          <addDefaultImplementationEntries>
+                            true
+                          </addDefaultImplementationEntries>
+                        </manifest>
+                        <manifestEntries>
+                          <Implementation-URL>${project.url}</Implementation-URL>
+                          <Java-Version>${java.version}</Java-Version>
+                          <Java-Vendor>${java.vendor}</Java-Vendor>
+                          <Os-Name>${os.name}</Os-Name>
+                          <Os-Arch>${os.arch}</Os-Arch>
+                          <Os-Version>${os.version}</Os-Version>
+                          <Scm-Url>${project.scm.url}</Scm-Url>
+                          <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                          <Scm-Revision>${buildNumber}</Scm-Revision>
+                          <Build-Timestamp>${build.datetime}</Build-Timestamp>
+                        </manifestEntries>
+                      </archive>
+                    </configuration>
                     <executions>
                         <execution>
                             <phase>verify</phase>
@@ -566,6 +614,31 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>2.2</version>
+                    <configuration>
+                      <archive>
+                        <index>true</index>
+                        <manifest>
+                          <addDefaultSpecificationEntries>
+                            true
+                          </addDefaultSpecificationEntries>
+                          <addDefaultImplementationEntries>
+                            true
+                          </addDefaultImplementationEntries>
+                        </manifest>
+                        <manifestEntries>
+                          <Implementation-URL>${project.url}</Implementation-URL>
+                          <Java-Version>${java.version}</Java-Version>
+                          <Java-Vendor>${java.vendor}</Java-Vendor>
+                          <Os-Name>${os.name}</Os-Name>
+                          <Os-Arch>${os.arch}</Os-Arch>
+                          <Os-Version>${os.version}</Os-Version>
+                          <Scm-Url>${project.scm.url}</Scm-Url>
+                          <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                          <Scm-Revision>${buildNumber}</Scm-Revision>
+                          <Build-Timestamp>${build.datetime}</Build-Timestamp>
+                        </manifestEntries>
+                      </archive>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -628,6 +701,29 @@
                     <excludePackageNames>
                         se.unlogic.*:com.restfully.*:org.jboss.resteasy.examples.*:org.jboss.resteasy.tests.*
                     </excludePackageNames>
+                    <archive>
+                        <index>true</index>
+                        <manifest>
+                          <addDefaultSpecificationEntries>
+                            true
+                          </addDefaultSpecificationEntries>
+                          <addDefaultImplementationEntries>
+                            true
+                          </addDefaultImplementationEntries>
+                        </manifest>
+                        <manifestEntries>
+                          <Implementation-URL>${project.url}</Implementation-URL>
+                          <Java-Version>${java.version}</Java-Version>
+                          <Java-Vendor>${java.vendor}</Java-Vendor>
+                          <Os-Name>${os.name}</Os-Name>
+                          <Os-Arch>${os.arch}</Os-Arch>
+                          <Os-Version>${os.version}</Os-Version>
+                          <Scm-Url>${project.scm.url}</Scm-Url>
+                          <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                          <Scm-Revision>${buildNumber}</Scm-Revision>
+                          <Build-Timestamp>${build.datetime}</Build-Timestamp>
+                        </manifestEntries>
+                    </archive>
                 </configuration>
             </plugin>
             <plugin>
@@ -640,6 +736,31 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+                <configuration>
+                    <archive>
+                      <index>true</index>
+                      <manifest>
+                        <addDefaultSpecificationEntries>
+                          true
+                        </addDefaultSpecificationEntries>
+                        <addDefaultImplementationEntries>
+                          true
+                        </addDefaultImplementationEntries>
+                      </manifest>
+                      <manifestEntries>
+                        <Implementation-URL>${project.url}</Implementation-URL>
+                        <Java-Version>${java.version}</Java-Version>
+                        <Java-Vendor>${java.vendor}</Java-Vendor>
+                        <Os-Name>${os.name}</Os-Name>
+                        <Os-Arch>${os.arch}</Os-Arch>
+                        <Os-Version>${os.version}</Os-Version>
+                        <Scm-Url>${project.scm.url}</Scm-Url>
+                        <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                        <Scm-Revision>${buildNumber}</Scm-Revision>
+                        <Build-Timestamp>${build.datetime}</Build-Timestamp>
+                      </manifestEntries>
+                    </archive>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>verify</phase>
