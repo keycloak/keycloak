@@ -24,6 +24,8 @@ public class UriUtilsTest {
         assertValid("http://192.168.123.123");
         assertValid("https://192.168.123.123");
         assertValid("https://192.168.123.123:8080");
+        assertValid("https://sub-sub.test.com");
+        assertValid("https://sub.test-test.com");
 
         assertInvalid("https://test/");
         assertInvalid("{");
