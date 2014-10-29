@@ -18,7 +18,6 @@
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
             <version>${jboss.logging.version}</version>
-            <scope>provided</scope>
         </dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
