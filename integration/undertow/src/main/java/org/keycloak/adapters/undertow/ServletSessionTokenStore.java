@@ -54,7 +54,7 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
             return false;
         }
 
-        if (!deployment.getRealm().equals(account.getKeycloakSecurityContext().getDeployment().getRealm())) {
+        if (!deployment.getRealm().equals(account.getKeycloakSecurityContext().getRealm())) {
             log.debug("Account in session belongs to a different realm than for this request.");
             return false;
         }

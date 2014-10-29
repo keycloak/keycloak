@@ -103,30 +103,28 @@ public class KeycloakServletExtension implements ServletExtension {
         }
         log.debug("KeycloakServletException initialization");
 
-        KeycloakConfigResolver configResolver = null;
+        // Possible scenarios:
+        // 1) The deployment has a keycloak.config.resolver specified and it exists:
+        //    Outcome: adapter uses the resolver
+        // 2) The deployment has a keycloak.config.resolver and isn't valid (doesn't exists, isn't a resolver, ...) :
+        //    Outcome: adapter is left unconfigured
+        // 3) The deployment doesn't have a keycloak.config.resolver , but has a keycloak.json (or equivalent)
+        //    Outcome: adapter uses it
+        // 4) The deployment doesn't have a keycloak.config.resolver nor keycloak.json (or equivalent)
+        //    Outcome: adapter is left unconfigured
+
+        KeycloakConfigResolver configResolver;
         String configResolverClass = servletContext.getInitParameter("keycloak.config.resolver");
+        AdapterDeploymentContext deploymentContext;
         if (configResolverClass != null) {
             try {
                 configResolver = (KeycloakConfigResolver) deploymentInfo.getClassLoader().loadClass(configResolverClass).newInstance();
+                deploymentContext = new AdapterDeploymentContext(configResolver);
                 log.info("Using " + configResolverClass + " to resolve Keycloak configuration on a per-request basis.");
             } catch (Exception ex) {
-                // TODO: should it re-throw the exception?
-                //
-                // Reasoning: if the explicitly defined `resolver` wasn't found, it *will* behave differently
-                // than the user expects!
-                //
-                // Counter-reasoning: the original code doesn't throws an exception if keycloak is unconfigured, ie,
-                // it's already not doing what the user would generally expect, but might be OK for development environments
-                // so, we probably shouldn't block the deployment of the user's application because of keycloak's configuration
-                // problem
-                log.warn("The specified resolver " + configResolverClass + " could NOT be loaded. Falling back to standard behavior. Reason: " + ex.getMessage());
+                log.warn("The specified resolver " + configResolverClass + " could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: " + ex.getMessage());
+                deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
             }
-        }
-
-        AdapterDeploymentContext deploymentContext;
-        if (configResolver != null) {
-            deploymentContext = new AdapterDeploymentContext(configResolver);
-            log.debug("Keycloak is using a per-request configuration resolver.");
         } else {
             InputStream is = getConfigInputStream(servletContext);
             final KeycloakDeployment deployment;

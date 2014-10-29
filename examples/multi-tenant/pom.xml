@@ -10,19 +10,11 @@
 
     <name>Keycloak Examples - Multi Tenant</name>
     <artifactId>multitenant</artifactId>
-    <packaging>pom</packaging>
+    <packaging>war</packaging>
 
     <description>
-        Keycloak Multi Tenants Example - Parent module
+        Keycloak Multi Tenants Example
     </description>
-
-    <developers>
-        <developer>
-            <id>jpkroehling</id>
-            <name>Juraci Paixão Kröhling</name>
-            <timezone>+01:00</timezone>
-        </developer>
-    </developers>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -30,11 +22,6 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <failOnMissingWebXml>false</failOnMissingWebXml>
     </properties>
-
-    <modules>
-        <module>registration</module>
-        <module>business</module>
-    </modules>
 
     <dependencyManagement>
         <dependencies>
@@ -44,13 +31,6 @@
                 <version>8.0.0.Final</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>com.airhacks</groupId>
-                <artifactId>jaxrs-cors</artifactId>
-                <version>0.0.1</version>
-                <scope>compile</scope>
             </dependency>
 
             <dependency>
@@ -66,7 +46,27 @@
         </dependencies>
     </dependencyManagement>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Contains KeycloakDeployment and KeycloakConfigResolver -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-core</artifactId>
+        </dependency>
+
+        <!-- Contains KeycloakPrincipal -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+        </dependency>
+    </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
     </build>
 </project>
+

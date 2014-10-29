@@ -87,6 +87,40 @@ public class MultiTenancyTest {
         doTenantRequests("tenant2", true);
     }
 
+    /**
+     * This test simulates an user that is not logged in yet, and tris to login
+     * into tenant1 using an account from tenant2.
+     * On this scenario, the user should be shown the login page again.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testUnauthorizedAccessNotLoggedIn() throws Exception {
+        String keycloakServerBaseUrl = "http://localhost:8081/auth";
+
+        driver.navigate().to("http://localhost:8081/multi-tenant?realm=tenant1");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(keycloakServerBaseUrl));
+
+        loginPage.login("user-tenant2", "user-tenant2");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(keycloakServerBaseUrl));
+    }
+
+    /**
+     * This test simulates an user which is already logged in into tenant1
+     * and tries to access a resource on tenant2.
+     * On this scenario, the user should be shown the login page again.
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testUnauthorizedAccessLoggedIn() throws Exception {
+        String keycloakServerBaseUrl = "http://localhost:8081/auth";
+        doTenantRequests("tenant1", false);
+
+        driver.navigate().to("http://localhost:8081/multi-tenant?realm=tenant2");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(keycloakServerBaseUrl));
+    }
+
     private void doTenantRequests(String tenant, boolean logout) {
         String tenantLoginUrl = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build(tenant).toString();
 

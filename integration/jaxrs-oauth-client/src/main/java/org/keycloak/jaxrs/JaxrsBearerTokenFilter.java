@@ -71,7 +71,7 @@ public class JaxrsBearerTokenFilter implements ContainerRequestFilter {
 
         try {
             AccessToken token = RSATokenVerifier.verifyToken(tokenString, realmPublicKey, realm);
-            KeycloakSecurityContext skSession = new KeycloakSecurityContext(tokenString, token, null, null);
+            KeycloakSecurityContext skSession = new KeycloakSecurityContext(tokenString, token, null, null, realm);
             ResteasyProviderFactory.pushContext(KeycloakSecurityContext.class, skSession);
 
             final KeycloakPrincipal<KeycloakSecurityContext> principal = new KeycloakPrincipal<KeycloakSecurityContext>(token.getSubject(), skSession);

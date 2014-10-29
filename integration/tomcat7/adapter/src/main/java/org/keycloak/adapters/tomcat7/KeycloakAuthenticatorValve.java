@@ -6,7 +6,6 @@ import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Manager;
-import org.apache.catalina.Session;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
@@ -23,8 +22,6 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.adapters.ServerRequest;
 import org.keycloak.enums.TokenStore;
 
 import javax.servlet.ServletContext;
@@ -93,35 +90,34 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         cache = false;
     }
 
+    @SuppressWarnings("UseSpecificCatch")
+    @Override
     public void initInternal() {
-        KeycloakConfigResolver configResolver = null;
+        // Possible scenarios:
+        // 1) The deployment has a keycloak.config.resolver specified and it exists:
+        //    Outcome: adapter uses the resolver
+        // 2) The deployment has a keycloak.config.resolver and isn't valid (doesn't exists, isn't a resolver, ...) :
+        //    Outcome: adapter is left unconfigured
+        // 3) The deployment doesn't have a keycloak.config.resolver , but has a keycloak.json (or equivalent)
+        //    Outcome: adapter uses it
+        // 4) The deployment doesn't have a keycloak.config.resolver nor keycloak.json (or equivalent)
+        //    Outcome: adapter is left unconfigured
+
         String configResolverClass = (String) context.getServletContext().getAttribute("keycloak.config.resolver");
         if (configResolverClass != null) {
             try {
-                configResolver = (KeycloakConfigResolver) context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
+                KeycloakConfigResolver configResolver = (KeycloakConfigResolver) context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
+                deploymentContext = new AdapterDeploymentContext(configResolver);
                 log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
             } catch (Exception ex) {
-                // TODO: should it re-throw the exception?
-                //
-                // Reasoning: if the explicitly defined `resolver` wasn't found, it *will* behave differently
-                // than the user expects!
-                //
-                // Counter-reasoning: the original code doesn't throws an exception if keycloak is unconfigured, ie,
-                // it's already not doing what the user would generally expect, but might be OK for development environments
-                // so, we probably shouldn't block the deployment of the user's application because of keycloak's configuration
-                // problem
-                log.log(Level.WARNING, "The specified resolver {0} could NOT be loaded. Falling back to standard behavior. Reason: {1}", new Object[]{configResolverClass, ex.getMessage()});
+                log.log(Level.FINE, "The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[]{configResolverClass, ex.getMessage()});
+                deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
             }
-        }
-
-        if (configResolver != null) {
-            deploymentContext = new AdapterDeploymentContext(configResolver);
-            log.fine("Keycloak is using a per-request configuration resolver.");
         } else {
             InputStream configInputStream = getConfigInputStream(context);
             KeycloakDeployment kd;
             if (configInputStream == null) {
-                log.warning("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
+                log.fine("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
                 kd = new KeycloakDeployment();
             } else {
                 kd = KeycloakDeploymentBuilder.build(configInputStream);

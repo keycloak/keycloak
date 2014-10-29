@@ -30,6 +30,5 @@
         <module>providers</module>
         <module>js-console</module>
         <module>multi-tenant</module>
-        <module>simple-multi-tenant</module>
     </modules>
 </project>

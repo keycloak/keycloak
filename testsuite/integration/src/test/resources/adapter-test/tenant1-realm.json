@@ -28,6 +28,21 @@
             "applicationRoles": {
                 "multi-tenant": [ "user" ]
             }
+        },
+        {
+            "username" : "user-tenant1",
+            "enabled": true,
+            "email" : "user-tenant1@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "user-tenant1" }
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "multi-tenant": [ "user" ]
+            }
         }
     ],
     "roles" : {

@@ -10,7 +10,6 @@ import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
-import static org.keycloak.adapters.undertow.UndertowCookieTokenStore.log;
 
 /**
  * Per-request object. Storage of tokens in undertow session.
@@ -52,7 +51,7 @@ public class UndertowSessionTokenStore implements AdapterTokenStore {
             return false;
         }
 
-        if (!deployment.getRealm().equals(account.getKeycloakSecurityContext().getDeployment().getRealm())) {
+        if (!deployment.getRealm().equals(account.getKeycloakSecurityContext().getRealm())) {
             log.debug("Account in session belongs to a different realm than for this request.");
             return false;
         }

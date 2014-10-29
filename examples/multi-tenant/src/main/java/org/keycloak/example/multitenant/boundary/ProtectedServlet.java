@@ -14,34 +14,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.adapter;
+package org.keycloak.example.multitenant.boundary;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.KeycloakPrincipal;
 
 /**
  *
  * @author Juraci Paixão Kröhling <juraci at kroehling.de>
  */
-public class MultiTenantServlet extends HttpServlet {
+@WebServlet(urlPatterns = "/*")
+public class ProtectedServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String realm = req.getPathInfo().split("/")[1];
+        if (realm.contains("?")) {
+            realm = realm.split("\\?")[0];
+        }
+
+        if (req.getPathInfo().contains("logout")) {
+            req.logout();
+            resp.sendRedirect(req.getContextPath() + "/" + realm);
+            return;
+        }
+
+        KeycloakPrincipal principal = (KeycloakPrincipal) req.getUserPrincipal();
+
         resp.setContentType("text/html");
-        PrintWriter pw = resp.getWriter();
-        KeycloakSecurityContext context = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
+        PrintWriter writer = resp.getWriter();
 
-        pw.print("Username: ");
-        pw.println(context.getIdToken().getPreferredUsername());
+        writer.write("Realm: ");
+        writer.write(principal.getKeycloakSecurityContext().getIdToken().getIssuer());
 
-        pw.print("<br/>Realm: ");
-        pw.println(context.getRealm());
+        writer.write("<br/>User: ");
+        writer.write(principal.getKeycloakSecurityContext().getIdToken().getPreferredUsername());
 
-        pw.flush();
+        writer.write(String.format("<br/><a href=\"/multitenant/%s/logout\">Logout</a>", realm));
     }
-}
+ }

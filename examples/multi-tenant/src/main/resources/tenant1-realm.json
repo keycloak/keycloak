@@ -1,6 +1,6 @@
 {
-    "id": "tenant2",
-    "realm": "tenant2",
+    "id": "tenant1",
+    "realm": "tenant1",
     "enabled": true,
     "accessTokenLifespan": 3000,
     "accessCodeLifespan": 10,
@@ -15,29 +15,11 @@
     "requiredCredentials": [ "password" ],
     "users" : [
         {
-            "username" : "bburke@redhat.com",
+            "username" : "user-tenant1",
             "enabled": true,
-            "email" : "bburke@redhat.com",
-            "firstName": "Bill",
-            "lastName": "Burke",
             "credentials" : [
                 { "type" : "password",
-                    "value" : "password" }
-            ],
-            "realmRoles": [ "user" ],
-            "applicationRoles": {
-                "multi-tenant": [ "user" ]
-            }
-        },
-        {
-            "username" : "user-tenant2",
-            "enabled": true,
-            "email" : "user-tenant2@redhat.com",
-            "firstName": "Bill",
-            "lastName": "Burke",
-            "credentials" : [
-                { "type" : "password",
-                    "value" : "user-tenant2" }
+                    "value" : "user-tenant1" }
             ],
             "realmRoles": [ "user" ],
             "applicationRoles": {
@@ -64,10 +46,10 @@
         {
             "name": "multi-tenant",
             "enabled": true,
-            "adminUrl": "http://localhost:8081/multi-tenant",
-            "baseUrl": "http://localhost:8081/multi-tenant",
+            "adminUrl": "http://localhost:8080/multitenant/tenant1",
+            "baseUrl": "http://localhost:8080/multitenant/tenant1",
             "redirectUris": [
-                "http://localhost:8081/multi-tenant/*"
+                "http://localhost:8080/multitenant/tenant1/*"
             ],
             "secret": "password"
         }

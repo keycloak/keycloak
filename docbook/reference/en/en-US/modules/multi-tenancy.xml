@@ -1,4 +1,4 @@
-<chapter id="multi_tenancy">
+<section id="multi_tenancy">
     <title>Multi Tenancy</title>
     <para>
         Multi Tenancy, in our context, means that one single target application (WAR) can be secured by a single (or clustered) Keycloak server, authenticating
@@ -51,6 +51,6 @@
         </itemizedlist>
     </para>
     <para>
-        Keycloak provides a complete application as example that uses this feature, including the dynamic registration of realms.
+        An implementation of this feature can be found on the examples.
     </para>
-</chapter>
+</section>

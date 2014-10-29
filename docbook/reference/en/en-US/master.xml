@@ -87,6 +87,7 @@ This one is short
         &JavascriptAdapter;
         &InstalledApplications;
         &Logout;
+        &MultiTenancy;
     </chapter>
 
     <chapter>
@@ -128,7 +129,6 @@ This one is short
     &SecurityVulnerabilities;
     &Clustering;
     &ApplicationClustering;
-    &MultiTenancy;
     &Migration;
 
 </book>

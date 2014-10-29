@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.Map;
-import org.keycloak.adapters.HttpFacade.Request;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -56,25 +55,6 @@ public class AdapterDeploymentContext {
      */
     public AdapterDeploymentContext(KeycloakConfigResolver configResolver) {
         this.configResolver = configResolver;
-    }
-
-    /**
-     * For single-tenant applications, returns the deployment's single
-     * KeycloakDeployment.
-     *
-     * For multi-tenant applications, queries the KeycloakConfigResolver for
-     * the KeycloakDeployment relative to this request.
-     *
-     * @param request The HTTP Request to be used when resolving, if on a
-     *                multi-tenant scenario. Can be null for single-tenant
-     *                applications.
-     * @return A complete KeycloakDeployment suitable for this request.
-     */
-    public KeycloakDeployment getDeployment(Request request) {
-        if (null != configResolver) {
-            return configResolver.resolve(request);
-        }
-        return deployment;
     }
 
     /**
