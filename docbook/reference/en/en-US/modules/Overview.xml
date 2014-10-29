@@ -98,7 +98,7 @@
                 Multitenancy support.  You can host and manage multiple realms for multiple organizations.
             </listitem>
             <listitem>
-                Supports JBoss AS7, EAP 6.x, Wildfly and Pure JavaScript applications.  Plans to support Node.js, RAILS, GRAILS, and other non-Java deployments
+                Supports JBoss AS7, EAP 6.x, Wildfly, Tomcat 7 and Pure JavaScript applications.  Plans to support Node.js, RAILS, GRAILS, and other non-Java deployments
             </listitem>
         </itemizedlist>
     </para>
