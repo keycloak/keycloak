@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  */
 public class UriUtils {
 
-    private static final Pattern originPattern = Pattern.compile("(http://|https://)[\\w]+(\\.[\\w]+)*(:[\\d]{2,5})?");
+    private static final Pattern originPattern = Pattern.compile("(http://|https://)[\\w-]+(\\.[\\w-]+)*(:[\\d]{2,5})?");
 
     public static String getOrigin(URI uri) {
         return getOrigin(uri.toString());

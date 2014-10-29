@@ -625,29 +625,74 @@ keycloak-war-dist-all-&project.version;/
                     <literal>X-Forwarded-Proto</literal> headers on the requests made to Keycloak. Next you need to enable
                     <literal>proxy-address-forwarding</literal> on the Keycloak http connector. Assuming that your reverse
                     proxy doesn't use port 8443 for SSL you also need to configure what port http traffic is redirected to.
-                    This is done by editing <literal>standalone/configuration/standalone.xml</literal>.
                 </para>
-                First add <literal>proxy-address-forwarding</literal> and <literal>redirect-socket</literal> to the <literal>http-listener</literal>
-                element:
-                <para>
+
+                <section>
+                    <title>WildFly</title>
+
+                    <para>
+                        Open <literal>standalone/configuration/standalone.xml</literal> in your favorite editor.
+                    </para>
+
+                    <para>
+                        First add <literal>proxy-address-forwarding</literal> and <literal>redirect-socket</literal> to
+                        the <literal>http-listener</literal> element:
 <programlisting><![CDATA[<subsystem xmlns="urn:jboss:domain:undertow:1.1">
     ...
-    <http-listener name="default" socket-binding="http" proxy-address-forwarding="true" redirect-socket="proxy-https"/>
+    <http-listener name="default" socket-binding="http"
+        proxy-address-forwarding="true" redirect-socket="proxy-https"/>
     ...
 </subsystem>
 ]]></programlisting>
-                Then add a new <literal>socket-binding</literal> element to the <literal>socket-binding-group</literal> element:
+                    </para>
+                    <para>
+                        Then add a new <literal>socket-binding</literal> element to the <literal>socket-binding-group</literal> element:
 <programlisting><![CDATA[
-<socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+<socket-binding-group name="standard-sockets" default-interface="public"
+    port-offset="${jboss.socket.binding.port-offset:0}">
     ...
     <socket-binding name="proxy-https" port="443"/>
     ...
 </socket-binding-group>
 ]]></programlisting>
-                </para>
-                <para>
-                    Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">WildFly</ulink> documentation for more information.
-                </para>
+                    </para>
+                    <para>
+                        Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">WildFly</ulink> documentation for more information.
+                    </para>
+                </section>
+
+                <section>
+                    <title>AS7/EAP</title>
+
+                    <para>
+                        Open <literal>standalone/configuration/standalone.xml</literal> in your favorite editor.
+                    </para>
+
+                    <para>
+                        You need to add <literal>redirect-port</literal> to http <literal>connector</literal> element and
+                        add the <literal>RemoteIpValve</literal> valve:
+<programlisting><![CDATA[
+<subsystem xmlns="urn:jboss:domain:web:1.5"
+    default-virtual-server="default-host" native="false">
+    <connector name="http" protocol="HTTP/1.1" scheme="http"
+        socket-binding="http"
+        redirect-port="443"/>
+    <virtual-server name="default-host" enable-welcome-root="true">
+        <alias name="localhost"/>
+        <alias name="example.com"/>
+    </virtual-server>
+    <valve name="remoteipvalve" module="org.jboss.as.web"
+        class-name="org.apache.catalina.valves.RemoteIpValve">
+        <param param-name="protocolHeader" param-value="x-forwarded-proto"/>
+    </valve>
+</subsystem>
+]]></programlisting>
+                    </para>
+
+
+
+                </section>
+
             </section>
 
             <section>
