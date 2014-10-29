@@ -516,6 +516,29 @@
                         <excludePackageNames>
                             com.restfully.*:org.jboss.resteasy.examples.*:se.unlogic.*:org.jboss.resteasy.tests.*
                         </excludePackageNames>
+                        <archive>
+                            <index>true</index>
+                            <manifest>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
+                            <manifestEntries>
+                                <Implementation-URL>${project.url}</Implementation-URL>
+                                <Java-Version>${java.version}</Java-Version>
+                                <Java-Vendor>${java.vendor}</Java-Vendor>
+                                <Os-Name>${os.name}</Os-Name>
+                                <Os-Arch>${os.arch}</Os-Arch>
+                                <Os-Version>${os.version}</Os-Version>
+                                <Scm-Url>${project.scm.url}</Scm-Url>
+                                <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                                <Scm-Revision>${buildNumber}</Scm-Revision>
+                                <Build-Timestamp>${build.datetime}</Build-Timestamp>
+                                <Specification-Vendor>JBoss (http://www.jboss.org/)</Specification-Vendor>
+                                <Implementation-URL>http://www.jboss.org/</Implementation-URL>
+                                <Implementation-Vendor>JBoss by Red Hat, Inc</Implementation-Vendor>
+                                <Implementation-Vendor-Id>http://www.jboss.org/</Implementation-Vendor-Id>
+                            </manifestEntries>
+                        </archive>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -530,6 +553,31 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>2.1.2</version>
+                    <configuration>
+                        <archive>
+                            <index>true</index>
+                            <manifest>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
+                            <manifestEntries>
+                                <Implementation-URL>${project.url}</Implementation-URL>
+                                <Java-Version>${java.version}</Java-Version>
+                                <Java-Vendor>${java.vendor}</Java-Vendor>
+                                <Os-Name>${os.name}</Os-Name>
+                                <Os-Arch>${os.arch}</Os-Arch>
+                                <Os-Version>${os.version}</Os-Version>
+                                <Scm-Url>${project.scm.url}</Scm-Url>
+                                <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                                <Scm-Revision>${buildNumber}</Scm-Revision>
+                                <Build-Timestamp>${build.datetime}</Build-Timestamp>
+                                <Specification-Vendor>JBoss (http://www.jboss.org/)</Specification-Vendor>
+                                <Implementation-URL>http://www.jboss.org/</Implementation-URL>
+                                <Implementation-Vendor>JBoss by Red Hat, Inc</Implementation-Vendor>
+                                <Implementation-Vendor-Id>http://www.jboss.org/</Implementation-Vendor-Id>
+                            </manifestEntries>
+                        </archive>
+                    </configuration>
                     <executions>
                         <execution>
                             <phase>verify</phase>
@@ -566,6 +614,31 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>2.2</version>
+                    <configuration>
+                        <archive>
+                            <index>true</index>
+                            <manifest>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
+                            <manifestEntries>
+                                <Implementation-URL>${project.url}</Implementation-URL>
+                                <Java-Version>${java.version}</Java-Version>
+                                <Java-Vendor>${java.vendor}</Java-Vendor>
+                                <Os-Name>${os.name}</Os-Name>
+                                <Os-Arch>${os.arch}</Os-Arch>
+                                <Os-Version>${os.version}</Os-Version>
+                                <Scm-Url>${project.scm.url}</Scm-Url>
+                                <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                                <Scm-Revision>${buildNumber}</Scm-Revision>
+                                <Build-Timestamp>${build.datetime}</Build-Timestamp>
+                                <Specification-Vendor>JBoss (http://www.jboss.org/)</Specification-Vendor>
+                                <Implementation-URL>http://www.jboss.org/</Implementation-URL>
+                                <Implementation-Vendor>JBoss by Red Hat, Inc</Implementation-Vendor>
+                                <Implementation-Vendor-Id>http://www.jboss.org/</Implementation-Vendor-Id>
+                            </manifestEntries>
+                        </archive>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -603,6 +676,11 @@
                     <artifactId>liquibase-maven-plugin</artifactId>
                     <!-- set to ${liquibase.version} once Liquibase 3.2.3 is released (https://liquibase.jira.com/browse/CORE-1987) -->
                     <version>3.1.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>buildnumber-maven-plugin</artifactId>
+                    <version>1.3</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -657,6 +735,37 @@
                 <groupId>com.atlassian.maven.plugins</groupId>
                 <artifactId>maven-clover2-plugin</artifactId>
                 <version>3.1.6</version>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>get-build-timestamp</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>create-timestamp</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Example date: Wed, 4 Jul 2001 12:08:56 -0700 -->
+                            <timestampFormat>EEE, d MMM yyyy HH:mm:ss Z</timestampFormat>
+                            <timestampPropertyName>build.datetime</timestampPropertyName>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>get-scm-revision</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>create</goal>
+                        </goals>
+                        <configuration>
+                            <doCheck>false</doCheck>
+                            <doUpdate>false</doUpdate>
+                            <revisionOnScmFailure>UNKNOWN</revisionOnScmFailure>
+                            <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
 

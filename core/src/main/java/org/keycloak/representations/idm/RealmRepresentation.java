@@ -61,8 +61,8 @@ public class RealmRepresentation {
     protected String accountTheme;
     protected String adminTheme;
     protected String emailTheme;
-    protected boolean eventsEnabled;
-    protected long eventsExpiration;
+    protected Boolean eventsEnabled;
+    protected Long eventsExpiration;
     protected List<String> eventsListeners;
 
     public String getId() {
@@ -445,7 +445,7 @@ public class RealmRepresentation {
         this.failureFactor = failureFactor;
     }
 
-    public boolean isEventsEnabled() {
+    public Boolean isEventsEnabled() {
         return eventsEnabled;
     }
 
@@ -453,7 +453,7 @@ public class RealmRepresentation {
         this.eventsEnabled = eventsEnabled;
     }
 
-    public long getEventsExpiration() {
+    public Long getEventsExpiration() {
         return eventsExpiration;
     }
 

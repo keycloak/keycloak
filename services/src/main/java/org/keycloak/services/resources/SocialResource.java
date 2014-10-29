@@ -121,7 +121,7 @@ public class SocialResource {
         RealmModel realm = clientSession.getRealm();
 
         EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder()
-                .event(EventType.SOCIAL_LOGIN)
+                .event(EventType.LOGIN)
                 .client(clientSession.getClient())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, authMethod);
