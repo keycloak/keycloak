@@ -53,7 +53,7 @@
             realm keys and password hashes) from being sent between the nodes.
         </para>
         <para>
-            User sessions supports either distributed caches or fully replicated caches. We recommend using a distributed
+            User sessions and login failures supports either distributed caches or fully replicated caches. We recommend using a distributed
             cache.
         </para>
         <para>
@@ -65,6 +65,7 @@
         <invalidation-cache name="realms" mode="SYNC"/>
         <invalidation-cache name="users" mode="SYNC"/>
         <distributed-cache name="sessions" mode="SYNC" owners="1" />
+        <distributed-cache name="loginFailures" mode="SYNC" owners="1" />
     </cache-container>
     ...
 </subsystem>

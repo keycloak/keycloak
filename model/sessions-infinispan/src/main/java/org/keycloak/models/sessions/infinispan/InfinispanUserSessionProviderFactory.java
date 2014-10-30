@@ -15,14 +15,11 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
  */
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
 
-    private static final String SESSION_CACHE_NAME = "sessions";
-    private static final String LOGIN_FAILURE_CACHE_NAME = "loginFailures";
-
     @Override
     public UserSessionProvider create(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-        Cache<String, SessionEntity> cache = connections.getCache(SESSION_CACHE_NAME);
-        Cache<LoginFailureKey, LoginFailureEntity> loginFailures = connections.getCache(LOGIN_FAILURE_CACHE_NAME);
+        Cache<String, SessionEntity> cache = connections.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
+        Cache<LoginFailureKey, LoginFailureEntity> loginFailures = connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
         return new InfinispanUserSessionProvider(session, cache, loginFailures);
     }
 

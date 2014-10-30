@@ -20,7 +20,9 @@ sed -i -e 's/<\/periodic-rotating-file-handler>/&\n <logger category=\"org.keycl
 
 sed -i -e 's/<subsystem xmlns=\"urn:jboss:domain:infinispan:[0-9]\.[0-9]\">/&\n <cache-container name=\"keycloak\" jndi-name=\"infinispan\/Keycloak\" start=\"EAGER\"> \
 \n  <transport lock-timeout=\"60000\"\/>\n  <distributed-cache name=\"sessions\" mode=\"SYNC\" owners=\"2\" segments=\"60\"\/> \
-\n  <invalidation-cache name=\"realms\" mode=\"SYNC\"\/>\n <\/cache-container>/' $JBOSS_HOME/standalone/configuration/standalone-ha.xml
+\n  <distributed-cache name=\"loginFailures\" mode=\"SYNC\" owners=\"2\" segments=\"60\"\/> \
+\n  <invalidation-cache name=\"realms\" mode=\"SYNC\"\/>\n \
+\n  <invalidation-cache name=\"users\"  mode=\"SYNC\"\/>\n <\/cache-container>/' $JBOSS_HOME/standalone/configuration/standalone-ha.xml
 
 sed -i "s|<mod-cluster-config .*>|<mod-cluster-config advertise-socket=\"modcluster\" proxy-list=\"\$\{httpd.proxyList\}\" proxy-url=\"\/\" balancer=\"mycluster\" advertise=\"false\" connector=\"ajp\" sticky-session=\"true\">|" $JBOSS_HOME/standalone/configuration/standalone-ha.xml
 

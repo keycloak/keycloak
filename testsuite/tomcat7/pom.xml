@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-testsuite-tomcat7</artifactId>
-    <name>Keycloak Tomcat 7Integration TestSuite</name>
+    <name>Keycloak Tomcat 7 Integration TestSuite</name>
     <description />
 
    <dependencies>
