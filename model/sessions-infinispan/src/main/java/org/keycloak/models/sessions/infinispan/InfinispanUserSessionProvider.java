@@ -210,6 +210,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         for (String id : map.keySet()) {
             removeUserSession(realm, id);
         }
+
+        map = new MapReduceTask(sessionCache)
+                .mappedWith(ClientSessionMapper.create(realm.getId()).expiredRefresh(expiredRefresh).requireNullUserSession(true).emitKey())
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        for (String id : map.keySet()) {
+            tx.remove(sessionCache, id);
+        }
     }
 
     @Override

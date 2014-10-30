@@ -194,7 +194,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
         Iterator<ClientSessionEntity> citr = clientSessions.values().iterator();
         while (citr.hasNext()) {
             ClientSessionEntity c = citr.next();
-            if (c.getSession() == null && c.getTimestamp() < Time.currentTime() - realm.getSsoSessionIdleTimeout()) {
+            if (c.getSession() == null && c.getRealmId().equals(realm.getId()) && c.getTimestamp() < Time.currentTime() - realm.getSsoSessionIdleTimeout()) {
                 citr.remove();
             }
         }

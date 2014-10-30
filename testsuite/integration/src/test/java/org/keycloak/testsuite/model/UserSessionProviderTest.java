@@ -244,12 +244,15 @@ public class UserSessionProviderTest {
     @Test
     public void testRemoveUserSessionsByExpired() {
         session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm));
+        ClientModel client = realm.findClient("test-app");
 
         try {
             Set<String> expired = new HashSet<String>();
+            Set<String> expiredClientSessions = new HashSet<String>();
 
             Time.setOffset(-(realm.getSsoSessionMaxLifespan() + 1));
             expired.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true).getId());
+            expiredClientSessions.add(session.sessions().createClientSession(realm, client).getId());
 
             Time.setOffset(0);
             UserSessionModel s = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", true);
@@ -257,9 +260,15 @@ public class UserSessionProviderTest {
             s.setLastSessionRefresh(0);
             expired.add(s.getId());
 
+            ClientSessionModel clSession = session.sessions().createClientSession(realm, client);
+            clSession.setUserSession(s);
+            expiredClientSessions.add(clSession.getId());
+
             Set<String> valid = new HashSet<String>();
+            Set<String> validClientSessions = new HashSet<String>();
 
             valid.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true).getId());
+            validClientSessions.add(session.sessions().createClientSession(realm, client).getId());
 
             resetSession();
 
@@ -269,9 +278,15 @@ public class UserSessionProviderTest {
             for (String e : expired) {
                 assertNull(session.sessions().getUserSession(realm, e));
             }
+            for (String e : expiredClientSessions) {
+                assertNull(session.sessions().getClientSession(realm, e));
+            }
 
             for (String v : valid) {
                 assertNotNull(session.sessions().getUserSession(realm, v));
+            }
+            for (String e : validClientSessions) {
+                assertNotNull(session.sessions().getClientSession(realm, e));
             }
         } finally {
             Time.setOffset(0);
