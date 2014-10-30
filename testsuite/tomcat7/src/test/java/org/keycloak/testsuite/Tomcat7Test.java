@@ -60,6 +60,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -106,12 +107,11 @@ public class Tomcat7Test {
 
     @BeforeClass
     public static void initTomcat() throws Exception {
-
-        String webappDirLocation = "src/test/resources/tomcat-test/webapp/";
         URL dir = Tomcat7Test.class.getResource("/tomcat-test/webapp/META-INF/context.xml");
         File webappDir = new File(dir.getFile()).getParentFile().getParentFile();
         tomcat = new Tomcat();
-
+        String baseDir = getBaseDirectory();
+        tomcat.setBaseDir(baseDir);
         tomcat.setPort(8080);
 
         tomcat.addWebapp("/customer-portal", webappDir.toString());
@@ -167,7 +167,24 @@ public class Tomcat7Test {
     }
 
 
+    private static String getBaseDirectory() {
+        String dirPath = null;
+        String relativeDirPath = "testsuite" + File.separator + "tomcat7" + File.separator + "target";
 
+        if (System.getProperties().containsKey("maven.home")) {
+            dirPath = System.getProperty("user.dir").replaceFirst("testsuite.tomcat7.*", Matcher.quoteReplacement(relativeDirPath));
+        } else {
+            for (String c : System.getProperty("java.class.path").split(File.pathSeparator)) {
+                if (c.contains(File.separator + "testsuite" + File.separator + "tomcat7")) {
+                    dirPath = c.replaceFirst("testsuite.tomcat7.*", Matcher.quoteReplacement(relativeDirPath));
+                    break;
+                }
+            }
+        }
+
+        String absolutePath = new File(dirPath).getAbsolutePath();
+        return absolutePath;
+    }
 
 
 
