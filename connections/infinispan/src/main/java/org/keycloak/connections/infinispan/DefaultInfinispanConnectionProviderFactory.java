@@ -96,8 +96,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
         Configuration invalidationCacheConfiguration = invalidationConfigBuilder.build();
 
-        cacheManager.defineConfiguration("realms", invalidationCacheConfiguration);
-        cacheManager.defineConfiguration("users", invalidationCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, invalidationCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_CACHE_NAME, invalidationCacheConfiguration);
 
         ConfigurationBuilder sessionConfigBuilder = new ConfigurationBuilder();
         if (clustered) {
@@ -115,7 +115,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .numSegments(config.getInt("sessionsSegments", 60)).build();
         }
 
-        cacheManager.defineConfiguration("sessions", sessionConfigBuilder.build());
+        Configuration sessionCacheConfiguration = sessionConfigBuilder.build();
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
     }
 
 }

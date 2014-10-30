@@ -21,7 +21,7 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
 
     @Override
     public CacheRealmProvider create(KeycloakSession session) {
-        Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache("realms");
+        Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
         RealmCache realmCache = new InfinispanRealmCache(cache, realmLookup);
         return new DefaultCacheRealmProvider(realmCache, session);
     }

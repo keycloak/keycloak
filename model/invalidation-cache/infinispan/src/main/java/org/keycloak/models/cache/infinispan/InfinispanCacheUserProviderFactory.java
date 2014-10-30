@@ -41,7 +41,7 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
             synchronized (this) {
                 if (userCache == null) {
                     checkIspnVersion();
-                    Cache<String, CachedUser> cache = session.getProvider(InfinispanConnectionProvider.class).getCache("users");
+                    Cache<String, CachedUser> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_CACHE_NAME);
                     cache.addListener(new CacheListener());
                     userCache = new InfinispanUserCache(cache, usernameLookup, emailLookup);
                 }
