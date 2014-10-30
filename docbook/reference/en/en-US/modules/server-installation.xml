@@ -370,7 +370,8 @@ keycloak-war-dist-all-&project.version;/
     "default": {
         "host": "127.0.0.1",
         "port": "27017",
-        "db": "keycloak"
+        "db": "keycloak",
+        "connectionsPerHost": 100
     }
 }
 ]]></programlisting>
@@ -379,6 +380,12 @@ keycloak-war-dist-all-&project.version;/
                 is <literal>keycloak</literal> . You can also specify properties <literal>user</literal> and <literal>password</literal>
                 if you want authenticate against your MongoDB. If user and password are not specified, Keycloak will connect
                 unauthenticated to your MongoDB.
+            </para>
+            <para>Finally there is set of optional configuration options, which can be used to specify connection-pooling capabilities of Mongo client. Supported int options are:
+                <literal>connectionsPerHost</literal>, <literal>threadsAllowedToBlockForConnectionMultiplier</literal>, <literal>maxWaitTime</literal>, <literal>connectTimeout</literal>
+                <literal>socketTimeout</literal>. Supported boolean options are: <literal>socketKeepAlive</literal>, <literal>autoConnectRetry</literal>.
+                Supported long option is <literal>maxAutoConnectRetryTime</literal>. See <ulink url="http://api.mongodb.org/java/2.11.4/com/mongodb/MongoClientOptions.html">Mongo documentation</ulink>
+                for details about those options and their default values.
             </para>
         </section>
 
