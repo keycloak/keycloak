@@ -44,6 +44,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Map;
+import org.keycloak.adapters.KeycloakConfigResolver;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -94,22 +95,49 @@ public class KeycloakServletExtension implements ServletExtension {
 
 
     @Override
+    @SuppressWarnings("UseSpecificCatch")
     public void handleDeployment(DeploymentInfo deploymentInfo, ServletContext servletContext) {
         if (!isAuthenticationMechanismPresent(deploymentInfo, "KEYCLOAK")) {
             log.debug("auth-method is not keycloak!");
             return;
         }
         log.debug("KeycloakServletException initialization");
-        InputStream is = getConfigInputStream(servletContext);
-        final KeycloakDeployment deployment;
-        if (is == null) {
-            log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
-            deployment = new KeycloakDeployment();
-        } else {
-            deployment = KeycloakDeploymentBuilder.build(is);
 
+        // Possible scenarios:
+        // 1) The deployment has a keycloak.config.resolver specified and it exists:
+        //    Outcome: adapter uses the resolver
+        // 2) The deployment has a keycloak.config.resolver and isn't valid (doesn't exists, isn't a resolver, ...) :
+        //    Outcome: adapter is left unconfigured
+        // 3) The deployment doesn't have a keycloak.config.resolver , but has a keycloak.json (or equivalent)
+        //    Outcome: adapter uses it
+        // 4) The deployment doesn't have a keycloak.config.resolver nor keycloak.json (or equivalent)
+        //    Outcome: adapter is left unconfigured
+
+        KeycloakConfigResolver configResolver;
+        String configResolverClass = servletContext.getInitParameter("keycloak.config.resolver");
+        AdapterDeploymentContext deploymentContext;
+        if (configResolverClass != null) {
+            try {
+                configResolver = (KeycloakConfigResolver) deploymentInfo.getClassLoader().loadClass(configResolverClass).newInstance();
+                deploymentContext = new AdapterDeploymentContext(configResolver);
+                log.info("Using " + configResolverClass + " to resolve Keycloak configuration on a per-request basis.");
+            } catch (Exception ex) {
+                log.warn("The specified resolver " + configResolverClass + " could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: " + ex.getMessage());
+                deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
+            }
+        } else {
+            InputStream is = getConfigInputStream(servletContext);
+            final KeycloakDeployment deployment;
+            if (is == null) {
+                log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
+                deployment = new KeycloakDeployment();
+            } else {
+                deployment = KeycloakDeploymentBuilder.build(is);
+            }
+            deploymentContext = new AdapterDeploymentContext(deployment);
+            log.debug("Keycloak is using a per-deployment configuration.");
         }
-        AdapterDeploymentContext deploymentContext = new AdapterDeploymentContext(deployment);
+
         servletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement();
         final NodesRegistrationManagement nodesRegistrationManagement = new NodesRegistrationManagement();

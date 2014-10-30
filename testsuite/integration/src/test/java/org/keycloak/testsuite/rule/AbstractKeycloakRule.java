@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import org.keycloak.adapters.KeycloakConfigResolver;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -133,9 +134,17 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
     }
 
     public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role, boolean isConstrained) {
+        deployApplication(name, contextPath, servletClass, adapterConfigPath, role, isConstrained, null);
+    }
+
+    public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role, boolean isConstrained, Class<? extends KeycloakConfigResolver> keycloakConfigResolver) {
         String constraintUrl = "/*";
         DeploymentInfo di = createDeploymentInfo(name, contextPath, servletClass);
-        di.addInitParameter("keycloak.config.file", adapterConfigPath);
+        if (null == keycloakConfigResolver) {
+            di.addInitParameter("keycloak.config.file", adapterConfigPath);
+        } else {
+            di.addInitParameter("keycloak.config.resolver", keycloakConfigResolver.getCanonicalName());
+        }
         if (isConstrained) {
             SecurityConstraint constraint = new SecurityConstraint();
             WebResourceCollection collection = new WebResourceCollection();

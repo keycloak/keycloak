@@ -1,0 +1,56 @@
+<section id="multi_tenancy">
+    <title>Multi Tenancy</title>
+    <para>
+        Multi Tenancy, in our context, means that one single target application (WAR) can be secured by a single (or clustered) Keycloak server, authenticating
+        its users against different realms. In practice, this means that one application needs to use different <literal>keycloak.json</literal> files.
+        For this case, there are two possible solutions:
+        <itemizedlist>
+
+            <listitem>
+                The same WAR file deployed under two different names, each with its own Keycloak configuration (probably via the Keycloak Subsystem).
+                This scenario is suitable when the number of realms is known in advance or when there's a dynamic provision of application instances.
+                One example would be a service provider that dinamically creates servers/deployments for their clients, like a PaaS.
+            </listitem>
+
+            <listitem>
+                A WAR file deployed once (possibly in a cluster), that decides which realm to authenticate against based on the request parameters.
+                This scenario is suitable when there are an undefined number of realms. One example would be a SaaS provider that have only one deployment
+                (perhaps in a cluster) serving several companies, differentiating between clients based on the hostname
+                (<literal>client1.acme.com</literal>, <literal>client2.acme.com</literal>) or path (<literal>/app/client1/</literal>,
+                <literal>/app/client2/</literal>) or even via a special HTTP Header.
+            </listitem>
+
+        </itemizedlist>
+
+        This chapter of the reference guide focus on this second scenario.
+    </para>
+
+    <para>
+        Keycloak provides an extension point for applications that need to evaluate the realm on a request basis. During the authentication
+        and authorization phase of the incoming request, Keycloak queries the application via this extension point and expects the application
+        to return a complete representation of the realm. With this, Keycloak then proceeds the authentication and authorization process,
+        accepting or refusing the request based on the incoming credentials and on the returned realm.
+
+        For this scenario, an application needs to:
+
+        <itemizedlist>
+
+            <listitem>
+                Add a context parameter to the <literal>web.xml</literal>, named <literal>keycloak.config.resolver</literal>.
+                The value of this property should be the fully qualified name of the a class extending
+                <literal>org.keycloak.adapters.KeycloakConfigResolver</literal>.
+            </listitem>
+
+            <listitem>
+                A concrete implementation of <literal>org.keycloak.adapters.KeycloakConfigResolver</literal>. Keycloak will call the
+                <literal>resolve(org.keycloak.adapters.HttpFacade.Request)</literal> method and expects a complete
+                <literal>org.keycloak.adapters.KeycloakDeployment</literal> in response. Note that Keycloak will call this for every request,
+                so, take the usual performance precautions.
+            </listitem>
+
+        </itemizedlist>
+    </para>
+    <para>
+        An implementation of this feature can be found on the examples.
+    </para>
+</section>
