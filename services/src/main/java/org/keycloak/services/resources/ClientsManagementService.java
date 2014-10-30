@@ -109,7 +109,7 @@ public class ClientsManagementService {
         String nodeHost = getApplicationClusterHost(formData);
 
         event.client(application).detail(Details.NODE_HOST, nodeHost);
-        logger.infof("Registering cluster host '%s' for client '%s'", nodeHost, application.getName());
+        logger.debugf("Registering cluster host '%s' for client '%s'", nodeHost, application.getName());
 
         application.registerNode(nodeHost, Time.currentTime());
 
@@ -145,7 +145,7 @@ public class ClientsManagementService {
         String nodeHost = getApplicationClusterHost(formData);
 
         event.client(application).detail(Details.NODE_HOST, nodeHost);
-        logger.infof("Unregistering cluster host '%s' for client '%s'", nodeHost, application.getName());
+        logger.debugf("Unregistering cluster host '%s' for client '%s'", nodeHost, application.getName());
 
         application.unregisterNode(nodeHost);
 

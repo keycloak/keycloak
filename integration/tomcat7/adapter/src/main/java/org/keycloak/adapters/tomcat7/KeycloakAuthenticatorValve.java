@@ -117,8 +117,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         if (json == null) {
             return null;
         }
-        log.info("**** using " + AdapterConstants.AUTH_DATA_PARAM_NAME);
-        log.info(json);
+        log.finest("**** using " + AdapterConstants.AUTH_DATA_PARAM_NAME);
+        log.finest(json);
         return new ByteArrayInputStream(json.getBytes());
     }
 
@@ -127,7 +127,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         if (is == null) {
             String path = context.getServletContext().getInitParameter("keycloak.config.file");
             if (path == null) {
-                log.info("**** using /WEB-INF/keycloak.json");
+                log.finest("**** using /WEB-INF/keycloak.json");
                 is = context.getServletContext().getResourceAsStream("/WEB-INF/keycloak.json");
             } else {
                 try {

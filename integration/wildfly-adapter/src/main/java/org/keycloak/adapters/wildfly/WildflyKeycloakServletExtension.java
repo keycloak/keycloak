@@ -18,7 +18,7 @@ public class WildflyKeycloakServletExtension extends KeycloakServletExtension {
     @Override
     protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, AdapterDeploymentContext deploymentContext,
                                                                     UndertowUserSessionManagement userSessionManagement, NodesRegistrationManagement nodesRegistrationManagement) {
-        log.info("creating WildflyAuthenticationMechanism");
+        log.debug("creating WildflyAuthenticationMechanism");
         return new WildflyAuthenticationMechanism(deploymentContext, userSessionManagement, nodesRegistrationManagement, deploymentInfo.getConfidentialPortManager());
 
     }

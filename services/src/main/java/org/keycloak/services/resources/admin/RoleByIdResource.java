@@ -132,7 +132,7 @@ public class RoleByIdResource extends RoleResource {
     @Produces("application/json")
     public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
 
-        logger.info("*** getRoleComposites: '" + id + "'");
+        if (logger.isDebugEnabled()) logger.debug("*** getRoleComposites: '" + id + "'");
         RoleModel role = getRoleModel(id);
         auth.requireView();
         return getRoleComposites(role);

@@ -372,7 +372,7 @@ public class ApplicationResource {
         if (node == null) {
             throw new BadRequestException("Node not found in params");
         }
-        logger.info("Register node: " + node);
+        if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
         application.registerNode(node, Time.currentTime());
     }
 
@@ -386,7 +386,7 @@ public class ApplicationResource {
     @NoCache
     public void unregisterNode(final @PathParam("node") String node) {
         auth.requireManage();
-        logger.info("Unregister node: " + node);
+        if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
 
         Integer time = application.getRegisteredNodes().get(node);
         if (time == null) {
@@ -406,7 +406,7 @@ public class ApplicationResource {
     @NoCache
     public GlobalRequestResult testNodesAvailable() {
         auth.requireManage();
-        logger.info("Test availability of cluster nodes");
+        logger.debug("Test availability of cluster nodes");
 
         return new ResourceAdminManager().testNodesAvailability(uriInfo.getRequestUri(), realm, application);
     }

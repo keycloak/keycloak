@@ -31,7 +31,7 @@ public class KeycloakLoginModule extends AbstractServerLoginModule {
     public boolean login() throws LoginException {
         log.debug("KeycloakLoginModule.login()");
         if (super.login() == true) {
-            log.info("super.login()==true");
+            log.debug("super.login()==true");
             return true;
         }
 

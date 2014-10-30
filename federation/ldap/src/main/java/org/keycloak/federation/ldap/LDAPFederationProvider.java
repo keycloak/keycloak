@@ -309,7 +309,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
             if (currentUser == null) {
                 // Add new user to Keycloak
                 importUserFromPicketlink(realm, picketlinkUser);
-                logger.infof("Added new user from LDAP: " + username);
+                logger.debugf("Added new user from LDAP: %s", username);
             } else {
                 if ((fedModel.getId().equals(currentUser.getFederationLink())) && (picketlinkUser.getId().equals(currentUser.getAttribute(LDAPFederationProvider.LDAP_ID)))) {
                     // Update keycloak user
@@ -317,7 +317,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     currentUser.setEmail(email);
                     currentUser.setFirstName(picketlinkUser.getFirstName());
                     currentUser.setLastName(picketlinkUser.getLastName());
-                    logger.infof("Updated user from LDAP: " + currentUser.getUsername());
+                    logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
                 } else {
                     logger.warnf("User '%s' is not updated during sync as he is not linked to federation provider '%s'", username, fedModel.getDisplayName());
                 }

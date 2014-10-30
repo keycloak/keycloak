@@ -116,7 +116,7 @@ public class PreAuthActionsHandler {
             if (action.getAdapterSessionIds() != null) {
                 userSessionManagement.logoutHttpSessions(action.getAdapterSessionIds());
             } else {
-                log.infof("logout of all sessions for application '%s'", action.getResource());
+                log.debugf("logout of all sessions for application '%s'", action.getResource());
                 if (action.getNotBefore() > deployment.getNotBefore()) {
                     deployment.setNotBefore(action.getNotBefore());
                 }
