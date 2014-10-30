@@ -62,14 +62,14 @@ public class NodesRegistrationManagement {
     }
 
     protected void sendRegistrationEvent(KeycloakDeployment deployment) {
-        log.info("Sending registration event right now");
+        log.debug("Sending registration event right now");
 
         String host = HostUtils.getIpAddress();
         try {
             ServerRequest.invokeRegisterNode(deployment, host);
             NodeRegistrationContext regContext = new NodeRegistrationContext(Time.currentTime(), deployment);
             nodeRegistrations.put(deployment.getRegisterNodeUrl(), regContext);
-            log.infof("Node '%s' successfully registered in Keycloak", host);
+            log.debugf("Node '%s' successfully registered in Keycloak", host);
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to register node to keycloak");
             log.error("status from server: " + failure.getStatus());
@@ -82,12 +82,12 @@ public class NodesRegistrationManagement {
     }
 
     protected boolean sendUnregistrationEvent(KeycloakDeployment deployment) {
-        log.info("Sending Unregistration event right now");
+        log.debug("Sending Unregistration event right now");
 
         String host = HostUtils.getIpAddress();
         try {
             ServerRequest.invokeUnregisterNode(deployment, host);
-            log.infof("Node '%s' successfully unregistered from Keycloak", host);
+            log.debugf("Node '%s' successfully unregistered from Keycloak", host);
             return true;
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to unregister node from keycloak");

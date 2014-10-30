@@ -106,7 +106,7 @@ public class ResourceAdminManager {
             }
 
             logger.debugv("logging out {0} resources ", clientSessions.size());
-            logger.infov("logging out resources: " + clientSessions);
+            //logger.infov("logging out resources: {0}", clientSessions);
 
             for (Map.Entry<ApplicationModel, List<ClientSessionModel>> entry : clientSessions.entrySet()) {
                 logoutClientSessions(requestUri, realm, entry.getKey(), entry.getValue(), executor);
@@ -251,7 +251,7 @@ public class ResourceAdminManager {
             return new GlobalRequestResult();
         }
 
-        logger.info("Send logoutApplication for URLs: " + mgmtUrls);
+        if (logger.isDebugEnabled()) logger.debug("Send logoutApplication for URLs: " + mgmtUrls);
 
         // Propagate this to all hosts
         GlobalRequestResult result = new GlobalRequestResult();
@@ -268,7 +268,7 @@ public class ResourceAdminManager {
     protected boolean sendLogoutRequest(RealmModel realm, ApplicationModel resource, List<String> adapterSessionIds, ApacheHttpClient4Executor client, int notBefore, String managementUrl) {
         LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), adapterSessionIds, notBefore);
         String token = new TokenManager().encodeToken(realm, adminAction);
-        logger.infov("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getName(), managementUrl);
+        if (logger.isDebugEnabled()) logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getName(), managementUrl);
         ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());
         ClientResponse response;
         try {
@@ -319,7 +319,7 @@ public class ResourceAdminManager {
             return new GlobalRequestResult();
         }
 
-        logger.info("Sending push revocation to URLS: " + mgmtUrls);
+        if (logger.isDebugEnabled()) logger.info("Sending push revocation to URLS: " + mgmtUrls);
 
         // Propagate this to all hosts
         GlobalRequestResult result = new GlobalRequestResult();
@@ -364,7 +364,7 @@ public class ResourceAdminManager {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            logger.info("Sending test nodes availability: " + mgmtUrls);
+            if (logger.isDebugEnabled()) logger.debug("Sending test nodes availability: " + mgmtUrls);
 
             // Propagate this to all hosts
             GlobalRequestResult result = new GlobalRequestResult();
@@ -384,7 +384,7 @@ public class ResourceAdminManager {
     protected boolean sendTestNodeAvailabilityRequest(RealmModel realm, ApplicationModel application, ApacheHttpClient4Executor client, String managementUrl) {
         TestAvailabilityAction adminAction = new TestAvailabilityAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName());
         String token = new TokenManager().encodeToken(realm, adminAction);
-        logger.infov("testNodes availability resource: {0} url: {1}", application.getName(), managementUrl);
+        logger.debugv("testNodes availability resource: {0} url: {1}", application.getName(), managementUrl);
         ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_TEST_AVAILABLE).build().toString());
         ClientResponse response;
         try {

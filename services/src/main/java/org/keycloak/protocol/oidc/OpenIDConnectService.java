@@ -620,7 +620,7 @@ public class OpenIDConnectService {
         String adapterSessionId = formData.getFirst(AdapterConstants.APPLICATION_SESSION_STATE);
         if (adapterSessionId != null) {
             String adapterSessionHost = formData.getFirst(AdapterConstants.APPLICATION_SESSION_HOST);
-            logger.infof("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
+            logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
 
             event.detail(AdapterConstants.APPLICATION_SESSION_STATE, adapterSessionId);
             clientSession.setNote(AdapterConstants.APPLICATION_SESSION_STATE, adapterSessionId);

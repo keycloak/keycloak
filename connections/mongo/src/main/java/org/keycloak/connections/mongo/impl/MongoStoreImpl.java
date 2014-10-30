@@ -259,7 +259,7 @@ public class MongoStoreImpl implements MongoStore {
             DBCollection dbCollection = getDBCollectionForType(type);
             BasicDBObject dbQuery = new BasicDBObject("_id", id);
             dbCollection.remove(dbQuery);
-            logger.info("Entity of type: " + type + ", id: " + id + " removed from MongoDB.");
+            //logger.debugf("Entity of type: %s , id: %s removed from MongoDB.", type,  id);
 
             context.addRemovedEntity(found);
             return true;
@@ -275,7 +275,7 @@ public class MongoStoreImpl implements MongoStore {
         } else {
             DBCollection dbCollection = getDBCollectionForType(type);
             dbCollection.remove(query);
-            logger.info("Removed " + foundObjects.size() + " entities of type: " + type + ", query: " + query);
+            //logger.debug("Removed %d" + foundObjects.size() + " entities of type: " + type + ", query: " + query);
 
             for (MongoIdentifiableEntity found : foundObjects) {
                 context.addRemovedEntity(found);;

@@ -20,7 +20,7 @@ public class CookieTokenStore {
     private static final String DELIM = "@";
 
     public static void setTokenCookie(KeycloakDeployment deployment, HttpFacade facade, RefreshableKeycloakSecurityContext session) {
-        log.infof("Set new %s cookie now", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);
+        log.debugf("Set new %s cookie now", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);
         String accessToken = session.getTokenString();
         String idToken = session.getIdTokenString();
         String refreshToken = session.getRefreshToken();
