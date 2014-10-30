@@ -2,6 +2,7 @@ package org.keycloak.connections.mongo;
 
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import org.jboss.logging.Logger;
@@ -12,6 +13,7 @@ import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocati
 import org.keycloak.connections.mongo.updater.DefaultMongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 
 /**
@@ -68,11 +70,13 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
                         String user = config.get("user");
                         String password = config.get("password");
+
+                        MongoClientOptions clientOptions = getClientOptions();
                         if (user != null && password != null) {
                             MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
-                            client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential));
+                            client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential), clientOptions);
                         } else {
-                            client = new MongoClient(host, port);
+                            client = new MongoClient(new ServerAddress(host, port), clientOptions);
                         }
 
                         this.db = client.getDB(dbName);
@@ -115,6 +119,45 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     @Override
     public String getId() {
         return "default";
+    }
+
+    protected MongoClientOptions getClientOptions() {
+        MongoClientOptions.Builder builder = MongoClientOptions.builder();
+        checkIntOption("connectionsPerHost", builder);
+        checkIntOption("threadsAllowedToBlockForConnectionMultiplier", builder);
+        checkIntOption("maxWaitTime", builder);
+        checkIntOption("connectTimeout", builder);
+        checkIntOption("socketTimeout", builder);
+        checkBooleanOption("socketKeepAlive", builder);
+        checkBooleanOption("autoConnectRetry", builder);
+        if (config.getLong("maxAutoConnectRetryTime") != null) {
+            builder.maxAutoConnectRetryTime(config.getLong("maxAutoConnectRetryTime"));
+        }
+        return builder.build();
+    }
+
+    protected void checkBooleanOption(String optionName, MongoClientOptions.Builder builder) {
+        Boolean val = config.getBoolean(optionName);
+        if (val != null) {
+            try {
+                Method m = MongoClientOptions.Builder.class.getMethod(optionName, boolean.class);
+                m.invoke(builder, val);
+            } catch (Exception e) {
+                throw new IllegalStateException("Problem configuring boolean option " + optionName + " for mongo client. Ensure you used correct value true or false and if this option is supported by mongo driver", e);
+            }
+        }
+    }
+
+    protected void checkIntOption(String optionName, MongoClientOptions.Builder builder) {
+        Integer val = config.getInt(optionName);
+        if (val != null) {
+            try {
+                Method m = MongoClientOptions.Builder.class.getMethod(optionName, int.class);
+                m.invoke(builder, val);
+            } catch (Exception e) {
+                throw new IllegalStateException("Problem configuring int option " + optionName + " for mongo client. Ensure you used correct value (number) and if this option is supported by mongo driver", e);
+            }
+        }
     }
 
 }
