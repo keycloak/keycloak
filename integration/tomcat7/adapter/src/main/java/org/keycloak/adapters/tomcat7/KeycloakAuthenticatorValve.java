@@ -22,6 +22,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.enums.TokenStore;
 
 import javax.servlet.ServletContext;
@@ -75,6 +76,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         if (ksc != null) {
             CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
             KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+            if (ksc instanceof RefreshableKeycloakSecurityContext) {
+                ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
+            }
 
             AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
             tokenStore.logout();

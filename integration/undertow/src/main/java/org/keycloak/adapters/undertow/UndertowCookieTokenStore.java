@@ -74,7 +74,6 @@ public class UndertowCookieTokenStore implements AdapterTokenStore {
         if (principal == null) return;
 
         CookieTokenStore.removeCookie(facade);
-        principal.getKeycloakSecurityContext().logout(deployment);
     }
 
     @Override

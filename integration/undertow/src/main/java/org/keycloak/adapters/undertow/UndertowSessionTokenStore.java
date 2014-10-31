@@ -84,9 +84,6 @@ public class UndertowSessionTokenStore implements AdapterTokenStore {
         KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
         if (account == null) return;
         session.removeAttribute(KeycloakUndertowAccount.class.getName());
-        if (account.getKeycloakSecurityContext() != null) {
-            account.getKeycloakSecurityContext().logout(deployment);
-        }
     }
 
     @Override
