@@ -25,6 +25,7 @@ import io.undertow.server.session.Session;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Sessions;
 import org.keycloak.KeycloakPrincipal;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AuthChallenge;
@@ -70,9 +71,14 @@ public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanis
             public void handleNotification(SecurityNotification notification) {
                 if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
 
-                UndertowHttpFacade facade = new UndertowHttpFacade(notification.getExchange());
+                HttpServerExchange exchange = notification.getExchange();
+                UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
                 KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
-                AdapterTokenStore tokenStore = getTokenStore(notification.getExchange(), facade, deployment, securityContext);
+                KeycloakSecurityContext ksc = exchange.getAttachment(UndertowHttpFacade.KEYCLOAK_SECURITY_CONTEXT_KEY);
+                if (ksc != null && ksc instanceof RefreshableKeycloakSecurityContext) {
+                    ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
+                }
+                AdapterTokenStore tokenStore = getTokenStore(exchange, facade, deployment, securityContext);
                 tokenStore.logout();
             }
         };

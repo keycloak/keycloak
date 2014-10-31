@@ -69,11 +69,6 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
     @Override
     public void logout() {
         CookieTokenStore.removeCookie(facade);
-
-        KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
-        if (ksc instanceof RefreshableKeycloakSecurityContext) {
-            ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
-        }
     }
 
     @Override

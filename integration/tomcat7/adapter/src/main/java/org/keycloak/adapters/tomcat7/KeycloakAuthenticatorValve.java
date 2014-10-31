@@ -77,6 +77,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             request.removeAttribute(KeycloakSecurityContext.class.getName());
             CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
             KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+            if (ksc instanceof RefreshableKeycloakSecurityContext) {
+                ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
+            }
 
             AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
             tokenStore.logout();

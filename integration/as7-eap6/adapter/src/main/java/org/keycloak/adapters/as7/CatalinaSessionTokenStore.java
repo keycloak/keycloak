@@ -96,10 +96,6 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
         Session session = request.getSessionInternal(false);
         if (session != null) {
             session.removeNote(KeycloakSecurityContext.class.getName());
-            KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
-            if (ksc instanceof RefreshableKeycloakSecurityContext) {
-                ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
-            }
         }
     }
 
