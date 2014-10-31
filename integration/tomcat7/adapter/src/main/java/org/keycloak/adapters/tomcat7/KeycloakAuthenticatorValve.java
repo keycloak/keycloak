@@ -73,12 +73,12 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
     public void logout(Request request) throws ServletException {
         KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
         if (ksc != null) {
-            request.removeAttribute(KeycloakSecurityContext.class.getName());
             CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
             KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
 
             AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
             tokenStore.logout();
+            request.removeAttribute(KeycloakSecurityContext.class.getName());
         }
         super.logout(request);
     }
@@ -103,7 +103,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         // 4) The deployment doesn't have a keycloak.config.resolver nor keycloak.json (or equivalent)
         //    Outcome: adapter is left unconfigured
 
-        String configResolverClass = (String) context.getServletContext().getAttribute("keycloak.config.resolver");
+        String configResolverClass = context.getServletContext().getInitParameter("keycloak.config.resolver");
         if (configResolverClass != null) {
             try {
                 KeycloakConfigResolver configResolver = (KeycloakConfigResolver) context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
