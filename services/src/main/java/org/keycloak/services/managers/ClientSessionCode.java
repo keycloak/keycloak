@@ -1,8 +1,5 @@
 package org.keycloak.services.managers;
 
-import org.keycloak.OAuthErrorException;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -11,17 +8,20 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.Time;
 
-import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-import java.security.Signature;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ClientSessionCode {
+
+    public static final String ACTION_KEY = "action_key";
+
+    private static final byte[] HASH_SEPERATOR = "//".getBytes();
 
     private final RealmModel realm;
     private final ClientSessionModel clientSession;
@@ -34,14 +34,14 @@ public class ClientSessionCode {
     public static ClientSessionCode parse(String code, KeycloakSession session) {
         try {
             String[] parts = code.split("\\.");
-            String id = new String(Base64Url.decode(parts[1]));
+            String id = parts[1];
 
             ClientSessionModel clientSession = session.sessions().getClientSession(id);
             if (clientSession == null) {
                 return null;
             }
 
-            String hash = createSignatureHash(clientSession.getRealm(), clientSession);
+            String hash = createHash(clientSession.getRealm(), clientSession);
             if (!hash.equals(parts[0])) {
                 return null;
             }
@@ -56,14 +56,14 @@ public class ClientSessionCode {
     public static ClientSessionCode parse(String code, KeycloakSession session, RealmModel realm) {
         try {
             String[] parts = code.split("\\.");
-            String id = new String(Base64Url.decode(parts[1]));
+            String id = parts[1];
 
             ClientSessionModel clientSession = session.sessions().getClientSession(realm, id);
             if (clientSession == null) {
                 return null;
             }
 
-            String hash = createSignatureHash(realm, clientSession);
+            String hash = createHash(realm, clientSession);
             if (!hash.equals(parts[0])) {
                 return null;
             }
@@ -76,10 +76,6 @@ public class ClientSessionCode {
 
     public ClientSessionModel getClientSession() {
         return clientSession;
-    }
-
-    public boolean isValid(RequiredAction requiredAction) {
-        return isValid(convertToAction(requiredAction));
     }
 
     public boolean isValid(ClientSessionModel.Action requestedAction) {
@@ -111,6 +107,7 @@ public class ClientSessionCode {
 
     public void setAction(ClientSessionModel.Action action) {
         clientSession.setAction(action);
+        clientSession.setNote(ACTION_KEY, UUID.randomUUID().toString());
         clientSession.setTimestamp(Time.currentTime());
     }
 
@@ -138,29 +135,24 @@ public class ClientSessionCode {
     }
 
     private static String generateCode(RealmModel realm, ClientSessionModel clientSession) {
-        String hash = createSignatureHash(realm, clientSession);
+        String hash = createHash(realm, clientSession);
 
         StringBuilder sb = new StringBuilder();
         sb.append(hash);
         sb.append(".");
-        sb.append(Base64Url.encode(clientSession.getId().getBytes()));
+        sb.append(clientSession.getId());
 
         return sb.toString();
     }
 
-    private static String createSignatureHash(RealmModel realm, ClientSessionModel clientSession) {
+    private static String createHash(RealmModel realm, ClientSessionModel clientSession) {
         try {
-            Signature signature = Signature.getInstance(RSAProvider.getJavaAlgorithm(Algorithm.RS256));
-            signature.initSign(realm.getPrivateKey());
-            signature.update(clientSession.getId().getBytes());
-            signature.update(ByteBuffer.allocate(4).putInt(clientSession.getTimestamp()));
-            if (clientSession.getAction() != null) {
-                signature.update(clientSession.getAction().toString().getBytes());
-            }
-            byte[] sign = signature.sign();
-
-            MessageDigest digest = MessageDigest.getInstance("sha-1");
-            digest.update(sign);
+            MessageDigest digest = MessageDigest.getInstance("sha-256");
+            digest.update(realm.getCodeSecret().getBytes());
+            digest.update(HASH_SEPERATOR);
+            digest.update(clientSession.getId().getBytes());
+            digest.update(HASH_SEPERATOR);
+            digest.update(clientSession.getNote(ACTION_KEY).getBytes());
             return Base64Url.encode(digest.digest());
         } catch (Exception e) {
             throw new RuntimeException(e);

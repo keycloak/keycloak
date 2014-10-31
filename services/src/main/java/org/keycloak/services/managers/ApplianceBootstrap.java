@@ -49,7 +49,7 @@ public class ApplianceBootstrap {
         realm.setName(adminRealmName);
         realm.setEnabled(true);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
-        realm.setSsoSessionIdleTimeout(300);
+        realm.setSsoSessionIdleTimeout(1800);
         realm.setAccessTokenLifespan(60);
         realm.setSsoSessionMaxLifespan(36000);
         realm.setAccessCodeLifespan(60);

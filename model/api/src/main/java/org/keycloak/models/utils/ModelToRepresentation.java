@@ -91,6 +91,7 @@ public class ModelToRepresentation {
             KeycloakModelUtils.generateRealmCertificate(realm);
         }
         rep.setCertificate(realm.getCertificatePem());
+        rep.setCodeSecret(realm.getCodeSecret());
         rep.setPasswordCredentialGrantAllowed(realm.isPasswordCredentialGrantAllowed());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRememberMe(realm.isRememberMe());

@@ -48,6 +48,10 @@ public class KeycloakSecurityContext implements Serializable {
         return idTokenString;
     }
 
+    public String getRealm() {
+        // Assumption that issuer contains realm name
+        return token.getIssuer();
+    }
 
     // SERIALIZATION
 

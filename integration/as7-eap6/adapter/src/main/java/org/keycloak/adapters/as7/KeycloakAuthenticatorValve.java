@@ -6,27 +6,23 @@ import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Manager;
-import org.apache.catalina.Session;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.jboss.logging.Logger;
-import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
-import org.keycloak.adapters.CookieTokenStore;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.enums.TokenStore;
 
 import javax.servlet.ServletContext;
@@ -37,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import org.keycloak.adapters.KeycloakConfigResolver;
 
 /**
  * Web deployment whose security is managed by a remote OAuth Skeleton Key authentication server
@@ -69,7 +66,6 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
     public void logout(Request request) throws ServletException {
         KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
         if (ksc != null) {
-            request.removeAttribute(KeycloakSecurityContext.class.getName());
             CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
             KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
             if (ksc instanceof RefreshableKeycloakSecurityContext) {
@@ -78,6 +74,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
             AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
             tokenStore.logout();
+            request.removeAttribute(KeycloakSecurityContext.class.getName());
         }
         super.logout(request);
     }
@@ -120,16 +117,41 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
     }
 
 
+    @SuppressWarnings("UseSpecificCatch")
     protected void init() {
-        InputStream configInputStream = getConfigInputStream(context);
-        KeycloakDeployment kd = null;
-        if (configInputStream == null) {
-            log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
-            kd = new KeycloakDeployment();
+        // Possible scenarios:
+        // 1) The deployment has a keycloak.config.resolver specified and it exists:
+        //    Outcome: adapter uses the resolver
+        // 2) The deployment has a keycloak.config.resolver and isn't valid (doesn't exists, isn't a resolver, ...) :
+        //    Outcome: adapter is left unconfigured
+        // 3) The deployment doesn't have a keycloak.config.resolver , but has a keycloak.json (or equivalent)
+        //    Outcome: adapter uses it
+        // 4) The deployment doesn't have a keycloak.config.resolver nor keycloak.json (or equivalent)
+        //    Outcome: adapter is left unconfigured
+
+        String configResolverClass = context.getServletContext().getInitParameter("keycloak.config.resolver");
+        if (configResolverClass != null) {
+            try {
+                KeycloakConfigResolver configResolver = (KeycloakConfigResolver) context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
+                deploymentContext = new AdapterDeploymentContext(configResolver);
+                log.info("Using " + configResolverClass + " to resolve Keycloak configuration on a per-request basis.");
+            } catch (Exception ex) {
+                log.warn("The specified resolver " + configResolverClass + " could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: " + ex.getMessage());
+                deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
+            }
         } else {
-            kd = KeycloakDeploymentBuilder.build(configInputStream);
+            InputStream configInputStream = getConfigInputStream(context);
+            KeycloakDeployment kd;
+            if (configInputStream == null) {
+                log.warn("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
+                kd = new KeycloakDeployment();
+            } else {
+                kd = KeycloakDeploymentBuilder.build(configInputStream);
+            }
+            deploymentContext = new AdapterDeploymentContext(kd);
+            log.debug("Keycloak is using a per-deployment configuration.");
         }
-        deploymentContext = new AdapterDeploymentContext(kd);
+
         context.getServletContext().setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
         AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer(), getController());
         setNext(actions);

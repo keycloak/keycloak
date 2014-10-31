@@ -47,6 +47,7 @@ public interface ClientSessionModel {
         UPDATE_PROFILE,
         CONFIGURE_TOTP,
         UPDATE_PASSWORD,
+        RECOVER_PASSWORD,
         AUTHENTICATE,
         SOCIAL_CALLBACK
     }

@@ -42,6 +42,14 @@
                 <exclude name="**/subsystem-config.xml"/>
             </fileset>
         </copy>
+        <copy todir="target/examples/multi-tenant" overwrite="true">
+            <fileset dir="../../examples/multi-tenant">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+            </fileset>
+        </copy>
         <copy todir="target/examples/themes" overwrite="true">
             <fileset dir="../../examples/themes">
                 <exclude name="**/target/**"/>

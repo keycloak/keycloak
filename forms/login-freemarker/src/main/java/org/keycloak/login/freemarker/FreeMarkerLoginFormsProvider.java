@@ -51,7 +51,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private static final Logger logger = Logger.getLogger(FreeMarkerLoginFormsProvider.class);
 
-    private String verifyCode;
     private String message;
     private String accessCode;
     private Response.Status status = Response.Status.OK;
@@ -110,8 +109,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case VERIFY_EMAIL:
                 try {
                     UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
-                    builder.queryParam("code", accessCode);
-                    builder.queryParam("key", verifyCode);
+                    builder.queryParam("key", accessCode);
 
                     String link = builder.build(realm.getName()).toString();
                     long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
@@ -308,12 +306,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setStatus(Response.Status status) {
         this.status = status;
-        return this;
-    }
-
-    @Override
-    public LoginFormsProvider setVerifyCode(String code) {
-        this.verifyCode = code;
         return this;
     }
 

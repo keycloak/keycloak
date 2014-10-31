@@ -44,6 +44,7 @@ public class RealmRepresentation {
     protected String privateKey;
     protected String publicKey;
     protected String certificate;
+    protected String codeSecret;
     protected RolesRepresentation roles;
     protected List<String> defaultRoles;
     protected Set<String> requiredCredentials;
@@ -227,6 +228,14 @@ public class RealmRepresentation {
 
     public void setCertificate(String certificate) {
         this.certificate = certificate;
+    }
+
+    public String getCodeSecret() {
+        return codeSecret;
+    }
+
+    public void setCodeSecret(String codeSecret) {
+        this.codeSecret = codeSecret;
     }
 
     public Boolean isPasswordCredentialGrantAllowed() {

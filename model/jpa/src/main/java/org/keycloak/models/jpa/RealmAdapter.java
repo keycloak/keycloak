@@ -434,6 +434,16 @@ public class RealmAdapter implements RealmModel {
         setPrivateKeyPem(privateKeyPem);
     }
 
+    @Override
+    public String getCodeSecret() {
+        return realm.getCodeSecret();
+    }
+
+    @Override
+    public void setCodeSecret(String codeSecret) {
+        realm.setCodeSecret(codeSecret);
+    }
+
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {
         RequiredCredentialModel model = RequiredCredentialModel.BUILT_IN.get(type);
         if (model == null) {

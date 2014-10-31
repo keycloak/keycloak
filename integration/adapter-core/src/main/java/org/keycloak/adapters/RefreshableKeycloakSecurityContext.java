@@ -83,6 +83,11 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
 
         if (this.deployment == null || refreshToken == null) return false; // Might be serialized in HttpSession?
 
+        if (!this.getRealm().equals(this.deployment.getRealm())) {
+            // this should not happen, but let's check it anyway
+            return false;
+        }
+
         if (log.isTraceEnabled()) {
             log.trace("Doing refresh");
         }

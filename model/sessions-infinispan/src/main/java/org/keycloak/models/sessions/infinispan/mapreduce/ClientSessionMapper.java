@@ -28,6 +28,10 @@ public class ClientSessionMapper implements Mapper<String, SessionEntity, String
 
     private String userSession;
 
+    private Long expiredRefresh;
+
+    private Boolean requireNullUserSession = false;
+
     public static ClientSessionMapper create(String realm) {
         return new ClientSessionMapper(realm);
     }
@@ -52,6 +56,16 @@ public class ClientSessionMapper implements Mapper<String, SessionEntity, String
         return this;
     }
 
+    public ClientSessionMapper expiredRefresh(long expiredRefresh) {
+        this.expiredRefresh = expiredRefresh;
+        return this;
+    }
+
+    public ClientSessionMapper requireNullUserSession(boolean requireNullUserSession) {
+        this.requireNullUserSession = requireNullUserSession;
+        return this;
+    }
+
     @Override
     public void map(String key, SessionEntity e, Collector collector) {
         if (!realm.equals(e.getRealm())) {
@@ -69,6 +83,14 @@ public class ClientSessionMapper implements Mapper<String, SessionEntity, String
         }
 
         if (userSession != null && !userSession.equals(entity.getUserSession())) {
+            return;
+        }
+
+        if (requireNullUserSession && entity.getUserSession() != null) {
+            return;
+        }
+
+        if (expiredRefresh != null && entity.getTimestamp() > expiredRefresh) {
             return;
         }
 

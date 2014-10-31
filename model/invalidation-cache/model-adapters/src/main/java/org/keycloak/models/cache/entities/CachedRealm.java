@@ -57,6 +57,7 @@ public class CachedRealm {
     private String publicKeyPem;
     private String privateKeyPem;
     private String certificatePem;
+    private String codeSecret;
 
     private String loginTheme;
     private String accountTheme;
@@ -115,6 +116,7 @@ public class CachedRealm {
         publicKeyPem = model.getPublicKeyPem();
         privateKeyPem = model.getPrivateKeyPem();
         certificatePem = model.getCertificatePem();
+        codeSecret = model.getCodeSecret();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -265,6 +267,10 @@ public class CachedRealm {
 
     public String getPrivateKeyPem() {
         return privateKeyPem;
+    }
+
+    public String getCodeSecret() {
+        return codeSecret;
     }
 
     public List<RequiredCredentialModel> getRequiredCredentials() {

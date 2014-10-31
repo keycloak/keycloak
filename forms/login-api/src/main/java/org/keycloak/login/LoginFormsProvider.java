@@ -50,8 +50,6 @@ public interface LoginFormsProvider extends Provider {
 
     public LoginFormsProvider setClient(ClientModel client);
 
-    LoginFormsProvider setVerifyCode(String code);
-
     public LoginFormsProvider setQueryParams(MultivaluedMap<String, String> queryParams);
 
     public LoginFormsProvider setFormData(MultivaluedMap<String, String> formData);
