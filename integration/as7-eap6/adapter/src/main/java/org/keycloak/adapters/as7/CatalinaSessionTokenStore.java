@@ -38,11 +38,6 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
         RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (session == null) return;
 
-        if (!deployment.getRealm().equals(session.getRealm())) {
-            log.debug("Account from cookie is from a different realm than for the request.");
-            return;
-        }
-
         // just in case session got serialized
         if (session.getDeployment() == null) session.setCurrentRequestInfo(deployment, this);
 
@@ -69,15 +64,22 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
         if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null)
             return false;
         log.debug("remote logged in already. Establish state from session");
-        GenericPrincipal principal = (GenericPrincipal) request.getSessionInternal().getPrincipal();
-        request.setUserPrincipal(principal);
-        request.setAuthType("KEYCLOAK");
 
         RefreshableKeycloakSecurityContext securityContext = (RefreshableKeycloakSecurityContext) request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (securityContext != null) {
+
+            if (!deployment.getRealm().equals(securityContext.getRealm())) {
+                log.debug("Account from cookie is from a different realm than for the request.");
+                return false;
+            }
+
             securityContext.setCurrentRequestInfo(deployment, this);
             request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
         }
+
+        GenericPrincipal principal = (GenericPrincipal) request.getSessionInternal().getPrincipal();
+        request.setUserPrincipal(principal);
+        request.setAuthType("KEYCLOAK");
 
         ((CatalinaRequestAuthenticator)authenticator).restoreRequest();
         return true;

@@ -1,7 +1,7 @@
 Keycloak Example - Multi Tenancy
 =======================================
 
-The following example was tested on Wildfly 8.1.0.Final and should be compatible with any JBoss AS, JBoss EAP or Wildfly that supports Java EE 7.
+The following example was tested on Wildfly 8.1.0.Final and JBoss EAP 6.3. It should be compatible with any JBoss AS, JBoss EAP or Wildfly that supports Java EE 7.
 
 This example demonstrates the simplest possible scenario for Keycloak Multi Tenancy support. Multi Tenancy is understood on this context as a single application (WAR) that is deployed on a single or clustered application server, authenticating users from *different realms* against a single or clustered Keycloak server.
 

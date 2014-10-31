@@ -47,6 +47,12 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
         if (authenticatedPrincipal != null) {
             log.fine("remote logged in already. Establish state from cookie");
             RefreshableKeycloakSecurityContext securityContext = authenticatedPrincipal.getKeycloakSecurityContext();
+
+            if (!securityContext.getRealm().equals(deployment.getRealm())) {
+                log.fine("Account from cookie is from a different realm than for the request.");
+                return false;
+            }
+
             securityContext.setCurrentRequestInfo(deployment, this);
             Set<String> roles = AdapterUtils.getRolesFromSecurityContext(securityContext);
             GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), authenticatedPrincipal, roles, securityContext);
@@ -94,11 +100,6 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
         }
 
         RefreshableKeycloakSecurityContext session = principal.getKeycloakSecurityContext();
-
-        if (!session.getRealm().equals(deployment.getRealm())) {
-            log.fine("Account from cookie is from a different realm than for the request.");
-            return null;
-        }
 
         if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) return principal;
         boolean success = session.refreshExpiredToken(false);

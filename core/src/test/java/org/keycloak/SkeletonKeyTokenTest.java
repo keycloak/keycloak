@@ -56,7 +56,6 @@ public class SkeletonKeyTokenTest {
 
     @Test
     public void testSerialization() throws Exception {
-        String realm = "acme";
         AccessToken token = createSimpleToken();
         IDToken idToken = new IDToken();
         idToken.setEmail("joe@email.cz");
@@ -70,7 +69,7 @@ public class SkeletonKeyTokenTest {
                 .jsonContent(idToken)
                 .rsa256(keyPair.getPrivate());
 
-        KeycloakSecurityContext ctx = new KeycloakSecurityContext(encoded, token, encodedIdToken, idToken, realm);
+        KeycloakSecurityContext ctx = new KeycloakSecurityContext(encoded, token, encodedIdToken, idToken);
         KeycloakPrincipal principal = new KeycloakPrincipal("joe", ctx);
 
         // Serialize
@@ -104,6 +103,7 @@ public class SkeletonKeyTokenTest {
     private AccessToken createSimpleToken() {
         AccessToken token = new AccessToken();
         token.id("111");
+        token.issuer("acme");
         token.addAccess("foo").addRole("admin");
         token.addAccess("bar").addRole("user");
         return token;
