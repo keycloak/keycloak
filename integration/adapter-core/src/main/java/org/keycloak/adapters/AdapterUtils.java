@@ -59,4 +59,27 @@ public class AdapterUtils {
         }
         return roles;
     }
+
+    public static String getPrincipalName(KeycloakDeployment deployment, AccessToken token) {
+        String attr = "sub";
+        if (deployment.getPrincipalAttribute() != null) attr = deployment.getPrincipalAttribute();
+        String name = null;
+        if ("sub".equals(attr)) {
+            name = token.getSubject();
+        } else if ("email".equals(attr)) {
+            name = token.getEmail();
+        } else if ("preferred_username".equals(attr)) {
+            name = token.getPreferredUsername();
+        } else if ("name".equals(attr)) {
+            name = token.getName();
+        } else if ("given_name".equals(attr)) {
+            name = token.getGivenName();
+        } else if ("family_name".equals(attr)) {
+            name = token.getFamilyName();
+        } else if ("nickname".equals(attr)) {
+            name = token.getNickName();
+        }
+        if (name == null) name = token.getSubject();
+        return name;
+    }
 }
