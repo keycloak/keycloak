@@ -126,10 +126,47 @@ public class SharedAttributeDefinitons {
             .build();
     protected static final SimpleAttributeDefinition EXPOSE_TOKEN =
             new SimpleAttributeDefinitionBuilder("expose-token", ModelType.BOOLEAN, true)
-            .setXmlName("expose-token")
-            .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
-            .build();
+                    .setXmlName("expose-token")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(false))
+                    .build();
+    protected static final SimpleAttributeDefinition AUTH_SERVER_URL_FOR_BACKEND_REQUESTS =
+            new SimpleAttributeDefinitionBuilder("auth-server-url-for-backend-requests", ModelType.STRING, true)
+                    .setXmlName("auth-server-url-for-backend-requests")
+                    .setAllowExpression(true)
+                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+                    .build();
+    protected static final SimpleAttributeDefinition ALWAYS_REFRESH_TOKEN =
+            new SimpleAttributeDefinitionBuilder("always-refresh-token", ModelType.BOOLEAN, true)
+                    .setXmlName("always-refresh-token")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(false))
+                    .build();
+    protected static final SimpleAttributeDefinition REGISTER_NODE_AT_STARTUP =
+            new SimpleAttributeDefinitionBuilder("register-node-at-startup", ModelType.BOOLEAN, true)
+                    .setXmlName("register-node-at-startup")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(false))
+                    .build();
+    protected static final SimpleAttributeDefinition REGISTER_NODE_PERIOD =
+            new SimpleAttributeDefinitionBuilder("register-node-period", ModelType.INT, true)
+                    .setXmlName("register-node-period")
+                    .setAllowExpression(true)
+                    .setValidator(new IntRangeValidator(-1, true))
+                    .build();
+    protected static final SimpleAttributeDefinition TOKEN_STORE =
+            new SimpleAttributeDefinitionBuilder("token-store", ModelType.STRING, true)
+                    .setXmlName("token-store")
+                    .setAllowExpression(true)
+                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+                    .build();
+    protected static final SimpleAttributeDefinition PRINCIPAL_ATTRIBUTE =
+            new SimpleAttributeDefinitionBuilder("principal-attribute", ModelType.STRING, true)
+                    .setXmlName("principal-attribute")
+                    .setAllowExpression(true)
+                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+                    .build();
+
 
 
     protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
@@ -150,6 +187,12 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(CORS_ALLOWED_HEADERS);
         ATTRIBUTES.add(CORS_ALLOWED_METHODS);
         ATTRIBUTES.add(EXPOSE_TOKEN);
+        ATTRIBUTES.add(AUTH_SERVER_URL_FOR_BACKEND_REQUESTS);
+        ATTRIBUTES.add(ALWAYS_REFRESH_TOKEN);
+        ATTRIBUTES.add(REGISTER_NODE_AT_STARTUP);
+        ATTRIBUTES.add(REGISTER_NODE_PERIOD);
+        ATTRIBUTES.add(TOKEN_STORE);
+        ATTRIBUTES.add(PRINCIPAL_ATTRIBUTE);
     }
 
     /**

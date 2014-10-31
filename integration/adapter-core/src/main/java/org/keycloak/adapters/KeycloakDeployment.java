@@ -34,6 +34,7 @@ public class KeycloakDeployment {
     protected String accountUrl;
     protected String registerNodeUrl;
     protected String unregisterNodeUrl;
+    protected String principalAttribute = "sub";
 
     protected String resourceName;
     protected boolean bearerOnly;
@@ -332,5 +333,13 @@ public class KeycloakDeployment {
 
     public void setRegisterNodePeriod(int registerNodePeriod) {
         this.registerNodePeriod = registerNodePeriod;
+    }
+
+    public String getPrincipalAttribute() {
+        return principalAttribute;
+    }
+
+    public void setPrincipalAttribute(String principalAttribute) {
+        this.principalAttribute = principalAttribute;
     }
 }

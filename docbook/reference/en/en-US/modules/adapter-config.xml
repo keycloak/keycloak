@@ -336,6 +336,15 @@
                     </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+                <term>principal-attribute</term>
+                <listitem>
+                    <para>
+                        OpenID Connection ID Token attribute to populate the UserPrincipal name with.  If token attribute is null, defaults to <literal>sub</literal>
+                        Possible values are <literal>sub</literal>, <literal>preferred_username</literal>, <literal>email</literal>, <literal>name</literal>, <literal>nickname</literal>, <literal>given_name</literal>, <literal>family_name</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
         </variablelist>
     </para>
 </section>
