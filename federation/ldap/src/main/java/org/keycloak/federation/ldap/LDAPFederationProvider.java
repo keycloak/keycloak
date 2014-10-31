@@ -211,6 +211,12 @@ public class LDAPFederationProvider implements UserFederationProvider {
                 return null;
             }
 
+            // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
+            if (!username.equals(picketlinkUser.getLoginName())) {
+                logger.warnf("User found in LDAP but with different username. LDAP username: %s, Searched username: %s", username, picketlinkUser.getLoginName());
+                return null;
+            }
+
             return importUserFromPicketlink(realm, picketlinkUser);
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);
@@ -223,6 +229,11 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     protected UserModel importUserFromPicketlink(RealmModel realm, User picketlinkUser) {
         String email = (picketlinkUser.getEmail() != null && picketlinkUser.getEmail().trim().length() > 0) ? picketlinkUser.getEmail() : null;
+
+        if (picketlinkUser.getLoginName() == null) {
+            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. ID of user from LDAP: " + picketlinkUser.getId());
+        }
+
         UserModel imported = session.userStorage().addUser(realm, picketlinkUser.getLoginName());
         imported.setEnabled(true);
         imported.setEmail(email);
@@ -247,6 +258,13 @@ public class LDAPFederationProvider implements UserFederationProvider {
             if (picketlinkUser == null) {
                 return null;
             }
+
+            // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
+            if (!email.equals(picketlinkUser.getEmail())) {
+                logger.warnf("User found in LDAP but with different email. LDAP email: %s, Searched email: %s", email, picketlinkUser.getEmail());
+                return null;
+            }
+
             return importUserFromPicketlink(realm, picketlinkUser);
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);

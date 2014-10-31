@@ -148,6 +148,15 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
+    public void loginLdapWithEmail() {
+        loginPage.open();
+        loginPage.login("john@email.org", "Password1");
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+    }
+
+    @Test
     public void XdeleteLink() {
         loginLdap();
         {
@@ -200,6 +209,11 @@ public class FederationProvidersIntegrationTest {
         loginPage.open();
         loginPage.login("johnkeycloak", "New-password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        // Change password back to previous value
+        changePasswordPage.open();
+        changePasswordPage.changePassword("New-password1", "Password1", "Password1");
+        Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
     }
 
     @Test
@@ -370,7 +384,7 @@ public class FederationProvidersIntegrationTest {
             Assert.assertTrue(session.users().validCredentials(appRealm, user, cred));
 
             // LDAP password is still unchanged
-            Assert.assertTrue(LDAPUtils.validatePassword(getPartitionManager(session, model), "johnkeycloak", "New-password1"));
+            Assert.assertTrue(LDAPUtils.validatePassword(getPartitionManager(session, model), "johnkeycloak", "Password1"));
 
             // ATM it's not permitted to delete user in unsynced mode. Should be user deleted just locally instead?
             Assert.assertFalse(session.users().removeUser(appRealm, user));
@@ -385,6 +399,18 @@ public class FederationProvidersIntegrationTest {
         } finally {
             keycloakRule.stopSession(session, false);
         }
+    }
+
+    @Test
+    public void testCaseSensitiveSearch() {
+        loginPage.open();
+
+        // This should fail for now due to case-sensitivity
+        loginPage.login("johnKeycloak", "Password1");
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        loginPage.login("John@email.org", "Password1");
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
     static PartitionManager getPartitionManager(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {
