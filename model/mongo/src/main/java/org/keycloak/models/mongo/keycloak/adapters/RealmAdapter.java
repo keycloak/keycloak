@@ -420,6 +420,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public String getCodeSecret() {
+        return realm.getCodeSecret();
+    }
+
+    @Override
+    public void setCodeSecret(String codeSecret) {
+        realm.setCodeSecret(codeSecret);
+        updateRealm();
+    }
+
+    @Override
     public String getLoginTheme() {
         return realm.getLoginTheme();
     }

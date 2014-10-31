@@ -714,22 +714,17 @@ public class LoginActionsService {
 
     @Path("email-verification")
     @GET
-    public Response emailVerification(@QueryParam("code") String code) {
+    public Response emailVerification(@QueryParam("code") String code, @QueryParam("key") String key) {
         event.event(EventType.VERIFY_EMAIL);
-        if (uriInfo.getQueryParameters().containsKey("key")) {
+        if (key != null) {
             Checks checks = new Checks();
-            if (!checks.check(code, ClientSessionModel.Action.VERIFY_EMAIL)) {
+            if (!checks.check(key, ClientSessionModel.Action.VERIFY_EMAIL)) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
             ClientSessionModel clientSession = accessCode.getClientSession();
             UserSessionModel userSession = clientSession.getUserSession();
             UserModel user = userSession.getUser();
-            String key = uriInfo.getQueryParameters().getFirst("key");
-            String keyNote = clientSession.getNote("key");
-            if (key == null || !key.equals(keyNote)) {
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Somebody is trying to illegally change your email.");
-            }
             initEvent(clientSession);
             user.setEmailVerified(true);
 
@@ -745,16 +740,11 @@ public class LoginActionsService {
             }
             ClientSessionCode accessCode = checks.clientCode;
             ClientSessionModel clientSession = accessCode.getClientSession();
-            String verifyCode = UUID.randomUUID().toString();
-            clientSession.setNote("key", verifyCode);
             UserSessionModel userSession = clientSession.getUserSession();
-            UserModel user = userSession.getUser();
-
             initEvent(clientSession);
 
             return Flows.forms(session, realm, null, uriInfo)
                     .setClientSessionCode(accessCode.getCode())
-                    .setVerifyCode(verifyCode)
                     .setUser(userSession.getUser())
                     .createResponse(RequiredAction.VERIFY_EMAIL);
         }
@@ -762,22 +752,14 @@ public class LoginActionsService {
 
     @Path("password-reset")
     @GET
-    public Response passwordReset(@QueryParam("code") String code) {
+    public Response passwordReset(@QueryParam("code") String code, @QueryParam("key") String key) {
         event.event(EventType.SEND_RESET_PASSWORD);
-        if (uriInfo.getQueryParameters().containsKey("key")) {
+        if (key != null) {
             Checks checks = new Checks();
-            if (!checks.check(code, ClientSessionModel.Action.UPDATE_PASSWORD)) {
+            if (!checks.check(key, ClientSessionModel.Action.UPDATE_PASSWORD)) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
-            ClientSessionModel clientSession = accessCode.getClientSession();
-            UserSessionModel userSession = clientSession.getUserSession();
-            UserModel user = userSession.getUser();
-            String key = uriInfo.getQueryParameters().getFirst("key");
-            String keyNote = clientSession.getNote("key");
-            if (key == null || !key.equals(keyNote)) {
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Somebody is trying to illegally change your password.");
-            }
             return Flows.forms(session, realm, null, uriInfo)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);
@@ -842,10 +824,7 @@ public class LoginActionsService {
 
             try {
                 UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
-                builder.queryParam("code", accessCode.getCode());
-                String verifyCode = UUID.randomUUID().toString();
-                clientSession.setNote("key", verifyCode);
-                builder.queryParam("key", verifyCode);
+                builder.queryParam("key", accessCode.getCode());
 
                 String link = builder.build(realm.getName()).toString();
                 long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());

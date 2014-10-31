@@ -119,6 +119,8 @@ public final class KeycloakModelUtils {
             throw new RuntimeException(e);
         }
         realm.setCertificate(certificate);
+
+        realm.setCodeSecret(generateCodeSecret());
     }
 
     public static void generateRealmCertificate(RealmModel realm) {
@@ -159,6 +161,10 @@ public final class KeycloakModelUtils {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
         app.setSecret(secret.getValue());
         return secret;
+    }
+
+    public static String generateCodeSecret() {
+        return UUID.randomUUID().toString();
     }
 
     public static ApplicationModel createApplication(RealmModel realm, String name) {

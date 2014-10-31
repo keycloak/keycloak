@@ -550,7 +550,7 @@ public class OpenIDConnectService {
             String[] parts = code.split("\\.");
             if (parts.length == 2) {
                 try {
-                    event.detail(Details.CODE_ID, new String(Base64Url.decode(parts[1])));
+                    event.detail(Details.CODE_ID, new String(parts[1]));
                 } catch (Throwable t) {
                 }
             }
@@ -776,6 +776,7 @@ public class OpenIDConnectService {
             clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);
             clientSession.setRedirectUri(redirect);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+            clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
             clientSession.setNote(OpenIDConnect.STATE_PARAM, state);
             if (scopeParam != null) clientSession.setNote(OpenIDConnect.SCOPE_PARAM, scopeParam);
             if (responseType != null) clientSession.setNote(OpenIDConnect.RESPONSE_TYPE_PARAM, responseType);

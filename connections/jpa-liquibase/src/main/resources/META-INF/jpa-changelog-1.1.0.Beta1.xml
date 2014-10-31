@@ -43,9 +43,10 @@
         </addColumn>
         <addColumn tableName="REALM">
             <column name="CERTIFICATE" type="VARCHAR(2048)"/>
+            <column name="CODE_SECRET" type="VARCHAR(255)"/>
         </addColumn>
         <addColumn tableName="CLIENT">
-            <column name="NODE_REREG_TIMEOUT" type="INT"/>
+            <column name="NODE_REREG_TIMEOUT" type="INT" defaultValue="0"/>
         </addColumn>
         <addPrimaryKey columnNames="CLIENT_ID, NAME" constraintName="CONSTRAINT_3C" tableName="CLIENT_ATTRIBUTES"/>
         <addPrimaryKey columnNames="CLIENT_SESSION, NAME" constraintName="CONSTRAINT_5E" tableName="CLIENT_SESSION_NOTE"/>
@@ -53,5 +54,6 @@
         <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_ATTRIBUTES" constraintName="FK3C47C64BEACCA966" referencedColumnNames="ID" referencedTableName="CLIENT"/>
         <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_SESSION_NOTE" constraintName="FK5EDFB00FF51C2736" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
         <addForeignKeyConstraint baseColumnNames="APPLICATION_ID" baseTableName="APP_NODE_REGISTRATIONS" constraintName="FK8454723BA992F594" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.AddRealmCodeSecret"/>
     </changeSet>
 </databaseChangeLog>

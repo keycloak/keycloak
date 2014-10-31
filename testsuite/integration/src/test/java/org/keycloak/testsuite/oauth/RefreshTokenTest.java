@@ -139,7 +139,7 @@ public class RefreshTokenTest {
 
         Assert.assertThat(token.getExpiration() - Time.currentTime(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         int actual = refreshToken.getExpiration() - Time.currentTime();
-        Assert.assertThat(actual, allOf(greaterThanOrEqualTo(559), lessThanOrEqualTo(600)));
+        Assert.assertThat(actual, allOf(greaterThanOrEqualTo(1799), lessThanOrEqualTo(1800)));
 
         Assert.assertEquals(sessionId, refreshToken.getSessionState());
 

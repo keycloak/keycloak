@@ -71,8 +71,7 @@ public class SamlBindingTest {
     @WebResource
     protected LoginPage loginPage;
 
-    @Test
-    @Ignore
+    //@Test
     public void runit() throws Exception {
         Thread.sleep(10000000);
     }
