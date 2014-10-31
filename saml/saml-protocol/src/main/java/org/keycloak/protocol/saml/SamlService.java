@@ -16,6 +16,7 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -201,6 +202,7 @@ public class SamlService {
             clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
             clientSession.setRedirectUri(redirect);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+            clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
             clientSession.setNote(SamlProtocol.SAML_BINDING, getBindingType());
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
             clientSession.setNote(SamlProtocol.SAML_REQUEST_ID, requestAbstractType.getID());

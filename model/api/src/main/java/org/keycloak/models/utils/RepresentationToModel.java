@@ -92,6 +92,12 @@ public class RepresentationToModel {
         } else {
             newRealm.setCertificatePem(rep.getCertificate());
         }
+        if (rep.getCodeSecret() == null) {
+            newRealm.setCodeSecret(KeycloakModelUtils.generateCodeSecret());
+        } else {
+            newRealm.setCodeSecret(rep.getCodeSecret());
+        }
+
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());

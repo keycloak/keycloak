@@ -290,9 +290,6 @@ public class AuthenticationManager {
 
             LoginFormsProvider loginFormsProvider = Flows.forms(session, realm, client, uriInfo).setClientSessionCode(accessCode.getCode()).setUser(user);
             if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL)) {
-                String key = UUID.randomUUID().toString();
-                clientSession.setNote("key", key);
-                loginFormsProvider.setVerifyCode(key);
                 event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
             }
 

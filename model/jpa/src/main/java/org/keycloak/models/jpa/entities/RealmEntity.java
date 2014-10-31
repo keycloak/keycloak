@@ -82,6 +82,8 @@ public class RealmEntity {
     protected String privateKeyPem;
     @Column(name="CERTIFICATE", length = 2048)
     protected String certificatePem;
+    @Column(name="CODE_SECRET", length = 255)
+    protected String codeSecret;
 
     @Column(name="LOGIN_THEME")
     protected String loginTheme;
@@ -282,6 +284,14 @@ public class RealmEntity {
 
     public void setPrivateKeyPem(String privateKeyPem) {
         this.privateKeyPem = privateKeyPem;
+    }
+
+    public String getCodeSecret() {
+        return codeSecret;
+    }
+
+    public void setCodeSecret(String codeSecret) {
+        this.codeSecret = codeSecret;
     }
 
     public Collection<RequiredCredentialEntity> getRequiredCredentials() {

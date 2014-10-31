@@ -709,9 +709,6 @@ public class UsersResource {
         try {
             UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
             builder.queryParam("code", accessCode.getCode());
-            String key = UUID.randomUUID().toString();
-            clientSession.setNote("key", key);
-            builder.queryParam("key", key);
 
             String link = builder.build(realm.getName()).toString();
             long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());

@@ -122,7 +122,7 @@ public class RequiredActionEmailVerificationTest {
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
-        //Assert.assertEquals(mailCodeId, verificationUrl.split("key=")[1]);
+        Assert.assertEquals(mailCodeId, verificationUrl.split("key=")[1].split("\\.")[1]);
 
         driver.navigate().to(verificationUrl.trim());
 

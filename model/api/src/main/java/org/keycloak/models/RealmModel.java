@@ -97,6 +97,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setPublicKey(PublicKey publicKey);
 
+    String getCodeSecret();
+
+    void setCodeSecret(String codeSecret);
+
     X509Certificate getCertificate();
     void setCertificate(X509Certificate certificate);
     String getCertificatePem();
