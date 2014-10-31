@@ -38,6 +38,7 @@ import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -97,6 +98,9 @@ public class ResetPasswordTest {
     protected LoginPage loginPage;
 
     @WebResource
+    protected ErrorPage errorPage;
+
+    @WebResource
     protected LoginPasswordResetPage resetPasswordPage;
 
     @WebResource
@@ -108,6 +112,42 @@ public class ResetPasswordTest {
     @Test
     public void resetPassword() throws IOException, MessagingException {
         resetPassword("login-test");
+    }
+
+    @Test
+    public void resetPasswordCancel() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword("login-test");
+
+        resetPasswordPage.assertCurrent();
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
+
+        resetPasswordPage.backToLogin();
+
+        Assert.assertTrue(loginPage.isCurrent());
+
+        loginPage.login("login-test", "password");
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String body = (String) message.getContent();
+        String changePasswordUrl = MailUtil.getLink(body);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        events.expect(EventType.RESET_PASSWORD_ERROR).client((String) null).user((String) null).error("invalid_code").clearDetails().assertEvent();
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Unknown code, please login again through your application.", errorPage.getError());
     }
 
     @Test

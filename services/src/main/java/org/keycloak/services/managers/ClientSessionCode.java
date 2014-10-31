@@ -78,10 +78,6 @@ public class ClientSessionCode {
         return clientSession;
     }
 
-    public boolean isValid(RequiredAction requiredAction) {
-        return isValid(convertToAction(requiredAction));
-    }
-
     public boolean isValid(ClientSessionModel.Action requestedAction) {
         ClientSessionModel.Action action = clientSession.getAction();
         if (action == null) {
