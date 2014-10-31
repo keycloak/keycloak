@@ -22,6 +22,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.enums.TokenStore;
 
 import javax.servlet.ServletContext;
