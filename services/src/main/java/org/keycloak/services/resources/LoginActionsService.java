@@ -271,9 +271,9 @@ public class LoginActionsService {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
         }
         ClientSessionModel clientSession = clientCode.getClientSession();
-        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
+        if (!(clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientCode.isValid(ClientSessionModel.Action.RECOVER_PASSWORD))) {
             clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
-            event.client(clientSession.getClient()).error(Errors.INVALID_USER_CREDENTIALS);
+            event.client(clientSession.getClient()).error(Errors.INVALID_CODE);
             return Flows.forms(this.session, realm, clientSession.getClient(), uriInfo).setError(Messages.INVALID_USER)
                     .setClientSessionCode(clientCode.getCode())
                     .createLogin();
@@ -753,13 +753,14 @@ public class LoginActionsService {
     @Path("password-reset")
     @GET
     public Response passwordReset(@QueryParam("code") String code, @QueryParam("key") String key) {
-        event.event(EventType.SEND_RESET_PASSWORD);
+        event.event(EventType.RESET_PASSWORD);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.check(key, ClientSessionModel.Action.UPDATE_PASSWORD)) {
+            if (!checks.check(key, ClientSessionModel.Action.RECOVER_PASSWORD)) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
+            accessCode.setRequiredAction(RequiredAction.UPDATE_PASSWORD);
             return Flows.forms(session, realm, null, uriInfo)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);
@@ -820,7 +821,7 @@ public class LoginActionsService {
             event.session(userSession);
             TokenManager.attachClientSession(userSession, clientSession);
 
-            accessCode.setRequiredAction(RequiredAction.UPDATE_PASSWORD);
+            accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD);
 
             try {
                 UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
@@ -840,7 +841,7 @@ public class LoginActionsService {
             }
         }
 
-        return Flows.forms(session, realm, client,  uriInfo).setSuccess("emailSent").createPasswordReset();
+        return Flows.forms(session, realm, client,  uriInfo).setSuccess("emailSent").setClientSessionCode(accessCode.getCode()).createPasswordReset();
     }
 
     private Response redirectOauth(UserModel user, ClientSessionCode accessCode, ClientSessionModel clientSession, UserSessionModel userSession) {

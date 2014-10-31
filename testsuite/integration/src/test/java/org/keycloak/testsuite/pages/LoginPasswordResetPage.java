@@ -41,6 +41,9 @@ public class LoginPasswordResetPage extends AbstractPage {
     @FindBy(className = "feedback-error")
     private WebElement emailErrorMessage;
 
+    @FindBy(partialLinkText = "Back to Login")
+    private WebElement backToLogin;
+
     public void changePassword(String username) {
         usernameInput.sendKeys(username);
 
@@ -61,6 +64,10 @@ public class LoginPasswordResetPage extends AbstractPage {
 
     public String getErrorMessage() {
         return emailErrorMessage != null ? emailErrorMessage.getText() : null;
+    }
+
+    public void backToLogin() {
+        backToLogin.click();
     }
 
 }
