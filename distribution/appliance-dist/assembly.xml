@@ -22,6 +22,7 @@
                 <exclude>**/*.sh</exclude>
                 <exclude>welcome-content/*</exclude>
                 <exclude>**/modules/system/layers/base/org/picketlink/**</exclude>
+                <exclude>**/modules/system/layers/base/org/jboss/as/cli/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>

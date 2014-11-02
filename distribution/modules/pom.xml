@@ -84,6 +84,11 @@
             <artifactId>bcprov-jdk16</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-cli</artifactId>
+            <version>${wildfly.core.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-common</artifactId>
         </dependency>
