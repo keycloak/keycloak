@@ -37,6 +37,11 @@ public class PathBasedKeycloakConfigResolver implements KeycloakConfigResolver {
     @Override
     public KeycloakDeployment resolve(HttpFacade.Request request) {
         String path = request.getURI();
+        int multitenantIndex = path.indexOf("multitenant/");
+        if (multitenantIndex == -1) {
+            throw new IllegalStateException("Not able to resolve realm from the request path!");
+        }
+
         String realm = path.substring(path.indexOf("multitenant/")).split("/")[1];
         if (realm.contains("?")) {
             realm = realm.split("\\?")[0];
@@ -46,6 +51,9 @@ public class PathBasedKeycloakConfigResolver implements KeycloakConfigResolver {
         if (null == deployment) {
             // not found on the simple cache, try to load it from the file system
             InputStream is = getClass().getResourceAsStream("/" + realm + "-keycloak.json");
+            if (is == null) {
+                throw new IllegalStateException("Not able to find the file /" + realm + "-keycloak.json");
+            }
             deployment = KeycloakDeploymentBuilder.build(is);
             cache.put(realm, deployment);
         }
