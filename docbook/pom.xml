@@ -110,6 +110,10 @@
                             <name>project.version</name>
                             <value>${project.version}</value>
                         </injection>
+                        <injection>
+                            <name>picketlink.version</name>
+                            <value>${picketlink.version}</value>
+                        </injection>
                     </injections>
                     <options>
                         <xmlTransformerType>saxon</xmlTransformerType>
