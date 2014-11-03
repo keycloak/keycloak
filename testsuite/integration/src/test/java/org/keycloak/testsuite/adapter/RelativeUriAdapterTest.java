@@ -173,6 +173,7 @@ public class RelativeUriAdapterTest {
 
         // test logout
         driver.navigate().to("http://localhost:8081/customer-portal/logout");
+        Assert.assertTrue(driver.getPageSource().contains("servlet logout ok"));
 
         driver.navigate().to("http://localhost:8081/customer-portal");
         String currentUrl = driver.getCurrentUrl();

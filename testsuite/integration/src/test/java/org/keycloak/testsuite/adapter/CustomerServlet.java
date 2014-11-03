@@ -28,7 +28,7 @@ public class CustomerServlet extends HttpServlet {
         PrintWriter pw = resp.getWriter();
         if (req.getRequestURI().toString().endsWith("logout")) {
             resp.setStatus(200);
-            pw.println("ok");
+            pw.println("servlet logout ok");
 
             // Call logout before pw.flush
             req.logout();
