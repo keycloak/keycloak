@@ -702,27 +702,6 @@ keycloak-war-dist-all-&project.version;/
 
             </section>
 
-            <section>
-                <title>Enforce HTTPS For Server Connections</title>
-                <para>
-                    Servlet containers can force browsers and other HTTP clients to use HTTPS.  You have to configure this in
-                    <literal>.../standalone/deployments/auth-server.war/WEB-INF/web.xml</literal>.  All you have to do is
-                    uncomment out the security constraint.
-                </para>
-                <para>
- <programlisting><![CDATA[<web-app>
- ...
-       <security-constraint>
-           <web-resource-collection>
-               <url-pattern>/*</url-pattern>
-           </web-resource-collection>
-           <user-data-constraint>
-               <transport-guarantee>CONFIDENTIAL</transport-guarantee>
-           </user-data-constraint>
-       </security-constraint>
-</web-app>]]></programlisting>
-                </para>
-            </section>
         </section>
 
     </section>
