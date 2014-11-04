@@ -124,40 +124,19 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
-    public void loginClassic() {
+    public void caseSensitiveSearch() {
         loginPage.open();
-        loginPage.login("mary", "password-app");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        // This should fail for now due to case-sensitivity
+        loginPage.login("johnKeycloak", "Password1");
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
+        loginPage.login("John@email.org", "Password1");
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
     @Test
-    public void loginLdap() {
-        loginPage.open();
-        loginPage.login("johnkeycloak", "Password1");
-
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        profilePage.open();
-        Assert.assertEquals("John", profilePage.getFirstName());
-        Assert.assertEquals("Doe", profilePage.getLastName());
-        Assert.assertEquals("john@email.org", profilePage.getEmail());
-    }
-
-    @Test
-    public void loginLdapWithEmail() {
-        loginPage.open();
-        loginPage.login("john@email.org", "Password1");
-
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-    }
-
-    @Test
-    public void XdeleteLink() {
+    public void deleteFederationLink() {
         loginLdap();
         {
             KeycloakSession session = keycloakRule.startSession();
@@ -190,6 +169,39 @@ public class FederationProvidersIntegrationTest {
         }
         loginLdap();
 
+    }
+
+    @Test
+    public void loginClassic() {
+        loginPage.open();
+        loginPage.login("mary", "password-app");
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+    }
+
+    @Test
+    public void loginLdap() {
+        loginPage.open();
+        loginPage.login("johnkeycloak", "Password1");
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        profilePage.open();
+        Assert.assertEquals("John", profilePage.getFirstName());
+        Assert.assertEquals("Doe", profilePage.getLastName());
+        Assert.assertEquals("john@email.org", profilePage.getEmail());
+    }
+
+    @Test
+    public void loginLdapWithEmail() {
+        loginPage.open();
+        loginPage.login("john@email.org", "Password1");
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
     }
 
     @Test
@@ -399,18 +411,6 @@ public class FederationProvidersIntegrationTest {
         } finally {
             keycloakRule.stopSession(session, false);
         }
-    }
-
-    @Test
-    public void testCaseSensitiveSearch() {
-        loginPage.open();
-
-        // This should fail for now due to case-sensitivity
-        loginPage.login("johnKeycloak", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
-
-        loginPage.login("John@email.org", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
     static PartitionManager getPartitionManager(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {

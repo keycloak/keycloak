@@ -89,12 +89,14 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
         req.removeAttribute(KeycloakSecurityContext.class.getName());
         HttpSession session = req.getSession(false);
         if (session == null) return;
-        KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
-        if (account == null) return;
-        session.removeAttribute(KeycloakSecurityContext.class.getName());
-        session.removeAttribute(KeycloakUndertowAccount.class.getName());
-        if (account.getKeycloakSecurityContext() != null) {
-            account.getKeycloakSecurityContext().logout(deployment);
+        try {
+            KeycloakUndertowAccount account = (KeycloakUndertowAccount) session.getAttribute(KeycloakUndertowAccount.class.getName());
+            if (account == null) return;
+            session.removeAttribute(KeycloakSecurityContext.class.getName());
+            session.removeAttribute(KeycloakUndertowAccount.class.getName());
+        } catch (IllegalStateException ise) {
+            // Session may be already logged-out in case that app has adminUrl
+            log.debugf("Session %s logged-out already", session.getId());
         }
     }
 

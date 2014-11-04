@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.1.0-Alpha1-SNAPSHOT</version>
+        <version>1.1.0.Beta2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -109,6 +109,10 @@
                         <injection>
                             <name>project.version</name>
                             <value>${project.version}</value>
+                        </injection>
+                        <injection>
+                            <name>picketlink.version</name>
+                            <value>${picketlink.version}</value>
                         </injection>
                     </injections>
                     <options>

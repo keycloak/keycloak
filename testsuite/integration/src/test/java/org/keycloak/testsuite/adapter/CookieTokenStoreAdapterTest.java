@@ -113,6 +113,7 @@ public class CookieTokenStoreAdapterTest {
         assertLogged();
 
         driver.navigate().to("http://localhost:8081/customer-portal/logout");
+        Assert.assertTrue(driver.getPageSource().contains("servlet logout ok"));
         driver.navigate().to("http://localhost:8081/customer-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
@@ -167,7 +168,7 @@ public class CookieTokenStoreAdapterTest {
 
     private void logoutFromCustomerCookiePortal() {
         driver.navigate().to("http://localhost:8081/customer-cookie-portal/logout");
-        Assert.assertTrue(driver.getPageSource().contains("ok"));
+        Assert.assertTrue(driver.getPageSource().contains("servlet logout ok"));
         Assert.assertNull(driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE));
         driver.navigate().to("http://localhost:8081/customer-cookie-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
