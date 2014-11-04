@@ -124,6 +124,10 @@ public class TokenManager {
     }
 
     public static void attachClientSession(UserSessionModel session, ClientSessionModel clientSession) {
+        if (clientSession.getUserSession() != null) {
+            return;
+        }
+
         UserModel user = session.getUser();
         clientSession.setUserSession(session);
         Set<String> requestedRoles = new HashSet<String>();
