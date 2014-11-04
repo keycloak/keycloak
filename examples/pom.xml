@@ -25,6 +25,7 @@
         </plugins>
     </build>
     <modules>
+        <module>admin-client</module>
         <module>cors</module>
         <module>demo-template</module>
         <module>providers</module>
