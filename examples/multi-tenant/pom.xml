@@ -9,7 +9,7 @@
     </parent>
 
     <name>Keycloak Examples - Multi Tenant</name>
-    <artifactId>multitenant</artifactId>
+    <artifactId>examples-multitenant</artifactId>
     <packaging>war</packaging>
 
     <description>
@@ -59,7 +59,7 @@
         </dependency>
     </dependencies>
     <build>
-        <finalName>${project.artifactId}</finalName>
+        <finalName>multitenant</finalName>
     </build>
 </project>
 
