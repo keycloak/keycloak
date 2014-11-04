@@ -59,6 +59,10 @@ public class MultiTenancyTest {
 
             deployApplication("multi-tenant", "/multi-tenant", MultiTenantServlet.class, null, "user", true, MultiTenantResolver.class);
         }
+
+        protected String[] getTestRealms() {
+            return new String[]{"test", "demo", "tenant1", "tenant2"};
+        }
     };
 
     /**
