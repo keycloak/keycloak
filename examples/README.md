@@ -14,6 +14,12 @@ This is the our main example, which shows Login, Single-Sign On, Single-Sign Out
 For more information look at `preconfigured-demo/README.md` or `unconfigured-demo/README.md`. For the unconfigured-demo there's an accompanying screencast at [http://keycloak.org/docs](http://keycloak.org/docs) that walks you through the setup process.
 
 
+Admin Client
+------------
+
+Example using the Admin Client. For more information look at `admin-client/README.md`.
+
+
 Cordova
 -------
 
