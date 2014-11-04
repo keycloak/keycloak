@@ -70,7 +70,7 @@ keycloak-appliance-dist-all-&project.version;/
             <literal>keycloak-war-dist-all-&project.version;.zip</literal>
             contains
             just the bits you need to install keycloak on your favorite web container. We currently only support
-            installing it on top of an existing JBoss AS 7.1.1, JBoss EAP 6.x, or Wildfly 8 distribution. We may in the
+            installing it on top of an existing Wildfly 8, JBoss EAP 6.x or JBoss AS 7.1.1 distribution. We may in the
             future provide directions on how to install it on another web container like Tomcat or Jetty. If anybody
             in the community is interested in pulling this together, please contact us. Its mostly Maven pom work.
         </para>
@@ -121,7 +121,7 @@ keycloak-war-dist-all-&project.version;/
             enter in a new password.
         </para>
         <para>
-            If you have Keycloak on JBoss AS 7.1.1 or EAP 6.2 make sure to follow <link linkend="as7-specifics">these steps</link>.
+            If you have Keycloak on JBoss AS 7.1.1 <link linkend="as7-specifics">these steps</link>.
         </para>
     </section>
     <section>
@@ -393,9 +393,9 @@ keycloak-war-dist-all-&project.version;/
         </section>
 
         <section id="as7-specifics">
-            <title>AS7/EAP6.x specifics</title>
+            <title>AS7 specifics</title>
             <para>
-                If you have Keycloak on JBoss AS 7.1.1 or JBoss EAP 6.2, you need to do few other things in order to have Keycloak up and running. This includes:
+                If you have Keycloak on JBoss AS 7.1.1 you need to do few other things in order to have Keycloak up and running. This includes:
                 <orderedlist>
                     <listitem>
                         <para>
