@@ -84,6 +84,10 @@ public class ClientAttributeCertificateResource {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -94,7 +98,10 @@ public class ClientAttributeCertificateResource {
         return info;
     }
 
-
+    /**
+     *
+     * @return
+     */
     @POST
     @NoCache
     @Path("generate")
@@ -129,6 +136,13 @@ public class ClientAttributeCertificateResource {
         return info;
     }
 
+    /**
+     *
+     * @param uriInfo
+     * @param input
+     * @return
+     * @throws IOException
+     */
     @POST
     @Path("upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -238,6 +252,11 @@ public class ClientAttributeCertificateResource {
         }
     }
 
+    /**
+     *
+     * @param config
+     * @return
+     */
     @POST
     @NoCache
     @Path("/download")

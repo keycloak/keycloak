@@ -229,7 +229,7 @@
                                 <docletArtifact>
                                     <groupId>com.lunatech.jax-doclets</groupId>
                                     <artifactId>doclets</artifactId>
-                                    <version>0.10.0</version>
+                                    <version>0.10.2</version>
                                 </docletArtifact>
                             </docletArtifacts>
                             <detectOfflineLinks>false</detectOfflineLinks>
