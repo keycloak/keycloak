@@ -46,10 +46,10 @@
         {
             "name": "multi-tenant",
             "enabled": true,
-            "adminUrl": "http://localhost:8080/multitenant/tenant1",
-            "baseUrl": "http://localhost:8080/multitenant/tenant1",
+            "adminUrl": "/multitenant/tenant1",
+            "baseUrl": "/multitenant/tenant1",
             "redirectUris": [
-                "http://localhost:8080/multitenant/tenant1/*"
+                "/multitenant/tenant1/*"
             ],
             "secret": "password"
         }
