@@ -73,6 +73,11 @@ public class OAuthClientResource  {
         return new ClaimResource(oauthClient, auth);
     }
 
+    /**
+     *
+     * @param attributePrefix
+     * @return
+     */
     @Path("certificates/{attr}")
     public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix) {
         return new ClientAttributeCertificateResource(realm, auth, oauthClient, session, attributePrefix);

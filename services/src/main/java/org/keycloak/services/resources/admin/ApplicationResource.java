@@ -120,6 +120,11 @@ public class ApplicationResource {
         return ModelToRepresentation.toRepresentation(application);
     }
 
+    /**
+     *
+     * @param attributePrefix
+     * @return
+     */
     @Path("certificates/{attr}")
     public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix) {
         return new ClientAttributeCertificateResource(realm, auth, application, session, attributePrefix);
