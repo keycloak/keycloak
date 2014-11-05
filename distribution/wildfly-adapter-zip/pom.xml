@@ -13,14 +13,6 @@
     <name>Keycloak Wildfly Adapter Distro</name>
     <description/>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter</artifactId>
-            <version>${project.version}</version>
-            <type>zip</type>
-        </dependency>
-    </dependencies>
     <build>
         <plugins>
             <plugin>
