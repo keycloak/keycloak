@@ -23,6 +23,7 @@
                 <exclude>welcome-content/*</exclude>
                 <exclude>**/modules/system/layers/base/org/picketlink/**</exclude>
                 <exclude>**/modules/system/layers/base/org/jboss/as/cli/**</exclude>
+                <exclude>**/modules/system/layers/base/org/jboss/aesh/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>

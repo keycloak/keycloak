@@ -790,8 +790,8 @@ keycloak-war-dist-all-&project.version;/
 </para>
             <warning>
                 <para>
-                    If you create more than one Keycloak server, you will need to use <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink>
-                    to fully configure each instance.  At the least, you will need to run the <link linkend="uploading-extra-config">update-server-config</link> operation.
+                    If you create more than one Keycloak server, you will need to use CLI to fully configure each instance.  At the least, 
+                    you will need to run the <link linkend="uploading-extra-config">update-server-config</link> operation.
                 </para>
             </warning>
         </section>
@@ -801,11 +801,11 @@ keycloak-war-dist-all-&project.version;/
                 Servers can also be added/removed or enabled/disabled at runtime using the <ulink url="https://developer.jboss.org/wiki/CommandLineInterface">CLI</ulink> or 
                 <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> tool.  These are tools that ship with WildFly and also with
                 the Keycloak Appliance installation.  See <ulink url="https://developer.jboss.org/wiki/CommandLineInterface">CLI</ulink> or 
-                <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> documentation to learn more about how to start the tools
-                and issue commands.
+                <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> documentation to learn more about how to start the tools,
+                issue commands, and create CLI scripts.
             </para>
 <para>
-To start CLI GUI with the Keycloak Appliance install:
+To start CLI with the Keycloak Appliance install:
 <programlisting><![CDATA[
 cd <APPLIANCE_INSTALL_DIR>/keycloak/bin
 ./jboss-cli.sh --gui
@@ -839,11 +839,11 @@ The Keycloak server will be immediately deployed or undeployed, but not deleted.
 </para>
             </section>
             <section id="uploading-extra-config">
-                <title>Uploading extra configuration using CLI GUI</title>
+                <title>Uploading extra configuration using CLI</title>
                 <para>
                     The WildFly Keycloak subsystem allows you to upload keycloak-server.json, provider jars, and theme jars to a Keycloak server instance.  The
-                    CLI operations for this are "update-server-config" and "add-provider".  You must use
-                    <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> for these operations.
+                    CLI operations for this are "update-server-config" and "add-provider".  You may use plain or CLI scripts for these operations.  The following
+                    examples are shown using <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> for clarity.
                 </para>
                 <para>
                     To use a new keycloak-server.json file for your server, find your server under the Keycloak subsystem.  Then right-click the server,
@@ -885,6 +885,12 @@ The Keycloak server will be immediately deployed or undeployed, but not deleted.
             <para>
                 In the example below, a Keycloak server named "foo" is defined in the "full" profile.  The "full" profile is assigned to the "main-server-group".
                 Every WildFly instance that belongs to "main-server-group" will get an identically configured deployment of the "foo" Keycloak server.
+            </para>
+            <para>
+                All operations discussed earlier are valid for a Keycloak server in a domain.  You can enable/disable, upload new keyclaok-server.json, and add provider jars.
+                In the following example, any changes that are made to the "foo" server will be automatically propogated to every instance in "main-server-group".
+            </para>
+            <para>
                 <imagedata fileref="images/domain-mode.png"/>
             </para>
         </section>

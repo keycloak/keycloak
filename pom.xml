@@ -12,6 +12,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <aesh.version>0.33.12</aesh.version>
         <bouncycastle.version>1.46</bouncycastle.version>
         <jackson.version>1.9.9</jackson.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
@@ -141,6 +142,17 @@
                 <groupId>javax.mail</groupId>
                 <artifactId>mail</artifactId>
                 <version>${javax.mail.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.aesh</groupId>
+                <artifactId>aesh</artifactId>
+                <version>${aesh.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>

@@ -124,7 +124,10 @@
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-impl</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.jboss.aesh</groupId>
+            <artifactId>aesh</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
