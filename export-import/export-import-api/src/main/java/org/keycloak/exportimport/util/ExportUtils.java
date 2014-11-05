@@ -45,7 +45,7 @@ import java.util.Set;
 public class ExportUtils {
 
     public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers) {
-        RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm);
+        RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, true);
 
         // Audit
         rep.setEventsEnabled(realm.isEventsEnabled());

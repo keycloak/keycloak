@@ -75,7 +75,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static RealmRepresentation toRepresentation(RealmModel realm) {
+    public static RealmRepresentation toRepresentation(RealmModel realm, boolean internal) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setId(realm.getId());
         rep.setRealm(realm.getName());
@@ -85,7 +85,9 @@ public class ModelToRepresentation {
         rep.setUpdateProfileOnInitialSocialLogin(realm.isUpdateProfileOnInitialSocialLogin());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
         rep.setPublicKey(realm.getPublicKeyPem());
-        rep.setPrivateKey(realm.getPrivateKeyPem());
+	    if (internal) {
+            rep.setPrivateKey(realm.getPrivateKeyPem());
+        }
         rep.setPasswordCredentialGrantAllowed(realm.isPasswordCredentialGrantAllowed());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRememberMe(realm.isRememberMe());

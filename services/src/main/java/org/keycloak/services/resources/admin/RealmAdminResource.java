@@ -119,7 +119,7 @@ public class RealmAdminResource {
     @Produces("application/json")
     public RealmRepresentation getRealm() {
         if (auth.hasView()) {
-            RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm);
+            RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, false);
             if (session.realms() instanceof CacheRealmProvider) {
                 CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
                 rep.setRealmCacheEnabled(cacheRealmProvider.isEnabled());

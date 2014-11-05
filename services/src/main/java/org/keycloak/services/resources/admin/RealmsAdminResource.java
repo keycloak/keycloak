@@ -100,7 +100,7 @@ public class RealmsAdminResource {
 
     protected void addRealmRep(List<RealmRepresentation> reps, RealmModel realm, ApplicationModel realmManagementApplication) {
         if (auth.hasAppRole(realmManagementApplication, AdminRoles.MANAGE_REALM)) {
-            reps.add(ModelToRepresentation.toRepresentation(realm));
+            reps.add(ModelToRepresentation.toRepresentation(realm, false));
         } else if (auth.hasOneOfAppRole(realmManagementApplication, AdminRoles.ALL_REALM_ROLES)) {
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
