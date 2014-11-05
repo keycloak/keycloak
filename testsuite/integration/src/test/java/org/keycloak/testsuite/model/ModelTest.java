@@ -67,7 +67,7 @@ public class ModelTest extends AbstractModelTest {
     }
 
     private RealmModel importExport(RealmModel src, String copyName) {
-        RealmRepresentation representation = ModelToRepresentation.toRepresentation(src);
+        RealmRepresentation representation = ModelToRepresentation.toRepresentation(src, true);
         representation.setRealm(copyName);
         representation.setId(copyName);
         RealmModel copy = realmManager.importRealm(representation);
