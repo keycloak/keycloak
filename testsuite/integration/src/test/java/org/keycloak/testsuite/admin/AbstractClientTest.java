@@ -7,6 +7,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -42,6 +43,7 @@ public abstract class AbstractClientTest {
 
                 RealmModel testRealm = manager.createRealm(REALM_NAME);
                 testRealm.setEnabled(true);
+                KeycloakModelUtils.generateRealmKeys(testRealm);
             }
         });
 
