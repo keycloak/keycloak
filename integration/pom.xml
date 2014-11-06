@@ -20,7 +20,7 @@
         <module>jboss-adapter-core</module>
         <module>as7-eap6/adapter</module>
         <module>tomcat7/adapter</module>
-        <!-- <module>jetty9/adapter</module>  -->
+        <module>jetty9/adapter</module>
         <module>undertow</module>
         <module>wildfly-adapter</module>
         <module>wildfly-subsystem</module>
