@@ -194,15 +194,19 @@ public class KeycloakApplication extends Application {
     }
 
     public void importRealmFile() {
-        String file = System.getProperty("keycloak.import");
-        if (file != null) {
-            RealmRepresentation rep = null;
-            try {
-                rep = loadJson(new FileInputStream(file), RealmRepresentation.class);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
+        String files = System.getProperty("keycloak.import");
+        if (files != null) {
+            StringTokenizer tokenizer = new StringTokenizer(files, ",");
+            while (tokenizer.hasMoreTokens()) {
+                String file = tokenizer.nextToken().trim();
+                RealmRepresentation rep = null;
+                try {
+                    rep = loadJson(new FileInputStream(file), RealmRepresentation.class);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                importRealm(rep, "file " + file);
             }
-            importRealm(rep, "file " + file);
         }
     }
 
@@ -223,11 +227,14 @@ public class KeycloakApplication extends Application {
                 return;
             }
 
-            RealmModel realm = manager.importRealm(rep);
-
-            log.info("Imported realm " + realm.getName() + " from " + from);
-
-            session.getTransaction().commit();
+            try {
+                RealmModel realm = manager.importRealm(rep);
+                session.getTransaction().commit();
+                log.info("Imported realm " + realm.getName() + " from " + from);
+            } catch (Throwable t) {
+                session.getTransaction().rollback();
+                log.warn("Unable to import realm " + rep.getRealm() + " from " + from + ". Cause: " + t.getMessage());
+            }
         } finally {
             session.close();
         }

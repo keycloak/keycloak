@@ -132,7 +132,7 @@ public class PasswordPolicy {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + count + " numerical digits" : null;
+            return count < min ? "Invalid password: must contain at least " + min + " numerical digits" : null;
         }
     }
 
@@ -152,7 +152,7 @@ public class PasswordPolicy {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + count + " lower case characters": null;
+            return count < min ? "Invalid password: must contain at least " + min + " lower case characters": null;
         }
     }
 
@@ -172,7 +172,7 @@ public class PasswordPolicy {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + count + " upper case characters" : null;
+            return count < min ? "Invalid password: must contain at least " + min + " upper case characters" : null;
         }
     }
 
@@ -192,7 +192,7 @@ public class PasswordPolicy {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + count + " special characters" : null;
+            return count < min ? "Invalid password: must contain at least " + min + " special characters" : null;
         }
     }
 

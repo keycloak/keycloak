@@ -6,7 +6,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -16,7 +20,15 @@ public class RealmTest extends AbstractClientTest {
 
     @Test
     public void getRealms() {
-        assertNames(keycloak.realms().findAll(), "master", "test", REALM_NAME);
+        List<RealmRepresentation> realms = keycloak.realms().findAll();
+        assertNames(realms, "master", "test", REALM_NAME);
+
+        for (RealmRepresentation rep : realms) {
+            assertNull(rep.getPrivateKey());
+            assertNull(rep.getCodeSecret());
+            assertNotNull(rep.getPublicKey());
+            assertNotNull(rep.getCertificate());
+        }
     }
 
     @Test
@@ -65,6 +77,11 @@ public class RealmTest extends AbstractClientTest {
         RealmRepresentation rep = realm.toRepresentation();
         assertEquals(REALM_NAME, rep.getRealm());
         assertTrue(rep.isEnabled());
+
+        assertNull(rep.getPrivateKey());
+        assertNull(rep.getCodeSecret());
+        assertNotNull(rep.getPublicKey());
+        assertNotNull(rep.getCertificate());
     }
 
 }

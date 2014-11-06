@@ -12,6 +12,13 @@
             <listitem>Directory on local filesystem</listitem>
             <listitem>Single JSON file on your filesystem</listitem>
         </itemizedlist>
+
+        When importing using the "dir" or "zip" strategies, note that the files need to follow the naming convention specified below.
+        If you are importing files which were previously exported, the files already follow this convention.
+        <itemizedlist>
+            <listitem>{REALM_NAME}-realm.json, such as "acme-roadrunner-affairs-realm.json" for the realm named "acme-roadrunner-affairs"</listitem>
+            <listitem>{REALM_NAME}-users-{INDEX}.json, such as "acme-roadrunner-affairs-users-0.json" for the first users file of the realm named "acme-roadrunner-affairs"</listitem>
+        </itemizedlist>
     </para>
     <para>
         Encrypted ZIP is recommended as export contains many sensitive informations like passwords of your users (even if they are hashed),
@@ -110,6 +117,15 @@ bin/standalone.sh -Dkeycloak.migration.action=import
                 </listitem>
             </varlistentry>
         </variablelist>
+    </para>
+    <para>
+        When importing realm files that weren't exported before, the option <literal>keycloak.import</literal> can be used. If more than one realm
+        file needs to be imported, a comma separated list of file names can be specified. This is more appropriate than the cases before, as this
+        will happen only after the master realm has been initialized. Examples:
+        <itemizedlist>
+            <listitem>-Dkeycloak.import=/tmp/realm1.json</listitem>
+            <listitem>-Dkeycloak.import=/tmp/realm1.json,/tmp/realm2.json</listitem>
+        </itemizedlist>
     </para>
 
 </chapter>

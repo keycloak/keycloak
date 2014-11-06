@@ -63,35 +63,37 @@
                     <span tooltip-placement="right" tooltip="Should newly created users be created within LDAP store?  Priority effects which provider is chose to sync the new user." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="vendor">Vendor</label>
+                    <label class="col-sm-2 control-label" for="vendor">Vendor<span class="required">*</span></label>
                     <div class="col-sm-4">
                         <div class="select-kc">
                             <select id="vendor"
                                     ng-model="instance.config.vendor"
-                                    ng-options="vendor.id as vendor.name for vendor in ldapVendors">
+                                    ng-options="vendor.id as vendor.name for vendor in ldapVendors"
+                                    required>
                             </select>
                         </div>
                     </div>
                     <span tooltip-placement="right" tooltip="LDAP vendor (provider)" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="usernameLDAPAttribute">Username LDAP attribute </label>
+                    <label class="col-sm-2 control-label" for="usernameLDAPAttribute">Username LDAP attribute<span class="required">*</span></label>
                     <div class="col-sm-4">
                         <div class="select-kc">
                             <select id="usernameLDAPAttribute"
                                     ng-model="instance.config.usernameLDAPAttribute"
-                                    ng-options="usernameLDAPAttribute for usernameLDAPAttribute in usernameLDAPAttributes">
+                                    ng-options="usernameLDAPAttribute for usernameLDAPAttribute in usernameLDAPAttributes"
+                                    required>
                             </select>
                         </div>
                     </div>
                     <span tooltip-placement="right" tooltip="Name of LDAP attribute, which is mapped as Keycloak username" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="userObjectClasses">User Object Classes </label>
+                    <label class="col-sm-2 control-label" for="userObjectClasses">User Object Classes<span class="required">*</span></label>
                     <div class="col-sm-4">
-                        <input class="form-control" id="userObjectClasses" type="text" ng-model="instance.config.userObjectClasses" placeholder="LDAP User Object Classes (div. by comma)">
+                        <input class="form-control" id="userObjectClasses" type="text" ng-model="instance.config.userObjectClasses" placeholder="LDAP User Object Classes (div. by comma)" required>
                     </div>
-                    <span tooltip-placement="right" tooltip="All values of LDAP objectClass attribute divided by comma, which are used for newly created LDAP users" class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="All values of LDAP objectClass attribute for users in LDAP divided by comma" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="ldapConnectionUrl">Connection URL<span class="required">*</span></label>
