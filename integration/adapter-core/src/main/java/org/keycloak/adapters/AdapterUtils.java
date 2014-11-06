@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.UriUtils;
@@ -81,5 +82,9 @@ public class AdapterUtils {
         }
         if (name == null) name = token.getSubject();
         return name;
+    }
+
+    public static KeycloakPrincipal<RefreshableKeycloakSecurityContext> createPrincipal(KeycloakDeployment deployment, RefreshableKeycloakSecurityContext securityContext) {
+        return new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(getPrincipalName(deployment, securityContext.getToken()), securityContext);
     }
 }
