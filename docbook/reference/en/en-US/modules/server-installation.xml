@@ -124,6 +124,14 @@ keycloak-war-dist-all-&project.version;/
             If you have Keycloak on JBoss AS 7.1.1 <link linkend="as7-specifics">these steps</link>.
         </para>
     </section>
+    <section id="subsystem_installation">
+        <title>Subsystem Installation</title>
+        <para>
+            For WildFly installations, the Keycloak server is not deployed from the /deployments directory.  Instead, the Keycloak 
+            subsystem module contains the Keycloak server and it is controlled by the subsystem.  If you are using the 
+            appliance install, this subsystem is already present and a Keycloak server is pre-defined in the subsytem declaration.
+        </para>
+    </section>
     <section>
         <title id="configure-server">Configuring the Server</title>
         <para>
@@ -748,5 +756,143 @@ keycloak-war-dist-all-&project.version;/
 
         </section>
 
+    </section>
+    <section>
+        <title>Configuring Servers from the Subsystem</title>
+        <para>
+            If you are using WildFly, the Keycloak server is deployed and configured from the Keycloak subsystem.  This makes provisioning simpler in a domain environment.
+            It also allows you to create more than one Keycloak server instance inside a single WildFly instance.  And, you can upload providers, themes, and
+            server configurations without disturbing Keycloak's auth-server.war.
+        </para>
+        <section>
+            <title>Manually Creating A Server</title>
+            <para>
+                A Keycloak server can be declared by editing standalone.xml or domain.xml.
+            </para>
+<para>
+<programlisting><![CDATA[
+<server xmlns="urn:jboss:domain:1.4">
+
+  <profile>
+    <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
+        <auth-server name="keycloak-1">
+            <enabled>true</enabled>
+            <web-context>auth</web-context>
+        </auth-server>
+        <auth-server name="keyclaok-2">
+            <enabled>false</enabled>
+            <web-context>auth2</web-context>
+        </auth-server>
+    </subsystem>
+  </profile>
+]]>
+</programlisting>
+</para>
+            <warning>
+                <para>
+                    If you create more than one Keycloak server, you will need to use CLI to fully configure each instance.  At the least, 
+                    you will need to run the <link linkend="uploading-extra-config">update-server-config</link> operation.
+                </para>
+            </warning>
+        </section>
+        <section>
+            <title>Using CLI and CLI GUI with the Keycloak Subsystem</title>
+            <para>
+                Servers can also be added/removed or enabled/disabled at runtime using the <ulink url="https://developer.jboss.org/wiki/CommandLineInterface">CLI</ulink> or 
+                <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> tool.  These are tools that ship with WildFly and also with
+                the Keycloak Appliance installation.  See <ulink url="https://developer.jboss.org/wiki/CommandLineInterface">CLI</ulink> or 
+                <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> documentation to learn more about how to start the tools,
+                issue commands, and create CLI scripts.
+            </para>
+<para>
+To start CLI with the Keycloak Appliance install:
+<programlisting><![CDATA[
+cd <APPLIANCE_INSTALL_DIR>/keycloak/bin
+./jboss-cli.sh --gui
+or
+./jboss.cli.bat --gui]]>
+</programlisting>
+<note>Your Keycloak server must be running to start in --gui mode.</note>
+</para>  
+            <section>
+                <title>Basic CLI Commands</title>
+<para>
+Command to add a server in CLI:
+<programlisting><![CDATA[
+/subsystem=keycloak/auth-server=my-auth-server/:add(web-context=my-auth, enabled=true)]]>
+</programlisting>
+Because "enabled=true", a new Keycloak server will be immediately deployed.  By default "enabled" is set to false.
+</para>  
+<para>
+Command to remove a server in CLI:
+<programlisting><![CDATA[
+/subsystem=keycloak/auth-server=my-auth-server/:remove]]>
+</programlisting>
+The Keycloak server will be immediately deleted and undeployed.
+</para>  
+<para>
+Command to enable or disable a server in CLI:
+<programlisting><![CDATA[
+/subsystem=keycloak/auth-server=foo/:write-attribute(name=enabled,value=true)]]>
+</programlisting>
+The Keycloak server will be immediately deployed or undeployed, but not deleted.
+</para>
+            </section>
+            <section id="uploading-extra-config">
+                <title>Uploading extra configuration using CLI</title>
+                <para>
+                    The WildFly Keycloak subsystem allows you to upload keycloak-server.json, provider jars, and theme jars to a Keycloak server instance.  The
+                    CLI operations for this are "update-server-config" and "add-provider".  You may use plain or CLI scripts for these operations.  The following
+                    examples are shown using <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> for clarity.
+                </para>
+                <para>
+                    To use a new keycloak-server.json file for your server, find your server under the Keycloak subsystem.  Then right-click the server,
+                    select "update-server-config", and upload your file.
+                </para>
+            
+                <para>
+                    <imagedata fileref="images/update-server-config-select.png"/>
+                </para>
+                <para>
+                    <imagedata fileref="images/update-server-config-dialog.png"/>
+                </para>
+            
+                <warning>
+                    <para>
+                    If you use the update-server-config operation, you should delete or rename &lt;WILDFLY_HOME&gt;/standalone/configuration/keycloak-server.json.
+                    Otherwise, all Keycloak server instances will use this file instead of your uploaded file.
+                    </para>
+                </warning>
+                <para>
+                    To upload a new provider jar or theme jar to your server, find your server under the Keycloak subsystem.  Then right-click the server,
+                    select "add-provider", and upload your file.
+                </para>
+                <para>
+                    <imagedata fileref="images/add-provider-select.png"/>
+                </para>
+                <para>
+                    <imagedata fileref="images/add-provider-dialog.png"/>
+                </para>
+            </section>
+        </section>
+        <section>
+            <title>Adding a Keycloak server in Domain Mode</title>
+            <para>
+                In domain mode, you start the server with the "domain" command instead of the "standalone" command.  In this case, the Keycloak subsystem is
+                defined in domain/configuration/domain.xml instead of standalone/configuration.standalone.xml.  Inside domain.xml, you will see more than one
+                profile.  A Keycloak subsystem can be defined in zero or more of those profiles.
+            </para>
+            <para>
+                In the example below, a Keycloak server named "foo" is defined in the "full" profile.  The "full" profile is assigned to the "main-server-group".
+                Every WildFly instance that belongs to "main-server-group" will get an identically configured deployment of the "foo" Keycloak server.
+            </para>
+            <para>
+                All operations discussed earlier are valid for a Keycloak server in a domain.  You can enable/disable, upload new keyclaok-server.json, and add provider jars.
+                In the following example, any changes that are made to the "foo" server will be automatically propogated to every instance in "main-server-group".
+            </para>
+            <para>
+                <imagedata fileref="images/domain-mode.png"/>
+            </para>
+        </section>
     </section>
 </chapter>

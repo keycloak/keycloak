@@ -16,6 +16,7 @@
  */
 package org.keycloak.subsystem.extension;
 
+import org.keycloak.subsystem.extension.authserver.AuthServerDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.PathElement;
@@ -46,11 +47,12 @@ public class KeycloakExtension implements Extension {
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
     protected static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     private static final ResourceDefinition KEYCLOAK_SUBSYSTEM_RESOURCE = new KeycloakSubsystemDefinition();
+    static final AuthServerDefinition AUTH_SERVER_DEFINITION = new AuthServerDefinition();
     static final RealmDefinition REALM_DEFINITION = new RealmDefinition();
     static final SecureDeploymentDefinition SECURE_DEPLOYMENT_DEFINITION = new SecureDeploymentDefinition();
     static final CredentialDefinition CREDENTIAL_DEFINITION = new CredentialDefinition();
 
-    static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
+    public static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
         for (String kp : keyPrefix) {
             prefix.append('.').append(kp);
@@ -76,7 +78,8 @@ public class KeycloakExtension implements Extension {
                 MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
 
         ManagementResourceRegistration registration = subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
-        ManagementResourceRegistration realmRegistration = registration.registerSubModel(REALM_DEFINITION);
+        registration.registerSubModel(AUTH_SERVER_DEFINITION);
+        registration.registerSubModel(REALM_DEFINITION);
         ManagementResourceRegistration secureDeploymentRegistration = registration.registerSubModel(SECURE_DEPLOYMENT_DEFINITION);
         secureDeploymentRegistration.registerSubModel(CREDENTIAL_DEFINITION);
 

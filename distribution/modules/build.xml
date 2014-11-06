@@ -51,6 +51,14 @@
             <maven-resource group="org.bouncycastle" artifact="bcprov-jdk16"/>
         </module-def>
 
+        <module-def name="org.jboss.aesh">
+            <maven-resource group="org.jboss.aesh" artifact="aesh"/>
+        </module-def>
+
+        <module-def name="org.jboss.as.cli">
+            <maven-resource group="org.wildfly.core" artifact="wildfly-cli"/>
+        </module-def>        
+
         <module-def name="org.keycloak.keycloak-core">
             <maven-resource group="org.keycloak" artifact="keycloak-core"/>
         </module-def>

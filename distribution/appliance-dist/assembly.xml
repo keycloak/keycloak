@@ -22,6 +22,8 @@
                 <exclude>**/*.sh</exclude>
                 <exclude>welcome-content/*</exclude>
                 <exclude>**/modules/system/layers/base/org/picketlink/**</exclude>
+                <exclude>**/modules/system/layers/base/org/jboss/as/cli/**</exclude>
+                <exclude>**/modules/system/layers/base/org/jboss/aesh/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -38,13 +40,6 @@
             <includes>
                 <include>org/picketlink/**</include>
             </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/deployments</directory>
-            <outputDirectory>keycloak/standalone/deployments</outputDirectory>
-            <excludes>
-                <exclude>keycloak-ds.xml</exclude>
-            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF</directory>

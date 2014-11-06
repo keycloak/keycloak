@@ -31,6 +31,10 @@ import org.keycloak.subsystem.logging.KeycloakLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import org.jboss.as.ee.component.EEModuleDescription;
+import org.jboss.as.server.deployment.Attachments;
+import org.jboss.as.server.deployment.MountedDeploymentOverlay;
 
 /**
  * Pass authentication data (keycloak.json) as a servlet context param so it can be read by the KeycloakServletExtension.
@@ -45,14 +49,14 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     // two places to avoid dependency between Keycloak Subsystem and Keyclaok Undertow Integration.
     public static final String AUTH_DATA_PARAM_NAME = "org.keycloak.json.adapterConfig";
 
-    public static final Phase PHASE = Phase.INSTALL;
-    // Seems wise to have this run after INSTALL_WAR_DEPLOYMENT
-    public static final int PRIORITY = Phase.INSTALL_WAR_DEPLOYMENT - 1;
+    public static final Phase PHASE = Phase.POST_MODULE;
+    // This needs to run just before bean validator factory
+    public static final int PRIORITY = Phase.POST_MODULE_VALIDATOR_FACTORY - 1;
 
     // not sure if we need this yet, keeping here just in case
     protected void addSecurityDomain(DeploymentUnit deploymentUnit, KeycloakAdapterConfigService service) {
         String deploymentName = deploymentUnit.getName();
-        if (!service.isKeycloakDeployment(deploymentName)) {
+        if (!service.isSecureDeployment(deploymentName)) {
             return;
         }
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
@@ -75,11 +79,16 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         String deploymentName = deploymentUnit.getName();
         KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
         //log.info("********* CHECK KEYCLOAK DEPLOYMENT: " + deploymentName);
-        if (service.isKeycloakDeployment(deploymentName)) {
-
+        if (service.isSecureDeployment(deploymentName)) {
             addKeycloakAuthData(phaseContext, deploymentName, service);
         }
 
+        if (service.isKeycloakServerDeployment(deploymentName)) {
+            final EEModuleDescription description = deploymentUnit.getAttachment(org.jboss.as.ee.component.Attachments.EE_MODULE_DESCRIPTION);
+            String webContext = service.getWebContext(deploymentName);
+            if (webContext == null) throw new DeploymentUnitProcessingException("Can't determine web context/module for Keycloak Auth Server");
+            description.setModuleName(webContext);
+        }
         // FYI, Undertow Extension will find deployments that have auth-method set to KEYCLOAK
 
         // todo notsure if we need this
@@ -99,6 +108,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
             webMetaData = new JBossWebMetaData();
             warMetaData.setMergedJBossWebMetaData(webMetaData);
         }
+
         LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
         if (loginConfig == null) {
             loginConfig = new LoginConfigMetaData();
