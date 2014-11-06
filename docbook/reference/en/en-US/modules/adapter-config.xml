@@ -218,7 +218,9 @@
                 <term>truststore</term>
                 <listitem>
                     <para>
-                        This setting is for Java adapters. This is the file path to a Java keystore file.
+                        This setting is for Java adapters. The value is the file path to a Java keystore file.  If
+                        you prefix the path with <literal>classpath:</literal>, then the truststore will be obtained
+                        from the deployment's classpath instead.
                         Used for outgoing HTTPS communications to the Keycloak server. Client making HTTPS
                         requests need a way to verify the host of the server they are talking to. This is
                         what the trustore does. The keystore contains one or more trusted
@@ -233,7 +235,7 @@
                         <literal>none</literal>
                         or
                         <literal>disable-trust-manager</literal>
-                        is <literal>true</literal>. The default value is<emphasis>false</emphasis>.
+                        is <literal>true</literal>.
                     </para>
                 </listitem>
             </varlistentry>
