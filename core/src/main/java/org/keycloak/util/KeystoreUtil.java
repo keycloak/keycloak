@@ -11,12 +11,10 @@ import java.security.KeyStore;
  */
 public class KeystoreUtil {
 
-    private static final String PROTOCOL_CLASSPATH = "classpath:";
-
     public static KeyStore loadKeyStore(String filename, String password) throws Exception {
         KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream trustStream = (filename.startsWith(PROTOCOL_CLASSPATH))
-                ?KeystoreUtil.class.getResourceAsStream(filename.replace(PROTOCOL_CLASSPATH, ""))
+        InputStream trustStream = (filename.startsWith(GenericConstants.PROTOCOL_CLASSPATH))
+                ?KeystoreUtil.class.getResourceAsStream(filename.replace(GenericConstants.PROTOCOL_CLASSPATH, ""))
                 :new FileInputStream(new File(filename));
         trustStore.load(trustStream, password.toCharArray());
         trustStream.close();

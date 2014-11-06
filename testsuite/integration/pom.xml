@@ -126,6 +126,11 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-jaxrs-oauth-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>federation-properties-example</artifactId>
             <version>${project.version}</version>
         </dependency>

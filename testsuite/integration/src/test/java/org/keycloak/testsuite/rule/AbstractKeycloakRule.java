@@ -1,10 +1,14 @@
 package org.keycloak.testsuite.rule;
 
+import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.SecurityConstraint;
 import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.api.WebResourceCollection;
+import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
+import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
@@ -14,16 +18,23 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.filters.ClientConnectionFilter;
+import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;
+import javax.ws.rs.core.Application;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.util.Map;
+
 import org.keycloak.adapters.KeycloakConfigResolver;
 
 /**
@@ -155,6 +166,22 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         }
         LoginConfig loginConfig = new LoginConfig("KEYCLOAK", "demo");
         di.setLoginConfig(loginConfig);
+        server.getServer().deploy(di);
+    }
+
+    public void deployJaxrsApplication(String name, String contextPath, Class<? extends Application> applicationClass, Map<String,String> initParams) {
+        ResteasyDeployment deployment = new ResteasyDeployment();
+        deployment.setApplicationClass(applicationClass.getName());
+
+        DeploymentInfo di = server.getServer().undertowDeployment(deployment, "");
+        di.setClassLoader(getClass().getClassLoader());
+        di.setContextPath(contextPath);
+        di.setDeploymentName(name);
+
+        for (Map.Entry<String,String> param : initParams.entrySet()) {
+            di.addInitParameter(param.getKey(), param.getValue());
+        }
+
         server.getServer().deploy(di);
     }
 
