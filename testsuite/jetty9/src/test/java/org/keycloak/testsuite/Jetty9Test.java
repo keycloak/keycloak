@@ -207,28 +207,4 @@ public class Jetty9Test {
     public void runit() throws Exception {
         Thread.sleep(10000000);
     }
-
-
-    private static String getBaseDirectory() {
-        String dirPath = null;
-        String relativeDirPath = "testsuite" + File.separator + "tomcat7" + File.separator + "target";
-
-        if (System.getProperties().containsKey("maven.home")) {
-            dirPath = System.getProperty("user.dir").replaceFirst("testsuite.tomcat7.*", Matcher.quoteReplacement(relativeDirPath));
-        } else {
-            for (String c : System.getProperty("java.class.path").split(File.pathSeparator)) {
-                if (c.contains(File.separator + "testsuite" + File.separator + "tomcat7")) {
-                    dirPath = c.replaceFirst("testsuite.tomcat7.*", Matcher.quoteReplacement(relativeDirPath));
-                    break;
-                }
-            }
-        }
-
-        String absolutePath = new File(dirPath).getAbsolutePath();
-        return absolutePath;
-    }
-
-
-
-
 }
