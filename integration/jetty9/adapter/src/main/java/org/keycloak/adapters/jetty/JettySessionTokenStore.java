@@ -12,7 +12,6 @@ import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 
 import javax.servlet.http.HttpSession;
-import java.util.Set;
 
 /**
  * Handle storage of token info in HTTP Session. Per-request object

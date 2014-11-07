@@ -1,20 +1,18 @@
 package org.keycloak.adapters.jetty;
 
-import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.http.MimeTypes;
-import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.DefaultUserIdentity;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
-import org.eclipse.jetty.security.authentication.FormAuthenticator;
+import org.eclipse.jetty.security.authentication.DeferredAuthentication;
+import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.util.MultiMap;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
@@ -30,89 +28,97 @@ import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.enums.TokenStore;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.security.Principal;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class KeycloakJettyAuthenticator extends FormAuthenticator {
+public class KeycloakJettyAuthenticator extends LoginAuthenticator {
     private static final org.jboss.logging.Logger log = Logger.getLogger(KeycloakJettyAuthenticator.class);
     protected AdapterDeploymentContext deploymentContext;
     protected NodesRegistrationManagement nodesRegistrationManagement;
+    protected AdapterConfig adapterConfig;
+    protected KeycloakConfigResolver configResolver;
 
     public KeycloakJettyAuthenticator() {
         super();
     }
 
-    public KeycloakJettyAuthenticator(String login, String error, boolean dispatch) {
-        super(login, error, dispatch);
+    @Override
+    public void setConfiguration(AuthConfiguration configuration) {
+        //super.setConfiguration(configuration);
+        initializeKeycloak();
     }
 
     @Override
-    public void setConfiguration(AuthConfiguration configuration) {
-        super.setConfiguration(configuration);
-        initializeKeycloak();
+    public boolean secureResponse(ServletRequest req, ServletResponse res, boolean mandatory, Authentication.User validatedUser) throws ServerAuthException
+    {
+        return true;
+    }
+
+    public AdapterConfig getAdapterConfig() {
+        return adapterConfig;
+    }
+
+    public void setAdapterConfig(AdapterConfig adapterConfig) {
+        this.adapterConfig = adapterConfig;
+    }
+
+    public KeycloakConfigResolver getConfigResolver() {
+        return configResolver;
+    }
+
+    public void setConfigResolver(KeycloakConfigResolver configResolver) {
+        this.configResolver = configResolver;
     }
 
     @SuppressWarnings("UseSpecificCatch")
     public void initializeKeycloak() {
+        nodesRegistrationManagement = new NodesRegistrationManagement();
         String contextPath = ContextHandler.getCurrentContext().getContextPath();
         ServletContext theServletContext = ContextHandler.getCurrentContext().getContext(contextPath);
-        // Possible scenarios:
-        // 1) The deployment has a keycloak.config.resolver specified and it exists:
-        //    Outcome: adapter uses the resolver
-        // 2) The deployment has a keycloak.config.resolver and isn't valid (doesn't exists, isn't a resolver, ...) :
-        //    Outcome: adapter is left unconfigured
-        // 3) The deployment doesn't have a keycloak.config.resolver , but has a keycloak.json (or equivalent)
-        //    Outcome: adapter uses it
-        // 4) The deployment doesn't have a keycloak.config.resolver nor keycloak.json (or equivalent)
-        //    Outcome: adapter is left unconfigured
 
-        String configResolverClass = theServletContext.getInitParameter("keycloak.config.resolver");
-        if (configResolverClass != null) {
-            try {
-                KeycloakConfigResolver configResolver = (KeycloakConfigResolver) ContextHandler.getCurrentContext().getClassLoader().loadClass(configResolverClass).newInstance();
-                deploymentContext = new AdapterDeploymentContext(configResolver);
-                log.infov("Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
-            } catch (Exception ex) {
-                log.infov("The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[]{configResolverClass, ex.getMessage()});
-                deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
+        if (configResolver == null) {
+            String configResolverClass = theServletContext.getInitParameter("keycloak.config.resolver");
+            if (configResolverClass != null) {
+                try {
+                    configResolver = (KeycloakConfigResolver) ContextHandler.getCurrentContext().getClassLoader().loadClass(configResolverClass).newInstance();
+                    log.infov("Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
+                } catch (Exception ex) {
+                    log.infov("The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[]{configResolverClass, ex.getMessage()});
+                }
             }
-        } else {
-            InputStream configInputStream = getConfigInputStream(theServletContext);
-            KeycloakDeployment kd;
-            if (configInputStream == null) {
-                log.debug("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
-                kd = new KeycloakDeployment();
-            } else {
-                kd = KeycloakDeploymentBuilder.build(configInputStream);
-            }
-            deploymentContext = new AdapterDeploymentContext(kd);
-            log.debug("Keycloak is using a per-deployment configuration.");
         }
 
-        theServletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
-        //AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer());
-        //setNext(actions);
+        if (configResolver != null) {
+            deploymentContext = new AdapterDeploymentContext(configResolver);
+        } else if (adapterConfig != null) {
+            KeycloakDeployment kd = KeycloakDeploymentBuilder.build(adapterConfig);
+            deploymentContext = new AdapterDeploymentContext(kd);
+        } else {
+            InputStream configInputStream = getConfigInputStream(theServletContext);
+            if (configInputStream == null) {
+                deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
 
-        nodesRegistrationManagement = new NodesRegistrationManagement();
+            } else {
+                deploymentContext = new AdapterDeploymentContext(KeycloakDeploymentBuilder.build(configInputStream));
+             }
+
+        }
+        theServletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
     }
 
     private static InputStream getJSONFromServletContext(ServletContext servletContext) {
@@ -146,6 +152,8 @@ public class KeycloakJettyAuthenticator extends FormAuthenticator {
         if (log.isTraceEnabled()) {
             log.trace("*** authenticate");
         }
+        if (!mandatory)
+            return new DeferredAuthentication(this);
         Request request = HttpChannel.getCurrentHttpChannel().getRequest();
         JettyHttpFacade facade = new JettyHttpFacade(request, (HttpServletResponse)res);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
@@ -189,7 +197,7 @@ public class KeycloakJettyAuthenticator extends FormAuthenticator {
     }
 
     public static final String TOKEN_STORE_NOTE = "TOKEN_STORE_NOTE";
-    protected AdapterTokenStore getTokenStore(Request request, HttpFacade facade, KeycloakDeployment resolvedDeployment) {
+    public static AdapterTokenStore getTokenStore(Request request, HttpFacade facade, KeycloakDeployment resolvedDeployment) {
         AdapterTokenStore store = (AdapterTokenStore)request.getAttribute(TOKEN_STORE_NOTE);
         if (store != null) {
             return store;
@@ -205,23 +213,60 @@ public class KeycloakJettyAuthenticator extends FormAuthenticator {
         return store;
     }
 
-    protected Authentication register(HttpServletRequest httpServletRequest, KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
+    public static class KeycloakAuthentication extends UserAuthentication
+    {
+        public KeycloakAuthentication(String method, UserIdentity userIdentity) {
+            super(method, userIdentity);
+        }
+
+        @Override
+        public void logout() {
+            Request request = HttpChannel.getCurrentHttpChannel().getRequest();
+            logoutCurrent(request);
+        }
+
+
+
+    }
+
+    public static void logoutCurrent(Request request) {
+        AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext)request.getAttribute(AdapterDeploymentContext.class.getName());
+        KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
+        if (ksc != null) {
+            JettyHttpFacade facade = new JettyHttpFacade(request, null);
+            KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+            if (ksc instanceof RefreshableKeycloakSecurityContext) {
+                ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
+            }
+
+            AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
+            tokenStore.logout();
+            request.removeAttribute(KeycloakSecurityContext.class.getName());
+        }
+    }
+
+
+    protected Authentication register(Request request, KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
+        request.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
+        Authentication authentication = request.getAuthentication();
+        if (!(authentication instanceof KeycloakAuthentication)) {
+            UserIdentity userIdentity = createIdentity(principal);
+            authentication = new KeycloakAuthentication(getAuthMethod(), userIdentity);
+            request.setAuthentication(authentication);
+        }
+        return authentication;
+    }
+
+    public static UserIdentity createIdentity(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
         Set<String> roles = AdapterUtils.getRolesFromSecurityContext(principal.getKeycloakSecurityContext());
         if (roles == null) {
             roles = new HashSet<String>();
         }
-        Request request = (Request) httpServletRequest;
-        Authentication authentication = request.getAuthentication();
-        if (!(authentication instanceof UserAuthentication)) {
-            Subject theSubject = new Subject();
-            String[] theRoles = new String[roles.size()];
-            roles.toArray(theRoles);
+        Subject theSubject = new Subject();
+        String[] theRoles = new String[roles.size()];
+        roles.toArray(theRoles);
 
-            UserIdentity userIdentity = new DefaultUserIdentity(theSubject, principal, theRoles);
-            authentication = new UserAuthentication(getAuthMethod(), userIdentity);
-            request.setAuthentication(authentication);
-        }
-        return authentication;
+        return new DefaultUserIdentity(theSubject, principal, theRoles);
     }
 
 

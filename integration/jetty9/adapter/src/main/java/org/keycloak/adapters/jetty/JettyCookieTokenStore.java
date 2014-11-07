@@ -5,15 +5,12 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.CookieTokenStore;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
-
-import java.util.Set;
 
 /**
  * Handle storage of token info in cookie. Per-request object.

@@ -84,6 +84,14 @@ public class Jetty9Test {
     public static class SendUsernameServlet extends HttpServlet {
         @Override
         protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+            if (req.getPathInfo().endsWith("logout")) {
+                req.logout();
+                resp.setContentType("text/plain");
+                OutputStream stream = resp.getOutputStream();
+                stream.write("logout".getBytes());
+                return;
+
+            }
             resp.setContentType("text/plain");
             OutputStream stream = resp.getOutputStream();
             Principal principal = req.getUserPrincipal();
@@ -197,6 +205,20 @@ public class Jetty9Test {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         driver.navigate().to("http://localhost:8080/customer-portal");
         String currentUrl = driver.getCurrentUrl();
+        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
+
+        // test servletRequest.logout()
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal/");
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke"));
+        driver.navigate().to("http://localhost:8080/customer-portal/logout");
+        pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("logout"));
+        driver.navigate().to("http://localhost:8080/customer-portal");
+        currentUrl = driver.getCurrentUrl();
         Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
 
 

@@ -12,7 +12,7 @@
 	<artifactId>keycloak-jetty9-adapter</artifactId>
 	<name>Keycloak Jetty 9 Integration</name>
     <properties>
-        <jetty9.version>9.1.0.v20131115</jetty9.version>
+        <jetty9.version>9.2.4.v20141103</jetty9.version>
     </properties>
 	<description />
 

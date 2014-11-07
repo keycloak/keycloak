@@ -20,7 +20,6 @@ import org.keycloak.enums.TokenStore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
 import java.security.Principal;
 import java.util.Set;
 
@@ -70,8 +69,9 @@ public class JettyRequestAuthenticator extends RequestAuthenticator {
                 if (MimeTypes.Type.FORM_ENCODED.is(request.getContentType()) && HttpMethod.POST.is(request.getMethod())) {
                     Request base_request = (request instanceof Request) ? (Request) request : HttpChannel
                             .getCurrentHttpChannel().getRequest();
-                    base_request.extractParameters();
-                    session.setAttribute(FormAuthenticator.__J_POST, new MultiMap<String>(base_request.getParameters()));
+                    MultiMap<String> formParameters = new MultiMap<String>();
+                    base_request.extractFormParameters(formParameters);
+                    session.setAttribute(FormAuthenticator.__J_POST, formParameters);
                 }
             }
         }
@@ -134,7 +134,7 @@ public class JettyRequestAuthenticator extends RequestAuthenticator {
                 MultiMap<String> j_post = (MultiMap<String>) session.getAttribute(FormAuthenticator.__J_POST);
                 if (j_post != null) {
                     Request base_request = HttpChannel.getCurrentHttpChannel().getRequest();
-                    base_request.setParameters(j_post);
+                    base_request.setContentParameters(j_post);
                 }
                 session.removeAttribute(FormAuthenticator.__J_URI);
                 session.removeAttribute(FormAuthenticator.__J_METHOD);
