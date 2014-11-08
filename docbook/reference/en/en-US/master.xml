@@ -12,6 +12,7 @@
                 <!ENTITY JBossAdapter SYSTEM "modules/jboss-adapter.xml">
                 <!ENTITY JavascriptAdapter SYSTEM "modules/javascript-adapter.xml">
                 <!ENTITY TomcatAdapter SYSTEM "modules/tomcat-adapter.xml">
+                <!ENTITY Jetty9Adapter SYSTEM "modules/jetty9-adapter.xml">
                 <!ENTITY InstalledApplications SYSTEM "modules/installed-applications.xml">
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
                 <!ENTITY SAML SYSTEM "modules/saml.xml">
@@ -86,6 +87,7 @@ This one is short
         &AdapterConfig;
         &JBossAdapter;
         &TomcatAdapter;
+        &Jetty9Adapter;
         &JavascriptAdapter;
         &InstalledApplications;
         &Logout;

@@ -1,0 +1,38 @@
+<assembly>
+    <id>war-dist</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory></directory>
+            <includes>
+                <include>keycloak.mod</include>
+            </includes>
+            <outputDirectory>modules</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/modules</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+    </fileSets>
+    <dependencySets>
+        <dependencySet>
+            <unpack>false</unpack>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <includes>
+                <include>org.keycloak:keycloak-jetty92-adapter</include>
+            </includes>
+            <excludes>
+                <exclude>org.eclipse.jetty:jetty-server</exclude>
+                <exclude>org.eclipse.jetty:jetty-util</exclude>
+                <exclude>org.eclipse.jetty:jetty-security</exclude>
+            </excludes>
+            <outputDirectory>lib/keycloak</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+</assembly>
