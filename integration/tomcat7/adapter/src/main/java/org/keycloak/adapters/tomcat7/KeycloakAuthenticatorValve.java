@@ -12,7 +12,7 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AuthChallenge;

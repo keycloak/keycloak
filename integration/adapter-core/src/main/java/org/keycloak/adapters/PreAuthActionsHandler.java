@@ -2,6 +2,7 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Version;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.adapters.action.AdminAction;
@@ -166,7 +167,7 @@ public class PreAuthActionsHandler {
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             log.warn("SSL is required for adapter admin action");
             facade.getResponse().sendError(403, "ssl required");
-
+            return null;
         }
         String token = StreamUtil.readString(facade.getRequest().getInputStream());
         if (token == null) {

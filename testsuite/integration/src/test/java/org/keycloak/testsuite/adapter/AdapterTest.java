@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;
-import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;

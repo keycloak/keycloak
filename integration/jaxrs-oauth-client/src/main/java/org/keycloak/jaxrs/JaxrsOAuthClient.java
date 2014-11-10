@@ -1,6 +1,5 @@
 package org.keycloak.jaxrs;
 
-import org.jboss.logging.Logger;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessTokenResponse;
@@ -18,6 +17,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Helper code to obtain oauth access tokens via browser redirects
@@ -26,7 +26,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class JaxrsOAuthClient extends AbstractOAuthClient {
-    protected static final Logger logger = Logger.getLogger(JaxrsOAuthClient.class);
+    private final static Logger logger = Logger.getLogger("" + JaxrsOAuthClient.class);
     protected Client client;
 
     /**
@@ -80,8 +80,8 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
         URI url = uriBuilder.build();
 
         NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure, true);
-        logger.debug("NewCookie: " + cookie.toString());
-        logger.debug("Oauth Redirect to: " + url);
+        logger.fine("NewCookie: " + cookie.toString());
+        logger.fine("Oauth Redirect to: " + url);
         return Response.status(302)
                 .location(url)
                 .cookie(cookie).build();
