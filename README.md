@@ -12,7 +12,7 @@ Here's some of the features:
 * Social Broker.  Enable Google, Facebook, Yahoo, Twitter social login with no code required.
 * Optional LDAP/Active Directory integration
 * Optional User Registration
-* Password and TOTP support (via Google Authenticator).  Client cert auth coming soon.
+* Password and TOTP support (via Google Authenticator or FreeOTP).  Client cert auth coming soon.
 * User session management from both admin and user perspective
 * Customizable themes for user facing pages: login, grant pages, account management, emails, and admin console all customizable!
 * OAuth Bearer token auth for REST Services
@@ -24,7 +24,7 @@ Here's some of the features:
 * Completely centrally managed user and role mapping metadata.  Minimal configuration at the application side
 * Admin Console for managing users, roles, role mappings, applications, user sessions, allowed CORS web origins, and OAuth clients.
 * Deployable as a WAR, appliance, or an Openshift  cloud service (SaaS).
-* Supports JBoss AS7, EAP 6.x, and Wildfly applications.   Plans to support Node.js, RAILS, GRAILS, and other non-Java applications.
+* Supports JBoss AS7, EAP 6.x, Wildfly, Tomcat, and Jetty applications.   Plans to support Node.js, RAILS, GRAILS, and other non-Java applications.
 * Javascript/HTML 5 adapter for pure Javascript apps
 * Session management from admin console
 * Revocation policies
