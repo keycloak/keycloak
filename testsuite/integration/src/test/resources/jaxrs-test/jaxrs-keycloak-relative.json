@@ -1,0 +1,7 @@
+{
+    "realm": "test",
+    "resource": "jaxrs-app",
+    "auth-server-url": "/auth",
+    "ssl-required" : "external",
+    "bearer-only": true
+}

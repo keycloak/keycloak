@@ -6,7 +6,7 @@ import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
 import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.keycloak.TokenIdGenerator;
-import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;

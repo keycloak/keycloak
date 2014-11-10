@@ -8,6 +8,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;

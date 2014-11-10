@@ -1,6 +1,5 @@
 package org.keycloak.services.resources;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +21,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;

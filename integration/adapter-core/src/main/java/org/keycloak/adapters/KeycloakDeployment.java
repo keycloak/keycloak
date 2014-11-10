@@ -2,7 +2,7 @@ package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
-import org.keycloak.ServiceUrlConstants;
+import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.enums.TokenStore;

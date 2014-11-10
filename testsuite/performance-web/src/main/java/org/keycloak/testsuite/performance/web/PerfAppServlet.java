@@ -4,7 +4,7 @@ import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.Time;

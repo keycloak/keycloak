@@ -1,7 +1,7 @@
 package org.keycloak.servlet;
 
 import org.apache.http.client.HttpClient;
-import org.keycloak.ServiceUrlConstants;
+import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.representations.adapters.config.AdapterConfig;

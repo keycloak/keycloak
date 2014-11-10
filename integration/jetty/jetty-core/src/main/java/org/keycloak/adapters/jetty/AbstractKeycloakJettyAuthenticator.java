@@ -12,7 +12,6 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
@@ -26,6 +25,7 @@ import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
