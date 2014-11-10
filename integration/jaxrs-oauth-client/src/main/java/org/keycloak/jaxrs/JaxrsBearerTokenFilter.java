@@ -90,6 +90,7 @@ public class JaxrsBearerTokenFilter implements ContainerRequestFilter {
 
                 @Override
                 public boolean isUserInRole(String role) {
+                    if (access == null) return false;
                     if (access.getRoles() == null) return false;
                     return access.getRoles().contains(role);
                 }

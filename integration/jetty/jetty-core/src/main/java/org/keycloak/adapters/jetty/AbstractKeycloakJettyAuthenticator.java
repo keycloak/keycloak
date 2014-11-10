@@ -6,7 +6,6 @@ import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.security.authentication.DeferredAuthentication;
 import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Authentication;
-import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -196,7 +195,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         if (log.isTraceEnabled()) {
             log.trace("*** authenticate");
         }
-        Request request = HttpChannel.getCurrentHttpChannel().getRequest();
+        Request request = resolveRequest(req);
         JettyHttpFacade facade = new JettyHttpFacade(request, (HttpServletResponse)res);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
@@ -235,6 +234,10 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         return Authentication.SEND_CONTINUE;
     }
 
+
+
+    protected abstract Request resolveRequest(ServletRequest req);
+
     protected abstract AbstractJettyRequestAuthenticator createRequestAuthenticator(Request request, JettyHttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore);
 
     @Override
@@ -247,25 +250,19 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         Authentication authentication = request.getAuthentication();
         if (!(authentication instanceof KeycloakAuthentication)) {
             UserIdentity userIdentity = createIdentity(principal);
-            authentication = new KeycloakAuthentication(getAuthMethod(), userIdentity);
+            authentication = createAuthentication(userIdentity);
             request.setAuthentication(authentication);
         }
         return authentication;
     }
 
-    public static class KeycloakAuthentication extends UserAuthentication
+    protected abstract Authentication createAuthentication(UserIdentity userIdentity);
+
+    public static abstract class KeycloakAuthentication extends UserAuthentication
     {
         public KeycloakAuthentication(String method, UserIdentity userIdentity) {
             super(method, userIdentity);
         }
-
-        @Override
-        public void logout() {
-            Request request = HttpChannel.getCurrentHttpChannel().getRequest();
-            logoutCurrent(request);
-        }
-
-
 
     }
 }

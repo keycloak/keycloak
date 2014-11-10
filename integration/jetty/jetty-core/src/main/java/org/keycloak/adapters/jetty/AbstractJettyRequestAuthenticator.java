@@ -1,9 +1,7 @@
 package org.keycloak.adapters.jetty;
 
-import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.MimeTypes;
 import org.eclipse.jetty.security.authentication.FormAuthenticator;
-import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.MultiMap;
 import org.jboss.logging.Logger;
@@ -29,6 +27,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public abstract class AbstractJettyRequestAuthenticator extends RequestAuthenticator {
+    public final static String __J_METHOD = "org.eclipse.jetty.security.HTTP_METHOD";
     protected static final Logger log = Logger.getLogger(AbstractJettyRequestAuthenticator.class);
     protected AbstractKeycloakJettyAuthenticator valve;
     protected Request request;
@@ -46,7 +45,7 @@ public abstract class AbstractJettyRequestAuthenticator extends RequestAuthentic
             @Override
             protected void saveRequest() {
                 if (deployment.getTokenStore() == TokenStore.SESSION) {
-                    saveServletRequest(request, request.getSession());
+                    saveServletRequest();
                 }
             }
         };
@@ -107,11 +106,10 @@ public abstract class AbstractJettyRequestAuthenticator extends RequestAuthentic
                  */
                 MultiMap<String> j_post = (MultiMap<String>) session.getAttribute(FormAuthenticator.__J_POST);
                 if (j_post != null) {
-                    Request base_request = HttpChannel.getCurrentHttpChannel().getRequest();
-                    restoreFormParameters(j_post, base_request);
+                    restoreFormParameters(j_post, request);
                 }
                 session.removeAttribute(FormAuthenticator.__J_URI);
-                session.removeAttribute(FormAuthenticator.__J_METHOD);
+                session.removeAttribute(__J_METHOD);
                 session.removeAttribute(FormAuthenticator.__J_POST);
                 // }
             }
@@ -124,8 +122,9 @@ public abstract class AbstractJettyRequestAuthenticator extends RequestAuthentic
         return session != null ? session.getId() : null;
     }
 
-    protected void saveServletRequest(HttpServletRequest request, HttpSession session) {
+    protected void saveServletRequest() {
         // remember the current URI
+        HttpSession session = request.getSession();
         synchronized (session) {
             // But only if it is not set already, or we save every uri that leads to a login form redirect
             if (session.getAttribute(FormAuthenticator.__J_URI) == null) {
@@ -133,12 +132,10 @@ public abstract class AbstractJettyRequestAuthenticator extends RequestAuthentic
                 if (request.getQueryString() != null)
                     buf.append("?").append(request.getQueryString());
                 session.setAttribute(FormAuthenticator.__J_URI, buf.toString());
-                session.setAttribute(FormAuthenticator.__J_METHOD, request.getMethod());
+                session.setAttribute(__J_METHOD, request.getMethod());
 
-                if (MimeTypes.Type.FORM_ENCODED.is(request.getContentType()) && HttpMethod.POST.is(request.getMethod())) {
-                    Request base_request = (request instanceof Request) ? (Request) request : HttpChannel
-                            .getCurrentHttpChannel().getRequest();
-                    MultiMap<String> formParameters = extractFormParameters(base_request);
+                if ("application/x-www-form-urlencoded".equals(request.getContentType()) && "POST".equalsIgnoreCase(request.getMethod())) {
+                    MultiMap<String> formParameters = extractFormParameters(request);
                     session.setAttribute(FormAuthenticator.__J_POST, formParameters);
                 }
             }

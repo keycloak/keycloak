@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jetty9-core</artifactId>
+            <artifactId>keycloak-jetty-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 		<dependency>
