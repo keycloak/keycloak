@@ -1,7 +1,7 @@
 package org.keycloak.adapters.jetty;
 
+import org.eclipse.jetty.server.AbstractHttpConnection;
 import org.eclipse.jetty.server.Authentication;
-import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.UserIdentity;
 import org.keycloak.adapters.AdapterTokenStore;
@@ -27,7 +27,7 @@ public class KeycloakJettyAuthenticator extends AbstractKeycloakJettyAuthenticat
 
     @Override
     protected Request resolveRequest(ServletRequest req) {
-        return (req instanceof Request) ? (Request)req : HttpChannel.getCurrentHttpChannel().getRequest();
+        return (req instanceof Request)?(Request)req: AbstractHttpConnection.getCurrentConnection().getRequest();
     }
 
     @Override
@@ -35,7 +35,7 @@ public class KeycloakJettyAuthenticator extends AbstractKeycloakJettyAuthenticat
         return new KeycloakAuthentication(getAuthMethod(), userIdentity) {
             @Override
             public void logout() {
-                logoutCurrent(HttpChannel.getCurrentHttpChannel().getRequest());
+                logoutCurrent(AbstractHttpConnection.getCurrentConnection().getRequest());
             }
         };
     }

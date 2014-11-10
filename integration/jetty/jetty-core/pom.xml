@@ -9,10 +9,10 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-jetty91-adapter</artifactId>
-	<name>Keycloak Jetty 9.1.x Integration</name>
+	<artifactId>keycloak-jetty-core</artifactId>
+	<name>Keycloak Jetty Core Integration</name>
     <properties>
-        <jetty9.version>9.1.5.v20140505</jetty9.version>
+        <jetty9.version>8.1.16.v20140903</jetty9.version>
     </properties>
 	<description />
 
@@ -27,16 +27,11 @@
 			<artifactId>keycloak-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jetty-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-adapter-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
