@@ -136,8 +136,9 @@ public class JaxrsHttpFacade implements HttpFacade {
 
         @Override
         public void end() {
-            // For now doesn't need to be supported
-            throw new IllegalStateException("Not supported yet");
+            javax.ws.rs.core.Response response = responseBuilder.build();
+            requestContext.abortWith(response);
+            responseFinished = true;
         }
     }
 
@@ -167,9 +168,5 @@ public class JaxrsHttpFacade implements HttpFacade {
 
     public boolean isResponseFinished() {
         return responseFinished;
-    }
-
-    public javax.ws.rs.core.Response.ResponseBuilder getResponseBuilder() {
-        return responseFacade.responseBuilder;
     }
 }

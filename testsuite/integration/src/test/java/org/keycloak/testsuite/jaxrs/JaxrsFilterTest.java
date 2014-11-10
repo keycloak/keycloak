@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.adapters.CorsHeaders;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.models.ApplicationModel;
@@ -225,6 +226,52 @@ public class JaxrsFilterTest {
         Assert.assertFalse(getRep.getHasUserRole());
         Assert.assertFalse(getRep.getHasAdminRole());
         Assert.assertTrue(getRep.getHasJaxrsAppRole());
+    }
+
+    @Test
+    public void testCors() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                Map<String,String> initParams = new TreeMap<String,String>();
+                initParams.put(CONFIG_FILE_INIT_PARAM, "classpath:jaxrs-test/jaxrs-keycloak.json");
+                keycloakRule.deployJaxrsApplication("JaxrsSimpleApp", "/jaxrs-simple", JaxrsTestApplication.class, initParams);
+            }
+
+        });
+
+        // Send OPTIONS request
+        Response optionsResp = client.target(JAXRS_APP_URL).request()
+                .header(CorsHeaders.ORIGIN, "http://localhost:8081")
+                .options();
+        Assert.assertEquals("true", optionsResp.getHeaderString(CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS));
+        Assert.assertEquals("http://localhost:8081", optionsResp.getHeaderString(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+        optionsResp.close();
+
+        // Retrieve token
+        OAuthClient.AccessTokenResponse accessTokenResp = retrieveAccessToken();
+        String authHeader = "Bearer " + accessTokenResp.getAccessToken();
+
+        // Send GET request with token but bad origin
+        Response badOriginResp = client.target(JAXRS_APP_URL).request()
+                .header(HttpHeaders.AUTHORIZATION, authHeader)
+                .header(CorsHeaders.ORIGIN, "http://evil.org")
+                .get();
+        Assert.assertEquals(403, badOriginResp.getStatus());
+        badOriginResp.close();
+
+        // Send GET request with token and good origin
+        Response goodResp = client.target(JAXRS_APP_URL).request()
+                .header(HttpHeaders.AUTHORIZATION, authHeader)
+                .header(CorsHeaders.ORIGIN, "http://localhost:8081")
+                .get();
+        Assert.assertEquals(200, goodResp.getStatus());
+        Assert.assertEquals("true", optionsResp.getHeaderString(CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS));
+        Assert.assertEquals("http://localhost:8081", optionsResp.getHeaderString(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+        JaxrsTestResource.SimpleRepresentation getRep = goodResp.readEntity(JaxrsTestResource.SimpleRepresentation.class);
+        Assert.assertEquals("get", getRep.getMethod());
+        goodResp.close();
     }
 
     @Test

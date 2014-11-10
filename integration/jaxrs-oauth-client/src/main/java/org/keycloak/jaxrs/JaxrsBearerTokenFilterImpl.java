@@ -5,6 +5,7 @@ import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
+import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.BearerTokenRequestAuthenticator;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -43,17 +44,17 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
 
     private String keycloakConfigFile;
     private String keycloakConfigResolverClass;
-    private volatile boolean started;
+    protected volatile boolean started;
 
     protected AdapterDeploymentContext deploymentContext;
 
-    // TODO: Should also handle stop lifecycle for de-registration
+    // TODO: Should also somehow handle stop lifecycle for de-registration
     protected NodesRegistrationManagement nodesRegistrationManagement;
     protected UserSessionManagement userSessionManagement = new EmptyUserSessionManagement();
 
     public void setKeycloakConfigFile(String configFile) {
         this.keycloakConfigFile = configFile;
-        start();
+        attemptStart();
     }
 
     public String getKeycloakConfigFile() {
@@ -66,7 +67,25 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
 
     public void setKeycloakConfigResolverClass(String keycloakConfigResolverClass) {
         this.keycloakConfigResolverClass = keycloakConfigResolverClass;
-        start();
+        attemptStart();
+    }
+
+    // INITIALIZATION AND STARTUP
+
+    protected void attemptStart() {
+        if (started) {
+            throw new IllegalStateException("Filter already started. Make sure to specify just keycloakConfigResolver or keycloakConfigFile but not both");
+        }
+
+        if (isInitialized()) {
+            start();
+        } else {
+            log.fine("Not yet initialized");
+        }
+    }
+
+    protected boolean isInitialized() {
+        return this.keycloakConfigFile != null || this.keycloakConfigResolverClass != null;
     }
 
     protected void start() {
@@ -75,30 +94,20 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
         }
 
         if (keycloakConfigResolverClass != null) {
-            Class<?> clazz;
-            try {
-                clazz = getClass().getClassLoader().loadClass(keycloakConfigResolverClass);
-            } catch (ClassNotFoundException cnfe) {
-                // Fallback to tccl
-                try {
-                    clazz = Thread.currentThread().getContextClassLoader().loadClass(keycloakConfigResolverClass);
-                } catch (ClassNotFoundException cnfe2) {
-                    throw new RuntimeException("Unable to find resolver class: " + keycloakConfigResolverClass);
-                }
-            }
+            Class<? extends KeycloakConfigResolver> resolverClass = loadResolverClass();
 
             try {
-                KeycloakConfigResolver resolver = (KeycloakConfigResolver) clazz.newInstance();
+                KeycloakConfigResolver resolver = resolverClass.newInstance();
                 log.info("Using " + resolver + " to resolve Keycloak configuration on a per-request basis.");
                 this.deploymentContext = new AdapterDeploymentContext(resolver);
             } catch (Exception e) {
-                throw new RuntimeException("Unable to instantiate resolver " + clazz);
+                throw new RuntimeException("Unable to instantiate resolver " + resolverClass);
             }
         } else {
             if (keycloakConfigFile == null) {
                 throw new IllegalArgumentException("You need to specify either keycloakConfigResolverClass or keycloakConfigFile in configuration");
             }
-            InputStream is = readConfigFile();
+            InputStream is = loadKeycloakConfigFile();
             KeycloakDeployment kd = KeycloakDeploymentBuilder.build(is);
             deploymentContext = new AdapterDeploymentContext(kd);
             log.info("Keycloak is using a per-deployment configuration loaded from: " + keycloakConfigFile);
@@ -108,7 +117,20 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
         started = true;
     }
 
-    protected InputStream readConfigFile() {
+    protected Class<? extends KeycloakConfigResolver> loadResolverClass() {
+        try {
+            return (Class<? extends KeycloakConfigResolver>)getClass().getClassLoader().loadClass(keycloakConfigResolverClass);
+        } catch (ClassNotFoundException cnfe) {
+            // Fallback to tccl
+            try {
+                return (Class<? extends KeycloakConfigResolver>)Thread.currentThread().getContextClassLoader().loadClass(keycloakConfigResolverClass);
+            } catch (ClassNotFoundException cnfe2) {
+                throw new RuntimeException("Unable to find resolver class: " + keycloakConfigResolverClass);
+            }
+        }
+    }
+
+    protected InputStream loadKeycloakConfigFile() {
         if (keycloakConfigFile.startsWith(GenericConstants.PROTOCOL_CLASSPATH)) {
             String classPathLocation = keycloakConfigFile.replace(GenericConstants.PROTOCOL_CLASSPATH, "");
             log.fine("Loading config from classpath on location: " + classPathLocation);
@@ -135,11 +157,13 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
         }
     }
 
+    // REQUEST HANDLING
+
     @Override
     public void filter(ContainerRequestContext request) throws IOException {
         SecurityContext securityContext = getRequestSecurityContext(request);
         JaxrsHttpFacade facade = new JaxrsHttpFacade(request, securityContext);
-        if (handlePreauth(request, facade)) {
+        if (handlePreauth(facade)) {
             return;
         }
 
@@ -150,12 +174,12 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
         bearerAuthentication(facade, request, resolvedDeployment);
     }
 
-    protected boolean handlePreauth(ContainerRequestContext request, JaxrsHttpFacade facade) {
+    protected boolean handlePreauth(JaxrsHttpFacade facade) {
         PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deploymentContext, facade);
         if (handler.handleRequest()) {
-            // Response might be already finished if error was sent
+            // Send response now (if not already sent)
             if (!facade.isResponseFinished()) {
-                request.abortWith(facade.getResponseBuilder().build());
+                facade.getResponse().end();
             }
             return true;
         }
@@ -175,9 +199,9 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
                 facade.getResponse().setStatus(Response.Status.UNAUTHORIZED.getStatusCode());
             }
 
-            // Send response now
+            // Send response now (if not already sent)
             if (!facade.isResponseFinished()) {
-                request.abortWith(facade.getResponseBuilder().build());
+                facade.getResponse().end();
             }
             return;
         } else {
@@ -187,6 +211,7 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
         }
 
         propagateSecurityContext(facade, request, resolvedDeployment, bearer);
+        handleAuthActions(facade, resolvedDeployment);
     }
 
     protected void propagateSecurityContext(JaxrsHttpFacade facade, ContainerRequestContext request, KeycloakDeployment resolvedDeployment, BearerTokenRequestAuthenticator bearer) {
@@ -237,6 +262,16 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
 
     protected SecurityContext getRequestSecurityContext(ContainerRequestContext request) {
         return request.getSecurityContext();
+    }
+
+    protected void handleAuthActions(JaxrsHttpFacade facade, KeycloakDeployment deployment) {
+        AuthenticatedActionsHandler authActionsHandler = new AuthenticatedActionsHandler(deployment, facade);
+        if (authActionsHandler.handledRequest()) {
+            // Send response now (if not already sent)
+            if (!facade.isResponseFinished()) {
+                facade.getResponse().end();
+            }
+        }
     }
 
     // We don't have any sessions to manage with pure jaxrs filter
