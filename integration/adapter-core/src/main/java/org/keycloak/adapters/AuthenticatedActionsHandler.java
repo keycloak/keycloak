@@ -2,6 +2,7 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessToken;
 
 import java.io.IOException;

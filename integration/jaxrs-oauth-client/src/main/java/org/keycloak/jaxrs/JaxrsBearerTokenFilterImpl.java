@@ -13,7 +13,7 @@ import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.UserSessionManagement;
-import org.keycloak.util.GenericConstants;
+import org.keycloak.constants.GenericConstants;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;

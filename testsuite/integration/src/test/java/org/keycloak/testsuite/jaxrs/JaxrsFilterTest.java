@@ -20,7 +20,7 @@ import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenIdGenerator;
-import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
