@@ -31,6 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ARC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERSISTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
@@ -40,6 +41,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UND
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -108,7 +110,7 @@ public class AuthServerUtil {
     }
 
     void addStepToUploadAuthServer(OperationContext context, boolean isEnabled) throws OperationFailedException {
-        PathAddress deploymentAddress = deploymentAddress();
+        PathAddress deploymentAddress = deploymentAddress(deploymentName);
         ModelNode op = Util.createOperation(ADD, deploymentAddress);
         op.get(ENABLED).set(isEnabled);
         op.get(PERSISTENT).set(false); // prevents writing this deployment out to standalone.xml
@@ -137,26 +139,26 @@ public class AuthServerUtil {
         return contentItem;
     }
 
-    void addStepToRedeployAuthServer(OperationContext context) {
-        addDeploymentAction(context, REDEPLOY);
+    static void addStepToRedeployAuthServer(OperationContext context, String deploymentName) {
+        addDeploymentAction(context, REDEPLOY, deploymentName);
     }
 
-    void addStepToUndeployAuthServer(OperationContext context) {
-        addDeploymentAction(context, UNDEPLOY);
+    static void addStepToUndeployAuthServer(OperationContext context, String deploymentName) {
+        addDeploymentAction(context, UNDEPLOY, deploymentName);
     }
 
-    void addStepToDeployAuthServer(OperationContext context) {
-        addDeploymentAction(context, DEPLOY);
+    static void addStepToDeployAuthServer(OperationContext context, String deploymentName) {
+        addDeploymentAction(context, DEPLOY, deploymentName);
     }
 
-    private void addDeploymentAction(OperationContext context, String operation) {
-        PathAddress deploymentAddress = deploymentAddress();
+    private static void addDeploymentAction(OperationContext context, String operation, String deploymentName) {
+        PathAddress deploymentAddress = deploymentAddress(deploymentName);
         ModelNode op = Util.createOperation(operation, deploymentAddress);
         op.get(RUNTIME_NAME).set(deploymentName);
         context.addStep(op, getHandler(context, deploymentAddress, operation), OperationContext.Stage.MODEL);
     }
 
-    private PathAddress deploymentAddress() {
+    private static PathAddress deploymentAddress(String deploymentName) {
         return PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT, deploymentName));
     }
 
@@ -181,6 +183,19 @@ public class AuthServerUtil {
 
     static PathAddress getPathAddress(ModelNode operation) {
         return PathAddress.pathAddress(operation.get(ADDRESS));
+    }
+
+    static PathAddress getOverlayAddress(String overlayName) {
+        return PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT_OVERLAY, overlayName));
+    }
+
+    static String getOverlayName(ModelNode operation) {
+        return AuthServerUtil.getAuthServerName(operation) + "-keycloak-overlay";
+    }
+
+    static boolean isOverlayExists(OperationContext context, String overlayName, PathAddress address) {
+        Resource resource = context.readResourceFromRoot(address);
+        return resource.getChildrenNames(DEPLOYMENT_OVERLAY).contains(overlayName);
     }
 
 }
