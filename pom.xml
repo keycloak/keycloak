@@ -20,7 +20,7 @@
         <resteasy.version.latest>3.0.9.Final</resteasy.version.latest>
         <undertow.version>1.0.15.Final</undertow.version>
 <!--        <picketlink.version>2.7.0.CR1-20140924</picketlink.version>  -->
-        <picketlink.version>2.7.0.CR1</picketlink.version>
+        <picketlink.version>2.7.0.CR2</picketlink.version>
         <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>
@@ -252,7 +252,7 @@
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
-                <artifactId>picketlink-wildlfy-common</artifactId>
+                <artifactId>picketlink-wildfly-common</artifactId>
                 <version>${picketlink.version}</version>
             </dependency>
             <dependency>

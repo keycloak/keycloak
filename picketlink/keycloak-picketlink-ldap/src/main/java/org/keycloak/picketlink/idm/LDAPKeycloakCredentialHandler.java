@@ -37,7 +37,7 @@ public class LDAPKeycloakCredentialHandler extends LDAPPlainTextPasswordCredenti
     protected boolean validateCredential(IdentityContext context, CredentialStorage credentialStorage, UsernamePasswordCredentials credentials, LDAPIdentityStore ldapIdentityStore) {
         Account account = getAccount(context, credentials.getUsername());
         char[] password = credentials.getPassword().getValue();
-        String userDN = getDNOfUser(ldapIdentityStore, account);
+        String userDN = (String) account.getAttribute(LDAPIdentityStore.ENTRY_DN_ATTRIBUTE_NAME).getValue();
         if (CREDENTIAL_LOGGER.isDebugEnabled()) {
             CREDENTIAL_LOGGER.debugf("Using DN [%s] for authentication of user [%s]", userDN, credentials.getUsername());
         }
@@ -47,17 +47,5 @@ public class LDAPKeycloakCredentialHandler extends LDAPPlainTextPasswordCredenti
         }
 
         return false;
-    }
-
-    protected String getDNOfUser(LDAPIdentityStore ldapIdentityStore, Account user) {
-        LDAPMappingConfiguration userMappingConfig = ldapIdentityStore.getConfig().getMappingConfig(User.class);
-        SearchResult sr = ldapIdentityStore.getOperationManager().lookupById(userMappingConfig.getBaseDN(), user.getId(), userMappingConfig);
-
-        if (sr != null) {
-            return sr.getNameInNamespace();
-        } else {
-            // Fallback
-            return ldapIdentityStore.getBindingDN(user, true);
-        }
     }
 }
