@@ -10,6 +10,8 @@ import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
+import org.picketlink.idm.query.AttributeParameter;
+import org.picketlink.idm.query.QueryParameter;
 
 import java.util.List;
 
@@ -19,6 +21,8 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPUtils {
+
+    public static QueryParameter MODIFY_DATE = new AttributeParameter("modifyDate");
 
     public static User addUser(PartitionManager partitionManager, String username, String firstName, String lastName, String email) {
         IdentityManager identityManager = getIdentityManager(partitionManager);

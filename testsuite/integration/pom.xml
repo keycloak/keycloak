@@ -215,7 +215,7 @@
         </dependency>
         <dependency>
             <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-wildlfy-common</artifactId>
+            <artifactId>picketlink-wildfly-common</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -53,8 +53,11 @@ public class LDAPFederationProvider implements UserFederationProvider {
         this.model = model;
         this.partitionManager = partitionManager;
         String editModeString = model.getConfig().get(EDIT_MODE);
-        if (editModeString == null) editMode = EditMode.READ_ONLY;
-        editMode = EditMode.valueOf(editModeString);
+        if (editModeString == null) {
+            editMode = EditMode.READ_ONLY;
+        } else {
+            editMode = EditMode.valueOf(editModeString);
+        }
     }
 
     private ModelException convertIDMException(IdentityManagementException ie) {
