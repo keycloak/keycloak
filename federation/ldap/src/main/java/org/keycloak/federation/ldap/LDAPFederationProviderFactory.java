@@ -16,7 +16,11 @@ import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.basic.User;
+import org.picketlink.idm.query.AttributeParameter;
+import org.picketlink.idm.query.Condition;
 import org.picketlink.idm.query.IdentityQuery;
+import org.picketlink.idm.query.IdentityQueryBuilder;
+import org.picketlink.idm.query.QueryParameter;
 
 import java.util.Collections;
 import java.util.Date;
@@ -84,13 +88,15 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
 
         // Sync newly created users
         IdentityManager identityManager = partitionMgr.createIdentityManager();
-        IdentityQuery<User> userQuery = identityManager.createIdentityQuery(User.class)
-                .setParameter(IdentityType.CREATED_AFTER, lastSync);
+        IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
+        Condition condition = queryBuilder.greaterThanOrEqualTo(IdentityType.CREATED_DATE, lastSync);
+        IdentityQuery<User> userQuery = queryBuilder.createIdentityQuery(User.class).where(condition);
         syncImpl(sessionFactory, userQuery, realmId, model);
 
         // Sync updated users
-        userQuery = identityManager.createIdentityQuery(User.class)
-                .setParameter(IdentityType.MODIFIED_AFTER, lastSync);
+        queryBuilder = identityManager.getQueryBuilder();
+        condition = queryBuilder.greaterThanOrEqualTo(LDAPUtils.MODIFY_DATE, lastSync);
+        userQuery = queryBuilder.createIdentityQuery(User.class).where(condition);
         syncImpl(sessionFactory, userQuery, realmId, model);
     }
 
