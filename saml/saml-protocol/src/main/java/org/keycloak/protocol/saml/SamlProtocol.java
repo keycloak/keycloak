@@ -128,7 +128,7 @@ public class SamlProtocol implements LoginProtocol {
         if(nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
             return userSession.getUser().getEmail();
         } else if(nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get())) {
-            return clientSession.getNote(ClientSessionCode.ACTION_KEY);
+            return userSession.getUser().getUsername();
         } else {
             // TODO: Support for persistent NameID (pseudo-random identifier persisted in user object)
             return userSession.getUser().getUsername();
