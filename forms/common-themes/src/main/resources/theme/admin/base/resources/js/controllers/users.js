@@ -529,7 +529,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     ];
 
     $scope.usernameLDAPAttributes = [
-        "uid", "cn", "sAMAccountName"
+        "uid", "cn", "sAMAccountName", "entryDN"
     ];
 
     $scope.realm = realm;

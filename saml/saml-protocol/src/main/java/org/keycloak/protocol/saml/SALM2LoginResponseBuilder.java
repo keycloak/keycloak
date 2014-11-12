@@ -38,7 +38,8 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     protected List<String> roles = new LinkedList<String>();
-    protected String userPrincipal;
+    protected String nameId;
+    protected String nameIdFormat;
     protected boolean multiValuedRoles;
     protected boolean disableAuthnStatement;
     protected String requestID;
@@ -88,8 +89,9 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
         return this;
     }
 
-    public SALM2LoginResponseBuilder userPrincipal(String userPrincipal) {
-        this.userPrincipal = userPrincipal;
+    public SALM2LoginResponseBuilder nameIdentifier(String nameIdFormat, String nameId) {
+        this.nameIdFormat = nameIdFormat;
+        this.nameId = nameId;
         return this;
     }
 
@@ -129,8 +131,8 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
         issuerHolder.setStatusCode(JBossSAMLURIConstants.STATUS_SUCCESS.get());
 
         IDPInfoHolder idp = new IDPInfoHolder();
-        idp.setNameIDFormatValue(userPrincipal);
-        idp.setNameIDFormat(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
+        idp.setNameIDFormatValue(nameId);
+        idp.setNameIDFormat(nameIdFormat);
 
         SPInfoHolder sp = new SPInfoHolder();
         sp.setResponseDestinationURI(destination);

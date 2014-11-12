@@ -25,8 +25,9 @@ public class LDAPRule extends ExternalResource {
     protected void after() {
         try {
             embeddedServer.tearDown();
+            embeddedServer = null;
         } catch (Exception e) {
-            throw new RuntimeException("Error starting Embedded LDAP server.", e);
+            throw new RuntimeException("Error tearDown Embedded LDAP server.", e);
         }
     }
 
