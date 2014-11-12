@@ -107,7 +107,7 @@
             <maven-resource group="org.picketlink" artifact="picketlink-federation"/>
         </module-def>
         <module-def name="org.picketlink.federation.bindings">
-            <maven-resource group="org.picketlink" artifact="picketlink-wildlfy-common"/>
+            <maven-resource group="org.picketlink" artifact="picketlink-wildfly-common"/>
         </module-def>
         <module-def name="org.picketlink.idm">
             <maven-resource group="org.picketlink" artifact="picketlink-idm-impl"/>
