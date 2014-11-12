@@ -74,7 +74,7 @@ public class HMACProvider {
 
     public static boolean verify(JWSInput input, byte[] sharedSecret) {
         try {
-            byte[] signature = sign(input.getContent(), input.getHeader().getAlgorithm(), sharedSecret);
+            byte[] signature = sign(input.getEncodedSignatureInput().getBytes("UTF-8"), input.getHeader().getAlgorithm(), sharedSecret);
             String x = Base64Url.encode(signature);
             return x.equals(input.getEncodedSignature());
         } catch (Exception e) {

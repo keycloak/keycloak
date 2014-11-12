@@ -83,6 +83,7 @@ public class SamlBindingTest {
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post/");
+        System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to("http://localhost:8081/sales-post?GLO=true");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
