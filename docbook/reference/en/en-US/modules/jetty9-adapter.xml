@@ -30,7 +30,7 @@ $ java -jar $JETTY_HOME/start.jar --add-to-startd=keycloak
         </para>
     </section>
 
-    <section>
+    <section id="jetty9_per_war">
         <title>Required Per WAR Configuration</title>
         <para>
             This section describes how to secure a WAR directly by adding config and editing files within your WAR package.

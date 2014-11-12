@@ -13,6 +13,7 @@
                 <!ENTITY JavascriptAdapter SYSTEM "modules/javascript-adapter.xml">
                 <!ENTITY TomcatAdapter SYSTEM "modules/tomcat-adapter.xml">
                 <!ENTITY Jetty9Adapter SYSTEM "modules/jetty9-adapter.xml">
+                <!ENTITY Jetty8Adapter SYSTEM "modules/jetty8-adapter.xml">
                 <!ENTITY InstalledApplications SYSTEM "modules/installed-applications.xml">
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
                 <!ENTITY SAML SYSTEM "modules/saml.xml">
@@ -88,6 +89,7 @@ This one is short
         &JBossAdapter;
         &TomcatAdapter;
         &Jetty9Adapter;
+        &Jetty8Adapter;
         &JavascriptAdapter;
         &InstalledApplications;
         &Logout;
