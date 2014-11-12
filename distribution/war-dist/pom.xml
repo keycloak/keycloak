@@ -40,6 +40,12 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-jetty81-adapter-dist</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-jetty91-adapter-dist</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
