@@ -12,7 +12,7 @@
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <includes>
-                <include>org.keycloak:keycloak-jetty91-adapter</include>
+                <include>org.keycloak:keycloak-jetty81-adapter</include>
             </includes>
             <excludes>
                 <exclude>org.eclipse.jetty:jetty-server</exclude>

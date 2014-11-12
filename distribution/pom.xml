@@ -30,6 +30,7 @@
         <module>tomcat7-adapter-zip</module>
         <module>eap6-adapter-zip</module>
         <module>wildfly-adapter-zip</module>
+        <module>jetty81-adapter-zip</module>
         <module>jetty91-adapter-zip</module>
         <module>jetty92-adapter-zip</module>
         <module>examples-docs-zip</module>
