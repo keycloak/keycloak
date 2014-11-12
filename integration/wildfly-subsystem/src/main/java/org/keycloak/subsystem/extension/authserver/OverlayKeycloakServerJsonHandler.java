@@ -33,8 +33,12 @@ public class OverlayKeycloakServerJsonHandler extends AbstractAddOverlayHandler 
 
     public static OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OP, AuthServerDefinition.rscDescriptionResolver)
             .addParameter(BYTES_TO_UPLOAD)
+            .addParameter(REDEPLOY_SERVER)
+            .addParameter(OVERWRITE)
             .build();
 
+    private OverlayKeycloakServerJsonHandler() {}
+    
     @Override
     String getOverlayPath(String fileName) {
         return "/WEB-INF/classes/META-INF/keycloak-server.json";

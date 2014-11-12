@@ -95,6 +95,8 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(AddProviderHandler.DEFINITION, AddProviderHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(OverlayKeycloakServerJsonHandler.DEFINITION, OverlayKeycloakServerJsonHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(ListOverlaysHandler.DEFINITION, ListOverlaysHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(RemoveOverlayHandler.DEFINITION, RemoveOverlayHandler.INSTANCE);
     }
 
     @Override

@@ -50,23 +50,23 @@ public class AuthServerWriteAttributeHandler extends ModelOnlyWriteAttributeHand
             return;
         }
 
-        AuthServerUtil authServerUtil = new AuthServerUtil(operation);
         boolean isEnabled = isEnabled(model); // is server currently enabled?
+        String deploymentName = AuthServerUtil.getDeploymentName(operation);
 
         if (attributeName.equals(AuthServerDefinition.WEB_CONTEXT.getName())) {
-            String deploymentName = AuthServerUtil.getDeploymentName(operation);
+
             KeycloakAdapterConfigService.INSTANCE.removeServerDeployment(deploymentName);
             KeycloakAdapterConfigService.INSTANCE.addServerDeployment(deploymentName, newValue.asString());
             if (isEnabled) {
-                authServerUtil.addStepToRedeployAuthServer(context);
+                AuthServerUtil.addStepToRedeployAuthServer(context, deploymentName);
             }
         }
 
         if (attributeName.equals(AuthServerDefinition.ENABLED.getName())) {
             if (!isEnabled) { // we are disabling
-                authServerUtil.addStepToUndeployAuthServer(context);
+                AuthServerUtil.addStepToUndeployAuthServer(context, deploymentName);
             } else { // we are enabling
-                authServerUtil.addStepToDeployAuthServer(context);
+                AuthServerUtil.addStepToDeployAuthServer(context, deploymentName);
             }
         }
 

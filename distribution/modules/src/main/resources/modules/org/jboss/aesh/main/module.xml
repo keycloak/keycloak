@@ -28,7 +28,7 @@
     </properties>
 
     <resources>
-        <artifact name="org.jboss.aesh:aesh:0.33.12"/>
+        <!-- Insert resources here -->
     </resources>
 
     <dependencies>
