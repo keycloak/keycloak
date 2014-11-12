@@ -152,6 +152,7 @@ public class AuthServerUtil {
     }
 
     private static void addDeploymentAction(OperationContext context, String operation, String deploymentName) {
+        if (!context.isNormalServer()) return;
         PathAddress deploymentAddress = deploymentAddress(deploymentName);
         ModelNode op = Util.createOperation(operation, deploymentAddress);
         op.get(RUNTIME_NAME).set(deploymentName);

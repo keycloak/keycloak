@@ -25,7 +25,6 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
@@ -106,7 +105,6 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
     static void removeContent(OperationContext context, PathAddress overlayAddress, String overlayPath) {
         PathAddress contentAddress = overlayAddress.append("content", overlayPath);
         ModelNode operation = Util.createRemoveOperation(contentAddress);
-        System.out.println("operation=" + operation);
         context.addStep(operation, getHandler(context, contentAddress, REMOVE), OperationContext.Stage.MODEL);
     }
 
