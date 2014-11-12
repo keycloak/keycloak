@@ -799,7 +799,7 @@ keycloak-war-dist-all-&project.version;/
             <title>Using CLI and CLI GUI with the Keycloak Subsystem</title>
             <para>
                 Servers can also be added/removed or enabled/disabled at runtime using the <ulink url="https://developer.jboss.org/wiki/CommandLineInterface">CLI</ulink> or 
-                <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> tool.  These are tools that ship with WildFly and also with
+                <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> tool.  These are tools that ship with WildFly/EAP and also with
                 the Keycloak Appliance installation.  See <ulink url="https://developer.jboss.org/wiki/CommandLineInterface">CLI</ulink> or 
                 <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> documentation to learn more about how to start the tools,
                 issue commands, and create CLI scripts.
@@ -812,7 +812,7 @@ cd <APPLIANCE_INSTALL_DIR>/keycloak/bin
 or
 ./jboss.cli.bat --gui]]>
 </programlisting>
-<note>Your Keycloak server must be running to start in --gui mode.</note>
+<note>Your server must be running to start in --gui mode.</note>
 </para>  
             <section>
                 <title>Basic CLI Commands</title>
@@ -842,7 +842,7 @@ The Keycloak server will be immediately deployed or undeployed, but not deleted.
                 <title>Uploading extra configuration using CLI</title>
                 <para>
                     The WildFly Keycloak subsystem allows you to upload keycloak-server.json, provider jars, and theme jars to a Keycloak server instance.  The
-                    CLI operations for this are "update-server-config" and "add-provider".  You may use plain or CLI scripts for these operations.  The following
+                    CLI operations for this are "update-server-config" and "add-provider".  You may use CLI, CLI GUI, or CLI scripts for these operations.  The following
                     examples are shown using <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> for clarity.
                 </para>
                 <para>
@@ -872,6 +872,39 @@ The Keycloak server will be immediately deployed or undeployed, but not deleted.
                 </para>
                 <para>
                     <imagedata fileref="images/add-provider-dialog.png"/>
+                </para>
+            </section>
+            <section>
+                <title>Working with overlays</title>
+                <para>
+                    When you upload a provider jar, theme jar, or keycloak-server.json file, you are creating an overlay.  That is, the file is "overlayed"
+                    onto the Keycloak server at deploy time.  There are two additional operations that help you manage these overlays.  They are "list-overlays" and
+                    "remove-overlay".  Here are CLI examples of these operations.
+                </para>
+<para>
+    <programlisting>
+/subsystem=keycloak/auth-server=my-auth-server/:list-overlays
+{
+    "outcome" => "success",
+    "result" => [
+        "/WEB-INF/classes/META-INF/keycloak-server.json",
+        "/WEB-INF/lib/federation-properties-example.jar"
+    ],
+}</programlisting>
+    <programlisting>
+/subsystem=keycloak/auth-server=my-auth-server/:remove-overlay(overlay-file-path=/WEB-INF/lib/federation-properties-example.jar,redeploy=true)
+{
+    "outcome" => "success",
+}</programlisting>
+</para>
+                <para>
+                    <note>
+                        Notice in the "list-overlays" operation, the full path to the server config is 
+                        /WEB-INF/classes/META-INF/keycloak-server.json.  This is always the uploaded path for an "update-server-config" operation.
+                        If you remove this overlay, the Keycloak server will revert to its default keycloak-server.json.  If you have a 
+                        keycloak-server.json file in your &lt;WILDFLY_HOME&gt;/standalone/configuration directory, it will always take precedence
+                        over both the default and the overlay.
+                    </note>
                 </para>
             </section>
         </section>

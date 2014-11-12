@@ -31,7 +31,7 @@
     <main-class name="org.jboss.as.cli.CommandLineMain"/>
 
     <resources>
-        <resource-root path="wildfly-cli-1.0.0.Alpha11-SNAPSHOT.jar"/>
+        <!-- Insert resources here -->
     </resources>
 
     <dependencies>

@@ -17,7 +17,6 @@
 
 package org.keycloak.subsystem.extension.authserver;
 
-import java.io.File;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -46,8 +45,12 @@ public class AddProviderHandler extends AbstractAddOverlayHandler {
     public static OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OP, AuthServerDefinition.rscDescriptionResolver)
             .addParameter(BYTES_TO_UPLOAD)
             .addParameter(UPLOADED_FILE_NAME)
+            .addParameter(REDEPLOY_SERVER)
+            .addParameter(OVERWRITE)
             .build();
 
+    private AddProviderHandler() {}
+    
     @Override
     String getOverlayPath(String fileName) {
         if (!fileName.toLowerCase().endsWith(".jar")) {

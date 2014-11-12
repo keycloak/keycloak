@@ -21,12 +21,11 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -48,21 +47,39 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
             .setAllowNull(false)
             .build();
 
+    static final SimpleAttributeDefinition REDEPLOY_SERVER =
+        new SimpleAttributeDefinitionBuilder("redeploy", ModelType.BOOLEAN, true)
+        .setXmlName("redeploy")
+        .setAllowExpression(true)
+        .setDefaultValue(new ModelNode(false))
+        .build();
+
+    protected static final SimpleAttributeDefinition OVERWRITE =
+        new SimpleAttributeDefinitionBuilder("overwrite", ModelType.BOOLEAN, true)
+        .setXmlName("overwrite")
+        .setAllowExpression(true)
+        .setDefaultValue(new ModelNode(false))
+        .build();
+
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         //System.out.println("*** execute operation ***");
         //System.out.println(scrub(operation));
 
         String uploadFileName = operation.get(UPLOADED_FILE_OP_NAME).asString();
-        String overlayPath = getOverlayPath(uploadFileName);
-        String overlayName = AuthServerUtil.getAuthServerName(operation) + "-keycloak-overlay";
-        PathAddress overlayAddress = PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT_OVERLAY, overlayName));
+        boolean isRedeploy = isRedeploy(context, operation);
+        boolean isOverwrite = getBooleanFromOperation(operation, OVERWRITE);
 
-        boolean isOverlayExists = isOverlayExists(context, overlayName, PathAddress.EMPTY_ADDRESS);
+        String overlayPath = getOverlayPath(uploadFileName);
+        String overlayName = AuthServerUtil.getOverlayName(operation);
+        PathAddress overlayAddress = AuthServerUtil.getOverlayAddress(overlayName);
+        String deploymentName = AuthServerUtil.getDeploymentName(operation);
+
+        boolean isOverlayExists = AuthServerUtil.isOverlayExists(context, overlayName, PathAddress.EMPTY_ADDRESS);
         if (!isOverlayExists) {
             addOverlay(context, overlayAddress);
             if (!isHostController(context)) {
-                addDeploymentToOverlay(context, overlayAddress, AuthServerUtil.getDeploymentName(operation));
+                addDeploymentToOverlay(context, overlayAddress, deploymentName);
             }
         }
 
@@ -70,17 +87,29 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
             addOverlayToServerGroups(context, overlayAddress, operation, overlayName);
         }
 
-        // There is no way to do an overwrite of content from here because it involves
-        // removing the overlay service in the runtime phase.  You have to remove
-        // the content in a seperate operation.
         if (isOverlayExists && isContentExists(context, overlayAddress, overlayPath)) {
-            throw new OperationFailedException(pathExistsMessage(overlayAddress, overlayPath));
+            if (isOverwrite) {
+                removeContent(context, overlayAddress, overlayPath);
+            } else {
+                throw new OperationFailedException(pathExistsMessage(overlayAddress, overlayPath));
+            }
         }
 
         addContent(context, overlayAddress, operation.get(BYTES_TO_UPLOAD.getName()).asBytes(), overlayPath);
 
-        context.restartRequired();
+        if (isRedeploy) AuthServerUtil.addStepToRedeployAuthServer(context, deploymentName);
+        if (!isRedeploy) context.restartRequired();
         context.completeStep(OperationContext.ResultHandler.NOOP_RESULT_HANDLER);
+    }
+
+    static void removeContent(OperationContext context, PathAddress overlayAddress, String overlayPath) {
+        PathAddress contentAddress = overlayAddress.append("content", overlayPath);
+        ModelNode operation = Util.createRemoveOperation(contentAddress);
+        context.addStep(operation, getHandler(context, contentAddress, REMOVE), OperationContext.Stage.MODEL);
+    }
+
+    static boolean isRedeploy(OperationContext context, ModelNode operation) {
+        return isAuthServerEnabled(context) && getBooleanFromOperation(operation, REDEPLOY_SERVER);
     }
 
     private boolean isHostController(OperationContext context) {
@@ -89,15 +118,9 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
 
     private String pathExistsMessage(PathAddress overlayAddress, String overlayPath) {
         PathAddress contentAddress = overlayAddress.append("content", overlayPath);
-        String msg = "Can not update overlay. ";
-        msg += "First remove the overlay with CLI using the following command with the content path in double quotes:  ";
-        msg += contentAddress.toCLIStyleString() + ":remove";
+        String msg = "Can not update overlay at " + contentAddress.toCLIStyleString();
+        msg += "  You may try your request again using the " + OVERWRITE.getName() + " attribute.";
         return msg;
-    }
-
-    private boolean isOverlayExists(OperationContext context, String overlayName, PathAddress address) {
-        Resource resource = context.readResourceFromRoot(address);
-        return resource.getChildrenNames("deployment-overlay").contains(overlayName);
     }
 
     private boolean isContentExists(OperationContext context, PathAddress overlayAddress, String overlayPath) {
@@ -124,7 +147,7 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
             ModelNode serverGroupModel = context.readResourceFromRoot(address).getModel();
             if (serverGroupModel.get("profile").asString().equals(myProfile)) {
                 PathAddress serverGroupOverlayAddress = address.append(overlayAddress);
-                boolean isOverlayExists = isOverlayExists(context, overlayName, address);
+                boolean isOverlayExists = AuthServerUtil.isOverlayExists(context, overlayName, address);
                 if (!isOverlayExists) {
                     addOverlay(context, serverGroupOverlayAddress);
                     addDeploymentToOverlay(context, serverGroupOverlayAddress, AuthServerUtil.getDeploymentName(operation));
@@ -158,6 +181,23 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
         //System.out.println("**** Adding Add Step ****");
         //System.out.println(scrub(operation).toString());
         context.addStep(operation, getHandler(context, address, ADD), OperationContext.Stage.MODEL);
+    }
+
+    private static boolean isAuthServerEnabled(OperationContext context) {
+        boolean defaultValue = AuthServerDefinition.ENABLED.getDefaultValue().asBoolean();
+        ModelNode authServerModel = context.readResource(PathAddress.EMPTY_ADDRESS).getModel().clone();
+        String attrName = AuthServerDefinition.ENABLED.getName();
+        if (!authServerModel.get(attrName).isDefined()) return defaultValue;
+        return authServerModel.get(attrName).asBoolean();
+    }
+
+    private static boolean getBooleanFromOperation(ModelNode operation, SimpleAttributeDefinition definition) {
+        boolean defaultValue = definition.getDefaultValue().asBoolean();
+        if (!operation.get(definition.getName()).isDefined()) {
+            return defaultValue;
+        } else {
+            return operation.get(definition.getName()).asBoolean();
+        }
     }
 
     // used for debugging
