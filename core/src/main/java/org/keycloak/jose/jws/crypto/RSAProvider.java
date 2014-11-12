@@ -49,7 +49,7 @@ public class RSAProvider {
         try {
             Signature verifier = getSignature(input.getHeader().getAlgorithm());
             verifier.initVerify(publicKey);
-            verifier.update(input.getContent());
+            verifier.update(input.getEncodedSignatureInput().getBytes("UTF-8"));
             return verifier.verify(input.getSignature());
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -15,6 +15,7 @@ public class JWSInput {
     String encodedHeader;
     String encodedContent;
     String encodedSignature;
+    String encodedSignatureInput;
     JWSHeader header;
     byte[] content;
     byte[] signature;
@@ -26,6 +27,7 @@ public class JWSInput {
         if (parts.length < 2 || parts.length > 3) throw new IllegalArgumentException("Parsing error");
         encodedHeader = parts[0];
         encodedContent = parts[1];
+        encodedSignatureInput = encodedHeader + '.' + encodedContent;
         try {
             content = Base64Url.decode(encodedContent);
             if (parts.length > 2) {
@@ -54,6 +56,9 @@ public class JWSInput {
 
     public String getEncodedSignature() {
         return encodedSignature;
+    }
+    public String getEncodedSignatureInput() {
+        return encodedSignatureInput;
     }
 
     public JWSHeader getHeader() {
