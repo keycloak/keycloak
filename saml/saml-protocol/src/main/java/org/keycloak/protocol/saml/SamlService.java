@@ -24,10 +24,12 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.StreamUtil;
 import org.picketlink.common.constants.GeneralConstants;
+import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.identity.federation.core.saml.v2.common.SAMLDocumentHolder;
 import org.picketlink.identity.federation.saml.v2.SAML2Object;
 import org.picketlink.identity.federation.saml.v2.protocol.AuthnRequestType;
 import org.picketlink.identity.federation.saml.v2.protocol.LogoutRequestType;
+import org.picketlink.identity.federation.saml.v2.protocol.NameIDPolicyType;
 import org.picketlink.identity.federation.saml.v2.protocol.RequestAbstractType;
 import org.picketlink.identity.federation.web.util.RedirectBindingUtil;
 
@@ -207,6 +209,21 @@ public class SamlService {
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
             clientSession.setNote(SamlProtocol.SAML_REQUEST_ID, requestAbstractType.getID());
 
+            // Handle NameIDPolicy from SP
+            NameIDPolicyType nameIdPolicy = requestAbstractType.getNameIDPolicy();
+            if(nameIdPolicy != null) {
+                String nameIdFormat = nameIdPolicy.getFormat().toString();
+                // TODO: Handle AllowCreate too, relevant for persistent NameID.
+                if(isSupportedNameIdFormat(nameIdFormat)) {
+                    clientSession.setNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
+                } else {
+                    event.error(Errors.INVALID_TOKEN);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unsupported NameIDFormat.");
+                }
+            } else {
+                clientSession.setNote(GeneralConstants.NAMEID_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get());
+            }
+
             Response response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
             if (response != null) return response;
 
@@ -224,6 +241,15 @@ public class SamlService {
             }
 
             return forms.createLogin();
+        }
+
+        private boolean isSupportedNameIdFormat(String nameIdFormat) {
+            if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get()) ||
+                    nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get()) ||
+                    nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())) {
+                return true;
+            }
+            return false;
         }
 
         protected abstract String getBindingType();

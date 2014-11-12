@@ -54,6 +54,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_ENCRYPT = "saml.encrypt";
     public static final String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
     public static final String SAML_REQUEST_ID = "SAML_REQUEST_ID";
+    public static final String SAML_DEFAULT_NAMEID_FORMAT = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
 
     protected KeycloakSession session;
 
@@ -117,6 +118,23 @@ public class SamlProtocol implements LoginProtocol {
         return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING)) || "true".equals(client.getAttribute(SAML_FORCE_POST_BINDING));
     }
 
+    protected String getNameIdFormat(ClientSessionModel clientSession) {
+        String nameIdFormat = clientSession.getNote(GeneralConstants.NAMEID_FORMAT);
+        if(nameIdFormat == null) return SAML_DEFAULT_NAMEID_FORMAT;
+        return nameIdFormat;
+    }
+
+    protected String getNameId(String nameIdFormat, ClientSessionModel clientSession, UserSessionModel userSession) {
+        if(nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
+            return userSession.getUser().getEmail();
+        } else if(nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get())) {
+            return clientSession.getNote(ClientSessionCode.ACTION_KEY);
+        } else {
+            // TODO: Support for persistent NameID (pseudo-random identifier persisted in user object)
+            return userSession.getUser().getUsername();
+        }
+    }
+
     @Override
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
@@ -125,6 +143,8 @@ public class SamlProtocol implements LoginProtocol {
         String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
         String redirectUri = clientSession.getRedirectUri();
         String responseIssuer = getResponseIssuer(realm);
+        String nameIdFormat = getNameIdFormat(clientSession);
+        String nameId = getNameId(nameIdFormat, clientSession, userSession);
 
         SALM2LoginResponseBuilder builder = new SALM2LoginResponseBuilder();
         builder.requestID(requestID)
@@ -132,8 +152,7 @@ public class SamlProtocol implements LoginProtocol {
                .destination(redirectUri)
                .responseIssuer(responseIssuer)
                .requestIssuer(clientSession.getClient().getClientId())
-               .userPrincipal(userSession.getUser().getUsername()) // todo userId instead?  There is no username claim it seems
-               .attribute(X500SAMLProfileConstants.USERID.getFriendlyName(), userSession.getUser().getId())
+               .nameIdentifier(nameIdFormat, nameId)
                .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
         initClaims(builder, clientSession.getClient(), userSession.getUser());
         if (clientSession.getRoles() != null) {
@@ -148,12 +167,12 @@ public class SamlProtocol implements LoginProtocol {
         }
         if (requiresRealmSignature(client)) {
             builder.signatureAlgorithm(getSignatureAlgorithm(client))
-                   .signWith(realm.getPrivateKey(), realm.getPublicKey())
+                   .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                    .signDocument();
         }
         if (requiresAssertionSignature(client)) {
             builder.signatureAlgorithm(getSignatureAlgorithm(client))
-                    .signWith(realm.getPrivateKey(), realm.getPublicKey())
+                    .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                     .signAssertions();
         }
         if (!includeAuthnStatement(client)) {
@@ -218,7 +237,11 @@ public class SamlProtocol implements LoginProtocol {
             builder.attribute(X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(), user.getFirstName());
             builder.attribute(X500SAMLProfileConstants.SURNAME.getFriendlyName(), user.getLastName());
         }
+        if (ClaimMask.hasUsername(model.getAllowedClaimsMask())) {
+            builder.attribute(X500SAMLProfileConstants.USERID.getFriendlyName(), user.getUsername());
+        }
     }
+
 
 
     @Override
@@ -238,7 +261,7 @@ public class SamlProtocol implements LoginProtocol {
                                          .destination(client.getClientId());
         if (requiresRealmSignature(client)) {
             logoutBuilder.signatureAlgorithm(getSignatureAlgorithm(client))
-                         .signWith(realm.getPrivateKey(), realm.getPublicKey())
+                         .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                          .signDocument();
         }
         /*
