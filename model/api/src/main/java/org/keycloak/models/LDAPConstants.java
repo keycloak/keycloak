@@ -9,6 +9,7 @@ public class LDAPConstants {
     public static final String VENDOR_RHDS = "rhds";
     public static final String VENDOR_ACTIVE_DIRECTORY = "ad";
     public static final String VENDOR_OTHER = "other";
+    public static final String VENDOR_TIVOLI = "tivoli";
 
     public static final String USERNAME_LDAP_ATTRIBUTE = "usernameLDAPAttribute";
     public static final String USER_OBJECT_CLASSES = "userObjectClasses";
