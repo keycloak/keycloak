@@ -58,10 +58,6 @@
             </listitem>
 
             <listitem>
-                OAuth Bearer token auth for REST Services
-            </listitem>
-
-            <listitem>
                 Integrated Browser App to REST Service token propagation
             </listitem>
             <listitem>
@@ -95,10 +91,11 @@
                 Deployable as a WAR, appliance, or on Openshift.  Completely clusterable.
             </listitem>
             <listitem>
-                Multitenancy support.  You can host and manage multiple realms for multiple organizations.
+                Multitenancy support.  You can host and manage multiple realms for multiple organizations.   In the same auth server
+                and even within the same deployed application.
             </listitem>
             <listitem>
-                Supports JBoss AS7, EAP 6.x, Wildfly, Tomcat 7, Jetty 9.1.x, Jetty 9.2.x, and Pure JavaScript applications.  Plans to support Node.js, RAILS, GRAILS, and other non-Java deployments
+                Supports JBoss AS7, EAP 6.x, Wildfly, Tomcat 7, Tomcat 8, Jetty 9.1.x, Jetty 9.2.x, Jetty 8.1.x, and Pure JavaScript applications.  Plans to support Node.js, RAILS, GRAILS, and other non-Java deployments
             </listitem>
         </itemizedlist>
     </para>

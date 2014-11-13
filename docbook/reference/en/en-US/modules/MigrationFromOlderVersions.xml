@@ -80,6 +80,14 @@
     <section>
         <title>Version specific migration</title>
         <section>
+            <title>Migrating from 1.1.Beta1 to 1.1.Beta2</title>
+            <itemizedlist>
+                <listitem>The tomcat adapter valve has moved to a different package.  From <literal>org.keycloak.adapters.tomcat7.KeycloakAuthenticatorValve</literal> to <literal>org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve</literal>
+                From the 'tomcat7' package to just 'tomcat'.
+                </listitem>
+            </itemizedlist>
+        </section>
+        <section>
             <title>Migrating from 1.0.x.Final to 1.1.Beta1</title>
             <itemizedlist>
                 <listitem>RealmModel JPA and Mongo storage schema has changed</listitem>

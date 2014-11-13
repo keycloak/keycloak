@@ -27,6 +27,7 @@
     <modules>
         <module>integration</module>
         <module>tomcat7</module>
+        <module>tomcat8</module>
         <module>jetty/jetty81</module>
         <module>jetty/jetty92</module>
         <module>jetty/jetty91</module>
