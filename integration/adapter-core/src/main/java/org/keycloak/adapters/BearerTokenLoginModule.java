@@ -25,6 +25,7 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.constants.GenericConstants;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.PemUtils;
 
 /**
@@ -83,19 +84,15 @@ public class BearerTokenLoginModule implements LoginModule {
                 }
                 String principalAttribute = (String) options.get(PRINCIPAL_ATTRIBUTE_OPTION);
 
-                kd = new KeycloakDeployment();
-                kd.setRealm(realm);
-                kd.setResourceName(resource);
-                kd.setUseResourceRoleMappings(useResourceRoleMappings);
-                kd.setPrincipalAttribute(principalAttribute);
-                if (publicKey != null) {
-                    try {
-                        PublicKey pk = PemUtils.decodePublicKey(publicKey);
-                        kd.setRealmKey(pk);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+                AdapterConfig cfg = new AdapterConfig();
+                cfg.setRealm(realm);
+                cfg.setResource(resource);
+                cfg.setUseResourceRoleMappings(useResourceRoleMappings);
+                cfg.setAuthServerUrl(authServerUrl);
+                cfg.setBearerOnly(true);
+                cfg.setPrincipalAttribute(principalAttribute);
+                cfg.setRealmKey(publicKey);
+                kd = KeycloakDeploymentBuilder.build(cfg);
             }
 
             if (kd.getRealmKey() == null) {
@@ -166,7 +163,7 @@ public class BearerTokenLoginModule implements LoginModule {
     }
 
     protected Auth bearerAuth(String username, String tokenString) throws VerificationException {
-        if ("Bearer".equalsIgnoreCase(username)) {
+        if (!"Bearer".equalsIgnoreCase(username)) {
             log.fine("Username is expected to be bearer but is " + username + ". Ignoring login module");
             return null;
         }
@@ -198,9 +195,11 @@ public class BearerTokenLoginModule implements LoginModule {
 
         this.subject.getPrincipals().add(auth.getPrincipal());
         this.subject.getPrivateCredentials().add(auth.getTokenString());
-        for (String roleName : auth.getRoles()) {
-            RolePrincipal rolePrinc = new RolePrincipal(roleName);
-            this.subject.getPrincipals().add(rolePrinc);
+        if (auth.getRoles() != null) {
+            for (String roleName : auth.getRoles()) {
+                RolePrincipal rolePrinc = new RolePrincipal(roleName);
+                this.subject.getPrincipals().add(rolePrinc);
+            }
         }
 
         return true;
