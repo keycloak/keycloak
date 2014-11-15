@@ -1,13 +1,13 @@
 package org.keycloak.adapters.tomcat;
 
+import org.apache.catalina.LifecycleException;
 import org.apache.catalina.connector.Request;
+import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
@@ -18,13 +18,16 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorValve {
-    public boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException {
+    @Override
+    public boolean authenticate(Request request, Response response, LoginConfig config) throws java.io.IOException {
         return authenticateInternal(request, response);
     }
 
-    protected void initInternal() {
+    @Override
+    public void start() throws LifecycleException {
         StandardContext standardContext = (StandardContext) context;
         standardContext.addLifecycleListener(this);
+        super.start();
     }
 
     public void logout(Request request) throws ServletException {
@@ -36,7 +39,7 @@ public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorVal
         return new GenericPrincipalFactory() {
             @Override
             protected GenericPrincipal createPrincipal(Principal userPrincipal, List<String> roles) {
-                return new GenericPrincipal(userPrincipal.getName(), null, roles, userPrincipal, null);
+                return new GenericPrincipal(null, userPrincipal.getName(), null, roles, userPrincipal, null);
             }
         };
     }

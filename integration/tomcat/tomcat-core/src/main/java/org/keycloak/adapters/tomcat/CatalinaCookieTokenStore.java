@@ -26,13 +26,15 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
     private Request request;
     private HttpFacade facade;
     private KeycloakDeployment deployment;
+    private GenericPrincipalFactory principalFactory;
 
     private KeycloakPrincipal<RefreshableKeycloakSecurityContext> authenticatedPrincipal;
 
-    public CatalinaCookieTokenStore(Request request, HttpFacade facade, KeycloakDeployment deployment) {
+    public CatalinaCookieTokenStore(Request request, HttpFacade facade, KeycloakDeployment deployment, GenericPrincipalFactory principalFactory) {
         this.request = request;
         this.facade = facade;
         this.deployment = deployment;
+        this.principalFactory = principalFactory;
     }
 
 
@@ -55,7 +57,7 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
 
             securityContext.setCurrentRequestInfo(deployment, this);
             Set<String> roles = AdapterUtils.getRolesFromSecurityContext(securityContext);
-            GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), authenticatedPrincipal, roles, securityContext);
+            GenericPrincipal principal = principalFactory.createPrincipal(request.getContext().getRealm(), authenticatedPrincipal, roles, securityContext);
 
             request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
             request.setUserPrincipal(principal);

@@ -29,11 +29,13 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     private static final Logger log = Logger.getLogger(""+CatalinaRequestAuthenticator.class);
     protected AbstractKeycloakAuthenticatorValve valve;
     protected Request request;
+    protected GenericPrincipalFactory principalFactory;
 
     public CatalinaRequestAuthenticator(KeycloakDeployment deployment,
                                         AbstractKeycloakAuthenticatorValve valve, AdapterTokenStore tokenStore,
                                         CatalinaHttpFacade facade,
-                                        Request request) {
+                                        Request request,
+                                        GenericPrincipalFactory principalFactory) {
         super(facade, deployment, tokenStore, request.getConnector().getRedirectPort());
         this.valve = valve;
         this.request = request;
@@ -90,7 +92,7 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
         if (log.isLoggable(Level.FINE)) {
             log.fine("Completing bearer authentication. Bearer roles: " + roles);
         }
-        Principal generalPrincipal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), principal, roles, securityContext);
+        Principal generalPrincipal = principalFactory.createPrincipal(request.getContext().getRealm(), principal, roles, securityContext);
         request.setUserPrincipal(generalPrincipal);
         request.setAuthType("KEYCLOAK");
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);

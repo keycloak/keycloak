@@ -18,24 +18,9 @@ import java.util.Set;
  * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>
  * @version $Revision: 1 $
  */
-public class CatalinaSecurityContextHelper {
+public abstract class GenericPrincipalFactory {
+
     public GenericPrincipal createPrincipal(Realm realm, final Principal identity, final Set<String> roleSet, final KeycloakSecurityContext securityContext) {
-//        KeycloakAccount account = new KeycloakAccount() {
-//            @Override
-//            public Principal getPrincipal() {
-//                return identity;
-//            }
-//
-//            @Override
-//            public Set<String> getRoles() {
-//                return roleSet;
-//            }
-//
-//            @Override
-//            public KeycloakSecurityContext getKeycloakSecurityContext() {
-//                return securityContext;
-//            }
-//        };
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(identity);
@@ -44,14 +29,6 @@ public class CatalinaSecurityContextHelper {
             Group group = roleSets[g];
             String name = group.getName();
             Group subjectGroup = createGroup(name, principals);
-//            if (subjectGroup instanceof NestableGroup) {
-//                /* A NestableGroup only allows Groups to be added to it so we
-//                need to add a SimpleGroup to subjectRoles to contain the roles
-//                */
-//                SimpleGroup tmp = new SimpleGroup("Roles");
-//                subjectGroup.addMember(tmp);
-//                subjectGroup = tmp;
-//            }
             // Copy the group members to the Subject group
             Enumeration<? extends Principal> members = group.members();
             while (members.hasMoreElements()) {
@@ -60,22 +37,14 @@ public class CatalinaSecurityContextHelper {
             }
         }
         
-        // add the CallerPrincipal group if none has been added in getRoleSets
-//        Group callerGroup = new SimpleGroup(SecurityConstants.CALLER_PRINCIPAL_GROUP);
-//        callerGroup.addMember(identity);
-//        principals.add(callerGroup);
-//        SecurityContext sc = SecurityContextAssociation.getSecurityContext();
-//        Principal userPrincipal = getPrincipal(subject);
-//        sc.getUtil().createSubjectInfo(userPrincipal, account, subject);
-//        List<String> rolesAsStringList = new ArrayList<String>();
-//        rolesAsStringList.addAll(roleSet);
-//        
         Principal userPrincipal = getPrincipal(subject);
         List<String> rolesAsStringList = new ArrayList<String>();
         rolesAsStringList.addAll(roleSet);
-        GenericPrincipal principal = new GenericPrincipal(userPrincipal.getName(), null, rolesAsStringList, userPrincipal, null);
+        GenericPrincipal principal = createPrincipal(userPrincipal, rolesAsStringList);
         return principal;
     }
+
+    protected abstract GenericPrincipal createPrincipal(Principal userPrincipal, List<String> roles);
 
     /**
      * Get the Principal given the authenticated Subject. Currently the first subject that is not of type {@code Group} is

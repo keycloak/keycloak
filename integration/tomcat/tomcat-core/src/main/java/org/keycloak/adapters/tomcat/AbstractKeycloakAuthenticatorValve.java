@@ -3,13 +3,11 @@ package org.keycloak.adapters.tomcat;
 import org.apache.catalina.Context;
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Manager;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
-import org.apache.catalina.core.StandardContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
@@ -55,13 +53,9 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
         if (Lifecycle.START_EVENT.equals(event.getType())) {
-            try {
-                startDeployment();
-            } catch (LifecycleException e) {
-            	log.severe("Error starting deployment. " + e.getMessage());
-            }
+            cache = false;
         } else if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
-        	initInternal();
+        	keycloakInit();
         } else if (event.getType() == Lifecycle.BEFORE_STOP_EVENT) {
             beforeStop();
         }
@@ -80,19 +74,11 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
             tokenStore.logout();
             request.removeAttribute(KeycloakSecurityContext.class.getName());
         }
-    }
-
-
-    public void startDeployment() throws LifecycleException {
-        super.start();
-        StandardContext standardContext = (StandardContext) context;
-        standardContext.addLifecycleListener(this);
-        cache = false;
+        request.setUserPrincipal(null);
     }
 
     @SuppressWarnings("UseSpecificCatch")
-    @Override
-    public void initInternal() {
+    public void keycloakInit() {
         // Possible scenarios:
         // 1) The deployment has a keycloak.config.resolver specified and it exists:
         //    Outcome: adapter uses the resolver
@@ -182,6 +168,8 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         }
     }
 
+    protected abstract GenericPrincipalFactory createPrincipalFactory();
+
     protected boolean authenticateInternal(Request request, HttpServletResponse response) {
         CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
@@ -192,7 +180,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
 
         nodesRegistrationManagement.tryRegister(deployment);
 
-        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, this, tokenStore, facade, request);
+        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, this, tokenStore, facade, request, createPrincipalFactory());
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             if (facade.isEnded()) {
@@ -237,9 +225,9 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         }
 
         if (resolvedDeployment.getTokenStore() == TokenStore.SESSION) {
-            store = new CatalinaSessionTokenStore(request, resolvedDeployment, userSessionManagement);
+            store = new CatalinaSessionTokenStore(request, resolvedDeployment, userSessionManagement, createPrincipalFactory());
         } else {
-            store = new CatalinaCookieTokenStore(request, facade, resolvedDeployment);
+            store = new CatalinaCookieTokenStore(request, facade, resolvedDeployment, createPrincipalFactory());
         }
 
         request.setNote(TOKEN_STORE_NOTE, store);

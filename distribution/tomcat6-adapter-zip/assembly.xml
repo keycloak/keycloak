@@ -1,0 +1,23 @@
+<assembly>
+    <id>war-dist</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <unpack>false</unpack>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <includes>
+                <include>org.keycloak:keycloak-tomcat6-adapter</include>
+            </includes>
+            <excludes>
+                <exclude>org.apache.tomcat:catalina</exclude>
+            </excludes>
+            <outputDirectory></outputDirectory>
+        </dependencySet>
+    </dependencySets>
+</assembly>
