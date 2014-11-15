@@ -9,11 +9,10 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-tomcat7-adapter</artifactId>
-	<name>Keycloak Tomcat 7 Integration</name>
+	<artifactId>keycloak-tomcat6-adapter</artifactId>
+	<name>Keycloak Tomcat 6 Integration</name>
     <properties>
-        <!--<tomcat.version>8.0.14</tomcat.version>-->
-        <tomcat.version>7.0.52</tomcat.version>
+        <tomcat.version>6.0.41</tomcat.version>
     </properties>
 	<description />
 
@@ -77,19 +76,12 @@
 			<groupId>org.codehaus.jackson</groupId>
 			<artifactId>jackson-xc</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>tomcat-servlet-api</artifactId>
-			<version>${tomcat.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>tomcat-catalina</artifactId>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>catalina</artifactId>
             <version>${tomcat.version}</version>
-			<scope>provided</scope>
-		</dependency>
-
+            <scope>provided</scope>
+        </dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>

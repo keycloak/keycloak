@@ -2,6 +2,7 @@ package org.keycloak.adapters.tomcat;
 
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpFacade;
+import org.keycloak.util.ServerCookie;
 
 import javax.security.cert.X509Certificate;
 import javax.servlet.http.HttpServletResponse;
@@ -117,13 +118,10 @@ public class CatalinaHttpFacade implements HttpFacade {
 
         @Override
         public void setCookie(String name, String value, String path, String domain, int maxAge, boolean secure, boolean httpOnly) {
-            javax.servlet.http.Cookie cookie = new javax.servlet.http.Cookie(name, value);
-            if (domain != null) cookie.setDomain(domain);
-            if (path != null) cookie.setPath(path);
-            if (secure) cookie.setSecure(true);
-            if (httpOnly) cookie.setHttpOnly(httpOnly);
-            cookie.setMaxAge(maxAge);
-            response.addCookie(cookie);
+            StringBuffer cookieBuf = new StringBuffer();
+            ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, null, maxAge, secure, httpOnly);
+            String cookie = cookieBuf.toString();
+            response.addHeader("Set-Cookie", cookie);
         }
 
         @Override

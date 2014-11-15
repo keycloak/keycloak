@@ -2,6 +2,7 @@ package org.keycloak.services.util;
 
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.util.ServerCookie;
 
 import javax.ws.rs.core.HttpHeaders;
 

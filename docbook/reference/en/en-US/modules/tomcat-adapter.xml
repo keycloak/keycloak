@@ -1,14 +1,14 @@
 <section id="tomcat-adapter">
-    <title>Tomcat 7 and 8 Adapter</title>
+    <title>Tomcat 6, 7 and 8 Adapters</title>
     <para>
-        To be able to secure WAR apps deployed on Tomcat 7 and 8 you must install the Keycloak Tomcat 7 or 8 adapter
+        To be able to secure WAR apps deployed on Tomcat 6, 7 and 8 you must install the Keycloak Tomcat 6, 7 or 8 adapter
         into your Tomcat installation.  You then have to provide some extra configuration in each WAR you deploy to
         Tomcat.  Let's go over these steps.
     </para>
     <section id="tomcat-adapter-installation">
         <title>Adapter Installation</title>
     <para>
-        There is a adapter zip file for Tomcat 7/8 in the <literal>adapters/</literal> directory in the Keycloak appliance
+        There is a adapter zip file for Tomcat in the <literal>adapters/</literal> directory in the Keycloak appliance
         or war distribution.  You must unzip this file into Tomcat's <literal>lib/</literal> directory.  Including
         adapter's jars within your WEB-INF/lib directory will not work!  The Keycloak adapter is implemented as a Valve
         and valve code must reside in Tomcat's main lib/ directory.
@@ -16,6 +16,8 @@
     <para>
 <programlisting>
 $ cd $TOMCAT_HOME/lib
+$ unzip keycloak-tomcat6-adapter-dist.zip
+    or
 $ unzip keycloak-tomcat7-adapter-dist.zip
     or
 $ unzip keycloak-tomcat8-adapter-dist.zip

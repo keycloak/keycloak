@@ -23,11 +23,13 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
     private Request request;
     private KeycloakDeployment deployment;
     private CatalinaUserSessionManagement sessionManagement;
+    protected GenericPrincipalFactory principalFactory;
 
-    public CatalinaSessionTokenStore(Request request, KeycloakDeployment deployment, CatalinaUserSessionManagement sessionManagement) {
+    public CatalinaSessionTokenStore(Request request, KeycloakDeployment deployment, CatalinaUserSessionManagement sessionManagement, GenericPrincipalFactory principalFactory) {
         this.request = request;
         this.deployment = deployment;
         this.sessionManagement = sessionManagement;
+        this.principalFactory = principalFactory;
     }
 
     @Override
@@ -87,7 +89,7 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
     public void saveAccountInfo(KeycloakAccount account) {
         RefreshableKeycloakSecurityContext securityContext = (RefreshableKeycloakSecurityContext)account.getKeycloakSecurityContext();
         Set<String> roles = account.getRoles();
-        GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), account.getPrincipal(), roles, securityContext);
+        GenericPrincipal principal = principalFactory.createPrincipal(request.getContext().getRealm(), account.getPrincipal(), roles, securityContext);
 
         Session session = request.getSessionInternal(true);
         session.setPrincipal(principal);

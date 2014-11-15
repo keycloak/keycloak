@@ -80,6 +80,7 @@
                 <include>org.keycloak:keycloak-wildfly-adapter-dist:zip</include>
                 <include>org.keycloak:keycloak-as7-adapter-dist:zip</include>
                 <include>org.keycloak:keycloak-eap6-adapter-dist:zip</include>
+                <include>org.keycloak:keycloak-tomcat6-adapter-dist:zip</include>
                 <include>org.keycloak:keycloak-tomcat7-adapter-dist:zip</include>
                 <include>org.keycloak:keycloak-tomcat8-adapter-dist:zip</include>
                 <include>org.keycloak:keycloak-jetty81-adapter-dist:zip</include>

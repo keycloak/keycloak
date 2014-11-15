@@ -1,4 +1,4 @@
-package org.keycloak.services.util;
+package org.keycloak.util;
 
 import java.io.Serializable;
 import java.text.DateFormat;
