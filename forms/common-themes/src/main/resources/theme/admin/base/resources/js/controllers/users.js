@@ -525,6 +525,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     $scope.ldapVendors = [
         { "id": "ad", "name": "Active Directory" },
         { "id": "rhds", "name": "Red Hat Directory Server" },
+        { "id": "tivoli", "name": "Tivoli" },
         { "id": "other", "name": "Other" }
     ];
 

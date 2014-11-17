@@ -105,6 +105,8 @@ public class PartitionManagerRegistry {
         // RHDS is using "nsuniqueid" as unique identifier instead of "entryUUID"
         if (vendor != null && vendor.equals(LDAPConstants.VENDOR_RHDS)) {
             ldapStoreBuilder.uniqueIdentifierAttributeName("nsuniqueid");
+        } else if (LDAPConstants.VENDOR_TIVOLI.equals(vendor)) {
+            ldapStoreBuilder.uniqueIdentifierAttributeName("uniqueidentifier");
         }
 
         LDAPMappingConfigurationBuilder ldapUserMappingBuilder = ldapStoreBuilder
