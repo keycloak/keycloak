@@ -157,6 +157,7 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
                 <listitem>tokenParsed - the parsed token</listitem>
                 <listitem>subject - the user id</listitem>
                 <listitem>idToken - the id token if claims is enabled for the application, null otherwise</listitem>
+                <listitem>idTokenParsed - the parsed id token</listitem>
                 <listitem>realmAccess - the realm roles associated with the token</listitem>
                 <listitem>resourceAccess - the resource roles assocaited with the token</listitem>
                 <listitem>refreshToken - the base64 encoded token that can be used to retrieve a new token</listitem>
