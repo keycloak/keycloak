@@ -70,7 +70,7 @@
                     }
 
                     if (initOptions.token || initOptions.refreshToken) {
-                        setToken(initOptions.token, initOptions.refreshToken);
+                        setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
                         initPromise.setSuccess();
                     } else if (initOptions.onLoad) {
                         var options = {};
@@ -255,7 +255,7 @@
                             if (req.readyState == 4) {
                                 if (req.status == 200) {
                                     var tokenResponse = JSON.parse(req.responseText);
-                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token']);
+                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token']);
                                     kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
                                         p.setSuccess(true);
@@ -325,7 +325,7 @@
                     if (req.readyState == 4) {
                         if (req.status == 200) {
                             var tokenResponse = JSON.parse(req.responseText);
-                            setToken(tokenResponse['access_token'], tokenResponse['refresh_token']);
+                            setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token']);
                             kc.onAuthSuccess && kc.onAuthSuccess();
                             promise && promise.setSuccess();
                         } else {
@@ -411,7 +411,7 @@
 
         function clearToken() {
             if (kc.token) {
-                setToken(null, null);
+                setToken(null, null, null);
                 kc.onAuthLogout && kc.onAuthLogout();
                 if (kc.loginRequired) {
                     kc.login();
@@ -419,14 +419,14 @@
             }
         }
 
-        function setToken(token, refreshToken) {
+        function setToken(token, refreshToken, idToken) {
             if (token || refreshToken) {
                 setupCheckLoginIframe();
             }
 
             if (token) {
                 kc.token = token;
-                kc.tokenParsed = JSON.parse(decodeURIComponent(escape(window.atob( token.split('.')[1] ))));
+                kc.tokenParsed = decodeToken(token);
                 var sessionId = kc.realm + '/' + kc.tokenParsed.sub;
                 if (kc.tokenParsed.session_state) {
                     sessionId = sessionId + '/' + kc.tokenParsed.session_state;
@@ -436,34 +436,59 @@
                 kc.subject = kc.tokenParsed.sub;
                 kc.realmAccess = kc.tokenParsed.realm_access;
                 kc.resourceAccess = kc.tokenParsed.resource_access;
-
-                for (var i = 0; i < idTokenProperties.length; i++) {
-                    var n = idTokenProperties[i];
-                    if (kc.tokenParsed[n]) {
-                        if (!kc.idToken) {
-                            kc.idToken = {};
-                        }
-                        kc.idToken[n] = kc.tokenParsed[n];
-                    }
-                }
             } else {
                 delete kc.token;
                 delete kc.tokenParsed;
                 delete kc.subject;
                 delete kc.realmAccess;
                 delete kc.resourceAccess;
-                delete kc.idToken;
 
                 kc.authenticated = false;
             }
 
             if (refreshToken) {
                 kc.refreshToken = refreshToken;
-                kc.refreshTokenParsed = JSON.parse(atob(refreshToken.split('.')[1]));
+                kc.refreshTokenParsed = decodeToken(refreshToken);
             } else {
                 delete kc.refreshToken;
                 delete kc.refreshTokenParsed;
             }
+
+            if (idToken) {
+                kc.idToken = idToken;
+                kc.idTokenParsed = decodeToken(idToken);
+            } else {
+                delete kc.idToken;
+                delete kc.idTokenParsed;
+            }
+        }
+
+        function decodeToken(str) {
+            str = str.split('.')[1];
+
+            str = str.replace('/-/g', '+');
+            str = str.replace('/_/g', '/');
+            switch (str.length % 4)
+            {
+                case 0:
+                    break;
+                case 2:
+                    str += '==';
+                    break;
+                case 3:
+                    str += '=';
+                    break;
+                default:
+                    throw 'Invalid token';
+            }
+
+            str = (str + '===').slice(0, str.length + (str.length % 4));
+            str = str.replace(/-/g, '+').replace(/_/g, '/');
+
+            str = decodeURIComponent(escape(atob(str)));
+
+            str = JSON.parse(str);
+            return str;
         }
 
         function createUUID() {
@@ -763,57 +788,15 @@
 
             throw 'invalid adapter type: ' + type;
         }
-
-        var idTokenProperties = [
-            "name", 
-            "given_name", 
-            "family_name", 
-            "middle_name", 
-            "nickname", 
-            "preferred_username", 
-            "profile", 
-            "picture", 
-            "website", 
-            "email", 
-            "email_verified", 
-            "gender", 
-            "birthdate", 
-            "zoneinfo", 
-            "locale", 
-            "phone_number", 
-            "phone_number_verified", 
-            "address", 
-            "updated_at", 
-            "formatted", 
-            "street_address", 
-            "locality", 
-            "region", 
-            "postal_code", 
-            "country", 
-            "claims_locales"
-        ]
     }
 
     if ( typeof module === "object" && module && typeof module.exports === "object" ) {
-        // Expose KeyCloak as module.exports in loaders that implement the Node
-        // module pattern (including browserify). Do not create the global, since
-        // the user will be storing it themselves locally, and globals are frowned
-        // upon in the Node module world.
         module.exports = Keycloak;
     } else {
-        // Otherwise expose KeyCloak to the global object as usual
         window.Keycloak = Keycloak;
 
-        // Register as a named AMD module, since KeyCloak can be concatenated with other
-        // files that may use define, but not via a proper concatenation script that
-        // understands anonymous AMD modules. A named AMD is safest and most robust
-        // way to register. Lowercase jquery is used because AMD module names are
-        // derived from file names, and KeyCloak is normally delivered in a lowercase
-        // file name. Do this after creating the global so that if an AMD module wants
-        // to call noConflict to hide this version of KeyCloak, it will work.
         if ( typeof define === "function" && define.amd ) {
             define( "keycloak", [], function () { return Keycloak; } );
         }
     }
-
 })( window );

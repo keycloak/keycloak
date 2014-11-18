@@ -85,6 +85,7 @@
                 <listitem>The tomcat adapter valve has moved to a different package.  From <literal>org.keycloak.adapters.tomcat7.KeycloakAuthenticatorValve</literal> to <literal>org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve</literal>
                 From the 'tomcat7' package to just 'tomcat'.
                 </listitem>
+                <listitem>JavaScript adapter now has idToken and idTokenParsed properties. If you use idToken to retrieve first name, email, etc. you need to change this to idTokenParsed.</listitem>
             </itemizedlist>
         </section>
         <section>
