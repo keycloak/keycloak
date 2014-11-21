@@ -32,36 +32,32 @@ import org.jboss.modules.ModuleLoader;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
+public abstract class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
 
-    private static final ModuleIdentifier KEYCLOAK_WILDFLY_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-wildfly-adapter");
-    private static final ModuleIdentifier KEYCLOAK_UNDERTOW_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-undertow-adapter");
     private static final ModuleIdentifier KEYCLOAK_JBOSS_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-jboss-adapter-core");
     private static final ModuleIdentifier KEYCLOAK_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-adapter-core");
     private static final ModuleIdentifier KEYCLOAK_CORE = ModuleIdentifier.create("org.keycloak.keycloak-core");
-    private static final ModuleIdentifier APACHE_HTTPCOMPONENTS = ModuleIdentifier.create("org.apache.httpcomponents");
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
 
-        String deploymentName = deploymentUnit.getName();
-        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
+        // Next phase, need to detect if this is a Keycloak deployment.  If not, don't add the modules.
 
-        addModules(deploymentUnit);
-    }
-
-    private void addModules(DeploymentUnit deploymentUnit) {
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
+        addCommonModules(moduleSpecification, moduleLoader);
+        addPlatformSpecificModules(moduleSpecification, moduleLoader);
+    }
 
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_WILDFLY_ADAPTER, false, false, true, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_UNDERTOW_ADAPTER, false, false, false, false));
+    private void addCommonModules(ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
+        // ModuleDependency(ModuleLoader moduleLoader, ModuleIdentifier identifier, boolean optional, boolean export, boolean importServices, boolean userSpecified)
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_JBOSS_CORE_ADAPTER, false, false, false, false));
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE_ADAPTER, false, false, false, false));
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, APACHE_HTTPCOMPONENTS, false, false, true, false));
     }
+
+    abstract protected void addPlatformSpecificModules(ModuleSpecification moduleSpecification, ModuleLoader moduleLoader);
 
     @Override
     public void undeploy(DeploymentUnit du) {

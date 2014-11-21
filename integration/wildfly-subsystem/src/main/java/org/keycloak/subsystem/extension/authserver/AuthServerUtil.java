@@ -56,23 +56,13 @@ public class AuthServerUtil {
 
     private static final ModuleIdentifier KEYCLOAK_SUBSYSTEM = ModuleIdentifier.create("org.keycloak.keycloak-wildfly-subsystem");
 
-    private final String authServerName;
-    private final PathAddress pathAddress;
     private final String deploymentName;
-
-    //private String overlayName;
     private final Module subsysModule;
     private final String keycloakVersion;
     private final boolean isAuthServerExploded;
-
-    //private File overlaysDir;
     private final URI authServerUri;
-    //private URL serverConfig = null;
-    //private Set<URL> spiUrls = new HashSet<URL>();
 
     AuthServerUtil(ModelNode operation) {
-        this.authServerName = getAuthServerName(operation);
-        this.pathAddress = getPathAddress(operation);
         this.deploymentName = getDeploymentName(operation);
         this.subsysModule = findSubsysModule();
         this.keycloakVersion = subsysModule.getProperty("keycloak-version");

@@ -224,7 +224,7 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
         return this.webContexts.containsKey(deploymentName);
     }
 
-    static KeycloakAdapterConfigService find(ServiceRegistry registry) {
+    public static KeycloakAdapterConfigService find(ServiceRegistry registry) {
         ServiceController<?> container = registry.getService(KeycloakAdapterConfigService.SERVICE_NAME);
         if (container != null) {
             KeycloakAdapterConfigService service = (KeycloakAdapterConfigService)container.getValue();
@@ -233,7 +233,7 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
         return null;
     }
 
-    static KeycloakAdapterConfigService find(OperationContext context) {
+    public static KeycloakAdapterConfigService find(OperationContext context) {
         return find(context.getServiceRegistry(true));
     }
 }

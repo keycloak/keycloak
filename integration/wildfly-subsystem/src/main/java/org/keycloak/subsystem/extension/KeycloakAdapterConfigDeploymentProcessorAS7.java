@@ -21,11 +21,13 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.as.web.common.WarMetaData;
+import org.jboss.as.web.deployment.WarMetaData;
 import org.jboss.logging.Logger;
 import org.jboss.metadata.javaee.spec.ParamValueMetaData;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
+import org.jboss.metadata.web.jboss.ValveMetaData;
 import org.jboss.metadata.web.spec.LoginConfigMetaData;
+import org.keycloak.adapters.as7.KeycloakAuthenticatorValve;
 import org.keycloak.subsystem.logging.KeycloakLogger;
 
 import java.util.ArrayList;
@@ -33,59 +35,43 @@ import java.util.List;
 
 /**
  * Pass authentication data (keycloak.json) as a servlet context param so it can be read by the KeycloakServletExtension.
+ * This is used for AS7/EAP6.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitProcessor {
-    protected Logger log = Logger.getLogger(KeycloakAdapterConfigDeploymentProcessor.class);
 
-    // This param name is defined again in Keycloak Undertow Integration class
-    // org.keycloak.adapters.undertow.KeycloakServletExtension.  We have this value in
-    // two places to avoid dependency between Keycloak Subsystem and Keyclaok Undertow Integration.
-    public static final String AUTH_DATA_PARAM_NAME = "org.keycloak.json.adapterConfig";
+// Note: Even though this class closely resembles the WildFly KeycloakAdapterConfigDeploymentProcessor
+//       it can not be easily refactored because the WarMetaData classes are of different types.
+public class KeycloakAdapterConfigDeploymentProcessorAS7 implements DeploymentUnitProcessor {
+    protected Logger log = Logger.getLogger(KeycloakAdapterConfigDeploymentProcessorAS7.class);
 
-    // not sure if we need this yet, keeping here just in case
-    protected void addSecurityDomain(DeploymentUnit deploymentUnit, KeycloakAdapterConfigService service) {
+    @Override
+    public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
+        DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         String deploymentName = deploymentUnit.getName();
-        if (!service.isSecureDeployment(deploymentName)) {
+
+        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
+        //log.info("********* CHECK KEYCLOAK DEPLOYMENT: " + deploymentName);
+        if (service.isSecureDeployment(deploymentName)) {
+            addKeycloakAuthData(phaseContext, deploymentName, service);
             return;
         }
+
+        // else check to see if KEYCLOAK is specified as login config
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
         if (warMetaData == null) return;
         JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
         if (webMetaData == null) return;
 
         LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
-        if (loginConfig == null || !loginConfig.getAuthMethod().equalsIgnoreCase("KEYCLOAK")) {
-            return;
+        if (loginConfig != null && "KEYCLOAK".equalsIgnoreCase(loginConfig.getAuthMethod())) {
+            addValve(webMetaData);
         }
-
-        webMetaData.setSecurityDomain("keycloak");
     }
 
-    @Override
-    public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
-        DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
-
-        String deploymentName = deploymentUnit.getName();
-        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
-        //log.info("********* CHECK KEYCLOAK DEPLOYMENT: " + deploymentName);
-        if (service.isSecureDeployment(deploymentName)) {
-            addKeycloakAuthData(phaseContext, deploymentName, service);
-        }
-
-        // FYI, Undertow Extension will find deployments that have auth-method set to KEYCLOAK
-
-        // todo notsure if we need this
-        // addSecurityDomain(deploymentUnit, service);
-    }
-
-    private void addKeycloakAuthData(DeploymentPhaseContext phaseContext, String deploymentName, KeycloakAdapterConfigService service) throws DeploymentUnitProcessingException {
+    private void addKeycloakAuthData(DeploymentPhaseContext phaseContext, String deploymentName, KeycloakAdapterConfigService service) {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
-        if (warMetaData == null) {
-            throw new DeploymentUnitProcessingException("WarMetaData not found for " + deploymentName + ".  Make sure you have specified a WAR as your secure-deployment in the Keycloak subsystem.");
-        }
 
         addJSONData(service.getJSON(deploymentName), warMetaData);
         JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
@@ -93,6 +79,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
             webMetaData = new JBossWebMetaData();
             warMetaData.setMergedJBossWebMetaData(webMetaData);
         }
+        addValve(webMetaData);
 
         LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
         if (loginConfig == null) {
@@ -102,6 +89,19 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         loginConfig.setAuthMethod("KEYCLOAK");
         loginConfig.setRealmName(service.getRealmName(deploymentName));
         KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentName);
+    }
+
+    private void addValve(JBossWebMetaData webMetaData) {
+        List<ValveMetaData> valves = webMetaData.getValves();
+        if (valves == null) {
+            valves = new ArrayList<ValveMetaData>(1);
+            webMetaData.setValves(valves);
+        }
+        ValveMetaData valve = new ValveMetaData();
+        valve.setValveClass(KeycloakAuthenticatorValve.class.getName());
+        valve.setModule("org.keycloak.keycloak-as7-adapter");
+        //log.info("******* adding Keycloak valve to: " + deploymentName);
+        valves.add(valve);
     }
 
     private void addJSONData(String json, WarMetaData warMetaData) {
@@ -117,7 +117,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         }
 
         ParamValueMetaData param = new ParamValueMetaData();
-        param.setParamName(AUTH_DATA_PARAM_NAME);
+        param.setParamName(KeycloakAdapterConfigDeploymentProcessor.AUTH_DATA_PARAM_NAME);
         param.setParamValue(json);
         contextParams.add(param);
 

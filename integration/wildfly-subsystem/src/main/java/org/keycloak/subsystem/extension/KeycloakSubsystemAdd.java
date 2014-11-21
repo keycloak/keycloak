@@ -29,6 +29,8 @@ import org.jboss.msc.service.ServiceController;
 
 import java.util.List;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.server.deployment.DeploymentUnitProcessor;
+import org.keycloak.subsystem.extension.authserver.KeycloakServerDeploymentProcessor;
 
 /**
  * The Keycloak subsystem add update handler.
@@ -51,13 +53,33 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(DeploymentProcessorTarget processorTarget) {
-                processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, 0, new KeycloakDependencyProcessor());
+                processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, 0, chooseDependencyProcessor());
                 processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME,
-                        KeycloakAdapterConfigDeploymentProcessor.PHASE,
-                        KeycloakAdapterConfigDeploymentProcessor.PRIORITY,
-                        new KeycloakAdapterConfigDeploymentProcessor());
+                        Phase.POST_MODULE, // PHASE
+                        Phase.POST_MODULE_VALIDATOR_FACTORY - 1, // PRIORITY
+                        chooseConfigDeploymentProcessor());
+                processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME,
+                        Phase.POST_MODULE, // PHASE
+                        Phase.POST_MODULE_VALIDATOR_FACTORY - 1, // PRIORITY
+                        new KeycloakServerDeploymentProcessor());
             }
         }, OperationContext.Stage.RUNTIME);
+    }
+
+    private DeploymentUnitProcessor chooseDependencyProcessor() {
+        if (Environment.isWildFly()) {
+            return new KeycloakDependencyProcessorWildFly();
+        } else {
+            return new KeycloakDependencyProcessorAS7();
+        }
+    }
+
+    private DeploymentUnitProcessor chooseConfigDeploymentProcessor() {
+        if (Environment.isWildFly()) {
+            return new KeycloakAdapterConfigDeploymentProcessor();
+        } else {
+            return new KeycloakAdapterConfigDeploymentProcessorAS7();
+        }
     }
 
     @Override

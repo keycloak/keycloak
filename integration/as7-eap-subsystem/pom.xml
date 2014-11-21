@@ -25,7 +25,7 @@
     </parent>
 
     <artifactId>keycloak-as7-subsystem</artifactId>
-    <name>Keycloak Wildfly Subsystem</name>
+    <name>Keycloak Wildfly AS7 Subsystem</name>
     <description/>
     <packaging>jar</packaging>
 
