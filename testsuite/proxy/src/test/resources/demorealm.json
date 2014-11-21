@@ -65,7 +65,8 @@
             "adminUrl": "http://localhost:8080/customer-portal",
             "baseUrl": "http://localhost:8080/customer-portal",
             "redirectUris": [
-                "http://localhost:8080/customer-portal/*"
+                "http://localhost:8080/customer-portal/*",
+                "https://localhost:8443/customer-portal/*"
             ],
             "secret": "password"
         }
