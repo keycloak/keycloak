@@ -42,12 +42,12 @@ import org.keycloak.enums.TokenStore;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanism {
+public abstract class AbstractUndertowKeycloakAuthMech implements AuthenticationMechanism {
     public static final AttachmentKey<AuthChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(AuthChallenge.class);
     protected AdapterDeploymentContext deploymentContext;
     protected UndertowUserSessionManagement sessionManagement;
 
-    public UndertowKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement) {
+    public AbstractUndertowKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement) {
         this.deploymentContext = deploymentContext;
         this.sessionManagement = sessionManagement;
     }

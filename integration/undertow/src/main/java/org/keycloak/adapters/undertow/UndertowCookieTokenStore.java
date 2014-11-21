@@ -53,7 +53,7 @@ public class UndertowCookieTokenStore implements AdapterTokenStore {
         if (account.checkActive()) {
             log.debug("Cached account found");
             securityContext.authenticationComplete(account, "KEYCLOAK", false);
-            ((UndertowRequestAuthenticator)authenticator).propagateKeycloakContext(account);
+            ((AbstractUndertowRequestAuthenticator)authenticator).propagateKeycloakContext(account);
             return true;
         } else {
             log.debug("Account was not active, removing cookie and returning false");

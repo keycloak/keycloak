@@ -34,7 +34,7 @@ import javax.servlet.http.HttpSession;
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  * @version $Revision: 1 $
  */
-public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
+public class ServletRequestAuthenticator extends AbstractUndertowRequestAuthenticator {
 
 
     public ServletRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort,
