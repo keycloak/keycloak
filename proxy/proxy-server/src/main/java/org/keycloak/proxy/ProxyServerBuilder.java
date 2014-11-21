@@ -20,7 +20,11 @@ import io.undertow.server.session.InMemorySessionManager;
 import io.undertow.server.session.SessionAttachmentHandler;
 import io.undertow.server.session.SessionCookieConfig;
 import io.undertow.server.session.SessionManager;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.FindFile;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
@@ -30,13 +34,25 @@ import org.keycloak.adapters.undertow.UndertowPreAuthActionsHandler;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.util.CertificateUtils;
+import org.keycloak.util.PemUtils;
+import org.keycloak.util.SystemPropertiesJsonParserFactory;
 import org.xnio.Option;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -47,6 +63,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ProxyServerBuilder {
+    protected static Logger log = Logger.getLogger(ProxyServerBuilder.class);
     public static final HttpHandler NOT_FOUND = new HttpHandler() {
         @Override
         public void handleRequest(HttpServerExchange exchange) throws Exception {
@@ -148,6 +165,16 @@ public class ProxyServerBuilder {
                 return this;
             }
 
+            public ConstraintBuilder excludedMethods(Set<String> excludedMethods) {
+                this.excludedMethods = excludedMethods;
+                return this;
+            }
+
+            public ConstraintBuilder methods(Set<String> methods) {
+                this.methods = methods;
+                return this;
+            }
+
             public ConstraintBuilder method(String method) {
                 methods.add(method);
                 return this;
@@ -160,6 +187,10 @@ public class ProxyServerBuilder {
 
 
             public ConstraintBuilder roles(String... roles) {
+                for (String role : roles) role(role);
+                return this;
+            }
+            public ConstraintBuilder roles(Set<String> roles) {
                 for (String role : roles) role(role);
                 return this;
             }
@@ -272,11 +303,6 @@ public class ProxyServerBuilder {
         return this;
     }
 
-    public ProxyServerBuilder setHandler(HttpHandler handler) {
-        builder.setHandler(handler);
-        return this;
-    }
-
     public <T> ProxyServerBuilder setServerOption(Option<T> option, T value) {
         builder.setServerOption(option, value);
         return this;
@@ -290,5 +316,128 @@ public class ProxyServerBuilder {
     public <T> ProxyServerBuilder setWorkerOption(Option<T> option, T value) {
         builder.setWorkerOption(option, value);
         return this;
+    }
+
+    public static ProxyConfig loadConfig(InputStream is) {
+        ObjectMapper mapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
+        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
+        ProxyConfig proxyConfig;
+        try {
+            proxyConfig = mapper.readValue(is, ProxyConfig.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return proxyConfig;
+    }
+    public static Undertow build(InputStream configStream) {
+        ProxyConfig config = loadConfig(configStream);
+        return build(config);
+
+    }
+
+    public static Undertow build(ProxyConfig config) {
+        ProxyServerBuilder builder = new ProxyServerBuilder();
+        if (config.getTargetUrl() == null) {
+            log.error("Must set Target URL");
+            return null;
+        }
+        builder.target(config.getTargetUrl());
+        if (config.getApplications() == null || config.getApplications().size() == 0) {
+            log.error("No applications defined");
+            return null;
+        }
+        initConnections(config, builder);
+        initOptions(config, builder);
+
+        for (ProxyConfig.Application application : config.getApplications()) {
+            ApplicationBuilder applicationBuilder = builder.application(application.getAdapterConfig())
+                    .base(application.getBasePath())
+                    .errorPage(application.getErrorPage());
+
+            if (application.getConstraints() != null) {
+                for (ProxyConfig.Constraint constraint : application.getConstraints()) {
+                    ApplicationBuilder.ConstraintBuilder constraintBuilder = applicationBuilder.constraint(constraint.getPattern());
+                    if (constraint.getRolesAllowed() != null) {
+                        constraintBuilder.roles(constraint.getRolesAllowed());
+                    }
+                    if (constraint.getMethods() != null) {
+                        constraintBuilder.methods(constraint.getMethods());
+                    }
+                    if (constraint.getExcludedMethods() != null) {
+                        constraintBuilder.excludedMethods(constraint.getExcludedMethods());
+                    }
+                    if (constraint.isDeny()) constraintBuilder.deny();
+                    if (constraint.isPermit()) constraintBuilder.permit();
+                    if (constraint.isAuthenticate()) constraintBuilder.authenticate();
+                    constraintBuilder.add();
+                }
+            }
+            applicationBuilder.add();
+        }
+        return builder.build();
+    }
+
+    public static void initOptions(ProxyConfig config, ProxyServerBuilder builder) {
+        if (config.getBufferSize() != null) builder.setBufferSize(config.getBufferSize());
+        if (config.getBuffersPerRegion() != null) builder.setBuffersPerRegion(config.getBuffersPerRegion());
+        if (config.getIoThreads() != null) builder.setIoThreads(config.getIoThreads());
+        if (config.getWorkerThreads() != null) builder.setWorkerThreads(config.getWorkerThreads());
+        if (config.getDirectBuffers() != null) builder.setDirectBuffers(config.getDirectBuffers());
+    }
+
+    public static void initConnections(ProxyConfig config, ProxyServerBuilder builder) {
+        if (config.getHttpPort() == null && config.getHttpsPort() == null) {
+            log.warn("You have not set up HTTP or HTTPS");
+        }
+        if (config.getHttpPort() != null) {
+            String bindAddress = "localhost";
+            if (config.getBindAddress() != null) bindAddress = config.getBindAddress();
+            builder.addHttpListener(config.getHttpPort(), bindAddress);
+        }
+        if (config.getHttpsPort() != null) {
+            String bindAddress = "localhost";
+            if (config.getBindAddress() != null) bindAddress = config.getBindAddress();
+            if (config.getKeystore() != null) {
+                InputStream is = FindFile.findFile(config.getKeystore());
+                SSLContext sslContext = null;
+                try {
+                    KeyStore keystore = KeyStore.getInstance("jks");
+                    keystore.load(is, config.getKeystorePassword().toCharArray());
+                    sslContext = SslUtil.createSSLContext(keystore, config.getKeyPassword(), null);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                builder.addHttpsListener(config.getHttpsPort().intValue(), bindAddress, sslContext);
+            } else {
+                log.warn("Generating temporary SSL cert");
+                KeyPair keyPair = null;
+                try {
+                    keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                }
+                X509Certificate certificate = null;
+                try {
+                    certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, bindAddress);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+                try {
+                    KeyStore keyStore = KeyStore.getInstance("JKS");
+                    keyStore.load(null, null);
+                    PrivateKey privateKey = keyPair.getPrivate();
+
+
+                    Certificate[] chain =  {certificate};
+
+                    keyStore.setKeyEntry(bindAddress, privateKey, "password".toCharArray(), chain);
+                    SSLContext sslContext = SslUtil.createSSLContext(keyStore, "password", null);
+                    builder.addHttpsListener(config.getHttpsPort().intValue(), bindAddress, sslContext);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 }

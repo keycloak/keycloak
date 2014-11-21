@@ -83,7 +83,7 @@ public class ProxyTest {
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/tomcat-test/demorealm.json"), RealmRepresentation.class);
+            RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/demorealm.json"), RealmRepresentation.class);
             RealmModel realm = manager.importRealm(representation);
        }
     };
@@ -148,8 +148,9 @@ public class ProxyTest {
     @BeforeClass
     public static void initProxy() throws Exception {
         initTomcat();
+        InputStream is = ProxyTest.class.getResourceAsStream("/proxy-config.json");
+        /*
         ProxyServerBuilder builder = new ProxyServerBuilder().addHttpListener(8080, "localhost");
-        InputStream is = ProxyTest.class.getResourceAsStream("/keycloak.json");
         AdapterConfig config = KeycloakDeploymentBuilder.loadAdapterConfig(is);
 
         builder.target("http://localhost:8082")
@@ -161,7 +162,8 @@ public class ProxyTest {
                     .constraint("/users/permit").permit().add()
                     .constraint("/users/deny").deny().add()
                 .add();
-        proxyServer = builder.build();
+                */
+        proxyServer = ProxyServerBuilder.build(is);
         proxyServer.start();
 
     }
@@ -183,67 +185,73 @@ public class ProxyTest {
     public static final String LOGIN_URL = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
 
     @Test
-    public void testLoginSSOAndLogout() throws Exception {
-        driver.navigate().to("http://localhost:8080/customer-portal/users");
-        System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal/users");
-        String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("customer-portal/users"));
-        Assert.assertTrue(pageSource.contains("count:0"));
-        driver.navigate().to("http://localhost:8080/customer-portal/users");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal/users");
-        pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("customer-portal/users"));
-        Assert.assertTrue(pageSource.contains("count:1")); // test http session
-
-        driver.navigate().to("http://localhost:8080/customer-portal/users/deny");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal/users/deny");
-        pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("access error"));
-
-        driver.navigate().to("http://localhost:8080/customer-portal/admins");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal/admins");
-        pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("access error"));
-
-
-
-        // test logout
-
-        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
-                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8080/customer-portal/users").build("demo").toString();
-        driver.navigate().to(logoutUri);
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        driver.navigate().to("http://localhost:8080/customer-portal/users");
-        String currentUrl = driver.getCurrentUrl();
-        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
-
-        // test unsecured page
-        driver.navigate().to("http://localhost:8080/customer-portal") ;
-        pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("customer-portal"));
-        driver.navigate().to("http://localhost:8080/customer-portal/users/permit") ;
-        pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("customer-portal/users/permit"));
+    public void testHttp() throws Exception {
+        String baseUrl = "http://localhost:8080";
+        testit(baseUrl);
 
 
     }
 
     @Test
-    @Ignore
-    public void runit() throws Exception {
-        Thread.sleep(10000000);
+    public void testHttps() throws Exception {
+        String baseUrl = "https://localhost:8443";
+        testit(baseUrl);
+
+
     }
 
+    public void testit(String baseUrl) {
+        driver.navigate().to(baseUrl + "/customer-portal/users");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        String loginPageSource = driver.getPageSource();
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), baseUrl + "/customer-portal/users");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("customer-portal/users"));
+        Assert.assertTrue(pageSource.contains("count:0"));
+        driver.navigate().to(baseUrl + "/customer-portal/users");
+        Assert.assertEquals(driver.getCurrentUrl(), baseUrl + "/customer-portal/users");
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("customer-portal/users"));
+        Assert.assertTrue(pageSource.contains("count:1")); // test http session
+
+        driver.navigate().to(baseUrl + "/customer-portal/users/deny");
+        Assert.assertEquals(driver.getCurrentUrl(), baseUrl + "/customer-portal/users/deny");
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("access error"));
+
+        driver.navigate().to(baseUrl + "/customer-portal/admins");
+        Assert.assertEquals(driver.getCurrentUrl(), baseUrl + "/customer-portal/admins");
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("access error"));
+
+
+        // test logout
+
+        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
+                .queryParam(OAuth2Constants.REDIRECT_URI, baseUrl + "/customer-portal/users").build("demo").toString();
+        driver.navigate().to(logoutUri);
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to(baseUrl + "/customer-portal/users");
+        String currentUrl = driver.getCurrentUrl();
+        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
+
+        // test unsecured page
+        driver.navigate().to(baseUrl + "/customer-portal") ;
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("customer-portal"));
+        driver.navigate().to(baseUrl + "/customer-portal/users/permit") ;
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("customer-portal/users/permit"));
+    }
 
     private static String getBaseDirectory() {
         String dirPath = null;

@@ -1,11 +1,8 @@
 package org.keycloak.adapters;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.security.Principal;
-import java.security.PublicKey;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -23,10 +20,8 @@ import javax.security.auth.spi.LoginModule;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
-import org.keycloak.constants.GenericConstants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.util.PemUtils;
 
 /**
  * Login module, which allows to authenticate Keycloak access token in environments, which rely on JAAS
@@ -103,30 +98,7 @@ public class BearerTokenLoginModule implements LoginModule {
     }
 
     protected InputStream loadKeycloakConfigFile(String keycloakConfigFile) {
-        if (keycloakConfigFile.startsWith(GenericConstants.PROTOCOL_CLASSPATH)) {
-            String classPathLocation = keycloakConfigFile.replace(GenericConstants.PROTOCOL_CLASSPATH, "");
-            log.info("Loading config from classpath on location: " + classPathLocation);
-            // Try current class classloader first
-            InputStream is = getClass().getClassLoader().getResourceAsStream(classPathLocation);
-            if (is == null) {
-                is = Thread.currentThread().getContextClassLoader().getResourceAsStream(classPathLocation);
-            }
-
-            if (is != null) {
-                return is;
-            } else {
-                throw new RuntimeException("Unable to find config from classpath: " + keycloakConfigFile);
-            }
-        } else {
-            // Fallback to file
-            try {
-                log.info("Loading config from file: " + keycloakConfigFile);
-                return new FileInputStream(keycloakConfigFile);
-            } catch (FileNotFoundException fnfe) {
-                log.severe("Config not found on " + keycloakConfigFile);
-                throw new RuntimeException(fnfe);
-            }
-        }
+        return FindFile.findFile(keycloakConfigFile);
     }
 
     @Override
