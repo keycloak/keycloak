@@ -162,7 +162,7 @@ public class TomcatTest {
     }
 
 
-    private static String getBaseDirectory() {
+    static String getBaseDirectory() {
         String dirPath = null;
         String relativeDirPath = "testsuite" + File.separator + "tomcat6" + File.separator + "target";
 

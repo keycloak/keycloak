@@ -24,7 +24,7 @@ public class KeycloakDeployment {
 
     protected RelativeUrlsUsed relativeUrls;
     protected String realm;
-    protected PublicKey realmKey;
+    protected volatile PublicKey realmKey;
     protected String authServerBaseUrl;
     protected String realmInfoUrl;
     protected KeycloakUriBuilder authUrl;

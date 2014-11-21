@@ -52,6 +52,7 @@ public class TomcatServer {
 
         server = new Embedded();
         server.setName("TomcatEmbeddedServer");
+        server.setCatalinaBase(TomcatTest.getBaseDirectory());
 
         Host localHost = server.createHost("localhost", appBase);
         localHost.setAutoDeploy(false);
