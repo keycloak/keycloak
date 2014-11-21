@@ -20,6 +20,7 @@ import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.testutils.KeycloakServer;
+import org.keycloak.util.Time;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 
@@ -90,15 +91,16 @@ public class CookieTokenStoreAdapterTest {
         KeycloakSession session = keycloakRule.startSession();
         RealmModel realm = session.realms().getRealmByName("demo");
         int originalTokenTimeout = realm.getAccessTokenLifespan();
-        realm.setAccessTokenLifespan(1);
+        realm.setAccessTokenLifespan(3);
         session.getTransaction().commit();
         session.close();
 
         // login to customer-cookie-portal
         String tokenCookie1 = loginToCustomerCookiePortal();
 
-        // wait 2 secs
-        Thread.sleep(2000);
+        // Simulate waiting 4 seconds (Running testsuite in real env like Wildfly or EAP may still require to do Thread.sleep to really wait 4 seconds...)
+        Time.setOffset(4);
+        //Thread.sleep(4000);
 
         // assert cookie was refreshed
         driver.navigate().to("http://localhost:8081/customer-cookie-portal");
@@ -117,14 +119,15 @@ public class CookieTokenStoreAdapterTest {
         driver.navigate().to("http://localhost:8081/customer-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
-        // wait 2 secs until accessToken expires for customer-cookie-portal too.
-        Thread.sleep(2000);
+        // Simulate another 4 seconds
+        Time.setOffset(8);
 
         // assert not logged in customer-cookie-portal
         driver.navigate().to("http://localhost:8081/customer-cookie-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
         // Change timeout back
+        Time.setOffset(0);
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
         realm.setAccessTokenLifespan(originalTokenTimeout);
