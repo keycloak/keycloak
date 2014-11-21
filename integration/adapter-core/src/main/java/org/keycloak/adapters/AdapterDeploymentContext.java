@@ -78,9 +78,11 @@ public class AdapterDeploymentContext {
         if (deployment == null) return null;
         if (deployment.getAuthServerBaseUrl() == null) return deployment;
 
-        deployment = resolveUrls(deployment, facade);
-        if (deployment.getRealmKey() == null) resolveRealmKey(deployment);
-        return deployment;
+        KeycloakDeployment resolvedDeployment = resolveUrls(deployment, facade);
+        if (resolvedDeployment.getRealmKey() == null) {
+            resolveRealmKey(resolvedDeployment);
+        }
+        return resolvedDeployment;
     }
 
     protected KeycloakDeployment resolveUrls(KeycloakDeployment deployment, HttpFacade facade) {
