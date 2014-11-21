@@ -24,6 +24,21 @@
                 { "type" : "password",
                     "value" : "password" }
             ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "account": [ "manage-account" ]
+            }
+        },
+        {
+            "username" : "admin",
+            "enabled": true,
+            "email" : "admin.burke@redhat.com",
+            "firstName": "Admin",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
             "realmRoles": [ "user", "admin" ],
             "applicationRoles": {
                 "account": [ "manage-account" ]

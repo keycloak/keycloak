@@ -10,7 +10,15 @@
         <servlet-name>SendUsername</servlet-name>
         <servlet-class>org.keycloak.testsuite.ProxyTest$SendUsernameServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>Error</servlet-name>
+        <servlet-class>org.keycloak.testsuite.ProxyTest$SendError</servlet-class>
+    </servlet>
 
+    <servlet-mapping>
+        <servlet-name>Error</servlet-name>
+        <url-pattern>/error.html</url-pattern>
+    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>SendUsername</servlet-name>
         <url-pattern>/*</url-pattern>

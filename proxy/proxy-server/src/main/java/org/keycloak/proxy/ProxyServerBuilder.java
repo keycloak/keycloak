@@ -4,7 +4,6 @@ import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.handlers.AuthenticationCallHandler;
-import io.undertow.security.handlers.AuthenticationConstraintHandler;
 import io.undertow.security.handlers.AuthenticationMechanismsHandler;
 import io.undertow.security.handlers.SecurityInitialHandler;
 import io.undertow.security.idm.Account;
@@ -72,7 +71,7 @@ public class ProxyServerBuilder {
         proxyHandler = new HttpHandler() {
             @Override
             public void handleRequest(HttpServerExchange exchange) throws Exception {
-                exchange.setRelativePath(exchange.getResolvedPath()); // need this otherwise proxy forwards to chopped off path
+                exchange.setRelativePath(exchange.getRequestPath()); // need this otherwise proxy forwards to chopped off path
                 handler.handleRequest(exchange);
             }
         };
@@ -93,9 +92,18 @@ public class ProxyServerBuilder {
         protected String base;
         protected SecurityPathMatches.Builder constraintBuilder = new SecurityPathMatches.Builder();
         protected SecurityPathMatches matches;
+        protected String errorPage;
 
         public ApplicationBuilder base(String base) {
             this.base = base;
+            return this;
+        }
+
+        public ApplicationBuilder errorPage(String errorPage) {
+            if (errorPage != null && errorPage.startsWith("/")) {
+                errorPage = errorPage.substring(1);
+            }
+            this.errorPage = errorPage;
             return this;
         }
 
@@ -172,8 +180,16 @@ public class ProxyServerBuilder {
         private HttpHandler addSecurity(final HttpHandler toWrap) {
             HttpHandler handler = toWrap;
             handler = new UndertowAuthenticatedActionsHandler(deploymentContext, toWrap);
+            if (errorPage != null) {
+                if (base.endsWith("/")) {
+                    errorPage = base + errorPage;
+                } else {
+                    errorPage = base + "/" + errorPage;
+                }
+            }
+            handler = new ConstraintAuthorizationHandler(errorPage, handler);
             handler = new AuthenticationCallHandler(handler);
-            handler = new ConstraintMatcherHandler(matches, handler, toWrap);
+            handler = new ConstraintMatcherHandler(matches, handler, toWrap, errorPage);
             final List<AuthenticationMechanism> mechanisms = new LinkedList<AuthenticationMechanism>();
             mechanisms.add(new CachedAuthenticatedSessionMechanism());
             mechanisms.add(new UndertowAuthenticationMechanism(deploymentContext, userSessionManagement, nodesRegistrationManagement, -1));

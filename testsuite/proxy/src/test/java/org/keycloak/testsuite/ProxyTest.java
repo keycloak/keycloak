@@ -98,10 +98,22 @@ public class ProxyTest {
             Integer count = (Integer)req.getSession().getAttribute("counter");
             if (count == null) count = new Integer(0);
             req.getSession().setAttribute("counter", new Integer(count.intValue() + 1));
-            stream.write(count.toString().getBytes());
+            stream.write(("count:"+count).getBytes());
 
 
 
+        }
+        @Override
+        protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+            doGet(req, resp);
+        }
+    }
+    public static class SendError extends HttpServlet {
+        @Override
+        protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+            resp.setContentType("text/plain");
+            OutputStream stream = resp.getOutputStream();
+            stream.write("access error".getBytes());
         }
         @Override
         protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
@@ -133,7 +145,7 @@ public class ProxyTest {
 
     static Undertow proxyServer = null;
 
-    //@BeforeClass
+    @BeforeClass
     public static void initProxy() throws Exception {
         initTomcat();
         ProxyServerBuilder builder = new ProxyServerBuilder().addHttpListener(8080, "localhost");
@@ -142,8 +154,13 @@ public class ProxyTest {
 
         builder.target("http://localhost:8082")
                 .application(config)
-                .base("/customer-portal")
-                .constraint("/*").add().add();
+                    .base("/customer-portal")
+                    .errorPage("/error.html")
+                    .constraint("/users/*").role("user").add()
+                    .constraint("/admins/*").role("admin").add()
+                    .constraint("/users/permit").permit().add()
+                    .constraint("/users/deny").deny().add()
+                .add();
         proxyServer = builder.build();
         proxyServer.start();
 
@@ -167,33 +184,56 @@ public class ProxyTest {
 
     @Test
     public void testLoginSSOAndLogout() throws Exception {
-        initProxy();
-        driver.navigate().to("http://localhost:8080/customer-portal");
+        driver.navigate().to("http://localhost:8080/customer-portal/users");
         System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
         System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal/users");
         String pageSource = driver.getPageSource();
         System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("customer-portal"));
-        Assert.assertTrue(pageSource.contains("0"));
-        driver.navigate().to("http://localhost:8080/customer-portal");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal");
+        Assert.assertTrue(pageSource.contains("customer-portal/users"));
+        Assert.assertTrue(pageSource.contains("count:0"));
+        driver.navigate().to("http://localhost:8080/customer-portal/users");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal/users");
         pageSource = driver.getPageSource();
         System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("customer-portal"));
-        Assert.assertTrue(pageSource.contains("1")); // test http session
+        Assert.assertTrue(pageSource.contains("customer-portal/users"));
+        Assert.assertTrue(pageSource.contains("count:1")); // test http session
+
+        driver.navigate().to("http://localhost:8080/customer-portal/users/deny");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal/users/deny");
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("access error"));
+
+        driver.navigate().to("http://localhost:8080/customer-portal/admins");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal/admins");
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("access error"));
+
+
 
         // test logout
 
         String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
-                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8080/customer-portal").build("demo").toString();
+                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8080/customer-portal/users").build("demo").toString();
         driver.navigate().to(logoutUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        driver.navigate().to("http://localhost:8080/customer-portal");
+        driver.navigate().to("http://localhost:8080/customer-portal/users");
         String currentUrl = driver.getCurrentUrl();
         Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
+
+        // test unsecured page
+        driver.navigate().to("http://localhost:8080/customer-portal") ;
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("customer-portal"));
+        driver.navigate().to("http://localhost:8080/customer-portal/users/permit") ;
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("customer-portal/users/permit"));
 
 
     }

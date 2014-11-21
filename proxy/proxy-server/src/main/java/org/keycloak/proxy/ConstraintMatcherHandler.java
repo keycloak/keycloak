@@ -15,11 +15,13 @@ public class ConstraintMatcherHandler implements HttpHandler {
     protected SecurityPathMatches matcher;
     protected HttpHandler securedHandler;
     protected HttpHandler unsecuredHandler;
+    protected String errorPage;
 
-    public ConstraintMatcherHandler(SecurityPathMatches matcher, HttpHandler securedHandler, HttpHandler unsecuredHandler) {
+    public ConstraintMatcherHandler(SecurityPathMatches matcher, HttpHandler securedHandler, HttpHandler unsecuredHandler, String errorPage) {
         this.matcher = matcher;
         this.securedHandler = securedHandler;
         this.unsecuredHandler = unsecuredHandler;
+        this.errorPage = errorPage;
     }
 
     @Override
@@ -31,8 +33,16 @@ public class ConstraintMatcherHandler implements HttpHandler {
         }
 
         if (match.getRequiredRoles().isEmpty() && match.getEmptyRoleSemantic() == SecurityInfo.EmptyRoleSemantic.DENY) {
-            exchange.setResponseCode(403);
-            exchange.endExchange();
+            if (errorPage != null) {
+                exchange.setRequestPath(errorPage);
+                exchange.setRelativePath(errorPage);
+                exchange.setResolvedPath(errorPage);
+                unsecuredHandler.handleRequest(exchange);
+            } else {
+                exchange.setResponseCode(403);
+                exchange.endExchange();
+            }
+            return;
         }
         exchange.getSecurityContext().setAuthenticationRequired();
         exchange.putAttachment(CONSTRAINT_KEY, match);
