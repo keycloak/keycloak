@@ -404,6 +404,16 @@ public class AdapterDeploymentContext {
         public boolean isRegisterNodeAtStartup() {
             return delegate.isRegisterNodeAtStartup();
         }
+
+        @Override
+        public String getPrincipalAttribute() {
+            return delegate.getPrincipalAttribute();
+        }
+
+        @Override
+        public void setPrincipalAttribute(String principalAttribute) {
+            delegate.setPrincipalAttribute(principalAttribute);
+        }
     }
 
     protected KeycloakUriBuilder getBaseBuilder(HttpFacade facade, String base) {
