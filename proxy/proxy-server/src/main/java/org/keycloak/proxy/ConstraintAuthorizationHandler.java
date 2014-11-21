@@ -10,13 +10,13 @@ import java.util.Collection;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RoleAuthHandler implements HttpHandler {
+public class ConstraintAuthorizationHandler implements HttpHandler {
 
-    protected Collection<String> roles;
     protected HttpHandler next;
+    protected String errorPage;
 
-    public RoleAuthHandler(Collection<String> roles, HttpHandler next) {
-        this.roles = roles;
+    public ConstraintAuthorizationHandler(String errorPage, HttpHandler next) {
+        this.errorPage = errorPage;
         this.next = next;
     }
 
@@ -35,6 +35,14 @@ public class RoleAuthHandler implements HttpHandler {
                     return;
                 }
             }
+        }
+        if (errorPage != null) {
+            exchange.setRequestPath(errorPage);
+            exchange.setRelativePath(errorPage);
+            exchange.setResolvedPath(errorPage);
+            next.handleRequest(exchange);
+            return;
+
         }
         exchange.setResponseCode(403);
         exchange.endExchange();
