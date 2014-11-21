@@ -87,6 +87,11 @@ public class KeycloakDeploymentBuilder {
     }
 
     public static KeycloakDeployment build(InputStream is) {
+        AdapterConfig adapterConfig = loadAdapterConfig(is);
+        return new KeycloakDeploymentBuilder().internalBuild(adapterConfig);
+    }
+
+    public static AdapterConfig loadAdapterConfig(InputStream is) {
         ObjectMapper mapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
         AdapterConfig adapterConfig;
@@ -95,7 +100,7 @@ public class KeycloakDeploymentBuilder {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return new KeycloakDeploymentBuilder().internalBuild(adapterConfig);
+        return adapterConfig;
     }
 
 

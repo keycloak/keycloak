@@ -96,6 +96,7 @@ public class UndertowHttpFacade implements HttpFacade {
 
         @Override
         public InputStream getInputStream() {
+            if (!exchange.isBlocking()) exchange.startBlocking();
             return exchange.getInputStream();
         }
 
@@ -142,6 +143,7 @@ public class UndertowHttpFacade implements HttpFacade {
 
         @Override
         public OutputStream getOutputStream() {
+            if (!exchange.isBlocking()) exchange.startBlocking();
             return exchange.getOutputStream();
         }
 

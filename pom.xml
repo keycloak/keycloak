@@ -108,6 +108,7 @@
         <module>events</module>
         <module>model</module>
         <module>integration</module>
+        <module>proxy/proxy-server</module>
         <module>picketlink</module>
         <module>federation</module>
         <module>services</module>

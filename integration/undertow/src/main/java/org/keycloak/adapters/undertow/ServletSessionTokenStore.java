@@ -63,7 +63,7 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
         if (account.checkActive()) {
             log.debug("Cached account found");
             securityContext.authenticationComplete(account, "KEYCLOAK", false);
-            ((UndertowRequestAuthenticator)authenticator).propagateKeycloakContext(account);
+            ((AbstractUndertowRequestAuthenticator)authenticator).propagateKeycloakContext(account);
             return true;
         } else {
             log.debug("Refresh failed. Account was not active. Returning null and invalidating Http session");

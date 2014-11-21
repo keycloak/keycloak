@@ -16,14 +16,10 @@
  */
 package org.keycloak.adapters.undertow;
 
-import io.undertow.security.api.NotificationReceiver;
 import io.undertow.security.api.SecurityContext;
-import io.undertow.security.api.SecurityNotification;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
-import io.undertow.servlet.handlers.ServletRequestContext;
 import org.jboss.logging.Logger;
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.HttpFacade;
@@ -32,15 +28,12 @@ import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.enums.TokenStore;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  * @version $Revision: 1 $
  */
-public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
+public class ServletKeycloakAuthMech extends AbstractUndertowKeycloakAuthMech {
     private static final Logger log = Logger.getLogger(ServletKeycloakAuthMech.class);
 
     protected NodesRegistrationManagement nodesRegistrationManagement;
