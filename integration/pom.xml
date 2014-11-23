@@ -24,7 +24,6 @@
         <module>undertow</module>
         <module>wildfly-adapter</module>
         <module>wildfly-subsystem</module>
-        <module>as7-eap-subsystem</module>
         <module>js</module>
         <module>installed</module>
         <module>admin-client</module>
