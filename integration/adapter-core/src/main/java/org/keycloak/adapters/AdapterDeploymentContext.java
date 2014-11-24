@@ -96,7 +96,7 @@ public class AdapterDeploymentContext {
         }
     }
 
-    protected void resolveRealmKey(KeycloakDeployment deployment) {
+    public void resolveRealmKey(KeycloakDeployment deployment) {
         if (deployment.getClient() == null) {
             throw new RuntimeException("KeycloakDeployment was never initialized through appropriate SPIs");
         }
