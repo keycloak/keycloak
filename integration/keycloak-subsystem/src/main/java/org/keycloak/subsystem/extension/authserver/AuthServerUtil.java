@@ -54,7 +54,7 @@ import org.jboss.modules.ModuleLoadException;
  */
 public class AuthServerUtil {
 
-    private static final ModuleIdentifier KEYCLOAK_SUBSYSTEM = ModuleIdentifier.create("org.keycloak.keycloak-wildfly-subsystem");
+    private static final ModuleIdentifier KEYCLOAK_SUBSYSTEM = ModuleIdentifier.create("org.keycloak.keycloak-subsystem");
 
     private final String deploymentName;
     private final Module subsysModule;
@@ -84,7 +84,7 @@ public class AuthServerUtil {
 
     private URI findAuthServerUri() throws IllegalStateException {
         try {
-            URL subsysJar = this.subsysModule.getExportedResource("keycloak-wildfly-subsystem-" + this.keycloakVersion + ".jar");
+            URL subsysJar = this.subsysModule.getExportedResource("keycloak-subsystem-" + this.keycloakVersion + ".jar");
             File subsysDir = new File(subsysJar.toURI()).getParentFile();
             File authServerDir = new File(subsysDir, "auth-server");
             if (this.isAuthServerExploded) {
@@ -106,7 +106,7 @@ public class AuthServerUtil {
         op.get(PERSISTENT).set(false); // prevents writing this deployment out to standalone.xml
 
         if (authServerUri == null) {
-            throw new OperationFailedException("Keycloak Auth Server WAR not found in keycloak-wildfly-subsystem module");
+            throw new OperationFailedException("Keycloak Auth Server WAR not found in keycloak-subsystem module");
         }
 
         op.get(CONTENT).add(makeContentItem());

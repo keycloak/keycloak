@@ -24,8 +24,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-wildfly-subsystem</artifactId>
-    <name>Keycloak Wildfly Subsystem</name>
+    <artifactId>keycloak-subsystem</artifactId>
+    <name>Keycloak Subsystem</name>
     <description/>
     <packaging>jar</packaging>
 

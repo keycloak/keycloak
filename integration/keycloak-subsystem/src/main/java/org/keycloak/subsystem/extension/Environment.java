@@ -28,7 +28,7 @@ import org.jboss.modules.ModuleLoadException;
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
 public class Environment {
-    private static final ModuleIdentifier KEYCLOAK_SUBSYSTEM = ModuleIdentifier.create("org.keycloak.keycloak-wildfly-subsystem");
+    private static final ModuleIdentifier KEYCLOAK_SUBSYSTEM = ModuleIdentifier.create("org.keycloak.keycloak-subsystem");
 
     private static final boolean isWildFly = findIsWildFly();
 

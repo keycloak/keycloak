@@ -12,7 +12,7 @@
     <xsl:template match="node()[name(.)='extensions']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
-            <extension module="org.keycloak.keycloak-wildfly-subsystem"/>
+            <extension module="org.keycloak.keycloak-subsystem"/>
         </xsl:copy>
     </xsl:template>
 

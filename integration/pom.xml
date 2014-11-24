@@ -23,7 +23,7 @@
         <module>jetty</module>
         <module>undertow</module>
         <module>wildfly-adapter</module>
-        <module>wildfly-subsystem</module>
+        <module>keycloak-subsystem</module>
         <module>js</module>
         <module>installed</module>
         <module>admin-client</module>
