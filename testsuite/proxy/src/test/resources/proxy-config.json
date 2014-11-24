@@ -2,6 +2,9 @@
     "bind-address": "localhost",
     "http-port": "8080",
     "https-port": "8443",
+    "keystore": "classpath:ssl.jks",
+    "keystore-password": "password",
+    "key-password": "password",
     "target-url": "http://localhost:8082",
     "applications": [
         {
