@@ -70,6 +70,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.security.Principal;
+import java.util.Enumeration;
 import java.util.regex.Matcher;
 
 /**
@@ -100,8 +101,11 @@ public class ProxyTest {
             req.getSession().setAttribute("counter", new Integer(count.intValue() + 1));
             stream.write(("count:"+count).getBytes());
 
-
-
+            Enumeration<String> headers = req.getHeaderNames();
+            while (headers.hasMoreElements()) {
+                String name = headers.nextElement();
+                System.out.println(name +": " + req.getHeader(name));
+            }
         }
         @Override
         protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
