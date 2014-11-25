@@ -137,6 +137,7 @@ public class ProxyServerBuilder {
         }
 
         public ConstraintBuilder constraint(String pattern) {
+            log.debugv("add constraint: {0}", pattern);
             return new ConstraintBuilder(pattern);
         }
 

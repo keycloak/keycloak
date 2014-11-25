@@ -6,11 +6,11 @@
         <version>1.1.0.Beta2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <name>Distribution</name>
+    <name>Model Parent</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>distribution-pom</artifactId>
+    <artifactId>keycloak-proxy-pom</artifactId>
     <packaging>pom</packaging>
 
     <build>
@@ -25,22 +25,7 @@
         </plugins>
     </build>
     <modules>
-        <module>modules</module>
-        <module>as7-adapter-zip</module>
-        <module>tomcat6-adapter-zip</module>
-        <module>tomcat7-adapter-zip</module>
-        <module>tomcat8-adapter-zip</module>
-        <module>eap6-adapter-zip</module>
-        <module>wildfly-adapter-zip</module>
-        <module>jetty81-adapter-zip</module>
-        <module>jetty91-adapter-zip</module>
-        <module>jetty92-adapter-zip</module>
-        <module>examples-docs-zip</module>
-        <module>theme-template-zip</module>
-        <module>war-zip</module>
-        <module>war-dist</module>
-        <module>proxy</module>
-        <module>appliance-dist</module>
-        <module>src-dist</module>
+        <module>launcher</module>
+        <module>proxy-server</module>
     </modules>
 </project>

@@ -39,6 +39,7 @@
                 <!ENTITY Clustering SYSTEM "modules/clustering.xml">
                 <!ENTITY ApplicationClustering SYSTEM "modules/application-clustering.xml">
                 <!ENTITY MultiTenancy SYSTEM "modules/multi-tenancy.xml">
+                <!ENTITY Proxy SYSTEM "modules/proxy.xml">
                 ]>
 
 <book>
@@ -135,6 +136,7 @@ This one is short
     &SecurityVulnerabilities;
     &Clustering;
     &ApplicationClustering;
+    &Proxy;
     &Migration;
 
 </book>

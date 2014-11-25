@@ -16,21 +16,15 @@
  */
 package org.keycloak.adapters.undertow;
 
-import io.undertow.security.api.AuthenticatedSessionManager;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.server.session.SessionConfig;
 import io.undertow.server.session.SessionListener;
 import io.undertow.server.session.SessionManager;
-import io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler;
 import org.jboss.logging.Logger;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages relationship to users and sessions so that forced admin logout can be implemented
@@ -40,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class UndertowUserSessionManagement implements SessionListener {
     private static final Logger log = Logger.getLogger(UndertowUserSessionManagement.class);
-    private static final String AUTH_SESSION_NAME = CachedAuthenticatedSessionHandler.class.getName() + ".AuthenticatedSession";
     protected volatile boolean registered;
 
     public void login(SessionManager manager) {
@@ -67,7 +60,7 @@ public class UndertowUserSessionManagement implements SessionListener {
         log.debug("logoutHttpSession: " + httpSessionId);
         Session session = getSessionById(manager, httpSessionId);
         try {
-            session.invalidate(null);
+            if (session != null) session.invalidate(null);
         } catch (Exception e) {
             log.warnf("Session %s not present or already invalidated.", httpSessionId);
         }
@@ -115,16 +108,6 @@ public class UndertowUserSessionManagement implements SessionListener {
 
     @Override
     public void sessionDestroyed(Session session, HttpServerExchange exchange, SessionDestroyedReason reason) {
-        // Look up the single session id associated with this session (if any)
-        String username = getUsernameFromSession(session);
-        log.debugf("Session destroyed for user: %s, sessionId: %s", username, session.getId());
-    }
-
-    protected String getUsernameFromSession(Session session) {
-        AuthenticatedSessionManager.AuthenticatedSession authSession = (AuthenticatedSessionManager.AuthenticatedSession) session.getAttribute(AUTH_SESSION_NAME);
-        if (authSession == null) return null;
-        return authSession.getAccount().getPrincipal().getName();
-
     }
 
 

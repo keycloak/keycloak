@@ -4,6 +4,7 @@ import io.undertow.security.handlers.AuthenticationConstraintHandler;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
+import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 
 /**
@@ -11,6 +12,7 @@ import org.keycloak.KeycloakSecurityContext;
  * @version $Revision: 1 $
  */
 public class ConstraintMatcherHandler implements HttpHandler {
+    protected static Logger log = Logger.getLogger(ConstraintMatcherHandler.class);
     public static final AttachmentKey<SingleConstraintMatch> CONSTRAINT_KEY = AttachmentKey.create(SingleConstraintMatch.class);
     protected SecurityPathMatches matcher;
     protected HttpHandler securedHandler;
@@ -26,6 +28,7 @@ public class ConstraintMatcherHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
+        log.debugv("ConstraintMatcherHandler: {0}", exchange.getRelativePath());
         SingleConstraintMatch match = matcher.getSecurityInfo(exchange.getRelativePath(), exchange.getRequestMethod().toString()).getMergedConstraint();
         if (match == null || (match.getRequiredRoles().isEmpty() && match.getEmptyRoleSemantic() == SecurityInfo.EmptyRoleSemantic.PERMIT)) {
             unsecuredHandler.handleRequest(exchange);
@@ -44,6 +47,7 @@ public class ConstraintMatcherHandler implements HttpHandler {
             }
             return;
         }
+        log.debug("found constraint");
         exchange.getSecurityContext().setAuthenticationRequired();
         exchange.putAttachment(CONSTRAINT_KEY, match);
         securedHandler.handleRequest(exchange);

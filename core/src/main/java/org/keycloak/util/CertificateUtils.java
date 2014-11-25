@@ -19,6 +19,9 @@ import java.util.Date;
  * @version $Revision: 1 $
  */
 public class CertificateUtils {
+    static {
+        BouncyIntegration.init();
+    }
     public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert, String subject) throws Exception {
 
         X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
