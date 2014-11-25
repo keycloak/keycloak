@@ -59,6 +59,10 @@ public class BearerTokenRequestAuthenticator {
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
+        return (authenticateToken(exchange, tokenString));
+    }
+    
+    protected AuthOutcome authenticateToken(HttpFacade exchange, String tokenString) {
         try {
             token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealm());
         } catch (VerificationException e) {

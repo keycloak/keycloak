@@ -16,6 +16,7 @@
   "cors-max-age" : 1000,
   "cors-allowed-methods" : [ "POST", "PUT", "DELETE", "GET" ],
   "bearer-only" : false,
+  "enable-basic-auth" : false,
   "expose-token" : true,
    "credentials" : {
       "secret" : "234234-234234-234234"
@@ -153,6 +154,16 @@
                         OAuth 2.0 redirects, but only accept bearer tokens through the
                         <literal>Authorization</literal>
                         header.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>enable-basic-auth</term>
+                <listitem>
+                    <para>
+                        This tells the adapter to also support basic authentication. If this option is enabled,
+                        then <emphasis>secret</emphasis> must also be provided.
                         This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
                     </para>
                 </listitem>

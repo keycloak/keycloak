@@ -238,6 +238,16 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public boolean isEnableBasicAuth() {
+            return delegate.isEnableBasicAuth();
+        }
+
+        @Override
+        public void setEnableBasicAuth(boolean enableBasicAuth) {
+            delegate.setEnableBasicAuth(enableBasicAuth);
+        }
+
+        @Override
         public boolean isPublicClient() {
             return delegate.isPublicClient();
         }

@@ -67,6 +67,7 @@ public class KeycloakDeploymentBuilder {
         }
 
         deployment.setBearerOnly(adapterConfig.isBearerOnly());
+        deployment.setEnableBasicAuth(adapterConfig.isEnableBasicAuth());
         deployment.setAlwaysRefreshToken(adapterConfig.isAlwaysRefreshToken());
         deployment.setRegisterNodeAtStartup(adapterConfig.isRegisterNodeAtStartup());
         deployment.setRegisterNodePeriod(adapterConfig.getRegisterNodePeriod());
