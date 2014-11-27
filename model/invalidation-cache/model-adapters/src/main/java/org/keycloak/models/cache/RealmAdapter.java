@@ -13,6 +13,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -34,6 +35,7 @@ public class RealmAdapter implements RealmModel {
     protected RealmCache cache;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
+    protected volatile transient Key codeSecretKey;
     protected volatile transient X509Certificate certificate;
 
     public RealmAdapter(CachedRealm cached, CacheRealmProvider cacheSession) {
@@ -377,6 +379,14 @@ public class RealmAdapter implements RealmModel {
     @Override
     public String getCodeSecret() {
         return updated != null ? updated.getCodeSecret() : cached.getCodeSecret();
+    }
+
+    @Override
+    public Key getCodeSecretKey() {
+        if (codeSecretKey == null) {
+            codeSecretKey = KeycloakModelUtils.getSecretKey(getCodeSecret());
+        }
+        return codeSecretKey;
     }
 
     @Override

@@ -8,7 +8,8 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.Time;
 
-import java.security.MessageDigest;
+import javax.crypto.Mac;
+import java.security.Key;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -147,13 +148,13 @@ public class ClientSessionCode {
 
     private static String createHash(RealmModel realm, ClientSessionModel clientSession) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("sha-256");
-            digest.update(realm.getCodeSecret().getBytes());
-            digest.update(HASH_SEPERATOR);
-            digest.update(clientSession.getId().getBytes());
-            digest.update(HASH_SEPERATOR);
-            digest.update(clientSession.getNote(ACTION_KEY).getBytes());
-            return Base64Url.encode(digest.digest());
+            Key codeSecretKey = realm.getCodeSecretKey();
+            Mac mac = Mac.getInstance(codeSecretKey.getAlgorithm());
+            mac.init(codeSecretKey);
+            mac.update(clientSession.getId().getBytes());
+            mac.update(HASH_SEPERATOR);
+            mac.update(clientSession.getNote(ACTION_KEY).getBytes());
+            return Base64Url.encode(mac.doFinal());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

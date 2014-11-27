@@ -15,6 +15,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.util.CertificateUtils;
 import org.keycloak.util.PemUtils;
 
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.security.Key;
@@ -75,6 +76,10 @@ public final class KeycloakModelUtils {
             }
         }
         return null;
+    }
+
+    public static Key getSecretKey(String secret) {
+        return secret != null ? new SecretKeySpec(secret.getBytes(), "HmacSHA256") : null;
     }
 
     public static String getPemFromKey(Key key) {
