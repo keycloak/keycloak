@@ -124,14 +124,6 @@ keycloak-war-dist-all-&project.version;/
             If you have Keycloak on JBoss AS 7.1.1 <link linkend="as7-specifics">these steps</link>.
         </para>
     </section>
-    <section id="subsystem_installation">
-        <title>Subsystem Installation</title>
-        <para>
-            For WildFly installations, the Keycloak server is not deployed from the /deployments directory.  Instead, the Keycloak 
-            subsystem module contains the Keycloak server and it is controlled by the subsystem.  If you are using the 
-            appliance install, this subsystem is already present and a Keycloak server is pre-defined in the subsytem declaration.
-        </para>
-    </section>
     <section>
         <title id="configure-server">Configuring the Server</title>
         <para>
@@ -760,7 +752,7 @@ keycloak-war-dist-all-&project.version;/
     <section>
         <title>Configuring Servers from the Subsystem</title>
         <para>
-            If you are using WildFly, the Keycloak server is deployed and configured from the Keycloak subsystem.  This makes provisioning simpler in a domain environment.
+            If you are using WildFly or EAP,he Keycloak server is deployed and configured from the Keycloak subsystem.  This makes provisioning simpler in a domain environment.
             It also allows you to create more than one Keycloak server instance inside a single WildFly instance.  And, you can upload providers, themes, and
             server configurations without disturbing Keycloak's auth-server.war.
         </para>
@@ -841,7 +833,7 @@ The Keycloak server will be immediately deployed or undeployed, but not deleted.
             <section id="uploading-extra-config">
                 <title>Uploading extra configuration using CLI</title>
                 <para>
-                    The WildFly Keycloak subsystem allows you to upload keycloak-server.json, provider jars, and theme jars to a Keycloak server instance.  The
+                    The Keycloak subsystem allows you to upload keycloak-server.json, provider jars, and theme jars to a Keycloak server instance.  The
                     CLI operations for this are "update-server-config" and "add-provider".  You may use CLI, CLI GUI, or CLI scripts for these operations.  The following
                     examples are shown using <ulink url="https://developer.jboss.org/wiki/AGUIForTheCommandLineInterface">CLI GUI</ulink> for clarity.
                 </para>

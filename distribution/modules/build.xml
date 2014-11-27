@@ -83,8 +83,8 @@
             <maven-resource group="org.keycloak" artifact="keycloak-wildfly-adapter"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-wildfly-subsystem">
-            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-subsystem"/>
+        <module-def name="org.keycloak.keycloak-subsystem">
+            <maven-resource group="org.keycloak" artifact="keycloak-subsystem"/>
         </module-def>
         <module-def name="org.keycloak.keycloak-as7-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-as7-subsystem"/>

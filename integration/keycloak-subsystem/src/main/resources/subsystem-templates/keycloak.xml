@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--  Template used by WildFly build when directed to include Keycloak subsystem in a configuration. -->
+<config>
+   <extension-module>org.keycloak.keycloak-subsystem</extension-module>
+   <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
+       <?WILDFLY-WEB-CONSOLE-CONFIG?>
+   </subsystem>
+   
+   <!-- Used in the WildFly build to create standalone-keycloak.xml -->
+   <supplement name="web-console-client-config">
+       <replacement placeholder="WILDFLY-WEB-CONSOLE-CONFIG">
+            <secure-deployment name="web-console">
+                <realm>master</realm>
+                <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4siLKUew0WYxdtq6/rwk4Uj/4amGFFnE/yzIxQVU0PUqz3QBRVkUWpDj0K6ZnS5nzJV/y6DHLEy7hjZTdRDphyF1sq09aDOYnVpzu8o2sIlMM8q5RnUyEfIyUZqwo8pSZDJ90fS0s+IDUJNCSIrAKO3w1lqZDHL6E/YFHXyzkvQIDAQAB</realm-public-key>
+                <auth-server-url>http://localhost:8080/auth</auth-server-url>
+                <ssl-required>EXTERNAL</ssl-required>
+                <resource>web-console</resource>
+                <credential name="secret">0aa31d98-e0aa-404c-b6e0-e771dba1e798</credential>
+                <use-resource-role-mappings>true</use-resource-role-mappings>
+            </secure-deployment>
+            <secure-deployment name="http-endpoint">
+                <realm>master</realm>
+                <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4siLKUew0WYxdtq6/rwk4Uj/4amGFFnE/yzIxQVU0PUqz3QBRVkUWpDj0K6ZnS5nzJV/y6DHLEy7hjZTdRDphyF1sq09aDOYnVpzu8o2sIlMM8q5RnUyEfIyUZqwo8pSZDJ90fS0s+IDUJNCSIrAKO3w1lqZDHL6E/YFHXyzkvQIDAQAB</realm-public-key>
+                <auth-server-url>http://localhost:8080/auth</auth-server-url>
+                <ssl-required>EXTERNAL</ssl-required>
+                <resource>http-endpoint</resource>
+                <credential name="secret">2769a4a2-5be0-454f-838f-f33b7755b667</credential>
+                <use-resource-role-mappings>true</use-resource-role-mappings>
+            </secure-deployment>
+       </replacement>
+   </supplement>
+
+   
+</config>

@@ -86,6 +86,8 @@
                 From the 'tomcat7' package to just 'tomcat'.
                 </listitem>
                 <listitem>JavaScript adapter now has idToken and idTokenParsed properties. If you use idToken to retrieve first name, email, etc. you need to change this to idTokenParsed.</listitem>
+                <listitem>The as7-eap-subsystem and keycloak-wildfly-subsystem have been merged into one keycloak-subsystem.  If you have an existing standalone.xml
+                          or domain.xml, you will need edit near the top of the file and change the extension module name to org.keycloak.keycloak-subsystem</listitem>
             </itemizedlist>
         </section>
         <section>

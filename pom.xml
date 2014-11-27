@@ -483,6 +483,11 @@
                 <version>${wildfly.core.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-version</artifactId>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-undertow</artifactId>
                 <version>${wildfly.version}</version>

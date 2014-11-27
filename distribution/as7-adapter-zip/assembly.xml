@@ -12,7 +12,7 @@
             <excludes>
                 <exclude>org/picketlink/**</exclude>
                 <exclude>org/keycloak/keycloak-undertow-adapter/**</exclude>
-                <exclude>org/keycloak/keycloak-wildfly-subsystem/**</exclude>
+                <exclude>org/keycloak/keycloak-subsystem/**</exclude>
                 <exclude>org/keycloak/keycloak-wildfly-adapter/**</exclude>
             </excludes>
             <outputDirectory>modules</outputDirectory>

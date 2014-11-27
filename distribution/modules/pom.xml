@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-subsystem</artifactId>
+            <artifactId>keycloak-subsystem</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -214,7 +214,7 @@
                                     <version>${project.version}</version>
                                     <type>war</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/modules/org/keycloak/keycloak-wildfly-subsystem/main/auth-server</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/modules/org/keycloak/keycloak-subsystem/main/auth-server</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

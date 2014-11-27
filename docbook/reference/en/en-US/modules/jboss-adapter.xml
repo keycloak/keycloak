@@ -41,40 +41,24 @@ $ unzip keycloak-as7-adapter-dist.zip
         After adding the Keycloak modules, you must then enable the Keycloak Subsystem within your app server's server configuration:
         <literal>domain.xml</literal> or <literal>standalone.xml</literal>.
     </para>
-    <para>For Wildfly:
+    <para>
 <programlisting><![CDATA[
 <server xmlns="urn:jboss:domain:1.4">
 
     <extensions>
-        <extension module="org.keycloak.keycloak-wildfly-subsystem"/>
+        <extension module="org.keycloak.keycloak-subsystem"/>
           ...
     </extensions>
 
     <profile>
         <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
          ...
-    </profile>
-]]>
-</programlisting>
-    </para>
-    <para>For JBoss AS 7.1.1 and EAP 6.x:
-<programlisting><![CDATA[
-<server xmlns="urn:jboss:domain:1.4">
-
-    <extensions>
-        <extension module="org.keycloak.keycloak-as7-subsystem"/>
-         ...
-    </extensions>
-
-    <profile>
-        <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
-          ...
     </profile>
 ]]>
 </programlisting>
     </para>
         <para>
-            Finally, for both AS7, EAP 6.x, and Wildfly installations you must specify a shared keycloak security domain.
+            Finally, you must specify a shared keycloak security domain.
             This security domain should be used with EJBs and other components when you need the security context created
             in the secured web tier to be propagated to the EJBs (other EE component) you are invoking.  Otherwise
             this configuration is optional.

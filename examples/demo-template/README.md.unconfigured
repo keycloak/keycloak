@@ -37,7 +37,7 @@ Next configure the Keycloak adapter by editing `standalone/configuration/standal
 
     <extensions>
         ....
-        <extension module="org.keycloak.keycloak-wildfly-subsystem"/>
+        <extension module="org.keycloak.keycloak-subsystem"/>
     </extensions>
 
 You also need to add realm config to the same file. Add a new child-element to `<profile>`:

@@ -57,12 +57,10 @@ For JBoss AS 7.1.1:
 Unzipping the adapter ZIP only installs the JAR files.  You must also add the Keycloak Subsystem to the server's
 configuration (standalone/configuration/standalone.xml).
 
-For Wildfly:
-
     <server xmlns="urn:jboss:domain:1.4">
 
         <extensions>
-            <extension module="org.keycloak.keycloak-wildfly-subsystem"/>
+            <extension module="org.keycloak.keycloak-subsystem"/>
             ...
         </extensions>
 
@@ -70,21 +68,6 @@ For Wildfly:
             <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
             ...
         </profile>
-
-For JBoss 7.1.1 and EAP 6.x:
-
-    <server xmlns="urn:jboss:domain:1.4">
-
-        <extensions>
-            <extension module="org.keycloak.keycloak-as7-subsystem"/>
-            ...
-        </extensions>
-
-        <profile>
-            <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
-            ...
-        </profile>
-
 
 Step 2: Boot Keycloak Server
 ---------------------------------------
