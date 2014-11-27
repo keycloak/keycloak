@@ -73,9 +73,7 @@ import java.security.Principal;
 import java.util.Enumeration;
 import java.util.regex.Matcher;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
+@Ignore
 public class ProxyTest {
     static String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
             .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8080/customer-portal").build("demo").toString();
