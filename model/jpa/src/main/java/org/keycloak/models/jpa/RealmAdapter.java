@@ -21,6 +21,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -46,6 +47,7 @@ public class RealmAdapter implements RealmModel {
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
     protected volatile transient X509Certificate certificate;
+    protected volatile transient Key codeSecretKey;
     protected KeycloakSession session;
     private PasswordPolicy passwordPolicy;
 
@@ -437,6 +439,14 @@ public class RealmAdapter implements RealmModel {
     @Override
     public String getCodeSecret() {
         return realm.getCodeSecret();
+    }
+
+    @Override
+    public Key getCodeSecretKey() {
+        if (codeSecretKey == null) {
+            codeSecretKey = KeycloakModelUtils.getSecretKey(getCodeSecret());
+        }
+        return codeSecretKey;
     }
 
     @Override

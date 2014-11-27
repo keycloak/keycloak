@@ -2,6 +2,7 @@ package org.keycloak.models;
 
 import org.keycloak.enums.SslRequired;
 
+import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -98,6 +99,8 @@ public interface RealmModel extends RoleContainerModel {
     void setPublicKey(PublicKey publicKey);
 
     String getCodeSecret();
+
+    Key getCodeSecretKey();
 
     void setCodeSecret(String codeSecret);
 

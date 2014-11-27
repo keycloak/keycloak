@@ -23,6 +23,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -43,14 +44,13 @@ import java.util.Set;
  */
 public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> implements RealmModel {
 
-    private static final Logger logger = Logger.getLogger(RealmAdapter.class);
-
     private final MongoRealmEntity realm;
     private final RealmProvider model;
 
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
     protected volatile transient X509Certificate certificate;
+    protected volatile transient Key codeSecretKey;
 
     private volatile transient PasswordPolicy passwordPolicy;
     private volatile transient KeycloakSession session;
@@ -422,6 +422,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public String getCodeSecret() {
         return realm.getCodeSecret();
+    }
+
+    @Override
+    public Key getCodeSecretKey() {
+        if (codeSecretKey == null) {
+            codeSecretKey = KeycloakModelUtils.getSecretKey(getCodeSecret());
+        }
+        return codeSecretKey;
     }
 
     @Override
