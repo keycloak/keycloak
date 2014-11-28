@@ -16,11 +16,7 @@ public class BearerTokenLoginModule extends AbstractKeycloakLoginModule {
 
     @Override
     protected Auth doAuth(String username, String password) throws VerificationException {
-        if (!"Bearer".equalsIgnoreCase(username)) {
-            log.debug("Username is expected to be bearer but is " + username + ". Ignoring login module");
-            return null;
-        }
-
+        // Should do some checking of authenticated username if it's equivalent to passed value?
         return bearerAuth(password);
     }
 
