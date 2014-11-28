@@ -54,10 +54,6 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
 
     @Override
     protected Auth doAuth(String username, String password) throws IOException, VerificationException {
-        if ("Bearer".equalsIgnoreCase(username)) {
-            log.debug("Username is not expected to be bearer for this login module. Ignoring login module");
-            return null;
-        }
         return directGrantAuth(username, password);
     }
 
