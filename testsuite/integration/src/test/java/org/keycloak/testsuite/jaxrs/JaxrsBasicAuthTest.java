@@ -47,6 +47,7 @@ public class JaxrsBasicAuthTest {
             ApplicationModel app = appRealm.addApplication("jaxrs-app");
             app.setEnabled(true);
             app.setSecret("password");
+            app.setFullScopeAllowed(true);
 
             JaxrsBasicAuthTest.appRealm = appRealm;
         }
@@ -122,9 +123,7 @@ public class JaxrsBasicAuthTest {
                 .get(JaxrsTestResource.SimpleRepresentation.class);
         Assert.assertEquals("get", getRep.getMethod());
         
-        // TODO: SHOULD HAVE USER ROLE
-        //Assert.assertTrue(getRep.getHasUserRole());
-        
+        Assert.assertTrue(getRep.getHasUserRole());
         Assert.assertFalse(getRep.getHasAdminRole());
         Assert.assertFalse(getRep.getHasJaxrsAppRole());
         // Assert that principal is ID of user (should be in UUID format)
