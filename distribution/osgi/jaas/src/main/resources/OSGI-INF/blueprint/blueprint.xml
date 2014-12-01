@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:jaas="http://karaf.apache.org/xmlns/jaas/v1.0.0"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0"
+           xmlns:ext="http://aries.apache.org/blueprint/xmlns/blueprint-ext/v1.2.0">
+
+    <!-- Bean to allow the $[karaf.base] property to be correctly resolved -->
+    <ext:property-placeholder placeholder-prefix="$[" placeholder-suffix="]"/>
+
+    <cm:property-placeholder persistent-id="org.keycloak" update-strategy="reload">
+        <cm:default-properties>
+            <cm:property name="jaasBearerKeycloakConfigFile" value="$[karaf.base]/etc/keycloak-hawtio.json"/>
+            <cm:property name="jaasDirectAccessKeycloakConfigFile" value="$[karaf.base]/etc/keycloak-direct-access.json"/>
+        </cm:default-properties>
+    </cm:property-placeholder>
+
+    <jaas:config name="keycloak" rank="1">
+
+        <!-- Used for web authentication (like hawtio) -->
+        <jaas:module className="org.keycloak.adapters.jaas.BearerTokenLoginModule"
+                     flags="sufficient">
+            keycloak-config-file = ${jaasBearerKeycloakConfigFile}
+        </jaas:module>
+
+        <!-- Used for direct username/password authentication for non-web scenarios (like ssh) -->
+        <jaas:module className="org.keycloak.adapters.jaas.DirectAccessGrantsLoginModule"
+                     flags="sufficient">
+            keycloak-config-file = ${jaasDirectAccessKeycloakConfigFile}
+        </jaas:module>
+
+    </jaas:config>
+
+</blueprint>

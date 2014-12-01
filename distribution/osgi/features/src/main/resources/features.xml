@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0" name="keycloak-${project.version}">
+
+    <feature name="keycloak-core-adapter" version="${project.version}" resolver="(obr)">
+        <details>The keycloak core adapter stuff</details>
+        <bundle>mvn:org.keycloak/keycloak-osgi-core-adapter/${project.version}</bundle>
+    </feature>
+
+    <feature name="keycloak-jaas" version="${project.version}" resolver="(obr)">
+        <details>The keycloak JAAS configuration</details>
+        <feature>keycloak-core-adapter</feature>
+        <bundle>mvn:org.keycloak/keycloak-osgi-jaas/${project.version}</bundle>
+    </feature>
+
+</features>
