@@ -39,6 +39,7 @@
         <module>theme-template-zip</module>
         <module>war-zip</module>
         <module>war-dist</module>
+        <module>osgi</module>
         <module>proxy</module>
         <module>appliance-dist</module>
         <module>src-dist</module>
