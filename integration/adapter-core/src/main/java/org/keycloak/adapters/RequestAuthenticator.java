@@ -36,10 +36,12 @@ public abstract class RequestAuthenticator {
         if (log.isTraceEnabled()) {
             log.trace("--> authenticate()");
         }
+
         BearerTokenRequestAuthenticator bearer = createBearerTokenAuthenticator();
         if (log.isTraceEnabled()) {
             log.trace("try bearer");
         }
+        
         AuthOutcome outcome = bearer.authenticate(facade);
         if (outcome == AuthOutcome.FAILED) {
             challenge = bearer.getChallenge();
@@ -47,13 +49,31 @@ public abstract class RequestAuthenticator {
             return AuthOutcome.FAILED;
         } else if (outcome == AuthOutcome.AUTHENTICATED) {
             if (verifySSL()) return AuthOutcome.FAILED;
-            completeAuthentication(bearer);
+            completeAuthentication(bearer, "KEYCLOAK");
             log.debug("Bearer AUTHENTICATED");
             return AuthOutcome.AUTHENTICATED;
         } else if (deployment.isBearerOnly()) {
             challenge = bearer.getChallenge();
             log.debug("NOT_ATTEMPTED: bearer only");
             return AuthOutcome.NOT_ATTEMPTED;
+        }
+
+        if (deployment.isEnableBasicAuth()) {
+            BasicAuthRequestAuthenticator basicAuth = createBasicAuthAuthenticator();
+            if (log.isTraceEnabled()) {
+                log.trace("try basic auth");
+            }
+    
+            outcome = basicAuth.authenticate(facade);
+            if (outcome == AuthOutcome.FAILED) {
+                challenge = basicAuth.getChallenge();
+                log.debug("BasicAuth FAILED");
+                return AuthOutcome.FAILED;
+            } else if (outcome == AuthOutcome.AUTHENTICATED) {
+                log.debug("BasicAuth AUTHENTICATED");
+                completeAuthentication(basicAuth, "BASIC");
+                return AuthOutcome.AUTHENTICATED;
+            }
         }
 
         if (log.isTraceEnabled()) {
@@ -104,6 +124,10 @@ public abstract class RequestAuthenticator {
         return new BearerTokenRequestAuthenticator(deployment);
     }
 
+    protected BasicAuthRequestAuthenticator createBasicAuthAuthenticator() {
+        return new BasicAuthRequestAuthenticator(deployment);
+    }
+
     protected void completeAuthentication(OAuthRequestAuthenticator oauth) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, tokenStore, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
         final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, oauth.getToken()), session);
@@ -111,13 +135,13 @@ public abstract class RequestAuthenticator {
     }
 
     protected abstract void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
-    protected abstract void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
+    protected abstract void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal, String method);
     protected abstract String getHttpSessionId(boolean create);
 
-    protected void completeAuthentication(BearerTokenRequestAuthenticator bearer) {
+    protected void completeAuthentication(BearerTokenRequestAuthenticator bearer, String method) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, null, bearer.getTokenString(), bearer.getToken(), null, null, null);
         final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, bearer.getToken()), session);
-        completeBearerAuthentication(principal);
+        completeBearerAuthentication(principal, method);
     }
 
 }

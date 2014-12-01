@@ -79,7 +79,7 @@ public abstract class AbstractJettyRequestAuthenticator extends RequestAuthentic
     }
 
     @Override
-    protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
+    protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal, String method) {
         this.principal = principal;
         RefreshableKeycloakSecurityContext securityContext = principal.getKeycloakSecurityContext();
         Set<String> roles = AdapterUtils.getRolesFromSecurityContext(securityContext);

@@ -6,6 +6,7 @@ import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
+import org.keycloak.adapters.BasicAuthRequestAuthenticator;
 import org.keycloak.adapters.BearerTokenRequestAuthenticator;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -188,10 +189,16 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
     }
 
     protected void bearerAuthentication(JaxrsHttpFacade facade, ContainerRequestContext request, KeycloakDeployment resolvedDeployment) {
-        BearerTokenRequestAuthenticator bearer = new BearerTokenRequestAuthenticator(resolvedDeployment);
-        AuthOutcome outcome = bearer.authenticate(facade);
+        BearerTokenRequestAuthenticator authenticator = new BearerTokenRequestAuthenticator(resolvedDeployment);
+        AuthOutcome outcome = authenticator.authenticate(facade);
+        
+        if (outcome == AuthOutcome.NOT_ATTEMPTED && resolvedDeployment.isEnableBasicAuth()) {
+            authenticator = new BasicAuthRequestAuthenticator(resolvedDeployment);
+            outcome = authenticator.authenticate(facade);
+        }
+        
         if (outcome == AuthOutcome.FAILED || outcome == AuthOutcome.NOT_ATTEMPTED) {
-            AuthChallenge challenge = bearer.getChallenge();
+            AuthChallenge challenge = authenticator.getChallenge();
             log.fine("Authentication outcome: " + outcome);
             boolean challengeSent = challenge.challenge(facade);
             if (!challengeSent) {
@@ -210,7 +217,7 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
             }
         }
 
-        propagateSecurityContext(facade, request, resolvedDeployment, bearer);
+        propagateSecurityContext(facade, request, resolvedDeployment, authenticator);
         handleAuthActions(facade, resolvedDeployment);
     }
 

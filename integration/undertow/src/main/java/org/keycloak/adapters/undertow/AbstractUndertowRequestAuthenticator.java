@@ -20,6 +20,7 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.util.Sessions;
+
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.HttpFacade;
@@ -69,9 +70,9 @@ public abstract class AbstractUndertowRequestAuthenticator extends RequestAuthen
     }
 
     @Override
-    protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
+    protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal, String method) {
         KeycloakUndertowAccount account = createAccount(principal);
-        securityContext.authenticationComplete(account, "KEYCLOAK", false);
+        securityContext.authenticationComplete(account, method, false);
         propagateKeycloakContext(account);
     }
 

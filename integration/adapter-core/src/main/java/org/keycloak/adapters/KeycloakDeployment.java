@@ -38,6 +38,7 @@ public class KeycloakDeployment {
 
     protected String resourceName;
     protected boolean bearerOnly;
+    protected boolean enableBasicAuth;
     protected boolean publicClient;
     protected Map<String, String> resourceCredentials = new HashMap<String, String>();
     protected HttpClient client;
@@ -197,6 +198,14 @@ public class KeycloakDeployment {
 
     public void setBearerOnly(boolean bearerOnly) {
         this.bearerOnly = bearerOnly;
+    }
+
+    public boolean isEnableBasicAuth() {
+        return enableBasicAuth;
+    }
+
+    public void setEnableBasicAuth(boolean enableBasicAuth) {
+        this.enableBasicAuth = enableBasicAuth;
     }
 
     public boolean isPublicClient() {

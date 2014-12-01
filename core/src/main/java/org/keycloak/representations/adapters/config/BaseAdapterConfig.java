@@ -16,7 +16,7 @@ import java.util.Map;
         "resource", "public-client", "credentials",
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods",
-        "expose-token", "bearer-only"})
+        "expose-token", "bearer-only", "enable-basic-auth"})
 public class BaseAdapterConfig extends BaseRealmConfig {
     @JsonProperty("resource")
     protected String resource;
@@ -34,6 +34,8 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     protected boolean exposeToken;
     @JsonProperty("bearer-only")
     protected boolean bearerOnly;
+    @JsonProperty("enable-basic-auth")
+    protected boolean enableBasicAuth;
     @JsonProperty("public-client")
     protected boolean publicClient;
     @JsonProperty("credentials")
@@ -97,12 +99,20 @@ public class BaseAdapterConfig extends BaseRealmConfig {
      }
 
     public boolean isBearerOnly() {
-         return bearerOnly;
-     }
+        return bearerOnly;
+    }
 
     public void setBearerOnly(boolean bearerOnly) {
-         this.bearerOnly = bearerOnly;
-     }
+        this.bearerOnly = bearerOnly;
+    }
+
+    public boolean isEnableBasicAuth() {
+        return enableBasicAuth;
+    }
+
+    public void setEnableBasicAuth(boolean enableBasicAuth) {
+        this.enableBasicAuth = enableBasicAuth;
+    }
 
     public Map<String, String> getCredentials() {
         return credentials;
