@@ -48,6 +48,7 @@ public class JettySessionTokenStore implements AdapterTokenStore {
 
         // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
         request.getSession().removeAttribute(KeycloakSecurityContext.class.getName());
+        request.getSession().invalidate();
      }
 
     @Override

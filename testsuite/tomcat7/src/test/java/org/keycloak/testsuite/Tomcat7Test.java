@@ -36,6 +36,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.adapter.AdapterTestStrategy;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -59,56 +60,33 @@ import java.util.regex.Matcher;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Tomcat7Test {
-    static String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
-            .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8080/customer-portal").build("demo").toString();
-
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/tomcat-test/demorealm.json"), RealmRepresentation.class);
+            RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
             RealmModel realm = manager.importRealm(representation);
        }
     };
-
-    public static class SendUsernameServlet extends HttpServlet {
-        @Override
-        protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-            resp.setContentType("text/plain");
-            OutputStream stream = resp.getOutputStream();
-            Principal principal = req.getUserPrincipal();
-            if (principal == null) {
-                stream.write("null".getBytes());
-                return;
-            }
-            String name = principal.getName();
-            stream.write(name.getBytes());
-            stream.write("\n".getBytes());
-            KeycloakSecurityContext context = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
-            stream.write(context.getIdToken().getName().getBytes());
-            stream.write("\n".getBytes());
-            stream.write(logoutUri.getBytes());
-
-        }
-        @Override
-        protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-            doGet(req, resp);
-        }
-    }
 
     static Tomcat tomcat = null;
 
     @BeforeClass
     public static void initTomcat() throws Exception {
-        URL dir = Tomcat7Test.class.getResource("/tomcat-test/webapp/META-INF/context.xml");
-        File webappDir = new File(dir.getFile()).getParentFile().getParentFile();
         tomcat = new Tomcat();
         String baseDir = getBaseDirectory();
         tomcat.setBaseDir(baseDir);
-        tomcat.setPort(8080);
+        tomcat.setPort(8082);
 
-        tomcat.addWebapp("/customer-portal", webappDir.toString());
-        System.out.println("configuring app with basedir: " + webappDir.toString());
+        System.setProperty("app.server.base.url", "http://localhost:8082");
+        System.setProperty("my.host.name", "localhost");
+        URL dir = Tomcat7Test.class.getResource("/adapter-test/demorealm.json");
+        File base = new File(dir.getFile()).getParentFile();
+        tomcat.addWebapp("/customer-portal", new File(base, "customer-portal").toString());
+        tomcat.addWebapp("/customer-db", new File(base, "customer-db").toString());
+        tomcat.addWebapp("/product-portal", new File(base, "product-portal").toString());
+        tomcat.addWebapp("/secure-portal", new File(base, "secure-portal").toString());
+        tomcat.addWebapp("/session-portal", new File(base, "session-portal").toString());
 
         tomcat.start();
         //tomcat.getServer().await();
@@ -121,42 +99,75 @@ public class Tomcat7Test {
     }
 
     @Rule
-    public WebRule webRule = new WebRule(this);
-    @WebResource
-    protected WebDriver driver;
-    @WebResource
-    protected LoginPage loginPage;
+    public AdapterTestStrategy testStrategy = new AdapterTestStrategy("http://localhost:8081/auth", "http://localhost:8082", keycloakRule);
 
-    public static final String LOGIN_URL = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
     @Test
     public void testLoginSSOAndLogout() throws Exception {
-        driver.navigate().to("http://localhost:8080/customer-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8080/customer-portal");
-        String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("Bill Burke"));
+        testStrategy.testLoginSSOAndLogout();
+    }
 
-        // test logout
+    @Test
+    public void testServletRequestLogout() throws Exception {
+        testStrategy.testServletRequestLogout();
+    }
 
-        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
-                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8080/customer-portal").build("demo").toString();
-        driver.navigate().to(logoutUri);
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        driver.navigate().to("http://localhost:8080/customer-portal");
-        String currentUrl = driver.getCurrentUrl();
-        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
-
+    @Test
+    public void testLoginSSOIdle() throws Exception {
+        testStrategy.testLoginSSOIdle();
 
     }
 
     @Test
-    @Ignore
-    public void runit() throws Exception {
-        Thread.sleep(10000000);
+    public void testLoginSSOIdleRemoveExpiredUserSessions() throws Exception {
+        testStrategy.testLoginSSOIdleRemoveExpiredUserSessions();
+    }
+
+    @Test
+    public void testLoginSSOMax() throws Exception {
+        testStrategy.testLoginSSOMax();
+    }
+
+    /**
+     * KEYCLOAK-518
+     * @throws Exception
+     */
+    @Test
+    public void testNullBearerToken() throws Exception {
+        testStrategy.testNullBearerToken();
+    }
+
+    /**
+     * KEYCLOAK-518
+     * @throws Exception
+     */
+    @Test
+    public void testBadUser() throws Exception {
+        testStrategy.testBadUser();
+    }
+
+    @Test
+    public void testVersion() throws Exception {
+        testStrategy.testVersion();
+    }
+
+
+    /**
+     * KEYCLOAK-732
+     *
+     * @throws Throwable
+     */
+    @Test
+    public void testSingleSessionInvalidated() throws Throwable {
+        testStrategy.testSingleSessionInvalidated();
+    }
+
+    /**
+     * KEYCLOAK-741
+     */
+    @Test
+    public void testSessionInvalidatedAfterFailedRefresh() throws Throwable {
+        testStrategy.testSessionInvalidatedAfterFailedRefresh();
+
     }
 
 
