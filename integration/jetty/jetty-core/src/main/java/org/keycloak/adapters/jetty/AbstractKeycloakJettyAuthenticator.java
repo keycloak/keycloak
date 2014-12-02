@@ -209,9 +209,9 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         if (!mandatory)
             return new DeferredAuthentication(this);
         AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
-
         nodesRegistrationManagement.tryRegister(deployment);
 
+        tokenStore.checkCurrentToken();
         AbstractJettyRequestAuthenticator authenticator = createRequestAuthenticator(request, facade, deployment, tokenStore);
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {

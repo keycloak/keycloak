@@ -17,6 +17,7 @@ public class TomcatServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(TomcatServer.class);
     private static final boolean isInfo = LOG.isInfoEnabled();
+    private final Host host;
 
 
     /**
@@ -33,20 +34,11 @@ public class TomcatServer {
      * </Server></pre>
      * <Server> & <Service> will be created automcatically. We need to hook the remaining to an {@link Embedded} instnace
      *
-     * @param contextPath  Context path for the application
      * @param port         Port number to be used for the embedded Tomcat server
      * @param appBase      Path to the Application files (for Maven based web apps, in general: <code>/src/main/</code>)
-     * @param shutdownHook If true, registers a server' shutdown hook with JVM. This is useful to shutdown the server
-     *                     in erroneous cases.
      * @throws Exception
      */
-    public TomcatServer(String contextPath, int port, String appBase, boolean shutdownHook) {
-        if (contextPath == null || appBase == null || appBase.length() == 0) {
-            throw new IllegalArgumentException("Context path or appbase should not be null");
-        }
-        if (!contextPath.startsWith("/")) {
-            contextPath = "/" + contextPath;
-        }
+    public TomcatServer(int port, String appBase) {
 
         this.port = port;
 
@@ -54,44 +46,24 @@ public class TomcatServer {
         server.setName("TomcatEmbeddedServer");
         server.setCatalinaBase(TomcatTest.getBaseDirectory());
 
-        Host localHost = server.createHost("localhost", appBase);
-        localHost.setAutoDeploy(false);
+        host = server.createHost("localhost", appBase);
+        host.setAutoDeploy(false);
 
-        StandardContext rootContext = (StandardContext) server.createContext(contextPath, "webapp");
+      }
+
+    public void deploy(String contextPath, String appDir) {
+        if (contextPath == null) {
+            throw new IllegalArgumentException("Context path or appbase should not be null");
+        }
+        if (!contextPath.startsWith("/")) {
+            contextPath = "/" + contextPath;
+        }
+        StandardContext rootContext = (StandardContext) server.createContext(contextPath, appDir);
         KeycloakAuthenticatorValve valve = new KeycloakAuthenticatorValve();
         rootContext.addValve(valve);
         //rootContext.addLifecycleListener(valve);
         rootContext.setDefaultWebXml("web.xml");
-        localHost.addChild(rootContext);
-
-        Engine engine = server.createEngine();
-        engine.setDefaultHost(localHost.getName());
-        engine.setName("TomcatEngine");
-        engine.addChild(localHost);
-
-        server.addEngine(engine);
-
-        Connector connector = server.createConnector(localHost.getName(), port, false);
-        server.addConnector(connector);
-
-        // register shutdown hook
-        if (shutdownHook) {
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    if (isRunning) {
-                        if (isInfo) LOG.info("Stopping the Tomcat server, through shutdown hook");
-                        try {
-                            if (server != null) {
-                                server.stop();
-                            }
-                        } catch (LifecycleException e) {
-                            LOG.error("Error while stopping the Tomcat server, through shutdown hook", e);
-                        }
-                    }
-                }
-            });
-        }
-
+        host.addChild(rootContext);
     }
 
     /**
@@ -102,6 +74,16 @@ public class TomcatServer {
             LOG.warn("Tomcat server is already running @ port={}; ignoring the start", port);
             return;
         }
+
+        Engine engine = server.createEngine();
+        engine.setDefaultHost(host.getName());
+        engine.setName("TomcatEngine");
+        engine.addChild(host);
+
+        server.addEngine(engine);
+
+        Connector connector = server.createConnector(host.getName(), port, false);
+        server.addConnector(connector);
 
         if (isInfo) LOG.info("Starting the Tomcat server @ port={}", port);
 

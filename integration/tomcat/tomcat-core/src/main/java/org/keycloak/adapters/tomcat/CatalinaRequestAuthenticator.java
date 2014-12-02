@@ -39,6 +39,7 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
         super(facade, deployment, tokenStore, request.getConnector().getRedirectPort());
         this.valve = valve;
         this.request = request;
+        this.principalFactory = principalFactory;
     }
 
     @Override

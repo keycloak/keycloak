@@ -39,7 +39,8 @@ public class CustomerServlet extends HttpServlet {
         Client client = ClientBuilder.newClient();
 
         try {
-            WebTarget target = client.target("http://localhost:8081/customer-db");
+            String appBase = System.getProperty("app.server.base.url", "http://localhost:8081");
+            WebTarget target = client.target(appBase + "/customer-db/");
             Response response = target.request().get();
             Assert.assertEquals(401, response.getStatus());
             response.close();
