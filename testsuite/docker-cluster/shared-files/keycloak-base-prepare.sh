@@ -6,13 +6,7 @@ mkdir -p mysql/main && mv /mysql-connector-java-5.1.32.jar mysql/main/
 cp /keycloak-docker-cluster/shared-files/mysql-module.xml mysql/main/module.xml
 mv mysql $JBOSS_MODULES_HOME/com/
 
-if [ $JBOSS_TYPE == "eap63" ]; then
-  EXT="as7";
-else
-  EXT=$JBOSS_TYPE;
-fi;
-
-sed -i -e "s/<extensions>/&\n <extension module=\"org.keycloak.keycloak-$EXT-subsystem\"\/>/" $JBOSS_HOME/standalone/configuration/standalone-ha.xml
+sed -i -e "s/<extensions>/&\n <extension module=\"org.keycloak.keycloak-subsystem\"\/>/" $JBOSS_HOME/standalone/configuration/standalone-ha.xml
 sed -i -e 's/<profile>/&\n <subsystem xmlns="urn:jboss:domain:keycloak:1.0"\/>/' $JBOSS_HOME/standalone/configuration/standalone-ha.xml && \
 sed -i -e 's/<security-domains>/&\n <security-domain name="keycloak">\n  <authentication>\n   <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule" flag="required"\/>\n  <\/authentication>\n <\/security-domain>/' $JBOSS_HOME/standalone/configuration/standalone-ha.xml && \
 sed -i -e 's/<drivers>/&\n <driver name="mysql" module="com.mysql">\n  <xa-datasource-class>com.mysql.jdbc.Driver<\/xa-datasource-class>\n  <driver-class>com.mysql.jdbc.Driver<\/driver-class>\n <\/driver>/' $JBOSS_HOME/standalone/configuration/standalone-ha.xml && \
