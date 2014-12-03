@@ -442,6 +442,21 @@ public class OpenIDConnectService {
     }
 
     /**
+     * CORS preflight path for refresh token requests
+     *
+     * @return
+     */
+    @Path("refresh")
+    @OPTIONS
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response refreshAccessTokenPreflight() {
+        if (logger.isDebugEnabled()) {
+            logger.debugv("cors request from: {0}", request.getHttpHeaders().getRequestHeaders().getFirst("Origin"));
+        }
+        return Cors.add(request, Response.ok()).auth().preflight().build();
+    }
+
+    /**
      * URL for making refresh token requests.
      *
      * @See <a href="http://tools.ietf.org/html/rfc6749#section-6">http://tools.ietf.org/html/rfc6749#section-6</a>
