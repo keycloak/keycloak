@@ -19,7 +19,7 @@
         <resteasy.version>2.3.7.Final</resteasy.version>
         <resteasy.version.latest>3.0.9.Final</resteasy.version.latest>
         <!-- <undertow.version>1.1.0.Final</undertow.version> -->
-        <undertow.version>1.0.15.Final</undertow.version>
+        <undertow.version>1.1.1.Final</undertow.version>
         <picketlink.version>2.7.0.CR2</picketlink.version>
         <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
