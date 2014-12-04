@@ -13,6 +13,7 @@
                 <exclude>org/picketlink/**</exclude>
                 <exclude>org/keycloak/keycloak-undertow-adapter/**</exclude>
                 <exclude>org/keycloak/keycloak-wildfly-adapter/**</exclude>
+                <exclude>org/keycloak/keycloak-as7-subsystem/**</exclude>
                 <exclude>org/jboss/**</exclude>
             </excludes>
             <outputDirectory>modules/system/layers/base</outputDirectory>

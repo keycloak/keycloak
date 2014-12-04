@@ -392,47 +392,8 @@ keycloak-war-dist-all-&project.version;/
             </para>
         </section>
 
-        <section id="as7-specifics">
-            <title>AS7 specifics</title>
-            <para>
-                If you have Keycloak on JBoss AS 7.1.1 you need to do few other things in order to have Keycloak up and running. This includes:
-                <orderedlist>
-                    <listitem>
-                        <para>
-                            Remove or comment the element from file <literal>KEYCLOAK_HOME/standalone/deployments/auth-server.war/WEB-INF/jboss-deployment-structure.xml</literal>.
-<programlisting><![CDATA[
-<exclude-subsystems>
-    <subsystem name="webservices"/>
-</exclude-subsystems>
-]]></programlisting>
-                        </para>
-                    </listitem>
-                    <listitem>
-                        <para>
-                            Then either:
-                        </para>
-                        <para>
-                            <itemizedlist>
-                                <listitem>
-                                    <para>
-                                        Disable webservices extension and subsystem by remove (or comment) both in <literal>KEYCLOAK_HOME/standalone/configuration/standalone.xml</literal>.
-                                    </para>
-                                </listitem>
-                                <listitem>
-                                    <para>
-                                        If you want to use webservices subsystem, the alternative is to remove 2 JAR files
-                                        <literal>KEYCLOAK_HOME/standalone/deployments/auth-server.war/WEB-INF/lib/keycloak-saml-protocol-&project.version;.jar</literal>
-                                        and <literal>KEYCLOAK_HOME/standalone/deployments/auth-server.war/WEB-INF/lib/picketlink-federation-&picketlink.version;.jar</literal>
-                                        but note that <link linkend="saml">SAML</link> won't work.
-                                    </para>
-                                </listitem>
-                            </itemizedlist>
-                        </para>
-                    </listitem>
-                </orderedlist>
-            </para>
-            <section>
-                <title>AS7/EAP6.x Logging</title>
+        <section>
+                <title>EAP6.x Logging</title>
                 <para>
                     Accessing the admin console will get these annoying log messages:
                 </para>
@@ -452,7 +413,6 @@ keycloak-war-dist-all-&project.version;/
     </logger>
 ]]>
 </programlisting>
-            </section>
         </section>
 
         <section id="ssl_modes">
@@ -644,10 +604,10 @@ keycloak-war-dist-all-&project.version;/
                     </para>
                 </section>
                 <section>
-                    <title>Installing the keystore to JBoss EAP6/AS7</title>
+                    <title>Installing the keystore to JBoss EAP6</title>
                     <para>
                         Now that you have a Java keystore with the appropriate certificates, you need to configure your
-                        JBoss EAP6/AS7 installation to use it.  First step is to move the keystore file to a directory
+                        JBoss EAP6 installation to use it.  First step is to move the keystore file to a directory
                         you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
                         Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
                     </para>
@@ -713,7 +673,7 @@ keycloak-war-dist-all-&project.version;/
                 </section>
 
                 <section>
-                    <title>AS7/EAP</title>
+                    <title>EAP</title>
 
                     <para>
                         Open <literal>standalone/configuration/standalone.xml</literal> in your favorite editor.
