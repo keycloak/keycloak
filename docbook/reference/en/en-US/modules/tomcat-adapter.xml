@@ -7,9 +7,12 @@
     </para>
     <section id="tomcat-adapter-installation">
         <title>Adapter Installation</title>
+        <para>
+            Adapters are no longer included with the appliance or war distribution.  Each adapter is a separate download on
+            the Keycloak download site.  They are also available as a maven artifact.
+        </para>
     <para>
-        There is a adapter zip file for Tomcat in the <literal>adapters/</literal> directory in the Keycloak appliance
-        or war distribution.  You must unzip this file into Tomcat's <literal>lib/</literal> directory.  Including
+        You must unzip the adapter distro into Tomcat's <literal>lib/</literal> directory.  Including
         adapter's jars within your WEB-INF/lib directory will not work!  The Keycloak adapter is implemented as a Valve
         and valve code must reside in Tomcat's main lib/ directory.
     </para>

@@ -41,10 +41,6 @@ keycloak-appliance-dist-all-&project.version;/
             standalone/configuration/
                 keycloak-server.json
                 themes/
-    adapters/
-        keycloak-as7-adapter-dist-&project.version;.zip
-        keycloak-eap6-adapter-dist-&project.version;.zip
-        keycloak-wildfly-adapter-dist-&project.version;.zip
     examples/
     docs/
 </programlisting>
@@ -86,10 +82,6 @@ keycloak-war-dist-all-&project.version;/
     configuration/
         keycloak-server.json
         themes/
-    adapters/
-        keycloak-as7-adapter-dist-&project.version;.zip
-        keycloak-eap6-adapter-dist-&project.version;.zip
-        keycloak-wildfly-adapter-dist-&project.version;.zip
     examples/
     docs/
 </programlisting>
@@ -107,7 +99,7 @@ keycloak-war-dist-all-&project.version;/
 </programlisting>
         </para>
         <para>
-            After these steps you should also <link linkend='jboss-adapter-installation'>install the client adapter</link>
+            After these steps you MUST then <link linkend='jboss-adapter-installation'>download and install the client adapter</link>
             as this may contain modules the server needs (like Bouncycastle).  You will also need to install the adapter
             to run the examples on the same server.
         </para>
@@ -121,7 +113,7 @@ keycloak-war-dist-all-&project.version;/
             enter in a new password.
         </para>
         <para>
-            If you have Keycloak on JBoss AS 7.1.1 <link linkend="as7-specifics">these steps</link>.
+            You can no longer run Keycloak on JBoss AS 7.1.1.  You must run on EAP 6.x or Wildfly.
         </para>
     </section>
     <section>

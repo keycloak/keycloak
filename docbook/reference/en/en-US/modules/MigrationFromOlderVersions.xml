@@ -82,6 +82,8 @@
         <section>
             <title>Migrating from 1.1.Beta1 to 1.1.Beta2</title>
             <itemizedlist>
+                <listitem>Adapters are now a separate download.  They are not included in appliance and war distribution.  We have too many now and the distro
+                is getting bloated.</listitem>
                 <listitem>The tomcat adapter valve has moved to a different package.  From <literal>org.keycloak.adapters.tomcat7.KeycloakAuthenticatorValve</literal> to <literal>org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve</literal>
                 From the 'tomcat7' package to just 'tomcat'.
                 </listitem>

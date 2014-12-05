@@ -7,9 +7,12 @@
     </para>
     <section id="jetty8-adapter-installation">
         <title>Adapter Installation</title>
+        <para>
+            Adapters are no longer included with the appliance or war distribution.Each adapter is a separate download on
+            the Keycloak download site.  They are also available as a maven artifact.
+        </para>
     <para>
-        There is a adapter zip file for Jetty 8.1.x in the <literal>adapters/</literal> directory in the Keycloak appliance
-        or war distribution.  You must unzip this file into Jetty 8.1.x's root directory.  Including
+        You must unzip the Jetty 8.1.x  distro into Jetty 8.1.x's root directory.  Including
         adapter's jars within your WEB-INF/lib directory will not work!
     </para>
     <para>
