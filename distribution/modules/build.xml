@@ -86,6 +86,9 @@
         <module-def name="org.keycloak.keycloak-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-subsystem"/>
         </module-def>
+        <module-def name="org.keycloak.keycloak-as7-subsystem">
+            <maven-resource group="org.keycloak" artifact="keycloak-as7-subsystem"/>
+        </module-def>
         <module-def name="org.picketlink">
         </module-def>
         <module-def name="org.picketlink.common">

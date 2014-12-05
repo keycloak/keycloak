@@ -56,6 +56,7 @@ $ unzip keycloak-as7-adapter-dist.zip
     </profile>
 ]]>
 </programlisting>
+<note>For AS7, the extension module is org.keycloak.keycloak-as7-sybsystem.</note>
     </para>
         <para>
             Finally, you must specify a shared keycloak security domain.
