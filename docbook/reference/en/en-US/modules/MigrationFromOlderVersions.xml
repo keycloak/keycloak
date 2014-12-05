@@ -87,7 +87,9 @@
                 </listitem>
                 <listitem>JavaScript adapter now has idToken and idTokenParsed properties. If you use idToken to retrieve first name, email, etc. you need to change this to idTokenParsed.</listitem>
                 <listitem>The as7-eap-subsystem and keycloak-wildfly-subsystem have been merged into one keycloak-subsystem.  If you have an existing standalone.xml
-                          or domain.xml, you will need edit near the top of the file and change the extension module name to org.keycloak.keycloak-subsystem</listitem>
+                          or domain.xml, you will need edit near the top of the file and change the extension module name to org.keycloak.keycloak-subsystem.
+                          For AS7 only, the extension module name is org.keycloak.keycloak-as7-subsystem.</listitem>
+                <listitem>Server installation is no longer supported on AS7.  You can still use AS7 as an application client.</listitem>
             </itemizedlist>
         </section>
         <section>

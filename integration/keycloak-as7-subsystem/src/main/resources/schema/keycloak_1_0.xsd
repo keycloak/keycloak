@@ -1,0 +1,94 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:jboss:domain:keycloak:1.0"
+            xmlns="urn:jboss:domain:keycloak:1.0"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.1">
+
+    <!-- The subsystem root element -->
+    <xs:element name="subsystem" type="subsystemType"/>
+
+    <xs:complexType name="subsystemType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                    The Keycloak subsystem, used to register deployments managed by Keycloak
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:element name="realm" maxOccurs="unbounded" minOccurs="0" type="realm-type"/>
+        <xs:element name="realm" maxOccurs="unbounded" minOccurs="0" type="secure-deployment-type"/>
+
+    </xs:complexType>
+
+    <xs:complexType name="realm-type">
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The name of the realm.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:complexContent>
+            <xs:extension base="override-element-type">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="secure-deployment-type">
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The name of the deployment.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:complexContent>
+            <xs:extension base="override-element-type">
+                <xs:element name="realm" type="xs:string" minOccurs="0" maxOccurs="1" use="required"/>
+                <xs:element name="resource" type="xs:string" minOccurs="0" maxOccurs="1" use="required"/>
+                <xs:element name="use-resource-role-mappings" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+                <xs:element name="bearer-only" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+                <xs:element name="credential" maxOccurs="unbounded" minOccurs="0" type="xs:credential-type"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="credential-type">
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The name of the credential.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="override-element-type">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                    These elements can be declared at the realm level and overridden at the secure-deployment level.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
+        <xs:element name="auth-url" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
+        <xs:element name="code-url" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
+        <xs:element name="ssl-required" type="xs:string" minOccurs="0" maxOccurs="1" />
+        <xs:element name="allow-any-hostname" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+        <xs:element name="disable-trust-manager" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+        <xs:element name="truststore" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="truststore-password" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="connection-pool-size" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="enable-cors" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="client-keystore" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="client-keystore-password" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="client-key-password" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="cors-max-age" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="cors-allowed-headers" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="cors-allowed-methods" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="expose-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="auth-server-url-for-backend-requests" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="always-refresh-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="register-node-at-startup" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="register-node-period" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="token-store" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="principal-attribute" type="xs:string" minOccurs="0" maxOccurs="1"/>
+    </xs:complexType>
+
+</xs:schema>
