@@ -58,19 +58,19 @@ public class SecurityPathMatches {
                 extensionRoleInformation.isEmpty();
     }
 
-    public SecurityPathMatch getSecurityInfo(final String path, final String method) {
+    public SingleConstraintMatch getSecurityInfo(final String path, final String method) {
         RuntimeMatch currentMatch = new RuntimeMatch();
         handleMatch(method, defaultPathSecurityInformation, currentMatch);
         PathSecurityInformation match = exactPathRoleInformation.get(path);
         if (match != null) {
             handleMatch(method, match, currentMatch);
-            return new SecurityPathMatch(mergeConstraints(currentMatch));
+            return mergeConstraints(currentMatch);
         }
 
         match = prefixPathRoleInformation.get(path);
         if (match != null) {
             handleMatch(method, match, currentMatch);
-            return new SecurityPathMatch(mergeConstraints(currentMatch));
+            return mergeConstraints(currentMatch);
         }
 
         int qsPos = -1;
@@ -83,7 +83,7 @@ public class SecurityPathMatches {
                 match = exactPathRoleInformation.get(part);
                 if (match != null) {
                     handleMatch(method, match, currentMatch);
-                    return new SecurityPathMatch(mergeConstraints(currentMatch));
+                    return mergeConstraints(currentMatch);
                 }
                 qsPos = i;
                 extension = false;
@@ -93,7 +93,7 @@ public class SecurityPathMatches {
                 match = prefixPathRoleInformation.get(part);
                 if (match != null) {
                     handleMatch(method, match, currentMatch);
-                    return new SecurityPathMatch(mergeConstraints(currentMatch));
+                    return mergeConstraints(currentMatch);
                 }
             } else if (c == '.') {
                 if (!extension) {
@@ -107,12 +107,12 @@ public class SecurityPathMatches {
                     match = extensionRoleInformation.get(ext);
                     if (match != null) {
                         handleMatch(method, match, currentMatch);
-                        return new SecurityPathMatch(mergeConstraints(currentMatch));
+                        return mergeConstraints(currentMatch);
                     }
                 }
             }
         }
-        return new SecurityPathMatch(mergeConstraints(currentMatch));
+        return mergeConstraints(currentMatch);
     }
 
     /**

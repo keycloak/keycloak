@@ -6,6 +6,7 @@
     "keystore-password": "password",
     "key-password": "password",
     "target-url": "http://localhost:8082",
+    "send-access-token": true,
     "applications": [
         {
             "base-path": "/customer-portal",
@@ -25,6 +26,18 @@
             "constraints": [
                 {
                     "pattern": "/users/*",
+                    "roles-allowed": [
+                        "user"
+                    ]
+                },
+                {
+                    "pattern": "/call-bearer/*",
+                    "roles-allowed": [
+                        "user"
+                    ]
+                },
+                {
+                    "pattern": "/bearer/*",
                     "roles-allowed": [
                         "user"
                     ]

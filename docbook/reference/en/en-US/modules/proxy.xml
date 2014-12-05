@@ -30,6 +30,7 @@ $ java -jar bin/launcher.jar [your-config.json]
 <programlisting><![CDATA[
 {
     "target-url": "http://localhost:8082",
+    "send-access-token": true,
     "bind-address": "localhost",
     "http-port": "8080",
     "https-port": "8443",
@@ -89,6 +90,15 @@ $ java -jar bin/launcher.jar [your-config.json]
                     <listitem>
                         <para>
                             The URL this server is proxying <emphasis>REQUIRED.</emphasis>.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>send-access-token</term>
+                    <listitem>
+                        <para>
+                            Boolean flag.  If true, this will send the access token via the KEYCLOAK_ACCESS_TOKEN header to the
+                            proxied server. <emphasis>OPTIONAL.</emphasis>.  Default is false.
                         </para>
                     </listitem>
                 </varlistentry>
@@ -310,6 +320,15 @@ $ java -jar bin/launcher.jar [your-config.json]
                     <listitem>
                         <para>
                             Full name of user if set.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>KEYCLOAK_ACCESS_TOKEN</term>
+                    <listitem>
+                        <para>
+                            Send the access token in this header if the proxy was configured to send it.  This token can
+                            be used to make bearer token requests.
                         </para>
                     </listitem>
                 </varlistentry>

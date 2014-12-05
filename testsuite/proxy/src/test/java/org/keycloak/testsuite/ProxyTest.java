@@ -62,6 +62,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -90,6 +95,7 @@ public class ProxyTest {
     public static class SendUsernameServlet extends HttpServlet {
         @Override
         protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+            String requestURI = req.getRequestURI();
             resp.setContentType("text/plain");
             OutputStream stream = resp.getOutputStream();
             stream.write(req.getRequestURL().toString().getBytes());
@@ -103,6 +109,34 @@ public class ProxyTest {
             while (headers.hasMoreElements()) {
                 String name = headers.nextElement();
                 System.out.println(name +": " + req.getHeader(name));
+            }
+
+            if (requestURI.contains("/bearer")) {
+                Client client = ClientBuilder.newClient();
+
+                try {
+                    String appBase = "http://localhost:8080/customer-portal";
+                    WebTarget target = client.target(appBase + "/call-bearer");
+
+                    Response response = null;
+                    response = target.request()
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer CRAP")
+                            .get();
+                    Assert.assertEquals(401, response.getStatus());
+                    response.close();
+                    response = target.request()
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + req.getHeader("KEYCLOAK_ACCESS_TOKEN"))
+                            .get();
+                    Assert.assertEquals(200, response.getStatus());
+                    String data = response.readEntity(String.class);
+                    response.close();
+                    stream.write(data.getBytes());
+                } finally {
+                    client.close();
+                }
+
+            } else if (requestURI.contains("/call-bearer")) {
+                stream.write("bearer called".getBytes());
             }
         }
         @Override
@@ -151,20 +185,6 @@ public class ProxyTest {
     public static void initProxy() throws Exception {
         initTomcat();
         InputStream is = ProxyTest.class.getResourceAsStream("/proxy-config.json");
-        /*
-        ProxyServerBuilder builder = new ProxyServerBuilder().addHttpListener(8080, "localhost");
-        AdapterConfig config = KeycloakDeploymentBuilder.loadAdapterConfig(is);
-
-        builder.target("http://localhost:8082")
-                .application(config)
-                    .base("/customer-portal")
-                    .errorPage("/error.html")
-                    .constraint("/users/*").role("user").add()
-                    .constraint("/admins/*").role("admin").add()
-                    .constraint("/users/permit").permit().add()
-                    .constraint("/users/deny").deny().add()
-                .add();
-                */
         proxyServer = ProxyServerBuilder.build(is);
         proxyServer.start();
 
@@ -220,6 +240,11 @@ public class ProxyTest {
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("customer-portal/users"));
         Assert.assertTrue(pageSource.contains("count:1")); // test http session
+
+        driver.navigate().to(baseUrl + "/customer-portal/bearer");
+        pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("bearer called"));
+
 
         driver.navigate().to(baseUrl + "/customer-portal/users/deny");
         Assert.assertEquals(driver.getCurrentUrl(), baseUrl + "/customer-portal/users/deny");
