@@ -14,7 +14,8 @@
                 <exclude>**/js-adapter/**</exclude>
             </excludes>
         </fileSet>
-        <fileSet>
+        <!--
+         <fileSet>
             <directory>${project.build.directory}/unpacked/js-adapter</directory>
             <outputDirectory>adapters/js-adapter</outputDirectory>
             <includes>
@@ -22,8 +23,10 @@
                 <include>**/*.html</include>
             </includes>
         </fileSet>
+        -->
     </fileSets>
     <dependencySets>
+        <!--
         <dependencySet>
             <unpack>false</unpack>
             <useTransitiveDependencies>false</useTransitiveDependencies>
@@ -40,6 +43,7 @@
             </includes>
             <outputDirectory>adapters</outputDirectory>
         </dependencySet>
+        -->
         <dependencySet>
             <unpack>true</unpack>
             <useTransitiveDependencies>false</useTransitiveDependencies>

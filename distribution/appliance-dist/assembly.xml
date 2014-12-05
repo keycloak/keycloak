@@ -57,14 +57,6 @@
             <outputDirectory>keycloak</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/js-adapter</directory>
-            <outputDirectory>adapters/js-adapter</outputDirectory>
-            <includes>
-                <include>**/*.js</include>
-                <include>**/*.html</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>src/main/welcome-content</directory>
             <outputDirectory>keycloak/welcome-content</outputDirectory>
             <includes>
@@ -72,6 +64,7 @@
             </includes>            
         </fileSet>
     </fileSets>
+    <!--
     <dependencySets>
         <dependencySet>
             <unpack>false</unpack>
@@ -90,20 +83,5 @@
             <outputDirectory>adapters</outputDirectory>
         </dependencySet>
     </dependencySets>
-    <!--
-    <moduleSets>
-        <moduleSet>
-            <useAllReactorProjects>true</useAllReactorProjects>
-            <includes>
-                <include>org.keycloak:keycloak-wildfly-adapter-dist</include>
-            </includes>
-            <binaries>
-                <outputDirectory>adapters</outputDirectory>
-                <attachmentClassifier>zip</attachmentClassifier>
-                <includeDependencies>false</includeDependencies>
-                <unpack>false</unpack>
-            </binaries>
-        </moduleSet>
-    </moduleSets>
     -->
 </assembly>

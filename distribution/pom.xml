@@ -35,6 +35,7 @@
         <module>jetty81-adapter-zip</module>
         <module>jetty91-adapter-zip</module>
         <module>jetty92-adapter-zip</module>
+        <module>js-adapter-zip</module>
         <module>examples-docs-zip</module>
         <module>theme-template-zip</module>
         <module>war-zip</module>

@@ -10,8 +10,8 @@
     <section id="jboss-adapter-installation">
         <title>Adapter Installation</title>
     <para>
-        There is a adapter zip file for AS7, EAP, and Wildfly in the <literal>adapters/</literal> directory in the Keycloak
-        distribution.
+        Adapters are no longer included with the appliance or war distribution.Each adapter is a separate download on
+        the Keycloak download site.  They are also available as a maven artifact.
     </para>
     <para>
         Install on Wildfly:

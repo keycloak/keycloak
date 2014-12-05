@@ -1,7 +1,9 @@
 <section id="javascript-adapter">
     <title>Pure Client Javascript Adapter</title>
     <para>
-        The Keycloak Server comes with a Javascript library you can use to secure pure HTML/Javascript applications.  It
+        The Keycloak Server comes with a Javascript library you can use to secure pure HTML/Javascript applications.  This
+        library is referencable directly from the keycloak server.  You can also download the adapter from Keycloak's download
+        site if you want a static copy of this library.  It
         works in the same way as other application adapters except that your browser is driving the OAuth redirect protocol
         rather than the server.
     </para>
