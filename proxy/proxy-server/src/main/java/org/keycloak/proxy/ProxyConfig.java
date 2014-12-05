@@ -37,6 +37,8 @@ public class ProxyConfig {
     protected Boolean directBuffers;
     @JsonProperty("target-url")
     protected String targetUrl;
+    @JsonProperty("send-access-token")
+    protected boolean sendAccessToken;
     @JsonProperty("applications")
     protected List<Application> applications = new LinkedList<Application>();
 
@@ -142,6 +144,14 @@ public class ProxyConfig {
 
     public void setApplications(List<Application> applications) {
         this.applications = applications;
+    }
+
+    public boolean isSendAccessToken() {
+        return sendAccessToken;
+    }
+
+    public void setSendAccessToken(boolean sendAccessToken) {
+        this.sendAccessToken = sendAccessToken;
     }
 
     public static class Application {

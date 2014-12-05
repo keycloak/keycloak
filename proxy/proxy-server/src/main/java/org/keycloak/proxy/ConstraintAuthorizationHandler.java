@@ -17,13 +17,16 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
     public static final HttpString KEYCLOAK_USERNAME = new HttpString("KEYCLOAK_USERNAME");
     public static final HttpString KEYCLOAK_EMAIL = new HttpString("KEYCLOAK_EMAIL");
     public static final HttpString KEYCLOAK_NAME = new HttpString("KEYCLOAK_NAME");
+    public static final HttpString KEYCLOAK_ACCESS_TOKEN = new HttpString("KEYCLOAK_ACCESS_TOKEN");
 
     protected HttpHandler next;
     protected String errorPage;
+    protected boolean sendAccessToken;
 
-    public ConstraintAuthorizationHandler(String errorPage, HttpHandler next) {
-        this.errorPage = errorPage;
+    public ConstraintAuthorizationHandler(HttpHandler next, String errorPage, boolean sendAccessToken) {
         this.next = next;
+        this.errorPage = errorPage;
+        this.sendAccessToken = sendAccessToken;
     }
 
     @Override
@@ -57,7 +60,8 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
 
     public void authenticatedRequest(KeycloakUndertowAccount account, HttpServerExchange exchange) throws Exception {
         if (account != null) {
-            IDToken idToken = account.getKeycloakSecurityContext().getIdToken();
+            IDToken idToken = account.getKeycloakSecurityContext().getToken();
+            if (idToken == null) return;
             if (idToken.getSubject() != null) {
                 exchange.getRequestHeaders().put(KEYCLOAK_SUBJECT, idToken.getSubject());
             }
@@ -69,6 +73,9 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
             }
             if (idToken.getName() != null) {
                 exchange.getRequestHeaders().put(KEYCLOAK_NAME, idToken.getName());
+            }
+            if (sendAccessToken) {
+                exchange.getRequestHeaders().put(KEYCLOAK_ACCESS_TOKEN, account.getKeycloakSecurityContext().getTokenString());
             }
         }
         next.handleRequest(exchange);

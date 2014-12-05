@@ -29,7 +29,7 @@ public class ConstraintMatcherHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         log.debugv("ConstraintMatcherHandler: {0}", exchange.getRelativePath());
-        SingleConstraintMatch match = matcher.getSecurityInfo(exchange.getRelativePath(), exchange.getRequestMethod().toString()).getMergedConstraint();
+        SingleConstraintMatch match = matcher.getSecurityInfo(exchange.getRelativePath(), exchange.getRequestMethod().toString());
         if (match == null || (match.getRequiredRoles().isEmpty() && match.getEmptyRoleSemantic() == SecurityInfo.EmptyRoleSemantic.PERMIT)) {
             unsecuredHandler.handleRequest(exchange);
             return;
