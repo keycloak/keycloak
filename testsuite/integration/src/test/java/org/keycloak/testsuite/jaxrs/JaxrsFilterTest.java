@@ -317,6 +317,7 @@ public class JaxrsFilterTest {
     // @Test
     public void testCxfExample() {
         String uri = "http://localhost:9000/customerservice/customers/123";
+        //String uri = "http://localhost:8080/jax_rs_basic_servlet/services/service1/customerservice/customers/123";
         Response resp = client.target(uri).request()
                 .get();
         Assert.assertEquals(resp.getStatus(), 401);
