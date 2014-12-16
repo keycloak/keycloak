@@ -104,23 +104,24 @@ public class KeycloakApplication extends Application {
 
     public static void loadConfig() {
         try {
-            URL config = null;
+            JsonNode node = null;
 
             String configDir = System.getProperty("jboss.server.config.dir");
             if (configDir != null) {
                 File f = new File(configDir + File.separator + "keycloak-server.json");
                 if (f.isFile()) {
-                    config = f.toURI().toURL();
+                    node = new ObjectMapper().readTree(f);
+                    log.info("Loaded config from " + f.getAbsolutePath());
                 }
             }
 
-            if (config == null) {
-                config = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
+            if (node == null) {
+                URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
+                node = new ObjectMapper().readTree(resource);
+                log.info("Loaded config from " + resource);
             }
 
-            if (config != null) {
-                JsonNode node = new ObjectMapper().readTree(config);
-
+            if (node != null) {
                 Properties properties = new Properties();
                 properties.putAll(System.getProperties());
                 for(Map.Entry<String, String> e : System.getenv().entrySet()) {
@@ -129,7 +130,6 @@ public class KeycloakApplication extends Application {
 
                 Config.init(new JsonConfigProvider(node, properties));
 
-                log.info("Loaded config from " + config);
                 return;
             } else {
                 log.warn("Config 'keycloak-server.json' not found");
