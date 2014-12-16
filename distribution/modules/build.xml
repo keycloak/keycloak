@@ -73,6 +73,7 @@
 
         <module-def name="org.keycloak.keycloak-as7-adapter">
             <maven-resource group="org.keycloak" artifact="keycloak-as7-adapter"/>
+            <maven-resource group="org.keycloak" artifact="keycloak-tomcat-core-adapter"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-undertow-adapter">
