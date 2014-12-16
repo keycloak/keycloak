@@ -122,20 +122,23 @@ public class ServerCookie implements Serializable {
     private final static String OLD_COOKIE_PATTERN = "EEE, dd-MMM-yyyy HH:mm:ss z";
 
 
-    private final static DateFormat oldCookieFormat = new SimpleDateFormat(OLD_COOKIE_PATTERN, LOCALE_US);
+    private final static DateFormat OLD_COOKIE_FORMAT = new SimpleDateFormat(OLD_COOKIE_PATTERN, LOCALE_US);
+    static{
+        OLD_COOKIE_FORMAT.setTimeZone(GMT_ZONE);
+    }
 
     public static String formatOldCookie(Date d) {
         String ocf = null;
-        synchronized (oldCookieFormat) {
-            ocf = oldCookieFormat.format(d);
+        synchronized (OLD_COOKIE_FORMAT) {
+            ocf = OLD_COOKIE_FORMAT.format(d);
         }
         return ocf;
     }
 
     public static void formatOldCookie(Date d, StringBuffer sb,
                                        FieldPosition fp) {
-        synchronized (oldCookieFormat) {
-            oldCookieFormat.format(d, sb, fp);
+        synchronized (OLD_COOKIE_FORMAT) {
+            OLD_COOKIE_FORMAT.format(d, sb, fp);
         }
     }
 
