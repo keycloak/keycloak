@@ -110,15 +110,15 @@ public class KeycloakApplication extends Application {
             if (configDir != null) {
                 File f = new File(configDir + File.separator + "keycloak-server.json");
                 if (f.isFile()) {
+                    log.info("Load config from " + f.getAbsolutePath());
                     node = new ObjectMapper().readTree(f);
-                    log.info("Loaded config from " + f.getAbsolutePath());
                 }
             }
 
             if (node == null) {
                 URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
+                log.info("Load config from " + resource);
                 node = new ObjectMapper().readTree(resource);
-                log.info("Loaded config from " + resource);
             }
 
             if (node != null) {
