@@ -1,4 +1,4 @@
-package org.keycloak.adapters.as7;
+package org.keycloak.adapters.jbossweb;
 
 import org.apache.catalina.Realm;
 import org.apache.catalina.realm.GenericPrincipal;
@@ -11,6 +11,7 @@ import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakAccount;
+import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
@@ -26,7 +27,14 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CatalinaSecurityContextHelper {
+public class JBossWebPrincipalFactory extends GenericPrincipalFactory {
+
+    @Override
+    protected GenericPrincipal createPrincipal(Principal userPrincipal, List<String> roles) {
+        return null;
+    }
+
+    @Override
     public GenericPrincipal createPrincipal(Realm realm, final Principal identity, final Set<String> roleSet, final KeycloakSecurityContext securityContext) {
         KeycloakAccount account = new KeycloakAccount() {
             @Override

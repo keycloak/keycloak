@@ -18,8 +18,8 @@
         <module>jaxrs-oauth-client</module>
         <module>servlet-oauth-client</module>
         <module>jboss-adapter-core</module>
-        <module>as7-eap6/adapter</module>
         <module>tomcat</module>
+        <module>as7-eap6/adapter</module>
         <module>jetty</module>
         <module>undertow</module>
         <module>wildfly-adapter</module>

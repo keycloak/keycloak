@@ -27,7 +27,7 @@ import org.jboss.metadata.javaee.spec.ParamValueMetaData;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
 import org.jboss.metadata.web.jboss.ValveMetaData;
 import org.jboss.metadata.web.spec.LoginConfigMetaData;
-import org.keycloak.adapters.as7.KeycloakAuthenticatorValve;
+import org.keycloak.adapters.jbossweb.KeycloakAuthenticatorValve;
 import org.keycloak.subsystem.logging.KeycloakLogger;
 
 import java.util.ArrayList;
