@@ -4,7 +4,7 @@
         This chapter discusses possible security vulnerabilities Keycloak could have, how Keycloak mitigates those
         vulnerabilities, and what steps you need to do to configure Keycloak to mitigate some vulnerabilities.  A good list
         of potential vulnerabilities and what security implementations should do to mitigate them can be found in the
-        <ulink url="http://tools.ietf.org/html/rfc6819">OAuth 2.0 Thread Model</ulink> document put out by the IETF.  Many of those vulnerabilities are discussed here.
+        <ulink url="http://tools.ietf.org/html/rfc6819">OAuth 2.0 Threat Model</ulink> document put out by the IETF.  Many of those vulnerabilities are discussed here.
     </para>
     <section>
         <title>SSL/HTTPS Requirement</title>
