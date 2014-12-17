@@ -1,0 +1,30 @@
+<div id="content-area" class="col-sm-12" role="main">
+    <h2></h2>
+
+    <div id="content">
+
+        <h2>Server Info</h2>
+
+        <table class="table table-striped table-bordered">
+            <tr>
+                <td>Version</td>
+                <td>{{serverInfo.version}}</td>
+            </tr>
+            <tr>
+                <td>Server Time</td>
+                <td>{{serverInfo.serverTime}}</td>
+            </tr>
+            <tr>
+                <td>Providers</td>
+                <td>
+                    <table class="table table-striped table-bordered">
+                        <tr data-ng-repeat="(spi, providers) in serverInfo.providers">
+                            <td>{{spi}}</td>
+                            <td>{{providers.sort().join(', ')}}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>

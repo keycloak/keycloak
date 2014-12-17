@@ -9,17 +9,21 @@ import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.util.ProviderLoader;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -38,13 +42,23 @@ public class ServerInfoAdminResource {
     @GET
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
-        info.setVersion(Version.VERSION);
+        info.version = Version.VERSION;
+        info.serverTime = new Date().toString();
         setSocialProviders(info);
         setThemes(info);
         setEventListeners(info);
         setProtocols(info);
         setApplicationImporters(info);
+        setProviders(info);
         return info;
+    }
+
+    private void setProviders(ServerInfoRepresentation info) {
+        Map<String, Set<String>> providers = new HashMap<String, Set<String>>();
+        for (Spi spi : ServiceLoader.load(Spi.class)) {
+            providers.put(spi.getName(), session.listProviderIds(spi.getProviderClass()));
+        }
+        info.providers = providers;
     }
 
     private void setThemes(ServerInfoRepresentation info) {
@@ -100,24 +114,27 @@ public class ServerInfoAdminResource {
 
         private String version;
 
+        private String serverTime;
+
         private Map<String, List<String>> themes;
 
         private List<String> socialProviders;
         private List<String> protocols;
         private List<Map<String, String>> applicationImporters;
 
+        private Map<String, Set<String>> providers;
 
         private List<String> eventListeners;
 
         public ServerInfoRepresentation() {
         }
 
-        public String getVersion() {
-            return version;
+        public String getServerTime() {
+            return serverTime;
         }
 
-        public void setVersion(String version) {
-            this.version = version;
+        public String getVersion() {
+            return version;
         }
 
         public Map<String, List<String>> getThemes() {
@@ -138,6 +155,10 @@ public class ServerInfoAdminResource {
 
         public List<Map<String, String>> getApplicationImporters() {
             return applicationImporters;
+        }
+
+        public Map<String, Set<String>> getProviders() {
+            return providers;
         }
     }
 
