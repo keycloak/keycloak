@@ -6,6 +6,9 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
     $scope.authUrl = authUrl;
     $scope.auth = Auth;
     $scope.serverInfo = ServerInfo.get();
+    $scope.serverInfoUpdate = function() {
+        $scope.serverInfo = ServerInfo.get();
+    };
 
     WhoAmI.get(function (data) {
         Auth.user = data;
