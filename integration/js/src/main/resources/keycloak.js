@@ -619,7 +619,7 @@
                 if (event.origin !== loginIframe.iframeOrigin) {
                     return;
                 }
-                var data = event.data;
+                var data = JSON.parse(event.data);
                 var promise = loginIframe.callbackMap[data.callbackId];
                 delete loginIframe.callbackMap[data.callbackId];
 
@@ -652,7 +652,7 @@
                 msg.callbackId = createCallbackId();
                 loginIframe.callbackMap[msg.callbackId] = promise;
                 var origin = loginIframe.iframeOrigin;
-                loginIframe.iframe.contentWindow.postMessage(msg, origin);
+                loginIframe.iframe.contentWindow.postMessage(JSON.stringify(msg), origin);
             } else {
                 promise.setSuccess();
             }
