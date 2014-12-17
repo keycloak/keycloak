@@ -33,10 +33,10 @@ the box to run these demos.  So, if you're using this, you can head to Step 2.
 Alternatively, you can install the Keycloak Server onto any JBoss AS 7.1.1, EAP 6.x, or Wildfly 8.x server, but there is
 a few steps you must follow.
 
-Obtain latest keycloak-war-dist-all.zip.  This distro is used to install Keycloak onto an existing JBoss installation.
-This installs the server.
+If using JBoss AS7, obtain latest keycloak-war-dist-all.zip.  This distro is used to install Keycloak onto an existing JBoss installation.
+This installs the server using a WAR file.  It is not needed on EAP6 and WildFly.
 
-    $ cd ${wildfly.jboss.home}/standalone
+    $ cd ${jboss.as7.home}/standalone
     $ cp -r ${keycloak-war-dist-all}/deployments .
 
 To be able to run the demos you also need to install the Keycloak client adapter. For Wildfly:
@@ -66,7 +66,12 @@ For WildFly and JBoss EAP 6.x
         </extensions>
 
         <profile>
-            <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
+            <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
+                <auth-server name="main-auth-server">
+                    <enabled>true</enabled>
+                    <web-context>auth</web-context>
+                </auth-server>
+            </subsystem>
             ...
         </profile>
 
