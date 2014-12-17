@@ -70,7 +70,7 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         if (Environment.isWildFly()) {
             return new KeycloakDependencyProcessorWildFly();
         } else {
-            return new KeycloakDependencyProcessorAS7();
+            return new KeycloakDependencyProcessorEAP6();
         }
     }
 
@@ -78,7 +78,7 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         if (Environment.isWildFly()) {
             return new KeycloakAdapterConfigDeploymentProcessor();
         } else {
-            return new KeycloakAdapterConfigDeploymentProcessorAS7();
+            return new KeycloakAdapterConfigDeploymentProcessorEAP6();
         }
     }
 

@@ -51,6 +51,7 @@ public final class AuthServerAddHandler extends AbstractAddStepHandler {
         for (AttributeDefinition attr : AuthServerDefinition.ALL_ATTRIBUTES) {
             attr.validateAndSet(operation, model);
         }
+        model = context.resolveExpressions(model);
 
         // returns early if on domain controller
         if (!requiresRuntime(context)) return;
