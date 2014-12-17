@@ -56,6 +56,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
@@ -622,6 +623,14 @@ public class AccountService {
             logger.error("Failed to update password", ape);
             setReferrerOnPage();
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
+        }
+
+        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
+        for (UserSessionModel s : sessions) {
+            if (!s.getId().equals(auth.getSession().getId())) {
+                new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, s);
+                session.sessions().removeUserSession(realm, s);
+            }
         }
 
         event.event(EventType.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
