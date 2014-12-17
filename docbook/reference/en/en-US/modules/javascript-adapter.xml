@@ -1,17 +1,15 @@
 <section id="javascript-adapter">
-    <title>Pure Client Javascript Adapter</title>
+    <title>Javascript Adapter</title>
     <para>
-        The Keycloak Server comes with a Javascript library you can use to secure pure HTML/Javascript applications.  This
+        The Keycloak Server comes with a Javascript library you can use to secure HTML/Javascript applications.  This
         library is referencable directly from the keycloak server.  You can also download the adapter from Keycloak's download
         site if you want a static copy of this library.  It
         works in the same way as other application adapters except that your browser is driving the OAuth redirect protocol
         rather than the server.
     </para>
     <para>
-        The
-        disadvantage of using this approach is that you end up having a non-confidential, public client.  This can be mitigated
-        by registering valid redirect URLs.  You are still vulnerable if somebody hijacks the IP/DNS name of your pure
-        HTML/Javascript application though.
+        The disadvantage of using this approach is that you have a non-confidential, public client. This makes it more
+        important that you register valid redirect URLs and make sure your domain name is secured.
     </para>
     <para>
         To use this adapter, you must first configure an application (or client) through the <literal>Keycloak Admin Console</literal>.
@@ -135,6 +133,21 @@ keycloak.updateToken(30).success(function() {
             This does not require any network traffic, instead the status is retrieved from a special status cookie. This feature can be disabled
             by setting <literal>checkLoginIframe: false</literal> in the options passed to the <literal>init</literal>
             method.
+        </para>
+    </section>
+
+    <section>
+        <title>Older browsers</title>
+
+        <para>
+            The JavaScript adapter depends on Base64 (window.btoa and window.atob) and HTML5 History API. If you need to
+            support browsers that don't provide those (for example IE9) you'll need to add polyfillers. Example polyfill
+            libraries:
+
+            <itemizedlist>
+                <listitem>Base64 - <ulink url="https://github.com/davidchambers/Base64.js">https://github.com/davidchambers/Base64.js</ulink></listitem>
+                <listitem>HTML5 History - <ulink url="https://github.com/devote/HTML5-History-API">https://github.com/devote/HTML5-History-API</ulink></listitem>
+            </itemizedlist>
         </para>
     </section>
 
