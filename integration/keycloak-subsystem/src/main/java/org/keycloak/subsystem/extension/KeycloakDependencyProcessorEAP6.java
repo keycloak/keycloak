@@ -23,11 +23,11 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
 /**
- * Adds platform-specific modules for AS7
+ * Adds platform-specific modules for EAP6
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public class KeycloakDependencyProcessorAS7 extends KeycloakDependencyProcessor {
+public class KeycloakDependencyProcessorEAP6 extends KeycloakDependencyProcessor {
 
     private static final ModuleIdentifier KEYCLOAK_AS7_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-as7-adapter");
 

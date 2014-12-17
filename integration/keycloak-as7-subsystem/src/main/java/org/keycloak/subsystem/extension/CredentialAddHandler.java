@@ -40,7 +40,7 @@ public class CredentialAddHandler extends AbstractAddStepHandlerWithAttributes {
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
         KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.find(context);
-        ckService.addCredential(operation, model);
+        ckService.addCredential(operation, context.resolveExpressions(model));
     }
 
 }
