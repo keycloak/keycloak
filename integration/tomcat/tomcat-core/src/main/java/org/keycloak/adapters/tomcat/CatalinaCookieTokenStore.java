@@ -84,6 +84,16 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
         CookieTokenStore.setTokenCookie(deployment, facade, secContext);
     }
 
+    @Override
+    public void saveRequest() {
+
+    }
+
+    @Override
+    public boolean restoreRequest() {
+        return false;
+    }
+
     /**
      * Verify if we already have authenticated and active principal in cookie. Perform refresh if it's not active
      *

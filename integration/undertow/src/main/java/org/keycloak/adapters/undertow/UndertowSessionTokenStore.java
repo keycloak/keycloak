@@ -71,6 +71,16 @@ public class UndertowSessionTokenStore implements AdapterTokenStore {
     }
 
     @Override
+    public void saveRequest() {
+
+    }
+
+    @Override
+    public boolean restoreRequest() {
+        return false;
+    }
+
+    @Override
     public void saveAccountInfo(KeycloakAccount account) {
         Session session = Sessions.getOrCreateSession(exchange);
         session.setAttribute(KeycloakUndertowAccount.class.getName(), account);

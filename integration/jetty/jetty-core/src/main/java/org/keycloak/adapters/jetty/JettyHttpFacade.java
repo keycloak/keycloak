@@ -2,6 +2,8 @@ package org.keycloak.adapters.jetty;
 
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpFacade;
+import org.keycloak.util.MultivaluedHashMap;
+import org.keycloak.util.UriUtils;
 
 import javax.security.cert.X509Certificate;
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +23,7 @@ public class JettyHttpFacade implements HttpFacade {
     protected HttpServletResponse response;
     protected RequestFacade requestFacade = new RequestFacade();
     protected ResponseFacade responseFacade = new ResponseFacade();
+    protected MultivaluedHashMap<String, String> queryParameters;
 
     protected class RequestFacade implements Request {
         @Override
@@ -39,7 +42,10 @@ public class JettyHttpFacade implements HttpFacade {
 
         @Override
         public String getQueryParamValue(String paramName) {
-            return request.getParameter(paramName);
+            if (queryParameters == null) {
+                queryParameters = UriUtils.decodeQueryString(request.getQueryString());
+            }
+            return queryParameters.getFirst(paramName);
         }
 
         @Override

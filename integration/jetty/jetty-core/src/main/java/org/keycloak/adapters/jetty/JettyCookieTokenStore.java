@@ -99,4 +99,14 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
         CookieTokenStore.removeCookie(facade);
         return null;
     }
+
+    @Override
+    public void saveRequest() {
+
+    }
+
+    @Override
+    public boolean restoreRequest() {
+        return false;
+    }
 }

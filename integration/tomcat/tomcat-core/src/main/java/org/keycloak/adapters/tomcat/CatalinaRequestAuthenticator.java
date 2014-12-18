@@ -27,36 +27,22 @@ import javax.servlet.http.HttpSession;
  */
 public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     private static final Logger log = Logger.getLogger(""+CatalinaRequestAuthenticator.class);
-    protected AbstractKeycloakAuthenticatorValve valve;
     protected Request request;
     protected GenericPrincipalFactory principalFactory;
 
     public CatalinaRequestAuthenticator(KeycloakDeployment deployment,
-                                        AbstractKeycloakAuthenticatorValve valve, AdapterTokenStore tokenStore,
+                                        AdapterTokenStore tokenStore,
                                         CatalinaHttpFacade facade,
                                         Request request,
                                         GenericPrincipalFactory principalFactory) {
         super(facade, deployment, tokenStore, request.getConnector().getRedirectPort());
-        this.valve = valve;
         this.request = request;
         this.principalFactory = principalFactory;
     }
 
     @Override
     protected OAuthRequestAuthenticator createOAuthAuthenticator() {
-        return new OAuthRequestAuthenticator(this, facade, deployment, sslRedirectPort) {
-            @Override
-            protected void saveRequest() {
-                try {
-                    // Support saving request just for TokenStore.SESSION TODO: Add to tokenStore spi?
-                    if (deployment.getTokenStore() == TokenStore.SESSION) {
-                        valve.keycloakSaveRequest(request);
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
+        return new OAuthRequestAuthenticator(this, facade, deployment, sslRedirectPort, tokenStore);
     }
 
     @Override
@@ -97,17 +83,6 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
         request.setUserPrincipal(generalPrincipal);
         request.setAuthType(method);
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
-    }
-
-    protected void restoreRequest() {
-        if (request.getSessionInternal().getNote(Constants.FORM_REQUEST_NOTE) != null) {
-            if (valve.keycloakRestoreRequest(request)) {
-                log.finer("restoreRequest");
-            } else {
-                log.finer("Restore of original request failed");
-                throw new RuntimeException("Restore of original request failed");
-            }
-        }
     }
 
     @Override

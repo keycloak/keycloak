@@ -125,6 +125,16 @@
                 "http://localhost:8081/session-portal/*"
             ],
             "secret": "password"
+        },
+        {
+            "name": "input-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8081/input-portal",
+            "baseUrl": "http://localhost:8081/input-portal",
+            "redirectUris": [
+                "http://localhost:8081/input-portal/*"
+            ],
+            "secret": "password"
         }
     ],
     "oauthClients": [

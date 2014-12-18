@@ -21,8 +21,8 @@ public class KeycloakJettyAuthenticator extends AbstractKeycloakJettyAuthenticat
 
 
     @Override
-    protected AbstractJettyRequestAuthenticator createRequestAuthenticator(Request request, JettyHttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore) {
-        return new JettyRequestAuthenticator(deployment, this, tokenStore, facade, request);
+    public AdapterTokenStore createSessionTokenStore(Request request, KeycloakDeployment resolvedDeployment) {
+        return new JettySessionTokenStore(request, resolvedDeployment);
     }
 
     @Override

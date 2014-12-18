@@ -20,12 +20,7 @@ public class KeycloakJettyAuthenticator extends AbstractKeycloakJettyAuthenticat
     }
 
 
-    @Override
-    protected AbstractJettyRequestAuthenticator createRequestAuthenticator(Request request, JettyHttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore) {
-        return new JettyRequestAuthenticator(deployment, this, tokenStore, facade, request);
-    }
-
-    @Override
+   @Override
     protected Request resolveRequest(ServletRequest req) {
         return (req instanceof Request) ? (Request)req : HttpChannel.getCurrentHttpChannel().getRequest();
     }
@@ -40,6 +35,8 @@ public class KeycloakJettyAuthenticator extends AbstractKeycloakJettyAuthenticat
         };
     }
 
-
-
+    @Override
+    public AdapterTokenStore createSessionTokenStore(Request request, KeycloakDeployment resolvedDeployment) {
+        return new JettySessionTokenStore(request, resolvedDeployment);
+    }
 }

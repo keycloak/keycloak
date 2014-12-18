@@ -38,4 +38,7 @@ public interface AdapterTokenStore {
      * @param securityContext context where refresh was performed
      */
     void refreshCallback(RefreshableKeycloakSecurityContext securityContext);
+
+    void saveRequest();
+    boolean restoreRequest();
 }
