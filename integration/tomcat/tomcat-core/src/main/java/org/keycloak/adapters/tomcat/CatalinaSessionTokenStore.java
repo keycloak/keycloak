@@ -1,5 +1,6 @@
 package org.keycloak.adapters.tomcat;
 
+import java.io.IOException;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -24,12 +25,18 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
     private KeycloakDeployment deployment;
     private CatalinaUserSessionManagement sessionManagement;
     protected GenericPrincipalFactory principalFactory;
+    protected AbstractKeycloakAuthenticatorValve valve;
 
-    public CatalinaSessionTokenStore(Request request, KeycloakDeployment deployment, CatalinaUserSessionManagement sessionManagement, GenericPrincipalFactory principalFactory) {
+
+    public CatalinaSessionTokenStore(Request request, KeycloakDeployment deployment,
+                                     CatalinaUserSessionManagement sessionManagement,
+                                     GenericPrincipalFactory principalFactory,
+                                     AbstractKeycloakAuthenticatorValve valve) {
         this.request = request;
         this.deployment = deployment;
         this.sessionManagement = sessionManagement;
         this.principalFactory = principalFactory;
+        this.valve = valve;
     }
 
     @Override
@@ -81,7 +88,7 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
         request.setUserPrincipal(principal);
         request.setAuthType("KEYCLOAK");
 
-        ((CatalinaRequestAuthenticator)authenticator).restoreRequest();
+        restoreRequest();
         return true;
     }
 
@@ -111,5 +118,19 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
     @Override
     public void refreshCallback(RefreshableKeycloakSecurityContext securityContext) {
         // no-op
+    }
+
+    @Override
+    public void saveRequest() {
+        try {
+            valve.keycloakSaveRequest(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public boolean restoreRequest() {
+        return valve.keycloakRestoreRequest(request);
     }
 }

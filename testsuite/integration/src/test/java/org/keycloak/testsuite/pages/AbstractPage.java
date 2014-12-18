@@ -39,8 +39,8 @@ public abstract class AbstractPage {
                 isCurrent());
     }
 
-    abstract boolean isCurrent();
+    abstract public boolean isCurrent();
 
-    abstract void open() throws Exception;
+    abstract public void open() throws Exception;
 
 }

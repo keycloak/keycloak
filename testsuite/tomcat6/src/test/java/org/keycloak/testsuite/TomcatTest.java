@@ -83,6 +83,7 @@ public class TomcatTest {
         tomcat.deploy("/product-portal", "product-portal");
         tomcat.deploy("/secure-portal", "secure-portal");
         tomcat.deploy("/session-portal", "session-portal");
+        tomcat.deploy("/input-portal", "input-portal");
 
 
         tomcat.start();
@@ -100,6 +101,11 @@ public class TomcatTest {
     @Test
     public void testLoginSSOAndLogout() throws Exception {
         testStrategy.testLoginSSOAndLogout();
+    }
+
+    @Test
+    public void testSavedPostRequest() throws Exception {
+        testStrategy.testSavedPostRequest();
     }
 
     @Test

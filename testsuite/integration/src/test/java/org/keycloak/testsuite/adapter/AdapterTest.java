@@ -74,7 +74,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AdapterTest {
 
-    public static final String LOGIN_URL = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
     public static PublicKey realmPublicKey;
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
@@ -99,6 +98,8 @@ public class AdapterTest {
             System.setProperty("my.host.name", "localhost");
             url = getClass().getResource("/adapter-test/session-keycloak.json");
             deployApplication("session-portal", "/session-portal", SessionServlet.class, url.getPath(), "user");
+            url = getClass().getResource("/adapter-test/input-keycloak.json");
+            deployApplication("input-portal", "/input-portal", InputServlet.class, url.getPath(), "user", true, null, "/secured/*");
         }
     };
 
@@ -108,6 +109,11 @@ public class AdapterTest {
     @Test
     public void testLoginSSOAndLogout() throws Exception {
         testStrategy.testLoginSSOAndLogout();
+    }
+
+    @Test
+    public void testSavedPostRequest() throws Exception {
+        testStrategy.testSavedPostRequest();
     }
 
     @Test

@@ -87,6 +87,9 @@ public class AdapterTestStrategy extends ExternalResource {
     @WebResource
     protected LoginPage loginPage;
 
+    @WebResource
+    protected InputPage inputPage;
+
     protected String LOGIN_URL = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri(AUTH_SERVER_URL)).build("demo").toString();
 
     public AdapterTestStrategy(String AUTH_SERVER_URL, String APP_SERVER_BASE_URL, AbstractKeycloakRule keycloakRule) {
@@ -131,6 +134,35 @@ public class AdapterTestStrategy extends ExternalResource {
             keycloakRule.stopSession(session, true);
         }
     }
+
+    @Test
+    public void testSavedPostRequest() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/input-portal" + slash);
+        inputPage.execute("hello");
+
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/input-portal/secured/post");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("parameter=hello"));
+
+        // test logout
+
+        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
+                .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
+        driver.navigate().to(logoutUri);
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+    }
+
 
     @Test
     public void testLoginSSOAndLogout() throws Exception {

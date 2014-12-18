@@ -95,6 +95,7 @@ public class Jetty9Test {
         list.add(new WebAppContext(new File(base, "customer-db").toString(), "/customer-db"));
         list.add(new WebAppContext(new File(base, "product-portal").toString(), "/product-portal"));
         list.add(new WebAppContext(new File(base, "session-portal").toString(), "/session-portal"));
+        list.add(new WebAppContext(new File(base, "input-portal").toString(), "/input-portal"));
         list.add(new WebAppContext(new File(base, "secure-portal").toString(), "/secure-portal"));
 
 
@@ -120,6 +121,11 @@ public class Jetty9Test {
     @Test
     public void testLoginSSOAndLogout() throws Exception {
         testStrategy.testLoginSSOAndLogout();
+    }
+
+    @Test
+    public void testSavedPostRequest() throws Exception {
+        testStrategy.testSavedPostRequest();
     }
 
     @Test
