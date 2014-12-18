@@ -863,6 +863,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmBruteForceCtrl'
         })
+        .when('/server-info', {
+            templateUrl : 'partials/server-info.html'
+        })
         .when('/logout', {
             templateUrl : 'partials/home.html',
             controller : 'LogoutCtrl'

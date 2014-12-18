@@ -17,14 +17,15 @@
             return;
 
         }
-        event.data.loggedIn = false;
+        var data = JSON.parse(event.data);
+        data.loggedIn = false;
         var cookie = getCookie('KEYCLOAK_SESSION');
         if (cookie) {
-            event.data.loggedIn = true;
-            event.data.session = cookie;
+            data.loggedIn = true;
+            data.session = cookie;
         }
 
-        event.source.postMessage(event.data,
+        event.source.postMessage(JSON.stringify(data),
                 event.origin);
     }
     window.addEventListener("message", receiveMessage, false);

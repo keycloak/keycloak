@@ -19,11 +19,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class OAuthRequestAuthenticator {
+public class OAuthRequestAuthenticator {
     private static final Logger log = Logger.getLogger(OAuthRequestAuthenticator.class);
     protected KeycloakDeployment deployment;
     protected RequestAuthenticator reqAuthenticator;
     protected int sslRedirectPort;
+    protected AdapterTokenStore tokenStore;
     protected String tokenString;
     protected String idTokenString;
     protected IDToken idToken;
@@ -33,11 +34,12 @@ public abstract class OAuthRequestAuthenticator {
     protected String refreshToken;
     protected String strippedOauthParametersRequestUri;
 
-    public OAuthRequestAuthenticator(RequestAuthenticator requestAuthenticator, HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort) {
+    public OAuthRequestAuthenticator(RequestAuthenticator requestAuthenticator, HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort, AdapterTokenStore tokenStore) {
         this.reqAuthenticator = requestAuthenticator;
         this.facade = facade;
         this.deployment = deployment;
         this.sslRedirectPort = sslRedirectPort;
+        this.tokenStore = tokenStore;
     }
 
     public AuthChallenge getChallenge() {
@@ -200,7 +202,7 @@ public abstract class OAuthRequestAuthenticator {
             } else {
                 log.debug("redirecting to auth server");
                 challenge = loginRedirect();
-                saveRequest();
+                tokenStore.saveRequest();
                 return AuthOutcome.NOT_ATTEMPTED;
             }
         } else {
@@ -213,12 +215,6 @@ public abstract class OAuthRequestAuthenticator {
         }
 
     }
-
-    /**
-     * Cache the request so that when we get redirected back, it gets invoked
-     *
-     */
-    protected abstract void saveRequest();
 
     protected AuthChallenge challenge(final int code) {
         return new AuthChallenge() {

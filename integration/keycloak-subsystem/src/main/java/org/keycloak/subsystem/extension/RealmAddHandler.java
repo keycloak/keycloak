@@ -61,6 +61,6 @@ public final class RealmAddHandler extends AbstractAddStepHandler {
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
         KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.find(context);
-        ckService.addRealm(operation, model);
+        ckService.addRealm(operation, context.resolveExpressions(model));
     }
 }

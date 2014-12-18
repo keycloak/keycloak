@@ -150,6 +150,10 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role, boolean isConstrained, Class<? extends KeycloakConfigResolver> keycloakConfigResolver) {
         String constraintUrl = "/*";
+        deployApplication(name, contextPath, servletClass, adapterConfigPath, role, isConstrained, keycloakConfigResolver, constraintUrl);
+    }
+
+    public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role, boolean isConstrained, Class<? extends KeycloakConfigResolver> keycloakConfigResolver, String constraintUrl) {
         DeploymentInfo di = createDeploymentInfo(name, contextPath, servletClass);
         if (null == keycloakConfigResolver) {
             di.addInitParameter("keycloak.config.file", adapterConfigPath);

@@ -65,14 +65,14 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         return new ByteArrayInputStream(json.getBytes());
     }
 
-    public static AdapterTokenStore getTokenStore(Request request, HttpFacade facade, KeycloakDeployment resolvedDeployment) {
+    public AdapterTokenStore getTokenStore(Request request, HttpFacade facade, KeycloakDeployment resolvedDeployment) {
         AdapterTokenStore store = (AdapterTokenStore)request.getAttribute(TOKEN_STORE_NOTE);
         if (store != null) {
             return store;
         }
 
         if (resolvedDeployment.getTokenStore() == TokenStore.SESSION) {
-            store = new JettySessionTokenStore(request, resolvedDeployment);
+            store = createSessionTokenStore(request, resolvedDeployment);
         } else {
             store = new JettyCookieTokenStore(request, facade, resolvedDeployment);
         }
@@ -81,7 +81,9 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         return store;
     }
 
-    public static void logoutCurrent(Request request) {
+    public abstract AdapterTokenStore createSessionTokenStore(Request request, KeycloakDeployment resolvedDeployment);
+
+    public void logoutCurrent(Request request) {
         AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext)request.getAttribute(AdapterDeploymentContext.class.getName());
         KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
         if (ksc != null) {
@@ -212,7 +214,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         nodesRegistrationManagement.tryRegister(deployment);
 
         tokenStore.checkCurrentToken();
-        AbstractJettyRequestAuthenticator authenticator = createRequestAuthenticator(request, facade, deployment, tokenStore);
+        JettyRequestAuthenticator authenticator = createRequestAuthenticator(request, facade, deployment, tokenStore);
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             if (facade.isEnded()) {
@@ -238,7 +240,10 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
 
     protected abstract Request resolveRequest(ServletRequest req);
 
-    protected abstract AbstractJettyRequestAuthenticator createRequestAuthenticator(Request request, JettyHttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore);
+    protected JettyRequestAuthenticator createRequestAuthenticator(Request request, JettyHttpFacade facade,
+                                                                           KeycloakDeployment deployment, AdapterTokenStore tokenStore) {
+        return new JettyRequestAuthenticator(facade, deployment, tokenStore, -1, request);
+    }
 
     @Override
     public String getAuthMethod() {

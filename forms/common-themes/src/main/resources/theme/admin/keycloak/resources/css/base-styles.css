@@ -33,3 +33,8 @@
     border-top-color: rgba(255,255,255,0.05);
 }
 
+.dropdown-menu .separator {
+    border-top: 1px solid #ddd;
+    margin-top: 5px;
+    padding-top: 5px;
+}

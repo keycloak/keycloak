@@ -5,9 +5,12 @@ import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Manager;
+import org.apache.catalina.authenticator.Constants;
 import org.apache.catalina.authenticator.FormAuthenticator;
+import org.apache.catalina.authenticator.SavedRequest;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
+import org.apache.tomcat.util.buf.ByteChunk;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
@@ -24,12 +27,15 @@ import org.keycloak.enums.TokenStore;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.keycloak.adapters.KeycloakConfigResolver;
@@ -180,7 +186,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
 
         nodesRegistrationManagement.tryRegister(deployment);
 
-        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, this, tokenStore, facade, request, createPrincipalFactory());
+        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, tokenStore, facade, request, createPrincipalFactory());
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             if (facade.isEnded()) {
@@ -225,7 +231,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         }
 
         if (resolvedDeployment.getTokenStore() == TokenStore.SESSION) {
-            store = new CatalinaSessionTokenStore(request, resolvedDeployment, userSessionManagement, createPrincipalFactory());
+            store = new CatalinaSessionTokenStore(request, resolvedDeployment, userSessionManagement, createPrincipalFactory(), this);
         } else {
             store = new CatalinaCookieTokenStore(request, facade, resolvedDeployment, createPrincipalFactory());
         }

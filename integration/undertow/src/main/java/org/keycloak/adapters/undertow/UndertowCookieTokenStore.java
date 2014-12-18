@@ -80,4 +80,14 @@ public class UndertowCookieTokenStore implements AdapterTokenStore {
     public void refreshCallback(RefreshableKeycloakSecurityContext securityContext) {
         CookieTokenStore.setTokenCookie(deployment, facade, securityContext);
     }
+
+    @Override
+    public void saveRequest() {
+
+    }
+
+    @Override
+    public boolean restoreRequest() {
+        return false;
+    }
 }

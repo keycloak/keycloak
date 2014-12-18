@@ -53,12 +53,7 @@ public abstract class AbstractUndertowRequestAuthenticator extends RequestAuthen
 
     @Override
     protected OAuthRequestAuthenticator createOAuthAuthenticator() {
-        return new OAuthRequestAuthenticator(this, facade, deployment, sslRedirectPort) {
-            @Override
-            protected void saveRequest() {
-                // todo
-            }
-        };
+        return new OAuthRequestAuthenticator(this, facade, deployment, sslRedirectPort, tokenStore);
     }
 
     @Override

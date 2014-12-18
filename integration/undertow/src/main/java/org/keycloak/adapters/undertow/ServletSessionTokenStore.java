@@ -64,6 +64,7 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
             log.debug("Cached account found");
             securityContext.authenticationComplete(account, "KEYCLOAK", false);
             ((AbstractUndertowRequestAuthenticator)authenticator).propagateKeycloakContext(account);
+            restoreRequest();
             return true;
         } else {
             log.debug("Refresh failed. Account was not active. Returning null and invalidating Http session");
@@ -103,6 +104,20 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
     @Override
     public void refreshCallback(RefreshableKeycloakSecurityContext securityContext) {
         // no-op
+    }
+
+    @Override
+    public void saveRequest() {
+        SavedRequest.trySaveRequest(exchange);
+
+    }
+
+    @Override
+    public boolean restoreRequest() {
+        HttpSession session = getSession(false);
+        if (session == null) return false;
+        SavedRequest.tryRestoreRequest(exchange, session);
+        return false;
     }
 
     protected HttpSession getSession(boolean create) {

@@ -87,6 +87,7 @@ public class TomcatTest {
         tomcat.addWebapp("/product-portal", new File(base, "product-portal").toString());
         tomcat.addWebapp("/secure-portal", new File(base, "secure-portal").toString());
         tomcat.addWebapp("/session-portal", new File(base, "session-portal").toString());
+        tomcat.addWebapp("/input-portal", new File(base, "input-portal").toString());
 
         tomcat.start();
         //tomcat.getServer().await();
@@ -105,6 +106,13 @@ public class TomcatTest {
     public void testLoginSSOAndLogout() throws Exception {
         testStrategy.testLoginSSOAndLogout();
     }
+
+    @Test
+    public void testSavedPostRequest() throws Exception {
+        testStrategy.testSavedPostRequest();
+    }
+
+
 
     @Test
     public void testServletRequestLogout() throws Exception {

@@ -35,15 +35,15 @@ import java.util.List;
 
 /**
  * Pass authentication data (keycloak.json) as a servlet context param so it can be read by the KeycloakServletExtension.
- * This is used for AS7/EAP6.
+ * This is used for EAP6.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
 
 // Note: Even though this class closely resembles the WildFly KeycloakAdapterConfigDeploymentProcessor
 //       it can not be easily refactored because the WarMetaData classes are of different types.
-public class KeycloakAdapterConfigDeploymentProcessorAS7 implements DeploymentUnitProcessor {
-    protected Logger log = Logger.getLogger(KeycloakAdapterConfigDeploymentProcessorAS7.class);
+public class KeycloakAdapterConfigDeploymentProcessorEAP6 implements DeploymentUnitProcessor {
+    protected Logger log = Logger.getLogger(KeycloakAdapterConfigDeploymentProcessorEAP6.class);
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {

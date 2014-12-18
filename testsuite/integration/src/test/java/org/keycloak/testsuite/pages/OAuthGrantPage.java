@@ -49,7 +49,7 @@ public class OAuthGrantPage extends AbstractPage {
     }
 
     @Override
-    void open() {
+    public void open() {
     }
 
 }
