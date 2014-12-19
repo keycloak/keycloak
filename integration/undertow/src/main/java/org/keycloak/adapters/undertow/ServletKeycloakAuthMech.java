@@ -49,7 +49,7 @@ public class ServletKeycloakAuthMech extends AbstractUndertowKeycloakAuthMech {
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
         UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
-        if (!deployment.isConfigured()) {
+        if (!deployment.isConfigured() || !securityContext.isAuthenticationRequired()) {
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
 
