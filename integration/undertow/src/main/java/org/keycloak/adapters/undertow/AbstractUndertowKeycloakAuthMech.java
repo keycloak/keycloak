@@ -103,7 +103,6 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
         if (outcome == AuthOutcome.FAILED) {
             return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
         }
-
         return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
     }
 

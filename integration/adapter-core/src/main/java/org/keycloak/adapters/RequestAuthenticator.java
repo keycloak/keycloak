@@ -76,6 +76,11 @@ public abstract class RequestAuthenticator {
             }
         }
 
+        if(!isAuthenticationRequired()){
+            log.debug("NOT_ATTEMPTED: authentication is not required");
+            return AuthOutcome.NOT_ATTEMPTED;
+        }
+
         if (log.isTraceEnabled()) {
             log.trace("try oauth");
         }
@@ -137,6 +142,7 @@ public abstract class RequestAuthenticator {
     protected abstract void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
     protected abstract void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal, String method);
     protected abstract String getHttpSessionId(boolean create);
+    protected abstract boolean isAuthenticationRequired();
 
     protected void completeAuthentication(BearerTokenRequestAuthenticator bearer, String method) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, null, bearer.getTokenString(), bearer.getToken(), null, null, null);

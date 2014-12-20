@@ -90,4 +90,10 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
         HttpSession session = request.getSession(create);
         return session != null ? session.getId() : null;
     }
+
+    @Override
+    protected boolean isAuthenticationRequired() {
+        //TODO: find out if authentication is required
+        return true;
+    }
 }
