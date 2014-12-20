@@ -153,8 +153,8 @@
             "name": "rest-resources",
             "enabled": true,
             "publicClient": true,
-            "adminUrl": "/rest",
-            "baseUrl": "/rest",
+            "adminUrl": "/rest-resources",
+            "baseUrl": "/rest-resources",
             "redirectUris": [
                 "/rest-resources/*"
             ]
