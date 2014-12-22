@@ -161,6 +161,16 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+        // test unsecured POST KEYCLOAK-901
+
+        Client client = ClientBuilder.newClient();
+        Form form = new Form();
+        form.param("parameter", "hello");
+        String text = client.target(APP_SERVER_BASE_URL + "/input-portal/unsecured").request().post(Entity.form(form), String.class);
+        Assert.assertTrue(text.contains("parameter=hello"));
+        client.close();
+
     }
 
 

@@ -91,9 +91,4 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
         return session != null ? session.getId() : null;
     }
 
-    @Override
-    protected boolean isAuthenticationRequired() {
-        //TODO: find out if authentication is required
-        return true;
-    }
 }
