@@ -88,8 +88,4 @@ public abstract class AbstractUndertowRequestAuthenticator extends RequestAuthen
      */
     protected abstract KeycloakUndertowAccount createAccount(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
 
-    @Override
-    protected boolean isAuthenticationRequired() {
-        return securityContext.isAuthenticationRequired();
-    }
 }

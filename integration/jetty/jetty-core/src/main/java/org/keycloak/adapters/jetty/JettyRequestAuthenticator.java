@@ -82,9 +82,4 @@ public class JettyRequestAuthenticator extends RequestAuthenticator {
     }
 
 
-    @Override
-    protected boolean isAuthenticationRequired() {
-        //TODO: find out if authentication is required
-        return true;
-    }
 }
