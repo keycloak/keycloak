@@ -34,6 +34,7 @@
         <module>admin-access-app</module>
         <module>angular-product-app</module>
         <module>database-service</module>
+        <module>rest-resources</module>
         <module>third-party</module>
         <module>third-party-cdi</module>
     </modules>
