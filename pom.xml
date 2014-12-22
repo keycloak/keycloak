@@ -35,7 +35,7 @@
         <mysql.version>5.1.25</mysql.version>
         <slf4j.version>1.5.10</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
-        <wildfly.version>8.1.0.Final</wildfly.version>
+        <wildfly.version>8.2.0.Final</wildfly.version>
         <wildfly.core.version>1.0.0.Alpha12</wildfly.core.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <google.zxing.version>2.2</google.zxing.version>
