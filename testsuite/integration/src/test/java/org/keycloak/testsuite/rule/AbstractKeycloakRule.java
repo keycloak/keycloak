@@ -5,6 +5,7 @@ import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.SecurityConstraint;
+import io.undertow.servlet.api.SecurityInfo;
 import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.api.WebResourceCollection;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
@@ -126,6 +127,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         server.getServer().deploy(deploymentInfo);
     }
 
+
     private DeploymentInfo createDeploymentInfo(String name, String contextPath, Class<? extends Servlet> servletClass) {
         DeploymentInfo deploymentInfo = new DeploymentInfo();
         deploymentInfo.setClassLoader(getClass().getClassLoader());
@@ -168,9 +170,23 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
             constraint.addRoleAllowed(role);
             di.addSecurityConstraint(constraint);
         }
-        LoginConfig loginConfig = new LoginConfig("KEYCLOAK", "demo");
+        LoginConfig loginConfig = new LoginConfig("KEYCLOAK", "demo", null, "/error.html");
         di.setLoginConfig(loginConfig);
+        addErrorPage(di);
+
         server.getServer().deploy(di);
+    }
+
+    public void addErrorPage(DeploymentInfo di) {
+        ServletInfo servlet = new ServletInfo("Error Page", ErrorServlet.class);
+        servlet.addMapping("/error.html");
+        SecurityConstraint constraint = new SecurityConstraint();
+        WebResourceCollection collection = new WebResourceCollection();
+        collection.addUrlPattern("/error.html");
+        constraint.addWebResourceCollection(collection);
+        constraint.setEmptyRoleSemantic(SecurityInfo.EmptyRoleSemantic.PERMIT);
+        di.addSecurityConstraint(constraint);
+        di.addServlet(servlet);
     }
 
     public void deployJaxrsApplication(String name, String contextPath, Class<? extends Application> applicationClass, Map<String,String> initParams) {

@@ -229,7 +229,7 @@ public class ProxyServerBuilder {
             handler = new ConstraintMatcherHandler(matches, handler, toWrap, errorPage);
             final List<AuthenticationMechanism> mechanisms = new LinkedList<AuthenticationMechanism>();
             mechanisms.add(new CachedAuthenticatedSessionMechanism());
-            mechanisms.add(new UndertowAuthenticationMechanism(deploymentContext, userSessionManagement, nodesRegistrationManagement, -1));
+            mechanisms.add(new UndertowAuthenticationMechanism(deploymentContext, userSessionManagement, nodesRegistrationManagement, -1, null));
             handler = new AuthenticationMechanismsHandler(handler, mechanisms);
             IdentityManager identityManager = new IdentityManager() {
                 @Override

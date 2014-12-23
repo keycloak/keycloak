@@ -23,7 +23,9 @@ import io.undertow.security.api.SecurityNotification;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.util.AttachmentKey;
+import io.undertow.util.Headers;
 import io.undertow.util.Sessions;
+import io.undertow.util.StatusCodes;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
@@ -46,16 +48,22 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
     public static final AttachmentKey<AuthChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(AuthChallenge.class);
     protected AdapterDeploymentContext deploymentContext;
     protected UndertowUserSessionManagement sessionManagement;
+    protected String errorPage;
 
-    public AbstractUndertowKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement) {
+    public AbstractUndertowKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement, String errorPage) {
         this.deploymentContext = deploymentContext;
         this.sessionManagement = sessionManagement;
+        this.errorPage = errorPage;
     }
 
     @Override
     public ChallengeResult sendChallenge(HttpServerExchange exchange, SecurityContext securityContext) {
         AuthChallenge challenge = exchange.getAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY);
         if (challenge != null) {
+            if (challenge.errorPage() && errorPage != null) {
+                Integer code = servePage(exchange, errorPage);
+                return new ChallengeResult(true, code);
+            }
             UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
             if (challenge.challenge(facade)) {
                 return new ChallengeResult(true, exchange.getResponseCode());
@@ -63,6 +71,19 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
         }
         return new ChallengeResult(false);
     }
+
+    protected Integer servePage(final HttpServerExchange exchange, final String location) {
+        sendRedirect(exchange, location);
+        return StatusCodes.TEMPORARY_REDIRECT;
+    }
+
+    static void sendRedirect(final HttpServerExchange exchange, final String location) {
+        // TODO - String concatenation to construct URLS is extremely error prone - switch to a URI which will better handle this.
+        String loc = exchange.getRequestScheme() + "://" + exchange.getHostAndPort() + location;
+        exchange.getResponseHeaders().put(Headers.LOCATION, loc);
+    }
+
+
 
     protected void registerNotifications(final SecurityContext securityContext) {
 

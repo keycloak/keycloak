@@ -16,17 +16,27 @@
  */
 package org.keycloak.adapters.undertow;
 
+import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
+import io.undertow.servlet.handlers.ServletRequestContext;
+import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
+import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.enums.TokenStore;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -39,10 +49,34 @@ public class ServletKeycloakAuthMech extends AbstractUndertowKeycloakAuthMech {
     protected NodesRegistrationManagement nodesRegistrationManagement;
     protected ConfidentialPortManager portManager;
 
-    public ServletKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement, NodesRegistrationManagement nodesRegistrationManagement, ConfidentialPortManager portManager) {
-        super(deploymentContext, userSessionManagement);
+    public ServletKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement,
+                                   NodesRegistrationManagement nodesRegistrationManagement, ConfidentialPortManager portManager,
+                                   String errorPage) {
+        super(deploymentContext, userSessionManagement, errorPage);
         this.nodesRegistrationManagement = nodesRegistrationManagement;
         this.portManager = portManager;
+    }
+
+    @Override
+    protected Integer servePage(HttpServerExchange exchange, String location) {
+        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        ServletRequest req = servletRequestContext.getServletRequest();
+        ServletResponse resp = servletRequestContext.getServletResponse();
+        RequestDispatcher disp = req.getRequestDispatcher(location);
+        //make sure the login page is never cached
+        exchange.getResponseHeaders().add(Headers.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
+        exchange.getResponseHeaders().add(Headers.PRAGMA, "no-cache");
+        exchange.getResponseHeaders().add(Headers.EXPIRES, "0");
+
+
+        try {
+            disp.forward(req, resp);
+        } catch (ServletException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 
     @Override

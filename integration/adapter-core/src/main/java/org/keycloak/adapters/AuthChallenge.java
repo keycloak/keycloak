@@ -11,4 +11,11 @@ public interface AuthChallenge {
      * @return challenge sent
      */
     boolean challenge(HttpFacade exchange);
+
+    /**
+     * Whether or not an error page should be displayed if possible
+     *
+     * @return
+     */
+    boolean errorPage();
 }
