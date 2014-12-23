@@ -146,13 +146,29 @@ public class OAuthRequestAuthenticator {
     protected AuthChallenge loginRedirect() {
         final String state = getStateCode();
         final String redirect = getRedirectUri(state);
-        return new AuthChallenge() {
-            @Override
-            public boolean challenge(HttpFacade exchange) {
-                if (redirect == null) {
+        if (redirect == null) {
+            return new AuthChallenge() {
+                @Override
+                public boolean challenge(HttpFacade exchange) {
                     exchange.getResponse().setStatus(403);
                     return true;
                 }
+
+                @Override
+                public boolean errorPage() {
+                    return true;
+                }
+            };
+        }
+        return new AuthChallenge() {
+
+            @Override
+            public boolean errorPage() {
+                return false;
+            }
+
+            @Override
+            public boolean challenge(HttpFacade exchange) {
                 tokenStore.saveRequest();
                 log.debug("Sending redirect to login page: " + redirect);
                 exchange.getResponse().setStatus(302);
@@ -218,6 +234,11 @@ public class OAuthRequestAuthenticator {
 
     protected AuthChallenge challenge(final int code) {
         return new AuthChallenge() {
+            @Override
+            public boolean errorPage() {
+                return true;
+            }
+
             @Override
             public boolean challenge(HttpFacade exchange) {
                 exchange.getResponse().setStatus(code);

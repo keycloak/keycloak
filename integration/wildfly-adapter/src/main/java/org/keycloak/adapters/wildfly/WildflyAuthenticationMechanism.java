@@ -21,8 +21,8 @@ public class WildflyAuthenticationMechanism extends ServletKeycloakAuthMech {
     public WildflyAuthenticationMechanism(AdapterDeploymentContext deploymentContext,
                                           UndertowUserSessionManagement userSessionManagement,
                                           NodesRegistrationManagement nodesRegistrationManagement,
-                                          ConfidentialPortManager portManager) {
-        super(deploymentContext, userSessionManagement, nodesRegistrationManagement, portManager);
+                                          ConfidentialPortManager portManager, String errorPage) {
+        super(deploymentContext, userSessionManagement, nodesRegistrationManagement, portManager, errorPage);
     }
 
     @Override

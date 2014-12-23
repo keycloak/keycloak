@@ -110,6 +110,11 @@ public class BearerTokenRequestAuthenticator {
     protected AuthChallenge clientCertChallenge() {
         return new AuthChallenge() {
             @Override
+            public boolean errorPage() {
+                return false;
+            }
+
+            @Override
             public boolean challenge(HttpFacade exchange) {
                 // do the same thing as client cert auth
                 return false;
@@ -129,6 +134,11 @@ public class BearerTokenRequestAuthenticator {
         }
         final String challenge = header.toString();
         return new AuthChallenge() {
+            @Override
+            public boolean errorPage() {
+                return false;
+            }
+
             @Override
             public boolean challenge(HttpFacade facade) {
                 facade.getResponse().setStatus(401);

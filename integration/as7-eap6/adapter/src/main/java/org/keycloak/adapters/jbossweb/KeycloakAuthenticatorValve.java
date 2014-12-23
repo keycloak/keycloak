@@ -11,6 +11,7 @@ import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
@@ -22,8 +23,18 @@ import java.util.List;
  */
 public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorValve {
     public boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws java.io.IOException {
-        return authenticateInternal(request, response);
+        return authenticateInternal(request, response, config);
     }
+
+    @Override
+    protected boolean forwardToErrorPageInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException {
+        if (loginConfig == null) return false;
+        LoginConfig config = (LoginConfig)loginConfig;
+        if (config.getErrorPage() == null) return false;
+        forwardToErrorPage(request, (Response)response, config);
+        return true;
+    }
+
 
     @Override
     public void start() throws LifecycleException {

@@ -1,14 +1,18 @@
 package org.keycloak.adapters.jetty;
 
+import org.apache.http.HttpVersion;
 import org.eclipse.jetty.security.DefaultUserIdentity;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.security.authentication.DeferredAuthentication;
+import org.eclipse.jetty.security.authentication.FormAuthenticator;
 import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.util.URIUtil;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
@@ -37,6 +41,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
@@ -52,6 +57,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
     protected NodesRegistrationManagement nodesRegistrationManagement;
     protected AdapterConfig adapterConfig;
     protected KeycloakConfigResolver configResolver;
+    protected String errorPage;
 
     public AbstractKeycloakJettyAuthenticator() {
         super();
@@ -66,7 +72,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
     }
 
     public AdapterTokenStore getTokenStore(Request request, HttpFacade facade, KeycloakDeployment resolvedDeployment) {
-        AdapterTokenStore store = (AdapterTokenStore)request.getAttribute(TOKEN_STORE_NOTE);
+        AdapterTokenStore store = (AdapterTokenStore) request.getAttribute(TOKEN_STORE_NOTE);
         if (store != null) {
             return store;
         }
@@ -84,8 +90,8 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
     public abstract AdapterTokenStore createSessionTokenStore(Request request, KeycloakDeployment resolvedDeployment);
 
     public void logoutCurrent(Request request) {
-        AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext)request.getAttribute(AdapterDeploymentContext.class.getName());
-        KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
+        AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext) request.getAttribute(AdapterDeploymentContext.class.getName());
+        KeycloakSecurityContext ksc = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
         if (ksc != null) {
             JettyHttpFacade facade = new JettyHttpFacade(request, null);
             KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
@@ -115,11 +121,25 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
     public void setConfiguration(AuthConfiguration configuration) {
         //super.setConfiguration(configuration);
         initializeKeycloak();
+        String error = configuration.getInitParameter(FormAuthenticator.__FORM_ERROR_PAGE);
+        setErrorPage(error);
+    }
+
+    private void setErrorPage(String path) {
+        if (path == null || path.trim().length() == 0) {
+        } else {
+            if (!path.startsWith("/")) {
+                path = "/" + path;
+            }
+            errorPage = path;
+
+            if (errorPage.indexOf('?') > 0)
+                errorPage = errorPage.substring(0, errorPage.indexOf('?'));
+        }
     }
 
     @Override
-    public boolean secureResponse(ServletRequest req, ServletResponse res, boolean mandatory, Authentication.User validatedUser) throws ServerAuthException
-    {
+    public boolean secureResponse(ServletRequest req, ServletResponse res, boolean mandatory, Authentication.User validatedUser) throws ServerAuthException {
         return true;
     }
 
@@ -167,12 +187,13 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
             InputStream configInputStream = getConfigInputStream(theServletContext);
             if (configInputStream != null) {
                 deploymentContext = new AdapterDeploymentContext(KeycloakDeploymentBuilder.build(configInputStream));
-             }
+            }
         }
         if (deploymentContext == null) {
             deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
         }
-        if (theServletContext != null) theServletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
+        if (theServletContext != null)
+            theServletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
     }
 
     private InputStream getConfigInputStream(ServletContext servletContext) {
@@ -198,7 +219,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
             log.trace("*** authenticate");
         }
         Request request = resolveRequest(req);
-        JettyHttpFacade facade = new JettyHttpFacade(request, (HttpServletResponse)res);
+        JettyHttpFacade facade = new JettyHttpFacade(request, (HttpServletResponse) res);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
             log.debug("*** deployment isn't configured return false");
@@ -231,17 +252,25 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         }
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
+            if (challenge.errorPage() && errorPage != null) {
+                Response response = (Response)res;
+                try {
+                    response.sendRedirect(response.encodeRedirectURL(URIUtil.addPaths(request.getContextPath(), errorPage)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
             challenge.challenge(facade);
         }
         return Authentication.SEND_CONTINUE;
     }
 
 
-
     protected abstract Request resolveRequest(ServletRequest req);
 
     protected JettyRequestAuthenticator createRequestAuthenticator(Request request, JettyHttpFacade facade,
-                                                                           KeycloakDeployment deployment, AdapterTokenStore tokenStore) {
+                                                                   KeycloakDeployment deployment, AdapterTokenStore tokenStore) {
         return new JettyRequestAuthenticator(facade, deployment, tokenStore, -1, request);
     }
 
@@ -263,8 +292,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
 
     protected abstract Authentication createAuthentication(UserIdentity userIdentity);
 
-    public static abstract class KeycloakAuthentication extends UserAuthentication
-    {
+    public static abstract class KeycloakAuthentication extends UserAuthentication {
         public KeycloakAuthentication(String method, UserIdentity userIdentity) {
             super(method, userIdentity);
         }

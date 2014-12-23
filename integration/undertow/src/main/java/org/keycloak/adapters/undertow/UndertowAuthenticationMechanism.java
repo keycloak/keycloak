@@ -17,8 +17,8 @@ public class UndertowAuthenticationMechanism extends AbstractUndertowKeycloakAut
     protected int confidentialPort;
 
     public UndertowAuthenticationMechanism(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement,
-                                           NodesRegistrationManagement nodesRegistrationManagement, int confidentialPort) {
-        super(deploymentContext, sessionManagement);
+                                           NodesRegistrationManagement nodesRegistrationManagement, int confidentialPort, String errorPage) {
+        super(deploymentContext, sessionManagement, errorPage);
         this.nodesRegistrationManagement = nodesRegistrationManagement;
         this.confidentialPort = confidentialPort;
     }

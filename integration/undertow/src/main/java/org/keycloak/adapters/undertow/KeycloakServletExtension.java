@@ -32,11 +32,12 @@ import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.ServletSessionConfig;
 import io.undertow.servlet.util.ImmediateInstanceHandle;
 import org.jboss.logging.Logger;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
+import org.keycloak.constants.AdapterConstants;
 
 import javax.servlet.ServletContext;
 import java.io.ByteArrayInputStream;
@@ -44,7 +45,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Map;
-import org.keycloak.adapters.KeycloakConfigResolver;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -57,9 +57,9 @@ public class KeycloakServletExtension implements ServletExtension {
     // todo when this DeploymentInfo method of the same name is fixed.
     public boolean isAuthenticationMechanismPresent(DeploymentInfo deploymentInfo, final String mechanismName) {
         LoginConfig loginConfig = deploymentInfo.getLoginConfig();
-        if(loginConfig != null) {
-            for(AuthMethodConfig method : loginConfig.getAuthMethods()) {
-                if(method.getName().equalsIgnoreCase(mechanismName)) {
+        if (loginConfig != null) {
+            for (AuthMethodConfig method : loginConfig.getAuthMethods()) {
+                if (method.getName().equalsIgnoreCase(mechanismName)) {
                     return true;
                 }
             }
@@ -191,7 +191,17 @@ public class KeycloakServletExtension implements ServletExtension {
 
     protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement,
                                                                     NodesRegistrationManagement nodesRegistrationManagement) {
-       log.debug("creating ServletKeycloakAuthMech");
-       return new ServletKeycloakAuthMech(deploymentContext, userSessionManagement, nodesRegistrationManagement, deploymentInfo.getConfidentialPortManager());
+        log.debug("creating ServletKeycloakAuthMech");
+        String errorPage = getErrorPage(deploymentInfo);
+        return new ServletKeycloakAuthMech(deploymentContext, userSessionManagement, nodesRegistrationManagement, deploymentInfo.getConfidentialPortManager(), errorPage);
+    }
+
+    protected String getErrorPage(DeploymentInfo deploymentInfo) {
+        LoginConfig loginConfig = deploymentInfo.getLoginConfig();
+        String errorPage = null;
+        if (loginConfig != null) {
+            errorPage = loginConfig.getErrorPage();
+        }
+        return errorPage;
     }
 }

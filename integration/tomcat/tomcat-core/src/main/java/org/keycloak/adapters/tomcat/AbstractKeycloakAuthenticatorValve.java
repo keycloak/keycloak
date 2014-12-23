@@ -10,6 +10,7 @@ import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.authenticator.SavedRequest;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
+import org.apache.catalina.deploy.LoginConfig;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.constants.AdapterConstants;
@@ -175,8 +176,9 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
     }
 
     protected abstract GenericPrincipalFactory createPrincipalFactory();
+    protected abstract boolean forwardToErrorPageInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException;
 
-    protected boolean authenticateInternal(Request request, HttpServletResponse response) {
+    protected boolean authenticateInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException {
         CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
@@ -196,6 +198,12 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         }
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
+            if (loginConfig == null) {
+                loginConfig = request.getContext().getLoginConfig();
+            }
+            if (challenge.errorPage()) {
+                if (forwardToErrorPageInternal(request, response, loginConfig))return false;
+            }
             challenge.challenge(facade);
         }
         return false;

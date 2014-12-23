@@ -10,10 +10,19 @@
         <servlet-name>Servlet</servlet-name>
         <servlet-class>org.keycloak.testsuite.adapter.CustomerServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>Error Servlet</servlet-name>
+        <servlet-class>org.keycloak.testsuite.rule.ErrorServlet</servlet-class>
+    </servlet>
 
     <servlet-mapping>
         <servlet-name>Servlet</servlet-name>
         <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>Error Servlet</servlet-name>
+        <url-pattern>/error.html</url-pattern>
     </servlet-mapping>
 
     <security-constraint>
@@ -25,10 +34,20 @@
             <role-name>user</role-name>
         </auth-constraint>
     </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Errors</web-resource-name>
+            <url-pattern>/error.html</url-pattern>
+        </web-resource-collection>
+    </security-constraint>
 
     <login-config>
         <auth-method>BASIC</auth-method>
         <realm-name>demo</realm-name>
+        <form-login-config>
+            <form-login-page>/error.html</form-login-page>
+            <form-error-page>/error.html</form-error-page>
+        </form-login-config>
     </login-config>
 
     <security-role>
