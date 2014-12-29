@@ -2,6 +2,7 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -146,6 +147,33 @@ public class UserTest extends AbstractClientTest {
         user.removeSocialLink("social-provider-id");
 
         assertEquals(0, user.getSocialLinks().size());
+    }
+
+    @Test
+    public void addRequiredAction() {
+        createUser();
+
+        UserResource user = realm.users().get("user1");
+        assertTrue(user.toRepresentation().getRequiredActions().isEmpty());
+
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.getRequiredActions().add("UPDATE_PASSWORD");
+        user.update(userRep);
+
+        assertEquals(1, user.toRepresentation().getRequiredActions().size());
+        assertEquals("UPDATE_PASSWORD", user.toRepresentation().getRequiredActions().get(0));
+    }
+
+    @Test
+    public void removeRequiredAction() {
+        addRequiredAction();
+
+        UserResource user = realm.users().get("user1");
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.getRequiredActions().clear();
+        user.update(userRep);
+
+        assertTrue(user.toRepresentation().getRequiredActions().isEmpty());
     }
 
     @Test
