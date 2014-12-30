@@ -29,6 +29,7 @@ import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -321,8 +322,15 @@ public class OpenIDConnectService {
 
         String scope = form.getFirst(OAuth2Constants.SCOPE);
 
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "oauth_credentials", false);
+        UserSessionProvider sessions = session.sessions();
+
+        UserSessionModel userSession = sessions.createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "oauth_credentials", false);
         event.session(userSession);
+
+        ClientSessionModel clientSession = sessions.createClientSession(realm, client);
+        clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);
+
+        TokenManager.attachClientSession(userSession, clientSession);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event)
                 .generateAccessToken(scope, client, user, userSession)

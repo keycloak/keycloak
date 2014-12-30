@@ -1,15 +1,38 @@
 package org.keycloak.testsuite.admin;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ApplicationResource;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.WebResource;
+import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.WebDriver;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ApplicationTest extends AbstractClientTest {
+
+    @Rule
+    public WebRule webRule = new WebRule(this);
+
+    @WebResource
+    protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
 
     @Test
     public void getApplications() {
@@ -42,6 +65,23 @@ public class ApplicationTest extends AbstractClientTest {
         assertTrue(rep.isEnabled());
     }
 
+    @Test
+    public void getApplicationSessions() throws Exception {
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertEquals(200, response.getStatusCode());
 
+        OAuthClient.AuthorizationCodeResponse codeResponse = oauth.doLogin("test-user@localhost", "password");
+
+        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode(), "password");
+        assertEquals(200, response2.getStatusCode());
+
+        ApplicationResource app = keycloak.realm("test").applications().get("test-app");
+
+        assertEquals(2, (long) app.getApplicationSessionCount().get("count"));
+
+        List<UserSessionRepresentation> userSessions = app.getUserSessions(0, 100);
+        assertEquals(2, userSessions.size());
+        assertEquals(1, userSessions.get(0).getApplications().size());
+    }
 
 }
