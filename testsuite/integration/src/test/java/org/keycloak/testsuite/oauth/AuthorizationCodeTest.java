@@ -177,16 +177,18 @@ public class AuthorizationCodeTest {
     @Test
     public void authorizationRequestNoState() throws IOException {
         oauth.state(null);
-        oauth.openLoginForm();
-        Assert.assertTrue(errorPage.isCurrent());
 
-        events.expect(EventType.LOGIN_ERROR)
-                .error(Errors.STATE_PARAM_NOT_FOUND)
-                .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.REDIRECT_URI, oauth.getRedirectUri())
-                .user((String)null)
-                .assertEvent();
-        //assertCode(codeId, response.getCode());
+        AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assert.assertTrue(response.isRedirected());
+        Assert.assertNotNull(response.getCode());
+        Assert.assertNull(response.getState());
+        Assert.assertNull(response.getError());
+
+        keycloakRule.verifyCode(response.getCode());
+
+        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        assertCode(codeId, response.getCode());
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {

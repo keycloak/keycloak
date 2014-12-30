@@ -758,11 +758,6 @@ public class OpenIDConnectService {
             }
 
             clientSession = null;
-            if (state == null) {
-                event.error(Errors.STATE_PARAM_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid state param.");
-
-            }
             ClientModel client = realm.findClient(clientId);
             if (client == null) {
                 event.error(Errors.CLIENT_NOT_FOUND);
