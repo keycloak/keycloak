@@ -23,6 +23,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OpenIDConnect;
+import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -668,15 +669,19 @@ public class UsersResource {
     }
 
     /**
-     * Send an email to the user with a link they can click to reset their password
+     * Send an email to the user with a link they can click to reset their password.
+     * The redirectUri and clientId parameters are optional. The default for the
+     * redirect is the account application.
      *
      * @param username username (not id!)
+     * @param redirectUri redirect uri
+     * @param clientId client id
      * @return
      */
     @Path("{username}/reset-password-email")
     @PUT
     @Consumes("application/json")
-    public Response resetPasswordEmail(@PathParam("username") String username) {
+    public Response resetPasswordEmail(@PathParam("username") String username, @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OpenIDConnect.CLIENT_ID_PARAM) String clientId) {
         auth.requireManage();
 
         UserModel user = session.users().getUserByUsername(username, realm);
@@ -688,13 +693,29 @@ public class UsersResource {
             return Flows.errors().error("User email missing", Response.Status.BAD_REQUEST);
         }
 
-        String redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
-        String clientId = Constants.ACCOUNT_MANAGEMENT_APP;
+        if(redirectUri != null && clientId == null){
+            return Flows.errors().error("Client id missing", Response.Status.BAD_REQUEST);
+        }
+
+        if(clientId == null){
+            clientId = Constants.ACCOUNT_MANAGEMENT_APP;
+        }
 
         ClientModel client = realm.findClient(clientId);
         if (client == null || !client.isEnabled()) {
-            return Flows.errors().error("AccountProvider management not enabled", Response.Status.INTERNAL_SERVER_ERROR);
+            return Flows.errors().error(clientId + " not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }
+
+        String redirect;
+        if(redirectUri != null){
+            redirect = OpenIDConnectService.verifyRedirectUri(uriInfo,redirectUri,realm,client);
+            if(redirect == null){
+                return Flows.errors().error("Invalid redirect uri.", Response.Status.BAD_REQUEST);
+            }
+        }else{
+            redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
+        }
+
 
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
         //audit.session(userSession);
