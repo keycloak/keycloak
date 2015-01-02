@@ -31,7 +31,7 @@ public class SkeletonKeyContextResolver implements ContextResolver<ObjectMapper>
 
     @Override
     public ObjectMapper getContext(Class<?> type) {
-        if (type.getPackage().getName().startsWith(getClass().getPackage().getName())) return mapper;
+        if (type.getPackage() != null && type.getPackage().getName().startsWith(getClass().getPackage().getName())) return mapper;
         return null;
     }
 }
