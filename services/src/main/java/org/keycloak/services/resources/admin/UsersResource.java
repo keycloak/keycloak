@@ -704,11 +704,11 @@ public class UsersResource {
         clientSession.setUserSession(userSession);
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
 
-        accessCode.setRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD);
 
         try {
             UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
-            builder.queryParam("code", accessCode.getCode());
+            builder.queryParam("key", accessCode.getCode());
 
             String link = builder.build(realm.getName()).toString();
             long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
