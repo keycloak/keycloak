@@ -686,7 +686,11 @@ public class UsersResource {
 
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
-            throw new NotFoundException("User not found");
+            return Flows.errors().error("User not found", Response.Status.NOT_FOUND);
+        }
+
+        if (!user.isEnabled()) {
+            return Flows.errors().error("User is disabled", Response.Status.BAD_REQUEST);
         }
 
         if (user.getEmail() == null) {
