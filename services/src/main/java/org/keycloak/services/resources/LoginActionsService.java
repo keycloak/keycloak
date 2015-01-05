@@ -816,7 +816,10 @@ public class LoginActionsService {
 
         if (user == null) {
             event.error(Errors.USER_NOT_FOUND);
-        } else {
+        }
+        else if(!user.isEnabled()) {
+            event.error(Errors.USER_DISABLED);
+        }else{
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
             event.session(userSession);
             TokenManager.attachClientSession(userSession, clientSession);
