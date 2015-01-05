@@ -836,6 +836,7 @@ public class LoginActionsService {
 
                 event.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, clientSession.getId()).success();
             } catch (EmailException e) {
+                event.error(Errors.EMAIL_SEND_FAILED);
                 logger.error("Failed to send password reset email", e);
                 return Flows.forms(this.session, realm, client, uriInfo).setError("emailSendError")
                         .setClientSessionCode(accessCode.getCode())
