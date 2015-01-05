@@ -413,6 +413,9 @@ public class TokenManager {
             if (refreshToken != null) {
                 String encodedToken = new JWSBuilder().jsonContent(refreshToken).rsa256(realm.getPrivateKey());
                 res.setRefreshToken(encodedToken);
+                if (refreshToken.getExpiration() != 0) {
+                    res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());
+                }
             }
             int notBefore = realm.getNotBefore();
             if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();

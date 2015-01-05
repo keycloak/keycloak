@@ -403,6 +403,7 @@ public class OAuthClient {
         private String accessToken;
         private String tokenType;
         private int expiresIn;
+        private int refreshExpiresIn;
         private String refreshToken;
 
         private String error;
@@ -421,6 +422,7 @@ public class OAuthClient {
                 accessToken = responseJson.getString("access_token");
                 tokenType = responseJson.getString("token_type");
                 expiresIn = responseJson.getInt("expires_in");
+                refreshExpiresIn = responseJson.getInt("refresh_expires_in");
 
                 if (responseJson.has(OAuth2Constants.REFRESH_TOKEN)) {
                     refreshToken = responseJson.getString(OAuth2Constants.REFRESH_TOKEN);
@@ -445,6 +447,10 @@ public class OAuthClient {
 
         public int getExpiresIn() {
             return expiresIn;
+        }
+
+        public int getRefreshExpiresIn() {
+            return refreshExpiresIn;
         }
 
         public int getStatusCode() {
