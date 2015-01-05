@@ -222,6 +222,42 @@ public class ResetPasswordTest {
     }
 
     @Test
+    public void resetPasswordDisabledUser() throws IOException, MessagingException, InterruptedException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                session.users().getUserByUsername("login-test", appRealm).setEnabled(false);
+            }
+        });
+
+        try {
+            loginPage.open();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+
+            resetPasswordPage.changePassword("login-test");
+
+            resetPasswordPage.assertCurrent();
+
+            Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+            Thread.sleep(1000);
+
+            Assert.assertEquals(0, greenMail.getReceivedMessages().length);
+
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("user_disabled").assertEvent();
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    session.users().getUserByUsername("login-test", appRealm).setEnabled(true);
+                }
+            });
+        }
+    }
+
+    @Test
     public void resetPasswordWithPasswordPolicy() throws IOException, MessagingException {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
