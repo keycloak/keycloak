@@ -13,6 +13,15 @@
 	<name>Keycloak Jetty 9.1.x Integration</name>
     <properties>
         <jetty9.version>9.1.5.v20140505</jetty9.version>
+        <keycloak.osgi.export>
+            org.keycloak.adapters.jetty.*
+        </keycloak.osgi.export>
+        <keycloak.osgi.import>
+            org.eclipse.jetty.*;version="[9.1,9.2)";resolution:=optional,
+            javax.servlet.*;version="[3.0,4)";resolution:=optional,
+            org.keycloak.*;version="${project.version}",
+            *;resolution:=optional
+        </keycloak.osgi.import>
     </properties>
 	<description />
 
@@ -113,6 +122,39 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
+
+            <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <instructions>
+                        <Bundle-ClassPath>.</Bundle-ClassPath>
+                        <Bundle-Name>${project.name}</Bundle-Name>
+                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
+                        <Import-Package>${keycloak.osgi.import}</Import-Package>
+                        <Export-Package>${keycloak.osgi.export}</Export-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
 		</plugins>
 	</build>
 

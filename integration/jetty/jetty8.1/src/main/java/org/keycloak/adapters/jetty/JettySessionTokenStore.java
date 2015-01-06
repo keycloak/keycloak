@@ -4,6 +4,7 @@ import org.eclipse.jetty.security.authentication.FormAuthenticator;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.MultiMap;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.jetty.core.AbstractJettySessionTokenStore;
 import org.keycloak.util.MultivaluedHashMap;
 
 import javax.servlet.http.HttpSession;
