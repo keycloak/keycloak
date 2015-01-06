@@ -819,6 +819,8 @@ public class LoginActionsService {
         } else if(!user.isEnabled()) {
             event.user(user).error(Errors.USER_DISABLED);
         } else {
+            event.user(user);
+
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
             event.session(userSession);
             TokenManager.attachClientSession(userSession, clientSession);
@@ -834,8 +836,9 @@ public class LoginActionsService {
 
                 this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
 
-                event.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, clientSession.getId()).success();
+                event.detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, clientSession.getId()).success();
             } catch (EmailException e) {
+                event.error(Errors.EMAIL_SEND_FAILED);
                 logger.error("Failed to send password reset email", e);
                 return Flows.forms(this.session, realm, client, uriInfo).setError("emailSendError")
                         .setClientSessionCode(accessCode.getCode())

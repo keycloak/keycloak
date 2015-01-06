@@ -26,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -252,6 +253,46 @@ public class ResetPasswordTest {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     session.users().getUserByUsername("login-test", appRealm).setEnabled(true);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void resetPasswordNoEmail() throws IOException, MessagingException, InterruptedException {
+        final String[] email = new String[1];
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                UserModel user = session.users().getUserByUsername("login-test", appRealm);
+                email[0] = user.getEmail();
+                user.setEmail(null);
+
+            }
+        });
+
+        try {
+            loginPage.open();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+
+            resetPasswordPage.changePassword("login-test");
+
+            errorPage.assertCurrent();
+
+            Assert.assertEquals("Failed to send email, please try again later", errorPage.getError());
+
+            Thread.sleep(1000);
+
+            Assert.assertEquals(0, greenMail.getReceivedMessages().length);
+
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD_ERROR).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error(Errors.EMAIL_SEND_FAILED).assertEvent();
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    session.users().getUserByUsername("login-test", appRealm).setEmail(email[0]);
                 }
             });
         }
