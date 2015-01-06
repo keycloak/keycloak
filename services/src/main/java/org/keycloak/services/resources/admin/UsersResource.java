@@ -7,6 +7,10 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -36,6 +40,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UserManager;
+import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 
@@ -630,20 +635,29 @@ public class UsersResource {
     @PUT
     @Consumes("application/json")
     public void resetPassword(@PathParam("username") String username, CredentialRepresentation pass) {
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        event.event(EventType.RESET_PASSWORD);
         auth.requireManage();
 
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
+            event.error(Errors.USER_NOT_FOUND);
             throw new NotFoundException("User not found");
         }
+
+        event.user(user);
+
         if (pass == null || pass.getValue() == null || !CredentialRepresentation.PASSWORD.equals(pass.getType())) {
+            event.error(Errors.INVALID_USER_CREDENTIALS);
             throw new BadRequestException("No password provided");
         }
 
         UserCredentialModel cred = RepresentationToModel.convertCredential(pass);
         try {
             session.users().updateCredential(realm, user, cred);
+            event.success();
         } catch (ModelReadOnlyException mre) {
+            event.error(Errors.ACCOUNT_IS_READONLY);
             throw new BadRequestException("Can't reset password as account is read only");
         }
         if (pass.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
@@ -682,22 +696,25 @@ public class UsersResource {
     @PUT
     @Consumes("application/json")
     public Response resetPasswordEmail(@PathParam("username") String username, @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OpenIDConnect.CLIENT_ID_PARAM) String clientId) {
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        event.event(EventType.SEND_RESET_PASSWORD);
         auth.requireManage();
 
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
+            event.error(Errors.USER_NOT_FOUND);
             return Flows.errors().error("User not found", Response.Status.NOT_FOUND);
         }
 
+        event.user(user);
+
         if (!user.isEnabled()) {
+            event.error(Errors.USER_DISABLED);
             return Flows.errors().error("User is disabled", Response.Status.BAD_REQUEST);
         }
 
-        if (user.getEmail() == null) {
-            return Flows.errors().error("User email missing", Response.Status.BAD_REQUEST);
-        }
-
         if(redirectUri != null && clientId == null){
+            event.error(Errors.CLIENT_NOT_FOUND);
             return Flows.errors().error("Client id missing", Response.Status.BAD_REQUEST);
         }
 
@@ -707,6 +724,7 @@ public class UsersResource {
 
         ClientModel client = realm.findClient(clientId);
         if (client == null || !client.isEnabled()) {
+            event.error(Errors.CLIENT_DISABLED);
             return Flows.errors().error(clientId + " not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -714,6 +732,7 @@ public class UsersResource {
         if(redirectUri != null){
             redirect = OpenIDConnectService.verifyRedirectUri(uriInfo,redirectUri,realm,client);
             if(redirect == null){
+                event.error(Errors.INVALID_REDIRECT_URI);
                 return Flows.errors().error("Invalid redirect uri.", Response.Status.BAD_REQUEST);
             }
         }else{
@@ -722,11 +741,15 @@ public class UsersResource {
 
 
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
-        //audit.session(userSession);
+        event.session(userSession);
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
         clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);
         clientSession.setRedirectUri(redirect);
         clientSession.setUserSession(userSession);
+        event.client(client)
+                .detail(Details.REDIRECT_URI, redirect)
+                .detail(Details.AUTH_METHOD, OpenIDConnect.LOGIN_PROTOCOL);
+
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
 
         accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD);
@@ -740,9 +763,10 @@ public class UsersResource {
 
             this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
 
-            //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
+            event.success();
             return Response.ok().build();
         } catch (EmailException e) {
+            event.error(Errors.EMAIL_SEND_FAILED);
             logger.error("Failed to send password reset email", e);
             return Flows.errors().error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
