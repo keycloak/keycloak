@@ -54,7 +54,7 @@
                 var callback = parseCallback(window.location.search);
 
                 if (callback) {
-                    window.history.replaceState({}, null, location.protocol + '//' + location.host + location.pathname + (callback.fragment ? '#' + callback.fragment : ''));
+                    window.history.replaceState({}, null, callback.newUrl);
                     processCallback(callback, initPromise);
                     return;
                 } else if (initOptions) {
@@ -117,11 +117,7 @@
 
             var redirectUri = adapter.redirectUri(options);
             if (options && options.prompt) {
-                if (redirectUri.indexOf('?') == -1) {
-                    redirectUri += '?prompt=' + options.prompt;
-                } else {
-                    redirectUri += '&prompt=' + options.prompt;
-                }
+                redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
             }
 
             sessionStorage.oauthState = state;
@@ -516,6 +512,7 @@
             if (url.indexOf('?') != -1) {
                 var oauth = {};
 
+                oauth.newUrl = url.split('?')[0];
                 var params = url.split('?')[1].split('&');
                 for (var i = 0; i < params.length; i++) {
                     var p = params[i].split('=');
@@ -535,11 +532,18 @@
                         case 'prompt':
                             oauth.prompt = p[1];
                             break;
+                        default:
+                            oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + p[0] + '=' + p[1];
                     }
                 }
 
                 if ((oauth.code || oauth.error) && oauth.state && oauth.state == sessionStorage.oauthState) {
                     delete sessionStorage.oauthState;
+
+                    if (oauth.fragment) {
+                        oauth.newUrl += '#' + oauth.fragment;
+                    }
+
                     return oauth;
                 }
             }
@@ -684,11 +688,11 @@
                         } else if (kc.redirectUri) {
                             return kc.redirectUri;
                         } else {
-                            var url = (location.protocol + '//' + location.hostname + (location.port && (':' + location.port)) + location.pathname);
+                            var redirectUri = location.href.substring(0, location.href.indexOf('#'));
                             if (location.hash) {
-                                url += '?redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
+                                redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
                             }
-                            return url;
+                            return redirectUri;
                         }
                     }
                 };
