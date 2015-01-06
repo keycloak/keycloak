@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:camel="http://camel.apache.org/schema/blueprint"
+           xsi:schemaLocation="
+       http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+       http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint.xsd">
+
+    <bean id="kcAdapterConfig" class="org.keycloak.representations.adapters.config.AdapterConfig">
+        <property name="realm" value="demo"/>
+        <property name="resource" value="admin-camel-endpoint"/>
+        <property name="realmKey" value="MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB"/>
+        <property name="bearerOnly" value="true"/>
+        <property name="sslRequired" value="EXTERNAL"/>
+    </bean>
+
+    <bean id="keycloakAuthenticator" class="org.keycloak.adapters.jetty.KeycloakJettyAuthenticator">
+        <property name="adapterConfig" ref="kcAdapterConfig"/>
+    </bean>
+
+    <bean id="constraint" class="org.eclipse.jetty.util.security.Constraint">
+        <property name="name" value="Customers"/>
+        <property name="roles">
+            <list>
+                <value>admin</value>
+            </list>
+        </property>
+        <property name="authenticate" value="true"/>
+        <property name="dataConstraint" value="0"/>
+    </bean>
+
+    <bean id="constraintMapping" class="org.eclipse.jetty.security.ConstraintMapping">
+        <property name="constraint" ref="constraint"/>
+        <property name="pathSpec" value="/*"/>
+    </bean>
+
+    <bean id="securityHandler" class="org.eclipse.jetty.security.ConstraintSecurityHandler">
+        <property name="authenticator" ref="keycloakAuthenticator" />
+        <property name="constraintMappings">
+            <list>
+                <ref component-id="constraintMapping" />
+            </list>
+        </property>
+        <property name="authMethod" value="BASIC"/>
+        <property name="realmName" value="does-not-matter"/>
+    </bean>
+
+    <bean id="sessionHandler" class="org.keycloak.adapters.jetty.core.WrappingSessionHandler">
+        <property name="handler" ref="securityHandler" />
+    </bean>
+
+    <bean id="helloBean" class="org.keycloak.example.CamelHelloBean" />
+
+    <camelContext id="blueprintContext"
+                  trace="false"
+                  xmlns="http://camel.apache.org/schema/blueprint">
+        <route id="httpBridge">
+            <from uri="jetty:http://0.0.0.0:8383/admin-camel-endpoint?handlers=sessionHandler&amp;matchOnUriPrefix=true" />
+            <setBody>
+                <method ref="helloBean" method="hello"/>
+            </setBody>
+            <log message="The message from camel endpoint contains ${body}"/>
+            <to uri="mock:result"/>
+        </route>
+    </camelContext>
+
+</blueprint>

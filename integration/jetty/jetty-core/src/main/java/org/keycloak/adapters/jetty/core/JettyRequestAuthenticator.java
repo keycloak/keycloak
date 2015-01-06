@@ -1,4 +1,4 @@
-package org.keycloak.adapters.jetty;
+package org.keycloak.adapters.jetty.core;
 
 import org.eclipse.jetty.server.Request;
 import org.jboss.logging.Logger;

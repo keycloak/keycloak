@@ -6,6 +6,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.UserIdentity;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.jetty.core.AbstractKeycloakJettyAuthenticator;
 
 import javax.servlet.ServletRequest;
 

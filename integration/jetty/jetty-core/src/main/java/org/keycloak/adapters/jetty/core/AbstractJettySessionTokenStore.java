@@ -1,8 +1,6 @@
-package org.keycloak.adapters.jetty;
+package org.keycloak.adapters.jetty.core;
 
-import org.eclipse.jetty.security.authentication.FormAuthenticator;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.util.MultiMap;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
@@ -12,7 +10,6 @@ import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
-import org.keycloak.util.MultivaluedHashMap;
 
 import javax.servlet.http.HttpSession;
 

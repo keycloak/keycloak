@@ -17,7 +17,7 @@
     <modules>
         <module>features</module>
         <module>jaas</module>
-        <module>core-adapter</module>
+        <module>thirdparty</module>
     </modules>
 
 </project>

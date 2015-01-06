@@ -32,5 +32,6 @@
         <module>js-console</module>
         <module>multi-tenant</module>
         <module>basic-auth</module>
+        <module>fuse</module>
     </modules>
 </project>

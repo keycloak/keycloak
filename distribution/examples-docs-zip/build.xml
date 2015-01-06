@@ -93,6 +93,12 @@
                 <exclude name="**/README.md"/>
             </fileset>
         </copy>
+        <copy todir="target/examples/fuse" overwrite="true">
+            <fileset dir="../../examples/fuse">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+            </fileset>
+        </copy>
         <copy file="../../examples/README.md" tofile="target/examples/README.md"/>
         <move file="target/examples/unconfigured-demo/README.md.unconfigured" tofile="target/examples/unconfigured-demo/README.md"/>
         <move file="target/examples/unconfigured-demo/customer-app/src/main/webapp/WEB-INF/web.xml.unconfigured" tofile="target/examples/unconfigured-demo/customer-app/src/main/webapp/WEB-INF/web.xml"/>
