@@ -709,7 +709,7 @@ public class UsersResource {
         event.user(user);
 
         if (!user.isEnabled()) {
-            event.user(user).error(Errors.USER_DISABLED);
+            event.error(Errors.USER_DISABLED);
             return Flows.errors().error("User is disabled", Response.Status.BAD_REQUEST);
         }
 
