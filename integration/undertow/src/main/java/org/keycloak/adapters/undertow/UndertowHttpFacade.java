@@ -29,6 +29,8 @@ import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -102,7 +104,18 @@ public class UndertowHttpFacade implements HttpFacade {
 
         @Override
         public String getRemoteAddr() {
-            return exchange.getSourceAddress().getAddress().getHostAddress();
+            InetSocketAddress sourceAddress = exchange.getSourceAddress();
+            if (sourceAddress == null) {
+                return "";
+            }
+            InetAddress address = sourceAddress.getAddress();
+            if (address == null) {
+                // this is unresolved, so we just return the host name not exactly spec, but if the name should be
+                // resolved then a PeerNameResolvingHandler should be used and this is probably better than just
+                // returning null
+                return sourceAddress.getHostString();
+            }
+            return address.getHostAddress();
         }
     }
 
