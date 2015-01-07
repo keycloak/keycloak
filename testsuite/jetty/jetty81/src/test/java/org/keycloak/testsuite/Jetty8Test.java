@@ -21,62 +21,35 @@
  */
 package org.keycloak.testsuite;
 
-import org.eclipse.jetty.security.ConstraintMapping;
-import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.jetty.AbstractKeycloakJettyAuthenticator;
-import org.keycloak.adapters.jetty.KeycloakJettyAuthenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.adapter.AdapterTestStrategy;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testutils.KeycloakServer;
-import org.openqa.selenium.WebDriver;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.UriBuilder;
 import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URL;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class Jetty9Test {
+public class Jetty8Test {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
-            RealmModel realm = manager.importRealm(representation);
+            AdapterTestStrategy.baseAdapterTestInitialization(session, manager, adminRealm, getClass());
         }
     };
 
@@ -89,7 +62,7 @@ public class Jetty9Test {
         List<Handler> list = new ArrayList<Handler>();
         System.setProperty("app.server.base.url", "http://localhost:8082");
         System.setProperty("my.host.name", "localhost");
-        URL dir = Jetty9Test.class.getResource("/adapter-test/demorealm.json");
+        URL dir = Jetty8Test.class.getResource("/adapter-test/demorealm.json");
         File base = new File(dir.getFile()).getParentFile();
         list.add(new WebAppContext(new File(base, "customer-portal").toString(), "/customer-portal"));
         list.add(new WebAppContext(new File(base, "customer-db").toString(), "/customer-db"));
@@ -190,4 +163,13 @@ public class Jetty9Test {
     public void testSessionInvalidatedAfterFailedRefresh() throws Throwable {
         testStrategy.testSessionInvalidatedAfterFailedRefresh();
 
-    }}
+    }
+
+    /**
+     * KEYCLOAK-942
+     */
+    @Test
+    public void testAdminApplicationLogout() throws Throwable {
+        testStrategy.testAdminApplicationLogout();
+    }
+}

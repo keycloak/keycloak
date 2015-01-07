@@ -63,8 +63,7 @@ public class TomcatTest {
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
-            RealmModel realm = manager.importRealm(representation);
+            AdapterTestStrategy.baseAdapterTestInitialization(session, manager, adminRealm, getClass());
        }
     };
 
@@ -171,6 +170,14 @@ public class TomcatTest {
     public void testSessionInvalidatedAfterFailedRefresh() throws Throwable {
         testStrategy.testSessionInvalidatedAfterFailedRefresh();
 
+    }
+
+    /**
+     * KEYCLOAK-942
+     */
+    @Test
+    public void testAdminApplicationLogout() throws Throwable {
+        testStrategy.testAdminApplicationLogout();
     }
 
     static String getBaseDirectory() {

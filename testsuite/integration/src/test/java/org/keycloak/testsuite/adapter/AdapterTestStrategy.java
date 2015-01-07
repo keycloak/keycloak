@@ -28,6 +28,7 @@ import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
@@ -38,15 +39,20 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
+import org.keycloak.services.resources.admin.ApplicationsResource;
+import org.keycloak.services.resources.admin.RealmAdminResource;
+import org.keycloak.services.resources.admin.RealmsAdminResource;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.WebDriver;
 
@@ -104,6 +110,15 @@ public class AdapterTestStrategy extends ExternalResource {
         this.keycloakRule = keycloakRule;
         // some servlet containers redirect to root + "/" if you visit root context
         if (addSlash) slash = "/";
+    }
+
+    public static RealmModel baseAdapterTestInitialization(KeycloakSession session, RealmManager manager, RealmModel adminRealm, Class<?> clazz) {
+        // Required by admin client
+        adminRealm.setPasswordCredentialGrantAllowed(true);
+
+        RealmRepresentation representation = KeycloakServer.loadJson(clazz.getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
+        RealmModel demoRealm = manager.importRealm(representation);
+        return demoRealm;
     }
 
     @Override
@@ -560,6 +575,25 @@ public class AdapterTestStrategy extends ExternalResource {
             }
 
         }, "demo");
+    }
+
+    /**
+     * KEYCLOAK-942
+     */
+    @Test
+    public void testAdminApplicationLogout() throws Throwable {
+        // login as bburke
+        loginAndCheckSession(driver, loginPage);
+
+        // logout mposolda with admin client
+        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_APPLICATION);
+        keycloakAdmin.realm("demo").applications().get("session-portal").logoutUser("mposolda");
+
+        // bburke should be still logged with original httpSession in our browser window
+        driver.navigate().to(APP_SERVER_BASE_URL + "/session-portal");
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/session-portal" + slash);
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Counter=3"));
     }
 
     protected void loginAndCheckSession(WebDriver driver, LoginPage loginPage) {
