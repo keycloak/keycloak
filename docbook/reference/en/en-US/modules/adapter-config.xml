@@ -113,6 +113,15 @@
                 </listitem>
             </varlistentry>
             <varlistentry>
+                <term>public-client</term>
+                <listitem>
+                    <para>
+                        If set to true, the adapter will not send credentials for the client to Keycloak.
+                        The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
                 <term>enable-cors</term>
                 <listitem>
                     <para>
@@ -140,7 +149,19 @@
                     <para>
                         If CORS is enabled, this sets the value of the
                         <literal>Access-Control-Allow-Methods</literal>
-                        header. This should be a JSON list of strings.
+                        header. This should be a comma-separated string.
+                        This is <emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
+                        responses.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>cors-allowed-headers</term>
+                <listitem>
+                    <para>
+                        If CORS is enabled, this sets the value of the
+                        <literal>Access-Control-Allow-Headers</literal>
+                        header. This should be a comma-separated string.
                         This is <emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
                         responses.
                     </para>
