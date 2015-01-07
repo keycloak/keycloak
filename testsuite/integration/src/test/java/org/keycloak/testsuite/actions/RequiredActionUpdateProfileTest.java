@@ -147,4 +147,21 @@ public class RequiredActionUpdateProfileTest {
         events.assertEmpty();
     }
 
+    @Test
+    public void updateProfileDuplicatedEmail() {
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.update("New first", "New last", "keycloak-user@localhost");
+
+        updateProfilePage.assertCurrent();
+
+        Assert.assertEquals("Email already exists", updateProfilePage.getError());
+
+        events.assertEmpty();
+    }
+
 }
