@@ -22,7 +22,6 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.email.EmailException;
@@ -45,7 +44,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.PasswordToken;
@@ -63,7 +61,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -73,7 +70,6 @@ import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -605,16 +601,28 @@ public class LoginActionsService {
         user.setLastName(formData.getFirst("lastName"));
 
         String email = formData.getFirst("email");
+
         String oldEmail = user.getEmail();
         boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
 
-        user.setEmail(email);
+        if (emailChanged) {
+            UserModel userByEmail = session.users().getUserByEmail(email, realm);
+
+            // check for duplicated email
+            if (userByEmail != null && !userByEmail.getId().equals(user.getId())) {
+                return Flows.forms(session, realm, null, uriInfo).setUser(user).setError(Messages.EMAIL_EXISTS)
+                        .setClientSessionCode(accessCode.getCode())
+                        .createResponse(RequiredAction.UPDATE_PROFILE);
+            }
+
+            user.setEmail(email);
+            user.setEmailVerified(false);
+        }
 
         user.removeRequiredAction(RequiredAction.UPDATE_PROFILE);
-
         event.clone().event(EventType.UPDATE_PROFILE).success();
+
         if (emailChanged) {
-            user.setEmailVerified(false);
             event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
 

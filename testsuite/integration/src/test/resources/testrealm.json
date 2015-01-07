@@ -29,6 +29,20 @@
                 "test-app": [ "customer-user" ],
                 "account": [ "view-profile", "manage-account" ]
             }
+        },
+        {
+            "username" : "keycloak-user@localhost",
+            "enabled": true,
+            "email" : "keycloak-user@localhost",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": ["user"],
+            "applicationRoles": {
+                "test-app": [ "customer-user" ],
+                "account": [ "view-profile", "manage-account" ]
+            }
         }
     ],
     "oauthClients" : [
