@@ -51,7 +51,7 @@
             var configPromise = loadConfig(config);
 
             function processInit() {
-                var callback = parseCallback(window.location.search);
+                var callback = parseCallback(window.location.href);
 
                 if (callback) {
                     window.history.replaceState({}, null, callback.newUrl);
@@ -534,6 +534,7 @@
                             break;
                         default:
                             oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + p[0] + '=' + p[1];
+                            break;
                     }
                 }
 
@@ -688,8 +689,9 @@
                         } else if (kc.redirectUri) {
                             return kc.redirectUri;
                         } else {
-                            var redirectUri = location.href.substring(0, location.href.indexOf('#'));
+                            var redirectUri = location.href;
                             if (location.hash) {
+                                redirectUri = redirectUri.substring(0, location.href.indexOf('#'));
                                 redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
                             }
                             return redirectUri;

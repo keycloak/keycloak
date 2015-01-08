@@ -59,6 +59,8 @@ public class KeycloakDeploymentBuilder {
         deployment.setPublicClient(adapterConfig.isPublicClient());
         deployment.setUseResourceRoleMappings(adapterConfig.isUseResourceRoleMappings());
 
+        deployment.setExposeToken(adapterConfig.isExposeToken());
+
         if (adapterConfig.isCors()) {
             deployment.setCors(true);
             deployment.setCorsMaxAge(adapterConfig.getCorsMaxAge());

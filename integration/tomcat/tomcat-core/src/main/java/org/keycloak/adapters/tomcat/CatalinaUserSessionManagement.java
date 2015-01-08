@@ -62,8 +62,7 @@ public class CatalinaUserSessionManagement implements SessionListener {
 
     public void sessionEvent(SessionEvent event) {
         // We only care about session destroyed events
-        if (!Session.SESSION_DESTROYED_EVENT.equals(event.getType())
-                && (!Session.SESSION_PASSIVATED_EVENT.equals(event.getType())))
+        if (!Session.SESSION_DESTROYED_EVENT.equals(event.getType()))
             return;
 
         // Look up the single session id associated with this session (if any)
