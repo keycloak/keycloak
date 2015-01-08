@@ -22,9 +22,11 @@ import java.net.URI;
  */
 public class SAML2LogoutRequestBuilder extends SAML2BindingBuilder<SAML2LogoutRequestBuilder> {
     protected String userPrincipal;
+    protected String userPrincipalFormat;
 
-    public SAML2LogoutRequestBuilder userPrincipal(String userPrincipal) {
-        this.userPrincipal = userPrincipal;
+    public SAML2LogoutRequestBuilder userPrincipal(String nameID, String nameIDformat) {
+        this.userPrincipal = nameID;
+        this.userPrincipalFormat = nameIDformat;
         return this;
     }
 
@@ -51,7 +53,7 @@ public class SAML2LogoutRequestBuilder extends SAML2BindingBuilder<SAML2LogoutRe
         NameIDType nameID = new NameIDType();
         nameID.setValue(userPrincipal);
         //Deal with NameID Format
-        String nameIDFormat = JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
+        String nameIDFormat = userPrincipalFormat;
         nameID.setFormat(URI.create(nameIDFormat));
         lort.setNameID(nameID);
 

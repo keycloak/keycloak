@@ -3,7 +3,7 @@
                   ServerEnvironment="tomcat" BindingType="POST" SupportsSignatures="true">
         <IdentityURL>${idp-sig.url::http://localhost:8081/auth/realms/demo/protocol/saml}
         </IdentityURL>
-        <ServiceURL>${sales-post-sig.url::http://localhost:8081/sales-post-sig/}
+        <ServiceURL>${sales-post-sig.url::http://localhost:8081/sales-post-sig-persistent/}
         </ServiceURL>
         <KeyProvider
                 ClassName="org.picketlink.identity.federation.core.impl.KeyStoreKeyManager">
@@ -21,7 +21,7 @@
                 class="org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler"/>
         <Handler
                 class="org.picketlink.identity.federation.web.handlers.saml2.SAML2AuthenticationHandler">
-            <Option Key="NAMEID_FORMAT" Value="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"/>
+            <Option Key="NAMEID_FORMAT" Value="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"/>
         </Handler>
         <Handler
                 class="org.picketlink.identity.federation.web.handlers.saml2.RolesGenerationHandler"/>
