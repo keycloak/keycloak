@@ -1,21 +1,10 @@
 package org.keycloak.adapters;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.bouncycastle.util.encoders.Base64;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.util.PemUtils;
-
-import javax.net.ssl.SSLSocketFactory;
-import java.io.File;
-import java.io.IOException;
-import java.security.PublicKey;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -24,22 +13,6 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class KeycloakDeploymentBuilderTest {
-
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
-
-    @Before
-    public void before() throws IOException {
-        File dir = folder.newFolder();
-        FileUtils.copyInputStreamToFile(getClass().getResourceAsStream("/cacerts.jks"), new File(dir, "cacerts.jks"));
-        FileUtils.copyInputStreamToFile(getClass().getResourceAsStream("/keystore.jks"), new File(dir, "keystore.jks"));
-        System.setProperty("testResources", dir.getAbsolutePath());
-    }
-
-    @After
-    public void after() {
-        System.getProperties().remove("testResources");
-    }
 
     @Test
     public void load() throws Exception {
