@@ -79,9 +79,7 @@ public class AdapterTest {
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
-            RealmModel realm = manager.importRealm(representation);
-
+            RealmModel realm = AdapterTestStrategy.baseAdapterTestInitialization(session, manager, adminRealm, getClass());
             realmPublicKey = realm.getPublicKey();
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak.json");
@@ -182,6 +180,14 @@ public class AdapterTest {
     public void testSessionInvalidatedAfterFailedRefresh() throws Throwable {
         testStrategy.testSessionInvalidatedAfterFailedRefresh();
 
+    }
+
+    /**
+     * KEYCLOAK-942
+     */
+    @Test
+    public void testAdminApplicationLogout() throws Throwable {
+        testStrategy.testAdminApplicationLogout();
     }
 
 }

@@ -28,6 +28,21 @@
             "applicationRoles": {
                 "account": [ "manage-account" ]
             }
+        },
+        {
+            "username" : "mposolda",
+            "enabled": true,
+            "email" : "mposolda@redhat.com",
+            "firstName": "Marek",
+            "lastName": "Posolda",
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "password" }
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "account": [ "manage-account" ]
+            }
         }
     ],
     "roles" : {

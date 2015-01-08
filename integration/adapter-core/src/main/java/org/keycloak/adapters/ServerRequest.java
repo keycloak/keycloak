@@ -103,7 +103,7 @@ public class ServerRequest {
         formparams.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
         if (sessionId != null) {
             formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_SESSION_STATE, sessionId));
-            formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_SESSION_HOST, HostUtils.getIpAddress()));
+            formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_SESSION_HOST, HostUtils.getHostName()));
         }
         HttpResponse response = null;
         HttpPost post = new HttpPost(codeUrl);

@@ -64,7 +64,7 @@ public class NodesRegistrationManagement {
     protected void sendRegistrationEvent(KeycloakDeployment deployment) {
         log.debug("Sending registration event right now");
 
-        String host = HostUtils.getIpAddress();
+        String host = HostUtils.getHostName();
         try {
             ServerRequest.invokeRegisterNode(deployment, host);
             NodeRegistrationContext regContext = new NodeRegistrationContext(Time.currentTime(), deployment);
@@ -84,7 +84,7 @@ public class NodesRegistrationManagement {
     protected boolean sendUnregistrationEvent(KeycloakDeployment deployment) {
         log.debug("Sending Unregistration event right now");
 
-        String host = HostUtils.getIpAddress();
+        String host = HostUtils.getHostName();
         try {
             ServerRequest.invokeUnregisterNode(deployment, host);
             log.debugf("Node '%s' successfully unregistered from Keycloak", host);

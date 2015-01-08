@@ -184,7 +184,12 @@ public class ResourceAdminManager {
                 }
             }
 
-            if (managementUrl.contains(APPLICATION_SESSION_HOST_PROPERTY) && adapterSessionIds != null) {
+            if (adapterSessionIds == null || adapterSessionIds.isEmpty()) {
+                logger.debugv("Can't logout {0}: no logged adapter sessions", resource.getName());
+                return false;
+            }
+
+            if (managementUrl.contains(APPLICATION_SESSION_HOST_PROPERTY)) {
                 boolean allPassed = true;
                 // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps - KEYCLOAK-748)
                 for (Map.Entry<String, List<String>> entry : adapterSessionIds.entrySet()) {
@@ -197,13 +202,11 @@ public class ResourceAdminManager {
                 return allPassed;
             } else {
                 // Send single logout request
-                List<String> allSessionIds = null;
-                if (adapterSessionIds != null) {
-                    allSessionIds = new ArrayList<String>();
-                    for (List<String> currentIds : adapterSessionIds.values()) {
-                        allSessionIds.addAll(currentIds);
-                    }
+                List<String> allSessionIds = new ArrayList<String>();
+                for (List<String> currentIds : adapterSessionIds.values()) {
+                    allSessionIds.addAll(currentIds);
                 }
+
                 return sendLogoutRequest(realm, resource, allSessionIds, client, 0, managementUrl);
             }
         } else {
