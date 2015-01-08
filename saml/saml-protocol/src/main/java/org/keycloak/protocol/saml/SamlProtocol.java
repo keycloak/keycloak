@@ -28,6 +28,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.security.PublicKey;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -54,7 +55,10 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_ENCRYPT = "saml.encrypt";
     public static final String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
     public static final String SAML_REQUEST_ID = "SAML_REQUEST_ID";
+    public static final String SAML_NAME_ID = "SAML_NAME_ID";
+    public static final String SAML_NAME_ID_FORMAT = "SAML_NAME_ID_FORMAT";
     public static final String SAML_DEFAULT_NAMEID_FORMAT = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
+    public static final String SAML_PERSISTENT_NAME_ID_FOR = "saml.persistent.name.id.for";
 
     protected KeycloakSession session;
 
@@ -125,12 +129,25 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     protected String getNameId(String nameIdFormat, ClientSessionModel clientSession, UserSessionModel userSession) {
-        if(nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
+        if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
             return userSession.getUser().getEmail();
         } else if(nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get())) {
+            // "G-" stands for "generated" Add this for the slight possibility of collisions.
+            return "G-" + UUID.randomUUID().toString();
+        } else if(nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get())) {
+            // generate a persistent user id specifically for each client.
+            UserModel user = userSession.getUser();
+            String name = SAML_PERSISTENT_NAME_ID_FOR + "." + clientSession.getClient().getClientId();
+            String samlPersistentId = user.getAttribute(name);
+            if (samlPersistentId != null) return samlPersistentId;
+            // "G-" stands for "generated"
+            samlPersistentId = "G-" + UUID.randomUUID().toString();
+            user.setAttribute(name, samlPersistentId);
+            return samlPersistentId;
+        } else if(nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())){
+            // TODO: Support for persistent NameID (pseudo-random identifier persisted in user object)
             return userSession.getUser().getUsername();
         } else {
-            // TODO: Support for persistent NameID (pseudo-random identifier persisted in user object)
             return userSession.getUser().getUsername();
         }
     }
@@ -145,6 +162,11 @@ public class SamlProtocol implements LoginProtocol {
         String responseIssuer = getResponseIssuer(realm);
         String nameIdFormat = getNameIdFormat(clientSession);
         String nameId = getNameId(nameIdFormat, clientSession, userSession);
+
+        // save NAME_ID and format in clientSession as they may be persistent or transient or email and not username
+        // we'll need to send this back on a logout
+        clientSession.setNote(SAML_NAME_ID, nameId);
+        clientSession.setNote(SAML_NAME_ID_FORMAT, nameIdFormat);
 
         SALM2LoginResponseBuilder builder = new SALM2LoginResponseBuilder();
         builder.requestID(requestID)
@@ -256,8 +278,9 @@ public class SamlProtocol implements LoginProtocol {
         ApplicationModel app = (ApplicationModel)client;
         if (app.getManagementUrl() == null) return;
 
+        // build userPrincipal with subject used at login
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
-                                         .userPrincipal(userSession.getUser().getUsername())
+                                         .userPrincipal(clientSession.getNote(SAML_NAME_ID), clientSession.getNote(SAML_NAME_ID_FORMAT))
                                          .destination(client.getClientId());
         if (requiresRealmSignature(client)) {
             logoutBuilder.signatureAlgorithm(getSignatureAlgorithm(client))

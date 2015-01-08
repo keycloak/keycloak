@@ -49,6 +49,9 @@ public class SamlBindingTest {
 
             initializeSamlSecuredWar("/saml/simple-post", "/sales-post",  "post.war", classLoader);
             initializeSamlSecuredWar("/saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
+            initializeSamlSecuredWar("/saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
+            initializeSamlSecuredWar("/saml/signed-post-transient", "/sales-post-sig-transient",  "post-sig-transient.war", classLoader);
+            initializeSamlSecuredWar("/saml/signed-post-persistent", "/sales-post-sig-persistent",  "post-sig-persistent.war", classLoader);
             initializeSamlSecuredWar("/saml/signed-metadata", "/sales-metadata",  "post-metadata.war", classLoader);
             initializeSamlSecuredWar("/saml/signed-get", "/employee-sig",  "employee-sig.war", classLoader);
             initializeSamlSecuredWar("/saml/bad-client-signed-post", "/bad-client-sales-post-sig",  "bad-client-post-sig.war", classLoader);
@@ -97,6 +100,44 @@ public class SamlBindingTest {
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-sig/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to("http://localhost:8081/sales-post-sig?GLO=true");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+
+    }
+    @Test
+    public void testPostSignedLoginLogoutTransientNameID() {
+        driver.navigate().to("http://localhost:8081/sales-post-sig-transient/");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        loginPage.login("bburke", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-sig-transient/");
+        System.out.println(driver.getPageSource());
+        Assert.assertFalse(driver.getPageSource().contains("bburke"));
+        Assert.assertTrue(driver.getPageSource().contains("principal=G-"));
+        driver.navigate().to("http://localhost:8081/sales-post-sig-transient?GLO=true");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+
+    }
+    @Test
+    public void testPostSignedLoginLogoutPersistentNameID() {
+        driver.navigate().to("http://localhost:8081/sales-post-sig-persistent/");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        loginPage.login("bburke", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-sig-persistent/");
+        System.out.println(driver.getPageSource());
+        Assert.assertFalse(driver.getPageSource().contains("bburke"));
+        Assert.assertTrue(driver.getPageSource().contains("principal=G-"));
+        driver.navigate().to("http://localhost:8081/sales-post-sig-persistent?GLO=true");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+
+    }
+    @Test
+    public void testPostSignedLoginLogoutEmailNameID() {
+        driver.navigate().to("http://localhost:8081/sales-post-sig-email/");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        loginPage.login("bburke", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-sig-email/");
+        System.out.println(driver.getPageSource());
+        Assert.assertTrue(driver.getPageSource().contains("principal=bburke@redhat.com"));
+        driver.navigate().to("http://localhost:8081/sales-post-sig-email?GLO=true");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
 
     }
