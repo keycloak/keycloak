@@ -63,4 +63,7 @@ public class UriUtils {
         return map;
     }
 
+    public static String stripQueryParam(String url, String name){
+        return url.replaceFirst("[\\?&]"+name+"=[^&]*$|"+name+"=[^&]*&", "");
+    }
 }

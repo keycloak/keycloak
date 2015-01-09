@@ -11,6 +11,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.util.UriUtils;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -128,7 +129,7 @@ public class OAuthRequestAuthenticator {
         }
 
         String loginHint = getQueryParamValue("login_hint");
-        url = url.replaceFirst("[\\?&]login_hint=[^&]*$|login_hint=.*&", "");
+        url = UriUtils.stripQueryParam(url,"login_hint");
 
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
