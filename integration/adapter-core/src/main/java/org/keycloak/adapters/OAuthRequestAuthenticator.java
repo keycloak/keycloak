@@ -1,5 +1,6 @@
 package org.keycloak.adapters;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
@@ -125,12 +126,20 @@ public class OAuthRequestAuthenticator {
             if (port != 443) secureUrl.port(port);
             url = secureUrl.build().toString();
         }
-        return deployment.getAuthUrl().clone()
+
+        String loginHint = getQueryParamValue("login_hint");
+        url = url.replaceFirst("[\\?&]login_hint=[^&]*$|login_hint=.*&", "");
+
+        KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
                 .queryParam(OAuth2Constants.REDIRECT_URI, url)
                 .queryParam(OAuth2Constants.STATE, state)
-                .queryParam("login", "true")
-                .build().toString();
+                .queryParam("login", "true");
+        if(loginHint != null && loginHint.length() > 0){
+            redirectUriBuilder.queryParam("login_hint",loginHint);
+        }
+
+        return redirectUriBuilder.build().toString();
     }
 
     protected int sslRedirectPort() {
