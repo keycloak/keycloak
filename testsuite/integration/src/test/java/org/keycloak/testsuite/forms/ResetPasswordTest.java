@@ -279,6 +279,44 @@ public class ResetPasswordTest {
 
             resetPasswordPage.changePassword("login-test");
 
+            resetPasswordPage.assertCurrent();
+
+            Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+            Thread.sleep(1000);
+
+            Assert.assertEquals(0, greenMail.getReceivedMessages().length);
+
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD_ERROR).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("invalid_email").assertEvent();
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    session.users().getUserByUsername("login-test", appRealm).setEmail(email[0]);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void resetPasswordWrongSmtp() throws IOException, MessagingException, InterruptedException {
+        final String[] host = new String[1];
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                host[0] =  appRealm.getSmtpConfig().get("host");
+                appRealm.getSmtpConfig().put("host", "invalid_host");
+            }
+        });
+
+        try {
+            loginPage.open();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+
+            resetPasswordPage.changePassword("login-test");
+
             errorPage.assertCurrent();
 
             Assert.assertEquals("Failed to send email, please try again later", errorPage.getError());
@@ -292,7 +330,7 @@ public class ResetPasswordTest {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    session.users().getUserByUsername("login-test", appRealm).setEmail(email[0]);
+                    appRealm.getSmtpConfig().put("host",host[0]);
                 }
             });
         }
