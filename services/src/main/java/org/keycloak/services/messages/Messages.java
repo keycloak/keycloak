@@ -71,19 +71,19 @@ public class Messages {
 
     public static final String ACTION_WARN_EMAIL = "actionEmailWarning";
 
-    public static final String MISSING_SOCIAL_PROVIDER = "missingSocialProvider";
+    public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProvider";
 
-    public static final String INVALID_SOCIAL_ACTION = "invalidSocialAction";
+    public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityAction";
 
-    public static final String SOCIAL_PROVIDER_NOT_FOUND = "socialProviderNotFound";
+    public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFound";
 
-    public static final String SOCIAL_LINK_NOT_ACTIVE = "socialLinkNotActive";
+    public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActive";
 
-    public static final String SOCIAL_REMOVING_LAST_PROVIDER = "socialRemovingLastProvider";
+    public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProvider";
 
-    public static final String SOCIAL_REDIRECT_ERROR = "socialRedirectError";
+    public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectError";
 
-    public static final String SOCIAL_PROVIDER_REMOVED = "socialProviderRemoved";
+    public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemoved";
 
     public static final String ERROR = "error";
 

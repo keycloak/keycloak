@@ -24,7 +24,7 @@ public class UserRepresentation {
     protected Map<String, String> attributes;
     protected List<CredentialRepresentation> credentials;
     protected List<String> requiredActions;
-    protected List<SocialLinkRepresentation> socialLinks;
+    protected List<FederatedIdentityRepresentation> federatedIdentities;
     protected List<String> realmRoles;
     protected Map<String, List<String>> applicationRoles;
 
@@ -139,12 +139,12 @@ public class UserRepresentation {
         this.requiredActions = requiredActions;
     }
 
-    public List<SocialLinkRepresentation> getSocialLinks() {
-        return socialLinks;
+    public List<FederatedIdentityRepresentation> getFederatedIdentities() {
+        return federatedIdentities;
     }
 
-    public void setSocialLinks(List<SocialLinkRepresentation> socialLinks) {
-        this.socialLinks = socialLinks;
+    public void setFederatedIdentities(List<FederatedIdentityRepresentation> federatedIdentities) {
+        this.federatedIdentities = federatedIdentities;
     }
 
     public List<String> getRealmRoles() {

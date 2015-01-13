@@ -248,8 +248,8 @@ module.factory('UserLogout', function($resource) {
         user : '@user'
     });
 });
-module.factory('UserSocialLinks', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/users/:user/social-links', {
+module.factory('UserFederatedIdentity', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/federated-identity', {
         realm : '@realm',
         user : '@user'
     });
@@ -1052,4 +1052,27 @@ module.factory('PasswordPolicy', function() {
     };
 
     return p;
+});
+
+module.factory('IdentityProvider', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/identity-provider/:id', {
+        realm : '@realm'
+    }, {
+        create : {
+            method : 'POST'
+        },
+        delete : {
+            method : 'DELETE'
+        },
+        update: {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('IdentityProviderFactory', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/identity-provider/providers/:provider_id', {
+        realm : '@realm',
+        provider_id : '@provider_id'
+    });
 });

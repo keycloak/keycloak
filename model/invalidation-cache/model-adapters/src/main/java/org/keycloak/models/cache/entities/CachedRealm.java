@@ -2,6 +2,7 @@ package org.keycloak.models.cache.entities;
 
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -34,8 +35,7 @@ public class CachedRealm {
     private boolean verifyEmail;
     private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
-    private boolean social;
-    private boolean updateProfileOnInitialSocialLogin;
+    private boolean identityFederationEnabled;
     //--- brute force settings
     private boolean bruteForceProtected;
     private int maxFailureWaitSeconds;
@@ -67,10 +67,10 @@ public class CachedRealm {
 
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
+    private List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
-    private Map<String, String> socialConfig = new HashMap<String, String>();
 
     private boolean eventsEnabled;
     private long eventsExpiration;
@@ -93,8 +93,7 @@ public class CachedRealm {
         verifyEmail = model.isVerifyEmail();
         passwordCredentialGrantAllowed = model.isPasswordCredentialGrantAllowed();
         resetPasswordAllowed = model.isResetPasswordAllowed();
-        social = model.isSocial();
-        updateProfileOnInitialSocialLogin = model.isUpdateProfileOnInitialSocialLogin();
+        identityFederationEnabled = model.isIdentityFederationEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
@@ -125,9 +124,9 @@ public class CachedRealm {
 
         requiredCredentials = model.getRequiredCredentials();
         userFederationProviders = model.getUserFederationProviders();
+        identityProviders = model.getIdentityProviders();
 
         smtpConfig.putAll(model.getSmtpConfig());
-        socialConfig.putAll(model.getSocialConfig());
         browserSecurityHeaders.putAll(model.getBrowserSecurityHeaders());
 
         eventsEnabled = model.isEventsEnabled();
@@ -281,20 +280,12 @@ public class CachedRealm {
         return passwordPolicy;
     }
 
-    public boolean isSocial() {
-        return social;
-    }
-
-    public boolean isUpdateProfileOnInitialSocialLogin() {
-        return updateProfileOnInitialSocialLogin;
+    public boolean isIdentityFederationEnabled() {
+        return identityFederationEnabled;
     }
 
     public Map<String, String> getSmtpConfig() {
         return smtpConfig;
-    }
-
-    public Map<String, String> getSocialConfig() {
-        return socialConfig;
     }
 
     public Map<String, String> getBrowserSecurityHeaders() {
@@ -339,5 +330,9 @@ public class CachedRealm {
 
     public String getCertificatePem() {
         return certificatePem;
+    }
+
+    public List<IdentityProviderModel> getIdentityProviders() {
+        return identityProviders;
     }
 }

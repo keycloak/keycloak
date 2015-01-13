@@ -9,12 +9,12 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.entities.SocialLinkEntity;
+import org.keycloak.models.entities.FederatedIdentityEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.CredentialValidation;
 
@@ -93,10 +93,10 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
+    public UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm) {
         DBObject query = new QueryBuilder()
-                .and("socialLinks.socialProvider").is(socialLink.getSocialProvider())
-                .and("socialLinks.socialUserId").is(socialLink.getSocialUserId())
+                .and("federatedIdentities.identityProvider").is(socialLink.getIdentityProvider())
+                .and("federatedIdentities.userId").is(socialLink.getUserId())
                 .and("realmId").is(realm.getId())
                 .get();
         MongoUserEntity userEntity = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
@@ -213,35 +213,35 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel userModel, RealmModel realm) {
+    public Set<FederatedIdentityModel> getFederatedIdentities(UserModel userModel, RealmModel realm) {
         UserModel user = getUserById(userModel.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
+        List<FederatedIdentityEntity> linkEntities = userEntity.getSocialLinks();
 
         if (linkEntities == null) {
             return Collections.EMPTY_SET;
         }
 
-        Set<SocialLinkModel> result = new HashSet<SocialLinkModel>();
-        for (SocialLinkEntity socialLinkEntity : linkEntities) {
-            SocialLinkModel model = new SocialLinkModel(socialLinkEntity.getSocialProvider(),
-                    socialLinkEntity.getSocialUserId(), socialLinkEntity.getSocialUsername());
+        Set<FederatedIdentityModel> result = new HashSet<FederatedIdentityModel>();
+        for (FederatedIdentityEntity federatedIdentityEntity : linkEntities) {
+            FederatedIdentityModel model = new FederatedIdentityModel(federatedIdentityEntity.getIdentityProvider(),
+                    federatedIdentityEntity.getUserId(), federatedIdentityEntity.getUserName());
             result.add(model);
         }
         return result;
     }
 
-    private SocialLinkEntity findSocialLink(UserModel userModel, String socialProvider, RealmModel realm) {
+    private FederatedIdentityEntity findSocialLink(UserModel userModel, String socialProvider, RealmModel realm) {
         UserModel user = getUserById(userModel.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
+        List<FederatedIdentityEntity> linkEntities = userEntity.getSocialLinks();
         if (linkEntities == null) {
             return null;
         }
 
-        for (SocialLinkEntity socialLinkEntity : linkEntities) {
-            if (socialLinkEntity.getSocialProvider().equals(socialProvider)) {
-                return socialLinkEntity;
+        for (FederatedIdentityEntity federatedIdentityEntity : linkEntities) {
+            if (federatedIdentityEntity.getIdentityProvider().equals(socialProvider)) {
+                return federatedIdentityEntity;
             }
         }
         return null;
@@ -249,9 +249,9 @@ public class MongoUserProvider implements UserProvider {
 
 
     @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider, realm);
-        return socialLinkEntity != null ? new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUserId(), socialLinkEntity.getSocialUsername()) : null;
+    public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
+        FederatedIdentityEntity federatedIdentityEntity = findSocialLink(user, socialProvider, realm);
+        return federatedIdentityEntity != null ? new FederatedIdentityModel(federatedIdentityEntity.getIdentityProvider(), federatedIdentityEntity.getUserId(), federatedIdentityEntity.getUserName()) : null;
     }
 
     @Override
@@ -296,37 +296,37 @@ public class MongoUserProvider implements UserProvider {
 
 
     @Override
-    public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
+    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
         user = getUserById(user.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
-        socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
-        socialLinkEntity.setSocialUserId(socialLink.getSocialUserId());
-        socialLinkEntity.setSocialUsername(socialLink.getSocialUsername());
+        FederatedIdentityEntity federatedIdentityEntity = new FederatedIdentityEntity();
+        federatedIdentityEntity.setIdentityProvider(socialLink.getIdentityProvider());
+        federatedIdentityEntity.setUserId(socialLink.getUserId());
+        federatedIdentityEntity.setUserName(socialLink.getUserName());
 
-        getMongoStore().pushItemToList(userEntity, "socialLinks", socialLinkEntity, true, invocationContext);
+        getMongoStore().pushItemToList(userEntity, "federatedIdentities", federatedIdentityEntity, true, invocationContext);
     }
 
     @Override
-    public boolean removeSocialLink(RealmModel realm, UserModel userModel, String socialProvider) {
+    public boolean removeFederatedIdentity(RealmModel realm, UserModel userModel, String socialProvider) {
         UserModel user = getUserById(userModel.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        SocialLinkEntity socialLinkEntity = findSocialLink(userEntity, socialProvider);
-        if (socialLinkEntity == null) {
+        FederatedIdentityEntity federatedIdentityEntity = findSocialLink(userEntity, socialProvider);
+        if (federatedIdentityEntity == null) {
             return false;
         }
-        return getMongoStore().pullItemFromList(userEntity, "socialLinks", socialLinkEntity, invocationContext);
+        return getMongoStore().pullItemFromList(userEntity, "federatedIdentities", federatedIdentityEntity, invocationContext);
     }
 
-    private SocialLinkEntity findSocialLink(MongoUserEntity userEntity, String socialProvider) {
-        List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
+    private FederatedIdentityEntity findSocialLink(MongoUserEntity userEntity, String socialProvider) {
+        List<FederatedIdentityEntity> linkEntities = userEntity.getSocialLinks();
         if (linkEntities == null) {
             return null;
         }
 
-        for (SocialLinkEntity socialLinkEntity : linkEntities) {
-            if (socialLinkEntity.getSocialProvider().equals(socialProvider)) {
-                return socialLinkEntity;
+        for (FederatedIdentityEntity federatedIdentityEntity : linkEntities) {
+            if (federatedIdentityEntity.getIdentityProvider().equals(socialProvider)) {
+                return federatedIdentityEntity;
             }
         }
         return null;

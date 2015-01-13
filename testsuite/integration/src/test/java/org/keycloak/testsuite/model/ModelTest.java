@@ -18,7 +18,6 @@ public class ModelTest extends AbstractModelTest {
         RealmModel realm = realmManager.createRealm("original");
         realm.setRegistrationAllowed(true);
         realm.setResetPasswordAllowed(true);
-        realm.setSocial(true);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setVerifyEmail(true);
         realm.setAccessTokenLifespan(1000);
@@ -36,7 +35,8 @@ public class ModelTest extends AbstractModelTest {
         HashMap<String, String> social = new HashMap<String,String>();
         social.put("google.key", "1234");
         social.put("google.secret", "5678");
-        realm.setSocialConfig(social);
+        //FIXME: KEYCLOAK-883
+//        realm.setSocialConfig(social);
 
         RealmModel persisted = realmManager.getRealm(realm.getId());
         assertEquals(realm, persisted);
@@ -46,11 +46,8 @@ public class ModelTest extends AbstractModelTest {
     }
 
     public static void assertEquals(RealmModel expected, RealmModel actual) {
-        Assert.assertEquals(expected.isUpdateProfileOnInitialSocialLogin(),
-                actual.isUpdateProfileOnInitialSocialLogin());
         Assert.assertEquals(expected.isRegistrationAllowed(), actual.isRegistrationAllowed());
         Assert.assertEquals(expected.isResetPasswordAllowed(), actual.isResetPasswordAllowed());
-        Assert.assertEquals(expected.isSocial(), actual.isSocial());
         Assert.assertEquals(expected.getSslRequired(), actual.getSslRequired());
         Assert.assertEquals(expected.isVerifyEmail(), actual.isVerifyEmail());
         Assert.assertEquals(expected.getAccessTokenLifespan(), actual.getAccessTokenLifespan());
@@ -63,7 +60,8 @@ public class ModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
 
         Assert.assertEquals(expected.getSmtpConfig(), actual.getSmtpConfig());
-        Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());
+        //FIXME: KEYCLOAK-883
+//        Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());
     }
 
     private RealmModel importExport(RealmModel src, String copyName) {

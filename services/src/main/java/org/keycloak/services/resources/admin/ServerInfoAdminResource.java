@@ -1,6 +1,8 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.Version;
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.exportimport.ApplicationImporter;
 import org.keycloak.exportimport.ApplicationImporterFactory;
@@ -8,16 +10,15 @@ import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.social.SocialProvider;
-import org.keycloak.util.ProviderLoader;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.social.SocialIdentityProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -45,6 +46,7 @@ public class ServerInfoAdminResource {
         info.version = Version.VERSION;
         info.serverTime = new Date().toString();
         setSocialProviders(info);
+        setIdentityProviders(info);
         setThemes(info);
         setEventListeners(info);
         setProtocols(info);
@@ -74,11 +76,38 @@ public class ServerInfoAdminResource {
     }
 
     private void setSocialProviders(ServerInfoRepresentation info) {
-        info.socialProviders = new LinkedList<String>();
-        for (SocialProvider p : ProviderLoader.load(SocialProvider.class)) {
-            info.socialProviders.add(p.getId());
+        info.socialProviders = new LinkedList<IdentityProviderRepresentation>();
+        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class);
+        setIdentityProviders(providerFactories, info.socialProviders, "Social");
+    }
+
+    private void setIdentityProviders(ServerInfoRepresentation info) {
+        info.identityProviders = new LinkedList<IdentityProviderRepresentation>();
+        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(IdentityProvider.class);
+        setIdentityProviders(providerFactories, info.identityProviders, "User-defined");
+
+        providerFactories = session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class);
+        setIdentityProviders(providerFactories, info.identityProviders, "Social");
+    }
+
+    public void setIdentityProviders(List<ProviderFactory> factories, List<IdentityProviderRepresentation> providers, String groupName) {
+        for (ProviderFactory providerFactory : factories) {
+            IdentityProviderFactory factory = (IdentityProviderFactory) providerFactory;
+            IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
+
+            rep.setId(factory.getId());
+            rep.setName(factory.getName());
+            rep.setGroupName(groupName);
+
+            providers.add(rep);
         }
-        Collections.sort(info.socialProviders);
+
+        Collections.sort(providers, new Comparator<IdentityProviderRepresentation>() {
+            @Override
+            public int compare(IdentityProviderRepresentation o1, IdentityProviderRepresentation o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
     }
 
     private void setEventListeners(ServerInfoRepresentation info) {
@@ -118,7 +147,8 @@ public class ServerInfoAdminResource {
 
         private Map<String, List<String>> themes;
 
-        private List<String> socialProviders;
+        private List<IdentityProviderRepresentation> socialProviders;
+        public List<IdentityProviderRepresentation> identityProviders;
         private List<String> protocols;
         private List<Map<String, String>> applicationImporters;
 
@@ -141,8 +171,12 @@ public class ServerInfoAdminResource {
             return themes;
         }
 
-        public List<String> getSocialProviders() {
+        public List<IdentityProviderRepresentation> getSocialProviders() {
             return socialProviders;
+        }
+
+        public List<IdentityProviderRepresentation> getIdentityProviders() {
+            return this.identityProviders;
         }
 
         public List<String> getEventListeners() {

@@ -19,7 +19,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
     private boolean social;
-    private boolean updateProfileOnInitialSocialLogin;
     private String passwordPolicy;
     //--- brute force settings
     private boolean bruteForceProtected;
@@ -126,22 +125,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setResetPasswordAllowed(boolean resetPasswordAllowed) {
         this.resetPasswordAllowed = resetPasswordAllowed;
-    }
-
-    public boolean isSocial() {
-        return social;
-    }
-
-    public void setSocial(boolean social) {
-        this.social = social;
-    }
-
-    public boolean isUpdateProfileOnInitialSocialLogin() {
-        return updateProfileOnInitialSocialLogin;
-    }
-
-    public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
-        this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
     }
 
     public String getPasswordPolicy() {

@@ -4,12 +4,12 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
@@ -17,11 +17,12 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -80,9 +81,7 @@ public class ModelToRepresentation {
         rep.setId(realm.getId());
         rep.setRealm(realm.getName());
         rep.setEnabled(realm.isEnabled());
-        rep.setSocial(realm.isSocial());
         rep.setNotBefore(realm.getNotBefore());
-        rep.setUpdateProfileOnInitialSocialLogin(realm.isUpdateProfileOnInitialSocialLogin());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
         rep.setPublicKey(realm.getPublicKeyPem());
         if (internal) {
@@ -112,7 +111,6 @@ public class ModelToRepresentation {
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setSmtpServer(realm.getSmtpConfig());
-        rep.setSocialProviders(realm.getSocialConfig());
         rep.setBrowserSecurityHeaders(realm.getBrowserSecurityHeaders());
         rep.setAccountTheme(realm.getAccountTheme());
         rep.setLoginTheme(realm.getLoginTheme());
@@ -146,6 +144,20 @@ public class ModelToRepresentation {
             }
             rep.setUserFederationProviders(fedProviderReps);
         }
+
+        for (IdentityProviderModel provider : realm.getIdentityProviders()) {
+            IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
+
+            providerRep.setProviderId(provider.getProviderId());
+            providerRep.setId(provider.getId());
+            providerRep.setName(provider.getName());
+            providerRep.setEnabled(provider.isEnabled());
+            providerRep.setUpdateProfileFirstLogin(provider.isUpdateProfileFirstLogin());
+            providerRep.setConfig(provider.getConfig());
+
+            rep.addIdentityProvider(providerRep);
+        }
+
         return rep;
     }
 
@@ -185,11 +197,11 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static SocialLinkRepresentation toRepresentation(SocialLinkModel socialLink) {
-        SocialLinkRepresentation rep = new SocialLinkRepresentation();
-        rep.setSocialUsername(socialLink.getSocialUsername());
-        rep.setSocialProvider(socialLink.getSocialProvider());
-        rep.setSocialUserId(socialLink.getSocialUserId());
+    public static FederatedIdentityRepresentation toRepresentation(FederatedIdentityModel socialLink) {
+        FederatedIdentityRepresentation rep = new FederatedIdentityRepresentation();
+        rep.setUserName(socialLink.getUserName());
+        rep.setIdentityProvider(socialLink.getIdentityProvider());
+        rep.setUserId(socialLink.getUserId());
         return rep;
     }
 

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="psilva@redhat.com" id="1.2.0.Beta1">
+        <createTable tableName="FEDERATED_IDENTITY">
+            <column name="IDENTITY_PROVIDER" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+            <column name="FEDERATED_USER_ID" type="VARCHAR(255)"/>
+            <column name="FEDERATED_USERNAME" type="VARCHAR(255)"/>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="IDENTITY_PROVIDER">
+            <column name="INTERNAL_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ENABLED" type="BOOLEAN(1)"/>
+            <column name="PROVIDER_NONIMAL_ID" type="VARCHAR(255)"/>
+            <column name="PROVIDER_NAME" type="VARCHAR(255)"/>
+            <column name="PROVIDER_ID" type="VARCHAR(255)"/>
+            <column name="UPDATE_PROFILE_FIRST_LOGIN" type="BOOLEAN(1)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="IDENTITY_PROVIDER_CONFIG">
+            <column name="IDENTITY_PROVIDER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="CLOB"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="INTERNAL_ID" constraintName="CONSTRAINT_2B" tableName="IDENTITY_PROVIDER"/>
+        <addPrimaryKey columnNames="IDENTITY_PROVIDER, USER_ID" constraintName="CONSTRAINT_40" tableName="FEDERATED_IDENTITY"/>
+        <addPrimaryKey columnNames="IDENTITY_PROVIDER_ID, NAME" constraintName="CONSTRAINT_D" tableName="IDENTITY_PROVIDER_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="IDENTITY_PROVIDER" constraintName="FK2B4EBC52AE5C3B34" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="FEDERATED_IDENTITY" constraintName="FK404288B92EF007A6" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+        <addForeignKeyConstraint baseColumnNames="IDENTITY_PROVIDER_ID" baseTableName="IDENTITY_PROVIDER_CONFIG" constraintName="FKDC4897CF864C4E43" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="INTERNAL_ID" referencedTableName="IDENTITY_PROVIDER"/>
+    </changeSet>
+</databaseChangeLog>

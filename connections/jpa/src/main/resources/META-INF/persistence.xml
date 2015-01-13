@@ -11,12 +11,13 @@
         <class>org.keycloak.models.jpa.entities.RequiredCredentialEntity</class>
         <class>org.keycloak.models.jpa.entities.UserFederationProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.RoleEntity</class>
-        <class>org.keycloak.models.jpa.entities.SocialLinkEntity</class>
+        <class>org.keycloak.models.jpa.entities.FederatedIdentityEntity</class>
         <class>org.keycloak.models.jpa.entities.UserEntity</class>
         <class>org.keycloak.models.jpa.entities.UserRequiredActionEntity</class>
         <class>org.keycloak.models.jpa.entities.UserAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.UserRoleMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ScopeMappingEntity</class>
+        <class>org.keycloak.models.jpa.entities.IdentityProviderEntity</class>
 
         <!-- JpaUserSessionProvider -->
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionEntity</class>
@@ -29,7 +30,7 @@
         <class>org.keycloak.events.jpa.EventEntity</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
-        
+
         <properties>
             <property name="jboss.as.jpa.managed" value="false"/>
         </properties>

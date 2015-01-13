@@ -129,11 +129,11 @@ module.controller('UserSessionsCtrl', function($scope, realm, user, sessions, Us
     }
 });
 
-module.controller('UserSocialCtrl', function($scope, realm, user, socialLinks) {
+module.controller('UserFederatedIdentityCtrl', function($scope, realm, user, federatedIdentities) {
     $scope.realm = realm;
     $scope.user = user;
-    $scope.socialLinks = socialLinks;
-    console.log('showing social links of user');
+    $scope.federatedIdentities = federatedIdentities;
+    console.log('showing federated identities of user');
 });
 
 

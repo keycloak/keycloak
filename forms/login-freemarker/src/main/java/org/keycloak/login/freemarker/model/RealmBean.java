@@ -40,8 +40,8 @@ public class RealmBean {
         return realm.getName();
     }
 
-    public boolean isSocial() {
-        return realm.isSocial();
+    public boolean isIdentityFederationEnabled() {
+        return realm.isIdentityFederationEnabled();
     }
 
     public boolean isRegistrationAllowed() {
@@ -64,5 +64,5 @@ public class RealmBean {
         }
         return false;
     }
-    
+
 }

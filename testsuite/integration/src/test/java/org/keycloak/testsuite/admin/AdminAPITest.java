@@ -228,7 +228,6 @@ public class AdminAPITest {
             Assert.assertEquals(rep.getRealm(), storedRealm.getRealm());
         }
         if (rep.isEnabled() != null) Assert.assertEquals(rep.isEnabled(), storedRealm.isEnabled());
-        if (rep.isSocial() != null) Assert.assertEquals(rep.isSocial(), storedRealm.isSocial());
         if (rep.isBruteForceProtected() != null) Assert.assertEquals(rep.isBruteForceProtected(), storedRealm.isBruteForceProtected());
         if (rep.getMaxFailureWaitSeconds() != null) Assert.assertEquals(rep.getMaxFailureWaitSeconds(), storedRealm.getMaxFailureWaitSeconds());
         if (rep.getMinimumQuickLoginWaitSeconds() != null) Assert.assertEquals(rep.getMinimumQuickLoginWaitSeconds(), storedRealm.getMinimumQuickLoginWaitSeconds());
@@ -241,8 +240,6 @@ public class AdminAPITest {
         if (rep.isRememberMe() != null) Assert.assertEquals(rep.isRememberMe(), storedRealm.isRememberMe());
         if (rep.isVerifyEmail() != null) Assert.assertEquals(rep.isVerifyEmail(), storedRealm.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) Assert.assertEquals(rep.isResetPasswordAllowed(), storedRealm.isResetPasswordAllowed());
-        if (rep.isUpdateProfileOnInitialSocialLogin() != null)
-            Assert.assertEquals(rep.isUpdateProfileOnInitialSocialLogin(), storedRealm.isUpdateProfileOnInitialSocialLogin());
         if (rep.getSslRequired() != null) Assert.assertEquals(rep.getSslRequired(), storedRealm.getSslRequired());
         if (rep.getAccessCodeLifespan() != null) Assert.assertEquals(rep.getAccessCodeLifespan(), storedRealm.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
@@ -275,9 +272,6 @@ public class AdminAPITest {
             Assert.assertEquals(rep.getSmtpServer(), storedRealm.getSmtpServer());
         }
 
-        if (rep.getSocialProviders() != null) {
-            Assert.assertEquals(rep.getSocialProviders(), storedRealm.getSocialProviders());
-        }
         if (rep.getBrowserSecurityHeaders() != null) {
             Assert.assertEquals(rep.getBrowserSecurityHeaders(), storedRealm.getBrowserSecurityHeaders());
         }

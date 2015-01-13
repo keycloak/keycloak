@@ -26,7 +26,6 @@ import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.resources.SocialResource;
 import org.keycloak.services.resources.ThemeResource;
 
 import javax.ws.rs.core.UriBuilder;
@@ -58,11 +57,11 @@ public class Urls {
     }
 
     public static URI accountSocialPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "socialPage").build(realmId);
+        return accountBase(baseUri).path(AccountService.class, "federatedIdentityPage").build(realmId);
     }
 
-    public static URI accountSocialUpdate(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "processSocialUpdate").build(realmName);
+    public static URI accountFederatedIdentityUpdate(URI baseUri, String realmName) {
+        return accountBase(baseUri).path(AccountService.class, "processFederatedIdentityUpdate").build(realmName);
     }
 
     public static URI accountTotpPage(URI baseUri, String realmId) {
@@ -159,19 +158,6 @@ public class Urls {
 
     public static URI realmOauthAction(URI baseUri, String realmId) {
         return requiredActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmId);
-    }
-
-    public static UriBuilder socialBase(URI baseUri) {
-        return UriBuilder.fromUri(baseUri).path(SocialResource.class);
-    }
-
-    public static URI socialCallback(URI baseUri) {
-        return socialBase(baseUri).path(SocialResource.class, "callback").build();
-    }
-
-    public static URI socialRedirectToProviderAuth(URI baseUri, String realmId) {
-        return socialBase(baseUri).path(SocialResource.class, "redirectToProviderAuth")
-                .build(realmId);
     }
 
     public static URI themeRoot(URI baseUri) {

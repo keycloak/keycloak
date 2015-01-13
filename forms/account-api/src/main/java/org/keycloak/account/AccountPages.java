@@ -5,6 +5,6 @@ package org.keycloak.account;
  */
 public enum AccountPages {
 
-    ACCOUNT, PASSWORD, TOTP, SOCIAL, LOG, SESSIONS;
+    ACCOUNT, PASSWORD, TOTP, FEDERATED_IDENTITY, LOG, SESSIONS;
 
 }

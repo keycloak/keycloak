@@ -34,7 +34,7 @@ public interface Errors {
 
     String NOT_ALLOWED = "not_allowed";
 
-    String SOCIAL_PROVIDER_NOT_FOUND = "social_provider_not_found";
+    String IDENTITY_PROVIDER_NOT_FOUND = "identity_provider_not_found";
     String SOCIAL_ID_IN_USE = "social_id_in_use";
     String SSL_REQUIRED = "ssl_required";
 

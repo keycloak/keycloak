@@ -21,12 +21,10 @@
  */
 package org.keycloak.services.resources.flows;
 
-import org.keycloak.ClientConnection;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.social.SocialProvider;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -41,10 +39,6 @@ public class Flows {
 
     public static LoginFormsProvider forms(KeycloakSession session, RealmModel realm, ClientModel client, UriInfo uriInfo) {
         return session.getProvider(LoginFormsProvider.class).setRealm(realm).setUriInfo(uriInfo).setClient(client);
-    }
-
-    public static SocialRedirectFlows social(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, SocialProvider provider) {
-        return new SocialRedirectFlows(realm, uriInfo, clientConnection, provider);
     }
 
     public static ErrorFlows errors() {

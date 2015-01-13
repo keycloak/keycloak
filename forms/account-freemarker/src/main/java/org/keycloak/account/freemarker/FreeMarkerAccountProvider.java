@@ -4,7 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
 import org.keycloak.account.freemarker.model.AccountBean;
-import org.keycloak.account.freemarker.model.AccountSocialBean;
+import org.keycloak.account.freemarker.model.AccountFederatedIdentityBean;
 import org.keycloak.account.freemarker.model.FeaturesBean;
 import org.keycloak.account.freemarker.model.LogBean;
 import org.keycloak.account.freemarker.model.MessageBean;
@@ -51,7 +51,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private List<Event> events;
     private String stateChecker;
     private List<UserSessionModel> sessions;
-    private boolean socialEnabled;
+    private boolean identityProviderEnabled;
     private boolean eventsEnabled;
     private boolean passwordUpdateSupported;
     private boolean passwordSet;
@@ -124,7 +124,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
 
-        attributes.put("features", new FeaturesBean(socialEnabled, eventsEnabled, passwordUpdateSupported));
+        attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported));
 
         switch (page) {
             case ACCOUNT:
@@ -133,8 +133,8 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             case TOTP:
                 attributes.put("totp", new TotpBean(realm, user, baseUri));
                 break;
-            case SOCIAL:
-                attributes.put("social", new AccountSocialBean(session, realm, user, uriInfo.getBaseUri(), stateChecker));
+            case FEDERATED_IDENTITY:
+                attributes.put("federatedIdentity", new AccountFederatedIdentityBean(session, realm, user, uriInfo.getBaseUri(), stateChecker));
                 break;
             case LOG:
                 attributes.put("log", new LogBean(events));
@@ -232,8 +232,8 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     }
 
     @Override
-    public AccountProvider setFeatures(boolean socialEnabled, boolean eventsEnabled, boolean passwordUpdateSupported) {
-        this.socialEnabled = socialEnabled;
+    public AccountProvider setFeatures(boolean identityProviderEnabled, boolean eventsEnabled, boolean passwordUpdateSupported) {
+        this.identityProviderEnabled = identityProviderEnabled;
         this.eventsEnabled = eventsEnabled;
         this.passwordUpdateSupported = passwordUpdateSupported;
         return this;

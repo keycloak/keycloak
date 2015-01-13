@@ -113,6 +113,7 @@
         <module>federation</module>
         <module>services</module>
         <module>saml</module>
+        <module>broker</module>
         <module>social</module>
         <module>forms</module>
         <module>examples</module>
@@ -702,7 +703,7 @@
                 <plugin>
                     <groupId>org.wildfly.plugins</groupId>
                     <artifactId>wildfly-maven-plugin</artifactId>
-                    <version>1.0.1.Final</version>        
+                    <version>1.0.1.Final</version>
                     <configuration>
                         <skip>true</skip>
                     </configuration>

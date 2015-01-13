@@ -2,11 +2,11 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
-import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -231,28 +231,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setResetPasswordAllowed(boolean resetPassword) {
         realm.setResetPasswordAllowed(resetPassword);
-        updateRealm();
-    }
-
-    @Override
-    public boolean isSocial() {
-        return realm.isSocial();
-    }
-
-    @Override
-    public void setSocial(boolean social) {
-        realm.setSocial(social);
-        updateRealm();
-    }
-
-    @Override
-    public boolean isUpdateProfileOnInitialSocialLogin() {
-        return realm.isUpdateProfileOnInitialSocialLogin();
-    }
-
-    @Override
-    public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
-        realm.setUpdateProfileOnInitialSocialLogin(updateProfileOnInitialSocialLogin);
         updateRealm();
     }
 
@@ -804,14 +782,23 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public Map<String, String> getSocialConfig() {
-        return realm.getSocialConfig();
+    public List<IdentityProviderModel> getIdentityProviders() {
+        return null;
     }
 
     @Override
-    public void setSocialConfig(Map<String, String> socialConfig) {
-        realm.setSocialConfig(socialConfig);
-        updateRealm();
+    public void addIdentityProvider(IdentityProviderModel identityProvider) {
+
+    }
+
+    @Override
+    public void removeIdentityProviderById(String providerId) {
+
+    }
+
+    @Override
+    public void updateIdentityProvider(IdentityProviderModel identityProvider) {
+
     }
 
     @Override
@@ -972,6 +959,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public MongoRealmEntity getMongoEntity() {
         return realm;
+    }
+
+    @Override
+    public boolean isIdentityFederationEnabled() {
+        //TODO: support identity federation storage for mongo
+        return false;
     }
 
     @Override

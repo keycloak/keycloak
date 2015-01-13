@@ -17,13 +17,13 @@ public interface UserProvider extends Provider {
     UserModel addUser(RealmModel realm, String username);
     boolean removeUser(RealmModel realm, UserModel user);
 
-    public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink);
-    public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider);
+    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink);
+    public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider);
 
     UserModel getUserById(String id, RealmModel realm);
     UserModel getUserByUsername(String username, RealmModel realm);
     UserModel getUserByEmail(String email, RealmModel realm);
-    UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm);
+    UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm);
     List<UserModel> getUsers(RealmModel realm);
     int getUsersCount(RealmModel realm);
     List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults);
@@ -31,8 +31,8 @@ public interface UserProvider extends Provider {
     List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm);
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults);
-    Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm);
-    SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm);
+    Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm);
+    FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm);
 
     void preRemove(RealmModel realm);
 

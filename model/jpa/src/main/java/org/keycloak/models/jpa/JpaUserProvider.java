@@ -1,15 +1,15 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.jpa.entities.SocialLinkEntity;
+import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -85,17 +85,17 @@ public class JpaUserProvider implements UserProvider {
 
     private void removeUser(UserEntity user) {
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("deleteSocialLinkByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteFederatedIdentityByUser").setParameter("user", user).executeUpdate();
         em.remove(user);
     }
 
     @Override
-    public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
-        SocialLinkEntity entity = new SocialLinkEntity();
+    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel identity) {
+        FederatedIdentityEntity entity = new FederatedIdentityEntity();
         entity.setRealmId(realm.getId());
-        entity.setSocialProvider(socialLink.getSocialProvider());
-        entity.setSocialUserId(socialLink.getSocialUserId());
-        entity.setSocialUsername(socialLink.getSocialUsername());
+        entity.setIdentityProvider(identity.getIdentityProvider());
+        entity.setUserId(identity.getUserId());
+        entity.setUserName(identity.getUserName());
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         entity.setUser(userEntity);
         em.persist(entity);
@@ -103,8 +103,8 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider) {
-        SocialLinkEntity entity = findSocialLink(user, socialProvider);
+    public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String identityProvider) {
+        FederatedIdentityEntity entity = findFederatedIdentity(user, identityProvider);
         if (entity != null) {
             em.remove(entity);
             em.flush();
@@ -122,7 +122,7 @@ public class JpaUserProvider implements UserProvider {
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserRequiredActionsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
-        num = em.createNamedQuery("deleteSocialLinkByRealm")
+        num = em.createNamedQuery("deleteFederatedIdentityByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteCredentialsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -142,7 +142,7 @@ public class JpaUserProvider implements UserProvider {
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", link.getId())
                 .executeUpdate();
-        num = em.createNamedQuery("deleteSocialLinkByRealmAndLink")
+        num = em.createNamedQuery("deleteFederatedIdentityByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", link.getId())
                 .executeUpdate();
@@ -199,17 +199,17 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("findUserByLinkAndRealm", UserEntity.class);
+    public UserModel getUserByFederatedIdentity(FederatedIdentityModel identity, RealmModel realm) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("findUserByFederatedIdentityAndRealm", UserEntity.class);
         query.setParameter("realmId", realm.getId());
-        query.setParameter("socialProvider", socialLink.getSocialProvider());
-        query.setParameter("socialUserId", socialLink.getSocialUserId());
+        query.setParameter("identityProvider", identity.getIdentityProvider());
+        query.setParameter("userId", identity.getUserId());
         List<UserEntity> results = query.getResultList();
         if (results.isEmpty()) {
             return null;
         } else if (results.size() > 1) {
-            throw new IllegalStateException("More results found for socialProvider=" + socialLink.getSocialProvider() +
-                    ", socialUserId=" + socialLink.getSocialUserId() + ", results=" + results);
+            throw new IllegalStateException("More results found for identityProvider=" + identity.getIdentityProvider() +
+                    ", userId=" + identity.getUserId() + ", results=" + results);
         } else {
             UserEntity user = results.get(0);
             return new UserAdapter(realm, em, user);
@@ -326,33 +326,33 @@ public class JpaUserProvider implements UserProvider {
         return users;
     }
 
-    private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
-        TypedQuery<SocialLinkEntity> query = em.createNamedQuery("findSocialLinkByUserAndProvider", SocialLinkEntity.class);
+    private FederatedIdentityEntity findFederatedIdentity(UserModel user, String identityProvider) {
+        TypedQuery<FederatedIdentityEntity> query = em.createNamedQuery("findFederatedIdentityByUserAndProvider", FederatedIdentityEntity.class);
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         query.setParameter("user", userEntity);
-        query.setParameter("socialProvider", socialProvider);
-        List<SocialLinkEntity> results = query.getResultList();
+        query.setParameter("identityProvider", identityProvider);
+        List<FederatedIdentityEntity> results = query.getResultList();
         return results.size() > 0 ? results.get(0) : null;
     }
 
 
     @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
-        TypedQuery<SocialLinkEntity> query = em.createNamedQuery("findSocialLinkByUser", SocialLinkEntity.class);
+    public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
+        TypedQuery<FederatedIdentityEntity> query = em.createNamedQuery("findFederatedIdentityByUser", FederatedIdentityEntity.class);
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         query.setParameter("user", userEntity);
-        List<SocialLinkEntity> results = query.getResultList();
-        Set<SocialLinkModel> set = new HashSet<SocialLinkModel>();
-        for (SocialLinkEntity entity : results) {
-            set.add(new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUserId(), entity.getSocialUsername()));
+        List<FederatedIdentityEntity> results = query.getResultList();
+        Set<FederatedIdentityModel> set = new HashSet<FederatedIdentityModel>();
+        for (FederatedIdentityEntity entity : results) {
+            set.add(new FederatedIdentityModel(entity.getIdentityProvider(), entity.getUserId(), entity.getUserName()));
         }
         return set;
     }
 
     @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        SocialLinkEntity entity = findSocialLink(user, socialProvider);
-        return (entity != null) ? new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUserId(), entity.getSocialUsername()) : null;
+    public FederatedIdentityModel getFederatedIdentity(UserModel user, String identityProvider, RealmModel realm) {
+        FederatedIdentityEntity entity = findFederatedIdentity(user, identityProvider);
+        return (entity != null) ? new FederatedIdentityModel(entity.getIdentityProvider(), entity.getUserId(), entity.getUserName()) : null;
     }
 
     @Override

@@ -116,16 +116,16 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
+    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
         validateUser(realm, user);
-        session.userStorage().addSocialLink(realm, user, socialLink);
+        session.userStorage().addFederatedIdentity(realm, user, socialLink);
     }
 
     @Override
-    public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider) {
+    public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         validateUser(realm, user);
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
-        return session.userStorage().removeSocialLink(realm, user, socialProvider);
+        return session.userStorage().removeFederatedIdentity(realm, user, socialProvider);
     }
 
     @Override
@@ -168,8 +168,8 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
-        UserModel user = session.userStorage().getUserBySocialLink(socialLink, realm);
+    public UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm) {
+        UserModel user = session.userStorage().getUserByFederatedIdentity(socialLink, realm);
         if (user != null) {
             user = validateAndProxyUser(realm, user);
         }
@@ -278,17 +278,17 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
+    public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
         validateUser(realm, user);
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
-        return session.userStorage().getSocialLinks(user, realm);
+        return session.userStorage().getFederatedIdentities(user, realm);
     }
 
     @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
+    public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
         validateUser(realm, user);
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
-        return session.userStorage().getSocialLink(user, socialProvider, realm);
+        return session.userStorage().getFederatedIdentity(user, socialProvider, realm);
     }
 
     @Override

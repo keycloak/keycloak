@@ -258,7 +258,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
         $scope.realm = angular.copy(realm);
     }
 
-    $scope.social = $scope.realm.social;
     $scope.registrationAllowed = $scope.realm.registrationAllowed;
 
     var oldCopy = angular.copy($scope.realm);
@@ -287,7 +286,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
                     }
                     $location.url("/realms/" + realmCopy.realm);
                     Notifications.success("The realm has been created.");
-                    $scope.social = $scope.realm.social;
                     $scope.registrationAllowed = $scope.realm.registrationAllowed;
                 });
             });
@@ -307,7 +305,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
                 });
                 $location.url("/realms/" + realmCopy.realm);
                 Notifications.success("Your changes have been saved to the realm.");
-                $scope.social = $scope.realm.social;
                 $scope.registrationAllowed = $scope.realm.registrationAllowed;
             });
         }
@@ -337,7 +334,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
 function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, url) {
     $scope.realm = angular.copy(realm);
     $scope.serverInfo = serverInfo;
-    $scope.social = $scope.realm.social;
     $scope.registrationAllowed = $scope.realm.registrationAllowed;
 
     var oldCopy = angular.copy($scope.realm);
@@ -367,7 +363,6 @@ function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $l
             });
             $location.url(url);
             Notifications.success("Your changes have been saved to the realm.");
-            $scope.social = $scope.realm.social;
             $scope.registrationAllowed = $scope.realm.registrationAllowed;
         });
     };
@@ -617,65 +612,156 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
 
 });
 
-module.controller('RealmSocialCtrl', function($scope, realm, Realm, serverInfo, $location, Notifications) {
-    console.log('RealmSocialCtrl');
+module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, realm, instance, providerFactory, IdentityProvider, serverInfo, $location, Notifications) {
+    console.log('RealmIdentityProviderCtrl');
 
     $scope.realm = angular.copy(realm);
+
+    $scope.hidePassword = true;
+
+    $scope.getBoolean = function(value) {
+        if (value == 'true') {
+            return true;
+        } else if (value == 'false') {
+            return false;
+        } else {
+            return value;
+        }
+    }
+
+    if (instance && instance.id) {
+        $scope.identityProvider = angular.copy(instance);
+
+        // fixme: this is a hack to make onofswith work and recognize string representation of boolean values
+        $scope.identityProvider.config.validateSignature = $scope.getBoolean($scope.identityProvider.config.validateSignature);
+        $scope.identityProvider.config.forceAuthn = $scope.getBoolean($scope.identityProvider.config.forceAuthn);
+        $scope.newIdentityProvider = false;
+    } else {
+        $scope.identityProvider = {};
+        $scope.identityProvider.id = providerFactory.id;
+        $scope.identityProvider.providerId = providerFactory.id;
+        $scope.identityProvider.name = providerFactory.name;
+        $scope.identityProvider.enabled = true;
+        $scope.identityProvider.updateProfileFirstLogin = true;
+        $scope.newIdentityProvider = true;
+    }
+
     $scope.serverInfo = serverInfo;
 
-    $scope.allProviders = serverInfo.socialProviders;
-    $scope.configuredProviders = [];
+    $scope.allProviders = angular.copy(serverInfo.identityProviders);
 
-    $scope.$watch('realm.socialProviders', function(socialProviders) {
-        $scope.configuredProviders = [];
-         for (var providerConfig in socialProviders) {
-             var i = providerConfig.split('.');
-             if (i.length == 2 && i[1] == 'key') {
-                 $scope.configuredProviders.push(i[0]);
-             }
-         }
-    }, true);
+    $scope.configuredProviders = angular.copy(realm.identityProviders);
 
-    var oldCopy = angular.copy($scope.realm);
-    $scope.changed = false;
-    $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/social/callback");
+    $scope.files = [];
+    $scope.importFile = false;
 
-    $scope.addProvider = function(pId) {
-        if (!$scope.realm.socialProviders) {
-            $scope.realm.socialProviders = {};
-        }
-
-        $scope.realm.socialProviders[pId + ".key"] = "";
-        $scope.realm.socialProviders[pId + ".secret"] = "";
+    $scope.onFileSelect = function($files) {
+        $scope.importFile = true;
+        $scope.files = $files;
     };
 
-    $scope.removeProvider = function(pId) {
-        delete $scope.realm.socialProviders[pId+".key"];
-        delete $scope.realm.socialProviders[pId+".secret"];
+    $scope.clearFileSelect = function() {
+        $scope.importFile = false;
+        $scope.files = null;
+    }
+
+    $scope.uploadFile = function() {
+        //$files: an array of files selected, each file has name, size, and type.
+        for (var i = 0; i < $scope.files.length; i++) {
+            var $file = $scope.files[i];
+            $scope.upload = $upload.upload({
+                url: authUrl + '/admin/realms/' + realm.realm + '/identity-provider/',
+                // method: POST or PUT,
+                // headers: {'headerKey': 'headerValue'}, withCredential: true,
+                data: $scope.identityProvider,
+                file: $file
+                /* set file formData name for 'Content-Desposition' header. Default: 'file' */
+                //fileFormDataName: myFile,
+                /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
+                //formDataAppender: function(formData, key, val){}
+            }).progress(function(evt) {
+                console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
+            }).success(function(data, status, headers) {
+                $location.url("/realms/" + realm.realm + "/identity-provider-settings");
+                Notifications.success("The " + $scope.identityProvider.name + " provider has been created.");
+            }).error(function() {
+                Notifications.error("The file can not be uploaded. Please verify the file.");
+            });
+        }
     };
 
-    $scope.$watch('realm', function() {
-        if (!angular.equals($scope.realm, oldCopy)) {
-            $scope.changed = true;
+    $scope.$watch('configuredProviders', function(configuredProviders) {
+        if (configuredProviders) {
+            $scope.configuredProviders = angular.copy(configuredProviders);
+
+            for (var j = 0; j < configuredProviders.length; j++) {
+                var configProvidedId = configuredProviders[j].providerId;
+
+                for (var i in $scope.allProviders) {
+                    var provider = $scope.allProviders[i];
+
+                    if (provider.groupName == 'Social' && (provider.id == configProvidedId)) {
+                        $scope.allProviders.splice(i, 1);
+                        break;
+                    }
+                }
+            }
         }
     }, true);
 
-    $scope.save = function() {
-        var realmCopy = angular.copy($scope.realm);
-        realmCopy.social = true;
-        $scope.changed = false;
-        Realm.update(realmCopy, function () {
-            $location.url("/realms/" + realm.realm + "/social-settings");
-            Notifications.success("The changes have been saved to the realm.");
-            oldCopy = realmCopy;
+    $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/broker/") + realm.realm + "/" ;
+
+    $scope.addProvider = function(provider) {
+        $location.url("/realms/" + realm.realm + "/identity-provider-settings/provider/" + provider.id + "/" + provider.id);
+    };
+
+    $scope.remove = function() {
+        IdentityProvider.delete({
+            realm: $scope.realm.realm,
+            id: $scope.identityProvider.id
+        }, $scope.identityProvider, function () {
+            $scope.changed = false;
+            $location.url("/realms/" + realm.realm + "/identity-provider-settings");
+            Notifications.success("The " + $scope.identityProvider.name + " provider has been deleted.");
         });
     };
 
-    $scope.reset = function() {
-        $scope.realm = angular.copy(oldCopy);
-        $scope.changed = false;
+    $scope.save = function() {
+        if ($scope.newIdentityProvider) {
+            IdentityProvider.create({
+                realm: $scope.realm.realm
+            }, $scope.identityProvider, function () {
+                $location.url("/realms/" + realm.realm + "/identity-provider-settings");
+                Notifications.success("The " + $scope.identityProvider.name + " provider has been created.");
+            });
+        } else {
+            IdentityProvider.update({
+                realm: $scope.realm.realm
+            }, $scope.identityProvider, function () {
+                $location.url("/realms/" + realm.realm + "/identity-provider-settings");
+                Notifications.success("The " + $scope.identityProvider.name + " provider has been update.");
+            });
+        }
     };
 
+    $scope.reset = function() {
+        $scope.identityProvider = {};
+        $scope.configuredProviders = angular.copy($scope.realm.identityProviders);
+    };
+
+    $scope.showPassword = function(flag) {
+        $scope.hidePassword = flag;
+    };
+
+    $scope.getBoolean = function(value) {
+        if (value == 'true') {
+            return true;
+        } else if (value == 'false') {
+            return false;
+        } else {
+            return value;
+        }
+    }
 });
 
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, $route, Dialog, Notifications, TimeUnit) {

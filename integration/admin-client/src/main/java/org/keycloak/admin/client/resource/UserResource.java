@@ -1,7 +1,7 @@
 package org.keycloak.admin.client.resource;
 
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.SocialLinkRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 
@@ -55,11 +55,11 @@ public interface UserResource {
 
     @GET
     @Path("social-links")
-    public List<SocialLinkRepresentation> getSocialLinks();
+    public List<FederatedIdentityRepresentation> getSocialLinks();
 
     @POST
     @Path("social-links/{provider}")
-    public Response addSocialLink(@PathParam("provider") String provider, SocialLinkRepresentation rep);
+    public Response addSocialLink(@PathParam("provider") String provider, FederatedIdentityRepresentation rep);
 
     @Path("social-links/{provider}")
     @DELETE

@@ -4,7 +4,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
@@ -191,8 +191,8 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
-        return getDelegate().getUserBySocialLink(socialLink, realm);
+    public UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm) {
+        return getDelegate().getUserByFederatedIdentity(socialLink, realm);
     }
 
     @Override
@@ -231,13 +231,13 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
-        return getDelegate().getSocialLinks(user, realm);
+    public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
+        return getDelegate().getFederatedIdentities(user, realm);
     }
 
     @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        return getDelegate().getSocialLink(user, socialProvider, realm);
+    public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
+        return getDelegate().getFederatedIdentity(user, socialProvider, realm);
     }
 
     @Override
@@ -258,13 +258,13 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
-        getDelegate().addSocialLink(realm, user, socialLink);
+    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
+        getDelegate().addFederatedIdentity(realm, user, socialLink);
     }
 
     @Override
-    public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider) {
-        return getDelegate().removeSocialLink(realm, user, socialProvider);
+    public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
+        return getDelegate().removeFederatedIdentity(realm, user, socialProvider);
     }
 
     @Override

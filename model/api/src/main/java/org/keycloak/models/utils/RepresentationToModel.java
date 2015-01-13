@@ -7,12 +7,12 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProviderModel;
@@ -20,11 +20,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
-import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -44,7 +44,6 @@ public class RepresentationToModel {
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
         newRealm.setName(rep.getRealm());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
-        if (rep.isSocial() != null) newRealm.setSocial(rep.isSocial());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
         if (rep.getMinimumQuickLoginWaitSeconds() != null) newRealm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
@@ -79,8 +78,6 @@ public class RepresentationToModel {
         if (rep.isRememberMe() != null) newRealm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
-        if (rep.isUpdateProfileOnInitialSocialLogin() != null)
-            newRealm.setUpdateProfileOnInitialSocialLogin(rep.isUpdateProfileOnInitialSocialLogin());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             KeycloakModelUtils.generateRealmKeys(newRealm);
         } else {
@@ -220,9 +217,6 @@ public class RepresentationToModel {
             newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.defaultHeaders);
         }
 
-        if (rep.getSocialProviders() != null) {
-            newRealm.setSocialConfig(new HashMap(rep.getSocialProviders()));
-        }
         if (rep.getUserFederationProviders() != null) {
             List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
             newRealm.setUserFederationProviders(providerModels);
@@ -242,7 +236,6 @@ public class RepresentationToModel {
             realm.setName(rep.getRealm());
         }
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
-        if (rep.isSocial() != null) realm.setSocial(rep.isSocial());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
         if (rep.getMinimumQuickLoginWaitSeconds() != null) realm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
@@ -255,8 +248,6 @@ public class RepresentationToModel {
         if (rep.isRememberMe() != null) realm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
-        if (rep.isUpdateProfileOnInitialSocialLogin() != null)
-            realm.setUpdateProfileOnInitialSocialLogin(rep.isUpdateProfileOnInitialSocialLogin());
         if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
@@ -284,10 +275,6 @@ public class RepresentationToModel {
 
         if (rep.getSmtpServer() != null) {
             realm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
-        }
-
-        if (rep.getSocialProviders() != null) {
-            realm.setSocialConfig(new HashMap(rep.getSocialProviders()));
         }
 
         if (rep.getBrowserSecurityHeaders() != null) {
@@ -670,10 +657,10 @@ public class RepresentationToModel {
                 updateCredential(user, cred);
             }
         }
-        if (userRep.getSocialLinks() != null) {
-            for (SocialLinkRepresentation socialLink : userRep.getSocialLinks()) {
-                SocialLinkModel mappingModel = new SocialLinkModel(socialLink.getSocialProvider(), socialLink.getSocialUserId(), socialLink.getSocialUsername());
-                session.users().addSocialLink(newRealm, user, mappingModel);
+        if (userRep.getFederatedIdentities() != null) {
+            for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
+                FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
+                session.users().addFederatedIdentity(newRealm, user, mappingModel);
             }
         }
         if (userRep.getRealmRoles() != null) {
