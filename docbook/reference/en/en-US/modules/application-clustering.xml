@@ -95,7 +95,7 @@
         <para>
             This would mean that browser requests (like redirecting to Keycloak login screen) will be still resolved relatively
             to current request URI like <emphasis>https://loadbalancer.com/myapp</emphasis>, but backend (out-of-bound) requests between keycloak
-            and your app are send always to same cluster host with application .
+            and your app are sent always to same cluster host with application .
         </para>
         <para>
             Note that additionally to network optimization,

@@ -20,7 +20,7 @@
                 Copy <literal>Client ID</literal> and <literal>Client secret</literal> from the
                 <ulink url="https://github.com/settings/applications">GitHub Settings</ulink> into the settings
                 page in the Keycloak Admin Console as the <literal>Key</literal> and <literal>Secret</literal>. Then click
-                <literal>Save</literal> in the Keycloak Admin Console to enable login with Google.
+                <literal>Save</literal> in the Keycloak Admin Console to enable login with GitHub.
             </para>
         </listitem>
     </orderedlist>
