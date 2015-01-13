@@ -18,7 +18,7 @@
                 <term>Include AuthnStatement</term>
                 <listitem>
                     <para>
-                        SAML login responses may specify the authenticaiton method used (password, etc.) as well as
+                        SAML login responses may specify the authentication method used (password, etc.) as well as
                         a timestamp of the login.  Setting this to on will include that statement in the response document.
                     </para>
                 </listitem>
@@ -27,7 +27,7 @@
                 <term>Multi-valued Roles</term>
                 <listitem>
                     <para>
-                        If this switch is off, any user role mapings will have a corresponding attribute created for it.
+                        If this switch is off, any user role mappings will have a corresponding attribute created for it.
                         If this switch is turn on, only one role attribute will be created, but it will have
                         multiple values within in.
                     </para>
@@ -82,7 +82,7 @@
                     <para>
                         By default, Keycloak will respond using the initial SAML binding of the original request.  By turning
                         on this switch, you will force Keycloak to always respond using the SAML POST Binding even if the
-                        original request was a the Redirect binding.
+                        original request was the Redirect binding.
                     </para>
                 </listitem>
             </varlistentry>

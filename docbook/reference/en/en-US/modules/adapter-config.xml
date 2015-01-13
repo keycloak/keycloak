@@ -204,7 +204,7 @@
                 <listitem>
                     <para>
                         Specify the credentials of the application. This is an object notation where the key
-                        is the credential type and the value if the value of the credential type. Currently only
+                        is the credential type and the value is the value of the credential type. Currently only
                         <literal>password</literal>
                         is supported.
                         This is <emphasis>REQUIRED</emphasis>.
@@ -374,7 +374,7 @@
                 <term>principal-attribute</term>
                 <listitem>
                     <para>
-                        OpenID Connection ID Token attribute to populate the UserPrincipal name with.  If token attribute is null, defaults to <literal>sub</literal>
+                        OpenID Connection ID Token attribute to populate the UserPrincipal name with.  If token attribute is null, defaults to <literal>sub</literal>.
                         Possible values are <literal>sub</literal>, <literal>preferred_username</literal>, <literal>email</literal>, <literal>name</literal>, <literal>nickname</literal>, <literal>given_name</literal>, <literal>family_name</literal>.
                     </para>
                 </listitem>
