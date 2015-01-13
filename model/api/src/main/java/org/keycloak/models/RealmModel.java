@@ -124,9 +124,9 @@ public interface RealmModel extends RoleContainerModel {
     RoleModel getRoleById(String id);
 
     List<String> getDefaultRoles();
-    
+
     void addDefaultRole(String name);
-    
+
     void updateDefaultRoles(String[] defaultRoles);
 
     ClientModel findClient(String clientId);
@@ -146,14 +146,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void updateRequiredCredentials(Set<String> creds);
 
-    boolean isSocial();
-
-    void setSocial(boolean social);
-
-    boolean isUpdateProfileOnInitialSocialLogin();
-
-    void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin);
-
     OAuthClientModel addOAuthClient(String name);
 
     OAuthClientModel addOAuthClient(String id, String name);
@@ -171,9 +163,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setSmtpConfig(Map<String, String> smtpConfig);
 
-    Map<String, String> getSocialConfig();
-
-    void setSocialConfig(Map<String, String> socialConfig);
+    List<IdentityProviderModel> getIdentityProviders();
+    void addIdentityProvider(IdentityProviderModel identityProvider);
+    void removeIdentityProviderById(String providerId);
+    void updateIdentityProvider(IdentityProviderModel identityProvider);
 
     List<UserFederationProviderModel> getUserFederationProviders();
 
@@ -228,4 +221,5 @@ public interface RealmModel extends RoleContainerModel {
 
     ClientModel findClientById(String id);
 
+    boolean isIdentityFederationEnabled();
 }

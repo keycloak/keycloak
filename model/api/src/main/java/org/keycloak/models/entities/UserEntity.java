@@ -26,7 +26,7 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private Map<String, String> attributes;
     private List<UserModel.RequiredAction> requiredActions;
     private List<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
-    private List<SocialLinkEntity> socialLinks;
+    private List<FederatedIdentityEntity> socialLinks;
     private String federationLink;
 
     public String getUsername() {
@@ -125,11 +125,11 @@ public class UserEntity extends AbstractIdentifiableEntity {
         this.credentials = credentials;
     }
 
-    public List<SocialLinkEntity> getSocialLinks() {
+    public List<FederatedIdentityEntity> getSocialLinks() {
         return socialLinks;
     }
 
-    public void setSocialLinks(List<SocialLinkEntity> socialLinks) {
+    public void setSocialLinks(List<FederatedIdentityEntity> socialLinks) {
         this.socialLinks = socialLinks;
     }
 

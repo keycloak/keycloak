@@ -25,8 +25,6 @@ public class RealmRepresentation {
     protected Boolean rememberMe;
     protected Boolean verifyEmail;
     protected Boolean resetPasswordAllowed;
-    protected Boolean social;
-    protected Boolean updateProfileOnInitialSocialLogin;
 
     protected Boolean userCacheEnabled;
     protected Boolean realmCacheEnabled;
@@ -55,7 +53,6 @@ public class RealmRepresentation {
     protected List<ApplicationRepresentation> applications;
     protected List<OAuthClientRepresentation> oauthClients;
     protected Map<String, String> browserSecurityHeaders;
-    protected Map<String, String> socialProviders;
     protected Map<String, String> smtpServer;
     protected List<UserFederationProviderRepresentation> userFederationProviders;
     protected String loginTheme;
@@ -65,6 +62,8 @@ public class RealmRepresentation {
     protected Boolean eventsEnabled;
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
+    private List<IdentityProviderRepresentation> identityProviders;
+    private boolean identityFederationEnabled;
 
     public String getId() {
         return id;
@@ -294,36 +293,12 @@ public class RealmRepresentation {
         this.resetPasswordAllowed = resetPassword;
     }
 
-    public Boolean isSocial() {
-        return social;
-    }
-
-    public void setSocial(Boolean social) {
-        this.social = social;
-    }
-
-    public Boolean isUpdateProfileOnInitialSocialLogin() {
-        return updateProfileOnInitialSocialLogin;
-    }
-
-    public void setUpdateProfileOnInitialSocialLogin(Boolean updateProfileOnInitialSocialLogin) {
-        this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
-    }
-
     public Map<String, String> getBrowserSecurityHeaders() {
         return browserSecurityHeaders;
     }
 
     public void setBrowserSecurityHeaders(Map<String, String> browserSecurityHeaders) {
         this.browserSecurityHeaders = browserSecurityHeaders;
-    }
-
-    public Map<String, String> getSocialProviders() {
-        return socialProviders;
-    }
-
-    public void setSocialProviders(Map<String, String> socialProviders) {
-        this.socialProviders = socialProviders;
     }
 
     public Map<String, String> getSmtpServer() {
@@ -484,5 +459,25 @@ public class RealmRepresentation {
 
     public void setUserFederationProviders(List<UserFederationProviderRepresentation> userFederationProviders) {
         this.userFederationProviders = userFederationProviders;
+    }
+
+    public List<IdentityProviderRepresentation> getIdentityProviders() {
+        if (this.identityProviders == null) {
+            this.identityProviders = new ArrayList<IdentityProviderRepresentation>();
+        }
+
+        return identityProviders;
+    }
+
+    public void setIdentityProviders(List<IdentityProviderRepresentation> identityProviders) {
+        this.identityProviders = identityProviders;
+    }
+
+    public void addIdentityProvider(IdentityProviderRepresentation identityProviderRepresentation) {
+        getIdentityProviders().add(identityProviderRepresentation);
+    }
+
+    public boolean isIdentityFederationEnabled() {
+        return !getIdentityProviders().isEmpty();
     }
 }

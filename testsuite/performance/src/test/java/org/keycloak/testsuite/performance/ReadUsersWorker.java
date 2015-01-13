@@ -5,7 +5,7 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 
@@ -105,15 +105,15 @@ public class ReadUsersWorker implements Worker {
                 session.users().validCredentials(realm, user, UserCredentialModel.password(username));
             }
 
-            // Read socialLinks of user
+            // Read federatedIdentities of user
             if (readSocialLinks) {
-                session.users().getSocialLinks(user, realm);
+                session.users().getFederatedIdentities(user, realm);
             }
 
             // Try to search by social links
             if (searchBySocialLinks) {
-                SocialLinkModel socialLink = new SocialLinkModel("facebook", username, username);
-                session.users().getUserBySocialLink(socialLink, realm);
+                FederatedIdentityModel socialLink = new FederatedIdentityModel("facebook", username, username);
+                session.users().getUserByFederatedIdentity(socialLink, realm);
             }
         }
 

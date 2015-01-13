@@ -147,17 +147,41 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmKeysDetailCtrl'
         })
-        .when('/realms/:realm/social-settings', {
-            templateUrl : 'partials/realm-social.html',
+        .when('/realms/:realm/identity-provider-settings', {
+            templateUrl : 'partials/realm-identity-provider.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
+                },
+                instance : function(IdentityProviderLoader) {
+                    return {};
+                },
+                providerFactory : function(IdentityProviderFactoryLoader) {
+                    return IdentityProviderFactoryLoader();
                 }
             },
-            controller : 'RealmSocialCtrl'
+            controller : 'RealmIdentityProviderCtrl'
+        })
+        .when('/realms/:realm/identity-provider-settings/provider/:provider_id/:id', {
+            templateUrl : function(params){ return 'partials/realm-identity-provider-' + params.provider_id + '.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                instance : function(IdentityProviderLoader) {
+                    return IdentityProviderLoader();
+                },
+                providerFactory : function(IdentityProviderFactoryLoader) {
+                    return IdentityProviderFactoryLoader();
+                }
+            },
+            controller : 'RealmIdentityProviderCtrl'
         })
         .when('/realms/:realm/default-roles', {
             templateUrl : 'partials/realm-default-roles.html',
@@ -282,8 +306,8 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserSessionsCtrl'
         })
-        .when('/realms/:realm/users/:user/social-links', {
-            templateUrl : 'partials/user-social-links.html',
+        .when('/realms/:realm/users/:user/federated-identity', {
+            templateUrl : 'partials/user-federated-identity.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -291,11 +315,11 @@ module.config([ '$routeProvider', function($routeProvider) {
                 user : function(UserLoader) {
                     return UserLoader();
                 },
-                socialLinks : function(UserSocialLinksLoader) {
-                    return UserSocialLinksLoader();
+                federatedIdentities : function(UserFederatedIdentityLoader) {
+                    return UserFederatedIdentityLoader();
                 }
             },
-            controller : 'UserSocialCtrl'
+            controller : 'UserFederatedIdentityCtrl'
         })
         .when('/realms/:realm/users', {
             templateUrl : 'partials/user-list.html',

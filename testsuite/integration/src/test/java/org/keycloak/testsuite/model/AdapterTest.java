@@ -5,13 +5,13 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
@@ -47,7 +47,6 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setPrivateKeyPem("0234234");
         realmModel.setPublicKeyPem("0234234");
         realmModel.setAccessTokenLifespan(1000);
-        realmModel.setUpdateProfileOnInitialSocialLogin(true);
         realmModel.addDefaultRole("foo");
 
         realmModel = realmManager.getRealm(realmModel.getId());
@@ -59,7 +58,6 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");
         Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
-        Assert.assertEquals(realmModel.isUpdateProfileOnInitialSocialLogin(), true);
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
         Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
     }
@@ -74,7 +72,6 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setPrivateKeyPem("0234234");
         realmModel.setPublicKeyPem("0234234");
         realmModel.setAccessTokenLifespan(1000);
-        realmModel.setUpdateProfileOnInitialSocialLogin(true);
         realmModel.addDefaultRole("foo");
 
         realmModel = realmManager.getRealm(realmModel.getId());
@@ -86,7 +83,6 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");
         Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
-        Assert.assertEquals(realmModel.isUpdateProfileOnInitialSocialLogin(), true);
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
         Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
 
@@ -170,8 +166,8 @@ public class AdapterTest extends AbstractModelTest {
         RoleModel appRole = app.addRole("test");
         user.grantRole(appRole);
 
-        SocialLinkModel socialLink = new SocialLinkModel("google", "google1", user.getUsername());
-        realmManager.getSession().users().addSocialLink(realmModel, user, socialLink);
+        FederatedIdentityModel socialLink = new FederatedIdentityModel("google", "google1", user.getUsername());
+        realmManager.getSession().users().addFederatedIdentity(realmModel, user, socialLink);
 
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(CredentialRepresentation.PASSWORD);

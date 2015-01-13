@@ -6,11 +6,9 @@
     "accessCodeLifespanUserAction": 6000,
     "sslRequired": "external",
     "registrationAllowed": false,
-    "social": false,
     "adminTheme": "aerogear",
     "accountTheme": "aerogear",
     "loginTheme": "aerogear",
-    "updateProfileOnInitialSocialLogin": false,
     "requiredCredentials": [ "password" ],
     "users" : [
         {

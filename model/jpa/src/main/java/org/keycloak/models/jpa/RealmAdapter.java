@@ -3,6 +3,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -11,6 +12,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -683,28 +685,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isSocial() {
-        return realm.isSocial();
-    }
-
-    @Override
-    public void setSocial(boolean social) {
-        realm.setSocial(social);
-        em.flush();
-    }
-
-    @Override
-    public boolean isUpdateProfileOnInitialSocialLogin() {
-        return realm.isUpdateProfileOnInitialSocialLogin();
-    }
-
-    @Override
-    public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
-        realm.setUpdateProfileOnInitialSocialLogin(updateProfileOnInitialSocialLogin);
-        em.flush();
-    }
-
-    @Override
     public OAuthClientModel addOAuthClient(String name) {
         return this.addOAuthClient(KeycloakModelUtils.generateId(), name);
     }
@@ -787,17 +767,6 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setSmtpConfig(Map<String, String> smtpConfig) {
         realm.setSmtpConfig(smtpConfig);
-        em.flush();
-    }
-
-    @Override
-    public Map<String, String> getSocialConfig() {
-        return realm.getSocialConfig();
-    }
-
-    @Override
-    public void setSocialConfig(Map<String, String> socialConfig) {
-        realm.setSocialConfig(socialConfig);
         em.flush();
     }
 
@@ -1137,4 +1106,67 @@ public class RealmAdapter implements RealmModel {
         em.flush();
     }
 
+    @Override
+    public List<IdentityProviderModel> getIdentityProviders() {
+        List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
+
+        for (IdentityProviderEntity entity: realm.getIdentityProviders()) {
+            IdentityProviderModel identityProviderModel = new IdentityProviderModel(entity.getProviderId(), entity.getId(), entity.getName(),
+                    entity.getConfig());
+
+            identityProviderModel.setEnabled(entity.isEnabled());
+            identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
+
+            identityProviders.add(identityProviderModel);
+        }
+
+        return identityProviders;
+    }
+
+    @Override
+    public void addIdentityProvider(IdentityProviderModel identityProvider) {
+        IdentityProviderEntity entity = new IdentityProviderEntity();
+
+        entity.setInternalId(KeycloakModelUtils.generateId());
+        entity.setId(identityProvider.getId());
+        entity.setProviderId(identityProvider.getProviderId());
+        entity.setName(identityProvider.getName());
+        entity.setEnabled(identityProvider.isEnabled());
+        entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+        entity.setConfig(identityProvider.getConfig());
+
+        realm.addIdentityProvider(entity);
+
+        em.persist(entity);
+        em.flush();
+    }
+
+    @Override
+    public void removeIdentityProviderById(String providerId) {
+        for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
+            if (entity.getId().equals(providerId)) {
+                em.remove(entity);
+                em.flush();
+            }
+        }
+    }
+
+    @Override
+    public void updateIdentityProvider(IdentityProviderModel identityProvider) {
+        for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
+            if (entity.getId().equals(identityProvider.getId())) {
+                entity.setName(identityProvider.getName());
+                entity.setEnabled(identityProvider.isEnabled());
+                entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+                entity.setConfig(identityProvider.getConfig());
+            }
+        }
+
+        em.flush();
+    }
+
+    @Override
+    public boolean isIdentityFederationEnabled() {
+        return !this.realm.getIdentityProviders().isEmpty();
+    }
 }

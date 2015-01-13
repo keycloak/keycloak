@@ -42,7 +42,7 @@
                 <li class="<#if active=='account'>active</#if>"><a href="${url.accountUrl}">Account</a></li>
                 <#if features.passwordUpdateSupported><li class="<#if active=='password'>active</#if>"><a href="${url.passwordUrl}">Password</a></li></#if>
                 <li class="<#if active=='totp'>active</#if>"><a href="${url.totpUrl}">Authenticator</a></li>
-                <#if features.social><li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">Social</a></li></#if>
+                <#if features.identityFederation><li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">Federated Identity</a></li></#if>
                 <li class="<#if active=='sessions'>active</#if>"><a href="${url.sessionsUrl}">Sessions</a></li>
                 <#if features.log><li class="<#if active=='log'>active</#if>"><a href="${url.logUrl}">Log</a></li></#if>
             </ul>

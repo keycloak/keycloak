@@ -37,14 +37,16 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OpenIDConnect;
@@ -64,14 +66,10 @@ import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.social.SocialLoader;
-import org.keycloak.social.SocialProvider;
-import org.keycloak.social.SocialProviderException;
 import org.keycloak.util.UriUtils;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.HttpMethod;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -111,7 +109,7 @@ public class AccountService {
         }
     }
 
-    private static final EventType[] LOG_EVENTS = {EventType.LOGIN, EventType.LOGOUT, EventType.REGISTER, EventType.REMOVE_SOCIAL_LINK, EventType.REMOVE_TOTP, EventType.SEND_RESET_PASSWORD,
+    private static final EventType[] LOG_EVENTS = {EventType.LOGIN, EventType.LOGOUT, EventType.REGISTER, EventType.REMOVE_FEDERATED_IDENTITY, EventType.REMOVE_TOTP, EventType.SEND_RESET_PASSWORD,
             EventType.SEND_VERIFY_EMAIL, EventType.SOCIAL_LINK, EventType.UPDATE_EMAIL, EventType.UPDATE_PASSWORD, EventType.UPDATE_PROFILE, EventType.UPDATE_TOTP, EventType.VERIFY_EMAIL};
 
     private static final Set<String> LOG_DETAILS = new HashSet<String>();
@@ -227,7 +225,7 @@ public class AccountService {
         boolean eventsEnabled = eventStore != null && realm.isEventsEnabled();
 
         // todo find out from federation if password is updatable
-        account.setFeatures(realm.isSocial(), eventsEnabled, true);
+        account.setFeatures(realm.isIdentityFederationEnabled(), eventsEnabled, true);
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
@@ -325,15 +323,10 @@ public class AccountService {
         return forwardToPage("password", AccountPages.PASSWORD);
     }
 
-
-    public static UriBuilder socialUrl(UriBuilder base) {
-        return RealmsResource.accountUrl(base).path(AccountService.class, "socialPage");
-    }
-
-    @Path("social")
+    @Path("identity")
     @GET
-    public Response socialPage() {
-        return forwardToPage("social", AccountPages.SOCIAL);
+    public Response federatedIdentityPage() {
+        return forwardToPage("identity", AccountPages.FEDERATED_IDENTITY);
     }
 
     @Path("log")
@@ -639,13 +632,13 @@ public class AccountService {
         return account.setPasswordSet(true).setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
     }
 
-    @Path("social-update")
+    @Path("federated-identity-update")
     @GET
-    public Response processSocialUpdate(@QueryParam("action") String action,
-                                        @QueryParam("provider_id") String providerId,
-                                        @QueryParam("stateChecker") String stateChecker) {
+    public Response processFederatedIdentityUpdate(@QueryParam("action") String action,
+                                                   @QueryParam("provider_id") String providerId,
+                                                   @QueryParam("stateChecker") String stateChecker) {
         if (auth == null) {
-            return login("social");
+            return login("broker");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
@@ -654,23 +647,30 @@ public class AccountService {
 
         if (Validation.isEmpty(providerId)) {
             setReferrerOnPage();
-            return account.setError(Messages.MISSING_SOCIAL_PROVIDER).createResponse(AccountPages.SOCIAL);
+            return account.setError(Messages.MISSING_IDENTITY_PROVIDER).createResponse(AccountPages.FEDERATED_IDENTITY);
         }
         AccountSocialAction accountSocialAction = AccountSocialAction.getAction(action);
         if (accountSocialAction == null) {
             setReferrerOnPage();
-            return account.setError(Messages.INVALID_SOCIAL_ACTION).createResponse(AccountPages.SOCIAL);
+            return account.setError(Messages.INVALID_FEDERATED_IDENTITY_ACTION).createResponse(AccountPages.FEDERATED_IDENTITY);
         }
 
-        SocialProvider provider = SocialLoader.load(providerId);
-        if (provider == null) {
+        boolean hasProvider = false;
+
+        for (IdentityProviderModel model : realm.getIdentityProviders()) {
+            if (model.getId().equals(providerId)) {
+                hasProvider = true;
+            }
+        }
+
+        if (!hasProvider) {
             setReferrerOnPage();
-            return account.setError(Messages.SOCIAL_PROVIDER_NOT_FOUND).createResponse(AccountPages.SOCIAL);
+            return account.setError(Messages.IDENTITY_PROVIDER_NOT_FOUND).createResponse(AccountPages.FEDERATED_IDENTITY);
         }
 
         if (!user.isEnabled()) {
             setReferrerOnPage();
-            return account.setError(Messages.ACCOUNT_DISABLED).createResponse(AccountPages.SOCIAL);
+            return account.setError(Messages.ACCOUNT_DISABLED).createResponse(AccountPages.FEDERATED_IDENTITY);
         }
 
         switch (accountSocialAction) {
@@ -682,36 +682,44 @@ public class AccountService {
                     clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
                     clientSession.setRedirectUri(redirectUri);
                     clientSession.setNote(OpenIDConnect.STATE_PARAM, UUID.randomUUID().toString());
+                    clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
                     ClientSessionCode clientSessionCode = new ClientSessionCode(realm, clientSession);
-                    return Flows.social(realm, uriInfo, clientConnection, provider)
-                            .redirectToSocialProvider(clientSessionCode);
-                } catch (SocialProviderException spe) {
+
+                    URI url = UriBuilder.fromUri(this.uriInfo.getBaseUri())
+                            .path(AuthenticationBrokerResource.class)
+                            .path(AuthenticationBrokerResource.class, "performLogin")
+                            .queryParam("provider_id", providerId)
+                            .queryParam("code", clientSessionCode.getCode())
+                            .build(this.realm.getName());
+
+                    return Response.temporaryRedirect(url).build();
+                } catch (Exception spe) {
                     setReferrerOnPage();
-                    return account.setError(Messages.SOCIAL_REDIRECT_ERROR).createResponse(AccountPages.SOCIAL);
+                    return account.setError(Messages.IDENTITY_PROVIDER_REDIRECT_ERROR).createResponse(AccountPages.FEDERATED_IDENTITY);
                 }
             case REMOVE:
-                SocialLinkModel link = session.users().getSocialLink(user, providerId, realm);
+                FederatedIdentityModel link = session.users().getFederatedIdentity(user, providerId, realm);
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (session.users().getSocialLinks(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet(user)) {
-                        session.users().removeSocialLink(realm, user, providerId);
+                    if (session.users().getFederatedIdentities(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet(user)) {
+                        session.users().removeFederatedIdentity(realm, user, providerId);
 
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
 
-                        event.event(EventType.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
-                                .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())
+                        event.event(EventType.REMOVE_FEDERATED_IDENTITY).client(auth.getClient()).user(auth.getUser())
+                                .detail(Details.USERNAME, link.getUserId() + "@" + link.getIdentityProvider())
                                 .success();
 
                         setReferrerOnPage();
-                        return account.setSuccess(Messages.SOCIAL_PROVIDER_REMOVED).createResponse(AccountPages.SOCIAL);
+                        return account.setSuccess(Messages.IDENTITY_PROVIDER_REMOVED).createResponse(AccountPages.FEDERATED_IDENTITY);
                     } else {
                         setReferrerOnPage();
-                        return account.setError(Messages.SOCIAL_REMOVING_LAST_PROVIDER).createResponse(AccountPages.SOCIAL);
+                        return account.setError(Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER).createResponse(AccountPages.FEDERATED_IDENTITY);
                     }
                 } else {
                     setReferrerOnPage();
-                    return account.setError(Messages.SOCIAL_LINK_NOT_ACTIVE).createResponse(AccountPages.SOCIAL);
+                    return account.setError(Messages.FEDERATED_IDENTITY_NOT_ACTIVE).createResponse(AccountPages.FEDERATED_IDENTITY);
                 }
             default:
                 throw new IllegalArgumentException();

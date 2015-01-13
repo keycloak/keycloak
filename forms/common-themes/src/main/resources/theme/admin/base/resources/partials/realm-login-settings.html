@@ -8,20 +8,6 @@
             <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
                 <fieldset class="border-top">
                     <div class="form-group">
-                        <label class="col-sm-2 control-label" for="social">Social login</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.social" name="social" id="social" onoffswitch />
-                        </div>
-                        <span tooltip-placement="right" tooltip="Enable/disable social login via Facebook, Google+, etc." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group" data-ng-show="realm.social">
-                        <label class="col-sm-2 control-label" for="updateProfileOnInitialSocialLogin">Update profile on first social login</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.updateProfileOnInitialSocialLogin" name="updateProfileOnInitialSocialLogin" id="updateProfileOnInitialSocialLogin" onoffswitch />
-                        </div>
-                        <span tooltip-placement="right" tooltip="Should user information from social provider be imported into user database?" class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group">
                         <label for="registrationAllowed" class="col-sm-2 control-label">User registration</label>
                         <div class="col-sm-4">
                             <input ng-model="realm.registrationAllowed" name="registrationAllowed" id="registrationAllowed" onoffswitch />

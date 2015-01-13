@@ -11,12 +11,13 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -27,9 +28,9 @@ import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -59,7 +60,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -248,21 +248,30 @@ public class UsersResource {
      * @param username
      * @return
      */
-    @Path("{username}/social-links")
+    @Path("{username}/federated-identity")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<SocialLinkRepresentation> getSocialLinks(final @PathParam("username") String username) {
+    public List<FederatedIdentityRepresentation> getFederatedIdentity(final @PathParam("username") String username) {
         auth.requireView();
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        Set<SocialLinkModel> socialLinks = session.users().getSocialLinks(user, realm);
-        List<SocialLinkRepresentation> result = new ArrayList<SocialLinkRepresentation>();
-        for (SocialLinkModel socialLink : socialLinks) {
-            SocialLinkRepresentation rep = ModelToRepresentation.toRepresentation(socialLink);
-            result.add(rep);
+
+        Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
+        List<FederatedIdentityRepresentation> result = new ArrayList<FederatedIdentityRepresentation>();
+
+        for (FederatedIdentityModel identity : identities) {
+            for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
+                if (identityProviderModel.getProviderId().equals(identity.getIdentityProvider())) {
+                    FederatedIdentityRepresentation rep = ModelToRepresentation.toRepresentation(identity);
+
+                    rep.setIdentityProvider(identityProviderModel.getName());
+
+                    result.add(rep);
+                }
+            }
         }
         return result;
     }
@@ -270,18 +279,18 @@ public class UsersResource {
     @Path("{username}/social-links/{provider}")
     @POST
     @NoCache
-    public Response addSocialLink(final @PathParam("username") String username, final @PathParam("provider") String provider, SocialLinkRepresentation rep) {
+    public Response addSocialLink(final @PathParam("username") String username, final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
         auth.requireManage();
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        if (session.users().getSocialLink(user, provider, realm) != null) {
+        if (session.users().getFederatedIdentity(user, provider, realm) != null) {
             return Flows.errors().exists("User is already linked with provider");
         }
 
-        SocialLinkModel socialLink = new SocialLinkModel(provider, rep.getSocialUserId(), rep.getSocialUsername());
-        session.users().addSocialLink(realm, user, socialLink);
+        FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
+        session.users().addFederatedIdentity(realm, user, socialLink);
 
         return Response.noContent().build();
     }
@@ -295,7 +304,7 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        if (!session.users().removeSocialLink(realm, user, provider)) {
+        if (!session.users().removeFederatedIdentity(realm, user, provider)) {
             throw new NotFoundException("Link not found");
         }
     }

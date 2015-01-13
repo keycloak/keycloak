@@ -1,0 +1,117 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+    <div id="content-area" class="col-sm-9" role="main">
+        <data-kc-navigation data-kc-current="social" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
+        <h2></h2>
+        <div id="content">
+            <ol class="breadcrumb">
+                <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
+                <li class="active">{{identityProvider.name}} Provider Settings</li>
+            </ol>
+            <h2 class="pull-left">{{identityProvider.name}} Provider Settings</h2>
+            <p class="subtitle"><span class="required">*</span> Required fields</p>
+            <form class="form-horizontal" name="realmForm" novalidate>
+                <fieldset>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="identifier">Alias <span class="required">*</span></label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="identifier" type="text" ng-model="identityProvider.id" data-ng-readonly="!newIdentityProvider" required>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The alias unique identifies an identity provider and it is also used to build the redirect uri." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="name">Name <span class="required">*</span></label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="name" type="text" ng-model="identityProvider.name" required>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The friendly name for this identity provider." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="authorizationUrl">Authorization Url <span class="required">*</span></label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="authorizationUrl" type="text" ng-model="identityProvider.config.authorizationUrl" required>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The Authorization Url." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="tokenUrl">Token Url <span class="required">*</span></label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="tokenUrl" type="text" ng-model="identityProvider.config.tokenUrl" required>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The Token Url." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="userInfoUrl">User Info Url <span class="required">*</span></label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="userInfoUrl" type="text" ng-model="identityProvider.config.userInfoUrl" required>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The User Info Url." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="clientId">Client ID <span class="required">*</span></label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="clientId" type="text" ng-model="identityProvider.config.clientId" required>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The client or application identifier registered withing the identity provider." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="clientSecret">Client Secret <span class="required">*</span></label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="clientSecret" type="password" ng-model="identityProvider.config.clientSecret" ng-show="hidePassword" required>
+                            <input class="form-control" id="clientSecret" type="text" ng-model="identityProvider.config.clientSecret" ng-show="!hidePassword" required>
+                            <a href="" ng-click="showPassword(false)" class="link" ng-show="hidePassword">Show Secret</a>
+                            <a href="" ng-click="showPassword(true);" ng-show="!hidePassword">Hide Secret</a>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The client or application secret registered withing the identity provider." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="issuer">Issuer </label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="issuer" type="text" ng-model="identityProvider.config.issuer">
+                        </div>
+                        <span tooltip-placement="right" tooltip="The issuer identifier for the issuer of the response. If not provided, no validation will be performed." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="defaultScope">Default Scopes </label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="defaultScope" type="text" ng-model="identityProvider.config.defaultScope">
+                        </div>
+                        <span tooltip-placement="right" tooltip="The scopes to be sent when asking for authorization. It can be a comma-separated list of scopes. Defaults to 'openid'." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="prompt">Prompt</label>
+                        <div class="col-sm-4">
+                            <div class="select-kc">
+                                <select id="prompt" ng-model="identityProvider.config.prompt">
+                                    <option value="">none</option>
+                                    <option>consent</option>
+                                    <option>login</option>
+                                    <option>select_account</option>
+                                </select>
+                            </div>
+                        </div>
+                        <span tooltip-placement="right" tooltip="Is HTTPS required?  'None' means HTTPS is not required for any client IP address. 'External requests' means localhost and private IP addresses can access without HTTPS.  'All requests' means HTTPS is required for all IP addresses." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="enabled">Enabled</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.enabled" id="enabled" onoffswitch />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Enable/disable this identity provider." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="updateProfileFirstLogin">Update Profile on First Login</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.updateProfileFirstLogin" name="identityProvider.updateProfileFirstLogin" id="updateProfileFirstLogin" onoffswitch />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Indicates if user must update his profile right after the first login." class="fa fa-info-circle"></span>
+                    </div>
+                </fieldset>
+
+                <div class="pull-right form-actions">
+                    <button kc-save>Save</button>
+                    <button kc-delete data-ng-click="remove()" data-ng-show="!newIdentityProvider">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

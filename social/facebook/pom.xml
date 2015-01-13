@@ -16,13 +16,13 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-api</artifactId>
+            <artifactId>keycloak-social-core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-social-core</artifactId>
+            <artifactId>keycloak-broker-oidc</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>

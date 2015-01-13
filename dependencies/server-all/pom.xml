@@ -82,7 +82,17 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- social -->
+        <!-- identity providers -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-broker-oidc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-broker-saml</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-social-github</artifactId>

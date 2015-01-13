@@ -6,7 +6,7 @@
         <li data-ng-show="access.manageUsers"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
         <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
         <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/sessions">Sessions</a></li>
-        <li data-ng-show="realm.social"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/social-links">Social Links</a></li>
+        <li data-ng-show="realm.identityFederationEnabled"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/federated-identity">Federated Identities</a></li>
     </ul>
     <ul class="nav nav-tabs nav-tabs-pf" data-ng-show="create">
         <li class="active"><a href="">User List</a></li>
@@ -27,7 +27,7 @@
         <p class="subtitle"><span class="required">*</span> Required fields</p>
 
         <form class="form-horizontal" name="userForm" novalidate kc-read-only="!access.manageUsers">
-            
+
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label"for="id">ID</label>

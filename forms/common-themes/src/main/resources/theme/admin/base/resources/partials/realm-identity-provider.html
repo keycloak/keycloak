@@ -1,0 +1,81 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+    <data-kc-navigation data-kc-current="social" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
+    <h2></h2>
+    <div id="content">
+        <h2 class="pull-left"><span>{{realm.realm}}</span> Identity Providers Settings</h2>
+        <p class="subtitle"><span class="required">*</span> Required fields</p>
+
+        <form name="realmForm" novalidate class="form-horizontal">
+            <fieldset>
+                <div>
+                    <table class="table table-striped table-bordered">
+                        <caption class="hidden">Table of identity providers</caption>
+                        <thead>
+                        <tr>
+                            <th colspan="5" class="kc-table-actions">
+                                <div class="pull-right">
+                                    <div class="select-kc">
+                                        <select ng-model="provider"
+                                                ng-options="p.name group by p.groupName for p in allProviders track by p.id"
+                                                ng-
+                                                data-ng-change="addProvider(provider); provider = null">
+                                            <option value="" disabled selected>Add provider...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </th>
+                        </tr>
+                        <tr ng-show="configuredProviders.length > 0">
+                            <th>Name</th>
+                            <th>Redirect URI</th>
+                        </tr>
+                        </thead>
+                        <tbody ng-show="configuredProviders.length > 0">
+                        <tr ng-repeat="identityProvider in configuredProviders">
+                            <td>
+                                <a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.id}}">{{identityProvider.name}}</a>
+                            </td>
+                            <td ng-show="!changed">
+                                {{callbackUrl}}{{identityProvider.id}}
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </fieldset>
+
+            <div class="pull-right form-actions">
+                <button type="submit" kc-reset data-ng-show="changed">Clear changes</button>
+                <button type="submit" kc-save class="primary" data-ng-show="changed">Save changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
+<!-- TODO remove once this page is properly styled -->
+<style type="text/css">
+    .social-provider input.ng-invalid.dirty,
+    .social-provider input.ng-invalid.ng-dirty {
+        background-color: #FFEEEE;
+    }
+
+    .social-provider .actions > div {
+        display: inline-block;
+        overflow: hidden;
+    }
+
+    .social-provider td {
+        font-size: 10px;
+    }
+
+    .social-provider .action-div {
+        display: inline-block;
+        margin: 5px;
+    }
+
+    .social-provider .icon-remove, .social-provider .icon-question {
+        cursor: pointer;
+    }
+</style>

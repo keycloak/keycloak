@@ -1,16 +1,19 @@
 package org.keycloak.testsuite.admin;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.SocialLinkRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -116,28 +119,30 @@ public class UserTest extends AbstractClientTest {
 
         UserResource user = realm.users().get("user1");
 
-        SocialLinkRepresentation link = new SocialLinkRepresentation();
-        link.setSocialUserId("social-user-id");
-        link.setSocialUsername("social-username");
+        FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
+        link.setUserId("social-user-id");
+        link.setUserName("social-username");
 
         Response response = user.addSocialLink("social-provider-id", link);
         assertEquals(204, response.getStatus());
     }
 
     @Test
+    @Ignore("Refactor based on KEYCLOAK-883")
     public void getSocialLinks() {
         addSocialLink();
 
         UserResource user = realm.users().get("user1");
         assertEquals(1, user.getSocialLinks().size());
 
-        SocialLinkRepresentation link = user.getSocialLinks().get(0);
-        assertEquals("social-provider-id", link.getSocialProvider());
-        assertEquals("social-user-id", link.getSocialUserId());
-        assertEquals("social-username", link.getSocialUsername());
+        FederatedIdentityRepresentation link = user.getSocialLinks().get(0);
+        assertEquals("social-provider-id", link.getIdentityProvider());
+        assertEquals("social-user-id", link.getUserId());
+        assertEquals("social-username", link.getUserName());
     }
 
     @Test
+    @Ignore("Refactor based on KEYCLOAK-883")
     public void removeSocialLink() {
         addSocialLink();
 

@@ -13,7 +13,7 @@ import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -25,7 +25,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
-import org.keycloak.representations.idm.SocialLinkRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.IOException;
@@ -253,14 +253,14 @@ public class ExportUtils {
         UserRepresentation userRep = ModelToRepresentation.toRepresentation(user);
 
         // Social links
-        Set<SocialLinkModel> socialLinks = session.users().getSocialLinks(user, realm);
-        List<SocialLinkRepresentation> socialLinkReps = new ArrayList<SocialLinkRepresentation>();
-        for (SocialLinkModel socialLink : socialLinks) {
-            SocialLinkRepresentation socialLinkRep = exportSocialLink(socialLink);
+        Set<FederatedIdentityModel> socialLinks = session.users().getFederatedIdentities(user, realm);
+        List<FederatedIdentityRepresentation> socialLinkReps = new ArrayList<FederatedIdentityRepresentation>();
+        for (FederatedIdentityModel socialLink : socialLinks) {
+            FederatedIdentityRepresentation socialLinkRep = exportSocialLink(socialLink);
             socialLinkReps.add(socialLinkRep);
         }
         if (socialLinkReps.size() > 0) {
-            userRep.setSocialLinks(socialLinkReps);
+            userRep.setFederatedIdentities(socialLinkReps);
         }
 
         // Role mappings
@@ -303,11 +303,11 @@ public class ExportUtils {
         return userRep;
     }
 
-    public static SocialLinkRepresentation exportSocialLink(SocialLinkModel socialLink) {
-        SocialLinkRepresentation socialLinkRep = new SocialLinkRepresentation();
-        socialLinkRep.setSocialProvider(socialLink.getSocialProvider());
-        socialLinkRep.setSocialUserId(socialLink.getSocialUserId());
-        socialLinkRep.setSocialUsername(socialLink.getSocialUsername());
+    public static FederatedIdentityRepresentation exportSocialLink(FederatedIdentityModel socialLink) {
+        FederatedIdentityRepresentation socialLinkRep = new FederatedIdentityRepresentation();
+        socialLinkRep.setIdentityProvider(socialLink.getIdentityProvider());
+        socialLinkRep.setUserId(socialLink.getUserId());
+        socialLinkRep.setUserName(socialLink.getUserName());
         return socialLinkRep;
     }
 

@@ -125,8 +125,8 @@ module.factory('UserSessionsLoader', function(Loader, UserSessions, $route, $q) 
     });
 });
 
-module.factory('UserSocialLinksLoader', function(Loader, UserSocialLinks, $route, $q) {
-    return Loader.query(UserSocialLinks, function() {
+module.factory('UserFederatedIdentityLoader', function(Loader, UserFederatedIdentity, $route, $q) {
+    return Loader.query(UserFederatedIdentity, function() {
         return {
             realm : $route.current.params.realm,
             user : $route.current.params.user
@@ -274,6 +274,24 @@ module.factory('OAuthClientInstallationLoader', function(Loader, OAuthClientInst
         return {
             realm : $route.current.params.realm,
             oauth : $route.current.params.oauth
+        }
+    });
+});
+
+module.factory('IdentityProviderLoader', function(Loader, IdentityProvider, $route, $q) {
+    return Loader.get(IdentityProvider, function () {
+        return {
+            realm: $route.current.params.realm,
+            id: $route.current.params.id
+        }
+    });
+});
+
+module.factory('IdentityProviderFactoryLoader', function(Loader, IdentityProviderFactory, $route, $q) {
+    return Loader.get(IdentityProviderFactory, function () {
+        return {
+            realm: $route.current.params.realm,
+            provider_id: $route.current.params.provider_id
         }
     });
 });

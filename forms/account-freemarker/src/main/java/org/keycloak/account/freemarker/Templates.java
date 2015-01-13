@@ -15,8 +15,8 @@ public class Templates {
                 return "password.ftl";
             case TOTP:
                 return "totp.ftl";
-            case SOCIAL:
-                return "social.ftl";
+            case FEDERATED_IDENTITY:
+                return "federatedIdentity.ftl";
             case LOG:
                 return "log.ftl";
             case SESSIONS:

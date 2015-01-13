@@ -12,10 +12,17 @@
         "host": "localhost",
         "port":"3025"
     },
-    "socialProviders": {
-        "google.key": "abc",
-        "google.secret": "def"
-    },
+    "identityProviders" : [
+        {
+            "providerId" : "google",
+            "name" : "Google",
+            "enabled": true,
+            "config": {
+                "clientId": "clientId",
+                "clientSecret": "clientSecret"
+            }
+        }
+    ],
     "userFederationProviders": [
         {
             "displayName": "MyLDAPProvider",
@@ -72,21 +79,21 @@
         {
             "username": "mySocialUser",
             "enabled": true,
-            "socialLinks": [
+            "federatedIdentities": [
                 {
-                    "socialProvider": "facebook",
-                    "socialUserId": "facebook1",
-                    "socialUsername": "fbuser1"
+                    "identityProvider": "facebook",
+                    "userId": "facebook1",
+                    "userName": "fbuser1"
                 },
                 {
-                    "socialProvider": "twitter",
-                    "socialUserId": "twitter1",
-                    "socialUsername": "twuser1"
+                    "identityProvider": "twitter",
+                    "userId": "twitter1",
+                    "userName": "twuser1"
                 },
                 {
-                    "socialProvider": "google",
-                    "socialUserId": "google1",
-                    "socialUsername": "mySocialUser@gmail.com"
+                    "identityProvider": "google",
+                    "userId": "google1",
+                    "userName": "mySocialUser@gmail.com"
                 }
             ]
         }

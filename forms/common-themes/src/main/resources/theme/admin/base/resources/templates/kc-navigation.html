@@ -1,7 +1,7 @@
 <ul class="nav nav-tabs nav-tabs-pf">
     <li ng-class="{active: !path[2]}"><a href="#/realms/{{realm.realm}}">General</a></li>
     <li ng-class="{active: path[2] == 'login-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/login-settings">Login</a></li>
-    <li ng-class="{active: path[2] == 'social-settings'}" data-ng-show="realm.social && access.viewRealm"><a href="#/realms/{{realm.realm}}/social-settings">Social</a></li>
+    <li ng-class="{active: path[2] == 'identity-provider-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Provider</a></li>
     <li ng-class="{active: path[2] == 'required-credentials'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
     <li ng-class="{active: path[2] == 'keys-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
     <li ng-class="{active: path[2] == 'smtp-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/smtp-settings">Email</a></li>

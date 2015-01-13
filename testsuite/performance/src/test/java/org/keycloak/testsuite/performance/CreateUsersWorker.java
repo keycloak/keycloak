@@ -5,7 +5,7 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -85,7 +85,7 @@ public class CreateUsersWorker implements Worker {
             user.updateCredential(password);
         }
 
-        // Creating some socialLinks
+        // Creating some federatedIdentities
         for (int i=0 ; i<socialLinksPerUserCount ; i++) {
             String socialProvider;
             switch (i) {
@@ -96,8 +96,8 @@ public class CreateUsersWorker implements Worker {
                         + " which is too big.");
             }
 
-            SocialLinkModel socialLink = new SocialLinkModel(socialProvider, username, username);
-            session.users().addSocialLink(realm, user, socialLink);
+            FederatedIdentityModel socialLink = new FederatedIdentityModel(socialProvider, username, username);
+            session.users().addFederatedIdentity(realm, user, socialLink);
         }
 
         log.info("Finished creation of user " + username + " in realm: " + realm.getId());

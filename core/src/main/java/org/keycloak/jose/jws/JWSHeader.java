@@ -21,6 +21,9 @@ public class JWSHeader implements Serializable {
     @JsonProperty("cty")
     private String contentType;
 
+    @JsonProperty("kid")
+    private String keyId;
+
     public JWSHeader() {
     }
 
@@ -42,6 +45,9 @@ public class JWSHeader implements Serializable {
         return contentType;
     }
 
+    public String getKeyId() {
+        return keyId;
+    }
 
     private static final ObjectMapper mapper = new ObjectMapper();
 

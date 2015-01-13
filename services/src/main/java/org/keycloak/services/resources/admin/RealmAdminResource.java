@@ -445,4 +445,9 @@ public class RealmAdminResource {
         boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential);
         return result ? Response.noContent().build() : Flows.errors().error("LDAP test error", Response.Status.BAD_REQUEST);
     }
+
+    @Path("identity-provider")
+    public IdentityProviderResource getIdentityProviderResource() {
+        return new IdentityProviderResource(realm, session);
+    }
 }
