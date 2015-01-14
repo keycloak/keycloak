@@ -120,7 +120,7 @@
                 redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
             }
 
-            sessionStorage.oauthState = state;
+            sessionStorage.oauthState = JSON.stringify({ state: state, redirectUri: encodeURIComponent(redirectUri) });
 
             var url = getRealmUrl()
                 + '/tokens/login'
@@ -314,6 +314,8 @@
                 } else {
                     params += '&client_id=' + encodeURIComponent(kc.clientId);
                 }
+
+                params += '&redirect_uri=' + oauth.redirectUri;
 
                 req.withCredentials = true;
 
@@ -538,8 +540,12 @@
                     }
                 }
 
-                if ((oauth.code || oauth.error) && oauth.state && oauth.state == sessionStorage.oauthState) {
+                var sessionState = sessionStorage.oauthState && JSON.parse(sessionStorage.oauthState);
+
+                if (sessionState && (oauth.code || oauth.error) && oauth.state && oauth.state == sessionState.state) {
                     delete sessionStorage.oauthState;
+
+                    oauth.redirectUri = sessionState.redirectUri;
 
                     if (oauth.fragment) {
                         oauth.newUrl += '#' + oauth.fragment;
