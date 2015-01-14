@@ -29,5 +29,6 @@
         <module>installed</module>
         <module>admin-client</module>
         <module>osgi-adapter</module>
+        <module>spring-boot</module>
     </modules>
 </project>
