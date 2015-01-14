@@ -826,7 +826,10 @@ public class LoginActionsService {
             event.error(Errors.USER_NOT_FOUND);
         } else if(!user.isEnabled()) {
             event.user(user).error(Errors.USER_DISABLED);
-        } else {
+        }
+        else if(user.getEmail() == null || user.getEmail().trim().length() == 0) {
+            event.user(user).error(Errors.INVALID_EMAIL);
+        } else{
             event.user(user);
 
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
