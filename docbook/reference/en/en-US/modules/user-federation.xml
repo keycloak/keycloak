@@ -19,7 +19,7 @@
         federation plugins may only import the username into Keycloak storage, others might import everything from name,
         address, and phone number, to user role mappings.  Some plugins might want to import credentials directly into
         Keycloak storage and let Keycloak handle credential validation.  Others might want to handle credential validation
-        themselves.  Thegoal of the Federation SPI is to support all of these scenarios.
+        themselves.  The goal of the Federation SPI is to support all of these scenarios.
     </para>
     <section>
         <title>LDAP and Active Directory Plugin</title>
@@ -76,7 +76,7 @@
                         <term>Display Name</term>
                         <listitem>
                             <para>
-                                Name used when this provider is referenced in the admin consle
+                                Name used when this provider is referenced in the admin console
                             </para>
                         </listitem>
                     </varlistentry>
@@ -118,7 +118,7 @@
             first import this LDAP user into Keycloak database and then authenticate against LDAP password.
         </para>
         <para>
-            Thing is that Federation Provider import just requested users by default, so if you click to <literal>View all users</literal>
+            Federation Provider imports just requested users by default, so if you click to <literal>View all users</literal>
             in Keycloak admin console, you will see just those LDAP users, which were already authenticated/requested by Keycloak.
         </para>
         <para>If you want to sync all LDAP users into Keycloak database, you may configure and enable Sync, which is in
@@ -160,7 +160,7 @@
         <para>
             Writing a User Federation Provider starts by implementing the <literal>UserFederationProvider</literal>
             and <literal>UserFederationProviderFactory</literal> interfaces.  Please see the Javadoc and example
-            for complete details on on how to do this.  Some important methods of note:
+            for complete details on how to do this.  Some important methods of note:
             getUserByUsername() and getUserByEmail() require that you query your federated storage and if the user exists
             create and import the user into Keycloak storage.  How much metadata you import is fully up to you.  This
             import is done by invoking methods on the object returned <literal>KeycloakSession.userStorage()</literal>
@@ -173,7 +173,7 @@
             contain a file called <literal>org.keycloak.models.UserFederationProviderFactory</literal>
             within the <literal>META-INF/services</literal> directory of the JAR.  This file is a list
             of fully qualified classnames of all implementations of <literal>UserFederationProviderFactory</literal>.
-            This is how Keycloak discovers which providers have been deployment.  Place the JAR in the
+            This is how Keycloak discovers which providers have been deployed.  Place the JAR in the
             keycloak WAR deployment in the <literal>WEB-INF/lib</literal> directory.
         </para>
     </section>
