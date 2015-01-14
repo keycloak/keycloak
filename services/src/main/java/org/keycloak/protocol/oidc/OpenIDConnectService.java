@@ -583,6 +583,7 @@ public class OpenIDConnectService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
+
         ClientSessionModel clientSession = accessCode.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
         if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN)) {
@@ -600,6 +601,16 @@ public class OpenIDConnectService {
         event.session(userSession.getId());
 
         ClientModel client = authorizeClient(authorizationHeader, formData, event);
+
+        String redirectUri = clientSession.getRedirectUri();
+        if (redirectUri != null && !redirectUri.equals(formData.getFirst(OAuth2Constants.REDIRECT_URI))) {
+            Map<String, String> res = new HashMap<String, String>();
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Incorrect redirect_uri");
+            event.error(Errors.INVALID_CODE);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
+                    .build();
+        }
 
         if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
             Map<String, String> res = new HashMap<String, String>();

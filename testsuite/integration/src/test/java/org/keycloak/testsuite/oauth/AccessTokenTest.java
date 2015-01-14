@@ -142,6 +142,25 @@ public class AccessTokenTest {
     }
 
     @Test
+    public void accessTokenInvalidRedirectUri() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        Event loginEvent = events.expectLogin().assertEvent();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        oauth.redirectUri("http://invalid");
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        Assert.assertEquals(400, response.getStatusCode());
+        Assert.assertEquals("invalid_grant", response.getError());
+        Assert.assertEquals("Incorrect redirect_uri", response.getErrorDescription());
+
+        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).assertEvent();
+    }
+
+    @Test
     public void accessTokenUserSessionExpired() {
         oauth.doLogin("test-user@localhost", "password");
 
