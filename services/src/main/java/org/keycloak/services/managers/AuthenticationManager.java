@@ -414,10 +414,6 @@ public class AuthenticationManager {
             return AuthenticationStatus.INVALID_USER;
         }
 
-        if (!user.isEnabled()) {
-            return AuthenticationStatus.ACCOUNT_DISABLED;
-        }
-
         Set<String> types = new HashSet<String>();
 
         for (RequiredCredentialModel credential : realm.getRequiredCredentials()) {
@@ -453,6 +449,10 @@ public class AuthenticationManager {
                 return AuthenticationStatus.INVALID_CREDENTIALS;
             }
 
+            if (!user.isEnabled()) {
+                return AuthenticationStatus.ACCOUNT_DISABLED;
+            }
+
             if (user.isTotp() && totp == null) {
                 return AuthenticationStatus.MISSING_TOTP;
             }
@@ -470,6 +470,9 @@ public class AuthenticationManager {
             }
             if (!session.users().validCredentials(realm, user, UserCredentialModel.secret(secret))) {
                 return AuthenticationStatus.INVALID_CREDENTIALS;
+            }
+            if (!user.isEnabled()) {
+                return AuthenticationStatus.ACCOUNT_DISABLED;
             }
             if (!user.getRequiredActions().isEmpty()) {
                 return AuthenticationStatus.ACTIONS_REQUIRED;

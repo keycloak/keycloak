@@ -119,6 +119,62 @@ public class LoginTest {
     }
 
     @Test
+    public void loginInvalidPasswordDisabledUser() {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                session.users().getUserByUsername("login-test", appRealm).setEnabled(false);
+            }
+        });
+
+        try {
+            loginPage.open();
+            loginPage.login("login-test", "invalid");
+
+            loginPage.assertCurrent();
+
+            Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+            events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials").detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).assertEvent();
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    session.users().getUserByUsername("login-test", appRealm).setEnabled(true);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void loginDisabledUser() {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                session.users().getUserByUsername("login-test", appRealm).setEnabled(false);
+            }
+        });
+
+        try {
+            loginPage.open();
+            loginPage.login("login-test", "password");
+
+            loginPage.assertCurrent();
+
+            Assert.assertEquals("Account is disabled, contact admin", loginPage.getError());
+
+            events.expectLogin().user(userId).session((String) null).error("user_disabled").detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).assertEvent();
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    session.users().getUserByUsername("login-test", appRealm).setEnabled(true);
+                }
+            });
+        }
+    }
+
+    @Test
     public void loginInvalidUsername() {
         loginPage.open();
         loginPage.login("invalid", "password");
