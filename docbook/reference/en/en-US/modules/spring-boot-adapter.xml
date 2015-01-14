@@ -1,0 +1,56 @@
+<section id="spring-boot-adapter">
+    <title>Spring Boot Adapter</title>
+    <para>
+        To be able to secure Spring Boot apps you must add the Keycloak Spring Boot adapter
+        JAR to your app. You then have to provide some extra configuration via normal Spring
+        Boot configuration (<literal>application.properties</literal>).  Let's go over these steps.
+    </para>
+    <section id="spring-boot-adapter-installation">
+        <title>Adapter Installation</title>
+        <para>
+            The Keycloak Spring Boot adapter takes advantage of Spring Boot's autoconfiguration so all
+            you need to do is add the Keycloak Spring Boot adapter JAR to your project. Depending on
+            what container you are using with Spring Boot, you also need to add the appropriate
+            Keycloak container adapter. If you are using Maven, add the following to your pom.xml (using
+            Tomcat as an example):
+        </para>
+        <para>
+            <programlisting>
+<![CDATA[
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-spring-boot-adapter</artifactId>
+    <version>1.2.0.Beta1-SNAPSHOT</version>
+</dependency>
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-tomcat8-adapter</artifactId>
+    <version>${keycloak.version}</version>
+</dependency>
+]]>
+            </programlisting>
+        </para>
+    </section>
+
+    <section id="spring-boot-adapter-configuration">
+        <title>Required Spring Boot Adapter Configuration</title>
+        <para>
+            This section describes how to configure your Spring Boot app to use Keycloak.
+        </para>
+        <para>
+            Instead of a <literal>keycloak.json</literal> file, you configure the Spring
+            Boot Keycloak adapter via the normal Spring Boot configuration. For example:
+        </para>
+        <programlisting>
+<![CDATA[
+keycloak.realm = demorealm
+keycloak.realmKey = MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCLCWYuxXmsmfV+Xc9Ik8QET8lD4wuHrJAXbbutS2O/eMjQQLNK7QDX/k/XhOkhxP0YBEypqeXeGaeQJjCxDhFjJXQuewUEMlmSja3IpoJ9/hFn4Cns4m7NGO+rtvnfnwgVfsEOS5EmZhRddp+40KBPPJfTH6Vgu6KjQwuFPj6DTwIDAQAB
+keycloak.auth-server-url = http://127.0.0.1:8080/auth
+keycloak.ssl-required = external
+keycloak.resource = demoapp
+keycloak.credentials.secret = 11111111-1111-1111-1111-111111111111
+keycloak.use-resource-role-mappings = true
+]]>
+        </programlisting>
+    </section>
+</section>
