@@ -194,6 +194,12 @@
         <dependency>
             <groupId>de.idyl</groupId>
             <artifactId>winzipaes</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk16</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
