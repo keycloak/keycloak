@@ -1,4 +1,4 @@
-package org.keycloak.adapters.jetty;
+package org.keycloak.adapters.jetty.core;
 
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpFacade;

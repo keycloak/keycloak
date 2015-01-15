@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:jaxrs="http://cxf.apache.org/blueprint/jaxrs"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.0.0"
+           xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/blueprint/jaxrs.xsd
+		http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
+
+    <!-- JAXRS Application -->
+
+    <bean id="customerBean" class="org.keycloak.example.rs.CxfCustomerService" />
+
+    <jaxrs:server id="cxfJaxrsServer" address="/customerservice">
+        <jaxrs:providers>
+            <!--<bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" />-->
+            <bean class="org.codehaus.jackson.jaxrs.JacksonJsonProvider" />
+        </jaxrs:providers>
+        <jaxrs:serviceBeans>
+            <ref component-id="customerBean" />
+        </jaxrs:serviceBeans>
+    </jaxrs:server>
+
+    <!-- Securing of whole /cxf context by unregister default cxf servlet from paxweb and re-register with applied security constraints -->
+
+    <cm:property-placeholder persistent-id="org.apache.cxf.osgi" id="cxfOsgiPropertiesKCSecured">
+        <cm:default-properties>
+            <cm:property name="org.apache.cxf.servlet.context" value="/cxf"/>
+            <cm:property name="org.apache.cxf.servlet.name" value="cxf-osgi-transport-servlet"/>
+            <cm:property name="org.apache.cxf.servlet.hide-service-list-page" value="false"/>
+            <cm:property name="org.apache.cxf.servlet.disable-address-updates" value="false"/>
+            <cm:property name="org.apache.cxf.servlet.base-address" value=""/>
+            <cm:property name="org.apache.cxf.servlet.service-list-path" value=""/>
+            <cm:property name="org.apache.cxf.servlet.static-resources-list" value=""/>
+            <cm:property name="org.apache.cxf.servlet.redirects-list" value=""/>
+            <cm:property name="org.apache.cxf.servlet.redirect-servlet-name" value=""/>
+            <cm:property name="org.apache.cxf.servlet.redirect-servlet-path" value=""/>
+            <cm:property name="org.apache.cxf.servlet.service-list-all-contexts" value=""/>
+            <cm:property name="org.apache.cxf.servlet.service-list-page-authenticate" value="false"/>
+            <cm:property name="org.apache.cxf.servlet.service-list-page-authenticate-realm" value="karaf"/>
+        </cm:default-properties>
+    </cm:property-placeholder>
+
+    <bean id="cxfConstraintMapping" class="org.eclipse.jetty.security.ConstraintMapping">
+        <property name="constraint">
+            <bean class="org.eclipse.jetty.util.security.Constraint">
+                <property name="name" value="cst1"/>
+                <property name="roles">
+                    <list>
+                        <value>user</value>
+                    </list>
+                </property>
+                <property name="authenticate" value="true"/>
+                <property name="dataConstraint" value="0"/>
+            </bean>
+        </property>
+        <property name="pathSpec" value="/cxf/*"/>
+    </bean>
+
+    <bean id="cxfKeycloakPaxWebIntegration" class="org.keycloak.adapters.osgi.PaxWebIntegrationService"
+          init-method="start" destroy-method="stop">
+        <property name="bundleContext" ref="blueprintBundleContext" />
+        <property name="jettyWebXmlLocation" value="/WEB-INF/jetty-web.xml" />
+        <property name="constraintMappings">
+            <list>
+                <ref component-id="cxfConstraintMapping" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="defaultCxfUnregistration" class="org.keycloak.adapters.osgi.ServletUnregistrationService"
+          init-method="start" destroy-method="stop">
+        <property name="bundleContext" ref="blueprintBundleContext" />
+        <property name="servletReference">
+            <reference interface="javax.servlet.Servlet" component-name="osgiServlet" />
+        </property>
+    </bean>
+
+    <bean id="osgiServletKCSecured" class="org.apache.cxf.transport.servlet.CXFNonSpringServlet" depends-on="cxfKeycloakPaxWebIntegration defaultCxfUnregistration">
+        <argument>
+            <reference interface="org.apache.cxf.transport.http.DestinationRegistry" timeout="5000"/>
+        </argument>
+        <argument value="false"/>
+    </bean>
+
+    <service ref="osgiServletKCSecured" interface="javax.servlet.Servlet">
+        <service-properties>
+            <entry key="alias" value="${org.apache.cxf.servlet.context}"/>
+            <entry key="servlet-name" value="${org.apache.cxf.servlet.name}"/>
+            <entry key="hide-service-list-page" value="${org.apache.cxf.servlet.hide-service-list-page}"/>
+            <entry key="disable-address-updates" value="${org.apache.cxf.servlet.disable-address-updates}"/>
+            <entry key="base-address" value="${org.apache.cxf.servlet.base-address}"/>
+            <entry key="service-list-path" value="${org.apache.cxf.servlet.service-list-path}"/>
+            <entry key="static-resources-list" value="${org.apache.cxf.servlet.static-resources-list}"/>
+            <entry key="redirects-list" value="${org.apache.cxf.servlet.redirects-list}"/>
+            <entry key="redirect-servlet-name" value="${org.apache.cxf.servlet.redirect-servlet-name}"/>
+            <entry key="redirect-servlet-path" value="${org.apache.cxf.servlet.redirect-servlet-path}"/>
+            <entry key="service-list-all-contexts" value="${org.apache.cxf.servlet.service-list-all-contexts}"/>
+            <entry key="service-list-page-authenticate" value="${org.apache.cxf.servlet.service-list-page-authenticate}"/>
+            <entry key="service-list-page-authenticate-realm" value="${org.apache.cxf.servlet.service-list-page-authenticate-realm}"/>
+        </service-properties>
+    </service>
+
+
+</blueprint>
