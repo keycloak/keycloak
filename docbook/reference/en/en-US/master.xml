@@ -18,6 +18,7 @@
                 <!ENTITY InstalledApplications SYSTEM "modules/installed-applications.xml">
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
                 <!ENTITY SAML SYSTEM "modules/saml.xml">
+                <!ENTITY JAAS SYSTEM "modules/jaas.xml">
                 <!ENTITY SocialConfig SYSTEM "modules/social-config.xml">
                 <!ENTITY SocialFacebook SYSTEM "modules/social-facebook.xml">
                 <!ENTITY SocialGitHub SYSTEM "modules/social-github.xml">
@@ -97,6 +98,7 @@ This one is short
         &InstalledApplications;
         &Logout;
         &MultiTenancy;
+        &JAAS;
     </chapter>
 
     <chapter>
