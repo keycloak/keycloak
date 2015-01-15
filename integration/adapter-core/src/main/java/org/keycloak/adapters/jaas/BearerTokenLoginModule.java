@@ -6,7 +6,7 @@ import org.keycloak.VerificationException;
 /**
  * Login module, which allows to authenticate Keycloak access token in environments, which rely on JAAS
  * <p/>
- * It expects login based on username and password where username must be equal to "Bearer" and password is keycloak access token.
+ * It expects login based on username and password where username doesn't matter and password is keycloak access token.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
