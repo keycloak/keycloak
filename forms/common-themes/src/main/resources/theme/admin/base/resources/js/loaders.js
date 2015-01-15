@@ -137,8 +137,8 @@ module.factory('UserSocialLinksLoader', function(Loader, UserSocialLinks, $route
 
 
 
-module.factory('RoleLoader', function(Loader, Role, $route, $q) {
-    return Loader.get(Role, function() {
+module.factory('RoleLoader', function(Loader, RoleById, $route, $q) {
+    return Loader.get(RoleById, function() {
         return {
             realm : $route.current.params.realm,
             role : $route.current.params.role
@@ -154,8 +154,8 @@ module.factory('RoleListLoader', function(Loader, Role, $route, $q) {
     });
 });
 
-module.factory('ApplicationRoleLoader', function(Loader, ApplicationRole, $route, $q) {
-    return Loader.get(ApplicationRole, function() {
+module.factory('ApplicationRoleLoader', function(Loader, RoleById, $route, $q) {
+    return Loader.get(RoleById, function() {
         return {
             realm : $route.current.params.realm,
             application : $route.current.params.application,
