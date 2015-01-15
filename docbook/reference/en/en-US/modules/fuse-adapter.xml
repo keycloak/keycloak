@@ -1,0 +1,41 @@
+<section id="fuse-adapter">
+    <title>JBoss Fuse and Apache Karaf Adapter</title>
+    <para>
+        Currently Keycloak supports securing your web applications running inside <ulink url="http://www.jboss.org/products/fuse/overview/">JBoss Fuse</ulink>
+        or <ulink url="http://karaf.apache.org/">Apache Karaf</ulink> . It leverages <link linkend="jetty8-adapter">Jetty 8 adapter</link> as both JBoss Fuse 6.1
+        and Apache Karaf 3 are bundled with <ulink url="http://eclipse.org/jetty/">Jetty 8.1 server</ulink> under the covers and Jetty is used for running various kinds of web applications.
+    </para>
+    <para>
+        What is supported for Fuse/Karaf is:
+        <itemizedlist>
+            <listitem>
+                <para>
+                    Security for classic WAR applications deployed on Fuse/Karaf with <ulink url="https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+War">Pax Web War Extender</ulink>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Security for servlets deployed on Fuse/Karaf as OSGI services with <ulink url="https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard">Pax Web Whiteboard Extender</ulink>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Security for <ulink url="http://camel.apache.org/">Apache Camel</ulink> Jetty endpoints running with
+                    <ulink url="http://camel.apache.org/jetty.html">Camel Jetty</ulink> component.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Security for <ulink url="http://cxf.apache.org/">Apache CXF</ulink> endpoints running on their own separate
+                    <ulink url="http://cxf.apache.org/docs/jetty-configuration.html">Jetty engine</ulink>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Security for <ulink url="http://cxf.apache.org/">Apache CXF</ulink> endpoints running on default engine provided by CXF servlet.
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
+    <para>The best place to start is look at Fuse demo bundled as part of Keycloak examples in directory <literal>examples/fuse</literal> .</para>
+</section>

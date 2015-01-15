@@ -1,6 +1,5 @@
-package org.keycloak.adapters.jetty;
+package org.keycloak.adapters.jetty.core;
 
-import org.apache.http.HttpVersion;
 import org.eclipse.jetty.security.DefaultUserIdentity;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
@@ -162,8 +161,19 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
     @SuppressWarnings("UseSpecificCatch")
     public void initializeKeycloak() {
         nodesRegistrationManagement = new NodesRegistrationManagement();
-        String contextPath = ContextHandler.getCurrentContext().getContextPath();
-        ServletContext theServletContext = ContextHandler.getCurrentContext().getContext(contextPath);
+
+        ServletContext theServletContext = null;
+        ContextHandler.Context currentContext = ContextHandler.getCurrentContext();
+        if (currentContext != null) {
+            String contextPath = currentContext.getContextPath();
+
+            if ("".equals(contextPath)) {
+                // This could be the case in osgi environment when deploying apps through pax whiteboard extension.
+                theServletContext = currentContext;
+            } else {
+                theServletContext = currentContext.getContext(contextPath);
+            }
+        }
 
         // Jetty 9.1.x servlet context will be null :(
         if (configResolver == null && theServletContext != null) {
