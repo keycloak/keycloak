@@ -14,6 +14,7 @@
                 <!ENTITY TomcatAdapter SYSTEM "modules/tomcat-adapter.xml">
                 <!ENTITY Jetty9Adapter SYSTEM "modules/jetty9-adapter.xml">
                 <!ENTITY Jetty8Adapter SYSTEM "modules/jetty8-adapter.xml">
+                <!ENTITY FuseAdapter SYSTEM "modules/fuse-adapter.xml">
                 <!ENTITY InstalledApplications SYSTEM "modules/installed-applications.xml">
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
                 <!ENTITY SAML SYSTEM "modules/saml.xml">
@@ -91,6 +92,7 @@ This one is short
         &TomcatAdapter;
         &Jetty9Adapter;
         &Jetty8Adapter;
+        &FuseAdapter;
         &JavascriptAdapter;
         &InstalledApplications;
         &Logout;
