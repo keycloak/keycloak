@@ -38,7 +38,7 @@
             This section describes how to configure your Spring Boot app to use Keycloak.
         </para>
         <para>
-            Instead of a <literal>keycloak.json</literal> file, you configure the Spring
+            Instead of a <literal>keycloak.json</literal> file, you configure the realm for the Spring
             Boot Keycloak adapter via the normal Spring Boot configuration. For example:
         </para>
         <programlisting>
@@ -50,6 +50,22 @@ keycloak.ssl-required = external
 keycloak.resource = demoapp
 keycloak.credentials.secret = 11111111-1111-1111-1111-111111111111
 keycloak.use-resource-role-mappings = true
+]]>
+        </programlisting>
+        <para>
+            You also need to specify the J2EE security config that would normally go in the <literal>web.xml</literal>.
+            Here's an example configuration:
+        </para>
+        <programlisting>
+<![CDATA[
+keycloak.securityConstraints[0].securityCollections[0].name = insecure stuff
+keycloak.securityConstraints[0].securityCollections[0].authRoles[0] = admin
+keycloak.securityConstraints[0].securityCollections[0].authRoles[0] = user
+keycloak.securityConstraints[0].securityCollections[0].patterns[0] = /insecure
+
+keycloak.securityConstraints[0].securityCollections[1].name = admin stuff
+keycloak.securityConstraints[0].securityCollections[1].authRoles[0] = admin
+keycloak.securityConstraints[0].securityCollections[1].patterns[0] = /admin
 ]]>
         </programlisting>
     </section>
