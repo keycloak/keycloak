@@ -58,3 +58,13 @@ Multi tenancy
 -------------
 
 A complete application, showing how to achieve multi tenancy of web applications by using one realm per account. For more information look at `multi-tenant/README.md`
+
+Basic authentication
+--------------------
+
+Example REST application configured to support both basic authentication with username/password as well as authentication with bearer token. For more information look at `basic-auth/README.md`  
+
+Fuse
+----
+
+This is set of demo applications, showing how to secure your own web applications running inside OSGI environment in JBoss Fuse or Apache Karaf. Fore more information look at `fuse/README.md`   
