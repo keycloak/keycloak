@@ -17,6 +17,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Keycloak authentication integration for Spring Boot
  *
@@ -65,16 +68,52 @@ public class KeycloakSpringBootConfiguration {
                 loginConfig.setAuthMethod("KEYCLOAK");
                 context.setLoginConfig(loginConfig);
 
-                context.addSecurityRole("jimmiapprole");
+                Set<String> authRoles = new HashSet<String>();
+                for (KeycloakSpringBootProperties.SecurityConstraint constraint : keycloakProperties.getSecurityConstraints()) {
+                    for (KeycloakSpringBootProperties.SecurityCollection collection : constraint.getSecurityCollections()) {
+                        for (String authRole : collection.getAuthRoles()) {
+                            if (!authRoles.contains(authRole)) {
+                                context.addSecurityRole(authRole);
+                                authRoles.add(authRole);
+                            }
+                        }
+                    }
+                }
 
-                SecurityConstraint constraint = new SecurityConstraint();
-                constraint.addAuthRole("jimmiapprole");
+                for (KeycloakSpringBootProperties.SecurityConstraint constraint : keycloakProperties.getSecurityConstraints()) {
+                    SecurityConstraint tomcatConstraint = new SecurityConstraint();
 
-                SecurityCollection collection = new SecurityCollection();
-                collection.addPattern("/*");
-                constraint.addCollection(collection);
+                    for (KeycloakSpringBootProperties.SecurityCollection collection : constraint.getSecurityCollections()) {
+                        SecurityCollection tomcatSecCollection = new SecurityCollection();
 
-                context.addConstraint(constraint);
+                        if (collection.getName() != null) {
+                            tomcatSecCollection.setName(collection.getName());
+                        }
+                        if (collection.getDescription() != null) {
+                            tomcatSecCollection.setDescription(collection.getDescription());
+                        }
+
+                        for (String authRole : collection.getAuthRoles()) {
+                            tomcatConstraint.addAuthRole(authRole);
+                        }
+
+                        for (String pattern : collection.getPatterns()) {
+                            tomcatSecCollection.addPattern(pattern);
+                        }
+
+                        for (String method : collection.getMethods()) {
+                            tomcatSecCollection.addMethod(method);
+                        }
+
+                        for (String method : collection.getOmittedMethods()) {
+                            tomcatSecCollection.addOmittedMethod(method);
+                        }
+
+                        tomcatConstraint.addCollection(tomcatSecCollection);
+                    }
+
+                    context.addConstraint(tomcatConstraint);
+                }
 
                 context.addParameter("keycloak.config.resolver", KeycloakSpringBootConfigResolver.class.getName());
             }
