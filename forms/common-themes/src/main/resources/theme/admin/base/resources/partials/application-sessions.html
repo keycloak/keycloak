@@ -34,7 +34,7 @@
                 <th>Session Start</th>
             </tr>
             </thead>
-            <tfoot data-ng-show="sessions && sessions.length > 5">
+            <tfoot data-ng-show="sessions && (sessions.length >= 5 || query.first != 0)">
             <tr>
                 <td colspan="7">
                     <div class="table-nav">
