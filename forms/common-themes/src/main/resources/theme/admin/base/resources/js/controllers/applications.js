@@ -332,10 +332,11 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
                 $scope.changed = false;
                 role = angular.copy($scope.role);
 
-                var l = headers().location;
-                var id = l.substring(l.lastIndexOf("/") + 1);
-                $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/roles/" + id);
-                Notifications.success("The role has been created.");
+                ApplicationRole.get({ realm: realm.realm, application : application.id, role: role.name }, function(role) {
+                    var id = role.id;
+                    $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/roles/" + id);
+                    Notifications.success("The role has been created.");
+                });
             });
         } else {
             $scope.update();
@@ -347,7 +348,7 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
             $scope.role.$remove({
                 realm : realm.realm,
                 application : application.id,
-                role : $scope.role.name
+                role : $scope.role.id
             }, function() {
                 $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/roles");
                 Notifications.success("The role has been deleted.");
