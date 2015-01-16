@@ -185,7 +185,7 @@ public class TokenManager {
             for (Map.Entry<String, AccessToken.Access> entry : token.getResourceAccess().entrySet()) {
                 ApplicationModel app = realm.getApplicationByName(entry.getKey());
                 if (app == null) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Application no longer exists", "Application no longer exists: " + app.getName());
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Application no longer exists", "Application no longer exists: " + entry.getKey());
                 }
                 for (String roleName : entry.getValue().getRoles()) {
                     RoleModel role = app.getRole(roleName);
@@ -199,7 +199,6 @@ public class TokenManager {
                         throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has application scope" + roleName);
                     }
                 }
-
             }
         }
     }
