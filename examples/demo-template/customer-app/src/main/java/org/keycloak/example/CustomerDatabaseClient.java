@@ -7,8 +7,10 @@ import org.apache.http.client.methods.HttpGet;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -50,7 +52,7 @@ public class CustomerDatabaseClient {
         HttpClient client = new HttpClientBuilder()
                 .disableTrustManager().build();
         try {
-            HttpGet get = new HttpGet(AdapterUtils.getOrigin(req.getRequestURL().toString(), session) + "/database/customers");
+            HttpGet get = new HttpGet(AdapterUtils.getOriginForRestCalls(req.getRequestURL().toString(), session) + "/database/customers");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);
