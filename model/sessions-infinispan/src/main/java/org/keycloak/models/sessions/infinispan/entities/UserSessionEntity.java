@@ -1,5 +1,8 @@
 package org.keycloak.models.sessions.infinispan.entities;
 
+import org.keycloak.models.UserSessionModel;
+
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -22,6 +25,10 @@ public class UserSessionEntity extends SessionEntity {
     private int lastSessionRefresh;
 
     private Set<String> clientSessions;
+
+    private UserSessionModel.State state;
+
+    private Map<String, String> notes;
 
     public String getUser() {
         return user;
@@ -85,5 +92,21 @@ public class UserSessionEntity extends SessionEntity {
 
     public void setClientSessions(Set<String> clientSessions) {
         this.clientSessions = clientSessions;
+    }
+
+    public Map<String, String> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(Map<String, String> notes) {
+        this.notes = notes;
+    }
+
+    public UserSessionModel.State getState() {
+        return state;
+    }
+
+    public void setState(UserSessionModel.State state) {
+        this.state = state;
     }
 }

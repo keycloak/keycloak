@@ -82,6 +82,17 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
+    public State getState() {
+        return entity.getState();
+    }
+
+    @Override
+    public void setState(State state) {
+        entity.setState(state);
+
+    }
+
+    @Override
     public List<ClientSessionModel> getClientSessions() {
         List<ClientSessionModel> clientSessionModels = new LinkedList<ClientSessionModel>();
         if (entity.getClientSessions() != null) {
@@ -105,5 +116,23 @@ public class UserSessionAdapter implements UserSessionModel {
     public int hashCode() {
         return getId().hashCode();
     }
+
+    @Override
+    public String getNote(String name) {
+        return entity.getNotes().get(name);
+    }
+
+    @Override
+    public void setNote(String name, String value) {
+        entity.getNotes().put(name, value);
+
+    }
+
+    @Override
+    public void removeNote(String name) {
+        entity.getNotes().remove(name);
+
+    }
+
 
 }

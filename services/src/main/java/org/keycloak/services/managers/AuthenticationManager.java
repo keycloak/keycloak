@@ -42,7 +42,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Stateless object that manages authentication
@@ -58,6 +57,7 @@ public class AuthenticationManager {
     // used solely to determine is user is logged in
     public static final String KEYCLOAK_SESSION_COOKIE = "KEYCLOAK_SESSION";
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
+    public static final String KEYCLOAK_LOGOUT_PROTOCOL = "KEYCLOAK_LOGOUT_PROTOCOL";
 
     protected BruteForceProtector protector;
 
@@ -81,6 +81,7 @@ public class AuthenticationManager {
     public static void logout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection) {
         if (userSession == null) return;
         UserModel user = userSession.getUser();
+        userSession.setState(UserSessionModel.State.LOGGING_OUT);
 
         logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
         expireIdentityCookie(realm, uriInfo, connection);
@@ -88,17 +89,85 @@ public class AuthenticationManager {
 
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
             ClientModel client = clientSession.getClient();
-            if (client instanceof ApplicationModel) {
+            if (client instanceof ApplicationModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
                 protocol.setRealm(realm)
                         .setUriInfo(uriInfo);
                 protocol.backchannelLogout(userSession, clientSession);
+                clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+            }
+        }
+        userSession.setState(UserSessionModel.State.LOGGED_OUT);
+        session.sessions().removeUserSession(realm, userSession);
+    }
+
+
+    public static Response browserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection) {
+        if (userSession == null) return null;
+        UserModel user = userSession.getUser();
+
+        logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
+        if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
+            userSession.setState(UserSessionModel.State.LOGGING_OUT);
+        }
+        List<ClientSessionModel> redirectClients = new LinkedList<ClientSessionModel>();
+        for (ClientSessionModel clientSession : userSession.getClientSessions()) {
+            ClientModel client = clientSession.getClient();
+            if (client.isFrontchannelLogout()) {
+                String authMethod = clientSession.getAuthMethod();
+                if (authMethod == null) continue; // must be a keycloak service like account
+                redirectClients.add(clientSession);
+                continue;
+            }
+            if (client instanceof ApplicationModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
+                String authMethod = clientSession.getAuthMethod();
+                if (authMethod == null) continue; // must be a keycloak service like account
+                LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
+                protocol.setRealm(realm)
+                        .setUriInfo(uriInfo);
+                try {
+                    protocol.backchannelLogout(userSession, clientSession);
+                    clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                } catch (Exception e) {
+                    logger.warn("Failed to logout client, continuing", e);
+                }
             }
         }
 
+        if (redirectClients.size() == 0) {
+            return finishBrowserLogout(session, realm, userSession, uriInfo, connection);
+        }
+        for (ClientSessionModel nextRedirectClient : redirectClients) {
+            String authMethod = nextRedirectClient.getAuthMethod();
+            LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
+            protocol.setRealm(realm)
+                    .setUriInfo(uriInfo);
+            // setting this to logged out cuz I"m not sure protocols can always verify that the client was logged out or not
+            nextRedirectClient.setAction(ClientSessionModel.Action.LOGGED_OUT);
+            try {
+                Response response = protocol.frontchannelLogout(userSession, nextRedirectClient);
+                if (response != null) return response;
+            } catch (Exception e) {
+                logger.warn("Failed to logout client, continuing", e);
+            }
+
+        }
+        return finishBrowserLogout(session, realm, userSession, uriInfo, connection);
+    }
+
+    protected static Response finishBrowserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection) {
+        expireIdentityCookie(realm, uriInfo, connection);
+        expireRememberMeCookie(realm, uriInfo, connection);
+        userSession.setState(UserSessionModel.State.LOGGED_OUT);
+        String method = userSession.getNote(KEYCLOAK_LOGOUT_PROTOCOL);
+        LoginProtocol protocol = session.getProvider(LoginProtocol.class, method);
+        protocol.setRealm(realm)
+                .setUriInfo(uriInfo);
+        Response response = protocol.finishLogout(userSession);
         session.sessions().removeUserSession(realm, userSession);
+        return response;
     }
 
 

@@ -173,6 +173,10 @@ public class JpaUserSessionProvider implements UserSessionProvider {
                 .setParameter("realmId", realm.getId())
                 .setParameter("userId", user.getId())
                 .executeUpdate();
+        em.createNamedQuery("removeUserSessionNoteByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .executeUpdate();
         em.createNamedQuery("removeUserSessionByUser")
                 .setParameter("realmId", realm.getId())
                 .setParameter("userId", user.getId())
@@ -211,6 +215,11 @@ public class JpaUserSessionProvider implements UserSessionProvider {
                 .setParameter("maxTime", maxTime)
                 .setParameter("idleTime", idleTime)
                 .executeUpdate();
+        em.createNamedQuery("removeUserSessionNoteByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", maxTime)
+                .setParameter("idleTime", idleTime)
+                .executeUpdate();
         em.createNamedQuery("removeUserSessionByExpired")
                 .setParameter("realmId", realm.getId())
                 .setParameter("maxTime", maxTime)
@@ -223,6 +232,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
         em.createNamedQuery("removeClientSessionNoteByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionRoleByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("removeUserSessionNoteByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
     }
 

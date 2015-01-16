@@ -7,8 +7,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
+import org.keycloak.models.sessions.jpa.entities.UserSessionNoteEntity;
 
 import javax.persistence.EntityManager;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -76,6 +78,55 @@ public class UserSessionAdapter implements UserSessionModel {
     @Override
     public void setLastSessionRefresh(int seconds) {
         entity.setLastSessionRefresh(seconds);
+    }
+
+    @Override
+    public void setNote(String name, String value) {
+        for (UserSessionNoteEntity attr : entity.getNotes()) {
+            if (attr.getName().equals(name)) {
+                attr.setValue(value);
+                return;
+            }
+        }
+        UserSessionNoteEntity attr = new UserSessionNoteEntity();
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setUserSession(entity);
+        em.persist(attr);
+        entity.getNotes().add(attr);
+    }
+
+    @Override
+    public void removeNote(String name) {
+        Iterator<UserSessionNoteEntity> it = entity.getNotes().iterator();
+        while (it.hasNext()) {
+            UserSessionNoteEntity attr = it.next();
+            if (attr.getName().equals(name)) {
+                it.remove();
+                em.remove(attr);
+            }
+        }
+    }
+
+    @Override
+    public String getNote(String name) {
+        for (UserSessionNoteEntity attr : entity.getNotes()) {
+            if (attr.getName().equals(name)) {
+                return attr.getValue();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public State getState() {
+        return entity.getState();
+    }
+
+    @Override
+    public void setState(State state) {
+        entity.setState(state);
+
     }
 
     @Override

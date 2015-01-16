@@ -81,6 +81,16 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isFrontchannelLogout() {
+        return entity.isFrontchannelLogout();
+    }
+
+    @Override
+    public void setFrontchannelLogout(boolean flag) {
+        entity.setFrontchannelLogout(flag);
+    }
+
+    @Override
     public boolean isFullScopeAllowed() {
         return entity.isFullScopeAllowed();
     }

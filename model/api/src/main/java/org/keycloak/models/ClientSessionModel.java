@@ -49,7 +49,8 @@ public interface ClientSessionModel {
         UPDATE_PASSWORD,
         RECOVER_PASSWORD,
         AUTHENTICATE,
-        SOCIAL_CALLBACK
+        SOCIAL_CALLBACK,
+        LOGGED_OUT
     }
 
 }

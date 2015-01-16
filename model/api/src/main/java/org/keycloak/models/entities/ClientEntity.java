@@ -18,6 +18,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private int notBefore;
     private boolean publicClient;
     private boolean fullScopeAllowed;
+    private boolean frontchannelLogout;
 
     private String realmId;
     private Map<String, String> attributes = new HashMap<String, String>();
@@ -129,5 +130,13 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
+    }
+
+    public boolean isFrontchannelLogout() {
+        return frontchannelLogout;
+    }
+
+    public void setFrontchannelLogout(boolean frontchannelLogout) {
+        this.frontchannelLogout = frontchannelLogout;
     }
 }

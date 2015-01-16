@@ -52,6 +52,12 @@ public class ResourceAdminManager {
         return new ApacheHttpClient4Executor(client);
     }
 
+    public static String resolveUri(URI requestUri, String uri) {
+        String absoluteURI = ResolveRelative.resolveRelativeUri(requestUri, uri);
+        return StringPropertyReplacer.replaceProperties(absoluteURI);
+
+   }
+
     public static String getManagementUrl(URI requestUri, ApplicationModel application) {
         String mgmtUrl = application.getManagementUrl();
         if (mgmtUrl == null || mgmtUrl.equals("")) {

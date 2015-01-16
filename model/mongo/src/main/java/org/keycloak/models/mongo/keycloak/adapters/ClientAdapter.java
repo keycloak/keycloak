@@ -159,6 +159,18 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
         updateMongoEntity();
     }
 
+
+    @Override
+    public boolean isFrontchannelLogout() {
+        return getMongoEntityAsClient().isFrontchannelLogout();
+    }
+
+    @Override
+    public void setFrontchannelLogout(boolean flag) {
+        getMongoEntityAsClient().setFrontchannelLogout(flag);
+        updateMongoEntity();
+    }
+
     @Override
     public boolean isFullScopeAllowed() {
         return getMongoEntityAsClient().isFullScopeAllowed();
