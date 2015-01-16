@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -38,6 +39,8 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
@@ -48,19 +51,21 @@ public class OAuthRedirectUriTest {
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
-
             ApplicationModel installedApp = appRealm.addApplication("test-installed");
             installedApp.setEnabled(true);
             installedApp.addRedirectUri(Constants.INSTALLED_APP_URN);
             installedApp.addRedirectUri(Constants.INSTALLED_APP_URL);
+            installedApp.setSecret("password");
 
             ApplicationModel installedApp2 = appRealm.addApplication("test-installed2");
             installedApp2.setEnabled(true);
             installedApp2.addRedirectUri(Constants.INSTALLED_APP_URL + "/myapp");
+            installedApp2.setSecret("password");
+
             ApplicationModel installedApp3 = appRealm.addApplication("test-wildcard");
             installedApp3.setEnabled(true);
             installedApp3.addRedirectUri("http://example.com/foo/*");
+            installedApp3.setSecret("password");
         }
     });
 
@@ -230,6 +235,19 @@ public class OAuthRedirectUriTest {
         } else {
             Assert.assertTrue(errorPage.isCurrent());
             Assert.assertEquals("Invalid redirect_uri.", errorPage.getError());
+        }
+
+        if (expectValid) {
+            loginPage.login("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            Assert.assertNotNull(code);
+
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+            Assert.assertEquals("Expected success, but got error: " + tokenResponse.getError(), 200, tokenResponse.getStatusCode());
+
+            driver.manage().deleteAllCookies();
         }
     }
 

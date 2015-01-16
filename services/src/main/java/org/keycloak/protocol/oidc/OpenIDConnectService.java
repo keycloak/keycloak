@@ -602,7 +602,7 @@ public class OpenIDConnectService {
 
         ClientModel client = authorizeClient(authorizationHeader, formData, event);
 
-        String redirectUri = clientSession.getRedirectUri();
+        String redirectUri = clientSession.getNote(OpenIDConnect.REDIRECT_URI_PARAM);
         if (redirectUri != null && !redirectUri.equals(formData.getFirst(OAuth2Constants.REDIRECT_URI))) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
@@ -795,6 +795,7 @@ public class OpenIDConnectService {
                 event.error(Errors.NOT_ALLOWED);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
             }
+            String redirectUriParam = redirect;
             redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
             if (redirect == null) {
                 event.error(Errors.INVALID_REDIRECT_URI);
@@ -806,6 +807,7 @@ public class OpenIDConnectService {
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
             clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
             clientSession.setNote(OpenIDConnect.STATE_PARAM, state);
+            clientSession.setNote(OpenIDConnect.REDIRECT_URI_PARAM, redirectUriParam);
             if (scopeParam != null) clientSession.setNote(OpenIDConnect.SCOPE_PARAM, scopeParam);
             if (responseType != null) clientSession.setNote(OpenIDConnect.RESPONSE_TYPE_PARAM, responseType);
             if (loginHint != null) clientSession.setNote(OpenIDConnect.LOGIN_HINT_PARAM, loginHint);
