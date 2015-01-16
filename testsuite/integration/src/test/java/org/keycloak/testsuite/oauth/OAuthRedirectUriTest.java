@@ -226,7 +226,7 @@ public class OAuthRedirectUriTest {
         checkRedirectUri("http://localhost/myapp2", false);
     }
 
-    private void checkRedirectUri(String redirectUri, boolean expectValid) {
+    private void checkRedirectUri(String redirectUri, boolean expectValid) throws IOException {
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
 
@@ -247,7 +247,7 @@ public class OAuthRedirectUriTest {
 
             Assert.assertEquals("Expected success, but got error: " + tokenResponse.getError(), 200, tokenResponse.getStatusCode());
 
-            driver.manage().deleteAllCookies();
+            oauth.doLogout(tokenResponse.getRefreshToken(), "password");
         }
     }
 
