@@ -155,7 +155,7 @@
             messages to the cluster. However, as there's no sensitive data sent there's not much that can be achieved.
             For realms and users all that can be done is to send invalidation messages to make nodes load data from the
             database more frequently. For user sessions it would be possible to modify existing user sessions, but creating
-            new sessions would have no affect as they would not be linked to any access tokens. There's not to much that
+            new sessions would have no affect as they would not be linked to any access tokens. There's not too much that
             can be achieved by modifying user sessions. For example it would be possible to prevent sessions from expiring,
             by changing the creation time. However, it would for example have no effect adding additional permissions to the
             sessions as these are rechecked against the user and application when the token is created or refreshed.

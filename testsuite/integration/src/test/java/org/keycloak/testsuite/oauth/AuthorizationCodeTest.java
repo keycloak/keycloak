@@ -106,7 +106,7 @@ public class AuthorizationCodeTest {
         String title = driver.getTitle();
         Assert.assertTrue(title.startsWith("Success code="));
 
-        String code = driver.findElement(By.id(OAuth2Constants.CODE)).getText();
+        String code = driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
         keycloakRule.verifyCode(code);
 
         String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);

@@ -7,7 +7,7 @@
         <version>1.2.0.Beta1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
-    <name>Keycloak OSGI JAAS</name>
+    <name>Keycloak OSGI JAAS Realm Configuration</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
@@ -27,7 +27,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-osgi-core-adapter</artifactId>
+            <artifactId>keycloak-adapter-core</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
@@ -53,7 +53,7 @@
                         <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
                         <Embed-Transitive>false</Embed-Transitive>
                         <Bundle-ClassPath>.</Bundle-ClassPath>    -->
-                        <Bundle-Name>${project.description}</Bundle-Name>
+                        <Bundle-Name>${project.name}</Bundle-Name>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Import-Package>${keycloak.osgi.import}</Import-Package>
                         <Export-Package>${keycloak.osgi.export}</Export-Package>

@@ -117,6 +117,10 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         logger.trace("Updating database");
 
                         JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class);
+                        if (updater == null) {
+                            throw new RuntimeException("Can't update database: JPA updater provider not found");
+                        }
+
                         connection = getConnection();
 
                         if (databaseSchema.equals("update")) {

@@ -852,8 +852,6 @@ module.controller('RealmSessionStatsCtrl', function($scope, realm, stats, RealmA
     $scope.realm = realm;
     $scope.stats = stats;
 
-    console.log(stats);
-
     $scope.logoutAll = function() {
         RealmLogoutAll.save({realm : realm.realm}, function (globalReqResult) {
             var successCount = globalReqResult.successRequests ? globalReqResult.successRequests.length : 0;
@@ -863,16 +861,10 @@ module.controller('RealmSessionStatsCtrl', function($scope, realm, stats, RealmA
                 var msgStart = successCount>0 ? 'Successfully logout all users under: ' + globalReqResult.successRequests + ' . ' : '';
                 Notifications.error(msgStart + 'Failed to logout users under: ' + globalReqResult.failedRequests + '. Verify availability of failed hosts and try again');
             } else {
-                Notifications.success('Successfully logout all users from the realm');
+                window.location.reload();
             }
-
-            RealmApplicationSessionStats.query({realm: realm.realm}, function(updated) {
-                $scope.stats = updated;
-            })
         });
     };
-
-
 });
 
 
@@ -960,10 +952,11 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, roles, applica
                 $scope.changed = false;
                 role = angular.copy($scope.role);
 
-                var l = headers().location;
-                var id = l.substring(l.lastIndexOf("/") + 1);
-                $location.url("/realms/" + realm.realm + "/roles/" + id);
-                Notifications.success("The role has been created.");
+                Role.get({ realm: realm.realm, role: role.name }, function(role) {
+                    var id = role.id;
+                    $location.url("/realms/" + realm.realm + "/roles/" + id);
+                    Notifications.success("The role has been created.");
+                });
             });
         } else {
             $scope.update();
@@ -974,7 +967,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, roles, applica
         Dialog.confirmDelete($scope.role.name, 'role', function () {
             $scope.role.$remove({
                 realm: realm.realm,
-                role: $scope.role.name
+                role: $scope.role.id
             }, function () {
                 $location.url("/realms/" + realm.realm + "/roles");
                 Notifications.success("The role has been deleted.");

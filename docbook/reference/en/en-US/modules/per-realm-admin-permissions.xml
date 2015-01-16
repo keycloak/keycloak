@@ -4,7 +4,7 @@
         Administering your realm through the <literal>master</literal> realm as discussed in <xref linkend="admin-permissions" /> may not always be
         ideal or feasible.  For example, maybe you have more than one admin application that manages various admin aspects of your organization
         and you want to unify all these different "admin consoles" under one realm so you can do SSO between them.  Keycloak allows you to
-        grant realm admin privleges to users within that realm.  These realm admins can participate in SSO for that realm and
+        grant realm admin privileges to users within that realm.  These realm admins can participate in SSO for that realm and
         visit a keycloak admin console instance that is dedicated solely for that realm by going to the url:
         <literal>/{keycloak-root}/admin/{realm}/console</literal>
     </para>

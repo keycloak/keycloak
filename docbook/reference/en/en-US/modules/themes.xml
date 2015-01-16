@@ -25,7 +25,7 @@
         <title>Configure theme</title>
         <para>
             All theme types, except welcome, is configured through <literal>Keycloak Admin Console</literal>. To change
-            the theme used for a realm open the open the <literal>Keycloak Admin Console</literal>, select your realm
+            the theme used for a realm open the <literal>Keycloak Admin Console</literal>, select your realm
             from the drop-down box in the top left corner. Under <literal>Settings</literal> click on <literal>Theme</literal>.
         </para>
         <para>
@@ -166,7 +166,7 @@
                 and <literal>org.keycloak.account.AccountProvider</literal>.
             </para>
             <para>
-                Once you have deployed your account provider to Keycloak you need to configure <literal>keycloak-server.json</literal>to specify which provider should be used:
+                Once you have deployed your account provider to Keycloak you need to configure <literal>keycloak-server.json</literal> to specify which provider should be used:
 <programlisting>
 "account": {
     "provider": "custom-provider"
@@ -182,7 +182,7 @@
                 and <literal>org.keycloak.login.LoginFormsProvider</literal> in <literal>forms/login-api</literal>.
             </para>
             <para>
-                Once you have deployed your account provider to Keycloak you need to configure <literal>keycloak-server.json</literal>to specify which provider should be used:
+                Once you have deployed your account provider to Keycloak you need to configure <literal>keycloak-server.json</literal> to specify which provider should be used:
 <programlisting>
 "login": {
     "provider": "custom-provider"

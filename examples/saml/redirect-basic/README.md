@@ -18,7 +18,7 @@ Make sure you've set up the Keycloak Server
 The Keycloak Appliance Distribution comes with a preconfigured Keycloak server (based on Wildfly).  You can use it out of
 the box to run these demos.  So, if you're using this, you can head to Step 2.
 
-Alternatively, you can install the Keycloak Server onto any JBoss AS 7.1.1, EAP 6.x, or Wildfly 8.x server, but there is
+Alternatively, you can install the Keycloak Server onto any EAP 6.x, or Wildfly 8.x server, but there is
 a few steps you must follow.
 
 Obtain latest keycloak-war-dist-all.zip.  This distro is used to install Keycloak onto an existing JBoss installation.

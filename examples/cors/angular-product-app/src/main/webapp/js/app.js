@@ -32,6 +32,9 @@ angular.element(document).ready(function ($http) {
 module.controller('GlobalCtrl', function($scope, $http) {
     $scope.products = [];
     $scope.roles = [];
+    $scope.serverInfo = [];
+    $scope.realm = [];
+    $scope.version = [];
     $scope.reloadData = function() {
         $http.get("http://localhost-db:8080/cors-database/products").success(function(data) {
             $scope.products = angular.fromJson(data);
@@ -69,6 +72,12 @@ module.controller('GlobalCtrl', function($scope, $http) {
     $scope.loadPublicRealmInfo = function() {
         $http.get("http://localhost-auth:8080/auth/realms/cors").success(function(data) {
             $scope.realm = angular.fromJson(data);
+        });
+    };
+
+    $scope.loadVersion = function() {
+        $http.get("http://localhost-auth:8080/auth/version").success(function(data) {
+            $scope.version = angular.fromJson(data);
         });
     };
 

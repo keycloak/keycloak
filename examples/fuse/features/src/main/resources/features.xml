@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0" name="keycloak-${project.version}">
+
+    <feature name="keycloak-fuse-example" version="${project.version}">
+        <details>The keycloak fuse example</details>
+        <feature>war</feature>
+        <feature>camel</feature>
+        <feature>camel-jetty</feature>
+        <feature>cxf</feature>
+        <feature>keycloak</feature>
+        <bundle dependency="true">mvn:org.codehaus.jackson/jackson-jaxrs/${jackson.version}</bundle>
+        <bundle>mvn:org.keycloak.example.demo/product-portal-fuse-example/${project.version}</bundle>
+        <bundle>mvn:org.keycloak.example.demo/customer-portal-fuse-example/${project.version}/war</bundle>
+        <bundle>mvn:org.keycloak.example.demo/camel-endpoint-example/${project.version}</bundle>
+        <bundle>mvn:org.keycloak.example.demo/cxf-jaxws-example/${project.version}</bundle>
+        <bundle>mvn:org.keycloak.example.demo/cxf-jaxrs-example/${project.version}</bundle>
+    </feature>
+
+</features>

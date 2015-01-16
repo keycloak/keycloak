@@ -18,9 +18,11 @@
                 document.getElementById('not-authenticated').style.display = 'none';
 
                 document.getElementById('subject').innerText = keycloak.subject;
-                document.getElementById('username').innerText = keycloak.idToken.preferred_username;
+                document.getElementById('username').innerText = keycloak.idTokenParsed.preferred_username;
                 document.getElementById('tokenExpires').innerText = new Date(keycloak.tokenParsed.exp * 1000).toLocaleString();
                 document.getElementById('tokenRefreshExpires').innerText = new Date(keycloak.refreshTokenParsed.exp * 1000).toLocaleString();
+                document.getElementById('token').innerText = JSON.stringify(keycloak.tokenParsed, null, '  ');
+                document.getElementById('idToken').innerText = JSON.stringify(keycloak.idTokenParsed, null, '  ');
             } else {
                 document.getElementById('authenticated').style.display = 'none';
                 document.getElementById('not-authenticated').style.display = 'block';
@@ -31,6 +33,15 @@
             keycloak.init({ onLoad: 'check-sso' }).success(updateState);
         }, false);
     </script>
+    <style>
+        td {
+            vertical-align: top;
+        }
+
+        tr.odd td {
+            background-color: #eee;
+        }
+    </style>
 </head>
 <body>
 <div id="authenticated" style="display: none;">
@@ -46,7 +57,7 @@
                 <td>Subject</td>
                 <td id="subject"></td>
             </tr>
-            <tr>
+            <tr class="odd">
                 <td>Username</td>
                 <td id="username"></td>
             </tr>
@@ -54,9 +65,17 @@
                 <td>Token expires</td>
                 <td id="tokenExpires"></td>
             </tr>
-            <tr>
+            <tr class="odd">
                 <td>Refresh token expires</td>
                 <td id="tokenRefreshExpires"></td>
+            </tr>
+            <tr>
+                <td>Token</td>
+                <td><pre id="token"></pre></td>
+            </tr>
+            <tr class="odd">
+                <td>ID Token</td>
+                <td><pre id="idToken"></pre></td>
             </tr>
         </table>
     </div>

@@ -120,7 +120,7 @@
                 redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
             }
 
-            sessionStorage.oauthState = state;
+            sessionStorage.oauthState = JSON.stringify({ state: state, redirectUri: encodeURIComponent(redirectUri) });
 
             var url = getRealmUrl()
                 + '/tokens/login'
@@ -193,6 +193,31 @@
                     if (req.status == 200) {
                         kc.profile = JSON.parse(req.responseText);
                         promise.setSuccess(kc.profile);
+                    } else {
+                        promise.setError();
+                    }
+                }
+            }
+
+            req.send();
+
+            return promise.promise;
+        }
+
+        kc.loadUserInfo = function() {
+            var url = getRealmUrl() + '/protocol/openid-connect/userinfo';
+            var req = new XMLHttpRequest();
+            req.open('GET', url, true);
+            req.setRequestHeader('Accept', 'application/json');
+            req.setRequestHeader('Authorization', 'bearer ' + kc.token);
+
+            var promise = createPromise();
+
+            req.onreadystatechange = function () {
+                if (req.readyState == 4) {
+                    if (req.status == 200) {
+                        kc.userInfo = JSON.parse(req.responseText);
+                        promise.setSuccess(kc.userInfo);
                     } else {
                         promise.setError();
                     }
@@ -314,6 +339,8 @@
                 } else {
                     params += '&client_id=' + encodeURIComponent(kc.clientId);
                 }
+
+                params += '&redirect_uri=' + oauth.redirectUri;
 
                 req.withCredentials = true;
 
@@ -538,8 +565,12 @@
                     }
                 }
 
-                if ((oauth.code || oauth.error) && oauth.state && oauth.state == sessionStorage.oauthState) {
+                var sessionState = sessionStorage.oauthState && JSON.parse(sessionStorage.oauthState);
+
+                if (sessionState && (oauth.code || oauth.error) && oauth.state && oauth.state == sessionState.state) {
                     delete sessionStorage.oauthState;
+
+                    oauth.redirectUri = sessionState.redirectUri;
 
                     if (oauth.fragment) {
                         oauth.newUrl += '#' + oauth.fragment;

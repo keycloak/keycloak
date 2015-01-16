@@ -20,6 +20,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.UserClaimSet;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -185,7 +186,7 @@ public class TokenManager {
             for (Map.Entry<String, AccessToken.Access> entry : token.getResourceAccess().entrySet()) {
                 ApplicationModel app = realm.getApplicationByName(entry.getKey());
                 if (app == null) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Application no longer exists", "Application no longer exists: " + app.getName());
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Application no longer exists", "Application no longer exists: " + entry.getKey());
                 }
                 for (String roleName : entry.getValue().getRoles()) {
                     RoleModel role = app.getRole(roleName);
@@ -199,26 +200,27 @@ public class TokenManager {
                         throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has application scope" + roleName);
                     }
                 }
-
             }
         }
     }
 
-    public void initClaims(IDToken token, ClientModel model, UserModel user) {
+    public void initClaims(UserClaimSet claimSet, ClientModel model, UserModel user) {
+        claimSet.setSubject(user.getId());
+
         if (ClaimMask.hasUsername(model.getAllowedClaimsMask())) {
-            token.setPreferredUsername(user.getUsername());
+            claimSet.setPreferredUsername(user.getUsername());
         }
         if (ClaimMask.hasEmail(model.getAllowedClaimsMask())) {
-            token.setEmail(user.getEmail());
-            token.setEmailVerified(user.isEmailVerified());
+            claimSet.setEmail(user.getEmail());
+            claimSet.setEmailVerified(user.isEmailVerified());
         }
         if (ClaimMask.hasName(model.getAllowedClaimsMask())) {
-            token.setFamilyName(user.getLastName());
-            token.setGivenName(user.getFirstName());
+            claimSet.setFamilyName(user.getLastName());
+            claimSet.setGivenName(user.getFirstName());
             StringBuilder fullName = new StringBuilder();
             if (user.getFirstName() != null) fullName.append(user.getFirstName()).append(" ");
             if (user.getLastName() != null) fullName.append(user.getLastName());
-            token.setName(fullName.toString());
+            claimSet.setName(fullName.toString());
         }
     }
 
@@ -233,7 +235,8 @@ public class TokenManager {
         if (realm.getAccessTokenLifespan() > 0) {
             token.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
         }
-        initClaims(token, claimer, user);
+        UserClaimSet claimSet = token.getUserClaimSet();
+        initClaims(claimSet, claimer, user);
         return token;
     }
 
@@ -257,7 +260,8 @@ public class TokenManager {
         if (allowedOrigins != null) {
             token.setAllowedOrigins(allowedOrigins);
         }
-        initClaims(token, client, user);
+        UserClaimSet claimSet = token.getUserClaimSet();
+        initClaims(claimSet, client, user);
         return token;
     }
 
@@ -354,30 +358,30 @@ public class TokenManager {
             if (realm.getAccessTokenLifespan() > 0) {
                 idToken.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
             }
-            idToken.setPreferredUsername(accessToken.getPreferredUsername());
-            idToken.setGivenName(accessToken.getGivenName());
-            idToken.setMiddleName(accessToken.getMiddleName());
-            idToken.setFamilyName(accessToken.getFamilyName());
-            idToken.setName(accessToken.getName());
-            idToken.setNickName(accessToken.getNickName());
-            idToken.setGender(accessToken.getGender());
-            idToken.setPicture(accessToken.getPicture());
-            idToken.setProfile(accessToken.getProfile());
-            idToken.setWebsite(accessToken.getWebsite());
-            idToken.setBirthdate(accessToken.getBirthdate());
-            idToken.setEmail(accessToken.getEmail());
-            idToken.setEmailVerified(accessToken.getEmailVerified());
-            idToken.setLocale(accessToken.getLocale());
-            idToken.setFormattedAddress(accessToken.getFormattedAddress());
-            idToken.setAddress(accessToken.getAddress());
-            idToken.setStreetAddress(accessToken.getStreetAddress());
-            idToken.setLocality(accessToken.getLocality());
-            idToken.setRegion(accessToken.getRegion());
-            idToken.setPostalCode(accessToken.getPostalCode());
-            idToken.setCountry(accessToken.getCountry());
-            idToken.setPhoneNumber(accessToken.getPhoneNumber());
-            idToken.setPhoneNumberVerified(accessToken.getPhoneNumberVerified());
-            idToken.setZoneinfo(accessToken.getZoneinfo());
+            idToken.getUserClaimSet().setPreferredUsername(accessToken.getUserClaimSet().getPreferredUsername());
+            idToken.getUserClaimSet().setGivenName(accessToken.getUserClaimSet().getGivenName());
+            idToken.getUserClaimSet().setMiddleName(accessToken.getUserClaimSet().getMiddleName());
+            idToken.getUserClaimSet().setFamilyName(accessToken.getUserClaimSet().getFamilyName());
+            idToken.getUserClaimSet().setName(accessToken.getUserClaimSet().getName());
+            idToken.getUserClaimSet().setNickName(accessToken.getUserClaimSet().getNickName());
+            idToken.getUserClaimSet().setGender(accessToken.getUserClaimSet().getGender());
+            idToken.getUserClaimSet().setPicture(accessToken.getUserClaimSet().getPicture());
+            idToken.getUserClaimSet().setProfile(accessToken.getUserClaimSet().getProfile());
+            idToken.getUserClaimSet().setWebsite(accessToken.getUserClaimSet().getWebsite());
+            idToken.getUserClaimSet().setBirthdate(accessToken.getUserClaimSet().getBirthdate());
+            idToken.getUserClaimSet().setEmail(accessToken.getUserClaimSet().getEmail());
+            idToken.getUserClaimSet().setEmailVerified(accessToken.getUserClaimSet().getEmailVerified());
+            idToken.getUserClaimSet().setLocale(accessToken.getUserClaimSet().getLocale());
+            idToken.getUserClaimSet().setFormattedAddress(accessToken.getUserClaimSet().getFormattedAddress());
+            idToken.getUserClaimSet().setAddress(accessToken.getUserClaimSet().getAddress());
+            idToken.getUserClaimSet().setStreetAddress(accessToken.getUserClaimSet().getStreetAddress());
+            idToken.getUserClaimSet().setLocality(accessToken.getUserClaimSet().getLocality());
+            idToken.getUserClaimSet().setRegion(accessToken.getUserClaimSet().getRegion());
+            idToken.getUserClaimSet().setPostalCode(accessToken.getUserClaimSet().getPostalCode());
+            idToken.getUserClaimSet().setCountry(accessToken.getUserClaimSet().getCountry());
+            idToken.getUserClaimSet().setPhoneNumber(accessToken.getUserClaimSet().getPhoneNumber());
+            idToken.getUserClaimSet().setPhoneNumberVerified(accessToken.getUserClaimSet().getPhoneNumberVerified());
+            idToken.getUserClaimSet().setZoneinfo(accessToken.getUserClaimSet().getZoneinfo());
             return this;
         }
 

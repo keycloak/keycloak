@@ -8,6 +8,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
 import org.keycloak.Config;
@@ -583,6 +584,7 @@ public class OpenIDConnectService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
+
         ClientSessionModel clientSession = accessCode.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
         if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN)) {
@@ -600,6 +602,16 @@ public class OpenIDConnectService {
         event.session(userSession.getId());
 
         ClientModel client = authorizeClient(authorizationHeader, formData, event);
+
+        String redirectUri = clientSession.getNote(OpenIDConnect.REDIRECT_URI_PARAM);
+        if (redirectUri != null && !redirectUri.equals(formData.getFirst(OAuth2Constants.REDIRECT_URI))) {
+            Map<String, String> res = new HashMap<String, String>();
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Incorrect redirect_uri");
+            event.error(Errors.INVALID_CODE);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
+                    .build();
+        }
 
         if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
             Map<String, String> res = new HashMap<String, String>();
@@ -670,6 +682,15 @@ public class OpenIDConnectService {
         event.success();
 
         return Cors.add(request, Response.ok(res)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+    }
+
+    @Path("userinfo")
+    public Object issueUserInfo() {
+        UserInfoService userInfoEndpoint = new UserInfoService(this);
+
+        ResteasyProviderFactory.getInstance().injectProperties(userInfoEndpoint);
+
+        return userInfoEndpoint;
     }
 
     protected ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData, EventBuilder event) {
@@ -784,6 +805,7 @@ public class OpenIDConnectService {
                 event.error(Errors.NOT_ALLOWED);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
             }
+            String redirectUriParam = redirect;
             redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
             if (redirect == null) {
                 event.error(Errors.INVALID_REDIRECT_URI);
@@ -795,6 +817,7 @@ public class OpenIDConnectService {
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
             clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
             clientSession.setNote(OpenIDConnect.STATE_PARAM, state);
+            clientSession.setNote(OpenIDConnect.REDIRECT_URI_PARAM, redirectUriParam);
             if (scopeParam != null) clientSession.setNote(OpenIDConnect.SCOPE_PARAM, scopeParam);
             if (responseType != null) clientSession.setNote(OpenIDConnect.RESPONSE_TYPE_PARAM, responseType);
             if (loginHint != null) clientSession.setNote(OpenIDConnect.LOGIN_HINT_PARAM, loginHint);
@@ -1137,4 +1160,11 @@ public class OpenIDConnectService {
         return Response.status(status).entity(e).type("application/json").build();
     }
 
+    TokenManager getTokenManager() {
+        return this.tokenManager;
+    }
+
+    RealmModel getRealm() {
+        return this.realm;
+    }
 }

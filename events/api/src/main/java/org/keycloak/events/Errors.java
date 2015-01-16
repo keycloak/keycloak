@@ -41,4 +41,5 @@ public interface Errors {
     String USER_SESSION_NOT_FOUND = "user_session_not_found";
 
     String EMAIL_SEND_FAILED = "email_send_failed";
+    String INVALID_EMAIL = "invalid_email";
 }
