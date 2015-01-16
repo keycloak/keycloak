@@ -10,7 +10,7 @@
         <div id="kc-code">
             <#if code.success>
                 <p>Please copy this code and paste it into your application:</p>
-                <textarea id="code" class="${properties.kcTextareaClass!}">${code.code}</textarea>
+                <input id="code" class="${properties.kcTextareaClass!}" value="${code.code}"/>
             <#else>
                 <p id="error">${code.error}</p>
             </#if>
