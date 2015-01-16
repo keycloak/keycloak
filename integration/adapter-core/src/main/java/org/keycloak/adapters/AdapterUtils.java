@@ -1,13 +1,14 @@
 package org.keycloak.adapters;
 
-import java.util.Collections;
-import java.util.Set;
-
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.UserClaimSet;
 import org.keycloak.util.UriUtils;
+
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -77,20 +78,22 @@ public class AdapterUtils {
         String attr = "sub";
         if (deployment.getPrincipalAttribute() != null) attr = deployment.getPrincipalAttribute();
         String name = null;
+        UserClaimSet claimSet = token.getUserClaimSet();
+
         if ("sub".equals(attr)) {
             name = token.getSubject();
         } else if ("email".equals(attr)) {
-            name = token.getEmail();
+            name = claimSet.getEmail();
         } else if ("preferred_username".equals(attr)) {
-            name = token.getPreferredUsername();
+            name = claimSet.getPreferredUsername();
         } else if ("name".equals(attr)) {
-            name = token.getName();
+            name = claimSet.getName();
         } else if ("given_name".equals(attr)) {
-            name = token.getGivenName();
+            name = claimSet.getGivenName();
         } else if ("family_name".equals(attr)) {
-            name = token.getFamilyName();
+            name = claimSet.getFamilyName();
         } else if ("nickname".equals(attr)) {
-            name = token.getNickName();
+            name = claimSet.getNickName();
         }
         if (name == null) name = token.getSubject();
         return name;

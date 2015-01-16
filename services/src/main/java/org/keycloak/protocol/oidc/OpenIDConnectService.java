@@ -8,6 +8,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
 import org.keycloak.Config;
@@ -683,6 +684,15 @@ public class OpenIDConnectService {
         return Cors.add(request, Response.ok(res)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
+    @Path("userinfo")
+    public Object issueUserInfo() {
+        UserInfoService userInfoEndpoint = new UserInfoService(this);
+
+        ResteasyProviderFactory.getInstance().injectProperties(userInfoEndpoint);
+
+        return userInfoEndpoint;
+    }
+
     protected ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData, EventBuilder event) {
         ClientModel client = authorizeClientBase(authorizationHeader, formData, event, realm);
 
@@ -1150,4 +1160,11 @@ public class OpenIDConnectService {
         return Response.status(status).entity(e).type("application/json").build();
     }
 
+    TokenManager getTokenManager() {
+        return this.tokenManager;
+    }
+
+    RealmModel getRealm() {
+        return this.realm;
+    }
 }

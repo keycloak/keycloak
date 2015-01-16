@@ -16,13 +16,14 @@
  */
 package org.keycloak.testsuite.adapter;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.keycloak.KeycloakSecurityContext;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.keycloak.KeycloakSecurityContext;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  *
@@ -37,7 +38,7 @@ public class MultiTenantServlet extends HttpServlet {
         KeycloakSecurityContext context = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
 
         pw.print("Username: ");
-        pw.println(context.getIdToken().getPreferredUsername());
+        pw.println(context.getIdToken().getUserClaimSet().getPreferredUsername());
 
         pw.print("<br/>Realm: ");
         pw.println(context.getRealm());

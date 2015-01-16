@@ -204,6 +204,31 @@
             return promise.promise;
         }
 
+        kc.loadUserInfo = function() {
+            var url = getRealmUrl() + '/protocol/openid-connect/userinfo';
+            var req = new XMLHttpRequest();
+            req.open('GET', url, true);
+            req.setRequestHeader('Accept', 'application/json');
+            req.setRequestHeader('Authorization', 'bearer ' + kc.token);
+
+            var promise = createPromise();
+
+            req.onreadystatechange = function () {
+                if (req.readyState == 4) {
+                    if (req.status == 200) {
+                        kc.userInfo = JSON.parse(req.responseText);
+                        promise.setSuccess(kc.userInfo);
+                    } else {
+                        promise.setError();
+                    }
+                }
+            }
+
+            req.send();
+
+            return promise.promise;
+        }
+
         kc.isTokenExpired = function(minValidity) {
             if (!kc.tokenParsed || !kc.refreshToken) {
                 throw 'Not authenticated';
