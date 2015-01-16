@@ -81,6 +81,16 @@
         </div>
     </div>
     <hr />
+    <div>
+        <h2><span>Server version</span></h2>
+        <button type="submit" data-ng-click="loadVersion()">Load version</button>
+
+        <div data-ng-show="version">
+            Keycloak version: {{version.version}} <br/>
+            Keycloak build time: {{version['build-time'] | date:'yyyy-MM-dd HH:mm:ss'}} <br/>
+        </div>
+    </div>
+    <hr />
 </div>
 </body>
 </html>
