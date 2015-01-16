@@ -2,6 +2,7 @@
 <%@ page import="org.keycloak.representations.AccessTokenResponse" %>
 <%@ page import="org.keycloak.representations.IDToken" %>
 <%@ page import="org.keycloak.servlet.ServletOAuthClient" %>
+<%@ page import="org.keycloak.representations.UserClaimSet" %>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
  pageEncoding="ISO-8859-1"%>
 <%@ page session="false" %>
@@ -16,15 +17,16 @@
         AccessTokenResponse tokenResponse = ProductDatabaseClient.getTokenResponse(request);
         if (tokenResponse.getIdToken() != null) {
             IDToken idToken = ServletOAuthClient.extractIdToken(tokenResponse.getIdToken());
+            UserClaimSet claimSet = idToken.getUserClaimSet();
             out.println("<p><i>Change client claims in admin console to view personal info of user</i></p>");
-            if (idToken.getPreferredUsername() != null) {
-                out.println("<p>Username: " + idToken.getPreferredUsername() + "</p>");
+            if (claimSet.getPreferredUsername() != null) {
+                out.println("<p>Username: " + claimSet.getPreferredUsername() + "</p>");
             }
-            if (idToken.getName() != null) {
-                out.println("<p>Full Name: " + idToken.getName() + "</p>");
+            if (claimSet.getName() != null) {
+                out.println("<p>Full Name: " + claimSet.getName() + "</p>");
             }
-            if (idToken.getEmail() != null) {
-                out.println("<p>Email: " + idToken.getEmail() + "</p>");
+            if (claimSet.getEmail() != null) {
+                out.println("<p>Email: " + claimSet.getEmail() + "</p>");
             }
         }
         list = ProductDatabaseClient.getProducts(request, tokenResponse.getToken());

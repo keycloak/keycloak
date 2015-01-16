@@ -16,14 +16,15 @@
  */
 package org.keycloak.example.multitenant.boundary;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.keycloak.KeycloakPrincipal;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.keycloak.KeycloakPrincipal;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  *
@@ -54,7 +55,7 @@ public class ProtectedServlet extends HttpServlet {
         writer.write(principal.getKeycloakSecurityContext().getIdToken().getIssuer());
 
         writer.write("<br/>User: ");
-        writer.write(principal.getKeycloakSecurityContext().getIdToken().getPreferredUsername());
+        writer.write(principal.getKeycloakSecurityContext().getIdToken().getUserClaimSet().getPreferredUsername());
 
         writer.write(String.format("<br/><a href=\"/multitenant/%s/logout\">Logout</a>", realm));
     }

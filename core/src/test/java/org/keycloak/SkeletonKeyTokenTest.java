@@ -6,6 +6,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.UserClaimSet;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
 
@@ -58,7 +59,9 @@ public class SkeletonKeyTokenTest {
     public void testSerialization() throws Exception {
         AccessToken token = createSimpleToken();
         IDToken idToken = new IDToken();
-        idToken.setEmail("joe@email.cz");
+        UserClaimSet claimSet = idToken.getUserClaimSet();
+
+        claimSet.setEmail("joe@email.cz");
 
         KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
 
@@ -95,7 +98,7 @@ public class SkeletonKeyTokenTest {
         Assert.assertEquals("111", token.getId());
         Assert.assertTrue(token.getResourceAccess("foo").isUserInRole("admin"));
         Assert.assertTrue(token.getResourceAccess("bar").isUserInRole("user"));
-        Assert.assertEquals("joe@email.cz", idToken.getEmail());
+        Assert.assertEquals("joe@email.cz", claimSet.getEmail());
         Assert.assertEquals("acme", ctx.getRealm());
         ois.close();
     }
