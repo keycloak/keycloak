@@ -30,11 +30,9 @@ Step 1: Make sure you've set up the Keycloak Server
 The Keycloak Appliance Distribution comes with a preconfigured Keycloak server (based on Wildfly).  You can use it out of
 the box to run these demos.  So, if you're using this, you can head to Step 2.
 
-Alternatively, you can install the Keycloak Server onto any JBoss AS 7.1.1, EAP 6.x, or Wildfly 8.x server, but there is
-a few steps you must follow.
-
-If using JBoss AS7, obtain latest keycloak-war-dist-all.zip.  This distro is used to install Keycloak onto an existing JBoss installation.
-This installs the server using a WAR file.  It is not needed on EAP6 and WildFly.
+Alternatively, you can install the Keycloak Server onto any EAP 6.x, or Wildfly 8.x server, but there is
+a few steps you must follow. You need to obtain latest keycloak-war-dist-all.zip.  This distro is used to install Keycloak onto an existing JBoss installation.
+This installs the server using a WAR file.
 
     $ cd ${jboss.as7.home}/standalone
     $ cp -r ${keycloak-war-dist-all}/deployments .
@@ -53,6 +51,10 @@ For JBoss AS 7.1.1:
 
     $ cd ${as7.home}
     $ unzip ${keycloak-war-dist-all}/adapters/keycloak-as7-adapter-dist.zip
+
+WARNING: Note that we don't officially support Keycloak auth-server running on JBoss AS 7.1.1. You can still test examples running on AS 7.1.1,
+but then you may need to do few additional changes in examples to point them into external Keycloak server running on WildFly or EAP 6.x.
+This is especially changing "auth-server-url" in keycloak.json files to be non-relative as examples and auth-server will run on different server!
 
 Unzipping the adapter ZIP only installs the JAR files.  You must also add the Keycloak Subsystem to the server's
 configuration (standalone/configuration/standalone.xml).
