@@ -65,6 +65,7 @@ public class OAuthRedirectUriTest {
             ApplicationModel installedApp3 = appRealm.addApplication("test-wildcard");
             installedApp3.setEnabled(true);
             installedApp3.addRedirectUri("http://example.com/foo/*");
+            installedApp3.addRedirectUri("http://localhost:8081/foo/*");
             installedApp3.setSecret("password");
         }
     });
@@ -199,27 +200,32 @@ public class OAuthRedirectUriTest {
     public void testWildcard() throws IOException {
         oauth.clientId("test-wildcard");
         checkRedirectUri("http://example.com", false);
+        checkRedirectUri("http://localhost:8080", false, true);
         checkRedirectUri("http://example.com/foo", true);
+        checkRedirectUri("http://example.com/foo/bar", true);
+        checkRedirectUri("http://localhost:8081/foo", true, true);
+        checkRedirectUri("http://localhost:8081/foo/bar", true, true);
         checkRedirectUri("http://example.com/foobar", false);
+        checkRedirectUri("http://localhost:8081/foobar", false, true);
     }
 
     @Test
     public void testLocalhost() throws IOException {
         oauth.clientId("test-installed");
 
-        checkRedirectUri("urn:ietf:wg:oauth:2.0:oob", true);
+        checkRedirectUri("urn:ietf:wg:oauth:2.0:oob", true, true);
         checkRedirectUri("http://localhost", true);
 
-        checkRedirectUri("http://localhost:8081", true);
+        checkRedirectUri("http://localhost:8081", true, true);
 
         checkRedirectUri("http://localhosts", false);
         checkRedirectUri("http://localhost/myapp", false);
-        checkRedirectUri("http://localhost:8081/myapp", false);
+        checkRedirectUri("http://localhost:8081/myapp", false, true);
 
         oauth.clientId("test-installed2");
 
         checkRedirectUri("http://localhost/myapp", true);
-        checkRedirectUri("http://localhost:8081/myapp", true);
+        checkRedirectUri("http://localhost:8081/myapp", true, true);
 
         checkRedirectUri("http://localhosts/myapp", false);
         checkRedirectUri("http://localhost", false);
@@ -227,6 +233,10 @@ public class OAuthRedirectUriTest {
     }
 
     private void checkRedirectUri(String redirectUri, boolean expectValid) throws IOException {
+        checkRedirectUri(redirectUri, expectValid, false);
+    }
+
+    private void checkRedirectUri(String redirectUri, boolean expectValid, boolean checkCodeToToken) throws IOException {
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
 
@@ -238,16 +248,20 @@ public class OAuthRedirectUriTest {
         }
 
         if (expectValid) {
-            loginPage.login("test-user@localhost", "password");
+            Assert.assertTrue(loginPage.isCurrent());
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            Assert.assertNotNull(code);
+            if (checkCodeToToken) {
+                loginPage.login("test-user@localhost", "password");
 
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+                String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+                Assert.assertNotNull(code);
 
-            Assert.assertEquals("Expected success, but got error: " + tokenResponse.getError(), 200, tokenResponse.getStatusCode());
+                OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
 
-            oauth.doLogout(tokenResponse.getRefreshToken(), "password");
+                Assert.assertEquals("Expected success, but got error: " + tokenResponse.getError(), 200, tokenResponse.getStatusCode());
+
+                oauth.doLogout(tokenResponse.getRefreshToken(), "password");
+            }
         }
     }
 
