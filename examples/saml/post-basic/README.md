@@ -12,6 +12,9 @@ What is it?
 
 This example demonstrates Keycloak SAML 2.0 support in conjunction with a servlet secured by Picketlink's SAML SP client.
 
+WARNING: This example doesn't use signed SAML request and response messages. It's used just for demonstration purpose, but in production
+you should always use signed SAML messages as shown in "post-with-signature" or "post-with-encryption" examples.
+
 
 Make sure you've set up the Keycloak Server
 --------------------------------------
@@ -228,7 +231,7 @@ Access the application
 
 The application will be running at the following URL: <http://localhost:8080/sales-post>.
 
-*Note: A Service Provider alone is not very useful without an Identity Provider to authenticate users and issue SAML Assertions. Once you get this application deployed, please take a look at [About the PicketLink Federation Quickstarts](../README.md#about-the-picketlink-federation-quickstarts).*
+*Note: A Service Provider alone is not very useful without an Identity Provider to authenticate users and issue SAML Assertions. Once you get this application deployed, please take a look at [About the PicketLink Federation Quickstarts](../README.md#about-the-keycloak-saml-quickstarts).*
 
 
 Undeploy the Archive
@@ -240,11 +243,6 @@ Undeploy the Archive
 
         For EAP 6:     mvn jboss-as:undeploy
         For WildFly:   mvn -Pwildfly wildfly:undeploy
-
-
-Run the Quickstart in JBoss Developer Studio or Eclipse
--------------------------------------
-You can also start the server and deploy the quickstarts from Eclipse using JBoss tools. For more information, see [Use JBoss Developer Studio or Eclipse to Run the Quickstarts](../README.md#use-jboss-developer-studio-or-eclipse-to-run-the-quickstarts) 
 
 
 Debug the Application
