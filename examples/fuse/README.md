@@ -80,18 +80,24 @@ features:uninstall pax-http-whiteboard
 features:uninstall pax-http
 features:uninstall pax-jetty
 features:removeurl mvn:org.ops4j.pax.web/pax-web-features/3.0.6/xml/features
-features:addurl mvn:org.ops4j.pax.web/pax-web-features/3.1.2/xml/features
+```
 
+Now restart fuse (use `osgi:shutdown` command and start it again from command line. You can ignore startup messages after restart 
+as pax-web is not installed at the moment. Then run those commands:
+
+```
+features:addurl mvn:org.ops4j.pax.web/pax-web-features/3.1.2/xml/features
 features:addurl mvn:org.keycloak/keycloak-osgi-features/1.1.0.Final/xml/features
 features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.1.0.Final/xml/features
-
 features:install keycloak-pax-web-upgrade
 features:install pax-http-whiteboard/3.1.2
 features:install pax-war/3.1.2
+```
 
-features:uninstall cxf
-features:install cxf
+Now it's recommended to restart again. After the start, you shouldn't see any error messages, which indicates that upgrade to pax-web 3.1.2 went fine.
+So last step is to install the demo now: 
 
+```
 features:install keycloak-fuse-example
 ```
 
