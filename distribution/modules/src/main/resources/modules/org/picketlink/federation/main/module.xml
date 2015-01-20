@@ -29,7 +29,7 @@
     <module name="javax.servlet.api" />
     <module name="org.jboss.common-core" />
     <module name="org.jboss.logging" />
-    <module name="org.jboss.as.web-common" />
+    <module name="org.jboss.as.web-common" optional="true" />
     <module name="org.jboss.security.xacml" />
     <module name="org.picketbox" />
     <module name="javax.xml.ws.api" />
