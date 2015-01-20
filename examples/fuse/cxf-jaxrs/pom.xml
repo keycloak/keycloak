@@ -18,14 +18,10 @@
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            META-INF.cxf,
-            META-INF.cxf.osgi,
-            org.apache.cxf.bus,
-            org.apache.cxf.bus.spring,
-            org.apache.cxf.bus.resource,
-            org.apache.cxf.resource,
-            org.apache.cxf.jaxrs,
-            org.apache.cxf.transport.http,
+            META-INF.cxf;version="[2.7,3.2)",
+            META-INF.cxf.osgi;version="[2.7,3.2)";resolution:=optional,
+            org.apache.cxf.transport.http;version="[2.7,3.2)",
+            org.apache.cxf.*;version="[2.7,3.2)",
             org.codehaus.jackson.jaxrs;version="${jackson.version}",
             org.keycloak.adapters.jetty;version="${project.version}",
             org.keycloak.adapters;version="${project.version}",
