@@ -79,7 +79,7 @@
         </para>
         <para>
             For example if your loadbalancer is on <emphasis>https://loadbalancer.com/myapp</emphasis> and auth-server-url is <emphasis>/auth</emphasis>,
-            then relative URI of Keycloak is resolved to be  <emphasis>https://loadbalancer.com/myapp</emphasis> .
+            then relative URI of Keycloak is resolved to be  <emphasis>https://loadbalancer.com/myapp/auth</emphasis> .
         </para>
         <para>
             For cluster setup, it may be even better to use option <emphasis>auth-server-url-for-backend-request</emphasis> . This allows to configure
