@@ -261,6 +261,26 @@
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
+                <artifactId>picketlink-tomcat-common</artifactId>
+                <version>${picketlink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.picketlink</groupId>
+                <artifactId>picketlink-tomcat5-single</artifactId>
+                <version>${picketlink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.picketlink</groupId>
+                <artifactId>picketlink-jbas-common</artifactId>
+                <version>${picketlink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.picketlink</groupId>
+                <artifactId>picketlink-jbas7-single</artifactId>
+                <version>${picketlink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-idm-simple-schema</artifactId>
                 <version>${picketlink.version}</version>
             </dependency>

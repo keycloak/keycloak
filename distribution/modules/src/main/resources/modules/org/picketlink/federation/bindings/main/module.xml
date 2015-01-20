@@ -29,7 +29,6 @@
     <module name="javax.servlet.api" />
     <module name="org.jboss.common-core" />
     <module name="org.jboss.logging" />
-    <module name="org.wildfly.extension.undertow" />
     <module name="org.jboss.security.xacml" />
     <module name="org.picketbox" />
     <module name="javax.xml.ws.api" />
@@ -43,11 +42,18 @@
     <module name="org.jboss.ws.api" />
     <module name="org.jboss.ws.spi" />
     <module name="org.apache.cxf" />
-    <module name="io.undertow.core" />
-    <module name="io.undertow.servlet" />
     <module name="org.picketlink.common" />
     <module name="org.picketlink.config" />
     <module name="org.picketlink.federation" />
+
+    <!-- Wildfly dependencies -->
+    <module name="org.wildfly.extension.undertow" optional="true" />
+    <module name="io.undertow.core" optional="true" />
+    <module name="io.undertow.servlet" optional="true" />
+
+    <!-- AS7/EAP6 dependencies -->
+    <module name="org.jboss.as.web" optional="true"/>
+    <module name="org.jboss.modules" optional="true"/>
   </dependencies>
 
 </module>

@@ -81,10 +81,31 @@
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-federation</artifactId>
         </dependency>
+
+        <!-- Wildfly federation binding -->
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-wildfly-common</artifactId>
         </dependency>
+
+        <!-- AS7/EAP6 federation binding -->
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-tomcat-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-tomcat5-single</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-jbas-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-jbas7-single</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-idm-simple-schema</artifactId>
