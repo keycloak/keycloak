@@ -837,3 +837,10 @@ legend .kc-icon-collapse {
 table table {
     margin-bottom: 0 !important;
 }
+
+.form-control[readonly] {
+    cursor: default;
+    border: none;
+    color: #333;
+    background-color: #fff;
+}

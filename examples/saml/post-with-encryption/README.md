@@ -225,7 +225,7 @@ Access the application
 
 The application will be running at the following URL: <http://localhost:8080/sales-post-enc>.
 
-*Note: A Service Provider alone is not very useful without an Identity Provider to authenticate users and issue SAML Assertions. Once you get this application deployed, please take a look at [About the PicketLink Federation Quickstarts](../README.md#about-the-picketlink-federation-quickstarts).*
+*Note: A Service Provider alone is not very useful without an Identity Provider to authenticate users and issue SAML Assertions. Once you get this application deployed, please take a look at [About the PicketLink Federation Quickstarts](../README.md#about-the-keycloak-saml-quickstarts).*
 
 Undeploy the Archive
 --------------------
@@ -236,11 +236,6 @@ Undeploy the Archive
 
         For EAP 6:     mvn jboss-as:undeploy
         For WildFly:   mvn -Pwildfly wildfly:undeploy
-
-
-Run the Quickstart in JBoss Developer Studio or Eclipse
--------------------------------------
-You can also start the server and deploy the quickstarts from Eclipse using JBoss tools. For more information, see [Use JBoss Developer Studio or Eclipse to Run the Quickstarts](../README.md#use-jboss-developer-studio-or-eclipse-to-run-the-quickstarts) 
 
 
 Debug the Application

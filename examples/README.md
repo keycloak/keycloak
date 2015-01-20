@@ -68,3 +68,8 @@ Fuse
 ----
 
 This is set of demo applications, showing how to secure your own web applications running inside OSGI environment in JBoss Fuse or Apache Karaf. Fore more information look at `fuse/README.md`   
+
+SAML
+----
+
+This is set of demo applications, showing how to secure your own SAML web applications. Fore more information look at `saml/README.md`   
