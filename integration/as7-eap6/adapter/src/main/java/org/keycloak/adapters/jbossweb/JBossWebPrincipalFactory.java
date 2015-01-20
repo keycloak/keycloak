@@ -14,6 +14,7 @@ import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
 import javax.security.auth.Subject;
+import java.lang.reflect.Constructor;
 import java.security.Principal;
 import java.security.acl.Group;
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class JBossWebPrincipalFactory extends GenericPrincipalFactory {
+
+    private static Constructor jbossWebPrincipalConstructor = findJBossGenericPrincipalConstructor();
 
     @Override
     protected GenericPrincipal createPrincipal(Principal userPrincipal, List<String> roles) {
@@ -84,9 +87,12 @@ public class JBossWebPrincipalFactory extends GenericPrincipalFactory {
         sc.getUtil().createSubjectInfo(userPrincipal, account, subject);
         List<String> rolesAsStringList = new ArrayList<String>();
         rolesAsStringList.addAll(roleSet);
-        return new JBossGenericPrincipal(realm, userPrincipal.getName(), null, rolesAsStringList,
-                userPrincipal, null, account, null, subject);
 
+        try {
+            return (GenericPrincipal) jbossWebPrincipalConstructor.newInstance(realm, userPrincipal.getName(), null, rolesAsStringList, userPrincipal, null, account, null, subject);
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to create JBossGenericPrincipal", t);
+        }
     }
 
     /**
@@ -148,6 +154,21 @@ public class JBossWebPrincipalFactory extends GenericPrincipalFactory {
             roles.addMember(new SimplePrincipal(role));
         }
         return roleSets;
+    }
+
+    static Constructor findJBossGenericPrincipalConstructor() {
+        for (Constructor<?> c : JBossGenericPrincipal.class.getConstructors()) {
+            if (c.getParameterTypes().length == 9 &&
+                    c.getParameterTypes()[0].equals(Realm.class) &&
+                    c.getParameterTypes()[1].equals(String.class) &&
+                    c.getParameterTypes()[3].equals(List.class) &&
+                    c.getParameterTypes()[4].equals(Principal.class) &&
+                    c.getParameterTypes()[6].equals(Object.class) &&
+                    c.getParameterTypes()[8].equals(Subject.class)) {
+                return c;
+            }
+        }
+        return null;
     }
 
 }
