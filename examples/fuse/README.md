@@ -72,7 +72,7 @@ Securing your applications on JBoss Fuse 6.1 is a bit more tricky. There is bug 
 custom Jetty authenticator provided by Keycloak Jetty adapter into underlying Jetty server. Hence first step is to upgrade pax-web 
 version from default 3.0.6 to newer 3.1.2 . Then you need to "refresh" cxf feature too. Final step is to install "keycloak-fuse-example" feature. 
 
-All the steps could be performed with these commands in Fuse console (Replace Keycloak versions with the current version number again):
+All the steps could be performed with these commands in Fuse console (Replace Keycloak versions with the current Keycloak version number):
                                                                                                                                                                                    
 ```
 features:uninstall pax-war
@@ -98,6 +98,19 @@ Now it's recommended to restart again. After the start, you shouldn't see any er
 So last step is to install the demo now: 
 
 ```
+features:install keycloak-fuse-example
+```
+
+Now you can test example applications similarly like described for "Karaf" section.
+
+Running example on JBoss Fuse 6.2.0
+-----------------------------------
+This is snapshot version of JBoss Fuse, which is not released yet at this moment. It has pax-web bug mentioned above fix already, so just those commands are 
+sufficient to install the demo (Replace Keycloak versions with the current Keycloak version number):
+
+```
+features:addurl mvn:org.keycloak/keycloak-osgi-features/1.1.0.Final/xml/features
+features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.1.0.Final/xml/features
 features:install keycloak-fuse-example
 ```
 
