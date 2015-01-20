@@ -30,4 +30,6 @@ public interface LoginProtocol extends Provider {
     Response consentDenied(ClientSessionModel clientSession);
 
     void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession);
+    Response frontchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession);
+    Response finishLogout(UserSessionModel userSession);
 }

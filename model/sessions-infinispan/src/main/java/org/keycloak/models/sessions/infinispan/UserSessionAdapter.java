@@ -11,6 +11,7 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -74,6 +75,39 @@ public class UserSessionAdapter implements UserSessionModel {
 
     public void setLastSessionRefresh(int lastSessionRefresh) {
         entity.setLastSessionRefresh(lastSessionRefresh);
+        update();
+    }
+
+    @Override
+    public String getNote(String name) {
+        return entity.getNotes() != null ? entity.getNotes().get(name) : null;
+    }
+
+    @Override
+    public void setNote(String name, String value) {
+        if (entity.getNotes() == null) {
+            entity.setNotes(new HashMap<String, String>());
+        }
+        entity.getNotes().put(name, value);
+        update();
+    }
+
+    @Override
+    public void removeNote(String name) {
+        if (entity.getNotes() != null) {
+            entity.getNotes().remove(name);
+            update();
+        }
+    }
+
+    @Override
+    public State getState() {
+        return entity.getState();
+    }
+
+    @Override
+    public void setState(State state) {
+        entity.setState(state);
         update();
     }
 

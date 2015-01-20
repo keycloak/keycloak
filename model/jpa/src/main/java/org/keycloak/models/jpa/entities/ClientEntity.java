@@ -43,6 +43,8 @@ public abstract class ClientEntity {
     private boolean publicClient;
     @Column(name="PROTOCOL")
     private String protocol;
+    @Column(name="FRONTCHANNEL_LOGOUT")
+    private boolean frontchannelLogout;
     @Column(name="FULL_SCOPE_ALLOWED")
     private boolean fullScopeAllowed;
 
@@ -168,5 +170,13 @@ public abstract class ClientEntity {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public boolean isFrontchannelLogout() {
+        return frontchannelLogout;
+    }
+
+    public void setFrontchannelLogout(boolean frontchannelLogout) {
+        this.frontchannelLogout = frontchannelLogout;
     }
 }

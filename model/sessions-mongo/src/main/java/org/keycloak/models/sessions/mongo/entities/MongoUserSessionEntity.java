@@ -5,10 +5,13 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.entities.AbstractIdentifiableEntity;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -33,6 +36,10 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
     private int lastSessionRefresh;
 
     private List<String> clientSessions = new ArrayList<String>();
+
+    private Map<String, String> notes = new HashMap<String, String>();
+
+    private UserSessionModel.State state;
 
     public String getRealmId() {
         return realmId;
@@ -114,4 +121,19 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
         context.getMongoStore().removeEntities(MongoClientSessionEntity.class, query, context);
     }
 
+    public Map<String, String> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(Map<String, String> notes) {
+        this.notes = notes;
+    }
+
+    public UserSessionModel.State getState() {
+        return state;
+    }
+
+    public void setState(UserSessionModel.State state) {
+        this.state = state;
+    }
 }

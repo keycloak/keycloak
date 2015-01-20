@@ -36,6 +36,9 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
             resp.setContentType("text/plain");
             OutputStream stream = resp.getOutputStream();
             Principal principal = req.getUserPrincipal();
+            stream.write("request-path: ".getBytes());
+            stream.write(req.getPathInfo().getBytes());
+            stream.write("\n".getBytes());
             stream.write("principal=".getBytes());
             if (principal == null) {
                 stream.write("null".getBytes());
@@ -49,6 +52,9 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
             resp.setContentType("text/plain");
             OutputStream stream = resp.getOutputStream();
             Principal principal = req.getUserPrincipal();
+            stream.write("request-path: ".getBytes());
+            stream.write(req.getPathInfo().getBytes());
+            stream.write("\n".getBytes());
             stream.write("principal=".getBytes());
             if (principal == null) {
                 stream.write("null".getBytes());

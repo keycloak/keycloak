@@ -83,6 +83,18 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     }
 
     @Override
+    public State getState() {
+        return entity.getState();
+    }
+
+    @Override
+    public void setState(State state) {
+        entity.setState(state);
+        updateMongoEntity();
+
+    }
+
+    @Override
     public List<ClientSessionModel> getClientSessions() {
         List<ClientSessionModel> sessions = new LinkedList<ClientSessionModel>();
         if (entity.getClientSessions() == null) {
@@ -95,6 +107,23 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
             sessions.add(clientSession);
         }
         return sessions;
+    }
+
+    @Override
+    public String getNote(String name) {
+        return entity.getNotes().get(name);
+    }
+
+    @Override
+    public void setNote(String name, String value) {
+        entity.getNotes().put(name, value);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void removeNote(String name) {
+        entity.getNotes().remove(name);
+        updateMongoEntity();
     }
 
     @Override

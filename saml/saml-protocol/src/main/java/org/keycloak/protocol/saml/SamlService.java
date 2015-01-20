@@ -20,6 +20,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.StreamUtil;
@@ -118,10 +119,24 @@ public class SamlService {
             return null;
         }
 
-        protected Response handleSamlResponse(String samleResponse, String relayState) {
-            event.event(EventType.LOGIN);
-            event.error(Errors.INVALID_TOKEN);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
+        protected Response handleSamlResponse(String samlResponse, String relayState) {
+            AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
+            if (authResult == null) {
+                logger.warn("Unknown saml response.");
+                event.event(EventType.LOGIN);
+                event.error(Errors.INVALID_TOKEN);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
+            }
+            // assume this is a logout response
+            UserSessionModel userSession = authResult.getSession();
+            if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
+                logger.warn("Unknown saml response.");
+                logger.warn("UserSession is not tagged as logging out.");
+                event.event(EventType.LOGIN);
+                event.error(Errors.INVALID_TOKEN);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
+            }
+            return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
         }
 
         protected Response handleSamlRequest(String samlRequest, String relayState) {
@@ -176,7 +191,7 @@ public class SamlService {
             } else if (samlObject instanceof LogoutRequestType) {
                 event.event(EventType.LOGOUT);
                 LogoutRequestType logout = (LogoutRequestType) samlObject;
-                return logoutRequest(logout, client);
+                return logoutRequest(logout, client, relayState);
 
             } else {
                 event.event(EventType.LOGIN);
@@ -255,12 +270,31 @@ public class SamlService {
 
         protected abstract String getBindingType();
 
-        protected Response logoutRequest(LogoutRequestType requestAbstractType, ClientModel client) {
+        protected Response logoutRequest(LogoutRequestType logoutRequest, ClientModel client, String relayState) {
             // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
+
+
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
             if (authResult != null) {
-                logout(authResult.getSession());
+                String bindingUri = client.getAttribute(SamlProtocol.SAML_LOGOUT_BINDING_URI);
+                if (bindingUri == null ) bindingUri = ((ApplicationModel)client).getManagementUrl();
+                bindingUri = ResourceAdminManager.resolveUri(uriInfo.getRequestUri(), bindingUri);
+                UserSessionModel userSession = authResult.getSession();
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
+                if (SamlProtocol.requiresRealmSignature(client)) {
+                    userSession.setNote(SamlProtocol.SAML_LOGOUT_SIGNATURE_ALGORITHM, SamlProtocol.getSignatureAlgorithm(client).toString());
+
+                }
+                if (relayState != null) userSession.setNote(SamlProtocol.SAML_LOGOUT_RELAY_STATE, relayState);
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_REQUEST_ID, logoutRequest.getID());
+                String logoutBinding = client.getAttribute(SamlProtocol.SAML_LOGOUT_BINDING);
+                if (logoutBinding == null) logoutBinding = getBindingType();
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING, logoutBinding);
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_ISSUER, logoutRequest.getIssuer().getValue());
+                userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL);
+                return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
             }
+
 
             String redirectUri = null;
 
@@ -269,20 +303,23 @@ public class SamlService {
             }
 
             if (redirectUri != null) {
-                String validatedRedirect = OpenIDConnectService.verifyRedirectUri(uriInfo, redirectUri, realm, client);;
-                if (validatedRedirect == null) {
+                redirectUri = OpenIDConnectService.verifyRedirectUri(uriInfo, redirectUri, realm, client);
+                if (redirectUri == null) {
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect uri.");
                 }
-                return Response.status(302).location(UriBuilder.fromUri(validatedRedirect).build()).build();
+            }
+            if (redirectUri != null) {
+                return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
             } else {
                 return Response.ok().build();
             }
 
         }
 
-        private void logout(UserSessionModel userSession) {
-            authManager.logout(session, realm, userSession, uriInfo, clientConnection);
-            event.user(userSession.getUser()).session(userSession).success();
+        private Response logout(UserSessionModel userSession) {
+            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
+            if (response == null) event.user(userSession.getUser()).session(userSession).success();
+            return response;
         }
 
         private boolean checkSsl() {

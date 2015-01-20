@@ -140,11 +140,14 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         }
 
         public String htmlResponse() throws ProcessingException, ConfigurationException, IOException {
-            return buildHtml(encoded());
+            return buildHtml(encoded(), destination);
 
         }
         public Response response() throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document);
+            return buildResponse(document, destination);
+        }
+        public Response response(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
+            return buildResponse(document, actionUrl);
         }
     }
 
@@ -162,11 +165,15 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         public Document getDocument() {
             return document;
         }
-        public URI responseUri() throws ConfigurationException, ProcessingException, IOException {
-            return generateRedirectUri("SAMLResponse", document);
+        public URI responseUri(String redirectUri) throws ConfigurationException, ProcessingException, IOException {
+            return generateRedirectUri("SAMLResponse", redirectUri, document);
         }
         public Response response() throws ProcessingException, ConfigurationException, IOException {
-            URI uri = responseUri();
+            return response(destination);
+        }
+
+        public Response response(String redirectUri) throws ProcessingException, ConfigurationException, IOException {
+            URI uri = responseUri(redirectUri);
 
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoCache(true);
@@ -259,8 +266,8 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     }
 
 
-    protected Response buildResponse(Document responseDoc) throws ProcessingException, ConfigurationException, IOException {
-        String str = buildHtmlPostResponse(responseDoc);
+    protected Response buildResponse(Document responseDoc, String actionUrl) throws ProcessingException, ConfigurationException, IOException {
+        String str = buildHtmlPostResponse(responseDoc, actionUrl);
 
         CacheControl cacheControl = new CacheControl();
         cacheControl.setNoCache(true);
@@ -269,14 +276,14 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
                        .header("Cache-Control", "no-cache, no-store").build();
     }
 
-    protected String buildHtmlPostResponse(Document responseDoc) throws ProcessingException, ConfigurationException, IOException {
+    protected String buildHtmlPostResponse(Document responseDoc, String actionUrl) throws ProcessingException, ConfigurationException, IOException {
         byte[] responseBytes = DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
         String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes));
 
-        return buildHtml(samlResponse);
+        return buildHtml(samlResponse, actionUrl);
     }
 
-    protected String buildHtml(String samlResponse) {
+    protected String buildHtml(String samlResponse, String actionUrl) {
         if (destination == null) {
             throw SALM2LoginResponseBuilder.logger.nullValueError("Destination is null");
         }
@@ -291,7 +298,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         builder.append("</HEAD>");
         builder.append("<BODY Onload=\"document.forms[0].submit()\">");
 
-        builder.append("<FORM METHOD=\"POST\" ACTION=\"" + destination + "\">");
+        builder.append("<FORM METHOD=\"POST\" ACTION=\"" + actionUrl + "\">");
         builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"" + key + "\"" + " VALUE=\"" + samlResponse + "\"/>");
 
         if (isNotNull(relayState)) {
@@ -315,8 +322,8 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     }
 
 
-    protected URI generateRedirectUri(String samlParameterName, Document document) throws ConfigurationException, ProcessingException, IOException {
-        UriBuilder builder = UriBuilder.fromUri(destination)
+    protected URI generateRedirectUri(String samlParameterName, String redirectUri, Document document) throws ConfigurationException, ProcessingException, IOException {
+        UriBuilder builder = UriBuilder.fromUri(redirectUri)
                 .replaceQuery(null)
                 .queryParam(samlParameterName, base64Encoded(document));
         if (relayState != null) {

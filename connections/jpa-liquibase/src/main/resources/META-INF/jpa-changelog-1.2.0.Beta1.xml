@@ -32,6 +32,9 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <addColumn tableName="CLIENT">
+            <column name="FRONTCHANNEL_LOGOUT" type="BOOLEAN" defaultValueBoolean="false"/>
+        </addColumn>
         <addPrimaryKey columnNames="INTERNAL_ID" constraintName="CONSTRAINT_2B" tableName="IDENTITY_PROVIDER"/>
         <addPrimaryKey columnNames="IDENTITY_PROVIDER, USER_ID" constraintName="CONSTRAINT_40" tableName="FEDERATED_IDENTITY"/>
         <addPrimaryKey columnNames="IDENTITY_PROVIDER_ID, NAME" constraintName="CONSTRAINT_D" tableName="IDENTITY_PROVIDER_CONFIG"/>

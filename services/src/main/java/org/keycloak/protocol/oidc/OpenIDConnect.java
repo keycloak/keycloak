@@ -147,6 +147,17 @@ public class OpenIDConnect implements LoginProtocol {
     }
 
     @Override
+    public Response frontchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
+        // todo oidc redirect support
+        throw new RuntimeException("NOT IMPLEMENTED");
+    }
+
+    @Override
+    public Response finishLogout(UserSessionModel userSession) {
+        throw new RuntimeException("NOT IMPLEMENTED");
+    }
+
+    @Override
     public void close() {
 
     }

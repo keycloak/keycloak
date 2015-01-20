@@ -69,6 +69,9 @@ public interface ClientModel {
     String getAttribute(String name);
     Map<String, String> getAttributes();
 
+    boolean isFrontchannelLogout();
+    void setFrontchannelLogout(boolean flag);
+
 
     boolean isPublicClient();
     void setPublicClient(boolean flag);

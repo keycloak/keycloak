@@ -28,6 +28,7 @@ public class CachedClient {
     protected boolean publicClient;
     protected boolean fullScopeAllowed;
     protected boolean directGrantsOnly;
+    protected boolean frontchannelLogout;
     protected int notBefore;
     protected Set<String> scope = new HashSet<String>();
     protected Set<String> webOrigins = new HashSet<String>();
@@ -42,6 +43,7 @@ public class CachedClient {
         attributes.putAll(model.getAttributes());
         notBefore = model.getNotBefore();
         directGrantsOnly = model.isDirectGrantsOnly();
+        frontchannelLogout = model.isFrontchannelLogout();
         publicClient = model.isPublicClient();
         allowedClaimsMask = model.getAllowedClaimsMask();
         fullScopeAllowed = model.isFullScopeAllowed();
@@ -111,5 +113,13 @@ public class CachedClient {
 
     public Map<String, String> getAttributes() {
         return attributes;
+    }
+
+    public boolean isFrontchannelLogout() {
+        return frontchannelLogout;
+    }
+
+    public void setFrontchannelLogout(boolean frontchannelLogout) {
+        this.frontchannelLogout = frontchannelLogout;
     }
 }

@@ -125,6 +125,16 @@ public abstract class ClientAdapter implements ClientModel {
         updatedClient.setPublicClient(flag);
     }
 
+    public boolean isFrontchannelLogout() {
+        if (updatedClient != null) return updatedClient.isPublicClient();
+        return cachedClient.isFrontchannelLogout();
+    }
+
+    public void setFrontchannelLogout(boolean flag) {
+        getDelegateForUpdate();
+        updatedClient.setFrontchannelLogout(flag);
+    }
+
     @Override
     public boolean isFullScopeAllowed() {
         if (updatedClient != null) return updatedClient.isFullScopeAllowed();

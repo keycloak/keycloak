@@ -1,8 +1,12 @@
 package org.keycloak.models.sessions.mem.entities;
 
+import org.keycloak.models.UserSessionModel;
+
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -18,6 +22,8 @@ public class UserSessionEntity {
     private boolean rememberMe;
     private int started;
     private int lastSessionRefresh;
+    private UserSessionModel.State state;
+    private Map<String, String> notes = new HashMap<String, String>();
     private List<ClientSessionEntity> clientSessions = Collections.synchronizedList(new LinkedList<ClientSessionEntity>());
 
     public String getId() {
@@ -109,4 +115,15 @@ public class UserSessionEntity {
         return clientSessions;
     }
 
+    public Map<String, String> getNotes() {
+        return notes;
+    }
+
+    public UserSessionModel.State getState() {
+        return state;
+    }
+
+    public void setState(UserSessionModel.State state) {
+        this.state = state;
+    }
 }

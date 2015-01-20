@@ -1,5 +1,7 @@
 package org.keycloak.models.sessions.jpa.entities;
 
+import org.keycloak.models.UserSessionModel;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -54,8 +56,14 @@ public class UserSessionEntity {
     @Column(name="LAST_SESSION_REFRESH")
     protected int lastSessionRefresh;
 
+    @Column(name="USER_SESSION_STATE")
+    protected UserSessionModel.State state;
+
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="session")
     protected Collection<ClientSessionEntity> clientSessions = new ArrayList<ClientSessionEntity>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="userSession")
+    protected Collection<UserSessionNoteEntity> notes = new ArrayList<UserSessionNoteEntity>();
 
     public String getId() {
         return id;
@@ -133,4 +141,19 @@ public class UserSessionEntity {
         return clientSessions;
     }
 
+     public UserSessionModel.State getState() {
+        return state;
+    }
+
+    public void setState(UserSessionModel.State state) {
+        this.state = state;
+    }
+
+    public Collection<UserSessionNoteEntity> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(Collection<UserSessionNoteEntity> notes) {
+        this.notes = notes;
+    }
 }

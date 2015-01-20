@@ -27,4 +27,18 @@ public interface UserSessionModel {
 
     List<ClientSessionModel> getClientSessions();
 
+    public String getNote(String name);
+    public void setNote(String name, String value);
+    public void removeNote(String name);
+
+    State getState();
+    void setState(State state);
+
+    public static enum State {
+        LOGGING_IN,
+        LOGGED_IN,
+        LOGGING_OUT,
+        LOGGED_OUT
+    }
+
 }
