@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -149,6 +150,36 @@ public class ResetPasswordTest {
 
         Assert.assertTrue(errorPage.isCurrent());
         Assert.assertEquals("Unknown code, please login again through your application.", errorPage.getError());
+    }
+
+    @Test
+    public void resetPasswordCancelChangeUser() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword("test-user@localhost");
+
+        resetPasswordPage.assertCurrent();
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).detail(Details.USERNAME, "test-user@localhost").detail(Details.EMAIL, "test-user@localhost").assertEvent().getSessionId();
+
+        resetPasswordPage.backToLogin();
+
+        Assert.assertTrue(loginPage.isCurrent());
+
+        loginPage.login("login@test.com", "password");
+
+        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+
+        String code = oauth.getCurrentQuery().get("code");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        Assert.assertEquals(200, tokenResponse.getStatusCode());
+        Assert.assertEquals(userId, oauth.verifyToken(tokenResponse.getAccessToken()).getSubject());
+
+        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId()).user(userId).assertEvent();
     }
 
     @Test

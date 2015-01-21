@@ -55,11 +55,19 @@ public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessio
 
     @Override
     public void setUserSession(UserSessionModel userSession) {
-        MongoUserSessionEntity userSessionEntity = provider.getUserSessionEntity(realm, userSession.getId());
-        entity.setSessionId(userSessionEntity.getId());
-        updateMongoEntity();
+        if (userSession == null) {
+            if (entity.getSessionId() != null) {
+                MongoUserSessionEntity userSessionEntity = provider.getUserSessionEntity(realm, entity.getSessionId());
+                provider.getMongoStore().pullItemFromList(userSessionEntity, "clientSessions", entity.getSessionId(), invocationContext);
+            }
+            entity.setSessionId(null);
+        } else {
+            MongoUserSessionEntity userSessionEntity = provider.getUserSessionEntity(realm, userSession.getId());
+            entity.setSessionId(userSessionEntity.getId());
+            updateMongoEntity();
 
-        provider.getMongoStore().pushItemToList(userSessionEntity, "clientSessions", entity.getId(), true, invocationContext);
+            provider.getMongoStore().pushItemToList(userSessionEntity, "clientSessions", entity.getId(), true, invocationContext);
+        }
     }
 
     @Override
@@ -70,9 +78,13 @@ public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessio
 
     @Override
     public void setRoles(Set<String> roles) {
-        List<String> list = new LinkedList<String>();
-        list.addAll(roles);
-        entity.setRoles(list);
+        if (roles == null) {
+            entity.setRoles(null);
+        } else {
+            List<String> list = new LinkedList<String>();
+            list.addAll(roles);
+            entity.setRoles(list);
+        }
         updateMongoEntity();
     }
 

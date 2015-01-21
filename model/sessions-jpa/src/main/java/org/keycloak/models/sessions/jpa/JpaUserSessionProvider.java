@@ -155,6 +155,9 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     public void removeUserSession(RealmModel realm, UserSessionModel session) {
         UserSessionEntity entity = em.find(UserSessionEntity.class, session.getId());
         if (entity != null) {
+            for (ClientSessionEntity c : entity.getClientSessions()) {
+                em.remove(c);
+            }
             em.remove(entity);
         }
     }

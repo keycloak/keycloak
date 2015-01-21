@@ -87,10 +87,17 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public void setUserSession(UserSessionModel userSession) {
-        UserSessionAdapter adapter = (UserSessionAdapter)userSession;
-        UserSessionEntity userSessionEntity = adapter.getEntity();
-        entity.setSession(userSessionEntity);
-        userSessionEntity.getClientSessions().add(entity);
+        if (userSession == null) {
+            if (entity.getSession() != null) {
+                entity.getSession().getClientSessions().remove(entity);
+            }
+            entity.setSession(null);
+        } else {
+            UserSessionAdapter adapter = (UserSessionAdapter) userSession;
+            UserSessionEntity userSessionEntity = adapter.getEntity();
+            entity.setSession(userSessionEntity);
+            userSessionEntity.getClientSessions().add(entity);
+        }
     }
 
     @Override
@@ -108,6 +115,13 @@ public class ClientSessionAdapter implements ClientSessionModel {
                 em.persist(roleEntity);
 
                 entity.getRoles().add(roleEntity);
+            }
+        } else {
+            if (entity.getRoles() != null) {
+                for (ClientSessionRoleEntity r : entity.getRoles()) {
+                    em.remove(r);
+                }
+                entity.getRoles().clear();
             }
         }
     }

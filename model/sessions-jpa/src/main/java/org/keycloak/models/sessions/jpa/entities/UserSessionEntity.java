@@ -59,7 +59,7 @@ public class UserSessionEntity {
     @Column(name="USER_SESSION_STATE")
     protected UserSessionModel.State state;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="session")
+    @OneToMany(mappedBy="session")
     protected Collection<ClientSessionEntity> clientSessions = new ArrayList<ClientSessionEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="userSession")

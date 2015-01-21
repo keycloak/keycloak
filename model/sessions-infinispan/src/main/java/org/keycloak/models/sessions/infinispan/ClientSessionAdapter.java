@@ -53,17 +53,24 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public void setUserSession(UserSessionModel userSession) {
-        if (entity.getUserSession() != null) {
-            if (entity.getUserSession().equals(userSession.getId())) {
-                return;
-            } else {
-                provider.dettachSession(userSession, this);
+        if (userSession == null) {
+            if (entity.getUserSession() != null) {
+                provider.dettachSession(getUserSession(), this);
             }
+            entity.setUserSession(null);
         } else {
-            provider.attachSession(userSession, this);
-        }
+            if (entity.getUserSession() != null) {
+                if (entity.getUserSession().equals(userSession.getId())) {
+                    return;
+                } else {
+                    provider.dettachSession(userSession, this);
+                }
+            } else {
+                provider.attachSession(userSession, this);
+            }
 
-        entity.setUserSession(userSession.getId());
+            entity.setUserSession(userSession.getId());
+        }
         update();
     }
 

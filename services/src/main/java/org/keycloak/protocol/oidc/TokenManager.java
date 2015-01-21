@@ -17,6 +17,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -137,10 +138,21 @@ public class TokenManager {
             requestedRoles.add(r.getId());
         }
         clientSession.setRoles(requestedRoles);
-
-
     }
 
+    public static void dettachClientSession(UserSessionProvider sessions, RealmModel realm, ClientSessionModel clientSession) {
+        UserSessionModel userSession = clientSession.getUserSession();
+        if (userSession == null) {
+            return;
+        }
+
+        clientSession.setUserSession(null);
+        clientSession.setRoles(null);
+
+        if (userSession.getClientSessions().isEmpty()) {
+            sessions.removeUserSession(realm, userSession);
+        }
+    }
 
     public static Set<RoleModel> getAccess(String scopeParam, ClientModel client, UserModel user) {
         // todo scopeParam is ignored until we figure out a scheme that fits with openid connect
