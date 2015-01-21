@@ -148,4 +148,10 @@ As a side effect, all other CXF services running on default CXF HTTP destination
 original unsecured servlet on `/cxf` context is deployed back and hence context will become unsecured again. 
 
 It's recommended to use your own Jetty engine for your apps (similarly like `cxf-jaxws` application is doing).
+
+How to secure Fuse admin services
+---------------------------------
+It's possible to secure fuse admin services with Keycloak too. See [fuse-admin](fuse-admin/README.md) for info on how to secure
+Fuse admin console, remote SSH and JMX access with Keycloak.
+
   

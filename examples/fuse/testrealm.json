@@ -133,5 +133,25 @@
             "baseUrl": "http://localhost:8383/admin-camel-endpoint",
             "bearerOnly": true
         }
+    ],
+    "oauthClients": [
+        {
+            "name": "ssh-jmx-admin-client",
+            "enabled": true,
+            "publicClient": false,
+            "directGrantsOnly": true,
+            "secret": "password",
+            "claims" : {
+                "name" : true,
+                "username" : true,
+                "email" : true
+            }
+        }
+    ],
+    "scopeMappings": [
+        {
+            "client": "ssh-jmx-admin-client",
+            "roles": ["admin"]
+        }
     ]
 }
