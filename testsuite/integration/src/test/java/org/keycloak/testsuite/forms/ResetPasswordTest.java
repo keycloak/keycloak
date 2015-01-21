@@ -48,6 +48,7 @@ import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
@@ -251,6 +252,39 @@ public class ResetPasswordTest {
         Assert.assertEquals(0, greenMail.getReceivedMessages().length);
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user((String) null).session((String) null).detail(Details.USERNAME, "invalid").removeDetail(Details.EMAIL).removeDetail(Details.CODE_ID).error("user_not_found").assertEvent();
+    }
+
+    @Test
+    public void resetPasswordExpiredCode() throws IOException, MessagingException, InterruptedException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword("login-test");
+
+        resetPasswordPage.assertCurrent();
+
+        String sessionId = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
+
+        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String body = (String) message.getContent();
+        String changePasswordUrl = MailUtil.getLink(body);
+
+        Time.setOffset(350);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        errorPage.assertCurrent();
+
+        Assert.assertEquals("Invalid code, please login again through your application.", errorPage.getError());
+
+        events.expectRequiredAction(EventType.RESET_PASSWORD).error("invalid_code").client((String) null).user((String) null).session((String) null).clearDetails().assertEvent();
     }
 
     @Test
