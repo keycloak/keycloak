@@ -200,7 +200,10 @@ public class LoginActionsService {
         ClientSessionCode clientSessionCode = checks.clientCode;
         ClientSessionModel clientSession = clientSessionCode.getClientSession();
 
-
+        if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD)) {
+            TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
+            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+        }
 
         LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
                 .setClientSessionCode(clientSessionCode.getCode());
@@ -267,7 +270,7 @@ public class LoginActionsService {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
         }
         ClientSessionModel clientSession = clientCode.getClientSession();
-        if (!(clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientCode.isValid(ClientSessionModel.Action.RECOVER_PASSWORD))) {
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientSession.getUserSession() != null) {
             clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
             event.client(clientSession.getClient()).error(Errors.INVALID_CODE);
             return Flows.forms(this.session, realm, clientSession.getClient(), uriInfo).setError(Messages.INVALID_USER)

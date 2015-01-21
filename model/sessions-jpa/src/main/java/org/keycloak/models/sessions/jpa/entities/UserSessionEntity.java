@@ -54,7 +54,7 @@ public class UserSessionEntity {
     @Column(name="LAST_SESSION_REFRESH")
     protected int lastSessionRefresh;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="session")
+    @OneToMany(mappedBy="session")
     protected Collection<ClientSessionEntity> clientSessions = new ArrayList<ClientSessionEntity>();
 
     public String getId() {
