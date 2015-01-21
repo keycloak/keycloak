@@ -152,12 +152,15 @@ public class LoginActionsService {
         Response response;
 
         boolean check(String code, ClientSessionModel.Action requiredAction) {
-            if (!check(code)) return false;
-            if (!clientCode.isValid(requiredAction)) {
+            if (!check(code)) {
+                return false;
+            } else if (!clientCode.isValid(requiredAction)) {
                 event.error(Errors.INVALID_CODE);
                 response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
+                return false;
+            } else {
+                return true;
             }
-            return true;
         }
 
         public boolean check(String code) {
