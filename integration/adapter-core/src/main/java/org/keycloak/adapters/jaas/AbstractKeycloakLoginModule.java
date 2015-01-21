@@ -61,13 +61,17 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
     }
 
     protected KeycloakDeployment resolveDeployment(String keycloakConfigFile) {
-        InputStream is = FindFile.findFile(keycloakConfigFile);
-        KeycloakDeployment kd = KeycloakDeploymentBuilder.build(is);
-        if (kd.getRealmKey() == null) {
-            new AdapterDeploymentContext().resolveRealmKey(kd);
+        try {
+            InputStream is = FindFile.findFile(keycloakConfigFile);
+            KeycloakDeployment kd = KeycloakDeploymentBuilder.build(is);
+            if (kd.getRealmKey() == null) {
+                new AdapterDeploymentContext().resolveRealmKey(kd);
+            }
+            return kd;
+        } catch (RuntimeException e) {
+            getLogger().debug("Unable to find or parse file " + keycloakConfigFile + " due to " + e.getMessage(), e);
+            throw e;
         }
-
-        return kd;
     }
 
     @Override
