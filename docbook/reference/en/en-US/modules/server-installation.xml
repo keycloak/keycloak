@@ -366,7 +366,8 @@ keycloak-war-dist-all-&project.version;/
         "host": "127.0.0.1",
         "port": "27017",
         "db": "keycloak",
-        "connectionsPerHost": 100
+        "connectionsPerHost": 100,
+        "databaseSchema": "update"
     }
 }
 ]]></programlisting>

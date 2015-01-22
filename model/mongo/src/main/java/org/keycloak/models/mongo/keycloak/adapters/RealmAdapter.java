@@ -15,6 +15,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
@@ -783,22 +784,60 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<IdentityProviderModel> getIdentityProviders() {
-        return null;
+        List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
+
+        for (IdentityProviderEntity entity: realm.getIdentityProviders()) {
+            IdentityProviderModel identityProviderModel = new IdentityProviderModel(entity.getProviderId(), entity.getId(), entity.getName(),
+                    entity.getConfig());
+
+            identityProviderModel.setEnabled(entity.isEnabled());
+            identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
+
+            identityProviders.add(identityProviderModel);
+        }
+
+        return identityProviders;
     }
 
     @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
+        IdentityProviderEntity entity = new IdentityProviderEntity();
 
+        entity.setId(identityProvider.getId());
+        entity.setProviderId(identityProvider.getProviderId());
+        entity.setName(identityProvider.getName());
+        entity.setEnabled(identityProvider.isEnabled());
+        entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+        entity.setConfig(identityProvider.getConfig());
+
+        realm.getIdentityProviders().add(entity);
+        updateRealm();
     }
 
     @Override
     public void removeIdentityProviderById(String providerId) {
-
+        IdentityProviderEntity toRemove;
+        for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
+            if (entity.getId().equals(providerId)) {
+                realm.getIdentityProviders().remove(entity);
+                updateRealm();
+                break;
+            }
+        }
     }
 
     @Override
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
+        for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
+            if (entity.getId().equals(identityProvider.getId())) {
+                entity.setName(identityProvider.getName());
+                entity.setEnabled(identityProvider.isEnabled());
+                entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+                entity.setConfig(identityProvider.getConfig());
+            }
+        }
 
+        updateRealm();
     }
 
     @Override
@@ -963,8 +1002,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public boolean isIdentityFederationEnabled() {
-        //TODO: support identity federation storage for mongo
-        return false;
+        return this.realm.getIdentityProviders() != null && !this.realm.getIdentityProviders().isEmpty();
     }
 
     @Override

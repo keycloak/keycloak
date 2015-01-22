@@ -72,6 +72,22 @@
             "applicationRoles": {
                 "realm-management": [ "realm-admin" ]
             }
+        },
+        {
+            "username" : "jmxadmin",
+            "enabled": true,
+            "email" : "jmxadmin@admin.com",
+            "firstName": "JmxAdmin",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "password" }
+            ],
+            "realmRoles": [ "user", "jmxAdmin" ],
+            "applicationRoles": {
+                "account": [ "manage-account" ],
+                "realm-management": [ "realm-admin" ]
+            }
         }
     ],
     "roles" : {
@@ -83,6 +99,38 @@
             {
                 "name": "admin",
                 "description": "Administrator privileges"
+            },
+            {
+                "name": "manager"
+            },
+            {
+                "name": "viewer"
+            },
+            {
+                "name": "Operator"
+            },
+            {
+                "name": "Maintainer"
+            },
+            {
+                "name": "Deployer"
+            },
+            {
+                "name": "Auditor"
+            },
+            {
+                "name": "Administrator"
+            },
+            {
+                "name": "SuperUser"
+            },
+            {
+                "name": "jmxAdmin",
+                "description": "Admin role with all privileges to SSH and JMX access",
+                "composite": true,
+                "composites": {
+                    "realm": [ "admin", "manager", "viewer", "Operator", "Maintainer", "Deployer", "Auditor", "Administrator", "SuperUser" ]
+                }
             }
         ]
     },
@@ -149,7 +197,7 @@
     "scopeMappings": [
         {
             "client": "ssh-jmx-admin-client",
-            "roles": ["admin"]
+            "roles": [ "admin", "jmxAdmin" ]
         }
     ]
 }

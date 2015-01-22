@@ -118,6 +118,7 @@ public class JaxrsBearerTokenFilterImpl implements JaxrsBearerTokenFilter {
         started = true;
     }
 
+    // TODO: Use 'Reflections.classForName'
     protected Class<? extends KeycloakConfigResolver> loadResolverClass() {
         try {
             return (Class<? extends KeycloakConfigResolver>)getClass().getClassLoader().loadClass(keycloakConfigResolverClass);

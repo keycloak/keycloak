@@ -35,6 +35,16 @@
                     Security for <ulink url="http://cxf.apache.org/">Apache CXF</ulink> endpoints running on default engine provided by CXF servlet.
                 </para>
             </listitem>
+            <listitem>
+                <para>
+                    Security for SSH and JMX admin access.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Security for <ulink url="http://hawt.io/">Hawt.io admin console</ulink> .
+                </para>
+            </listitem>
         </itemizedlist>
     </para>
     <para>The best place to start is look at Fuse demo bundled as part of Keycloak examples in directory <literal>examples/fuse</literal> .</para>

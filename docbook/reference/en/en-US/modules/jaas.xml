@@ -31,7 +31,12 @@
         </variablelist>
     </para>
     <para>
-        Both login modules have single configuration property <literal>keycloak-config-file</literal> where you need to provide location of keycloak.json configuration file.
+        Both login modules have configuration property <literal>keycloak-config-file</literal> where you need to provide location of keycloak.json configuration file.
         It could be either provided from filesystem or from classpath (in that case you may need value like <literal>classpath:/folder-on-classpath/keycloak.json</literal> ).
+    </para>
+    <para>
+        Second property <literal>role-principal-class</literal> allows to specify alternative class for Role principals attached to JAAS Subject. Default
+        value for Role principal is <literal>org.keycloak.adapters.jaas.RolePrincipal</literal> . Note that class should have constructor
+        with single String argument.
     </para>
 </section>
