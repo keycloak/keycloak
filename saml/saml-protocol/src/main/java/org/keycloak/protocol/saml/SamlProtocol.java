@@ -114,7 +114,7 @@ public class SamlProtocol implements LoginProtocol {
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
                 .relayState(clientSession.getNote(GeneralConstants.RELAY_STATE))
                 .destination(clientSession.getRedirectUri())
-                .responseIssuer(getResponseIssuer(realm))
+                .issuer(getResponseIssuer(realm))
                 .status(status);
       try {
           if (isPostBinding(clientSession)) {
@@ -191,7 +191,7 @@ public class SamlProtocol implements LoginProtocol {
         builder.requestID(requestID)
                .relayState(relayState)
                .destination(redirectUri)
-               .responseIssuer(responseIssuer)
+               .issuer(responseIssuer)
                .requestIssuer(clientSession.getClient().getClientId())
                .nameIdentifier(nameIdFormat, nameId)
                .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());

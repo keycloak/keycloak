@@ -73,6 +73,20 @@
                         <span tooltip-placement="right" tooltip="Enable/disable signature validation of SAML responses." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
+                        <label class="col-sm-2 control-label" for="postBindingResponse">HTTP-POST Binding Response</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.config.postBindingResponse" id="postBindingResponse" onoffswitch />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Indicates whether the identity provider must respond to the AuthnRequest using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="postBindingAuthnRequest">HTTP-POST Binding for AuthnRequest</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.config.postBindingAuthnRequest" id="postBindingAuthnRequest" onoffswitch />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Indicates whether the AuthnRequest must be sent using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group">
                         <label class="col-sm-2 control-label" for="enabled">Enabled</label>
                         <div class="col-sm-4">
                             <input ng-model="identityProvider.enabled" id="enabled" onoffswitch />

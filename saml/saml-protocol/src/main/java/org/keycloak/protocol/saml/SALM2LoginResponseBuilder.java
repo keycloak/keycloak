@@ -127,7 +127,7 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
         // Create a response type
         String id = IDGenerator.create("ID_");
 
-        IssuerInfoHolder issuerHolder = new IssuerInfoHolder(responseIssuer);
+        IssuerInfoHolder issuerHolder = new IssuerInfoHolder(issuer);
         issuerHolder.setStatusCode(JBossSAMLURIConstants.STATUS_SUCCESS.get());
 
         IDPInfoHolder idp = new IDPInfoHolder();
