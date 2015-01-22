@@ -70,7 +70,7 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     protected void completeBearerAuthentication(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext securityContext) {
         Set<String> roles = getRolesFromToken(securityContext);
         for (String role : roles) {
-            log.debug("Bearer role: " + role);
+            log.info("Bearer role: " + role);
         }
         Principal generalPrincipal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), principal, roles, securityContext);
         request.setUserPrincipal(generalPrincipal);
