@@ -25,18 +25,12 @@ import java.util.Map;
  */
 public class IdentityProviderEntity {
 
-    private String id;
     private String name;
-    private String iconUrl;
+    private boolean enabled;
+    private boolean updateProfileFirstLogin;
+    private String providerId;
+    private String id;
     private Map<String, String> config = new HashMap<String, String>();
-
-    public String getId() {
-        return this.id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getName() {
         return this.name;
@@ -46,12 +40,36 @@ public class IdentityProviderEntity {
         this.name = name;
     }
 
-    public String getIconUrl() {
-        return this.iconUrl;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    public void setIconUrl(String iconUrl) {
-        this.iconUrl = iconUrl;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public boolean isUpdateProfileFirstLogin() {
+        return updateProfileFirstLogin;
+    }
+
+    public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
+        this.updateProfileFirstLogin = updateProfileFirstLogin;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String providerNonimalId) {
+        this.id = providerNonimalId;
     }
 
     public Map<String, String> getConfig() {
