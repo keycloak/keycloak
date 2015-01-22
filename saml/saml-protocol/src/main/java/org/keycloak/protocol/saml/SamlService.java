@@ -220,7 +220,7 @@ public class SamlService {
             clientSession.setRedirectUri(redirect);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
             clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
-            clientSession.setNote(SamlProtocol.SAML_BINDING, getBindingType());
+            clientSession.setNote(SamlProtocol.SAML_BINDING, getBindingType(requestAbstractType));
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
             clientSession.setNote(SamlProtocol.SAML_REQUEST_ID, requestAbstractType.getID());
 
@@ -256,6 +256,20 @@ public class SamlService {
             }
 
             return forms.createLogin();
+        }
+
+        private String getBindingType(AuthnRequestType requestAbstractType) {
+            URI requestedProtocolBinding = requestAbstractType.getProtocolBinding();
+
+            if (requestedProtocolBinding != null) {
+                if (JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get().equals(requestedProtocolBinding.toString())) {
+                    return SamlProtocol.SAML_POST_BINDING;
+                } else {
+                    return SamlProtocol.SAML_GET_BINDING;
+                }
+            }
+
+            return getBindingType();
         }
 
         private boolean isSupportedNameIdFormat(String nameIdFormat) {
