@@ -156,7 +156,7 @@ public class AuthenticationBrokerResource {
             String relayState = provider.getRelayState(createAuthenticationRequest(providerId, null, realm, null));
 
             if (relayState == null) {
-                return redirectToErrorPage(realm, "No authorization code provided.");
+                return redirectToErrorPage(realm, "No relay state from identity provider.");
             }
 
             ClientSessionCode clientCode = isValidAuthorizationCode(relayState, realm);

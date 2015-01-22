@@ -89,4 +89,20 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public void setEncryptionPublicKey(String encryptionPublicKey) {
         getConfig().put("encryptionPublicKey", encryptionPublicKey);
     }
+
+    public boolean isPostBindingAuthnRequest() {
+        return Boolean.valueOf(getConfig().get("postBindingAuthnRequest"));
+    }
+
+    public void setPostBindingAuthnRequest(boolean postBindingAuthnRequest) {
+        getConfig().put("postBindingAuthnRequest", String.valueOf(postBindingAuthnRequest));
+    }
+
+    public boolean isPostBindingResponse() {
+        return Boolean.valueOf(getConfig().get("postBindingResponse"));
+    }
+
+    public void setPostBindingResponse(boolean postBindingResponse) {
+        getConfig().put("postBindingResponse", String.valueOf(postBindingResponse));
+    }
 }

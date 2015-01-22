@@ -6,13 +6,8 @@ import org.picketlink.common.exceptions.ParsingException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
 import org.picketlink.identity.federation.core.saml.v2.common.IDGenerator;
-import org.picketlink.identity.federation.core.saml.v2.factories.JBossSAMLAuthnResponseFactory;
-import org.picketlink.identity.federation.core.saml.v2.holders.IDPInfoHolder;
-import org.picketlink.identity.federation.core.saml.v2.holders.IssuerInfoHolder;
-import org.picketlink.identity.federation.core.saml.v2.holders.SPInfoHolder;
 import org.picketlink.identity.federation.core.saml.v2.util.XMLTimeUtil;
 import org.picketlink.identity.federation.saml.v2.assertion.NameIDType;
-import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.picketlink.identity.federation.saml.v2.protocol.StatusCodeType;
 import org.picketlink.identity.federation.saml.v2.protocol.StatusResponseType;
 import org.picketlink.identity.federation.saml.v2.protocol.StatusType;
@@ -60,7 +55,7 @@ public class SAML2LogoutResponseBuilder extends SAML2BindingBuilder<SAML2LogoutR
             statusResponse.setStatus(statusType);
             statusResponse.setInResponseTo(logoutRequestID);
             NameIDType issuer = new NameIDType();
-            issuer.setValue(responseIssuer);
+            issuer.setValue(this.issuer);
 
             statusResponse.setIssuer(issuer);
             statusResponse.setDestination(destination);

@@ -44,7 +44,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     protected SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.RSA_SHA1;
     protected String relayState;
     protected String destination;
-    protected String responseIssuer;
+    protected String issuer;
     protected int encryptionKeySize = 128;
     protected PublicKey encryptionPublicKey;
     protected String encryptionAlgorithm = "AES";
@@ -108,8 +108,8 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         return (T)this;
     }
 
-    public T responseIssuer(String issuer) {
-        this.responseIssuer = issuer;
+    public T issuer(String issuer) {
+        this.issuer = issuer;
         return (T)this;
     }
 
@@ -140,14 +140,17 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         }
 
         public String htmlResponse() throws ProcessingException, ConfigurationException, IOException {
-            return buildHtml(encoded(), destination);
+            return buildHtml(encoded(), destination, false);
 
         }
+        public Response request() throws ConfigurationException, ProcessingException, IOException {
+            return buildResponse(document, destination, true);
+        }
         public Response response() throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document, destination);
+            return buildResponse(document, destination, false);
         }
         public Response response(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document, actionUrl);
+            return buildResponse(document, actionUrl, false);
         }
     }
 
@@ -165,15 +168,28 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         public Document getDocument() {
             return document;
         }
-        public URI responseUri(String redirectUri) throws ConfigurationException, ProcessingException, IOException {
-            return generateRedirectUri("SAMLResponse", redirectUri, document);
+        public URI responseUri(String redirectUri, boolean asRequest) throws ConfigurationException, ProcessingException, IOException {
+            String samlParameterName = GeneralConstants.SAML_RESPONSE_KEY;
+
+            if (asRequest) {
+                samlParameterName = GeneralConstants.SAML_REQUEST_KEY;
+            }
+
+            return generateRedirectUri(samlParameterName, redirectUri, document);
         }
         public Response response() throws ProcessingException, ConfigurationException, IOException {
-            return response(destination);
+            return response(destination, false);
+        }
+        public Response response(String redirectUri) throws ProcessingException, ConfigurationException, IOException {
+            return response(destination, false);
         }
 
-        public Response response(String redirectUri) throws ProcessingException, ConfigurationException, IOException {
-            URI uri = responseUri(redirectUri);
+        public Response request() throws ProcessingException, ConfigurationException, IOException {
+            return response(destination, true);
+        }
+
+        private Response response(String redirectUri, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
+            URI uri = responseUri(redirectUri, asRequest);
 
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoCache(true);
@@ -266,8 +282,8 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     }
 
 
-    protected Response buildResponse(Document responseDoc, String actionUrl) throws ProcessingException, ConfigurationException, IOException {
-        String str = buildHtmlPostResponse(responseDoc, actionUrl);
+    protected Response buildResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
+        String str = buildHtmlPostResponse(responseDoc, actionUrl, asRequest);
 
         CacheControl cacheControl = new CacheControl();
         cacheControl.setNoCache(true);
@@ -276,14 +292,14 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
                        .header("Cache-Control", "no-cache, no-store").build();
     }
 
-    protected String buildHtmlPostResponse(Document responseDoc, String actionUrl) throws ProcessingException, ConfigurationException, IOException {
+    protected String buildHtmlPostResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
         byte[] responseBytes = DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
         String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes));
 
-        return buildHtml(samlResponse, actionUrl);
+        return buildHtml(samlResponse, actionUrl, asRequest);
     }
 
-    protected String buildHtml(String samlResponse, String actionUrl) {
+    protected String buildHtml(String samlResponse, String actionUrl, boolean asRequest) {
         if (destination == null) {
             throw SALM2LoginResponseBuilder.logger.nullValueError("Destination is null");
         }
@@ -291,6 +307,11 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         StringBuilder builder = new StringBuilder();
 
         String key = GeneralConstants.SAML_RESPONSE_KEY;
+
+        if (asRequest) {
+            key = GeneralConstants.SAML_REQUEST_KEY;
+        }
+
         builder.append("<HTML>");
         builder.append("<HEAD>");
 

@@ -54,4 +54,7 @@ public class AuthenticationResponse {
         return new AuthenticationResponse(Response.temporaryRedirect(url).build());
     }
 
+    public static AuthenticationResponse fromResponse(Response response) {
+        return new AuthenticationResponse(response);
+    }
 }

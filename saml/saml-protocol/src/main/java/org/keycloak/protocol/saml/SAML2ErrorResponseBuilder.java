@@ -47,7 +47,7 @@ public class SAML2ErrorResponseBuilder extends SAML2BindingBuilder<SAML2ErrorRes
         // Create a response type
         String id = IDGenerator.create("ID_");
 
-        IssuerInfoHolder issuerHolder = new IssuerInfoHolder(responseIssuer);
+        IssuerInfoHolder issuerHolder = new IssuerInfoHolder(issuer);
         issuerHolder.setStatusCode(status);
 
         IDPInfoHolder idp = new IDPInfoHolder();

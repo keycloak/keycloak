@@ -22,6 +22,8 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.protocol.saml.SAML2AuthnRequestBuilder;
+import org.keycloak.protocol.saml.SAML2NameIDPolicyBuilder;
 import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ProcessingException;
@@ -31,7 +33,6 @@ import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
 import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
 import org.picketlink.identity.federation.api.saml.v2.sig.SAML2Signature;
 import org.picketlink.identity.federation.core.parsers.saml.SAMLParser;
-import org.picketlink.identity.federation.core.saml.v2.common.IDGenerator;
 import org.picketlink.identity.federation.core.saml.v2.common.SAMLDocumentHolder;
 import org.picketlink.identity.federation.core.util.JAXPValidationUtil;
 import org.picketlink.identity.federation.core.util.XMLEncryptionUtil;
@@ -41,7 +42,6 @@ import org.picketlink.identity.federation.saml.v2.assertion.EncryptedAssertionTy
 import org.picketlink.identity.federation.saml.v2.assertion.NameIDType;
 import org.picketlink.identity.federation.saml.v2.assertion.SubjectType;
 import org.picketlink.identity.federation.saml.v2.assertion.SubjectType.STSubType;
-import org.picketlink.identity.federation.saml.v2.protocol.AuthnRequestType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType.RTChoiceType;
 import org.picketlink.identity.federation.saml.v2.protocol.StatusCodeType;
@@ -53,10 +53,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.namespace.QName;
-import java.net.URI;
 import java.net.URLDecoder;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -85,22 +85,26 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             UriInfo uriInfo = request.getUriInfo();
             String issuerURL = UriBuilder.fromUri(uriInfo.getBaseUri()).build().toString();
             String destinationUrl = getConfig().getSingleSignOnServiceUrl();
-            SAML2Request samlRequest = new SAML2Request();
             String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
             if (nameIDPolicyFormat == null) {
                 nameIDPolicyFormat =  JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
             }
 
-            samlRequest.setNameIDFormat(nameIDPolicyFormat);
+            String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
 
-            AuthnRequestType authn = samlRequest
-                    .createAuthnRequestType(IDGenerator.create("ID_"), request.getRedirectUri(), destinationUrl, issuerURL);
+            if (getConfig().isPostBindingResponse()) {
+                protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
+            }
 
-            authn.setProtocolBinding(URI.create(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get()));
-            authn.setForceAuthn(getConfig().isForceAuthn());
-
-            Document authnDoc = samlRequest.convert(authn);
+            SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
+                    .assertionConsumerUrl(request.getRedirectUri())
+                    .destination(destinationUrl)
+                    .issuer(issuerURL)
+                    .forceAuthn(getConfig().isForceAuthn())
+                    .protocolBinding(protocolBinding)
+                    .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat))
+                    .relayState(request.getState());
 
             if (getConfig().isWantAuthnRequestsSigned()) {
                 PrivateKey privateKey = request.getRealm().getPrivateKey();
@@ -116,16 +120,14 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
                 KeyPair keypair = new KeyPair(publicKey, privateKey);
 
-                this.saml2Signature.signSAMLDocument(authnDoc, keypair);
+                authnRequestBuilder.signWith(keypair);
             }
 
-            byte[] responseBytes = DocumentUtil.getDocumentAsString(authnDoc).getBytes("UTF-8");
-            String urlEncodedResponse = RedirectBindingUtil.deflateBase64URLEncode(responseBytes);
-            URI redirectUri = UriBuilder.fromPath(destinationUrl)
-                    .queryParam(SAML_REQUEST_PARAMETER, urlEncodedResponse)
-                    .queryParam(RELAY_STATE_PARAMETER, request.getState()).build();
-
-            return AuthenticationResponse.temporaryRedirect(redirectUri);
+            if (getConfig().isPostBindingAuthnRequest()) {
+                return AuthenticationResponse.fromResponse(authnRequestBuilder.postBinding().request());
+            } else {
+                return AuthenticationResponse.fromResponse(authnRequestBuilder.redirectBinding().request());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Could not create authentication request.", e);
         }
@@ -133,44 +135,48 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     @Override
     public String getRelayState(AuthenticationRequest request) {
-        HttpRequest httpRequest = request.getHttpRequest();
-        return httpRequest.getFormParameters().getFirst(RELAY_STATE_PARAMETER);
+        return getRequestParameter(request, RELAY_STATE_PARAMETER);
     }
 
     @Override
     public AuthenticationResponse handleResponse(AuthenticationRequest request) {
-        HttpRequest httpRequest = request.getHttpRequest();
-        String samlResponse = httpRequest.getFormParameters().getFirst(SAML_RESPONSE_PARAMETER);
-
-        if (samlResponse == null) {
-            throw new RuntimeException("No response from SAML identity provider.");
-        }
-
         try {
-            SAML2Request saml2Request = new SAML2Request();
-            ResponseType responseType = (ResponseType) saml2Request
-                    .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(URLDecoder.decode(samlResponse, "UTF-8")));
-            AssertionType assertion = getAssertion(request, saml2Request, responseType);
-
+            AssertionType assertion = getAssertion(request);
             SubjectType subject = assertion.getSubject();
             STSubType subType = subject.getSubType();
             NameIDType subjectNameID = (NameIDType) subType.getBaseID();
+            FederatedIdentity identity = new FederatedIdentity(subjectNameID.getValue());
 
-            FederatedIdentity user = new FederatedIdentity(subjectNameID.getValue());
-
-            user.setUsername(subjectNameID.getValue());
+            identity.setUsername(subjectNameID.getValue());
 
             if (subjectNameID.getFormat().toString().equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
-                user.setEmail(subjectNameID.getValue());
+                identity.setEmail(subjectNameID.getValue());
             }
 
-            return AuthenticationResponse.end(user);
+            return AuthenticationResponse.end(identity);
         } catch (Exception e) {
             throw new RuntimeException("Could not process response from SAML identity provider.", e);
         }
     }
 
-    private AssertionType getAssertion(AuthenticationRequest request, SAML2Request saml2Request, ResponseType responseType) throws ProcessingException {
+    private AssertionType getAssertion(AuthenticationRequest request) throws Exception {
+        String samlResponse = getRequestParameter(request, SAML_RESPONSE_PARAMETER);
+
+        if (samlResponse == null) {
+            throw new RuntimeException("No response from SAML identity provider.");
+        }
+
+        SAML2Request saml2Request = new SAML2Request();
+        ResponseType responseType;
+
+        if (getConfig().isPostBindingResponse()) {
+            responseType = (ResponseType) saml2Request
+                    .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(URLDecoder.decode(samlResponse, "UTF-8")));
+        } else {
+            responseType = (ResponseType) saml2Request
+                    .getSAML2ObjectFromStream(RedirectBindingUtil.base64DeflateDecode((samlResponse)));
+        }
+
         validateStatusResponse(responseType);
         validateSignature(saml2Request);
 
@@ -252,4 +258,17 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         }
     }
 
+    private String getRequestParameter(AuthenticationRequest request, String parameterName) {
+        MultivaluedMap<String, String> requestParameters;
+
+        if (getConfig().isPostBindingResponse()) {
+            HttpRequest httpRequest = request.getHttpRequest();
+            requestParameters = httpRequest.getFormParameters();
+        } else {
+            UriInfo uriInfo = request.getUriInfo();
+            requestParameters = uriInfo.getQueryParameters();
+        }
+
+        return requestParameters.getFirst(parameterName);
+    }
 }
