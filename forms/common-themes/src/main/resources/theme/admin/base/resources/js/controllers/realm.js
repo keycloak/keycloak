@@ -631,14 +631,11 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
     if (instance && instance.id) {
         $scope.identityProvider = angular.copy(instance);
-
-        // fixme: this is a hack to make onofswith work and recognize string representation of boolean values
-        $scope.identityProvider.config.validateSignature = $scope.getBoolean($scope.identityProvider.config.validateSignature);
-        $scope.identityProvider.config.forceAuthn = $scope.getBoolean($scope.identityProvider.config.forceAuthn);
         $scope.newIdentityProvider = false;
     } else {
         $scope.identityProvider = {};
-        $scope.identityProvider.id = providerFactory.id;
+        $scope.identityProvider.config = {};
+        $scope.identityProvider.id = "";
         $scope.identityProvider.providerId = providerFactory.id;
         $scope.identityProvider.name = providerFactory.name;
         $scope.identityProvider.enabled = true;
@@ -760,6 +757,18 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             return false;
         } else {
             return value;
+        }
+    }
+
+    $scope.initSamlProvider = function() {
+        if (instance && instance.id) {
+            $scope.identityProvider.config.validateSignature = $scope.getBoolean($scope.identityProvider.config.validateSignature);
+            $scope.identityProvider.config.forceAuthn = $scope.getBoolean($scope.identityProvider.config.forceAuthn);
+            $scope.identityProvider.config.postBindingAuthnRequest = $scope.getBoolean($scope.identityProvider.config.postBindingAuthnRequest);
+            $scope.identityProvider.config.postBindingResponse = $scope.getBoolean($scope.identityProvider.config.postBindingResponse);
+            $scope.identityProvider.config.wantAuthnRequestsSigned = $scope.getBoolean($scope.identityProvider.config.wantAuthnRequestsSigned);
+        } else {
+            $scope.identityProvider.config.postBindingResponse = true;
         }
     }
 });

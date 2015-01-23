@@ -121,6 +121,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 KeyPair keypair = new KeyPair(publicKey, privateKey);
 
                 authnRequestBuilder.signWith(keypair);
+                authnRequestBuilder.signDocument();
             }
 
             if (getConfig().isPostBindingAuthnRequest()) {

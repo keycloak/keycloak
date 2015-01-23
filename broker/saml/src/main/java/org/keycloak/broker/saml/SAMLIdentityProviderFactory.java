@@ -78,6 +78,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                         samlIdentityProviderConfig.setSingleSignOnServiceUrl(idpDescriptor.getSingleSignOnService().get(0).getLocation().toString());
                         samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
                         samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
+                        samlIdentityProviderConfig.setPostBindingResponse(true);
 
                         List<KeyDescriptorType> keyDescriptor = idpDescriptor.getKeyDescriptor();
                         String defaultPublicKey = null;
