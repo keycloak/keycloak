@@ -1,6 +1,7 @@
 package org.keycloak.adapters.jaas;
 
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,6 +29,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.util.reflections.Reflections;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -35,11 +37,13 @@ import org.keycloak.representations.AccessToken;
 public abstract class AbstractKeycloakLoginModule implements LoginModule {
 
     public static final String KEYCLOAK_CONFIG_FILE_OPTION = "keycloak-config-file";
+    public static final String ROLE_PRINCIPAL_CLASS_OPTION = "role-principal-class";
 
     protected Subject subject;
     protected CallbackHandler callbackHandler;
     protected Auth auth;
     protected KeycloakDeployment deployment;
+    protected String rolePrincipalClass;
 
     // This is to avoid parsing keycloak.json file in each request. Key is file location, Value is parsed keycloak deployment
     private static ConcurrentMap<String, KeycloakDeployment> deployments = new ConcurrentHashMap<String, KeycloakDeployment>();
@@ -50,6 +54,9 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
         this.callbackHandler = callbackHandler;
 
         String configFile = (String)options.get(KEYCLOAK_CONFIG_FILE_OPTION);
+        rolePrincipalClass = (String)options.get(ROLE_PRINCIPAL_CLASS_OPTION);
+        getLogger().debug("Declared options: " + KEYCLOAK_CONFIG_FILE_OPTION + "=" + configFile + ", " + ROLE_PRINCIPAL_CLASS_OPTION + "=" + rolePrincipalClass);
+
         if (configFile != null) {
             deployment = deployments.get(configFile);
             if (deployment == null) {
@@ -117,13 +124,30 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
         this.subject.getPrivateCredentials().add(auth.getTokenString());
         if (auth.getRoles() != null) {
             for (String roleName : auth.getRoles()) {
-                RolePrincipal rolePrinc = new RolePrincipal(roleName);
+                Principal rolePrinc = createRolePrincipal(roleName);
                 this.subject.getPrincipals().add(rolePrinc);
             }
         }
 
         return true;
     }
+
+
+    protected Principal createRolePrincipal(String roleName) {
+        if (rolePrincipalClass != null && rolePrincipalClass.length() > 0) {
+            try {
+                Class<Principal> clazz = Reflections.classForName(rolePrincipalClass, getClass().getClassLoader());
+                Constructor<Principal> constructor = clazz.getDeclaredConstructor(String.class);
+                return constructor.newInstance(roleName);
+            } catch (Exception e) {
+                getLogger().warn("Unable to create declared roleClass " + rolePrincipalClass + " due to " + e.getMessage());
+            }
+        }
+
+        // Fallback to default rolePrincipal class
+        return new RolePrincipal(roleName);
+    }
+
 
     @Override
     public boolean abort() throws LoginException {

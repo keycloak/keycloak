@@ -10,7 +10,10 @@
     <cm:property-placeholder persistent-id="org.keycloak" update-strategy="reload">
         <cm:default-properties>
             <cm:property name="jaasBearerKeycloakConfigFile" value="$[karaf.base]/etc/keycloak-hawtio.json"/>
+            <cm:property name="jaasBearerRolePrincipalClass" value=""/>
+
             <cm:property name="jaasDirectAccessKeycloakConfigFile" value="$[karaf.base]/etc/keycloak-direct-access.json"/>
+            <cm:property name="jaasDirectAccessRolePrincipalClass" value="org.apache.karaf.jaas.boot.principal.RolePrincipal"/>
         </cm:default-properties>
     </cm:property-placeholder>
 
@@ -20,12 +23,14 @@
         <jaas:module className="org.keycloak.adapters.jaas.BearerTokenLoginModule"
                      flags="sufficient">
             keycloak-config-file = ${jaasBearerKeycloakConfigFile}
+            role-principal-class = ${jaasBearerRolePrincipalClass}
         </jaas:module>
 
         <!-- Used for direct username/password authentication for non-web scenarios (like ssh) -->
         <jaas:module className="org.keycloak.adapters.jaas.DirectAccessGrantsLoginModule"
                      flags="sufficient">
             keycloak-config-file = ${jaasDirectAccessKeycloakConfigFile}
+            role-principal-class = ${jaasDirectAccessRolePrincipalClass}
         </jaas:module>
 
     </jaas:config>
