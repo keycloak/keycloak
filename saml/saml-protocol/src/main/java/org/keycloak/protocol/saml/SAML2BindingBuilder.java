@@ -30,6 +30,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 
+import static org.keycloak.util.HtmlUtils.escapeAttribute;
 import static org.picketlink.common.util.StringUtil.isNotNull;
 
 /**
@@ -37,6 +38,7 @@ import static org.picketlink.common.util.StringUtil.isNotNull;
  * @version $Revision: 1 $
  */
 public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
+
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
     protected boolean sign;
@@ -323,7 +325,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"" + key + "\"" + " VALUE=\"" + samlResponse + "\"/>");
 
         if (isNotNull(relayState)) {
-            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"RelayState\" " + "VALUE=\"" + relayState + "\"/>");
+            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"RelayState\" " + "VALUE=\"" + escapeAttribute(relayState) + "\"/>");
         }
 
         builder.append("<NOSCRIPT>");
