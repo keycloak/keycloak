@@ -18,7 +18,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean verifyEmail;
     private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
-    private boolean social;
     private String passwordPolicy;
     //--- brute force settings
     private boolean bruteForceProtected;
@@ -52,6 +51,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     private List<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
     private List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
+    private List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
@@ -373,6 +373,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setUserFederationProviders(List<UserFederationProviderEntity> userFederationProviders) {
         this.userFederationProviders = userFederationProviders;
+    }
+
+    public List<IdentityProviderEntity> getIdentityProviders() {
+        return identityProviders;
+    }
+
+    public void setIdentityProviders(List<IdentityProviderEntity> identityProviders) {
+        this.identityProviders = identityProviders;
     }
 
     public String getCertificatePem() {
