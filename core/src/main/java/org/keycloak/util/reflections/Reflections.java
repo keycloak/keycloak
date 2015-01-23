@@ -1,4 +1,4 @@
-package org.keycloak.models.utils.reflection;
+package org.keycloak.util.reflections;
 
 import java.beans.Introspector;
 import java.io.Serializable;
