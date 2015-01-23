@@ -9,6 +9,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.updater.updates.Update;
 import org.keycloak.connections.mongo.updater.updates.Update1_0_0_Final;
 import org.keycloak.connections.mongo.updater.updates.Update1_1_0_Beta1;
+import org.keycloak.connections.mongo.updater.updates.Update1_2_0_Beta1;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +31,8 @@ public class DefaultMongoUpdaterProvider implements MongoUpdaterProvider {
 
     private Class<? extends Update>[] updates = new Class[]{
             Update1_0_0_Final.class,
-            Update1_1_0_Beta1.class
+            Update1_1_0_Beta1.class,
+            Update1_2_0_Beta1.class
     };
 
     @Override
