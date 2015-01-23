@@ -40,7 +40,7 @@ public class UrlBean {
     }
 
     public String getSocialUrl() {
-        return Urls.accountSocialPage(baseQueryURI, realm).toString();
+        return Urls.accountFederatedIdentityPage(baseQueryURI, realm).toString();
     }
 
     public String getTotpUrl() {

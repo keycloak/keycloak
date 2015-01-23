@@ -21,9 +21,13 @@
  */
 package org.keycloak.services.resources.flows;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.AuthenticationBrokerResource;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.ThemeResource;
@@ -56,12 +60,29 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "passwordPage").build(realmId);
     }
 
-    public static URI accountSocialPage(URI baseUri, String realmId) {
+    public static URI accountFederatedIdentityPage(URI baseUri, String realmId) {
         return accountBase(baseUri).path(AccountService.class, "federatedIdentityPage").build(realmId);
     }
 
     public static URI accountFederatedIdentityUpdate(URI baseUri, String realmName) {
         return accountBase(baseUri).path(AccountService.class, "processFederatedIdentityUpdate").build(realmName);
+    }
+
+    public static URI identityProviderAuthnRequest(URI baseURI, IdentityProviderModel identityProvider, RealmModel realm, String accessCode) {
+        UriBuilder uriBuilder = UriBuilder.fromUri(baseURI)
+                .path(AuthenticationBrokerResource.class)
+                .path(AuthenticationBrokerResource.class, "performLogin")
+                .replaceQueryParam("provider_id", identityProvider.getProviderId());
+
+        if (accessCode != null) {
+            uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
+        }
+
+        return uriBuilder.build(realm.getName());
+    }
+
+    public static URI identityProviderAuthnRequest(URI baseURI, IdentityProviderModel identityProvider, RealmModel realm) {
+        return identityProviderAuthnRequest(baseURI, identityProvider, realm, null);
     }
 
     public static URI accountTotpPage(URI baseUri, String realmId) {
