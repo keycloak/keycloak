@@ -25,9 +25,11 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
@@ -70,6 +72,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -871,8 +874,27 @@ public class OpenIDConnectService {
             return oauth.cancelLogin(clientSession);
         }
 
+        String accessCode = new ClientSessionCode(realm, clientSession).getCode();
+        List<RequiredCredentialModel> requiredCredentials = realm.getRequiredCredentials();
+
+        if (requiredCredentials.isEmpty()) {
+            List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+
+            if (!identityProviders.isEmpty()) {
+                if (identityProviders.size() == 1) {
+                    return Response.temporaryRedirect(
+                            Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviders.get(0), this.realm, accessCode))
+                            .build();
+                }
+
+                return Flows.forms(session, realm, null, uriInfo).setError("Realm [" + this.realm.getName() + "] supports multiple identity providers. Could not determine which identity provider should be used to authenticate with.").createErrorPage();
+            }
+
+            return Flows.forms(session, realm, null, uriInfo).setError("Realm [" + this.realm.getName() + "] does not support any credential type.").createErrorPage();
+        }
+
         LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
-                .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode());
+                .setClientSessionCode(accessCode);
 
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(realm, headers);
 

@@ -675,7 +675,7 @@ public class AccountService {
 
         switch (accountSocialAction) {
             case ADD:
-                String redirectUri = UriBuilder.fromUri(Urls.accountSocialPage(uriInfo.getBaseUri(), realm.getName())).build().toString();
+                String redirectUri = UriBuilder.fromUri(Urls.accountFederatedIdentityPage(uriInfo.getBaseUri(), realm.getName())).build().toString();
 
                 try {
                     ClientSessionModel clientSession = auth.getClientSession();
