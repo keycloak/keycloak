@@ -36,7 +36,6 @@ public class Cors {
 
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD = "*";
 
-
     private HttpRequest request;
     private ResponseBuilder builder;
     private Set<String> allowedOrigins;
@@ -116,27 +115,35 @@ public class Cors {
 
         builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
-        if (allowedMethods != null) {
-            builder.header(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
-        } else {
-            builder.header(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
+        if (preflight) {
+            if (allowedMethods != null) {
+                builder.header(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
+            } else {
+                builder.header(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
+            }
         }
 
-        if (exposedHeaders != null) {
+        if (!preflight && exposedHeaders != null) {
             builder.header(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
         }
 
         builder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
-        if (auth) {
-            builder.header(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
-        } else {
-            builder.header(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+
+        if (preflight) {
+            if (auth) {
+                builder.header(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
+            } else {
+                builder.header(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+            }
         }
 
-        builder.header(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
+        if (preflight) {
+            builder.header(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
+        }
 
         return builder.build();
     }
+
     public void build(HttpResponse response) {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
@@ -148,27 +155,36 @@ public class Cors {
             logger.debug("!preflight and no origin");
             return;
         }
+
         logger.debug("build CORS headers and return");
+
         response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
-        if (allowedMethods != null) {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
-        } else {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
+        if (preflight) {
+            if (allowedMethods != null) {
+                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
+            } else {
+                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
+            }
         }
 
-        if (exposedHeaders != null) {
+        if (!preflight && exposedHeaders != null) {
             response.getOutputHeaders().add(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
         }
 
         response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
-        if (auth) {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
-        } else {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+
+        if (preflight) {
+            if (auth) {
+                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
+            } else {
+                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+            }
         }
 
-        response.getOutputHeaders().add(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
+        if (preflight) {
+            response.getOutputHeaders().add(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
+        }
     }
 
 }
