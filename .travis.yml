@@ -1,1 +1,8 @@
 language: java
+
+cache:
+    directories:
+        - $HOME/.m2
+sudo: false
+
+after_script: 'misc/.travis/after.sh'
