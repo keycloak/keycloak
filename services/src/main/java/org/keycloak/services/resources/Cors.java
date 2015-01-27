@@ -1,6 +1,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.ClientModel;
@@ -9,6 +10,7 @@ import org.keycloak.util.CollectionUtil;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -21,11 +23,14 @@ public class Cors {
     protected static final Logger logger = Logger.getLogger(Cors.class);
 
     public static final long DEFAULT_MAX_AGE = TimeUnit.HOURS.toSeconds(1);
-    public static final String DEFAULT_ALLOW_METHODS = "GET, HEAD, OPTIONS";
+    public static final String DEFAULT_ALLOW_METHODS = "GET, POST, HEAD, OPTIONS";
     public static final String DEFAULT_ALLOW_HEADERS = "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers";
 
     public static final String ORIGIN_HEADER = "Origin";
     public static final String AUTHORIZATION_HEADER = "Authorization";
+
+    public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
+    public static final String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
 
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
@@ -36,11 +41,11 @@ public class Cors {
 
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD = "*";
 
-
     private HttpRequest request;
     private ResponseBuilder builder;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
+    private Set<String> supportedHeaders;
     private Set<String> exposedHeaders;
 
     private boolean preflight;
@@ -99,76 +104,202 @@ public class Cors {
         return this;
     }
 
+    public Cors supportedHeaders(String... supportedHeaders) {
+        this.supportedHeaders = new HashSet<String>(Arrays.asList(supportedHeaders));
+        return this;
+    }
+
     public Cors exposedHeaders(String... exposedHeaders) {
         this.exposedHeaders = new HashSet<String>(Arrays.asList(exposedHeaders));
         return this;
     }
 
     public Response build() {
-        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
+        final String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
-            return builder.build();
+            logger.debug("CORS origin denied");
+            throw new BadRequestException("CORS origin denied");
         }
 
-        if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
-            return builder.build();
+        if (allowedOrigins == null
+                || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD))) {
+            logger.debug("CORS origin denied");
+            throw new BadRequestException("CORS origin denied");
+        }
+
+        if (auth) {
+            builder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
 
         builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
-        if (allowedMethods != null) {
-            builder.header(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
+        if (preflight) {
+
+            // Parse requested method
+            // Note: method checking must be done after header parsing, see CORS spec
+            final String requestMethodHeader = request.getHttpHeaders().getRequestHeaders()
+                    .getFirst(ACCESS_CONTROL_REQUEST_METHOD);
+            if (requestMethodHeader == null) {
+                logger.debug("Invalid preflight CORS request: Missing Access-Control-Request-Method header");
+                throw new BadRequestException("Invalid preflight CORS request: Missing Access-Control-Request-Method header");
+            }
+
+            final String requestedMethod = requestMethodHeader.toUpperCase();
+
+            // Parse the requested author (custom) headers
+            final String rawRequestHeadersString = request.getHttpHeaders().getRequestHeaders()
+                    .getFirst(ACCESS_CONTROL_REQUEST_HEADERS);
+            final String[] requestHeaderValues = CorsUtil.parseMultipleHeaderValues(rawRequestHeadersString);
+            final String[] requestHeaders = new String[requestHeaderValues.length];
+
+            for (int i = 0; i < requestHeaders.length; i++) {
+                try {
+                    requestHeaders[i] = CorsUtil.formatCanonical(requestHeaderValues[i]);
+                } catch (IllegalArgumentException e) {
+                    // Invalid header name
+                    logger.debug("Invalid preflight CORS request: Bad request header value");
+                    throw new BadRequestException("Invalid preflight CORS request: Bad request header value");
+                }
+            }
+
+            // Now, do method check
+            if (!allowedMethods.contains(requestedMethod)) {
+                logger.debug("Unsupported HTTP method " + requestedMethod);
+                throw new BadRequestException("Unsupported HTTP method " + requestedMethod);
+            }
+
+            // Author request headers check
+            for (String requestHeader : requestHeaders) {
+                if (!supportedHeaders.contains(requestHeader)) {
+                    logger.debug("Unsupported HTTP request header " + requestHeader);
+                    throw new BadRequestException("Unsupported HTTP request header " + requestHeader);
+                }
+            }
+
+            // Setting up headers for preflight request
+            builder.header(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
+
+            if (allowedMethods != null) {
+                builder.header(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
+            } else {
+                builder.header(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
+            }
+
+            if (rawRequestHeadersString != null) {
+                builder.header(ACCESS_CONTROL_ALLOW_HEADERS, rawRequestHeadersString);
+            } else if (supportedHeaders != null && !supportedHeaders.isEmpty()) {
+                builder.header(ACCESS_CONTROL_ALLOW_HEADERS, CollectionUtil.join(supportedHeaders));
+            }
+
         } else {
-            builder.header(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
-        }
+            // request is actual
+            // do method check
+            final String method = request.getHttpMethod().toUpperCase();
+            if (!allowedMethods.contains(method)) {
+                logger.debug("Unsupported HTTP request method " + method);
+                throw new BadRequestException("Unsupported HTTP request method " + method);
+            }
 
-        if (exposedHeaders != null) {
-            builder.header(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
+            // Setting up headers for actual request
+            if (exposedHeaders != null) {
+                builder.header(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
+            }
         }
-
-        builder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
-        if (auth) {
-            builder.header(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
-        } else {
-            builder.header(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
-        }
-
-        builder.header(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
 
         return builder.build();
     }
+
     public void build(HttpResponse response) {
-        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
+        final String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
-            logger.debug("No origin returning");
-            return;
+            logger.debug("CORS origin denied");
+            throw new BadRequestException("CORS origin denied", builder.build());
         }
 
-        if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
-            logger.debug("!preflight and no origin");
-            return;
+        if (allowedOrigins == null
+                || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD))) {
+            logger.debug("CORS origin denied");
+            throw new BadRequestException("CORS origin denied", builder.build());
         }
-        logger.debug("build CORS headers and return");
+
+        if (auth) {
+            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        }
+
         response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
-        if (allowedMethods != null) {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
+        if (preflight) {
+            // request is preflight
+            // Parse requested method
+            // Note: method checking must be done after header parsing, see CORS spec
+            final String requestMethodHeader = request.getHttpHeaders().getRequestHeaders()
+                    .getFirst(ACCESS_CONTROL_REQUEST_METHOD);
+            if (requestMethodHeader == null) {
+                logger.debug("Invalid preflight CORS request: Missing Access-Control-Request-Method header");
+                throw new BadRequestException("Invalid preflight CORS request: Missing Access-Control-Request-Method header");
+            }
+
+            final String requestedMethod = requestMethodHeader.toUpperCase();
+
+            // Parse the requested author (custom) headers
+            final String rawRequestHeadersString = request.getHttpHeaders().getRequestHeaders()
+                    .getFirst(ACCESS_CONTROL_REQUEST_HEADERS);
+            final String[] requestHeaderValues = CorsUtil.parseMultipleHeaderValues(rawRequestHeadersString);
+            final String[] requestHeaders = new String[requestHeaderValues.length];
+
+            for (int i = 0; i < requestHeaders.length; i++) {
+                try {
+                    requestHeaders[i] = CorsUtil.formatCanonical(requestHeaderValues[i]);
+                } catch (IllegalArgumentException e) {
+                    // Invalid header name
+                    logger.debug("Invalid preflight CORS request: Bad request header value");
+                    throw new BadRequestException("Invalid preflight CORS request: Bad request header value");
+                }
+            }
+
+            // Now, do method check
+            if (!allowedMethods.contains(requestedMethod)) {
+                logger.debug("Unsupported HTTP method " + requestedMethod);
+                throw new BadRequestException("Unsupported HTTP method " + requestedMethod);
+            }
+
+            // Author request headers check
+            for (String requestHeader : requestHeaders) {
+                if (!supportedHeaders.contains(requestHeader)) {
+                    logger.debug("Unsupported HTTP request header " + requestHeader);
+                    throw new BadRequestException("Unsupported HTTP request header " + requestHeader);
+                }
+            }
+
+            // Setting up headers for preflight request
+            response.getOutputHeaders().add(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
+
+            if (allowedMethods != null) {
+                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
+            } else {
+                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
+            }
+
+            if (rawRequestHeadersString != null) {
+                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, rawRequestHeadersString);
+            } else if (supportedHeaders != null && !supportedHeaders.isEmpty()) {
+                response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, CollectionUtil.join(supportedHeaders));
+            }
+
         } else {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
-        }
+            // request is actual
+            // do method check
+            final String method = request.getHttpMethod().toUpperCase();
+            if (!allowedMethods.contains(method)) {
+                logger.debug("Unsupported HTTP request method " + method);
+                throw new BadRequestException("Unsupported HTTP request method " + method);
+            }
 
-        if (exposedHeaders != null) {
-            response.getOutputHeaders().add(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
+            // Setting up headers for actual request
+            if (exposedHeaders != null) {
+                response.getOutputHeaders().add(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
+            }
         }
-
-        response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
-        if (auth) {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
-        } else {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
-        }
-
-        response.getOutputHeaders().add(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
     }
 
 }
