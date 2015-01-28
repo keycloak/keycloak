@@ -53,6 +53,13 @@ public class SAML2LogoutRequestBuilder extends SAML2BindingBuilder<SAML2LogoutRe
         nameID.setFormat(URI.create(nameIDFormat));
         lort.setNameID(nameID);
 
+        if (issuer != null) {
+            NameIDType issuerID = new NameIDType();
+            issuerID.setValue(issuer);
+            lort.setIssuer(issuerID);
+        }
+
+
         long assertionValidity = PicketLinkCoreSTS.instance().getConfiguration().getIssuedTokenTimeout();
 
         lort.setNotOnOrAfter(XMLTimeUtil.add(lort.getIssueInstant(), assertionValidity));

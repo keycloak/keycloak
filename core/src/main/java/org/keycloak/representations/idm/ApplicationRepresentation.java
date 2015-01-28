@@ -22,6 +22,7 @@ public class ApplicationRepresentation {
     protected Integer notBefore;
     protected Boolean bearerOnly;
     protected Boolean publicClient;
+    protected Boolean frontchannelLogout;
     protected String protocol;
     protected Map<String, String> attributes;
     protected Boolean fullScopeAllowed;
@@ -178,5 +179,13 @@ public class ApplicationRepresentation {
 
     public void setRegisteredNodes(Map<String, Integer> registeredNodes) {
         this.registeredNodes = registeredNodes;
+    }
+
+    public Boolean isFrontchannelLogout() {
+        return frontchannelLogout;
+    }
+
+    public void setFrontchannelLogout(Boolean frontchannelLogout) {
+        this.frontchannelLogout = frontchannelLogout;
     }
 }

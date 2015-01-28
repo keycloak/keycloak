@@ -21,6 +21,7 @@ public class OAuthClientRepresentation {
     protected Map<String, String> attributes;
     protected Boolean directGrantsOnly;
     protected Boolean fullScopeAllowed;
+    protected Boolean frontchannelLogout;
 
 
     public String getId() {
@@ -125,5 +126,13 @@ public class OAuthClientRepresentation {
 
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
+    }
+
+    public Boolean isFrontchannelLogout() {
+        return frontchannelLogout;
+    }
+
+    public void setFrontchannelLogout(Boolean frontchannelLogout) {
+        this.frontchannelLogout = frontchannelLogout;
     }
 }

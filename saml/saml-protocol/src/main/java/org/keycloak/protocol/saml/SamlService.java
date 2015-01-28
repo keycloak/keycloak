@@ -136,6 +136,7 @@ public class SamlService {
                 event.error(Errors.INVALID_TOKEN);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
             }
+            logger.debug("logout response");
             return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
         }
 
@@ -183,12 +184,15 @@ public class SamlService {
                 event.error(Errors.INVALID_SIGNATURE);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid requester.");
             }
+            logger.debug("verified request");
             if (samlObject instanceof AuthnRequestType) {
+                logger.debug("** login request");
                 event.event(EventType.LOGIN);
                 // Get the SAML Request Message
                 AuthnRequestType authn = (AuthnRequestType) samlObject;
                 return loginRequest(relayState, authn, client);
             } else if (samlObject instanceof LogoutRequestType) {
+                logger.debug("** logout request");
                 event.event(EventType.LOGOUT);
                 LogoutRequestType logout = (LogoutRequestType) samlObject;
                 return logoutRequest(logout, client, relayState);
@@ -306,6 +310,13 @@ public class SamlService {
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING, logoutBinding);
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_ISSUER, logoutRequest.getIssuer().getValue());
                 userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL);
+                // remove client from logout requests
+                for (ClientSessionModel clientSession : userSession.getClientSessions()) {
+                    if (clientSession.getClient().getId().equals(client.getId())) {
+                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                    }
+                }
+                logger.debug("browser Logout");
                 return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
             }
 
@@ -450,6 +461,7 @@ public class SamlService {
     public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
                                     @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                     @QueryParam(GeneralConstants.RELAY_STATE) String relayState)  {
+        logger.debug("SAML GET");
         return new RedirectBindingProtocol().execute(samlRequest, samlResponse, relayState);
     }
 
@@ -461,6 +473,7 @@ public class SamlService {
     public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
                                 @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                 @FormParam(GeneralConstants.RELAY_STATE) String relayState) {
+        logger.debug("SAML POST");
         return new PostBindingProtocol().execute(samlRequest, samlResponse, relayState);
     }
 

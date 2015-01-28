@@ -307,9 +307,10 @@ public class SamlProtocol implements LoginProtocol {
         SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(clientSession, client);
         try {
             if (isLogoutPostBindingForClient(app)) {
-                return logoutBuilder.postBinding().response(bindingUri);
+                return logoutBuilder.postBinding().request(bindingUri);
             } else {
-                return logoutBuilder.redirectBinding().response(bindingUri);
+                logger.debug("frontchannel redirect binding");
+                return logoutBuilder.redirectBinding().request(bindingUri);
             }
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
@@ -325,6 +326,7 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public Response finishLogout(UserSessionModel userSession) {
+        logger.debug("finishLogout");
         SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
         builder.logoutRequestID(userSession.getNote(SAML_LOGOUT_REQUEST_ID));
         builder.destination(userSession.getNote(SAML_LOGOUT_ISSUER));
