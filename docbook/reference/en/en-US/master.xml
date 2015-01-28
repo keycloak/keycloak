@@ -4,6 +4,7 @@
                 <!ENTITY License SYSTEM "modules/License.xml">
                 <!ENTITY Overview SYSTEM "modules/Overview.xml">
                 <!ENTITY Installation SYSTEM "modules/server-installation.xml">
+                <!ENTITY Providers SYSTEM "modules/providers.xml">
                 <!ENTITY OpenShift SYSTEM "modules/openshift.xml">
                 <!ENTITY AdminPermissions SYSTEM "modules/admin-permissions.xml">
                 <!ENTITY PerRealmAdminPermissions SYSTEM "modules/per-realm-admin-permissions.xml">
@@ -78,6 +79,7 @@ This one is short
     &License;
     &Overview;
     &Installation;
+    &Providers;
     &OpenShift;
     &AdminPermissions;
     &PerRealmAdminPermissions;

@@ -173,8 +173,8 @@
             contain a file called <literal>org.keycloak.models.UserFederationProviderFactory</literal>
             within the <literal>META-INF/services</literal> directory of the JAR.  This file is a list
             of fully qualified classnames of all implementations of <literal>UserFederationProviderFactory</literal>.
-            This is how Keycloak discovers which providers have been deployed.  Place the JAR in the
-            keycloak WAR deployment in the <literal>WEB-INF/lib</literal> directory.
+            For more details on writing provider implementations and how to deploy to Keycloak refer to the
+            <link linkend='providers'>providers</link> section.
         </para>
     </section>
 
