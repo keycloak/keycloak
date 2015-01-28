@@ -80,7 +80,17 @@
     <section>
         <title>Version specific migration</title>
         <section>
-            <title>Migrating from 1.1.Beta1 to 1.1.Beta2</title>
+            <title>Migrating from 1.1.0.Beta2 to 1.1.0.Final</title>
+            <itemizedlist>
+                <listitem>
+                    Providers are no longer loaded from <literal>WEB-INF/lib</literal>, they are now loaded
+                    from <literal>standalone/configuration/providers</literal>. See the
+                    <link linkend='providers'>providers</link> section for more details.
+                </listitem>
+            </itemizedlist>
+        </section>
+        <section>
+            <title>Migrating from 1.1.0.Beta1 to 1.1.0.Beta2</title>
             <itemizedlist>
                 <listitem>Adapters are now a separate download.  They are not included in appliance and war distribution.  We have too many now and the distro
                 is getting bloated.</listitem>
@@ -95,7 +105,7 @@
             </itemizedlist>
         </section>
         <section>
-            <title>Migrating from 1.0.x.Final to 1.1.Beta1</title>
+            <title>Migrating from 1.0.x.Final to 1.1.0.Beta1</title>
             <itemizedlist>
                 <listitem>RealmModel JPA and Mongo storage schema has changed</listitem>
                 <listitem>UserSessionModel JPA and Mongo storage schema has changed as these interfaces have been refactored</listitem>
