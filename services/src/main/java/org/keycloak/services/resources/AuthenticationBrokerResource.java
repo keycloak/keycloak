@@ -314,16 +314,16 @@ public class AuthenticationBrokerResource {
     }
 
     private IdentityProvider getIdentityProvider(RealmModel realm, String providerId) {
-        for (IdentityProviderModel model : realm.getIdentityProviders()) {
-            if (model.getId().equals(providerId)) {
-                IdentityProviderFactory providerFactory = getIdentityProviderFactory(model);
+        IdentityProviderModel identityProviderModel = realm.getIdentityProviderById(providerId);
 
-                if (providerFactory == null) {
-                    throw new RuntimeException("Could not find provider factory for identity provider [" + providerId + "].");
-                }
+        if (identityProviderModel != null) {
+            IdentityProviderFactory providerFactory = getIdentityProviderFactory(identityProviderModel);
 
-                return providerFactory.create(model);
+            if (providerFactory == null) {
+                throw new RuntimeException("Could not find provider factory for identity provider [" + providerId + "].");
             }
+
+            return providerFactory.create(identityProviderModel);
         }
 
         return null;

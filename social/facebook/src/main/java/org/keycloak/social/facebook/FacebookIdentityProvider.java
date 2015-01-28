@@ -12,11 +12,10 @@ import org.keycloak.social.SocialIdentityProvider;
  */
 public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider implements SocialIdentityProvider {
 
-    private static final String ID = "facebook";
-    private static final String AUTH_URL = "https://graph.facebook.com/oauth/authorize";
-    private static final String TOKEN_URL = "https://graph.facebook.com/oauth/access_token";
-    private static final String PROFILE_URL = "https://graph.facebook.com/me";
-    private static final String DEFAULT_SCOPE = "email";
+    public static final String AUTH_URL = "https://graph.facebook.com/oauth/authorize";
+    public static final String TOKEN_URL = "https://graph.facebook.com/oauth/access_token";
+    public static final String PROFILE_URL = "https://graph.facebook.com/me";
+    public static final String DEFAULT_SCOPE = "email";
 
     public FacebookIdentityProvider(OAuth2IdentityProviderConfig config) {
         super(config);

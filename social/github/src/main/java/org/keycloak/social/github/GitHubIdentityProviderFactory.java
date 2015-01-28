@@ -27,6 +27,8 @@ import org.keycloak.social.SocialIdentityProviderFactory;
  */
 public class GitHubIdentityProviderFactory extends AbstractIdentityProviderFactory<GitHubIdentityProvider> implements SocialIdentityProviderFactory<GitHubIdentityProvider> {
 
+    public static final String PROVIDER_ID = "github";
+
     @Override
     public String getName() {
         return "GitHub";
@@ -34,11 +36,11 @@ public class GitHubIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     @Override
     public GitHubIdentityProvider create(IdentityProviderModel model) {
-        return new GitHubIdentityProvider(new OAuth2IdentityProviderConfig(getId(), model.getId(), model.getName(), model.getConfig()));
+        return new GitHubIdentityProvider(new OAuth2IdentityProviderConfig(model));
     }
 
     @Override
     public String getId() {
-        return "github";
+        return PROVIDER_ID;
     }
 }

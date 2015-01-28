@@ -105,6 +105,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
     }
 
+    @Override
+    public C getConfig() {
+        return super.getConfig();
+    }
+
     protected AuthenticationResponse doHandleResponse(String response) throws IOException {
         String token = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
 

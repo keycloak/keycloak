@@ -40,6 +40,8 @@ import java.util.Map;
  */
 public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory<SAMLIdentityProvider> {
 
+    public static final String PROVIDER_ID = "saml";
+
     @Override
     public String getName() {
         return "SAML v2.0";
@@ -47,7 +49,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public SAMLIdentityProvider create(IdentityProviderModel model) {
-        return new SAMLIdentityProvider(new SAMLIdentityProviderConfig(getId(), model.getId(), model.getName(), model.getConfig()));
+        return new SAMLIdentityProvider(new SAMLIdentityProviderConfig(model));
     }
 
     @Override
@@ -121,6 +123,6 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public String getId() {
-        return "saml";
+        return PROVIDER_ID;
     }
 }
