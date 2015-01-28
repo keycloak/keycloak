@@ -42,7 +42,8 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF</directory>
+            <directory>${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF
+            </directory>
             <outputDirectory>keycloak/standalone/configuration</outputDirectory>
             <includes>
                 <include>keycloak-server.json</include>
@@ -61,27 +62,18 @@
             <outputDirectory>keycloak/welcome-content</outputDirectory>
             <includes>
                 <include>*.*</include>
-            </includes>            
+            </includes>
         </fileSet>
     </fileSets>
-    <!--
-    <dependencySets>
-        <dependencySet>
-            <unpack>false</unpack>
-            <useTransitiveDependencies>false</useTransitiveDependencies>
-            <includes>
-                <include>org.keycloak:keycloak-wildfly-adapter-dist:zip</include>
-                <include>org.keycloak:keycloak-as7-adapter-dist:zip</include>
-                <include>org.keycloak:keycloak-eap6-adapter-dist:zip</include>
-                <include>org.keycloak:keycloak-tomcat6-adapter-dist:zip</include>
-                <include>org.keycloak:keycloak-tomcat7-adapter-dist:zip</include>
-                <include>org.keycloak:keycloak-tomcat8-adapter-dist:zip</include>
-                <include>org.keycloak:keycloak-jetty81-adapter-dist:zip</include>
-                <include>org.keycloak:keycloak-jetty91-adapter-dist:zip</include>
-                <include>org.keycloak:keycloak-jetty92-adapter-dist:zip</include>
-            </includes>
-            <outputDirectory>adapters</outputDirectory>
-        </dependencySet>
-    </dependencySets>
-    -->
+
+    <files>
+        <file>
+            <source>src/main/themes/README.txt</source>
+            <outputDirectory>keycloak/standalone/configuration/themes</outputDirectory>
+        </file>
+        <file>
+            <source>src/main/providers/README.txt</source>
+            <outputDirectory>keycloak/standalone/configuration/providers</outputDirectory>
+        </file>
+    </files>
 </assembly>

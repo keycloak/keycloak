@@ -27,6 +27,8 @@ import org.keycloak.social.SocialIdentityProviderFactory;
  */
 public class FacebookIdentityProviderFactory extends AbstractIdentityProviderFactory<FacebookIdentityProvider> implements SocialIdentityProviderFactory<FacebookIdentityProvider> {
 
+    public static final String PROVIDER_ID = "facebook";
+
     @Override
     public String getName() {
         return "Facebook";
@@ -34,11 +36,11 @@ public class FacebookIdentityProviderFactory extends AbstractIdentityProviderFac
 
     @Override
     public FacebookIdentityProvider create(IdentityProviderModel model) {
-        return new FacebookIdentityProvider(new OAuth2IdentityProviderConfig(getId(), model.getId(), model.getName(), model.getConfig()));
+        return new FacebookIdentityProvider(new OAuth2IdentityProviderConfig(model));
     }
 
     @Override
     public String getId() {
-        return "facebook";
+        return PROVIDER_ID;
     }
 }

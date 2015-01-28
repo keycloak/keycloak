@@ -1,0 +1,276 @@
+<chapter id="providers">
+    <title>Providers and SPIs</title>
+
+    <para>
+        Keycloak is designed to cover most use-cases without requiring custom code, but we also want it to be
+        customizable. To achive this Keycloak has a number of SPIs which you can implement your own providers for.
+    </para>
+
+    <section>
+        <title>Implementing a SPI</title>
+        <para>
+            To implement an SPI you need to implement it's ProviderFactory and Provider interfaces. You also need to
+            create a provider-configuration file. For example to implement the Event Listener SPI you need to implement
+            EventListenerProviderFactory and EventListenerProvider and also provide the file
+            <literal>META-INF/services/org.keycloak.events.EventListenerProviderFactory</literal>
+        </para>
+        <para>
+            For example to implement the Event Listener SPI you start by implementing EventListenerProviderFactory:
+<programlisting><![CDATA[{
+package org.acme.provider;
+
+import ...
+
+public class MyEventListenerProviderFactory implements EventListenerProviderFactory {
+
+    private List<Event> events;
+
+    public String getId() {
+        return "my-event-listener";
+    }
+
+    public void init(Config.Scope config) {
+        int max = config.getInt("max");
+        events = new MaxList(max);
+    }
+
+    public EventListenerProvider create(KeycloakSession session) {
+        return new MyEventListenerProvider(events);
+    }
+
+    public void close() {
+        events = null;
+    }
+
+}
+}]]></programlisting>
+            The example uses a MaxList which has a maximum size and is concurrency safe. When the maximum size is reached
+            and new entries are added the oldest entry is removed. Keycloak creates a single instance of
+            EventListenerProviderFactory which makes it possible to store state for multiple requests. EventListenerProvider
+            instances are created by calling create on the factory for each requests so these should be light-weight.
+        </para>
+        <para>
+            Next you would implement EventListenerProvider:
+<programlisting><![CDATA[{
+package org.acme.provider;
+
+import ...
+
+public class MyEventListenerProvider implements EventListenerProvider {
+
+    private List<Event> events;
+
+    public MyEventListenerProvider(List<Event> events) {
+        this.events = events;
+    }
+
+    @Override
+    public void onEvent(Event event) {
+        events.add(event);
+    }
+
+    @Override
+    public void close() {
+
+    }
+
+}
+}]]></programlisting>
+        </para>
+        <para>
+            The file <literal>META-INF/services/org.keycloak.events.EventListenerProviderFactory</literal> should
+            contain the full name of your ProviderFactory implementation:
+<programlisting><![CDATA[{
+org.acme.provider.MyEventListenerProviderFactory
+}]]></programlisting>
+        </para>
+    </section>
+
+    <section>
+        <title>Registering provider implementations</title>
+        <para>
+            Keycloak loads provider implementations from the file-system. By default all JARs inside
+            <literal>standalone/configuration/providers</literal> are loaded. This is simple, but requires all providers
+            to share the same library. All provides also inherit all classes from the Keycloak class-loader. In the future
+            we'll add support to load providers from modules, which allows better control of class isolation.
+        </para>
+        <para>
+            To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the
+            provider configuration file to <literal>standalone/configuration/providers</literal>.
+        </para>
+        <para>
+            You can also define multiple provider class-path if you want to create isolated class-loaders. To do this
+            edit keycloak-server.json and add more classpath entries to the providers array. For example:
+<programlisting><![CDATA[{
+    "providers": [
+        "classpath:provider1.jar;lib-v1.jar",
+        "classpath:provider2.jar;lib-v2.jar"
+    ]
+}]]></programlisting>
+            The above example will create two separate class-loaders for providers. The classpath entries follow the
+            same syntax as Java classpath, with ';' separating multiple-entries. Wildcard is also supported allowing
+            loading all jars (files with .jar or .JAR extension) in a folder, for example:
+<programlisting><![CDATA[{
+    "providers": [
+        "classpath:/home/user/providers/*"
+    ]
+}]]></programlisting>
+        </para>
+    </section>
+
+    <section>
+        <title>Available SPIs</title>
+        <para>
+            Here's a list of the available SPIs and a brief description. For more details on each SPI refer to
+            individual
+            sections.
+            <variablelist>
+                <varlistentry>
+                    <term>Account</term>
+                    <listitem>
+                        Provides the account manage console pages. The default implementation uses FreeMarker templates.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Connections Infinispan</term>
+                    <listitem>
+                        Loads and configures Infinispan connections. The default implementation can load connections
+                        from
+                        the Infinispan subsystem, or alternatively can be manually configured in keycloak-server.json.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Connections Jpa</term>
+                    <listitem>
+                        Loads and configures Infinispan connections. The default implementation can load datasources
+                        from
+                        WildFly/EAP, or alternatively can be manually configured in keycloak-server.json.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Connections Jpa Updater</term>
+                    <listitem>
+                        Updates database schema. The default implementation uses Liquibase.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Connections Mongo</term>
+                    <listitem>
+                        Loads and configures MongoDB connections. The default implementation is configured in
+                        keycloak-server.json.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Email</term>
+                    <listitem>
+                        Formats and sends email. The default implementation uses FreeMarker templates and JavaMail.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Events Listener</term>
+                    <listitem>
+                        Listen to user related events for example user login success and failures. Keycloak provides two
+                        implementations out of box. One that logs events to the server log and another that can send
+                        email
+                        notifications to users on certain events.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Events Store</term>
+                    <listitem>
+                        Store user related events so they can be viewed through the admin console and account management
+                        console.
+                        Keycloak provides implementations for Relational Databases and MongoDB.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Export</term>
+                    <listitem>
+                        Exports the Keycloak database. Keycloak provides implementations that export to JSON files
+                        either
+                        as a single file, multiple file in a directory or a encrypted ZIP archive.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Import</term>
+                    <listitem>
+                        Imports and exported Keycloak database. Keycloak provides implementations that import from JSON
+                        files either
+                        as a single file, multiple file in a directory or a encrypted ZIP archive.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Login</term>
+                    <listitem>
+                        Provides the login pages. The default implementation uses FreeMarker templates.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Login Protocol</term>
+                    <listitem>
+                        Provides protocols. Keycloak provides implementations of OpenID Connect and SAML 2.0.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Realm</term>
+                    <listitem>
+                        Provides realm and application meta-data. Keycloak provides implementations for Relational
+                        Databases
+                        and MongoDB.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Realm Cache</term>
+                    <listitem>
+                        Caches realm and application meta-data to improve performance. Keycloak provides a basic
+                        in-memory
+                        cache and a Infinispan cache.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Theme</term>
+                    <listitem>
+                        Allows creating themes to customize look and feel. Keycloak provides implementations that can
+                        load
+                        themes from the file-system or classpath.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Timer</term>
+                    <listitem>
+                        Executes scheduled tasks. Keycloak provides a basic implementation based on java.util.Timer.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>User</term>
+                    <listitem>
+                        Provides users and role-mappings. Keycloak provides implementations for Relational Databases
+                        and MongoDB.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>User Cache</term>
+                    <listitem>
+                        Caches users and role-mappings to improve performance. Keycloak provides a basic in-memory
+                        cache and a Infinispan cache.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>User Federation</term>
+                    <listitem>
+                        Support syncing users from an external source. Keycloak provides implementations for LDAP and
+                        Active Directory.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>User Sessions</term>
+                    <listitem>
+                        Provides users session information. Keycloak provides implementations for basic in-memory,
+                        Infinispan,
+                        Relational Databases and MongoDB
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </section>
+</chapter>

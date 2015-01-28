@@ -787,9 +787,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
         for (IdentityProviderEntity entity: realm.getIdentityProviders()) {
-            IdentityProviderModel identityProviderModel = new IdentityProviderModel(entity.getProviderId(), entity.getId(), entity.getName(),
-                    entity.getConfig());
+            IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
+            identityProviderModel.setProviderId(entity.getProviderId());
+            identityProviderModel.setId(entity.getId());
+            identityProviderModel.setName(entity.getName());
+            identityProviderModel.setConfig(entity.getConfig());
             identityProviderModel.setEnabled(entity.isEnabled());
             identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
 
@@ -797,6 +800,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
 
         return identityProviders;
+    }
+
+    @Override
+    public IdentityProviderModel getIdentityProviderById(String identityProviderId) {
+        for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
+            if (identityProviderModel.getId().equals(identityProviderId)) {
+                return identityProviderModel;
+            }
+        }
+
+        return null;
     }
 
     @Override

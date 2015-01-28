@@ -12,11 +12,10 @@ import org.keycloak.social.SocialIdentityProvider;
  */
 public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider implements SocialIdentityProvider {
 
-    private static final String ID = "github";
-    private static final String AUTH_URL = "https://github.com/login/oauth/authorize";
-    private static final String TOKEN_URL = "https://github.com/login/oauth/access_token";
-    private static final String PROFILE_URL = "https://api.github.com/user";
-    private static final String DEFAULT_SCOPE = "user:email";
+    public static final String AUTH_URL = "https://github.com/login/oauth/authorize";
+    public static final String TOKEN_URL = "https://github.com/login/oauth/access_token";
+    public static final String PROFILE_URL = "https://api.github.com/user";
+    public static final String DEFAULT_SCOPE = "user:email";
 
     public GitHubIdentityProvider(OAuth2IdentityProviderConfig config) {
         super(config);
