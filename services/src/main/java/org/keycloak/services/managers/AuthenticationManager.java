@@ -115,19 +115,21 @@ public class AuthenticationManager {
         List<ClientSessionModel> redirectClients = new LinkedList<ClientSessionModel>();
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
             ClientModel client = clientSession.getClient();
+            if (clientSession.getAction() == ClientSessionModel.Action.LOGGED_OUT) continue;
             if (client.isFrontchannelLogout()) {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 redirectClients.add(clientSession);
                 continue;
             }
-            if (client instanceof ApplicationModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
+            if (client instanceof ApplicationModel && !client.isFrontchannelLogout()) {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
                 protocol.setRealm(realm)
                         .setUriInfo(uriInfo);
                 try {
+                    logger.debugv("backchannel logout to: {0}", client.getClientId());
                     protocol.backchannelLogout(userSession, clientSession);
                     clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
                 } catch (Exception e) {
@@ -147,8 +149,12 @@ public class AuthenticationManager {
             // setting this to logged out cuz I"m not sure protocols can always verify that the client was logged out or not
             nextRedirectClient.setAction(ClientSessionModel.Action.LOGGED_OUT);
             try {
+                logger.debugv("frontchannel logout to: {0}", nextRedirectClient.getClient().getClientId());
                 Response response = protocol.frontchannelLogout(userSession, nextRedirectClient);
-                if (response != null) return response;
+                if (response != null) {
+                    logger.debug("returning frontchannel logout request to client");
+                    return response;
+                }
             } catch (Exception e) {
                 logger.warn("Failed to logout client, continuing", e);
             }
