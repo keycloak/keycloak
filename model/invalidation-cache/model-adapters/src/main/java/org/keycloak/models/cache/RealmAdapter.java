@@ -616,6 +616,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public IdentityProviderModel getIdentityProviderById(String identityProviderId) {
+        for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
+            if (identityProviderModel.getId().equals(identityProviderId)) {
+                return identityProviderModel;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
         getDelegateForUpdate();
         updated.addIdentityProvider(identityProvider);

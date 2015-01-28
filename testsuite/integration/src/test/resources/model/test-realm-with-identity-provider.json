@@ -1,0 +1,183 @@
+{
+    "realm": "test-realm-with-identity-provider",
+    "enabled": true,
+    "requiredCredentials": [ "password" ],
+    "defaultRoles": [ "foo", "bar" ],
+    "identityProviders" : [
+        {
+            "id" : "google",
+            "providerId" : "google",
+            "name" : "Google",
+            "enabled": true,
+            "updateProfileFirstLogin" : "true",
+            "config": {
+                "clientId": "clientId",
+                "clientSecret": "clientSecret"
+            }
+        },
+        {
+            "id" : "facebook",
+            "providerId" : "facebook",
+            "name" : "Facebook",
+            "enabled": true,
+            "updateProfileFirstLogin" : "true",
+            "config": {
+                "authorizationUrl": "authorizationUrl",
+                "tokenUrl": "tokenUrl",
+                "userInfoUrl": "userInfoUrl",
+                "clientId": "clientId",
+                "clientSecret": "clientSecret"
+            }
+        },
+        {
+            "id" : "github",
+            "providerId" : "github",
+            "name" : "GitHub",
+            "enabled": true,
+            "updateProfileFirstLogin" : "true",
+            "config": {
+                "authorizationUrl": "authorizationUrl",
+                "tokenUrl": "tokenUrl",
+                "userInfoUrl": "userInfoUrl",
+                "clientId": "clientId",
+                "clientSecret": "clientSecret"
+            }
+        },
+        {
+            "id" : "twitter",
+            "providerId" : "twitter",
+            "name" : "Twitter",
+            "enabled": true,
+            "updateProfileFirstLogin" : "true",
+            "config": {
+                "authorizationUrl": "authorizationUrl",
+                "tokenUrl": "tokenUrl",
+                "userInfoUrl": "userInfoUrl",
+                "clientId": "clientId",
+                "clientSecret": "clientSecret"
+            }
+        },
+        {
+            "id" : "saml-idp",
+            "providerId" : "saml",
+            "name" : "SAML IdP",
+            "enabled": true,
+            "updateProfileFirstLogin" : "true",
+            "config": {
+                "singleSignOnServiceUrl": "http://localhost:8080/idp/",
+                "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+                "signingPublicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+                "wantAuthnRequestsSigned": true,
+                "forceAuthn": true,
+                "validateSignature": true,
+                "postBindingResponse": true,
+                "postBindingAuthnRequest": true
+            }
+        },
+        {
+            "id" : "oidc-idp",
+            "providerId" : "oidc",
+            "name" : "OIDC IdP",
+            "enabled": false,
+            "updateProfileFirstLogin" : "false",
+            "config": {
+                "clientId": "clientId",
+                "clientSecret": "clientSecret",
+                "prompt": "prompt",
+                "authorizationUrl": "authorizationUrl",
+                "tokenUrl": "tokenUrl",
+                "userInfoUrl": "userInfoUrl",
+                "defaultScope": "defaultScope",
+                "issuer": "issuer"
+            }
+        }
+    ],
+    "users": [
+        {
+            "username": "federated-user",
+            "enabled": true,
+            "federatedIdentities": [
+                {
+                    "identityProvider": "facebook",
+                    "userId": "facebook1",
+                    "userName": "fbuser1"
+                },
+                {
+                    "identityProvider": "twitter",
+                    "userId": "twitter1",
+                    "userName": "twuser1"
+                },
+                {
+                    "identityProvider": "google",
+                    "userId": "google1",
+                    "userName": "mySocialUser@gmail.com"
+                }
+            ]
+        }
+    ],
+    "applications": [
+        {
+            "name": "Application",
+            "enabled": true,
+            "nodeReRegistrationTimeout": 50,
+            "registeredNodes": {
+                "node1": 10,
+                "172.10.15.20": 20
+            }
+        },
+        {
+            "name": "OtherApp",
+            "enabled": true
+        }
+
+    ],
+    "oauthClients" : [
+        {
+            "name" : "oauthclient",
+            "enabled": true,
+            "secret": "clientpassword"
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "admin"
+            }
+        ],
+        "application" : {
+            "Application" : [
+                {
+                    "name": "app-admin"
+                },
+                {
+                    "name": "app-user"
+                }
+            ],
+            "OtherApp" : [
+                {
+                    "name": "otherapp-admin"
+                },
+                {
+                    "name": "otherapp-user"
+                }
+            ]
+        }
+    },
+    "scopeMappings": [
+        {
+            "client": "oauthclient",
+            "roles": ["admin"]
+        }
+    ],
+    "applicationScopeMappings": {
+        "Application": [
+            {
+                "client": "oauthclient",
+                "roles": ["app-user"]
+            }
+        ]
+
+    }
+
+
+}

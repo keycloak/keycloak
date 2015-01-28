@@ -164,6 +164,7 @@ public interface RealmModel extends RoleContainerModel {
     void setSmtpConfig(Map<String, String> smtpConfig);
 
     List<IdentityProviderModel> getIdentityProviders();
+    IdentityProviderModel getIdentityProviderById(String identityProviderId);
     void addIdentityProvider(IdentityProviderModel identityProvider);
     void removeIdentityProviderById(String providerId);
     void updateIdentityProvider(IdentityProviderModel identityProvider);

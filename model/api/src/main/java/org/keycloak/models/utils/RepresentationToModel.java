@@ -8,6 +8,7 @@ import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -21,6 +22,7 @@ import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -227,6 +229,21 @@ public class RepresentationToModel {
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
                 UserModel user = createUser(session, newRealm, userRep, appMap);
+            }
+        }
+
+        if (rep.getIdentityProviders() != null) {
+            for (IdentityProviderRepresentation identityProviderRepresentation : rep.getIdentityProviders()) {
+                IdentityProviderModel identityProviderModel = new IdentityProviderModel();
+
+                identityProviderModel.setId(identityProviderRepresentation.getId());
+                identityProviderModel.setProviderId(identityProviderRepresentation.getProviderId());
+                identityProviderModel.setName(identityProviderRepresentation.getName());
+                identityProviderModel.setEnabled(identityProviderRepresentation.isEnabled());
+                identityProviderModel.setUpdateProfileFirstLogin(identityProviderRepresentation.isUpdateProfileFirstLogin());
+                identityProviderModel.setConfig(identityProviderRepresentation.getConfig());
+
+                newRealm.addIdentityProvider(identityProviderModel);
             }
         }
     }
@@ -727,5 +744,4 @@ public class RepresentationToModel {
 
         }
     }
-
 }

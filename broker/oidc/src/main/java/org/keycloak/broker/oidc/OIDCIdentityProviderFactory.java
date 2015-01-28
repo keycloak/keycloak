@@ -25,6 +25,8 @@ import org.keycloak.models.IdentityProviderModel;
  */
 public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory<OIDCIdentityProvider> {
 
+    public static final String PROVIDER_ID = "oidc";
+
     @Override
     public String getName() {
         return "OpenID Connect v1.0";
@@ -32,11 +34,11 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public OIDCIdentityProvider create(IdentityProviderModel model) {
-        return new OIDCIdentityProvider(new OIDCIdentityProviderConfig(getId(), model.getId(), model.getName(), model.getConfig()));
+        return new OIDCIdentityProvider(new OIDCIdentityProviderConfig(model));
     }
 
     @Override
     public String getId() {
-        return "oidc";
+        return PROVIDER_ID;
     }
 }

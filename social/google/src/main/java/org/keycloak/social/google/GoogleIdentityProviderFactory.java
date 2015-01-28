@@ -27,6 +27,8 @@ import org.keycloak.social.SocialIdentityProviderFactory;
  */
 public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFactory<GoogleIdentityProvider> implements SocialIdentityProviderFactory<GoogleIdentityProvider> {
 
+    public static final String PROVIDER_ID = "google";
+
     @Override
     public String getName() {
         return "Google";
@@ -34,11 +36,11 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     @Override
     public GoogleIdentityProvider create(IdentityProviderModel model) {
-        return new GoogleIdentityProvider(new OIDCIdentityProviderConfig(getId(), model.getId(), model.getName(), model.getConfig()));
+        return new GoogleIdentityProvider(new OIDCIdentityProviderConfig(model));
     }
 
     @Override
     public String getId() {
-        return "google";
+        return PROVIDER_ID;
     }
 }

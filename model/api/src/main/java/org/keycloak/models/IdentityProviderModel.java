@@ -55,17 +55,15 @@ public class IdentityProviderModel {
     private Map<String, String> config = new HashMap<String, String>();
 
     public IdentityProviderModel() {
-        this(null, null, null, null);
     }
 
-    public IdentityProviderModel(String providerId, String id, String name, Map<String, String> config) {
-        this.providerId = providerId;
-        this.id = id;
-        this.name = name;
-
-        if (config != null) {
-            this.config.putAll(config);
-        }
+    public IdentityProviderModel(IdentityProviderModel model) {
+        this.providerId = model.getProviderId();
+        this.id = model.getId();
+        this.name = model.getName();
+        this.config = new HashMap<String, String>(model.getConfig());
+        this.enabled = model.isEnabled();
+        this.updateProfileFirstLogin = model.isUpdateProfileFirstLogin();
     }
 
     public String getId() {

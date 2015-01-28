@@ -15,32 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.social.twitter;
+package org.keycloak.testsuite.broker.social;
 
-import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.social.SocialIdentityProviderFactory;
 
 /**
- * @author Pedro Igor
+ * @author pedroigor
  */
-public class TwitterIdentityProviderFactory extends AbstractIdentityProviderFactory<TwitterIdentityProvider> implements SocialIdentityProviderFactory<TwitterIdentityProvider> {
-
-    public static final String PROVIDER_ID = "twitter";
+public class CustomSocialProviderFactory extends AbstractIdentityProviderFactory<CustomSocialProvider> implements SocialIdentityProviderFactory<CustomSocialProvider> {
 
     @Override
     public String getName() {
-        return "Twitter";
+        return "Custom Social Provider";
     }
 
     @Override
-    public TwitterIdentityProvider create(IdentityProviderModel model) {
-        return new TwitterIdentityProvider(new OAuth2IdentityProviderConfig(model));
+    public CustomSocialProvider create(IdentityProviderModel model) {
+        return new CustomSocialProvider(model);
     }
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return "custom-social-provider";
     }
 }

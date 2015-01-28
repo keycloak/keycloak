@@ -69,7 +69,6 @@ import java.util.List;
  */
 public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityProviderConfig> {
 
-    private static final String SAML_REQUEST_PARAMETER = "SAMLRequest";
     private static final String SAML_RESPONSE_PARAMETER = "SAMLResponse";
     private static final String RELAY_STATE_PARAMETER = "RelayState";
 

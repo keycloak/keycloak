@@ -19,19 +19,16 @@ package org.keycloak.broker.saml;
 
 import org.keycloak.models.IdentityProviderModel;
 
-import java.util.Map;
-
 /**
  * @author Pedro Igor
  */
 public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public SAMLIdentityProviderConfig() {
-        super();
     }
 
-    public SAMLIdentityProviderConfig(String providerId, String id, String name, Map<String, String> config) {
-        super(providerId, id, name, config);
+    public SAMLIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
+        super(identityProviderModel);
     }
 
     public String getSingleSignOnServiceUrl() {
