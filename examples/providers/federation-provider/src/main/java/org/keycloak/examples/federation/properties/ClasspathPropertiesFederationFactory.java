@@ -20,7 +20,7 @@ public class ClasspathPropertiesFederationFactory extends BasePropertiesFederati
     }
 
     protected InputStream getPropertiesFileStream(String path) {
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
+        InputStream is = getClass().getClassLoader().getResourceAsStream(path);
         if (is == null) {
             throw new IllegalStateException("Path not found for properties file");
 
