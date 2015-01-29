@@ -54,6 +54,11 @@ public abstract class AbstractIdentityProviderTest {
             URL url = getClass().getResource("/broker-test/test-app-keycloak.json");
             deployApplication("test-app", "/test-app", UserSessionStatusServlet.class, url.getPath(), "manager");
         }
+
+        @Override
+        protected String[] getTestRealms() {
+            return new String[] {"realm-with-broker"};
+        }
     };
 
     @Rule
@@ -76,45 +81,68 @@ public abstract class AbstractIdentityProviderTest {
         // choose the identity provider
         this.loginPage.clickSocial(providerId);
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/realms/realm-with-saml-identity-provider/protocol/saml"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
 
         // log in to identity provider
-        this.loginPage.login("saml.user", "password");
+        this.loginPage.login("test-user", "password");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/broker/realm-with-broker/" + providerId));
+        doAfterProviderAuthentication(providerId);
 
-        // update profile
-        this.updateProfilePage.assertCurrent();
-
-        String userEmail = "new@email.com";
-        String userFirstName = "New first";
-        String userLastName = "New last";
-
-        this.updateProfilePage.update(userFirstName, userLastName, userEmail);
+        doUpdateProfile(providerId);
 
         // authenticated and redirected to app
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app/"));
+        assertNotNull(retrieveSessionStatus());
 
-        KeycloakSession samlServerSession = brokerServerRule.startSession();
-        RealmModel brokerRealm = samlServerSession.realms().getRealm("realm-with-broker");
-
-        UserModel federatedUser = samlServerSession.users().getUserByEmail(userEmail, brokerRealm);
-
-        // user created
-        assertNotNull(federatedUser);
-        assertEquals(userFirstName, federatedUser.getFirstName());
-        assertEquals(userLastName, federatedUser.getLastName());
+        doAssertFederatedUser(providerId);
 
         driver.navigate().to("http://localhost:8081/test-app/logout");
         driver.navigate().to("http://localhost:8081/test-app/");
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+    }
 
-        // choose the identity provider
-        this.loginPage.clickSocial(providerId);
+    protected void doAssertFederatedUser(String providerId) {
+        String userEmail = "new@email.com";
+        String userFirstName = "New first";
+        String userLastName = "New last";
+        UserModel federatedUser = getFederatedUser();
 
-        // already authenticated in saml idp and redirected to app
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app/"));
+        assertEquals(userEmail, federatedUser.getEmail());
+        assertEquals(userFirstName, federatedUser.getFirstName());
+        assertEquals(userLastName, federatedUser.getLastName());
+    }
+
+    protected UserModel getFederatedUser() {
+        KeycloakSession samlServerSession = brokerServerRule.startSession();
+        RealmModel brokerRealm = samlServerSession.realms().getRealm("realm-with-broker");
+        UserModel userModel = samlServerSession.users().getUserByUsername("test-user", brokerRealm);
+
+        if (userModel != null) {
+            return userModel;
+        }
+
+        userModel = samlServerSession.users().getUserByEmail("test-user@localhost", brokerRealm);
+
+        if (userModel == null) {
+            return samlServerSession.users().getUserByEmail("new@email.com", brokerRealm);
+        }
+
+        return userModel;
+    }
+
+    protected void doUpdateProfile(String providerId) {
+        String userEmail = "new@email.com";
+        String userFirstName = "New first";
+        String userLastName = "New last";
+
+        // update profile
+        this.updateProfilePage.assertCurrent();
+        this.updateProfilePage.update(userFirstName, userLastName, userEmail);
+    }
+
+    protected void doAfterProviderAuthentication(String providerId) {
+
     }
 
     private UserSessionStatus retrieveSessionStatus() {
@@ -125,10 +153,8 @@ public abstract class AbstractIdentityProviderTest {
             String pageSource = this.driver.getPageSource();
 
             sessionStatus = objectMapper.readValue(pageSource.getBytes(), UserSessionStatus.class);
-
-            assertNotNull(retrieveSessionStatus());
-        } catch (IOException e) {
-            throw new RuntimeException("Could not retrieve session status.", e);
+        } catch (IOException ignore) {
+            ignore.printStackTrace();
         }
 
         return sessionStatus;

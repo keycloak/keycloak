@@ -143,22 +143,20 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         for (IdentityProviderModel identityProvider : identityProviders) {
             String providerId = identityProvider.getProviderId();
 
-            if (SAMLIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                if (identityProvider.getId().equals("saml-signed-idp")) {
+            if (!identityProvider.getId().contains("kc-")) {
+                if (SAMLIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertSamlIdentityProviderConfig(identityProvider);
-                } else {
-                    continue;
+                } else if (GoogleIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertGoogleIdentityProviderConfig(identityProvider);
+                } else if (OIDCIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertOidcIdentityProviderConfig(identityProvider);
+                } else if (FacebookIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertFacebookIdentityProviderConfig(identityProvider);
+                } else if (GitHubIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertGitHubIdentityProviderConfig(identityProvider);
+                } else if (TwitterIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertTwitterIdentityProviderConfig(identityProvider);
                 }
-            } else if (GoogleIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertGoogleIdentityProviderConfig(identityProvider);
-            } else if (OIDCIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertOidcIdentityProviderConfig(identityProvider);
-            } else if (FacebookIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertFacebookIdentityProviderConfig(identityProvider);
-            } else if (GitHubIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertGitHubIdentityProviderConfig(identityProvider);
-            } else if (TwitterIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertTwitterIdentityProviderConfig(identityProvider);
             }
 
             checkedProviders.remove(providerId);

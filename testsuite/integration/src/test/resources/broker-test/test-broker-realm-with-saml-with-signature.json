@@ -1,6 +1,6 @@
 {
-    "id": "realm-with-saml-identity-provider",
-    "realm": "realm-with-saml-identity-provider",
+    "id": "realm-with-saml-signed-idp",
+    "realm": "realm-with-saml-signed-idp",
     "enabled": true,
     "requiredCredentials": [ "password" ],
     "defaultRoles": [ "foo", "bar" ],
@@ -11,7 +11,7 @@
             "name": "http://localhost:8081/auth/",
             "enabled": true,
             "redirectUris": [
-                "http://localhost:8081/auth/broker/realm-with-broker/saml-signed-idp"
+                "http://localhost:8081/auth/broker/realm-with-broker/kc-saml-signed-idp"
             ],
             "attributes": {
                 "saml.assertion.signature": "true",
@@ -25,15 +25,18 @@
         }
     ],
     "users": [
-        {
-            "username" : "saml.user",
-            "enabled": true,
-            "credentials" : [
-                { "type" : "password",
-                    "value" : "password" }
-            ],
-            "realmRoles": ["manager"]
-        }
+      {
+        "username" : "test-user",
+        "enabled": true,
+        "email" : "test-user@localhost",
+        "firstName" : "Test",
+        "lastName" : "User",
+        "credentials" : [
+          { "type" : "password",
+            "value" : "password" }
+        ],
+        "realmRoles": ["manager"]
+      }
     ],
     "roles" : {
         "realm" : [

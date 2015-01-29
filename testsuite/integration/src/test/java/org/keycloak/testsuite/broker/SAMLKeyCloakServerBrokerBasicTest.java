@@ -29,6 +29,6 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
 
     @Test
     public void testSuccessfulAuthentication() {
-        assertSuccessfulAuthentication("saml-idp-basic");
+        assertSuccessfulAuthentication("kc-saml-idp-basic");
     }
 }
