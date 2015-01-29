@@ -72,7 +72,7 @@ public class Urls {
         UriBuilder uriBuilder = UriBuilder.fromUri(baseURI)
                 .path(AuthenticationBrokerResource.class)
                 .path(AuthenticationBrokerResource.class, "performLogin")
-                .replaceQueryParam("provider_id", identityProvider.getProviderId());
+                .replaceQueryParam("provider_id", identityProvider.getId());
 
         if (accessCode != null) {
             uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);

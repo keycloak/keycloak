@@ -55,20 +55,20 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("forceAuthn", String.valueOf(forceAuthn));
     }
 
-    public String getSigningPublicKey() {
-        return getConfig().get("signingPublicKey");
+    public String getSigningCertificate() {
+        return getConfig().get("signingCertificate");
     }
 
-    public void setSigningPublicKey(String signingPublicKey) {
-        getConfig().put("signingPublicKey", signingPublicKey);
+    public void setSigningCertificate(String signingCertificate) {
+        getConfig().put("signingCertificate", signingCertificate);
     }
 
     public String getNameIDPolicyFormat() {
         return getConfig().get("nameIDPolicyFormat");
     }
 
-    public void setNameIDPolicyFormat(String signingPublicKey) {
-        getConfig().put("nameIDPolicyFormat", signingPublicKey);
+    public void setNameIDPolicyFormat(String nameIDPolicyFormat) {
+        getConfig().put("nameIDPolicyFormat", nameIDPolicyFormat);
     }
 
     public boolean isWantAuthnRequestsSigned() {

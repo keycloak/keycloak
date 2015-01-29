@@ -52,11 +52,11 @@
                         <span tooltip-placement="right" tooltip="Specifies the URI reference corresponding to a name identifier format. Defaults to urn:oasis:names:tc:SAML:2.0:nameid-format:persistent." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group clearfix" data-ng-show="!importFile">
-                        <label class="col-sm-2 control-label" for="signingPublicKey">Signing Public Key</label>
+                        <label class="col-sm-2 control-label" for="signingCertificate">Validating X509 Certificate</label>
                         <div class="col-sm-4">
-                            <textarea class="form-control" id="signingPublicKey" ng-model="identityProvider.config.signingPublicKey"/>
+                            <textarea class="form-control" id="signingCertificate" ng-model="identityProvider.config.signingCertificate"/>
                         </div>
-                        <span tooltip-placement="right" tooltip="The public key that must be used to check for signatures." class="fa fa-info-circle"></span>
+                        <span tooltip-placement="right" tooltip="The certificate in PEM format that must be used to check for signatures." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="!importFile">
                         <label class="col-sm-2 control-label" for="wantAuthnRequestsSigned">Want AuthnRequests Signed</label>
