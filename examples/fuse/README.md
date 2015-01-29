@@ -56,11 +56,11 @@ feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.
 feature:install keycloak-fuse-example
 ```
 
-After that you can test running on [http://localhost:8080/customer-portal](http://localhost:8080/customer-portal) and login as "bburke@redhat.com" with password "password". Customer-portal is able to
+After that you can test running on [http://localhost:8181/customer-portal](http://localhost:8181/customer-portal) and login as "bburke@redhat.com" with password "password". Customer-portal is able to
 receive the response from the endpoints provided by `cxf-jaxrs` and `camel` applications. Note that camel endpoint is available just for users with role `admin`
 in this demo, so "bburke@redhat.com" can't access it. You may login as "admin" with password "password" in order to invoke camel endpoint.
 
-From [http://localhost:8080/product-portal](http://localhost:8080/product-portal) you will see servlet endpoint, which invokes JAX-WS provided by `cxf-jaxws` application.
+From [http://localhost:8181/product-portal](http://localhost:8181/product-portal) you will see servlet endpoint, which invokes JAX-WS provided by `cxf-jaxws` application.
 
 Note that this demo also secures whole default CXF endpoint on [http://localhost:8181/cxf](http://localhost:8181/cxf) hence every application running under it is secured too.  
 
@@ -129,7 +129,7 @@ recommended to use maven-bundle-plugin similarly like Fuse examples are doing, b
 as it's not used by application or Blueprint or Spring descriptor, but it's used just in jetty-web.xml file.
  
 **Servlet web application deployed by pax-whiteboard-extender** - Take a look at `product-portal-app` for inspiration. The needed steps are:
-* Keycloak provides PaxWebIntegrationService, which allows to inject jetty-authenticator.xml and configure security constraints for your application. 
+* Keycloak provides PaxWebIntegrationService, which allows to inject jetty-web.xml and configure security constraints for your application. 
 Example `product-portal-app` declares this in `OSGI-INF/blueprint/blueprint.xml` . Note that your servlet needs to depend on it. 
 * Steps 2,3 are same like for classic WAR
  
@@ -141,7 +141,7 @@ proper security constraints injected. Take a look at `OSGI-INF/blueprint/bluepri
      
 **Builtin web applications** - Some services automatically come with deployed servlets on startup. One of such examples is CXF servlet running on 
 [http://localhost:8181/cxf](http://localhost:8181/cxf) context. Securing such endpoints is quite tricky. The approach, which Keycloak is currently using, 
-is providing ServletUnregistrationService, which undeploys builtin servlet at startup, so you are able to re-deploy it again on context secured by Keycloak. 
+is providing ServletReregistrationService, which undeploys builtin servlet at startup, so you are able to re-deploy it again on context secured by Keycloak. 
 You can see the `OSGI-INF/blueprint/blueprint.xml` inside `cxf-jaxrs` project, which adds JAX-RS "customerservice" endpoint and more importantly, it secures whole `/cxf` context. 
 
 As a side effect, all other CXF services running on default CXF HTTP destination will be secured too. Once you uninstall feature "keycloak-fuse-example" the 

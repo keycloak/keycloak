@@ -20,6 +20,8 @@
         <keycloak.osgi.import>
             org.keycloak.*;version="${project.version}",
             org.apache.http.*;version=${keycloak.apache.httpcomponents.version},
+            org.apache.karaf.jaas.boot.principal;resolution:=optional,
+            org.apache.karaf.jaas.modules;resolution:=optional,
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>
