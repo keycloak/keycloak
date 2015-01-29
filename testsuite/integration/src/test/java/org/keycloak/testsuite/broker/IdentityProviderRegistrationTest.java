@@ -24,7 +24,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.social.SocialIdentityProvider;
 import org.keycloak.social.SocialIdentityProviderFactory;
 import org.keycloak.testsuite.broker.provider.CustomIdentityProvider;
-import org.keycloak.testsuite.broker.social.CustomSocialProvider;
+import org.keycloak.testsuite.broker.provider.social.CustomSocialProvider;
 
 import java.util.Set;
 

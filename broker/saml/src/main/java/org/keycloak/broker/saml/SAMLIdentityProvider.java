@@ -199,7 +199,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     private void validateSignature(SAML2Request saml2Request) throws ProcessingException {
         if (getConfig().isValidateSignature()) {
-            X509Certificate certificate = XMLSignatureUtil.getX509CertificateFromKeyInfoString(getConfig().getSigningPublicKey().replaceAll("\\s", ""));
+            X509Certificate certificate = XMLSignatureUtil.getX509CertificateFromKeyInfoString(getConfig().getSigningCertificate().replaceAll("\\s", ""));
             SAMLDocumentHolder samlDocumentHolder = saml2Request.getSamlDocumentHolder();
             Document samlDocument = samlDocumentHolder.getSamlDocument();
 

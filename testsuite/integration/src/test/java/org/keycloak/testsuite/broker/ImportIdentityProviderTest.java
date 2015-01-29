@@ -144,7 +144,11 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
             String providerId = identityProvider.getProviderId();
 
             if (SAMLIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertSamlIdentityProviderConfig(identityProvider);
+                if (identityProvider.getId().equals("saml-signed-idp")) {
+                    assertSamlIdentityProviderConfig(identityProvider);
+                } else {
+                    continue;
+                }
             } else if (GoogleIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                 assertGoogleIdentityProviderConfig(identityProvider);
             } else if (OIDCIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
@@ -184,14 +188,14 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         SAMLIdentityProvider samlIdentityProvider = new SAMLIdentityProviderFactory().create(identityProvider);
         SAMLIdentityProviderConfig config = samlIdentityProvider.getConfig();
 
-        assertEquals("saml-idp", config.getId());
+        assertEquals("saml-signed-idp", config.getId());
         assertEquals(SAMLIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
-        assertEquals("SAML IdP", config.getName());
+        assertEquals("SAML Signed IdP", config.getName());
         assertEquals(true, config.isEnabled());
         assertEquals(true, config.isUpdateProfileFirstLogin());
-        assertEquals("http://localhost:8080/idp/", config.getSingleSignOnServiceUrl());
+        assertEquals("http://localhost:8082/auth/realms/realm-with-saml-identity-provider/protocol/saml", config.getSingleSignOnServiceUrl());
         assertEquals("urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress", config.getNameIDPolicyFormat());
-        assertEquals("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB", config.getSigningPublicKey());
+        assertEquals("MIIDdzCCAl+gAwIBAgIEbySuqTANBgkqhkiG9w0BAQsFADBsMRAwDgYDVQQGEwdVbmtub3duMRAwDgYDVQQIEwdVbmtub3duMRAwDgYDVQQHEwdVbmtub3duMRAwDgYDVQQKEwdVbmtub3duMRAwDgYDVQQLEwdVbmtub3duMRAwDgYDVQQDEwdVbmtub3duMB4XDTE1MDEyODIyMTYyMFoXDTE3MTAyNDIyMTYyMFowbDEQMA4GA1UEBhMHVW5rbm93bjEQMA4GA1UECBMHVW5rbm93bjEQMA4GA1UEBxMHVW5rbm93bjEQMA4GA1UEChMHVW5rbm93bjEQMA4GA1UECxMHVW5rbm93bjEQMA4GA1UEAxMHVW5rbm93bjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAII/K9NNvXi9IySl7+l2zY/kKrGTtuR4WdCI0xLW/Jn4dLY7v1/HOnV4CC4ecFOzhdNFPtJkmEhP/q62CpmOYOKApXk3tfmm2rwEz9bWprVxgFGKnbrWlz61Z/cjLAlhD3IUj2ZRBquYgSXQPsYfXo1JmSWF5pZ9uh1FVqu9f4wvRqY20ZhUN+39F+1iaBsoqsrbXypCn1HgZkW1/9D9GZug1c3vB4wg1TwZZWRNGtxwoEhdK6dPrNcZ+6PdanVilWrbQFbBjY4wz8/7IMBzssoQ7Usmo8F1Piv0FGfaVeJqBrcAvbiBMpk8pT+27u6p8VyIX6LhGvnxIwM07NByeSUCAwEAAaMhMB8wHQYDVR0OBBYEFFlcNuTYwI9W0tQ224K1gFJlMam0MA0GCSqGSIb3DQEBCwUAA4IBAQB5snl1KWOJALtAjLqD0mLPg1iElmZP82Lq1htLBt3XagwzU9CaeVeCQ7lTp+DXWzPa9nCLhsC3QyrV3/+oqNli8C6NpeqI8FqN2yQW/QMWN1m5jWDbmrWwtQzRUn/rh5KEb5m3zPB+tOC6e/2bV3QeQebxeW7lVMD0tSCviUg1MQf1l2gzuXQo60411YwqrXwk6GMkDOhFDQKDlMchO3oRbQkGbcP8UeiKAXjMeHfzbiBr+cWz8NYZEtxUEDYDjTpKrYCSMJBXpmgVJCZ00BswbksxJwaGqGMPpUKmCV671pf3m8nq3xyiHMDGuGwtbU+GE8kVx85menmp8+964nin", config.getSigningCertificate());
         assertEquals(true, config.isWantAuthnRequestsSigned());
         assertEquals(true, config.isForceAuthn());
         assertEquals(true, config.isPostBindingAuthnRequest());
@@ -258,10 +262,10 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     }
 
     private RealmModel installTestRealm() throws IOException {
-        RealmRepresentation realmRepresentation = loadJson("model/test-realm-with-identity-provider.json");
+        RealmRepresentation realmRepresentation = loadJson("broker-test/test-realm-with-broker.json");
 
         assertNotNull(realmRepresentation);
-        assertEquals("test-realm-with-identity-provider", realmRepresentation.getRealm());
+        assertEquals("realm-with-broker", realmRepresentation.getRealm());
 
         RealmModel realmModel = this.realmManager.importRealm(realmRepresentation);
 

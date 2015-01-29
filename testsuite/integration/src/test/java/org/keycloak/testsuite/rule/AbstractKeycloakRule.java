@@ -41,11 +41,18 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     protected void before() throws Throwable {
         server = new KeycloakServer();
+
+        configureServer(server);
+
         server.start();
 
         removeTestRealms();
 
         setupKeycloak();
+    }
+
+    protected void configureServer(KeycloakServer server) {
+
     }
 
     public UserRepresentation getUser(String realm, String name) {

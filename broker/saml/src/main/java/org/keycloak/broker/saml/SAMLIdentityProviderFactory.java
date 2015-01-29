@@ -83,7 +83,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                         samlIdentityProviderConfig.setPostBindingResponse(true);
 
                         List<KeyDescriptorType> keyDescriptor = idpDescriptor.getKeyDescriptor();
-                        String defaultPublicKey = null;
+                        String defaultCertificate = null;
 
                         if (keyDescriptor != null) {
                             for (KeyDescriptorType keyDescriptorType : keyDescriptor) {
@@ -91,22 +91,22 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                                 Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
 
                                 if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
-                                    samlIdentityProviderConfig.setSigningPublicKey(x509KeyInfo.getTextContent());
+                                    samlIdentityProviderConfig.setSigningCertificate(x509KeyInfo.getTextContent());
                                 } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
                                     samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
                                 } else if (keyDescriptorType.getUse() ==  null) {
-                                    defaultPublicKey = x509KeyInfo.getTextContent();
+                                    defaultCertificate = x509KeyInfo.getTextContent();
                                 }
                             }
                         }
 
-                        if (defaultPublicKey != null) {
-                            if (samlIdentityProviderConfig.getSigningPublicKey() == null) {
-                                samlIdentityProviderConfig.setSigningPublicKey(defaultPublicKey);
+                        if (defaultCertificate != null) {
+                            if (samlIdentityProviderConfig.getSigningCertificate() == null) {
+                                samlIdentityProviderConfig.setSigningCertificate(defaultCertificate);
                             }
 
                             if (samlIdentityProviderConfig.getEncryptionPublicKey() == null) {
-                                samlIdentityProviderConfig.setEncryptionPublicKey(defaultPublicKey);
+                                samlIdentityProviderConfig.setEncryptionPublicKey(defaultCertificate);
                             }
                         }
 
