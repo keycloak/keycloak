@@ -10,7 +10,7 @@
     <cm:property-placeholder persistent-id="org.keycloak" update-strategy="reload">
         <cm:default-properties>
             <cm:property name="jaasBearerKeycloakConfigFile" value="$[karaf.base]/etc/keycloak-hawtio.json"/>
-            <cm:property name="jaasBearerRolePrincipalClass" value=""/>
+            <cm:property name="jaasBearerRolePrincipalClass" value="org.apache.karaf.jaas.boot.principal.RolePrincipal"/>
 
             <cm:property name="jaasDirectAccessKeycloakConfigFile" value="$[karaf.base]/etc/keycloak-direct-access.json"/>
             <cm:property name="jaasDirectAccessRolePrincipalClass" value="org.apache.karaf.jaas.boot.principal.RolePrincipal"/>
