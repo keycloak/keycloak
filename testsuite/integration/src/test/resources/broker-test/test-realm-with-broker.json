@@ -8,7 +8,7 @@
     "publicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgj8r0029eL0jJKXv6XbNj+QqsZO25HhZ0IjTEtb8mfh0tju/X8c6dXgILh5wU7OF00U+0mSYSE/+rrYKmY5g4oCleTe1+abavATP1tamtXGAUYqdutaXPrVn9yMsCWEPchSPZlEGq5iBJdA+xh9ejUmZJYXmln26HUVWq71/jC9GpjbRmFQ37f0X7WJoGyiqyttfKkKfUeBmRbX/0P0Zm6DVze8HjCDVPBllZE0a3HCgSF0rp0+s1xn7o91qdWKVattAVsGNjjDPz/sgwHOyyhDtSyajwXU+K/QUZ9pV4moGtwC9uIEymTylP7bu7qnxXIhfouEa+fEjAzTs0HJ5JQIDAQAB",
     "identityProviders" : [
         {
-            "id" : "google",
+            "id" : "model-google",
             "providerId" : "google",
             "name" : "Google",
             "enabled": true,
@@ -19,7 +19,7 @@
             }
         },
         {
-            "id" : "facebook",
+            "id" : "model-facebook",
             "providerId" : "facebook",
             "name" : "Facebook",
             "enabled": true,
@@ -33,7 +33,7 @@
             }
         },
         {
-            "id" : "github",
+            "id" : "model-github",
             "providerId" : "github",
             "name" : "GitHub",
             "enabled": true,
@@ -47,7 +47,7 @@
             }
         },
         {
-            "id" : "twitter",
+            "id" : "model-twitter",
             "providerId" : "twitter",
             "name" : "Twitter",
             "enabled": true,
@@ -61,7 +61,7 @@
             }
         },
         {
-          "id" : "saml-signed-idp",
+          "id" : "model-saml-signed-idp",
           "providerId" : "saml",
           "name" : "SAML Signed IdP",
           "enabled": true,
@@ -109,7 +109,7 @@
             }
         },
         {
-            "id" : "oidc-idp",
+            "id" : "model-oidc-idp",
             "providerId" : "oidc",
             "name" : "OIDC IdP",
             "enabled": false,
@@ -125,20 +125,20 @@
             }
         },
         {
-          "id" : "kc-oidc-idp",
-          "providerId" : "oidc",
-          "name" : "KeyCloak OIDC IdP",
-          "enabled": true,
-          "updateProfileFirstLogin" : "false",
-          "config": {
-            "clientId": "broker-app",
-            "clientSecret": "secret",
-            "prompt": "login",
-            "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/tokens/login",
-            "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/access/codes",
-            "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
-            "defaultScope": "email profile"
-          }
+            "id" : "kc-oidc-idp",
+            "providerId" : "oidc",
+            "name" : "KeyCloak OIDC IdP",
+            "enabled": true,
+            "updateProfileFirstLogin" : "false",
+            "config": {
+                "clientId": "broker-app",
+                "clientSecret": "secret",
+                "prompt": "login",
+                "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/tokens/login",
+                "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/access/codes",
+                "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
+                "defaultScope": "email profile"
+            }
         }
     ],
     "users": [

@@ -33,6 +33,16 @@
                     "value" : "password" }
             ],
             "realmRoles": ["manager"]
+        },
+        {
+          "username" : "pedroigor",
+          "enabled": true,
+          "email" : "psilva@redhat.com",
+          "credentials" : [
+            { "type" : "password",
+              "value" : "password" }
+          ],
+          "realmRoles": ["manager"]
         }
     ],
     "roles" : {
