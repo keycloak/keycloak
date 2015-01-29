@@ -60,14 +60,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertIdentityProviderConfig(realm.getIdentityProviders());
 
         assertTrue(realm.isIdentityFederationEnabled());
-
-        this.realmManager.removeRealm(realm);
-
-        commit();
-
-        realm = this.realmManager.getRealm(realm.getId());
-
-        assertNull(realm);
     }
 
     @Test
@@ -141,27 +133,27 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         Set<String> checkedProviders = new HashSet<String>(getExpectedProviders());
 
         for (IdentityProviderModel identityProvider : identityProviders) {
-            String providerId = identityProvider.getProviderId();
+            if (identityProvider.getId().startsWith("model-")) {
+                String providerId = identityProvider.getProviderId();
 
-            if (SAMLIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                if (identityProvider.getId().equals("saml-signed-idp")) {
+                if (SAMLIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertSamlIdentityProviderConfig(identityProvider);
+                } else if (GoogleIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertGoogleIdentityProviderConfig(identityProvider);
+                } else if (OIDCIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertOidcIdentityProviderConfig(identityProvider);
+                } else if (FacebookIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertFacebookIdentityProviderConfig(identityProvider);
+                } else if (GitHubIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertGitHubIdentityProviderConfig(identityProvider);
+                } else if (TwitterIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertTwitterIdentityProviderConfig(identityProvider);
                 } else {
                     continue;
                 }
-            } else if (GoogleIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertGoogleIdentityProviderConfig(identityProvider);
-            } else if (OIDCIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertOidcIdentityProviderConfig(identityProvider);
-            } else if (FacebookIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertFacebookIdentityProviderConfig(identityProvider);
-            } else if (GitHubIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertGitHubIdentityProviderConfig(identityProvider);
-            } else if (TwitterIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                assertTwitterIdentityProviderConfig(identityProvider);
-            }
 
-            checkedProviders.remove(providerId);
+                checkedProviders.remove(providerId);
+            }
         }
 
         assertTrue(checkedProviders.isEmpty());
@@ -171,7 +163,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         GoogleIdentityProvider googleIdentityProvider = new GoogleIdentityProviderFactory().create(identityProvider);
         OIDCIdentityProviderConfig config = googleIdentityProvider.getConfig();
 
-        assertEquals("google", config.getId());
+        assertEquals("model-google", config.getId());
         assertEquals(GoogleIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals("Google", config.getName());
         assertEquals(true, config.isEnabled());
@@ -188,7 +180,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         SAMLIdentityProvider samlIdentityProvider = new SAMLIdentityProviderFactory().create(identityProvider);
         SAMLIdentityProviderConfig config = samlIdentityProvider.getConfig();
 
-        assertEquals("saml-signed-idp", config.getId());
+        assertEquals("model-saml-signed-idp", config.getId());
         assertEquals(SAMLIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals("SAML Signed IdP", config.getName());
         assertEquals(true, config.isEnabled());
@@ -207,7 +199,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         OIDCIdentityProvider googleIdentityProvider = new OIDCIdentityProviderFactory().create(identityProvider);
         OIDCIdentityProviderConfig config = googleIdentityProvider.getConfig();
 
-        assertEquals("oidc-idp", config.getId());
+        assertEquals("model-oidc-idp", config.getId());
         assertEquals(OIDCIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals("OIDC IdP", config.getName());
         assertEquals(false, config.isEnabled());
@@ -220,7 +212,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         FacebookIdentityProvider facebookIdentityProvider = new FacebookIdentityProviderFactory().create(identityProvider);
         OAuth2IdentityProviderConfig config = facebookIdentityProvider.getConfig();
 
-        assertEquals("facebook", config.getId());
+        assertEquals("model-facebook", config.getId());
         assertEquals(FacebookIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals("Facebook", config.getName());
         assertEquals(true, config.isEnabled());
@@ -236,7 +228,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         GitHubIdentityProvider gitHubIdentityProvider = new GitHubIdentityProviderFactory().create(identityProvider);
         OAuth2IdentityProviderConfig config = gitHubIdentityProvider.getConfig();
 
-        assertEquals("github", config.getId());
+        assertEquals("model-github", config.getId());
         assertEquals(GitHubIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals("GitHub", config.getName());
         assertEquals(true, config.isEnabled());
@@ -252,7 +244,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         TwitterIdentityProvider gitHubIdentityProvider = new TwitterIdentityProviderFactory().create(identityProvider);
         OAuth2IdentityProviderConfig config = gitHubIdentityProvider.getConfig();
 
-        assertEquals("twitter", config.getId());
+        assertEquals("model-twitter", config.getId());
         assertEquals(TwitterIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals("Twitter", config.getName());
         assertEquals(true, config.isEnabled());
@@ -267,13 +259,17 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertNotNull(realmRepresentation);
         assertEquals("realm-with-broker", realmRepresentation.getRealm());
 
-        RealmModel realmModel = this.realmManager.importRealm(realmRepresentation);
+        RealmModel realmModel = this.realmManager.getRealm("realm-with-broker");
 
-        commit();
+        if (realmModel == null) {
+            realmModel = this.realmManager.importRealm(realmRepresentation);
 
-        realmModel = this.realmManager.getRealm(realmModel.getId());
+            commit();
 
-        assertNotNull(realmModel);
+            realmModel = this.realmManager.getRealm(realmModel.getId());
+
+            assertNotNull(realmModel);
+        }
 
         return realmModel;
     }
