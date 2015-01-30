@@ -29,12 +29,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.IDToken;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.By;
@@ -43,7 +40,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 import java.util.Set;
 
@@ -58,20 +54,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class AbstractIdentityProviderTest {
 
     @ClassRule
-    public static AbstractKeycloakRule brokerServerRule = new AbstractKeycloakRule() {
-
-        @Override
-        protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            server.importRealm(getClass().getResourceAsStream("/broker-test/test-realm-with-broker.json"));
-            URL url = getClass().getResource("/broker-test/test-app-keycloak.json");
-            deployApplication("test-app", "/test-app", UserSessionStatusServlet.class, url.getPath(), "manager");
-        }
-
-        @Override
-        protected String[] getTestRealms() {
-            return new String[] {"realm-with-broker"};
-        }
-    };
+    public static BrokerKeyCloakRule brokerServerRule = new BrokerKeyCloakRule();
 
     @Rule
     public WebRule webRule = new WebRule(this);
