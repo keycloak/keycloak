@@ -42,6 +42,13 @@
                         </div>
                         <span tooltip-placement="right" tooltip="The client or application secret registered withing the identity provider." class="fa fa-info-circle"></span>
                     </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="defaultScope">Default Scopes </label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="defaultScope" type="text" ng-model="identityProvider.config.defaultScope">
+                        </div>
+                        <span tooltip-placement="right" tooltip="The scopes to be sent when asking for authorization. It can be a space-separated list of scopes. Defaults to 'openid'." class="fa fa-info-circle"></span>
+                    </div>
                     <div class="form-group">
                         <label class="col-sm-2 control-label" for="enabled">Enabled</label>
                         <div class="col-sm-4">

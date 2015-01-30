@@ -22,7 +22,6 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);
-        config.setDefaultScope(DEFAULT_SCOPE);
     }
 
     @Override
@@ -65,5 +64,10 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected String getDefaultScopes() {
+        return DEFAULT_SCOPE;
     }
 }
