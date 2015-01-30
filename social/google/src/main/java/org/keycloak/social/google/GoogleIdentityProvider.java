@@ -30,11 +30,10 @@ import org.keycloak.social.SocialIdentityProvider;
  */
 public class GoogleIdentityProvider extends OIDCIdentityProvider implements SocialIdentityProvider<OIDCIdentityProviderConfig> {
 
-    private static final String ID = "google";
-    private static final String AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
-    private static final String TOKEN_URL = "https://accounts.google.com/o/oauth2/token";
-    private static final String PROFILE_URL = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
-    private static final String DEFAULT_SCOPE = "openid profile email";
+    public static final String AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
+    public static final String TOKEN_URL = "https://accounts.google.com/o/oauth2/token";
+    public static final String PROFILE_URL = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
+    public static final String DEFAULT_SCOPE = "openid profile email";
 
     public GoogleIdentityProvider(OIDCIdentityProviderConfig config) {
         super(config);

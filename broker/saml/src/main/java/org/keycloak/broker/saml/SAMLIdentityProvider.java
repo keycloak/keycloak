@@ -69,7 +69,6 @@ import java.util.List;
  */
 public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityProviderConfig> {
 
-    private static final String SAML_REQUEST_PARAMETER = "SAMLRequest";
     private static final String SAML_RESPONSE_PARAMETER = "SAMLResponse";
     private static final String RELAY_STATE_PARAMETER = "RelayState";
 
@@ -121,6 +120,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 KeyPair keypair = new KeyPair(publicKey, privateKey);
 
                 authnRequestBuilder.signWith(keypair);
+                authnRequestBuilder.signDocument();
             }
 
             if (getConfig().isPostBindingAuthnRequest()) {
@@ -199,7 +199,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     private void validateSignature(SAML2Request saml2Request) throws ProcessingException {
         if (getConfig().isValidateSignature()) {
-            X509Certificate certificate = XMLSignatureUtil.getX509CertificateFromKeyInfoString(getConfig().getSigningPublicKey().replaceAll("\\s", ""));
+            X509Certificate certificate = XMLSignatureUtil.getX509CertificateFromKeyInfoString(getConfig().getSigningCertificate().replaceAll("\\s", ""));
             SAMLDocumentHolder samlDocumentHolder = saml2Request.getSamlDocumentHolder();
             Document samlDocument = samlDocumentHolder.getSamlDocument();
 

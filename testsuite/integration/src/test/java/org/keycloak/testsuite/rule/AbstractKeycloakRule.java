@@ -1,17 +1,15 @@
 package org.keycloak.testsuite.rule;
 
-import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
-import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.SecurityConstraint;
 import io.undertow.servlet.api.SecurityInfo;
 import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.api.WebResourceCollection;
-import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
+import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
@@ -19,24 +17,19 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.filters.ClientConnectionFilter;
-import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Time;
 
-import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;
 import javax.ws.rs.core.Application;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.util.Map;
-
-import org.keycloak.adapters.KeycloakConfigResolver;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,11 +41,18 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     protected void before() throws Throwable {
         server = new KeycloakServer();
+
+        configureServer(server);
+
         server.start();
 
         removeTestRealms();
 
         setupKeycloak();
+    }
+
+    protected void configureServer(KeycloakServer server) {
+
     }
 
     public UserRepresentation getUser(String realm, String name) {
@@ -209,6 +209,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
     protected void after() {
         removeTestRealms();
         stopServer();
+        Time.setOffset(0);
     }
 
     protected void removeTestRealms() {

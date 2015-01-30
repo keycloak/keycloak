@@ -27,6 +27,8 @@ import org.keycloak.social.SocialIdentityProviderFactory;
  */
 public class TwitterIdentityProviderFactory extends AbstractIdentityProviderFactory<TwitterIdentityProvider> implements SocialIdentityProviderFactory<TwitterIdentityProvider> {
 
+    public static final String PROVIDER_ID = "twitter";
+
     @Override
     public String getName() {
         return "Twitter";
@@ -34,11 +36,11 @@ public class TwitterIdentityProviderFactory extends AbstractIdentityProviderFact
 
     @Override
     public TwitterIdentityProvider create(IdentityProviderModel model) {
-        return new TwitterIdentityProvider(new OAuth2IdentityProviderConfig(getId(), model.getId(), model.getName(), model.getConfig()));
+        return new TwitterIdentityProvider(new OAuth2IdentityProviderConfig(model));
     }
 
     @Override
     public String getId() {
-        return "twitter";
+        return PROVIDER_ID;
     }
 }

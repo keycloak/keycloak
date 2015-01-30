@@ -17,15 +17,15 @@
  */
 package org.keycloak.broker.oidc;
 
-import java.util.Map;
+import org.keycloak.models.IdentityProviderModel;
 
 /**
  * @author Pedro Igor
  */
 public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
-    public OIDCIdentityProviderConfig(String providerId, String id, String name, Map<String, String> config) {
-        super(providerId, id, name, config);
+    public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
+        super(identityProviderModel);
     }
 
     public String getPrompt() {

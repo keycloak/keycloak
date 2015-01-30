@@ -38,6 +38,9 @@ public class CookieTokenStoreAdapterTest {
 
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
+            // Other tests may left Time offset uncleared, which could cause issues
+            Time.setOffset(0);
+
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
             manager.importRealm(representation);
 
@@ -87,52 +90,56 @@ public class CookieTokenStoreAdapterTest {
 
     @Test
     public void testTokenInCookieRefresh() throws Throwable {
-        // Set token timeout 1 sec
-        KeycloakSession session = keycloakRule.startSession();
-        RealmModel realm = session.realms().getRealmByName("demo");
-        int originalTokenTimeout = realm.getAccessTokenLifespan();
-        realm.setAccessTokenLifespan(3);
-        session.getTransaction().commit();
-        session.close();
+        try {
+            // Set token timeout 1 sec
+            KeycloakSession session = keycloakRule.startSession();
+            RealmModel realm = session.realms().getRealmByName("demo");
+            int originalTokenTimeout = realm.getAccessTokenLifespan();
+            realm.setAccessTokenLifespan(3);
+            session.getTransaction().commit();
+            session.close();
 
-        // login to customer-cookie-portal
-        String tokenCookie1 = loginToCustomerCookiePortal();
+            // login to customer-cookie-portal
+            String tokenCookie1 = loginToCustomerCookiePortal();
 
-        // Simulate waiting 4 seconds (Running testsuite in real env like Wildfly or EAP may still require to do Thread.sleep to really wait 4 seconds...)
-        Time.setOffset(4);
-        //Thread.sleep(4000);
+            // Simulate waiting 4 seconds (Running testsuite in real env like Wildfly or EAP may still require to do Thread.sleep to really wait 4 seconds...)
+            Time.setOffset(4);
+            //Thread.sleep(4000);
 
-        // assert cookie was refreshed
-        driver.navigate().to("http://localhost:8081/customer-cookie-portal");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-cookie-portal");
-        assertLogged();
-        String tokenCookie2 = driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE).getValue();
-        Assert.assertNotEquals(tokenCookie1, tokenCookie2);
+            // assert cookie was refreshed
+            driver.navigate().to("http://localhost:8081/customer-cookie-portal");
+            Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-cookie-portal");
+            assertLogged();
+            String tokenCookie2 = driver.manage().getCookieNamed(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE).getValue();
+            Assert.assertNotEquals(tokenCookie1, tokenCookie2);
 
-        // login to 2nd app and logout from it
-        driver.navigate().to("http://localhost:8081/customer-portal");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
-        assertLogged();
+            // login to 2nd app and logout from it
+            driver.navigate().to("http://localhost:8081/customer-portal");
+            Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
+            assertLogged();
 
-        driver.navigate().to("http://localhost:8081/customer-portal/logout");
-        Assert.assertTrue(driver.getPageSource().contains("servlet logout ok"));
-        driver.navigate().to("http://localhost:8081/customer-portal");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+            driver.navigate().to("http://localhost:8081/customer-portal/logout");
+            Assert.assertTrue(driver.getPageSource().contains("servlet logout ok"));
+            driver.navigate().to("http://localhost:8081/customer-portal");
+            Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
-        // Simulate another 4 seconds
-        Time.setOffset(8);
+            // Simulate another 4 seconds
+            Time.setOffset(8);
 
-        // assert not logged in customer-cookie-portal
-        driver.navigate().to("http://localhost:8081/customer-cookie-portal");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+            // assert not logged in customer-cookie-portal
+            driver.navigate().to("http://localhost:8081/customer-cookie-portal");
+            Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
-        // Change timeout back
-        Time.setOffset(0);
-        session = keycloakRule.startSession();
-        realm = session.realms().getRealmByName("demo");
-        realm.setAccessTokenLifespan(originalTokenTimeout);
-        session.getTransaction().commit();
-        session.close();
+            // Change timeout back
+            Time.setOffset(0);
+            session = keycloakRule.startSession();
+            realm = session.realms().getRealmByName("demo");
+            realm.setAccessTokenLifespan(originalTokenTimeout);
+            session.getTransaction().commit();
+            session.close();
+        } finally {
+            Time.setOffset(0);
+        }
     }
 
     @Test

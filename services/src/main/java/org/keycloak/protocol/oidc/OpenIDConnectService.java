@@ -25,9 +25,11 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
@@ -70,8 +72,11 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.keycloak.constants.AdapterConstants.K_IDP_HINT;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -848,7 +853,8 @@ public class OpenIDConnectService {
                               @QueryParam(OpenIDConnect.SCOPE_PARAM) String scopeParam,
                               @QueryParam(OpenIDConnect.STATE_PARAM) String state,
                               @QueryParam(OpenIDConnect.PROMPT_PARAM) String prompt,
-                              @QueryParam(OpenIDConnect.LOGIN_HINT_PARAM) String loginHint) {
+                              @QueryParam(OpenIDConnect.LOGIN_HINT_PARAM) String loginHint,
+                              @QueryParam(K_IDP_HINT) String idpHint) {
         event.event(EventType.LOGIN);
         FrontPageInitializer pageInitializer = new FrontPageInitializer();
         pageInitializer.responseType = responseType;
@@ -871,8 +877,41 @@ public class OpenIDConnectService {
             return oauth.cancelLogin(clientSession);
         }
 
+        String accessCode = new ClientSessionCode(realm, clientSession).getCode();
+
+        if (idpHint != null && !"".equals(idpHint)) {
+            IdentityProviderModel identityProviderModel = realm.getIdentityProviderById(idpHint);
+
+            if (identityProviderModel == null) {
+                return Flows.forms(session, realm, null, uriInfo)
+                        .setError("Could not find an identity provider with the identifier [" + idpHint + "].")
+                        .createErrorPage();
+            }
+
+            return Response.temporaryRedirect(
+                    Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviderModel, realm, accessCode)).build();
+        }
+
+        List<RequiredCredentialModel> requiredCredentials = realm.getRequiredCredentials();
+
+        if (requiredCredentials.isEmpty()) {
+            List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+
+            if (!identityProviders.isEmpty()) {
+                if (identityProviders.size() == 1) {
+                    return Response.temporaryRedirect(
+                            Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviders.get(0), this.realm, accessCode))
+                            .build();
+                }
+
+                return Flows.forms(session, realm, null, uriInfo).setError("Realm [" + this.realm.getName() + "] supports multiple identity providers. Could not determine which identity provider should be used to authenticate with.").createErrorPage();
+            }
+
+            return Flows.forms(session, realm, null, uriInfo).setError("Realm [" + this.realm.getName() + "] does not support any credential type.").createErrorPage();
+        }
+
         LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
-                .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode());
+                .setClientSessionCode(accessCode);
 
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(realm, headers);
 

@@ -2,8 +2,8 @@ Example User Federation Provider
 ===================================================
 
 This is an example of user federation backed by a simple properties file.  This properties file only contains username/password
-key pairs.  To deploy, build this directory then take the jar and copy it to the WEB-INF/lib of the keycloak server's
-WAR file.  You will then have to restart the authentication server.
+key pairs.  To deploy, build this directory then take the jar and copy it to standalone/configuration/providers.  
+You will then have to restart the authentication server.
 
 The ClasspathPropertiesFederationProvider is an example of a readonly provider.  If you go to the Users/Federation
   page of the admin console you will see this provider listed under "classpath-properties.  To configure this provider you 

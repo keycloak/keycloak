@@ -24,6 +24,7 @@ import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testutils.DummyUserFederationProviderFactory;
 import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.util.Time;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.model.basic.User;
 
@@ -45,6 +46,9 @@ public class SyncProvidersTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            // Other tests may left Time offset uncleared, which could cause issues
+            Time.setOffset(0);
+
             LDAPEmbeddedServer ldapServer = ldapRule.getEmbeddedServer();
             Map<String,String> ldapConfig = ldapServer.getLDAPConfig();
             ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "false");
@@ -68,7 +72,7 @@ public class SyncProvidersTest {
             User user5 = LDAPUtils.addUser(partitionManager, "user5", "User5FN", "User5LN", "user5@email.org");
             LDAPUtils.updatePassword(partitionManager, user5, "Password5");
 
-            // Add properties provider
+            // Add dummy provider
             dummyModel = appRealm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, 1, 0);
         }
     });

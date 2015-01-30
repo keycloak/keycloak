@@ -23,9 +23,8 @@ package org.keycloak.login.freemarker.model;
 
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.resources.AuthenticationBrokerResource;
+import org.keycloak.services.resources.flows.Urls;
 
-import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,11 +48,7 @@ public class IdentityProviderBean {
 
             for (IdentityProviderModel identityProvider : identityProviders) {
                 if (identityProvider.isEnabled()) {
-                    String loginUrl = UriBuilder.fromUri(baseURI)
-                            .path(AuthenticationBrokerResource.class)
-                            .path(AuthenticationBrokerResource.class, "performLogin")
-                            .replaceQueryParam("provider_id", identityProvider.getId())
-                            .build(realm.getName()).toString();
+                    String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider, realm).toString();
                     providers.add(new IdentityProvider(identityProvider.getId(), identityProvider.getName(), loginUrl));
                 }
             }

@@ -1,5 +1,6 @@
 package org.keycloak.protocol.saml;
 
+import org.jboss.logging.Logger;
 import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
@@ -38,6 +39,7 @@ import static org.picketlink.common.util.StringUtil.isNotNull;
  * @version $Revision: 1 $
  */
 public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
+    protected static final Logger logger = Logger.getLogger(SAML2BindingBuilder.class);
 
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
@@ -148,6 +150,9 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         public Response request() throws ConfigurationException, ProcessingException, IOException {
             return buildResponse(document, destination, true);
         }
+        public Response request(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
+            return buildResponse(document, actionUrl, true);
+        }
         public Response response() throws ConfigurationException, ProcessingException, IOException {
             return buildResponse(document, destination, false);
         }
@@ -186,13 +191,16 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
             return response(destination, false);
         }
 
+        public Response request(String redirect) throws ProcessingException, ConfigurationException, IOException {
+            return response(redirect, true);
+        }
         public Response request() throws ProcessingException, ConfigurationException, IOException {
             return response(destination, true);
         }
 
         private Response response(String redirectUri, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
             URI uri = responseUri(redirectUri, asRequest);
-
+            if (logger.isDebugEnabled()) logger.trace("redirect-binding uri: " + uri.toString());
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoCache(true);
             return Response.status(302).location(uri)
@@ -339,7 +347,9 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     }
 
     protected String base64Encoded(Document document) throws ConfigurationException, ProcessingException, IOException  {
-        byte[] responseBytes = org.picketlink.identity.federation.core.saml.v2.util.DocumentUtil.getDocumentAsString(document).getBytes("UTF-8");
+        String documentAsString = org.picketlink.identity.federation.core.saml.v2.util.DocumentUtil.getDocumentAsString(document);
+        logger.debugv("saml docment: {0}", documentAsString);
+        byte[] responseBytes = documentAsString.getBytes("UTF-8");
 
         return RedirectBindingUtil.deflateBase64URLEncode(responseBytes);
     }

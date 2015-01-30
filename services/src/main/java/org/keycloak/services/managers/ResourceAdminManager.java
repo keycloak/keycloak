@@ -328,7 +328,7 @@ public class ResourceAdminManager {
             return new GlobalRequestResult();
         }
 
-        if (logger.isDebugEnabled()) logger.info("Sending push revocation to URLS: " + mgmtUrls);
+        if (logger.isDebugEnabled()) logger.debug("Sending push revocation to URLS: " + mgmtUrls);
 
         // Propagate this to all hosts
         GlobalRequestResult result = new GlobalRequestResult();

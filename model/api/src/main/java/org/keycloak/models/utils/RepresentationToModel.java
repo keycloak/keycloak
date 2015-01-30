@@ -8,6 +8,7 @@ import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -21,6 +22,7 @@ import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -229,6 +231,21 @@ public class RepresentationToModel {
                 UserModel user = createUser(session, newRealm, userRep, appMap);
             }
         }
+
+        if (rep.getIdentityProviders() != null) {
+            for (IdentityProviderRepresentation identityProviderRepresentation : rep.getIdentityProviders()) {
+                IdentityProviderModel identityProviderModel = new IdentityProviderModel();
+
+                identityProviderModel.setId(identityProviderRepresentation.getId());
+                identityProviderModel.setProviderId(identityProviderRepresentation.getProviderId());
+                identityProviderModel.setName(identityProviderRepresentation.getName());
+                identityProviderModel.setEnabled(identityProviderRepresentation.isEnabled());
+                identityProviderModel.setUpdateProfileFirstLogin(identityProviderRepresentation.isUpdateProfileFirstLogin());
+                identityProviderModel.setConfig(identityProviderRepresentation.getConfig());
+
+                newRealm.addIdentityProvider(identityProviderModel);
+            }
+        }
     }
 
     public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
@@ -372,6 +389,7 @@ public class RepresentationToModel {
         applicationModel.setBaseUrl(resourceRep.getBaseUrl());
         if (resourceRep.isBearerOnly() != null) applicationModel.setBearerOnly(resourceRep.isBearerOnly());
         if (resourceRep.isPublicClient() != null) applicationModel.setPublicClient(resourceRep.isPublicClient());
+        if (resourceRep.isFrontchannelLogout() != null) applicationModel.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
         if (resourceRep.getProtocol() != null) applicationModel.setProtocol(resourceRep.getProtocol());
         if (resourceRep.isFullScopeAllowed() != null) {
             applicationModel.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
@@ -458,6 +476,7 @@ public class RepresentationToModel {
         if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
         if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
         if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
+        if (rep.isFrontchannelLogout() != null) resource.setFrontchannelLogout(rep.isFrontchannelLogout());
         if (rep.getAdminUrl() != null) resource.setManagementUrl(rep.getAdminUrl());
         if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
@@ -579,6 +598,7 @@ public class RepresentationToModel {
         if (rep.getName() != null) model.setClientId(rep.getName());
         if (rep.isEnabled() != null) model.setEnabled(rep.isEnabled());
         if (rep.isPublicClient() != null) model.setPublicClient(rep.isPublicClient());
+        if (rep.isFrontchannelLogout() != null) model.setFrontchannelLogout(rep.isFrontchannelLogout());
         if (rep.isFullScopeAllowed() != null) model.setFullScopeAllowed(rep.isFullScopeAllowed());
         if (rep.isDirectGrantsOnly() != null) model.setDirectGrantsOnly(rep.isDirectGrantsOnly());
         if (rep.getClaims() != null) {
@@ -727,5 +747,4 @@ public class RepresentationToModel {
 
         }
     }
-
 }

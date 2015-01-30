@@ -6,6 +6,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 
 import java.util.HashMap;
@@ -24,6 +25,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
     private Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<Class<? extends Provider>, Map<String, ProviderFactory>>();
 
     public void init() {
+        ProviderManager pm = new ProviderManager(getClass().getClassLoader(), Config.scope().getArray("providers"));
+
         for (Spi spi : ServiceLoader.load(Spi.class)) {
             Map<String, ProviderFactory> factories = new HashMap<String, ProviderFactory>();
             factoriesMap.put(spi.getProviderClass(), factories);
@@ -32,7 +35,11 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
             if (provider != null) {
                 this.provider.put(spi.getProviderClass(), provider);
 
-                ProviderFactory factory = loadProviderFactory(spi, provider);
+                ProviderFactory factory = pm.load(spi, provider);
+                if (factory == null) {
+                    throw new RuntimeException("Failed to find provider " + provider + " for " + spi.getName());
+                }
+
                 Config.Scope scope = Config.scope(spi.getName(), provider);
                 factory.init(scope);
 
@@ -40,7 +47,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
                 log.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
             } else {
-                for (ProviderFactory factory : ServiceLoader.load(spi.getProviderFactoryClass())) {
+                for (ProviderFactory factory : pm.load(spi)) {
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());
                     factory.init(scope);
 
@@ -57,15 +64,6 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                 }
             }
         }
-    }
-
-    private ProviderFactory loadProviderFactory(Spi spi, String id) {
-        for (ProviderFactory factory : ServiceLoader.load(spi.getProviderFactoryClass())) {
-            if (factory.getId().equals(id)){
-                return factory;
-            }
-        }
-        throw new RuntimeException("Failed to find provider " + id + " for " + spi.getName());
     }
 
     public KeycloakSession create() {

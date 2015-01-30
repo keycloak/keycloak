@@ -124,7 +124,12 @@ public class CachedRealm {
 
         requiredCredentials = model.getRequiredCredentials();
         userFederationProviders = model.getUserFederationProviders();
-        identityProviders = model.getIdentityProviders();
+
+        this.identityProviders = new ArrayList<IdentityProviderModel>();
+
+        for (IdentityProviderModel identityProviderModel : model.getIdentityProviders()) {
+            this.identityProviders.add(new IdentityProviderModel(identityProviderModel));
+        }
 
         smtpConfig.putAll(model.getSmtpConfig());
         browserSecurityHeaders.putAll(model.getBrowserSecurityHeaders());

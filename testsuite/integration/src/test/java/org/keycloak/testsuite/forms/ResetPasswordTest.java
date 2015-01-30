@@ -256,35 +256,39 @@ public class ResetPasswordTest {
 
     @Test
     public void resetPasswordExpiredCode() throws IOException, MessagingException, InterruptedException {
-        loginPage.open();
-        loginPage.resetPassword();
+        try {
+            loginPage.open();
+            loginPage.resetPassword();
 
-        resetPasswordPage.assertCurrent();
+            resetPasswordPage.assertCurrent();
 
-        resetPasswordPage.changePassword("login-test");
+            resetPasswordPage.changePassword("login-test");
 
-        resetPasswordPage.assertCurrent();
+            resetPasswordPage.assertCurrent();
 
-        String sessionId = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
+            String sessionId = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
 
-        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+            Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
-        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+            Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+            MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        String body = (String) message.getContent();
-        String changePasswordUrl = MailUtil.getLink(body);
+            String body = (String) message.getContent();
+            String changePasswordUrl = MailUtil.getLink(body);
 
-        Time.setOffset(350);
+            Time.setOffset(350);
 
-        driver.navigate().to(changePasswordUrl.trim());
+            driver.navigate().to(changePasswordUrl.trim());
 
-        errorPage.assertCurrent();
+            errorPage.assertCurrent();
 
-        Assert.assertEquals("Invalid code, please login again through your application.", errorPage.getError());
+            Assert.assertEquals("Invalid code, please login again through your application.", errorPage.getError());
 
-        events.expectRequiredAction(EventType.RESET_PASSWORD).error("invalid_code").client((String) null).user((String) null).session((String) null).clearDetails().assertEvent();
+            events.expectRequiredAction(EventType.RESET_PASSWORD).error("invalid_code").client((String) null).user((String) null).session((String) null).clearDetails().assertEvent();
+        } finally {
+            Time.setOffset(0);
+        }
     }
 
     @Test

@@ -19,19 +19,16 @@ package org.keycloak.broker.saml;
 
 import org.keycloak.models.IdentityProviderModel;
 
-import java.util.Map;
-
 /**
  * @author Pedro Igor
  */
 public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public SAMLIdentityProviderConfig() {
-        super();
     }
 
-    public SAMLIdentityProviderConfig(String providerId, String id, String name, Map<String, String> config) {
-        super(providerId, id, name, config);
+    public SAMLIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
+        super(identityProviderModel);
     }
 
     public String getSingleSignOnServiceUrl() {
@@ -58,20 +55,20 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("forceAuthn", String.valueOf(forceAuthn));
     }
 
-    public String getSigningPublicKey() {
-        return getConfig().get("signingPublicKey");
+    public String getSigningCertificate() {
+        return getConfig().get("signingCertificate");
     }
 
-    public void setSigningPublicKey(String signingPublicKey) {
-        getConfig().put("signingPublicKey", signingPublicKey);
+    public void setSigningCertificate(String signingCertificate) {
+        getConfig().put("signingCertificate", signingCertificate);
     }
 
     public String getNameIDPolicyFormat() {
         return getConfig().get("nameIDPolicyFormat");
     }
 
-    public void setNameIDPolicyFormat(String signingPublicKey) {
-        getConfig().put("nameIDPolicyFormat", signingPublicKey);
+    public void setNameIDPolicyFormat(String nameIDPolicyFormat) {
+        getConfig().put("nameIDPolicyFormat", nameIDPolicyFormat);
     }
 
     public boolean isWantAuthnRequestsSigned() {

@@ -40,6 +40,8 @@ import java.util.Map;
  */
 public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory<SAMLIdentityProvider> {
 
+    public static final String PROVIDER_ID = "saml";
+
     @Override
     public String getName() {
         return "SAML v2.0";
@@ -47,7 +49,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public SAMLIdentityProvider create(IdentityProviderModel model) {
-        return new SAMLIdentityProvider(new SAMLIdentityProviderConfig(getId(), model.getId(), model.getName(), model.getConfig()));
+        return new SAMLIdentityProvider(new SAMLIdentityProviderConfig(model));
     }
 
     @Override
@@ -78,9 +80,10 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                         samlIdentityProviderConfig.setSingleSignOnServiceUrl(idpDescriptor.getSingleSignOnService().get(0).getLocation().toString());
                         samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
                         samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
+                        samlIdentityProviderConfig.setPostBindingResponse(true);
 
                         List<KeyDescriptorType> keyDescriptor = idpDescriptor.getKeyDescriptor();
-                        String defaultPublicKey = null;
+                        String defaultCertificate = null;
 
                         if (keyDescriptor != null) {
                             for (KeyDescriptorType keyDescriptorType : keyDescriptor) {
@@ -88,22 +91,22 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                                 Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
 
                                 if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
-                                    samlIdentityProviderConfig.setSigningPublicKey(x509KeyInfo.getTextContent());
+                                    samlIdentityProviderConfig.setSigningCertificate(x509KeyInfo.getTextContent());
                                 } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
                                     samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
                                 } else if (keyDescriptorType.getUse() ==  null) {
-                                    defaultPublicKey = x509KeyInfo.getTextContent();
+                                    defaultCertificate = x509KeyInfo.getTextContent();
                                 }
                             }
                         }
 
-                        if (defaultPublicKey != null) {
-                            if (samlIdentityProviderConfig.getSigningPublicKey() == null) {
-                                samlIdentityProviderConfig.setSigningPublicKey(defaultPublicKey);
+                        if (defaultCertificate != null) {
+                            if (samlIdentityProviderConfig.getSigningCertificate() == null) {
+                                samlIdentityProviderConfig.setSigningCertificate(defaultCertificate);
                             }
 
                             if (samlIdentityProviderConfig.getEncryptionPublicKey() == null) {
-                                samlIdentityProviderConfig.setEncryptionPublicKey(defaultPublicKey);
+                                samlIdentityProviderConfig.setEncryptionPublicKey(defaultCertificate);
                             }
                         }
 
@@ -120,6 +123,6 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public String getId() {
-        return "saml";
+        return PROVIDER_ID;
     }
 }
