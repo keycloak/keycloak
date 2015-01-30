@@ -76,6 +76,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.keycloak.constants.AdapterConstants.K_IDP_HINT;
+
 /**
  * Resource class for the oauth/openid connect token service
  *
@@ -851,7 +853,8 @@ public class OpenIDConnectService {
                               @QueryParam(OpenIDConnect.SCOPE_PARAM) String scopeParam,
                               @QueryParam(OpenIDConnect.STATE_PARAM) String state,
                               @QueryParam(OpenIDConnect.PROMPT_PARAM) String prompt,
-                              @QueryParam(OpenIDConnect.LOGIN_HINT_PARAM) String loginHint) {
+                              @QueryParam(OpenIDConnect.LOGIN_HINT_PARAM) String loginHint,
+                              @QueryParam(K_IDP_HINT) String idpHint) {
         event.event(EventType.LOGIN);
         FrontPageInitializer pageInitializer = new FrontPageInitializer();
         pageInitializer.responseType = responseType;
@@ -875,6 +878,20 @@ public class OpenIDConnectService {
         }
 
         String accessCode = new ClientSessionCode(realm, clientSession).getCode();
+
+        if (idpHint != null && !"".equals(idpHint)) {
+            IdentityProviderModel identityProviderModel = realm.getIdentityProviderById(idpHint);
+
+            if (identityProviderModel == null) {
+                return Flows.forms(session, realm, null, uriInfo)
+                        .setError("Could not find an identity provider with the identifier [" + idpHint + "].")
+                        .createErrorPage();
+            }
+
+            return Response.temporaryRedirect(
+                    Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviderModel, realm, accessCode)).build();
+        }
+
         List<RequiredCredentialModel> requiredCredentials = realm.getRequiredCredentials();
 
         if (requiredCredentials.isEmpty()) {

@@ -29,4 +29,7 @@ public interface AdapterConstants {
 
     // Cookie used on adapter side to store token info. Used only when tokenStore is 'COOKIE'
     public static final String KEYCLOAK_ADAPTER_STATE_COOKIE = "KEYCLOAK_ADAPTER_STATE";
+
+    // Request parameter used to specify the identifier of the identity provider that should be used to authenticate an user
+    String K_IDP_HINT = "k_idp_hint";
 }
