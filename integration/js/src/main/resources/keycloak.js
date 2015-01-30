@@ -123,7 +123,7 @@
             sessionStorage.oauthState = JSON.stringify({ state: state, redirectUri: encodeURIComponent(redirectUri) });
 
             var url = getRealmUrl()
-                + '/tokens/login'
+                + '/protocol/openid-connect/login'
                 + '?client_id=' + encodeURIComponent(kc.clientId)
                 + '&redirect_uri=' + encodeURIComponent(redirectUri)
                 + '&state=' + encodeURIComponent(state)
@@ -146,7 +146,7 @@
 
         kc.createLogoutUrl = function(options) {
             var url = getRealmUrl()
-                + '/tokens/logout'
+                + '/protocol/openid-connect/logout'
                 + '?redirect_uri=' + encodeURIComponent(adapter.redirectUri(options));
 
             return url;
@@ -257,7 +257,7 @@
                     promise.setSuccess(false);
                 } else {
                     var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
-                    var url = getRealmUrl() + '/tokens/refresh';
+                    var url = getRealmUrl() + '/protocol/openid-connect/refresh';
 
                     refreshQueue.push(promise);
 
@@ -332,7 +332,7 @@
 
             if (code) {
                 var params = 'code=' + code;
-                var url = getRealmUrl() + '/tokens/access/codes';
+                var url = getRealmUrl() + '/protocol/openid-connect/access/codes';
 
                 var req = new XMLHttpRequest();
                 req.open('POST', url, true);
