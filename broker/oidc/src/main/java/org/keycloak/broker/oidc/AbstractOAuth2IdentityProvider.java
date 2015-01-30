@@ -53,6 +53,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     public AbstractOAuth2IdentityProvider(C config) {
         super(config);
+
+        if (config.getDefaultScope() == null || config.getDefaultScope().isEmpty()) {
+            config.setDefaultScope(getDefaultScopes());
+        }
     }
 
     @Override
@@ -158,4 +162,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     protected JsonNode asJsonNode(String json) throws IOException {
         return mapper.readTree(json);
     }
+
+    protected abstract String getDefaultScopes();
 }

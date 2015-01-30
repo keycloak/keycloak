@@ -34,15 +34,28 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     public static final String OAUTH2_PARAMETER_PROMPT = "prompt";
     public static final String OIDC_PARAMETER_ID_TOKEN = "id_token";
+    public static final String SCOPE_OPENID = "openid";
 
     public OIDCIdentityProvider(OIDCIdentityProviderConfig config) {
         super(config);
+
+        String defaultScope = config.getDefaultScope();
+
+        if (!defaultScope.contains(SCOPE_OPENID)) {
+            config.setDefaultScope(SCOPE_OPENID + " " + defaultScope);
+        }
     }
 
     @Override
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
-        return super.createAuthorizationUrl(request)
-                .queryParam(OAUTH2_PARAMETER_PROMPT, getConfig().getPrompt());
+        UriBuilder authorizationUrl = super.createAuthorizationUrl(request);
+        String prompt = getConfig().getPrompt();
+
+        if (prompt != null && !prompt.isEmpty()) {
+            authorizationUrl.queryParam(OAUTH2_PARAMETER_PROMPT, prompt);
+        }
+
+        return authorizationUrl;
     }
 
     @Override
@@ -124,5 +137,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     private String decodeJWS(String token) {
         return new JWSInput(token).readContentAsString();
+    }
+
+    @Override
+    protected String getDefaultScopes() {
+        return "openid";
     }
 }

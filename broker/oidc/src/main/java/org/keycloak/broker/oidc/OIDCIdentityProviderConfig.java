@@ -29,28 +29,10 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     }
 
     public String getPrompt() {
-        String prompt = getConfig().get("prompt");
-
-        if (prompt == null || "".equals(prompt)) {
-            return "none";
-        }
-
-        return prompt;
-    }
-
-    @Override
-    public String getDefaultScope() {
-        String scope = super.getDefaultScope();
-
-        if (scope == null || "".equals(scope)) {
-            scope = "openid";
-        }
-
-        return scope;
+        return getConfig().get("prompt");
     }
 
     public String getIssuer() {
         return getConfig().get("issuer");
     }
-
 }

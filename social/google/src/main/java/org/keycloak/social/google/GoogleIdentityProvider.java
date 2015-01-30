@@ -31,7 +31,7 @@ import org.keycloak.social.SocialIdentityProvider;
 public class GoogleIdentityProvider extends OIDCIdentityProvider implements SocialIdentityProvider<OIDCIdentityProviderConfig> {
 
     public static final String AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
-    public static final String TOKEN_URL = "https://accounts.google.com/o/oauth2/token";
+    public static final String TOKEN_URL = "https://www.googleapis.com/oauth2/v3/token";
     public static final String PROFILE_URL = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
     public static final String DEFAULT_SCOPE = "openid profile email";
 
@@ -40,6 +40,10 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);
-        config.setDefaultScope(DEFAULT_SCOPE);
+    }
+
+    @Override
+    protected String getDefaultScopes() {
+        return DEFAULT_SCOPE;
     }
 }
