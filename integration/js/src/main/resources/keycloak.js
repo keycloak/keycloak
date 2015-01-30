@@ -310,7 +310,11 @@
         }
 
         function getRealmUrl() {
-            return kc.authServerUrl + '/realms/' + encodeURIComponent(kc.realm);
+            if (kc.authServerUrl.charAt(kc.authServerUrl.length - 1) == '/') {
+                return kc.authServerUrl + 'realms/' + encodeURIComponent(kc.realm);
+            } else {
+                return kc.authServerUrl + '/realms/' + encodeURIComponent(kc.realm);
+            }
         }
 
         function getOrigin() {
