@@ -12,11 +12,11 @@ import org.keycloak.representations.IDToken;
  * @version $Revision: 1 $
  */
 public class ConstraintAuthorizationHandler implements HttpHandler {
-    public static final HttpString KEYCLOAK_SUBJECT = new HttpString("KEYCLOAK_SUBJECT");
-    public static final HttpString KEYCLOAK_USERNAME = new HttpString("KEYCLOAK_USERNAME");
-    public static final HttpString KEYCLOAK_EMAIL = new HttpString("KEYCLOAK_EMAIL");
-    public static final HttpString KEYCLOAK_NAME = new HttpString("KEYCLOAK_NAME");
-    public static final HttpString KEYCLOAK_ACCESS_TOKEN = new HttpString("KEYCLOAK_ACCESS_TOKEN");
+    public static final HttpString KEYCLOAK_SUBJECT = new HttpString("KEYCLOAK-SUBJECT");
+    public static final HttpString KEYCLOAK_USERNAME = new HttpString("KEYCLOAK-USERNAME");
+    public static final HttpString KEYCLOAK_EMAIL = new HttpString("KEYCLOAK-EMAIL");
+    public static final HttpString KEYCLOAK_NAME = new HttpString("KEYCLOAK-NAME");
+    public static final HttpString KEYCLOAK_ACCESS_TOKEN = new HttpString("KEYCLOAK-ACCESS-TOKEN");
 
     protected HttpHandler next;
     protected String errorPage;
