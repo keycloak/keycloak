@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <name>Keycloak</name>
@@ -25,6 +25,7 @@
         <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>
+        <syslog4j.version>0.9.30</syslog4j.version>
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
         <hibernate.javax.persistence.version>1.0.1.Final</hibernate.javax.persistence.version>
         <hibernate.entitymanager.version>4.0.1.Final</hibernate.entitymanager.version>
@@ -315,6 +316,11 @@
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
                 <version>${jboss.logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.syslog4j</groupId>
+                <artifactId>syslog4j</artifactId>
+                <version>${syslog4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>log4j</groupId>
