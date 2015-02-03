@@ -5,7 +5,7 @@
  */
 package org.keycloak.testsuite.ui.page.settings;
 
-import org.jboss.arquillian.graphene.angular.findby.FindByNg;
+import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.ui.fragment.OnOffSwitch;
 import org.keycloak.testsuite.ui.page.AbstractPage;
 
@@ -15,32 +15,56 @@ import org.keycloak.testsuite.ui.page.AbstractPage;
  */
 public class LoginSettingsPage extends AbstractPage {
 
-	@FindByNg(model = "realm.social")
+	@FindByJQuery("div[class='onoffswitch']:eq(0)")
 	private OnOffSwitch socialLoginAllowed;
 
-	@FindByNg(model = "realm.registrationAllowed")
+	@FindByJQuery("div[class='onoffswitch']:eq(1)")
+	private OnOffSwitch updateProfileOnSocialNetwork;
+		
+	@FindByJQuery("div[class='onoffswitch']:eq(2)")
 	private OnOffSwitch registrationAllowed;
 
-	@FindByNg(model = "realm.resetPasswordAllowed")
+	@FindByJQuery("div[class='onoffswitch']:eq(3)")
 	private OnOffSwitch resetPasswordAllowed;
 
-	@FindByNg(model = "realm.rememberMe")
+	@FindByJQuery("div[class='onoffswitch']:eq(4)")
 	private OnOffSwitch rememberMeEnabled;
 
-	@FindByNg(model = "realm.verifyEmail")
+	@FindByJQuery("div[class='onoffswitch']:eq(5)")
 	private OnOffSwitch verifyEmailEnabled;
 	
-	@FindByNg(model = "realm.passwordCredentialGrantAllowed")
+	@FindByJQuery("div[class='onoffswitch']:eq(6)")
 	private OnOffSwitch passwordCredentialGrantAllowed;
 
-	@FindByNg(model = "realm.requireSsl")
+	@FindByJQuery("div[class='onoffswitch']:eq(7)")
 	private OnOffSwitch requireSsl;
 
 	public boolean isSocialLoginAllowed() {
 		return socialLoginAllowed.isEnabled();
 	}
 	
-	public void toggleSocialLogin() {
-		socialLoginAllowed.toggle();
+	public void enableSocialLogin() {
+		socialLoginAllowed.enable();
+		primaryButton.click();
 	}
+	
+	public void disableSocialLogin() {
+		socialLoginAllowed.disable();
+		primaryButton.click();
+	}
+	
+	public boolean isUserRegistrationAllowed() {
+		return registrationAllowed.isEnabled();
+	}
+	
+	public void enableUserRegistration() {
+		registrationAllowed.enable();
+		primaryButton.click();
+	}
+	
+	public void disableUserRegistration() {
+		registrationAllowed.disable();
+		primaryButton.click();
+	}
+	
 }

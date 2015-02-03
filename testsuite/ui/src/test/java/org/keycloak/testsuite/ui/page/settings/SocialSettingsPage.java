@@ -7,7 +7,7 @@ package org.keycloak.testsuite.ui.page.settings;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.jboss.arquillian.graphene.angular.findby.FindByNg;
+import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import static org.junit.Assert.assertNotNull;
 import org.keycloak.testsuite.ui.model.Provider;
 import org.keycloak.testsuite.ui.model.SocialProvider;
@@ -23,13 +23,13 @@ import org.openqa.selenium.support.ui.Select;
  */
 public class SocialSettingsPage extends AbstractPage {
 	
-	@FindByNg(model = "newProviderId")
+	@FindBy(tagName = "select")
 	private Select newProviderSelect;
 	
-	@FindByNg(model = "realm.socialProviders[pId+'.key']")
+	@FindByJQuery("input[class*='form-control']:eq(1)")
 	private WebElement providerKey;
 	
-	@FindByNg(model = "realm.socialProviders[pId+'.secret']")
+	@FindByJQuery("input[class*='form-control']:eq(2)")
 	private WebElement providerSecret;
 	
 	@FindBy(tagName = "tbody")

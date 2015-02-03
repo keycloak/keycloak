@@ -66,7 +66,7 @@ public class Navigation {
     public void applications() {
         openPage(applicationsLink, "Applications");
     }
-
+	
     public void oauth() {
         openPage(oauthLink, "OAuth Clients");
     }

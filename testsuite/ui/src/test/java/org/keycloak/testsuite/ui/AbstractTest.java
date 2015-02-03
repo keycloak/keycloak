@@ -11,7 +11,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.runner.RunWith;
 import org.keycloak.testsuite.ui.fragment.Navigation;
-import org.keycloak.testsuite.ui.fragment.UserMenu;
+import org.keycloak.testsuite.ui.fragment.MenuPage;
 import org.keycloak.testsuite.ui.page.LoginPage;
 
 import static org.keycloak.testsuite.ui.util.URL.BASE_URL;
@@ -21,13 +21,13 @@ import org.openqa.selenium.WebDriver;
  * @author pmensik
  */
 @RunWith(Arquillian.class)
-public class AbstractTest {
+public abstract class AbstractTest {
 
 	@Page
 	protected LoginPage loginPage;
 	
 	@Page
-	protected UserMenu menuPage;
+	protected MenuPage menuPage;
 	
     @Page
     protected Navigation navigation;

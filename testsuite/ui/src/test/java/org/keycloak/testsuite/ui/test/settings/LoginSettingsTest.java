@@ -26,9 +26,9 @@ public class LoginSettingsTest extends AbstractKeyCloakTest<LoginSettingsPage> {
 	@Test
 	public void testToggleSocialLogin() {
 		assertFalse("Social login shoudn't be allowed by default", page.isSocialLoginAllowed());
-		page.toggleSocialLogin();
+		page.enableSocialLogin();
 		assertTrue("Social login should be allowed", page.isSocialLoginAllowed());
-		page.toggleSocialLogin();
+		page.disableSocialLogin();
 		assertFalse("Social login shouldn't be allowed", page.isSocialLoginAllowed());
 	}
 }

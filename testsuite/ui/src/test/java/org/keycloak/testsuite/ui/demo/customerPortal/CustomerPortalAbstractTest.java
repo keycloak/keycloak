@@ -9,12 +9,10 @@ import java.io.File;
 import java.net.URL;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
-import org.junit.runner.RunWith;
 import org.keycloak.testsuite.ui.AbstractTest;
 import org.keycloak.testsuite.ui.fragment.CreateRealm;
 import org.openqa.selenium.By;
@@ -23,8 +21,7 @@ import org.openqa.selenium.By;
  *
  * @author pmensik
  */
-@RunWith(Arquillian.class)
-public class CustomerPortalAbstractTest extends AbstractTest {
+public abstract class CustomerPortalAbstractTest extends AbstractTest {
 	
 	protected static final String JBOSS_HOME = System.getProperty("jbossHome");
 	

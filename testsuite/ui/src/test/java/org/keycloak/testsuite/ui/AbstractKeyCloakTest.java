@@ -16,7 +16,7 @@ import org.keycloak.testsuite.ui.page.AbstractPage;
  * @author pmensik
  * @param <P>
  */
-public class AbstractKeyCloakTest<P extends AbstractPage> extends AbstractTest {
+public abstract class AbstractKeyCloakTest<P extends AbstractPage> extends AbstractTest {
 	
     @Page
     protected P page;
@@ -25,6 +25,7 @@ public class AbstractKeyCloakTest<P extends AbstractPage> extends AbstractTest {
 	public void before() {
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
 		loginAsAdmin();
+		menuPage.switchRealm("master");
 	}
 	
 	@After

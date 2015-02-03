@@ -2,7 +2,7 @@ package org.keycloak.testsuite.ui.test.user;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.junit.InSequence;
+import org.junit.After;
 import org.junit.Test;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.ui.model.User;
@@ -10,8 +10,9 @@ import org.keycloak.testsuite.ui.page.RegisterPage;
 import org.keycloak.testsuite.ui.page.settings.UserPage;
 
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
-import static org.keycloak.testsuite.ui.util.URL.BASE_URL;
+import org.keycloak.testsuite.ui.page.settings.LoginSettingsPage;
 import static org.keycloak.testsuite.ui.util.Users.*;
 
 /**
@@ -23,46 +24,57 @@ public class RegisterNewUserTest extends AbstractKeyCloakTest<RegisterPage> {
     @Page
     private UserPage userPage;
 
+	@Page
+	private LoginSettingsPage loginSettingsPage;
+	
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;
+	
+	@Before
+	public void beforeUserRegistration() {
+		navigation.settings();
+		navigation.login();
+		loginSettingsPage.enableUserRegistration();
+		logOut();
+		loginPage.goToUserRegistration();
+	}
+	
+	@After
+	public void afterUserRegistration() {
+		navigation.settings();
+		navigation.login();
+		loginSettingsPage.disableUserRegistration();
+	}
 
     @Test
-    @InSequence(0)
     public void registerNewUserTest() {
-        driver.get(BASE_URL);
-        loginPage.goToUserRegistration();
         page.registerNewUser(TEST_USER1);
         //assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         loginAsAdmin();
+		menuPage.switchRealm("master");
         navigation.users();
         userPage.deleteUser(TEST_USER1.getUserName());
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        logOut();
     }
 
 
     @Test
-    @InSequence(1)
     public void registerNewUserWithWrongEmail() {
-        String invalidEmail = "newUser.redhat.com";
         User testUser = TEST_USER1;
-		testUser.setEmail(invalidEmail);
-        loginPage.goToUserRegistration();
+		testUser.setEmail("newUser.redhat.com");
         page.registerNewUser(testUser);
         assertTrue(page.isInvalidEmail());
         loginAsAdmin();
+		menuPage.switchRealm("master");
         navigation.users();
         assertNull(userPage.findUser(testUser.getUserName()));
-        logOut();
     }
 
     @Test
-    @InSequence(2)
     public void registerNewUserWithWrongAttributes() {
 		User testUser = new User();
 		
-        loginPage.goToUserRegistration();
         page.registerNewUser(testUser);
         assertFalse(page.isAttributeSpecified("first name"));
 		testUser.setFirstName("name");
@@ -80,26 +92,24 @@ public class RegisterNewUserTest extends AbstractKeyCloakTest<RegisterPage> {
 		testUser.setPassword("password");
         page.registerNewUser(testUser);
         loginAsAdmin();
+		menuPage.switchRealm("master");
         navigation.users();
         userPage.deleteUser(TEST_USER1.getUserName());
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        logOut();
     }
 
     @Test
-    @InSequence(3)
     public void registerNewUserWithNotMatchingPasswords() {
-        loginPage.goToUserRegistration();
-        page.registerNewUser(TEST_USER1);
+        page.registerNewUser(TEST_USER1, "psswd");
         assertFalse(page.isPasswordSame());
         page.registerNewUser(TEST_USER1);
         loginAsAdmin();
+		menuPage.switchRealm("master");
         navigation.users();
         userPage.deleteUser(TEST_USER1.getUserName());
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        logOut();
     }
 
 }

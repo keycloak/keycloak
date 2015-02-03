@@ -8,6 +8,7 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jboss.arquillian.graphene.findby.ByJQuery;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitAjaxForElement;
@@ -145,4 +146,8 @@ public class ApplicationPage extends AbstractPage {
         }
         return rows;
     }
+	
+	public void goToCreateApplication() {
+		driver.findElements(ByJQuery.selector(".btn.btn-primary")).get(1).click();
+	}
 }
