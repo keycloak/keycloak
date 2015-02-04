@@ -12,7 +12,7 @@ import org.productivity.java.syslog4j.SyslogIF;
  */
 public class SysLoggingEventListenerProviderFactory implements EventListenerProviderFactory {
 
-    public static final String ID = "sys-logging";
+    public static final String ID = "syslog";
 
     private SyslogIF syslogger;
     private String protocol;
