@@ -13,6 +13,7 @@ import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocati
 import org.keycloak.connections.mongo.updater.DefaultMongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.lang.reflect.Method;
 import java.util.Collections;
 
@@ -134,6 +135,10 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
         if (config.getLong("maxAutoConnectRetryTime") != null) {
             builder.maxAutoConnectRetryTime(config.getLong("maxAutoConnectRetryTime"));
         }
+        if(config.getBoolean("ssl", false)) {
+            builder = builder.socketFactory(SSLSocketFactory.getDefault());
+        }
+
         return builder.build();
     }
 
