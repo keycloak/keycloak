@@ -145,17 +145,20 @@ public class ModelToRepresentation {
             rep.setUserFederationProviders(fedProviderReps);
         }
 
-        for (IdentityProviderModel provider : realm.getIdentityProviders()) {
-            IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
+        List<IdentityProviderModel> identityProviderModels = realm.getIdentityProviders();
+        if(identityProviderModels != null && identityProviderModels.size() > 0) {
+            for (IdentityProviderModel provider : realm.getIdentityProviders()) {
+                IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
 
-            providerRep.setProviderId(provider.getProviderId());
-            providerRep.setId(provider.getId());
-            providerRep.setName(provider.getName());
-            providerRep.setEnabled(provider.isEnabled());
-            providerRep.setUpdateProfileFirstLogin(provider.isUpdateProfileFirstLogin());
-            providerRep.setConfig(provider.getConfig());
+                providerRep.setProviderId(provider.getProviderId());
+                providerRep.setId(provider.getId());
+                providerRep.setName(provider.getName());
+                providerRep.setEnabled(provider.isEnabled());
+                providerRep.setUpdateProfileFirstLogin(provider.isUpdateProfileFirstLogin());
+                providerRep.setConfig(provider.getConfig());
 
-            rep.addIdentityProvider(providerRep);
+                rep.addIdentityProvider(providerRep);
+            }
         }
 
         return rep;

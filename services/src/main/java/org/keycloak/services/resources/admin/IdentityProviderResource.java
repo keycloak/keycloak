@@ -104,9 +104,12 @@ public class IdentityProviderResource {
     @NoCache
     @Produces("application/json")
     public Response getIdentityProvider(@PathParam("id") String providerId) {
-        for (IdentityProviderModel identityProviderModel : this.realm.getIdentityProviders()) {
-            if (identityProviderModel.getId().equals(providerId)) {
-                return Response.ok(identityProviderModel).build();
+        List<IdentityProviderModel> identityProviderModels = this.realm.getIdentityProviders();
+        if(identityProviderModels != null && identityProviderModels.size() > 0) {
+            for (IdentityProviderModel identityProviderModel : identityProviderModels) {
+                if (identityProviderModel.getId().equals(providerId)) {
+                    return Response.ok(identityProviderModel).build();
+                }
             }
         }
 

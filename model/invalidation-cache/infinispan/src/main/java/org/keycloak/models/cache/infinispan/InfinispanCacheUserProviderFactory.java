@@ -130,7 +130,7 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
         public String get(String realm, String key) {
             ConcurrentHashMap<String, String> map = lookup.get(realm);
-            return map != null ? map.get(key) : null;
+            return map != null && key != null ? map.get(key) : null;
         }
 
         public void remove(String realm, String key) {

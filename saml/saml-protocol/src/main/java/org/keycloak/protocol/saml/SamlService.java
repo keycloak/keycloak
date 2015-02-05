@@ -210,8 +210,8 @@ public class SamlService {
 
         protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
 
-            URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
-            String redirect = OpenIDConnectService.verifyRedirectUri(uriInfo, redirectUri.toString(), realm, client);
+            String redirectUri = requestAbstractType.getAssertionConsumerServiceURL() != null ? requestAbstractType.getAssertionConsumerServiceURL().toString() : null;
+            String redirect = OpenIDConnectService.verifyRedirectUri(uriInfo, redirectUri, realm, client);
 
             if (redirect == null) {
                 event.error(Errors.INVALID_REDIRECT_URI);
