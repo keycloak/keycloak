@@ -207,10 +207,6 @@ public class AdminConsole {
             logger.debug("setting up realm access for a realm user");
             addRealmAccess(realm, user, realmAccess);
         }
-        if (realmAccess.size() == 0) {
-            return Response.status(401).build();
-        }
-
 
         return Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess)).build();
     }
