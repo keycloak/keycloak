@@ -86,6 +86,16 @@
                     </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+                <term>Front Channel Logout</term>
+                <listitem>
+                    <para>
+                        If true, this application requires a browser redirect to be able to perform a logout.  For example,
+                        the application may require a cookie to be reset which could only be done by a done via a redirect.
+                        If this switch is false, then Keycloak will invoke a background SAML request to logout the application.
+                    </para>
+                </listitem>
+            </varlistentry>
         </variablelist>
     </para>
     <para>
