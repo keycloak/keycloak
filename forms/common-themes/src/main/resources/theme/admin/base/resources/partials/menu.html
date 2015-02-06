@@ -20,7 +20,7 @@
 		                </a>
 		                <ul class="dropdown-menu">
 		                    <li><a href="{{authUrl}}/realms/{{auth.user.realm}}/account?referrer=security-admin-console">Manage Account</a></li>
-		                    <li><a href="#/server-info">Server Info</a></li>
+		                    <li data-ng-show="auth.hasAnyAccess"><a href="#/server-info">Server Info</a></li>
 		                    <li class="separator"><a href="" ng-click="auth.authz.logout()">Sign Out</a></li>
 		                </ul>
 		            </li>

@@ -10,9 +10,22 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
         $scope.serverInfo = ServerInfo.get();
     };
 
+    function hasAnyAccess() {
+        var realmAccess = Auth.user && Auth.user['realm_access'];
+        if (realmAccess) {
+            for (var p in realmAccess){
+                return true;
+            }
+            return false;
+        } else {
+            return false;
+        }
+    }
+
     WhoAmI.get(function (data) {
         Auth.user = data;
         Auth.loggedIn = true;
+        Auth.hasAnyAccess = hasAnyAccess();
     });
 
     function getAccess(role) {
