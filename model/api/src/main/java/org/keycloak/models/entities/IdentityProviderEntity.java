@@ -25,12 +25,21 @@ import java.util.Map;
  */
 public class IdentityProviderEntity {
 
+    private String internalId;
     private String name;
     private boolean enabled;
     private boolean updateProfileFirstLogin;
     private String providerId;
     private String id;
     private Map<String, String> config = new HashMap<String, String>();
+
+    public String getInternalId() {
+        return this.internalId;
+    }
+
+    public void setInternalId(String internalId) {
+        this.internalId = internalId;
+    }
 
     public String getName() {
         return this.name;

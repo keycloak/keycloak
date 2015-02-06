@@ -28,6 +28,8 @@ import java.util.Map;
  */
 public class IdentityProviderModel {
 
+    private String internalId;
+
     /**
      * <p>An user-defined identifier to unique identify an identity provider instance.</p>
      */
@@ -58,12 +60,21 @@ public class IdentityProviderModel {
     }
 
     public IdentityProviderModel(IdentityProviderModel model) {
+        this.internalId = model.getInternalId();
         this.providerId = model.getProviderId();
         this.id = model.getId();
         this.name = model.getName();
         this.config = new HashMap<String, String>(model.getConfig());
         this.enabled = model.isEnabled();
         this.updateProfileFirstLogin = model.isUpdateProfileFirstLogin();
+    }
+
+    public String getInternalId() {
+        return this.internalId;
+    }
+
+    public void setInternalId(String internalId) {
+        this.internalId = internalId;
     }
 
     public String getId() {
