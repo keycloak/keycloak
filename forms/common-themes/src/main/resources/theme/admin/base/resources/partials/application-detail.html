@@ -118,7 +118,13 @@
                     </div>
                     <span tooltip-placement="right" tooltip="Always use POST binding for responses." class="fa fa-info-circle"></span>
                 </div>
-
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="frontchannelLogout">Front Channel Logout</label>
+                    <div class="col-sm-6">
+                        <input ng-model="application.frontchannelLogout" name="frontchannelLogout" id="frontchannelLogout" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="When true, logout requires a browser redirect to application.  When false, server performs a background invocation for logout." class="fa fa-info-circle"></span>
+                </div>
                 <div class="form-group" data-ng-show="!application.bearerOnly">
                     <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI <span class="required" data-ng-show="create">*</span></label>
                     <div class="col-sm-6 multiple" ng-repeat="redirectUri in application.redirectUris">
