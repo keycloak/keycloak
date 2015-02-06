@@ -1115,6 +1115,7 @@ public class RealmAdapter implements RealmModel {
 
             identityProviderModel.setProviderId(entity.getProviderId());
             identityProviderModel.setId(entity.getId());
+            identityProviderModel.setInternalId(entity.getInternalId());
             identityProviderModel.setName(entity.getName());
             identityProviderModel.setConfig(entity.getConfig());
             identityProviderModel.setEnabled(entity.isEnabled());
@@ -1168,7 +1169,8 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
         for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
-            if (entity.getId().equals(identityProvider.getId())) {
+            if (entity.getInternalId().equals(identityProvider.getInternalId())) {
+                entity.setId(identityProvider.getId());
                 entity.setName(identityProvider.getName());
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
