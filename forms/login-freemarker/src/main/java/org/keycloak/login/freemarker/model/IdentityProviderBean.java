@@ -21,10 +21,13 @@
  */
 package org.keycloak.login.freemarker.model;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.flows.Urls;
 
+import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +42,7 @@ public class IdentityProviderBean {
     private List<IdentityProvider> providers;
     private RealmModel realm;
 
-    public IdentityProviderBean(RealmModel realm, URI baseURI) {
+    public IdentityProviderBean(RealmModel realm, URI baseURI, UriInfo uriInfo) {
         this.realm = realm;
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
 
@@ -48,6 +51,16 @@ public class IdentityProviderBean {
 
             for (IdentityProviderModel identityProvider : identityProviders) {
                 if (identityProvider.isEnabled()) {
+                    String clientId = uriInfo.getQueryParameters().getFirst(OAuth2Constants.CLIENT_ID);
+
+                    if (clientId != null) {
+                        ClientModel clientModel = realm.findClient(clientId);
+
+                        if (clientModel != null && !clientModel.hasIdentityProvider(identityProvider.getId())) {
+                            continue;
+                        }
+                    }
+
                     String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider, realm).toString();
                     providers.add(new IdentityProvider(identityProvider.getId(), identityProvider.getName(), loginUrl));
                 }

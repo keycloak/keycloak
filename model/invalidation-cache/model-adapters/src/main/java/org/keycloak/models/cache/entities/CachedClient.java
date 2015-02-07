@@ -6,8 +6,10 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.RealmCache;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +34,7 @@ public class CachedClient {
     protected int notBefore;
     protected Set<String> scope = new HashSet<String>();
     protected Set<String> webOrigins = new HashSet<String>();
+    private List<String> allowedIdentityProviders = new ArrayList<String>();
 
     public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
@@ -52,7 +55,7 @@ public class CachedClient {
         for (RoleModel role : model.getScopeMappings())  {
             scope.add(role.getId());
         }
-
+        this.allowedIdentityProviders = model.getAllowedIdentityProviders();
     }
 
     public String getId() {
@@ -121,5 +124,17 @@ public class CachedClient {
 
     public void setFrontchannelLogout(boolean frontchannelLogout) {
         this.frontchannelLogout = frontchannelLogout;
+    }
+
+    public List<String> getAllowedIdentityProviders() {
+        return this.allowedIdentityProviders;
+    }
+
+    public boolean hasIdentityProvider(String providerId) {
+        if (this.allowedIdentityProviders.isEmpty()) {
+            return true;
+        }
+
+        return this.allowedIdentityProviders.contains(providerId);
     }
 }

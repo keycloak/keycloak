@@ -27,12 +27,14 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.social.SocialIdentityProvider;
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
 import twitter4j.auth.RequestToken;
 
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 
@@ -108,5 +110,10 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Response retrieveToken(FederatedIdentityModel identity) {
+        return Response.noContent().build();
     }
 }

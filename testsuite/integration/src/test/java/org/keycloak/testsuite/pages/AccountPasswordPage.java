@@ -33,8 +33,6 @@ import javax.ws.rs.core.UriBuilder;
  */
 public class AccountPasswordPage extends AbstractAccountPage {
 
-    public static String PATH = AccountService.passwordUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build("test").toString();
-
     @FindBy(id = "password")
     private WebElement passwordInput;
 
@@ -47,8 +45,17 @@ public class AccountPasswordPage extends AbstractAccountPage {
     @FindBy(className = "btn-primary")
     private WebElement submitButton;
 
+    private String realmName = "test";
+
     public void changePassword(String password, String newPassword, String passwordConfirm) {
         passwordInput.sendKeys(password);
+        newPasswordInput.sendKeys(newPassword);
+        passwordConfirmInput.sendKeys(passwordConfirm);
+
+        submitButton.click();
+    }
+
+    public void changePassword(String newPassword, String passwordConfirm) {
         newPasswordInput.sendKeys(newPassword);
         passwordConfirmInput.sendKeys(passwordConfirm);
 
@@ -60,7 +67,14 @@ public class AccountPasswordPage extends AbstractAccountPage {
     }
 
     public void open() {
-        driver.navigate().to(PATH);
+        driver.navigate().to(getPath());
     }
 
+    public void realm(String realmName) {
+        this.realmName = realmName;
+    }
+
+    public String getPath() {
+        return AccountService.passwordUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build(this.realmName).toString();
+    }
 }

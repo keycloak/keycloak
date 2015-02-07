@@ -8,6 +8,7 @@ public class FederatedIdentityEntity {
     private String userId;
     private String userName;
     private String identityProvider;
+    private String token;
 
     public String getUserId() {
         return userId;
@@ -58,5 +59,13 @@ public class FederatedIdentityEntity {
             code = code * identityProvider.hashCode() * 17;
         }
         return code;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getToken() {
+        return token;
     }
 }

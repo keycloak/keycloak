@@ -324,4 +324,74 @@ module.controller('OAuthClientRevocationCtrl', function($scope, realm, oauth, OA
     }
 });
 
+module.controller('OAuthClientIdentityProviderCtrl', function($scope, realm, oauth, OAuthClient, $location, Notifications) {
+    $scope.realm = realm;
+    $scope.oauth = angular.copy(oauth);
+
+    $scope.identityProviders = [];
+
+    if (!$scope.oauth.allowedIdentityProviders) {
+        $scope.oauth.allowedIdentityProviders = [];
+    }
+
+    for (j = 0; j < realm.identityProviders.length; j++) {
+        var identityProvider = realm.identityProviders[j];
+        var match = false;
+
+        for (i = 0; i < $scope.oauth.allowedIdentityProviders.length; i++) {
+            var appProvider = $scope.oauth.allowedIdentityProviders[i];
+
+            if (appProvider == identityProvider.id) {
+                $scope.identityProviders[i] = identityProvider;
+                match = true;
+            }
+        }
+
+        if (!match) {
+            var length = $scope.identityProviders.length;
+
+            length = length + $scope.oauth.allowedIdentityProviders.length;
+
+            $scope.identityProviders[length] = identityProvider;
+        }
+    }
+
+    $scope.identityProviders = $scope.identityProviders.filter(function(n){ return n != undefined });
+
+    $scope.save = function() {
+        var selectedProviders = [];
+
+        for (i = 0; i < $scope.oauth.allowedIdentityProviders.length; i++) {
+            var appProvider = $scope.oauth.allowedIdentityProviders[i];
+
+            if (appProvider) {
+                selectedProviders[selectedProviders.length] = appProvider;
+            }
+        }
+
+        $scope.allowedIdentityProviders = $scope.oauth.allowedIdentityProviders;
+        $scope.oauth.allowedIdentityProviders = selectedProviders;
+
+        OAuthClient.update({
+            realm : realm.realm,
+            oauth : oauth.id
+        }, $scope.oauth, function() {
+            $scope.changed = false;
+            $scope.oauth.allowedIdentityProviders = $scope.allowedIdentityProviders;
+            $location.url("/realms/" + realm.realm + "/oauth-clients/" + oauth.id + "/identity-provider");
+            Notifications.success("Your changes have been saved to the application.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.oauth = angular.copy(oauth);
+        $scope.changed = false;
+    };
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
 

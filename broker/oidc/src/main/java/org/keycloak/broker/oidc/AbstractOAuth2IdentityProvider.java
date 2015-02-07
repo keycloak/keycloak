@@ -25,7 +25,9 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.models.FederatedIdentityModel;
 
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -100,7 +102,13 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         .param(OAUTH2_PARAMETER_REDIRECT_URI, request.getRedirectUri())
                         .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE).asString();
 
-                return doHandleResponse(response);
+                FederatedIdentity federatedIdentity = getFederatedIdentity(response);
+
+                if (getConfig().isStoreToken()) {
+                    federatedIdentity.setToken(response);
+                }
+
+                return AuthenticationResponse.end(federatedIdentity);
             }
 
             throw new RuntimeException("No authorization code from identity provider.");
@@ -110,23 +118,22 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     @Override
+    public Response retrieveToken(FederatedIdentityModel identity) {
+        return Response.ok(identity.getToken()).build();
+    }
+
+    @Override
     public C getConfig() {
         return super.getConfig();
     }
 
-    protected AuthenticationResponse doHandleResponse(String response) throws IOException {
-        String token = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
-
-        if (token == null) {
-            throw new RuntimeException("No access token from server.");
-        }
-
-        return AuthenticationResponse.end(getFederatedIdentity(token));
-    }
-
-    protected String extractTokenFromResponse(String response, String tokenName) throws IOException {
+    protected String extractTokenFromResponse(String response, String tokenName) {
         if (response.startsWith("{")) {
-            return mapper.readTree(response).get(tokenName).getTextValue();
+            try {
+                return mapper.readTree(response).get(tokenName).getTextValue();
+            } catch (IOException e) {
+                throw new RuntimeException("Could not extract token [" + tokenName + "] from response [" + response + "].", e);
+            }
         } else {
             Matcher matcher = Pattern.compile(tokenName + "=([^&]+)").matcher(response);
 
@@ -138,9 +145,21 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return null;
     }
 
-    protected FederatedIdentity getFederatedIdentity(String accessToken) {
-        throw new RuntimeException("Not implemented.");
-    };
+    protected FederatedIdentity getFederatedIdentity(String response) {
+        String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
+
+        if (accessToken == null) {
+            throw new RuntimeException("No access token from server.");
+        }
+
+        return doGetFederatedIdentity(accessToken);
+    }
+
+    protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
+        return null;
+    }
+
+    ;
 
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
         return UriBuilder.fromPath(getConfig().getAuthorizationUrl())

@@ -291,5 +291,30 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
         return copy;
     }
 
+    @Override
+    public void updateAllowedIdentityProviders(List<String> identityProviders) {
+        List<String> providerIds = new ArrayList<String>();
+        for (String providerId : identityProviders) {
+            providerIds.add(providerId);
+        }
 
+        getMongoEntityAsClient().setAllowedIdentityProviders(identityProviders);
+        updateMongoEntity();
+    }
+
+    @Override
+    public List<String> getAllowedIdentityProviders() {
+        return getMongoEntityAsClient().getAllowedIdentityProviders();
+    }
+
+    @Override
+    public boolean hasIdentityProvider(String providerId) {
+        List<String> allowedIdentityProviders = getMongoEntityAsClient().getAllowedIdentityProviders();
+
+        if (allowedIdentityProviders.isEmpty()) {
+            return true;
+        }
+
+        return allowedIdentityProviders.contains(providerId);
+    }
 }

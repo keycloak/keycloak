@@ -30,6 +30,7 @@ public class IdentityProviderRepresentation {
     protected String name;
     protected boolean enabled = true;
     protected boolean updateProfileFirstLogin = true;
+    protected boolean storeToken;
     protected String groupName;
     protected Map<String, String> config = new HashMap<String, String>();
 
@@ -65,14 +66,6 @@ public class IdentityProviderRepresentation {
         this.config = config;
     }
 
-    public String getGroupName() {
-        return this.groupName;
-    }
-
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
-    }
-
     public boolean isEnabled() {
         return this.enabled;
     }
@@ -87,5 +80,21 @@ public class IdentityProviderRepresentation {
 
     public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
         this.updateProfileFirstLogin = updateProfileFirstLogin;
+    }
+
+    public boolean isStoreToken() {
+        return this.storeToken;
+    }
+
+    public void setStoreToken(boolean storeToken) {
+        this.storeToken = storeToken;
+    }
+
+    public String getGroupName() {
+        return this.groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 }

@@ -76,6 +76,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         identityProviderModel.getConfig().put("config-added", "value-added");
         identityProviderModel.setEnabled(false);
         identityProviderModel.setUpdateProfileFirstLogin(false);
+        identityProviderModel.setStoreToken(true);
 
         realm.updateIdentityProvider(identityProviderModel);
 
@@ -87,8 +88,9 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
 
         assertEquals("Changed Name", identityProviderModel.getName());
         assertEquals("value-added", identityProviderModel.getConfig().get("config-added"));
-        assertEquals(false, identityProviderModel.isEnabled());
-        assertEquals(false, identityProviderModel.isUpdateProfileFirstLogin());
+        assertFalse(identityProviderModel.isEnabled());
+        assertFalse(identityProviderModel.isUpdateProfileFirstLogin());
+        assertTrue(identityProviderModel.isStoreToken());
 
         identityProviderModel.setName("Changed Name Again");
         identityProviderModel.getConfig().remove("config-added");

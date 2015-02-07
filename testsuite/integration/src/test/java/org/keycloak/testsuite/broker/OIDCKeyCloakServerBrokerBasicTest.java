@@ -3,11 +3,18 @@ package org.keycloak.testsuite.broker;
 import org.junit.ClassRule;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testutils.KeycloakServer;
+import org.keycloak.util.JsonSerialization;
+
+import java.io.IOException;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author pedroigor
@@ -36,6 +43,18 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
         // grant access to broker-app
         grantPage.assertCurrent();
         grantPage.accept();
+    }
+
+    @Override
+    protected void doAssertTokenRetrieval(String pageSource) {
+        try {
+            AccessTokenResponse accessTokenResponse = JsonSerialization.readValue(pageSource, AccessTokenResponse.class);
+
+            assertNotNull(accessTokenResponse.getToken());
+            assertNotNull(accessTokenResponse.getIdToken());
+        } catch (IOException e) {
+            fail("Could not parse token.");
+        }
     }
 
     @Override

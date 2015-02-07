@@ -25,7 +25,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     }
 
     @Override
-    protected FederatedIdentity getFederatedIdentity(String accessToken) {
+    protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
         try {
             JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 

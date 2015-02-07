@@ -93,6 +93,13 @@
                         <span tooltip-placement="right" tooltip="Specifies whether the Authorization Server prompts the End-User for reauthentication and consent." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
+                        <label class="col-sm-2 control-label" for="enabled">Store Tokens</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.storeToken" id="storeToken" onoffswitch />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Enable/disable if tokens must be stored when authenticating users." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group">
                         <label class="col-sm-2 control-label" for="enabled">Enabled</label>
                         <div class="col-sm-4">
                             <input ng-model="identityProvider.enabled" id="enabled" onoffswitch />

@@ -34,17 +34,19 @@ import java.util.List;
  */
 public class OAuthGrantBean {
 
+    private final String accessRequestMessage;
     private List<RoleModel> realmRolesRequested;
     private MultivaluedMap<String, RoleModel> resourceRolesRequested;
     private String code;
     private ClientModel client;
     private List<String> claimsRequested;
 
-    public OAuthGrantBean(String code, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
+    public OAuthGrantBean(String code, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested, String accessRequestMessage) {
         this.code = code;
         this.client = client;
         this.realmRolesRequested = realmRolesRequested;
         this.resourceRolesRequested = resourceRolesRequested;
+        this.accessRequestMessage = accessRequestMessage;
 
         // todo support locale
         List<String> claims = new LinkedList<String>();
@@ -100,5 +102,9 @@ public class OAuthGrantBean {
 
     public List<String> getClaimsRequested() {
         return claimsRequested;
+    }
+
+    public String getAccessRequestMessage() {
+        return this.accessRequestMessage;
     }
 }

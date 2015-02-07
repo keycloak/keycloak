@@ -57,6 +57,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     private List<RoleModel> realmRolesRequested;
     private MultivaluedMap<String, RoleModel> resourceRolesRequested;
     private MultivaluedMap<String, String> queryParams;
+    private String accessRequestMessage;
+    private URI actionUri;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
@@ -188,8 +190,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
-            attributes.put("social", new IdentityProviderBean(realm, baseUri));
-            attributes.put("url", new UrlBean(realm, theme, baseUri));
+            attributes.put("social", new IdentityProviderBean(realm, baseUri, this.uriInfo));
+            attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
         }
 
         if (client != null) {
@@ -209,7 +211,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("register", new RegisterBean(formData));
                 break;
             case OAUTH_GRANT:
-                attributes.put("oauth", new OAuthGrantBean(accessCode, client, realmRolesRequested, resourceRolesRequested));
+                attributes.put("oauth", new OAuthGrantBean(accessCode, client, realmRolesRequested, resourceRolesRequested, this.accessRequestMessage));
                 break;
             case CODE:
                 attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? message : null));
@@ -304,6 +306,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
+    public LoginFormsProvider setAccessRequest(String accessRequestMessage) {
+        this.accessRequestMessage = accessRequestMessage;
+        return this;
+    }
+
+    @Override
     public LoginFormsProvider setStatus(Response.Status status) {
         this.status = status;
         return this;
@@ -312,6 +320,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setQueryParams(MultivaluedMap<String, String> queryParams) {
         this.queryParams = queryParams;
+        return this;
+    }
+
+    @Override
+    public LoginFormsProvider setActionUri(URI actionUri) {
+        this.actionUri = actionUri;
         return this;
     }
 

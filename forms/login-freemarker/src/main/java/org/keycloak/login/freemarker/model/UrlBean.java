@@ -32,16 +32,18 @@ import java.net.URI;
  */
 public class UrlBean {
 
+    private final URI actionuri;
     private URI baseURI;
 
     private Theme theme;
 
     private String realm;
 
-    public UrlBean(RealmModel realm, Theme theme, URI baseURI) {
+    public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI actionUri) {
         this.realm = realm.getName();
         this.theme = theme;
         this.baseURI = baseURI;
+        this.actionuri = actionUri;
     }
 
     public String getLoginAction() {
@@ -85,6 +87,10 @@ public class UrlBean {
     }
 
     public String getOauthAction() {
+        if (this.actionuri != null) {
+            return this.actionuri.getPath();
+        }
+
         return Urls.realmOauthAction(baseURI, realm).toString();
     }
 
@@ -92,5 +98,4 @@ public class UrlBean {
         URI uri = Urls.themeRoot(baseURI);
         return uri.getPath() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
     }
-
 }

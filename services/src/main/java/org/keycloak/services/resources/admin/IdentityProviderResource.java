@@ -5,6 +5,7 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -83,6 +84,7 @@ public class IdentityProviderResource {
         String providerId = formDataMap.get("providerId").get(0).getBodyAsString();
         String enabled = formDataMap.get("enabled").get(0).getBodyAsString();
         String updateProfileFirstLogin = formDataMap.get("updateProfileFirstLogin").get(0).getBodyAsString();
+        String storeToken = formDataMap.get("storeToken").get(0).getBodyAsString();
         InputPart file = formDataMap.get("file").get(0);
         InputStream inputStream = file.getBody(InputStream.class, null);
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
@@ -94,6 +96,7 @@ public class IdentityProviderResource {
         providerModel.setProviderId(providerId);
         providerModel.setEnabled(Boolean.valueOf(enabled));
         providerModel.setUpdateProfileFirstLogin(Boolean.valueOf(updateProfileFirstLogin));
+        providerModel.setStoreToken(Boolean.valueOf(storeToken));
         providerModel.setConfig(config);
 
         return create(uriInfo, providerModel);
@@ -117,8 +120,30 @@ public class IdentityProviderResource {
     @DELETE
     @NoCache
     public Response delete(@PathParam("id") String providerId) {
+        for (ClientModel applicationModel : getClientModels()) {
+            List<String> allowedIdentityProviders = applicationModel.getAllowedIdentityProviders();
+
+            for (String appProvider : new ArrayList<String>(allowedIdentityProviders)) {
+                if (appProvider.equals(providerId)) {
+                    allowedIdentityProviders.remove(appProvider);
+                }
+            }
+
+            applicationModel.updateAllowedIdentityProviders(allowedIdentityProviders);
+        }
+
         this.realm.removeIdentityProviderById(providerId);
+
         return Response.noContent().build();
+    }
+
+    private List<ClientModel> getClientModels() {
+        List<ClientModel> clients = new ArrayList<ClientModel>();
+
+        clients.addAll(this.realm.getOAuthClients());
+        clients.addAll(this.realm.getApplications());
+
+        return clients;
     }
 
     @PUT
