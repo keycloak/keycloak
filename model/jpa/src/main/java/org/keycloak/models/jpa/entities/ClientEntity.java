@@ -9,10 +9,14 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -67,6 +71,10 @@ public abstract class ClientEntity {
     @Column(name="VALUE", length = 2048)
     @CollectionTable(name="CLIENT_ATTRIBUTES", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Map<String, String> attributes = new HashMap<String, String>();
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinTable(name="CLIENT_ALLOWED_IDENTITY_PROVIDER", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="INTERNAL_ID")})
+    Collection<IdentityProviderEntity> allowedIdentityProviders = new ArrayList<IdentityProviderEntity>();
 
     public RealmEntity getRealm() {
         return realm;
@@ -178,5 +186,13 @@ public abstract class ClientEntity {
 
     public void setFrontchannelLogout(boolean frontchannelLogout) {
         this.frontchannelLogout = frontchannelLogout;
+    }
+
+    public Collection<IdentityProviderEntity> getAllowedIdentityProviders() {
+        return this.allowedIdentityProviders;
+    }
+
+    public void setAllowedIdentityProviders(Collection<IdentityProviderEntity> allowedIdentityProviders) {
+        this.allowedIdentityProviders = allowedIdentityProviders;
     }
 }

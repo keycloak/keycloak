@@ -45,6 +45,9 @@ public class FederatedIdentityEntity {
     @Column(name = "FEDERATED_USERNAME")
     protected String userName;
 
+    @Column(name = "TOKEN")
+    protected String token;
+
     public UserEntity getUser() {
         return user;
     }
@@ -83,6 +86,14 @@ public class FederatedIdentityEntity {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getToken() {
+        return token;
     }
 
     public static class Key implements Serializable {

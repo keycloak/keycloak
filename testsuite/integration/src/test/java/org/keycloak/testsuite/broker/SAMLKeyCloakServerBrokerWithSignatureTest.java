@@ -8,9 +8,17 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testutils.KeycloakServer;
+import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
+import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
+import org.picketlink.identity.federation.web.util.PostBindingUtil;
+
+import java.net.URLDecoder;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author pedroigor
@@ -37,15 +45,27 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
     }
 
     @Override
-    protected void doAssertFederatedUser(UserModel federatedUser) {
-        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-
+    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel) {
         if (identityProviderModel.isUpdateProfileFirstLogin()) {
-            super.doAssertFederatedUser(federatedUser);
+            super.doAssertFederatedUser(federatedUser, identityProviderModel);
         } else {
             assertEquals("test-user@localhost", federatedUser.getEmail());
             assertNull(federatedUser.getFirstName());
             assertNull(federatedUser.getLastName());
+        }
+    }
+
+    @Override
+    protected void doAssertTokenRetrieval(String pageSource) {
+        try {
+            SAML2Request saml2Request = new SAML2Request();
+            ResponseType responseType = (ResponseType) saml2Request
+                        .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(URLDecoder.decode(pageSource, "UTF-8")));
+
+            assertNotNull(responseType);
+            assertFalse(responseType.getAssertions().isEmpty());
+        } catch (Exception e) {
+            fail("Could not parse token.");
         }
     }
 }

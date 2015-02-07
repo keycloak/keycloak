@@ -5,11 +5,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -292,5 +295,61 @@ public abstract class ClientAdapter implements ClientModel {
         Map<String, String> copy = new HashMap<String, String>();
         copy.putAll(entity.getAttributes());
         return copy;
+    }
+
+    @Override
+    public void updateAllowedIdentityProviders(List<String> identityProviders) {
+        Collection<IdentityProviderEntity> entities = entity.getAllowedIdentityProviders();
+        Set<String> already = new HashSet<String>();
+        List<IdentityProviderEntity> remove = new ArrayList<IdentityProviderEntity>();
+        for (IdentityProviderEntity rel : entities) {
+            if (!contains(rel.getId(), identityProviders.toArray(new String[identityProviders.size()]))) {
+                remove.add(rel);
+            } else {
+                already.add(rel.getId());
+            }
+        }
+        for (IdentityProviderEntity entity : remove) {
+            entities.remove(entity);
+        }
+        em.flush();
+        for (String providerId : identityProviders) {
+            if (!already.contains(providerId)) {
+                TypedQuery<IdentityProviderEntity> query = em.createNamedQuery("findIdentityProviderById", IdentityProviderEntity.class).setParameter("id", providerId);
+                IdentityProviderEntity providerEntity = query.getSingleResult();
+                entities.add(providerEntity);
+            }
+        }
+        em.flush();
+    }
+
+    @Override
+    public List<String> getAllowedIdentityProviders() {
+        Collection<IdentityProviderEntity> entities = entity.getAllowedIdentityProviders();
+        List<String> providers = new ArrayList<String>();
+
+        for (IdentityProviderEntity entity : entities) {
+            providers.add(entity.getId());
+        }
+
+        return providers;
+    }
+
+    @Override
+    public boolean hasIdentityProvider(String providerId) {
+        List<String> allowedIdentityProviders = getAllowedIdentityProviders();
+
+        if (allowedIdentityProviders.isEmpty()) {
+            return true;
+        }
+
+        return allowedIdentityProviders.contains(providerId);
+    }
+
+    public static boolean contains(String str, String[] array) {
+        for (String s : array) {
+            if (str.equals(s)) return true;
+        }
+        return false;
     }
 }

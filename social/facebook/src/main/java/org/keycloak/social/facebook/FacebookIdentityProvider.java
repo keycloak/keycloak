@@ -24,8 +24,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
         config.setUserInfoUrl(PROFILE_URL);
     }
 
-    @Override
-    protected FederatedIdentity getFederatedIdentity(String accessToken) {
+    protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
         try {
             JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 

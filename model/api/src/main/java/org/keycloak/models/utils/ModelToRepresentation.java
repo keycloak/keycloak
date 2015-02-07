@@ -258,6 +258,10 @@ public class ModelToRepresentation {
             rep.setRegisteredNodes(new HashMap<String, Integer>(applicationModel.getRegisteredNodes()));
         }
 
+        if (!applicationModel.getAllowedIdentityProviders().isEmpty()) {
+            rep.setAllowedIdentityProviders(applicationModel.getAllowedIdentityProviders());
+        }
+
         return rep;
     }
 
@@ -282,6 +286,11 @@ public class ModelToRepresentation {
             rep.setWebOrigins(new LinkedList<String>(webOrigins));
         }
         rep.setNotBefore(model.getNotBefore());
+
+        if (!model.getAllowedIdentityProviders().isEmpty()) {
+            rep.setAllowedIdentityProviders(model.getAllowedIdentityProviders());
+        }
+
         return rep;
     }
 

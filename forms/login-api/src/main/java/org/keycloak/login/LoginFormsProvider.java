@@ -9,6 +9,7 @@ import org.keycloak.provider.Provider;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.List;
 
 /**
@@ -39,6 +40,7 @@ public interface LoginFormsProvider extends Provider {
     public LoginFormsProvider setClientSessionCode(String accessCode);
 
     public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested);
+    public LoginFormsProvider setAccessRequest(String message);
 
     public LoginFormsProvider setError(String message);
 
@@ -56,4 +58,5 @@ public interface LoginFormsProvider extends Provider {
 
     public LoginFormsProvider setStatus(Response.Status status);
 
+    LoginFormsProvider setActionUri(URI requestUri);
 }

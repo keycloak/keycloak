@@ -53,5 +53,4 @@ public interface ApplicationModel extends RoleContainerModel, ClientModel {
     void registerNode(String nodeHost, int registrationTime);
 
     void unregisterNode(String nodeHost);
-
 }

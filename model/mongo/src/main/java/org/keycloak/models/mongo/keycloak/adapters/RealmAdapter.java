@@ -796,6 +796,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             identityProviderModel.setConfig(entity.getConfig());
             identityProviderModel.setEnabled(entity.isEnabled());
             identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
+            identityProviderModel.setStoreToken(entity.isStoreToken());
 
             identityProviders.add(identityProviderModel);
         }
@@ -850,6 +851,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 entity.setName(identityProvider.getName());
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+                entity.setStoreToken(identityProvider.isStoreToken());
                 entity.setConfig(identityProvider.getConfig());
             }
         }

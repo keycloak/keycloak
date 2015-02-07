@@ -35,6 +35,7 @@ public class BrokerKeyCloakRule extends AbstractKeycloakRule {
         server.importRealm(getClass().getResourceAsStream("/broker-test/test-realm-with-broker.json"));
         URL url = getClass().getResource("/broker-test/test-app-keycloak.json");
         deployApplication("test-app", "/test-app", UserSessionStatusServlet.class, url.getPath(), "manager");
+        deployApplication("test-app-allowed-providers", "/test-app-allowed-providers", UserSessionStatusServlet.class, url.getPath(), "manager");
     }
 
     @Override

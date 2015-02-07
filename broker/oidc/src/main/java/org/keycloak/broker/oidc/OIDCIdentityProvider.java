@@ -20,7 +20,6 @@ package org.keycloak.broker.oidc;
 import org.codehaus.jackson.JsonNode;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.jose.jws.JWSInput;
 
@@ -59,7 +58,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    protected AuthenticationResponse doHandleResponse(String response) throws IOException {
+    protected FederatedIdentity getFederatedIdentity(String response) {
         String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
 
         if (accessToken == null) {
@@ -96,7 +95,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
             identity.setUsername(preferredUsername);
 
-            return AuthenticationResponse.end(identity);
+            if (getConfig().isStoreToken()) {
+                identity.setToken(response);
+            }
+
+            return identity;
         } catch (Exception e) {
             throw new RuntimeException("Could not fetch attributes from userinfo endpoint.", e);
         }

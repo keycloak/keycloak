@@ -30,6 +30,7 @@ public class FederatedIdentity {
     private String firstName;
     private String lastName;
     private String email;
+    private String token;
 
     public FederatedIdentity(String id) {
         if (id == null) {
@@ -84,4 +85,11 @@ public class FederatedIdentity {
     }
 
 
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getToken() {
+        return this.token;
+    }
 }

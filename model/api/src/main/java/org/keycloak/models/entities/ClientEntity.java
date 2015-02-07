@@ -27,6 +27,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private List<String> webOrigins = new ArrayList<String>();
     private List<String> redirectUris = new ArrayList<String>();
     private List<String> scopeIds = new ArrayList<String>();
+    private List<String> allowedIdentityProviders;
 
     public String getName() {
         return name;
@@ -138,5 +139,13 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setFrontchannelLogout(boolean frontchannelLogout) {
         this.frontchannelLogout = frontchannelLogout;
+    }
+
+    public List<String> getAllowedIdentityProviders() {
+        return this.allowedIdentityProviders;
+    }
+
+    public void setAllowedIdentityProviders(List<String> allowedIdentityProviders) {
+        this.allowedIdentityProviders = allowedIdentityProviders;
     }
 }

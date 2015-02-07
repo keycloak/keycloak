@@ -112,6 +112,8 @@ public class RepresentationToModel {
 
         if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
+        importIdentityProviders(rep, newRealm);
+
         if (rep.getApplications() != null) {
             Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
         }
@@ -229,21 +231,6 @@ public class RepresentationToModel {
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
                 UserModel user = createUser(session, newRealm, userRep, appMap);
-            }
-        }
-
-        if (rep.getIdentityProviders() != null) {
-            for (IdentityProviderRepresentation identityProviderRepresentation : rep.getIdentityProviders()) {
-                IdentityProviderModel identityProviderModel = new IdentityProviderModel();
-
-                identityProviderModel.setId(identityProviderRepresentation.getId());
-                identityProviderModel.setProviderId(identityProviderRepresentation.getProviderId());
-                identityProviderModel.setName(identityProviderRepresentation.getName());
-                identityProviderModel.setEnabled(identityProviderRepresentation.isEnabled());
-                identityProviderModel.setUpdateProfileFirstLogin(identityProviderRepresentation.isUpdateProfileFirstLogin());
-                identityProviderModel.setConfig(identityProviderRepresentation.getConfig());
-
-                newRealm.addIdentityProvider(identityProviderModel);
             }
         }
     }
@@ -517,6 +504,10 @@ public class RepresentationToModel {
         if (rep.getClaims() != null) {
             setClaims(resource, rep.getClaims());
         }
+
+        if (rep.getAllowedIdentityProviders() != null) {
+            resource.updateAllowedIdentityProviders(rep.getAllowedIdentityProviders());
+        }
     }
 
     public static void setClaims(ClientModel model, ClaimRepresentation rep) {
@@ -632,6 +623,9 @@ public class RepresentationToModel {
             }
         }
 
+        if (rep.getAllowedIdentityProviders() != null) {
+            model.updateAllowedIdentityProviders(rep.getAllowedIdentityProviders());
+        }
     }
 
     // Scope mappings
@@ -745,6 +739,24 @@ public class RepresentationToModel {
             }
             user.grantRole(role);
 
+        }
+    }
+
+    private static void importIdentityProviders(RealmRepresentation rep, RealmModel newRealm) {
+        if (rep.getIdentityProviders() != null) {
+            for (IdentityProviderRepresentation identityProviderRepresentation : rep.getIdentityProviders()) {
+                IdentityProviderModel identityProviderModel = new IdentityProviderModel();
+
+                identityProviderModel.setId(identityProviderRepresentation.getId());
+                identityProviderModel.setProviderId(identityProviderRepresentation.getProviderId());
+                identityProviderModel.setName(identityProviderRepresentation.getName());
+                identityProviderModel.setEnabled(identityProviderRepresentation.isEnabled());
+                identityProviderModel.setUpdateProfileFirstLogin(identityProviderRepresentation.isUpdateProfileFirstLogin());
+                identityProviderModel.setStoreToken(identityProviderRepresentation.isStoreToken());
+                identityProviderModel.setConfig(identityProviderRepresentation.getConfig());
+
+                newRealm.addIdentityProvider(identityProviderModel);
+            }
         }
     }
 }

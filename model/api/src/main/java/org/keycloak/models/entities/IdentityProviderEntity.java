@@ -26,11 +26,13 @@ import java.util.Map;
 public class IdentityProviderEntity {
 
     private String internalId;
+    private String id;
+    private String providerId;
     private String name;
     private boolean enabled;
     private boolean updateProfileFirstLogin;
-    private String providerId;
-    private String id;
+    private boolean storeToken;
+
     private Map<String, String> config = new HashMap<String, String>();
 
     public String getInternalId() {
@@ -63,6 +65,14 @@ public class IdentityProviderEntity {
 
     public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
         this.updateProfileFirstLogin = updateProfileFirstLogin;
+    }
+
+    public boolean isStoreToken() {
+        return this.storeToken;
+    }
+
+    public void setStoreToken(boolean storeToken) {
+        this.storeToken = storeToken;
     }
 
     public String getProviderId() {

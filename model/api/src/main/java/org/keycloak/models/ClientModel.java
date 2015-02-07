@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -97,4 +98,9 @@ public interface ClientModel {
 
     void setNotBefore(int notBefore);
 
+    void updateAllowedIdentityProviders(List<String> identityProviders);
+
+    List<String> getAllowedIdentityProviders();
+
+    boolean hasIdentityProvider(String providerId);
 }
