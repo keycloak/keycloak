@@ -1148,6 +1148,7 @@ public class RealmAdapter implements RealmModel {
         entity.setProviderId(identityProvider.getProviderId());
         entity.setName(identityProvider.getName());
         entity.setEnabled(identityProvider.isEnabled());
+        entity.setStoreToken(identityProvider.isStoreToken());
         entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
         entity.setConfig(identityProvider.getConfig());
 
