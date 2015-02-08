@@ -137,6 +137,10 @@
                 url += '&login_hint=' + options.loginHint;
             }
 
+            if (options && options.idpHint) {
+                url += '&k_idp_hint=' + options.idpHint;
+            }
+
             return url;
         }
 
