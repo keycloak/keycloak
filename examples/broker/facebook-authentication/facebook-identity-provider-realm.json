@@ -55,8 +55,8 @@
           "updateProfileFirstLogin" : "true",
           "storeToken" : "true",
           "config": {
-            "clientId": "1390393481240999",
-            "clientSecret": "56ac7436363f130a021cbf605d5a557b"
+            "clientId": "CHANGE_CLIENT_ID",
+            "clientSecret": "CHANGE_CLIENT_SECRET"
           }
         }
     ]
