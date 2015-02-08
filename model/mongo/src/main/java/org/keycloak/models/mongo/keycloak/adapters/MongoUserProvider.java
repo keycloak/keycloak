@@ -309,6 +309,14 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
+    public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        MongoUserEntity userEntity = ((UserAdapter) federatedUser).getUser();
+        FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, federatedIdentityModel.getIdentityProvider());
+
+        federatedIdentityEntity.setToken(federatedIdentityModel.getToken());
+    }
+
+    @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel userModel, String socialProvider) {
         UserModel user = getUserById(userModel.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();

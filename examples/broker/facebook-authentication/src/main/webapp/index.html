@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Facebook Authentication Example</title>
+
+    <script src="js/lib/angular/angular.js"></script>
+    <script src="js/lib/angular/angular-resource.js"></script>
+    <script src="js/lib/angular/angular-route.js"></script>
+    <script src="js/lib/angular/ui-bootstrap-tpls-0.4.0.js"></script>
+
+    <script src="/auth/js/keycloak.js"></script>
+    <script src="js/app.js" type="text/javascript"></script>
+</head>
+
+<body data-ng-controller="GlobalCtrl">
+
+<div id="content-area" class="col-md-9" role="main">
+    <div id="content">
+        <h2>Hello, {{identity.name}}</h2>
+        <div>
+            <p><button type="submit" data-ng-click="getSocialProfile()">Load your social profile</button></p>
+
+            <div data-ng-show="socialProfile">
+                <p>{{socialProfile}}</p>
+            </div>
+        </div>
+        <h3><a href="" ng-click="logout()">Sign Out</a></h3>
+    </div>
+</div>
+</body>
+</html>

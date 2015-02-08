@@ -121,6 +121,10 @@ public class UserFederationManager implements UserProvider {
         session.userStorage().addFederatedIdentity(realm, user, socialLink);
     }
 
+    public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        session.userStorage().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
+    }
+
     @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         validateUser(realm, user);
