@@ -263,6 +263,11 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
+    public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        getDelegate().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
+    }
+
+    @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         return getDelegate().removeFederatedIdentity(realm, user, socialProvider);
     }

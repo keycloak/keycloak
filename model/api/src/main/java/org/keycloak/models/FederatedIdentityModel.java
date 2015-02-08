@@ -5,7 +5,7 @@ package org.keycloak.models;
  */
 public class FederatedIdentityModel {
 
-    private final String token;
+    private String token;
     private final String userId;
     private final String identityProvider;
     private final String userName;
@@ -35,5 +35,9 @@ public class FederatedIdentityModel {
 
     public String getToken() {
         return this.token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }

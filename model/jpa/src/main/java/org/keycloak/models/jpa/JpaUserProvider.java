@@ -104,6 +104,16 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
+    public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        FederatedIdentityEntity federatedIdentity = findFederatedIdentity(federatedUser, federatedIdentityModel.getIdentityProvider());
+
+        federatedIdentity.setToken(federatedIdentityModel.getToken());
+
+        em.persist(federatedIdentity);
+        em.flush();
+    }
+
+    @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String identityProvider) {
         FederatedIdentityEntity entity = findFederatedIdentity(user, identityProvider);
         if (entity != null) {
