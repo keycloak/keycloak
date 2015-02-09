@@ -21,7 +21,7 @@ angular.element(document).ready(function ($http) {
 
             Auth.refreshToken = function() {
                 return window.location = keycloakAuth.createLoginUrl({
-                    idpHint: 'facebook'
+                    idpHint: 'google'
                 });
             }
 
@@ -83,11 +83,18 @@ module.controller('GlobalCtrl', function($scope, $http, $location, Auth) {
     $scope.identity = Auth.getIdentity();
 
     $scope.loadSocialProfile = function() {
-        $http.get('http://localhost:8081/auth/broker/facebook-identity-provider-realm/facebook/token').success(function(data) {
-            var accessTokenParameter = 'access_token=';
-            var accessToken = data.substring(data.indexOf(accessTokenParameter) + accessTokenParameter.length, data.indexOf('&'));
+        $http.get('http://localhost:8081/auth/broker/google-identity-provider-realm/google/token').success(function(data) {
+            var accessToken = data.access_token;
 
-            $http.get('https://graph.facebook.com/me?access_token=' + accessToken)
+            var req = {
+                method: 'GET',
+                url: 'https://www.googleapis.com/plus/v1/people/me',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            };
+
+            $http(req)
                 .success(function(profile) {
                     $scope.socialProfile = profile;
                 })

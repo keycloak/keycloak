@@ -10,12 +10,12 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <name>Keycloak Broker Examples - Facebook Authentication</name>
-    <artifactId>facebook-authentication</artifactId>
+    <name>Keycloak Broker Examples - Google Authentication</name>
+    <artifactId>google-authentication</artifactId>
     <packaging>war</packaging>
 
     <description>
-        An example about how to authenticate with Facebook
+        An example about how to authenticate with Google
     </description>
 
     <repositories>
@@ -27,7 +27,7 @@
     </repositories>
 
     <build>
-        <finalName>facebook-authentication</finalName>
+        <finalName>google-authentication</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>
