@@ -18,6 +18,7 @@
         <module>core</module>
         <module>oidc</module>
         <module>saml</module>
+        <module>kerberos</module>
     </modules>
 
 </project>
