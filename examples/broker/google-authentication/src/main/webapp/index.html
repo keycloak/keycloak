@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Facebook Authentication Example</title>
+    <title>Google Authentication Example</title>
 
     <script src="js/lib/angular/angular.js"></script>
     <script src="js/lib/angular/angular-resource.js"></script>
@@ -34,14 +34,14 @@
             <p><button type="submit" data-ng-click="loadSocialProfile()">Load your social profile</button></p>
 
             <div data-ng-show="socialProfile">
-                <p><b>This is your Facebook Profile</b>:</p>
+                <p><b>This is your Google Profile</b>:</p>
                 <p>
                     <ul>
                         <li><b>Id</b>: {{socialProfile.id}}</li>
-                        <li><b>First Name</b>: {{socialProfile.first_name}}</li>
-                        <li><b>Last Name</b>: {{socialProfile.last_name}}</li>
+                        <li><b>First Name</b>: {{socialProfile.name['givenName']}}</li>
+                        <li><b>Last Name</b>: {{socialProfile.name['familyName']}}</li>
                         <li><b>Gender</b>: {{socialProfile.gender}}</li>
-                        <li><b>Profile Link</b>: <a href="{{socialProfile.link}}">{{socialProfile.link}}</a></li>
+                        <li><b>Profile Link</b>: <a href="{{socialProfile.url}}">{{socialProfile.url}}</a></li>
                     </ul>
                 </p>
             </div>
