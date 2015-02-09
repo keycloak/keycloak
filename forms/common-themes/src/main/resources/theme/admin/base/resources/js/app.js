@@ -160,7 +160,25 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return {};
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
-                    return IdentityProviderFactoryLoader();
+                    return {};
+                }
+            },
+            controller : 'RealmIdentityProviderCtrl'
+        })
+        .when('/create/identity-provider/:realm/:provider_id', {
+            templateUrl : function(params){ return 'partials/realm-identity-provider-' + params.provider_id + '.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                instance : function(IdentityProviderLoader) {
+                    return {};
+                },
+                providerFactory : function(IdentityProviderFactoryLoader) {
+                    return new IdentityProviderFactoryLoader();
                 }
             },
             controller : 'RealmIdentityProviderCtrl'

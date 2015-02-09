@@ -35,6 +35,9 @@ public interface RealmResource {
     @Path("roles")
     public RolesResource roles();
 
+    @Path("identity-provider")
+    IdentityProvidersResource identityProviders();
+
     @DELETE
     public void remove();
 

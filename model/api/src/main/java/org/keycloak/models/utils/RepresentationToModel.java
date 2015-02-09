@@ -744,19 +744,24 @@ public class RepresentationToModel {
 
     private static void importIdentityProviders(RealmRepresentation rep, RealmModel newRealm) {
         if (rep.getIdentityProviders() != null) {
-            for (IdentityProviderRepresentation identityProviderRepresentation : rep.getIdentityProviders()) {
-                IdentityProviderModel identityProviderModel = new IdentityProviderModel();
-
-                identityProviderModel.setId(identityProviderRepresentation.getId());
-                identityProviderModel.setProviderId(identityProviderRepresentation.getProviderId());
-                identityProviderModel.setName(identityProviderRepresentation.getName());
-                identityProviderModel.setEnabled(identityProviderRepresentation.isEnabled());
-                identityProviderModel.setUpdateProfileFirstLogin(identityProviderRepresentation.isUpdateProfileFirstLogin());
-                identityProviderModel.setStoreToken(identityProviderRepresentation.isStoreToken());
-                identityProviderModel.setConfig(identityProviderRepresentation.getConfig());
-
-                newRealm.addIdentityProvider(identityProviderModel);
+            for (IdentityProviderRepresentation representation : rep.getIdentityProviders()) {
+                newRealm.addIdentityProvider(toModel(representation));
             }
         }
+    }
+
+    public static IdentityProviderModel toModel(IdentityProviderRepresentation representation) {
+        IdentityProviderModel identityProviderModel = new IdentityProviderModel();
+
+        identityProviderModel.setInternalId(representation.getInternalId());
+        identityProviderModel.setId(representation.getId());
+        identityProviderModel.setProviderId(representation.getProviderId());
+        identityProviderModel.setName(representation.getName());
+        identityProviderModel.setEnabled(representation.isEnabled());
+        identityProviderModel.setUpdateProfileFirstLogin(representation.isUpdateProfileFirstLogin());
+        identityProviderModel.setStoreToken(representation.isStoreToken());
+        identityProviderModel.setConfig(representation.getConfig());
+
+        return identityProviderModel;
     }
 }

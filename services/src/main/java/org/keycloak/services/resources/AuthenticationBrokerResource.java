@@ -204,6 +204,10 @@ public class AuthenticationBrokerResource {
             if (identityProviderConfig.isStoreToken()) {
                 FederatedIdentityModel identity = this.session.users().getFederatedIdentity(authResult.getUser(), providerId, realm);
 
+                if (identity == null) {
+                    return corsResponse(Flows.errors().error("User [" + authResult.getUser().getId() + "] is not associated with identity provider [" + providerId + "].", Response.Status.FORBIDDEN), clientModel);
+                }
+
                 return corsResponse(identityProvider.retrieveToken(identity), clientModel);
             }
 
@@ -229,17 +233,19 @@ public class AuthenticationBrokerResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
 
-        try {
-            IdentityProvider provider = getIdentityProvider(realm, providerId);
+        IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(realm, providerId);
 
-            if (provider == null) {
-                return Flows.forms(session, realm, null, uriInfo).setError("Social provider not found").createErrorPage();
+        try {
+            IdentityProvider identityProvider = getIdentityProvider(realm, providerId);
+
+            if (identityProvider == null) {
+                return Flows.forms(session, realm, null, uriInfo).setError("Social identityProvider not found").createErrorPage();
             }
 
-            String relayState = provider.getRelayState(createAuthenticationRequest(providerId, null, realm, null));
+            String relayState = identityProvider.getRelayState(createAuthenticationRequest(providerId, null, realm, null));
 
             if (relayState == null) {
-                return redirectToErrorPage(realm, "No relay state from identity provider.");
+                return redirectToErrorPage(realm, "No relay state from identity identityProvider.");
             }
 
             ClientSessionCode clientCode = isValidAuthorizationCode(relayState, realm);
@@ -256,7 +262,7 @@ public class AuthenticationBrokerResource {
                 return response;
             }
 
-            AuthenticationResponse authenticationResponse = provider.handleResponse(createAuthenticationRequest(providerId, null, realm, clientSession));
+            AuthenticationResponse authenticationResponse = identityProvider.handleResponse(createAuthenticationRequest(providerId, null, realm, clientSession));
 
             response = authenticationResponse.getResponse();
 
@@ -266,13 +272,15 @@ public class AuthenticationBrokerResource {
 
             FederatedIdentity identity = authenticationResponse.getUser();
 
+            if (!identityProviderConfig.isStoreToken()) {
+                identity.setToken(null);
+            }
+
             return performLocalAuthentication(realm, providerId, identity, clientCode);
         } catch (Exception e) {
             if (session.getTransaction().isActive()) {
                 session.getTransaction().rollback();
             }
-
-            IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(realm, providerId);
 
             return Flows.forms(session, realm, null, uriInfo).setError("Authentication failed. Could not authenticate against Identity Provider [" + identityProviderConfig.getName() + "].").createErrorPage();
         } finally {

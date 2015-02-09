@@ -26,6 +26,7 @@ import java.util.Map;
 public class IdentityProviderRepresentation {
 
     protected String id;
+    protected String internalId;
     protected String providerId;
     protected String name;
     protected boolean enabled = true;
@@ -33,6 +34,14 @@ public class IdentityProviderRepresentation {
     protected boolean storeToken;
     protected String groupName;
     protected Map<String, String> config = new HashMap<String, String>();
+
+    public String getInternalId() {
+        return this.internalId;
+    }
+
+    public void setInternalId(String internalId) {
+        this.internalId = internalId;
+    }
 
     public String getId() {
         return this.id;
