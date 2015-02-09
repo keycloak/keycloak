@@ -722,7 +722,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/broker/") + realm.realm + "/" ;
 
     $scope.addProvider = function(provider) {
-        $location.url("/realms/" + realm.realm + "/identity-provider-settings/provider/" + provider.id + "/" + provider.id);
+        $location.url("/create/identity-provider/" + realm.realm + "/" + provider.id);
     };
 
     $scope.remove = function() {
@@ -746,7 +746,8 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             });
         } else {
             IdentityProvider.update({
-                realm: $scope.realm.realm
+                realm: $scope.realm.realm,
+                id: $scope.identityProvider.internalId
             }, $scope.identityProvider, function () {
                 $location.url("/realms/" + realm.realm + "/identity-provider-settings");
                 Notifications.success("The " + $scope.identityProvider.name + " provider has been update.");
