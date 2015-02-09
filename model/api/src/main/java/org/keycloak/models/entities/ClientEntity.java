@@ -27,7 +27,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private List<String> webOrigins = new ArrayList<String>();
     private List<String> redirectUris = new ArrayList<String>();
     private List<String> scopeIds = new ArrayList<String>();
-    private List<String> allowedIdentityProviders;
+    private List<String> allowedIdentityProviders = new ArrayList<String>();
 
     public String getName() {
         return name;
