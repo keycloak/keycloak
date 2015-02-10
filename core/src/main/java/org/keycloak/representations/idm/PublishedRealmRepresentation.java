@@ -73,6 +73,7 @@ public class PublishedRealmRepresentation {
         try {
             pemWriter.writeObject(publicKey);
             pemWriter.flush();
+            pemWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -48,7 +48,7 @@
         </module-def>
 
         <module-def name="org.bouncycastle">
-            <maven-resource group="org.bouncycastle" artifact="bcprov-jdk16"/>
+            <maven-resource group="org.bouncycastle" artifact="bcprov-jdk15on"/>
         </module-def>
 
         <module-def name="org.jboss.aesh">

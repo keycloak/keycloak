@@ -88,6 +88,7 @@ public final class KeycloakModelUtils {
         try {
             pemWriter.writeObject(key);
             pemWriter.flush();
+            pemWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -101,6 +102,7 @@ public final class KeycloakModelUtils {
         try {
             pemWriter.writeObject(certificate);
             pemWriter.flush();
+            pemWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
