@@ -17,6 +17,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.broker.provider.AuthenticationRequest;
@@ -77,6 +78,8 @@ import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
 @Path("/broker")
 public class AuthenticationBrokerResource {
 
+    private static final Logger logger = Logger.getLogger(AuthenticationBrokerResource.class);
+
     @Context
     private UriInfo uriInfo;
 
@@ -132,6 +135,7 @@ public class AuthenticationBrokerResource {
                 return response;
             }
         } catch (Exception e) {
+            logger.error("Could not send authentication request to identity provider " + providerId, e);
             String message = "Could not send authentication request to identity provider";
             event.error(message);
             return redirectToErrorPage(realm, message);
@@ -278,6 +282,7 @@ public class AuthenticationBrokerResource {
 
             return performLocalAuthentication(realm, providerId, identity, clientCode);
         } catch (Exception e) {
+            logger.error("Could not authenticate user against provider " + providerId, e);
             if (session.getTransaction().isActive()) {
                 session.getTransaction().rollback();
             }
@@ -333,34 +338,36 @@ public class AuthenticationBrokerResource {
             return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
         }
 
-        UserModel user = session.users().getUserByEmail(updatedIdentity.getEmail(), realm);
-        String errorMessage = "federatedIdentityEmailExists";
+        if (federatedUser == null) {
 
-        if (user == null) {
-            user = session.users().getUserByUsername(updatedIdentity.getUsername(), realm);
-            errorMessage = "federatedIdentityUsernameExists";
-        }
+            UserModel existingUser = session.users().getUserByEmail(updatedIdentity.getEmail(), realm);
+            String errorMessage = "federatedIdentityEmailExists";
 
-        if (user == null) {
-            federatedUser = session.users().addUser(realm, updatedIdentity.getUsername());
-            federatedUser.setEnabled(true);
-            federatedUser.setFirstName(updatedIdentity.getFirstName());
-            federatedUser.setLastName(updatedIdentity.getLastName());
-            federatedUser.setEmail(updatedIdentity.getEmail());
-
-            session.users().addFederatedIdentity(realm, federatedUser, federatedIdentityModel);
-
-            event.clone().user(federatedUser).event(EventType.REGISTER)
-                    .detail(Details.REGISTER_METHOD, authMethod)
-                    .detail(Details.EMAIL, federatedUser.getEmail())
-                    .removeDetail("auth_method")
-                    .success();
-
-            if (identityProviderConfig.isUpdateProfileFirstLogin()) {
-                federatedUser.addRequiredAction(UPDATE_PROFILE);
+            if (existingUser == null) {
+                existingUser = session.users().getUserByUsername(updatedIdentity.getUsername(), realm);
+                errorMessage = "federatedIdentityUsernameExists";
             }
-        } else {
-            if (federatedUser == null) {
+
+            if (existingUser == null) {
+                logger.debug("Creating user " + updatedIdentity.getUsername() + " and linking to federation provider " + providerId);
+                federatedUser = session.users().addUser(realm, updatedIdentity.getUsername());
+                federatedUser.setEnabled(true);
+                federatedUser.setFirstName(updatedIdentity.getFirstName());
+                federatedUser.setLastName(updatedIdentity.getLastName());
+                federatedUser.setEmail(updatedIdentity.getEmail());
+
+                session.users().addFederatedIdentity(realm, federatedUser, federatedIdentityModel);
+
+                event.clone().user(federatedUser).event(EventType.REGISTER)
+                        .detail(Details.REGISTER_METHOD, authMethod)
+                        .detail(Details.EMAIL, federatedUser.getEmail())
+                        .removeDetail("auth_method")
+                        .success();
+
+                if (identityProviderConfig.isUpdateProfileFirstLogin()) {
+                    federatedUser.addRequiredAction(UPDATE_PROFILE);
+                }
+            } else {
                 return Flows.forms(session, realm, clientSession.getClient(), uriInfo)
                         .setClientSessionCode(clientCode.getCode())
                         .setError(errorMessage)
