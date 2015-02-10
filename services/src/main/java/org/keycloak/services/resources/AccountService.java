@@ -679,11 +679,10 @@ public class AccountService {
 
                 try {
                     ClientSessionModel clientSession = auth.getClientSession();
-                    clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+                    ClientSessionCode clientSessionCode = new ClientSessionCode(realm, clientSession);
+                    clientSessionCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
                     clientSession.setRedirectUri(redirectUri);
                     clientSession.setNote(OpenIDConnect.STATE_PARAM, UUID.randomUUID().toString());
-                    clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
-                    ClientSessionCode clientSessionCode = new ClientSessionCode(realm, clientSession);
 
                     URI url = UriBuilder.fromUri(this.uriInfo.getBaseUri())
                             .path(AuthenticationBrokerResource.class)

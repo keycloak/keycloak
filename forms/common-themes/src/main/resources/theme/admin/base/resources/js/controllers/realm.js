@@ -785,6 +785,14 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config.postBindingResponse = true;
         }
     }
+
+    $scope.initKerberosProvider = function() {
+        if (instance && instance.id) {
+            $scope.identityProvider.config.debug = $scope.getBoolean($scope.identityProvider.config.debug);
+        } else {
+            $scope.identityProvider.config.debug = false;
+        }
+    }
 });
 
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, $route, Dialog, Notifications, TimeUnit) {

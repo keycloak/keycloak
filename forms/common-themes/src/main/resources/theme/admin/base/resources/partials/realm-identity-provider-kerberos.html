@@ -1,0 +1,71 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main" data-ng-init="initKerberosProvider()">
+    <data-kc-navigation data-kc-current="social" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
+    <h2></h2>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
+            <li class="active">{{identityProvider.name}} Provider Settings</li>
+        </ol>
+        <h2 class="pull-left">{{identityProvider.name}} Provider Settings</h2>
+        <p class="subtitle"><span class="required">*</span> Required fields</p>
+        <form class="form-horizontal" name="realmForm" novalidate>
+            <fieldset>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="identifier">Alias <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="identifier" type="text" ng-model="identityProvider.id" required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="The alias unique identifies an identity provider and it is also used to build the redirect uri." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="name">Name <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="name" type="text" ng-model="identityProvider.name" required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="The friendly name for this identity provider." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="serverPrincipal">Server principal <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="serverPrincipal" type="text" ng-model="identityProvider.config.serverPrincipal" required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Full name of server principal for HTTP service including server and domain name. For example HTTP/host.foo.org@FOO.ORG" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="keyTab">KeyTab <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="keyTab" type="text" ng-model="identityProvider.config.keyTab" required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Location of Kerberos KeyTab file containing the credentials of server principal. For example /etc/krb5.keytab" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="debug">Debug </label>
+                    <div class="col-sm-4">
+                        <input ng-model="identityProvider.config.debug" id="debug" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Enable/disable debug logging to standard output for Krb5LoginModule." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="enabled">Enabled</label>
+                    <div class="col-sm-4">
+                        <input ng-model="identityProvider.enabled" id="enabled" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Enable/disable this identity provider." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="updateProfileFirstLogin">Update Profile on First Login</label>
+                    <div class="col-sm-4">
+                        <input ng-model="identityProvider.updateProfileFirstLogin" name="identityProvider.updateProfileFirstLogin" id="updateProfileFirstLogin" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Indicates if user must update his profile right after the first login." class="fa fa-info-circle"></span>
+                </div>
+            </fieldset>
+
+            <div class="pull-right form-actions">
+                <button kc-save>Save</button>
+                <button kc-delete data-ng-click="remove()" data-ng-show="!newIdentityProvider">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
