@@ -14,7 +14,8 @@
     <properties>
         <aesh.version>0.33.12</aesh.version>
         <base64.version>2.3.8</base64.version>
-        <bouncycastle.version>1.46</bouncycastle.version>
+        <bouncycastle.crypto.version>1.50</bouncycastle.crypto.version>
+        <bouncycastle.mail.version>1.46</bouncycastle.mail.version>
         <jackson.version>1.9.9</jackson.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <resteasy.version>2.3.7.Final</resteasy.version>
@@ -132,13 +133,18 @@
         <dependencies>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk16</artifactId>
-                <version>${bouncycastle.version}</version>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>${bouncycastle.crypto.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+			    <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${bouncycastle.crypto.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcmail-jdk16</artifactId>
-                <version>${bouncycastle.version}</version>
+                <version>${bouncycastle.mail.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.iharder</groupId>

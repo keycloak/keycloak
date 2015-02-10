@@ -17,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk16</artifactId>
+            <artifactId>bcprov-jdk15on</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
