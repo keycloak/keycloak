@@ -210,8 +210,23 @@ public class SamlService {
 
         protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
 
+            String bindingType = getBindingType(requestAbstractType);
+            if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING))) bindingType = SamlProtocol.SAML_POST_BINDING;
+            String redirect = null;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
-            String redirect = OpenIDConnectService.verifyRedirectUri(uriInfo, redirectUri.toString(), realm, client);
+            if (redirectUri != null && !"null".equals(redirectUri)) {  // "null" is for testing purposes
+                redirect = OpenIDConnectService.verifyRedirectUri(uriInfo, redirectUri.toString(), realm, client);
+            } else {
+                if (bindingType.equals(SamlProtocol.SAML_POST_BINDING)) {
+                    redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
+                } else {
+                    redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
+                }
+                if (redirect == null && client instanceof ApplicationModel) {
+                    redirect = ((ApplicationModel)client).getManagementUrl();
+                }
+
+            }
 
             if (redirect == null) {
                 event.error(Errors.INVALID_REDIRECT_URI);
@@ -224,7 +239,7 @@ public class SamlService {
             clientSession.setRedirectUri(redirect);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
             clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
-            clientSession.setNote(SamlProtocol.SAML_BINDING, getBindingType(requestAbstractType));
+            clientSession.setNote(SamlProtocol.SAML_BINDING, bindingType);
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
             clientSession.setNote(SamlProtocol.SAML_REQUEST_ID, requestAbstractType.getID());
 
@@ -269,7 +284,7 @@ public class SamlService {
                 if (JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get().equals(requestedProtocolBinding.toString())) {
                     return SamlProtocol.SAML_POST_BINDING;
                 } else {
-                    return SamlProtocol.SAML_GET_BINDING;
+                    return SamlProtocol.SAML_REDIRECT_BINDING;
                 }
             }
 
@@ -294,9 +309,9 @@ public class SamlService {
 
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
             if (authResult != null) {
-                String bindingUri = client.getAttribute(SamlProtocol.SAML_LOGOUT_BINDING_URI);
-                if (bindingUri == null ) bindingUri = ((ApplicationModel)client).getManagementUrl();
-                bindingUri = ResourceAdminManager.resolveUri(uriInfo.getRequestUri(), bindingUri);
+                String logoutBinding = getBindingType();
+                if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING))) logoutBinding = SamlProtocol.SAML_POST_BINDING;
+                String bindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, logoutBinding);
                 UserSessionModel userSession = authResult.getSession();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
                 if (SamlProtocol.requiresRealmSignature(client)) {
@@ -305,8 +320,6 @@ public class SamlService {
                 }
                 if (relayState != null) userSession.setNote(SamlProtocol.SAML_LOGOUT_RELAY_STATE, relayState);
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_REQUEST_ID, logoutRequest.getID());
-                String logoutBinding = client.getAttribute(SamlProtocol.SAML_LOGOUT_BINDING);
-                if (logoutBinding == null) logoutBinding = getBindingType();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING, logoutBinding);
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_ISSUER, logoutRequest.getIssuer().getValue());
                 userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL);
@@ -440,7 +453,7 @@ public class SamlService {
 
         @Override
         protected String getBindingType() {
-            return SamlProtocol.SAML_GET_BINDING;
+            return SamlProtocol.SAML_REDIRECT_BINDING;
         }
 
 

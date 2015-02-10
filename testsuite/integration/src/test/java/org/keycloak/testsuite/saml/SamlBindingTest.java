@@ -192,11 +192,19 @@ public class SamlBindingTest {
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee-sig-front/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
 
+        // visit 3rd app
+        System.out.println("visit 3rd app ");
+        driver.navigate().to("http://localhost:8081/sales-post-sig/");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-sig/");
+        Assert.assertTrue(driver.getPageSource().contains("bburke"));
+
         // logout of first app
         System.out.println("GLO");
         driver.navigate().to("http://localhost:8081/employee-sig?GLO=true");
         checkLoggedOut("http://localhost:8081/employee-sig/");
         driver.navigate().to("http://localhost:8081/employee-sig-front/");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        driver.navigate().to("http://localhost:8081/sales-post-sig/");
         Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
 
     }

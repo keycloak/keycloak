@@ -34,12 +34,15 @@
             "fullScopeAllowed": true,
             "protocol": "saml",
             "baseUrl": "http://localhost:8081/sales-post",
-            "adminUrl": "http://localhost:8081/sales-post",
             "redirectUris": [
                 "http://localhost:8081/sales-post/*"
             ],
             "attributes": {
-                "saml.authnstatement": "true"
+                "saml.authnstatement": "true",
+                "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post",
+                "saml_single_logout_service_url_post": "http://localhost:8081/sales-post",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/sales-post"
             }
         },
         {
@@ -48,11 +51,14 @@
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8081/sales-post-sig",
-            "adminUrl": "http://localhost:8081/sales-post-sig",
             "redirectUris": [
                 "http://localhost:8081/sales-post-sig/*"
             ],
             "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post-sig",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post-sig",
+                "saml_single_logout_service_url_post": "http://localhost:8081/sales-post-sig",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/sales-post-sig",
                 "saml.server.signature": "true",
                 "saml.signature.algorithm": "RSA_SHA256",
                 "saml.client.signature": "true",
@@ -72,6 +78,10 @@
                 "http://localhost:8081/sales-post-sig-transient/*"
             ],
             "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post-sig-transient",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post-sig-transient",
+                "saml_single_logout_service_url_post": "http://localhost:8081/sales-post-sig-transient",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/sales-post-sig-transient",
                 "saml.server.signature": "true",
                 "saml.signature.algorithm": "RSA_SHA256",
                 "saml.client.signature": "true",
@@ -86,11 +96,14 @@
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8081/sales-post-sig-persistent",
-            "adminUrl": "http://localhost:8081/sales-post-sig-persistent",
             "redirectUris": [
                 "http://localhost:8081/sales-post-sig-persistent/*"
             ],
             "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post-sig-persistent",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post-sig-persistent",
+                "saml_single_logout_service_url_post": "http://localhost:8081/sales-post-sig-persistent",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/sales-post-sig-persistent",
                 "saml.server.signature": "true",
                 "saml.signature.algorithm": "RSA_SHA256",
                 "saml.client.signature": "true",
@@ -110,6 +123,10 @@
                 "http://localhost:8081/sales-post-sig-email/*"
             ],
             "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post-sig-email",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post-sig-email",
+                "saml_single_logout_service_url_post": "http://localhost:8081/sales-post-sig-email",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/sales-post-sig-email",
                 "saml.server.signature": "true",
                 "saml.signature.algorithm": "RSA_SHA256",
                 "saml.client.signature": "true",
@@ -160,11 +177,14 @@
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8081/sales-post-enc",
-            "adminUrl": "http://localhost:8081/sales-post-enc",
             "redirectUris": [
                 "http://localhost:8081/sales-post-enc/*"
             ],
             "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post-enc",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post-enc",
+                "saml_single_logout_service_url_post": "http://localhost:8081/sales-post-enc",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/sales-post-enc",
                 "saml.server.signature": "true",
                 "saml.signature.algorithm": "RSA_SHA512",
                 "saml.client.signature": "true",
@@ -182,11 +202,14 @@
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8081/employee-sig",
-            "adminUrl": "http://localhost:8081/employee-sig",
             "redirectUris": [
                 "http://localhost:8081/employee-sig/*"
             ],
             "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8081/employee-sig",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/employee-sig",
+                "saml_single_logout_service_url_post": "http://localhost:8081/employee-sig",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/employee-sig",
                 "saml.server.signature": "true",
                 "saml.client.signature": "true",
                 "saml.signature.algorithm": "RSA_SHA1",
@@ -202,11 +225,14 @@
             "fullScopeAllowed": true,
             "frontchannelLogout": true,
             "baseUrl": "http://localhost:8081/employee-sig-front",
-            "adminUrl": "http://localhost:8081/employee-sig-front",
             "redirectUris": [
                 "http://localhost:8081/employee-sig-front/*"
             ],
             "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8081/employee-sig-front",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/employee-sig-front",
+                "saml_single_logout_service_url_post": "http://localhost:8081/employee-sig-front",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/employee-sig-front",
                 "saml.server.signature": "true",
                 "saml.client.signature": "true",
                 "saml.signature.algorithm": "RSA_SHA1",
