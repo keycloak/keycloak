@@ -232,11 +232,50 @@ public abstract class AbstractIdentityProviderTest {
         accountFederatedIdentityPage.logout();
         assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
 
-        // Assert I am logged immediately to account management
+        // Assert I am logged immediately to account management due to previously linked "test-user" identity
         loginPage.clickSocial(identityProviderModel.getId());
         doAfterProviderAuthentication();
         assertTrue(accountFederatedIdentityPage.isCurrent());
         assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getId() + "\""));
+
+        // Unlink my "test-user"
+        accountFederatedIdentityPage.clickRemoveProvider(identityProviderModel.getId());
+        assertTrue(driver.getPageSource().contains("id=\"add-" + identityProviderModel.getId() + "\""));
+
+        // Logout from account management
+        accountFederatedIdentityPage.logout();
+        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+
+        // Try to login. Previous link is not valid anymore, so now it should try to register new user
+        this.loginPage.clickSocial(identityProviderModel.getId());
+        doAfterProviderAuthentication();
+        this.updateProfilePage.assertCurrent();
+    }
+
+    @Test
+    public void testDisabledRegistration() {
+        // Disable registration in realm
+        getRealm().setRegistrationAllowed(false);
+        brokerServerRule.stopSession(this.session, true);
+        this.session = brokerServerRule.startSession();
+
+        // Login with identity provider
+        this.driver.navigate().to("http://localhost:8081/test-app/");
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+        this.loginPage.clickSocial(getProviderId());
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+        this.loginPage.login("test-user", "password");
+        doAfterProviderAuthentication();
+
+        WebElement element = this.driver.findElement(By.className("kc-feedback-text"));
+        assertNotNull(element);
+        assertEquals("Registration of new users is not allowed. Please ask admin to register you and login to account management to link the account.", element.getText());
+
+        // Re-enable registration in realm
+        getRealm().setRegistrationAllowed(true);
+        brokerServerRule.stopSession(this.session, true);
+        this.session = brokerServerRule.startSession();
     }
 
     @Test(expected = NoSuchElementException.class)

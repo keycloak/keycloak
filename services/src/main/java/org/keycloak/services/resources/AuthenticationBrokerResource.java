@@ -340,15 +340,28 @@ public class AuthenticationBrokerResource {
 
         if (federatedUser == null) {
 
-            UserModel existingUser = session.users().getUserByEmail(updatedIdentity.getEmail(), realm);
-            String errorMessage = "federatedIdentityEmailExists";
+            String errorMessage = null;
 
-            if (existingUser == null) {
+            // Check if no user already exists with this username or email
+            UserModel existingUser = session.users().getUserByEmail(updatedIdentity.getEmail(), realm);
+            if (existingUser != null) {
+                event.error(Errors.FEDERATED_IDENTITY_EMAIL_EXISTS);
+                errorMessage = "federatedIdentityEmailExists";
+            } else {
                 existingUser = session.users().getUserByUsername(updatedIdentity.getUsername(), realm);
-                errorMessage = "federatedIdentityUsernameExists";
+                if (existingUser != null) {
+                    event.error(Errors.FEDERATED_IDENTITY_USERNAME_EXISTS);
+                    errorMessage = "federatedIdentityUsernameExists";
+                }
             }
 
-            if (existingUser == null) {
+            // Check if realm registration is allowed
+            if (!realm.isRegistrationAllowed()) {
+                event.error(Errors.FEDERATED_IDENTITY_DISABLED_REGISTRATION);
+                errorMessage = "federatedIdentityDisabledRegistration";
+            }
+
+            if (errorMessage == null) {
                 logger.debug("Creating user " + updatedIdentity.getUsername() + " and linking to federation provider " + providerId);
                 federatedUser = session.users().addUser(realm, updatedIdentity.getUsername());
                 federatedUser.setEnabled(true);
