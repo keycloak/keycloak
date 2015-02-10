@@ -163,7 +163,10 @@
                 { "type" : "password",
                     "value" : "password" }
             ],
-            "realmRoles": ["manager"]
+            "realmRoles": ["manager"],
+            "applicationRoles": {
+                "account": [ "manage-account" ]
+            }
         }
     ],
     "applications": [

@@ -33,6 +33,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
+import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -92,6 +93,9 @@ public abstract class AbstractIdentityProviderTest {
     @WebResource
     protected AccountPasswordPage changePasswordPage;
 
+    @WebResource
+    protected AccountFederatedIdentityPage accountFederatedIdentityPage;
+
     private KeycloakSession session;
 
     @Before
@@ -118,6 +122,7 @@ public abstract class AbstractIdentityProviderTest {
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        identityProviderModel.setUpdateProfileFirstLogin(false);
 
         assertSuccessfulAuthentication(identityProviderModel);
     }
@@ -200,6 +205,38 @@ public abstract class AbstractIdentityProviderTest {
         assertNotNull(element);
 
         assertEquals("User with email already exists. Please login to account management to link the account.", element.getText());
+    }
+
+    @Test
+    public void testAccountManagementLinkIdentity() {
+        // Login as pedroigor to account management
+        accountFederatedIdentityPage.realm("realm-with-broker");
+        accountFederatedIdentityPage.open();
+        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+        loginPage.login("pedroigor", "password");
+        assertTrue(accountFederatedIdentityPage.isCurrent());
+
+        // Link my "pedroigor" identity with "test-user" from brokered Keycloak
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        accountFederatedIdentityPage.clickAddProvider(identityProviderModel.getId());
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+        this.loginPage.login("test-user", "password");
+        doAfterProviderAuthentication();
+
+        // Assert identity linked in account management
+        assertTrue(accountFederatedIdentityPage.isCurrent());
+        assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getId() + "\""));
+
+        // Logout from account management
+        accountFederatedIdentityPage.logout();
+        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+
+        // Assert I am logged immediately to account management
+        loginPage.clickSocial(identityProviderModel.getId());
+        doAfterProviderAuthentication();
+        assertTrue(accountFederatedIdentityPage.isCurrent());
+        assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getId() + "\""));
     }
 
     @Test(expected = NoSuchElementException.class)

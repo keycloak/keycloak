@@ -49,7 +49,7 @@ public class AccountFederatedIdentityBean {
                         .queryParam("stateChecker", stateChecker)
                         .build().toString();
 
-                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, provider.getName(), actionUrl);
+                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, provider.getId(), provider.getName(), actionUrl);
                 this.identities.add(entry);
             }
         }
@@ -78,17 +78,19 @@ public class AccountFederatedIdentityBean {
     public class FederatedIdentityEntry {
 
         private FederatedIdentityModel federatedIdentityModel;
+        private final String providerId;
         private final String providerName;
         private final String actionUrl;
 
-        public FederatedIdentityEntry(FederatedIdentityModel federatedIdentityModel, String providerName, String actionUrl) {
+        public FederatedIdentityEntry(FederatedIdentityModel federatedIdentityModel, String providerId, String providerName, String actionUrl) {
             this.federatedIdentityModel = federatedIdentityModel;
+            this.providerId = providerId;
             this.providerName = providerName;
             this.actionUrl = actionUrl;
         }
 
         public String getProviderId() {
-            return federatedIdentityModel != null ? federatedIdentityModel.getIdentityProvider() : null;
+            return providerId;
         }
 
         public String getProviderName() {
