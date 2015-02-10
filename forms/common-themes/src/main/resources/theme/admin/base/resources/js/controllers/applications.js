@@ -750,7 +750,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         $scope.application.protocol = $scope.protocol;
         $scope.application.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
 
-        if (!$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
+        if ($scope.application.protocol != 'saml' && !$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {

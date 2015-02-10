@@ -47,10 +47,14 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_SIGNING_CERTIFICATE_ATTRIBUTE = "saml.signing." + ClientAttributeCertificateResource.X509CERTIFICATE;
     public static final String SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE = "saml.encryption." + ClientAttributeCertificateResource.X509CERTIFICATE;
     public static final String SAML_CLIENT_SIGNATURE_ATTRIBUTE = "saml.client.signature";
+    public static final String SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE = "saml_assertion_consumer_url_post";
+    public static final String SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE = "saml_assertion_consumer_url_redirect";
+    public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE = "saml_single_logout_service_url_post";
+    public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE = "saml_single_logout_service_url_redirect";
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_POST_BINDING = "post";
-    public static final String SAML_GET_BINDING = "get";
+    public static final String SAML_REDIRECT_BINDING = "get";
     public static final String SAML_SERVER_SIGNATURE = "saml.server.signature";
     public static final String SAML_ASSERTION_SIGNATURE = "saml.assertion.signature";
     public static final String SAML_AUTHNSTATEMENT = "saml.authnstatement";
@@ -129,7 +133,7 @@ public class SamlProtocol implements LoginProtocol {
 
     protected boolean isPostBinding(ClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
-        return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING)) || "true".equals(client.getAttribute(SAML_FORCE_POST_BINDING));
+        return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING)) || forcePostBinding(client);
     }
 
     protected boolean isLogoutPostBindingForInitiator(UserSessionModel session) {
@@ -137,8 +141,36 @@ public class SamlProtocol implements LoginProtocol {
         return SamlProtocol.SAML_POST_BINDING.equals(note);
     }
 
-    protected boolean isLogoutPostBindingForClient(ClientModel client) {
-        return SamlProtocol.SAML_POST_BINDING.equals(client.getAttribute(SamlProtocol.SAML_LOGOUT_BINDING));
+
+
+    protected boolean isLogoutPostBindingForClient(ClientSessionModel clientSession) {
+        ClientModel client = clientSession.getClient();
+        String logoutPostUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
+        String logoutRedirectUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
+
+        if (logoutPostUrl == null) {
+            // if we don't have a redirect uri either, return true and default to the admin url + POST binding
+            if (logoutRedirectUrl == null) return true;
+            return false;
+        }
+
+        if (forcePostBinding(client)) {
+            return true; // configured to force a post binding and post binding logout url is not null
+        }
+
+        String bindingType = clientSession.getNote(SAML_BINDING);
+
+        // if the login binding was POST, return true
+        if (SAML_POST_BINDING.equals(bindingType)) return true;
+
+        if (logoutRedirectUrl == null) return true; // we don't have a redirect binding url, so use post binding
+
+        return false;  // redirect binding
+
+    }
+
+    public static boolean forcePostBinding(ClientModel client) {
+        return "true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING));
     }
 
     protected String getNameIdFormat(ClientSessionModel clientSession) {
@@ -290,10 +322,15 @@ public class SamlProtocol implements LoginProtocol {
         return getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
     }
 
-    protected String getBindingUri(ClientModel client) {
-        String bindingUri = client.getAttribute(SamlProtocol.SAML_LOGOUT_BINDING_URI);
-        if (bindingUri == null ) bindingUri = ((ApplicationModel)client).getManagementUrl();
-        return ResourceAdminManager.resolveUri(uriInfo.getRequestUri(), bindingUri);
+    public static String getLogoutServiceUrl(UriInfo uriInfo, ClientModel client, String bindingType) {
+        String logoutServiceUrl = null;
+        if (SAML_POST_BINDING.equals(bindingType)) {
+            logoutServiceUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
+        } else {
+            logoutServiceUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
+        }
+        if (logoutServiceUrl == null && client instanceof ApplicationModel) logoutServiceUrl = ((ApplicationModel)client).getManagementUrl();
+        return ResourceAdminManager.resolveUri(uriInfo.getRequestUri(), logoutServiceUrl);
 
     }
 
@@ -301,15 +338,14 @@ public class SamlProtocol implements LoginProtocol {
     public Response frontchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
         if (!(client instanceof ApplicationModel)) return null;
-        ApplicationModel app = (ApplicationModel)client;
-        String bindingUri = getBindingUri(client);
-        if (bindingUri == null) return null;
         SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(clientSession, client);
         try {
-            if (isLogoutPostBindingForClient(app)) {
+            if (isLogoutPostBindingForClient(clientSession)) {
+                String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
                 return logoutBuilder.postBinding().request(bindingUri);
             } else {
                 logger.debug("frontchannel redirect binding");
+                String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_REDIRECT_BINDING);
                 return logoutBuilder.redirectBinding().request(bindingUri);
             }
         } catch (ConfigurationException e) {
@@ -360,7 +396,11 @@ public class SamlProtocol implements LoginProtocol {
         ClientModel client = clientSession.getClient();
         if (!(client instanceof ApplicationModel)) return;
         ApplicationModel app = (ApplicationModel)client;
-        if (app.getManagementUrl() == null) return;
+        String logoutUrl = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
+        if (logoutUrl == null) {
+            logger.warnv("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: {1}", client.getClientId());
+            return;
+        }
         SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(clientSession, client);
 
 
@@ -373,13 +413,11 @@ public class SamlProtocol implements LoginProtocol {
         }
 
 
-        String adminUrl = ResourceAdminManager.getManagementUrl(uriInfo.getRequestUri(), app);
-
         ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
 
 
         try {
-            ClientRequest request = executor.createRequest(adminUrl);
+            ClientRequest request = executor.createRequest(logoutUrl);
             request.formParameter(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString);
             request.formParameter(SAML2LogOutHandler.BACK_CHANNEL_LOGOUT, SAML2LogOutHandler.BACK_CHANNEL_LOGOUT);
             ClientResponse response = null;
@@ -387,9 +425,9 @@ public class SamlProtocol implements LoginProtocol {
                 response = request.post();
                 response.releaseConnection();
                 // Undertow will redirect root urls not ending in "/" to root url + "/".  Test for this weird behavior
-                if (response.getStatus() == 302  && !adminUrl.endsWith("/")) {
+                if (response.getStatus() == 302  && !logoutUrl.endsWith("/")) {
                     String redirect = (String)response.getHeaders().getFirst(HttpHeaders.LOCATION);
-                    String withSlash = adminUrl + "/";
+                    String withSlash = logoutUrl + "/";
                     if (withSlash.equals(redirect)) {
                         request = executor.createRequest(withSlash);
                         request.formParameter(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString);
