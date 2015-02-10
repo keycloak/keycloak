@@ -28,6 +28,7 @@ public class ApplicationRepresentation {
     protected Boolean fullScopeAllowed;
     protected Integer nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
+    protected List<String> allowedIdentityProviders;
 
     public String getId() {
         return id;
@@ -187,5 +188,13 @@ public class ApplicationRepresentation {
 
     public void setFrontchannelLogout(Boolean frontchannelLogout) {
         this.frontchannelLogout = frontchannelLogout;
+    }
+
+    public List<String> getAllowedIdentityProviders() {
+        return this.allowedIdentityProviders;
+    }
+
+    public void setAllowedIdentityProviders(List<String> allowedIdentityProviders) {
+        this.allowedIdentityProviders = allowedIdentityProviders;
     }
 }

@@ -1,0 +1,24 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <kc-navigation-application></kc-navigation-application>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li class="active">Identity Provider</li>
+        </ol>
+        <h2 data-ng-hide="create"><span>{{application.name}}</span> Identity Provider Settings</h2>
+        <form class="form-horizontal" name="identityProviderForm" novalidate>
+            <div class="form-group" ng-repeat="identityProvider in identityProviders">
+                <legend><span class="text">{{identityProvider.name}}</span></legend>
+                <label class="col-sm-2 control-label" for="{{identityProvider.id}}">Enable</label>
+                <div class="col-sm-4">
+                    <input ng-model="application.allowedIdentityProviders[$index]" name="identityProvider.id" id="identityProvider.id" value="identityProvider.id" kc-onoffswitch-model />
+                </div>
+            </div>
+            <div class="pull-right form-actions">
+                <button kc-save>Save</button>
+            </div>
+        </form>
+    </div>
+</div>

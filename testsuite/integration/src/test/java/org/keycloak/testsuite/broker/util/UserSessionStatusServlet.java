@@ -20,6 +20,7 @@ package org.keycloak.testsuite.broker.util;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 
 import javax.servlet.ServletException;
@@ -49,7 +50,8 @@ public class UserSessionStatusServlet extends HttpServlet {
     private void writeSessionStatus(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         KeycloakSecurityContext context = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
         IDToken idToken = context.getIdToken();
-        JsonNode jsonNode = new ObjectMapper().valueToTree(new UserSessionStatus(idToken));
+        AccessToken accessToken = context.getToken();
+        JsonNode jsonNode = new ObjectMapper().valueToTree(new UserSessionStatus(idToken, accessToken, context.getTokenString()));
         PrintWriter writer = resp.getWriter();
 
         writer.println(jsonNode.toString());
@@ -59,14 +61,18 @@ public class UserSessionStatusServlet extends HttpServlet {
 
     public static class UserSessionStatus implements Serializable {
 
+        private String accessTokenString;
+        private AccessToken accessToken;
         private IDToken idToken;
 
         public UserSessionStatus() {
 
         }
 
-        public UserSessionStatus(IDToken idToken) {
+        public UserSessionStatus(IDToken idToken, AccessToken accessToken, String tokenString) {
             this.idToken = idToken;
+            this.accessToken = accessToken;
+            this.accessTokenString = tokenString;
         }
 
         public IDToken getIdToken() {
@@ -75,6 +81,18 @@ public class UserSessionStatusServlet extends HttpServlet {
 
         public void setIdToken(IDToken idToken) {
             this.idToken = idToken;
+        }
+
+        public AccessToken getAccessToken() {
+            return this.accessToken;
+        }
+
+        public void setAccessToken(AccessToken accessToken) {
+            this.accessToken = accessToken;
+        }
+
+        public String getAccessTokenString() {
+            return this.accessTokenString;
         }
     }
 }

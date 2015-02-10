@@ -7,9 +7,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -229,13 +229,6 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
         RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
         entities.add(roleEntity);
         em.flush();
-    }
-
-    public static boolean contains(String str, String[] array) {
-        for (String s : array) {
-            if (str.equals(s)) return true;
-        }
-        return false;
     }
 
     @Override

@@ -25,7 +25,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
@@ -220,7 +219,7 @@ public class AccountTest {
 
         changePasswordPage.logout();
 
-        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, AccountPasswordPage.PATH).assertEvent();
+        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, changePasswordPage.getPath()).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");

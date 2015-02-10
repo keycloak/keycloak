@@ -11,7 +11,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
-import org.keycloak.util.Time;
 
 import java.util.ArrayList;
 import java.util.Collections;

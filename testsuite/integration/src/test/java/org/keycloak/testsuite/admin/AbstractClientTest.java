@@ -9,6 +9,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -100,6 +101,8 @@ public abstract class AbstractClientTest {
             return ((ApplicationRepresentation) o1).getName();
         } else if (o1 instanceof OAuthClientRepresentation) {
             return ((OAuthClientRepresentation) o1).getName();
+        } else if (o1 instanceof IdentityProviderRepresentation) {
+            return ((IdentityProviderRepresentation) o1).getId();
         }
         throw new IllegalArgumentException();
     }

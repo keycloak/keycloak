@@ -6,10 +6,10 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
@@ -225,7 +225,7 @@ public class MongoUserProvider implements UserProvider {
         Set<FederatedIdentityModel> result = new HashSet<FederatedIdentityModel>();
         for (FederatedIdentityEntity federatedIdentityEntity : linkEntities) {
             FederatedIdentityModel model = new FederatedIdentityModel(federatedIdentityEntity.getIdentityProvider(),
-                    federatedIdentityEntity.getUserId(), federatedIdentityEntity.getUserName());
+                    federatedIdentityEntity.getUserId(), federatedIdentityEntity.getUserName(), federatedIdentityEntity.getToken());
             result.add(model);
         }
         return result;
@@ -296,15 +296,24 @@ public class MongoUserProvider implements UserProvider {
 
 
     @Override
-    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
+    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel identity) {
         user = getUserById(user.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
         FederatedIdentityEntity federatedIdentityEntity = new FederatedIdentityEntity();
-        federatedIdentityEntity.setIdentityProvider(socialLink.getIdentityProvider());
-        federatedIdentityEntity.setUserId(socialLink.getUserId());
-        federatedIdentityEntity.setUserName(socialLink.getUserName());
+        federatedIdentityEntity.setIdentityProvider(identity.getIdentityProvider());
+        federatedIdentityEntity.setUserId(identity.getUserId());
+        federatedIdentityEntity.setUserName(identity.getUserName());
+        federatedIdentityEntity.setToken(identity.getToken());
 
         getMongoStore().pushItemToList(userEntity, "federatedIdentities", federatedIdentityEntity, true, invocationContext);
+    }
+
+    @Override
+    public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        MongoUserEntity userEntity = ((UserAdapter) federatedUser).getUser();
+        FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, federatedIdentityModel.getIdentityProvider());
+
+        federatedIdentityEntity.setToken(federatedIdentityModel.getToken());
     }
 
     @Override

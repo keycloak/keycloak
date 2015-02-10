@@ -22,6 +22,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.protocol.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.protocol.saml.SAML2NameIDPolicyBuilder;
 import org.picketlink.common.constants.JBossSAMLConstants;
@@ -54,6 +55,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.namespace.QName;
@@ -140,8 +142,14 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     @Override
     public AuthenticationResponse handleResponse(AuthenticationRequest request) {
+        String samlResponse = getRequestParameter(request, SAML_RESPONSE_PARAMETER);
+
+        if (samlResponse == null) {
+            throw new RuntimeException("No response from SAML identity provider.");
+        }
+
         try {
-            AssertionType assertion = getAssertion(request);
+            AssertionType assertion = getAssertion(samlResponse, request);
             SubjectType subject = assertion.getSubject();
             STSubType subType = subject.getSubType();
             NameIDType subjectNameID = (NameIDType) subType.getBaseID();
@@ -153,19 +161,22 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 identity.setEmail(subjectNameID.getValue());
             }
 
+            if (getConfig().isStoreToken()) {
+                identity.setToken(samlResponse);
+            }
+
             return AuthenticationResponse.end(identity);
         } catch (Exception e) {
             throw new RuntimeException("Could not process response from SAML identity provider.", e);
         }
     }
 
-    private AssertionType getAssertion(AuthenticationRequest request) throws Exception {
-        String samlResponse = getRequestParameter(request, SAML_RESPONSE_PARAMETER);
+    @Override
+    public Response retrieveToken(FederatedIdentityModel identity) {
+        return Response.ok(identity.getToken()).build();
+    }
 
-        if (samlResponse == null) {
-            throw new RuntimeException("No response from SAML identity provider.");
-        }
-
+    private AssertionType getAssertion(String samlResponse, AuthenticationRequest request) throws Exception {
         SAML2Request saml2Request = new SAML2Request();
         ResponseType responseType;
 

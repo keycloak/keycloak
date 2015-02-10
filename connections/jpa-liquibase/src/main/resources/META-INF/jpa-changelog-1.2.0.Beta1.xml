@@ -8,6 +8,7 @@
             <column name="REALM_ID" type="VARCHAR(255)"/>
             <column name="FEDERATED_USER_ID" type="VARCHAR(255)"/>
             <column name="FEDERATED_USERNAME" type="VARCHAR(255)"/>
+            <column name="TOKEN" type="TEXT"/>
             <column name="USER_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
@@ -21,6 +22,7 @@
             <column name="PROVIDER_NAME" type="VARCHAR(255)"/>
             <column name="PROVIDER_ID" type="VARCHAR(255)"/>
             <column name="UPDATE_PROFILE_FIRST_LOGIN" type="BOOLEAN(1)"/>
+            <column name="STORE_TOKEN" type="BOOLEAN(1)"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
         </createTable>
         <createTable tableName="IDENTITY_PROVIDER_CONFIG">
@@ -29,6 +31,14 @@
             </column>
             <column name="VALUE" type="CLOB"/>
             <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="CLIENT_ALLOWED_IDENTITY_PROVIDER">
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="INTERNAL_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -41,5 +51,8 @@
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="IDENTITY_PROVIDER" constraintName="FK2B4EBC52AE5C3B34" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="FEDERATED_IDENTITY" constraintName="FK404288B92EF007A6" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
         <addForeignKeyConstraint baseColumnNames="IDENTITY_PROVIDER_ID" baseTableName="IDENTITY_PROVIDER_CONFIG" constraintName="FKDC4897CF864C4E43" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="INTERNAL_ID" referencedTableName="IDENTITY_PROVIDER"/>
+        <addForeignKeyConstraint baseColumnNames="INTERNAL_ID" baseTableName="CLIENT_ALLOWED_IDENTITY_PROVIDER" constraintName="FK_7CELWNIBJI49AVXSRTUF6XJ12" referencedColumnNames="INTERNAL_ID" referencedTableName="IDENTITY_PROVIDER"/>
+        <addUniqueConstraint columnNames="INTERNAL_ID,CLIENT_ID" constraintName="UK_7CAELWNIBJI49AVXSRTUF6XJ12" tableName="CLIENT_ALLOWED_IDENTITY_PROVIDER"/>
+        <addUniqueConstraint columnNames="PROVIDER_NONIMAL_ID" constraintName="UK_2DAELWNIBJI49AVXSRTUF6XJ33" tableName="IDENTITY_PROVIDER"/>
     </changeSet>
 </databaseChangeLog>

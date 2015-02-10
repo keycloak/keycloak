@@ -20,7 +20,10 @@ package org.keycloak.testsuite.broker.provider;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+
+import javax.ws.rs.core.Response;
 
 /**
  * @author pedroigor
@@ -43,6 +46,11 @@ public class CustomIdentityProvider extends AbstractIdentityProvider<IdentityPro
 
     @Override
     public AuthenticationResponse handleResponse(AuthenticationRequest request) {
+        return null;
+    }
+
+    @Override
+    public Response retrieveToken(FederatedIdentityModel identity) {
         return null;
     }
 }

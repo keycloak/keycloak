@@ -146,16 +146,7 @@ public class ModelToRepresentation {
         }
 
         for (IdentityProviderModel provider : realm.getIdentityProviders()) {
-            IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
-
-            providerRep.setProviderId(provider.getProviderId());
-            providerRep.setId(provider.getId());
-            providerRep.setName(provider.getName());
-            providerRep.setEnabled(provider.isEnabled());
-            providerRep.setUpdateProfileFirstLogin(provider.isUpdateProfileFirstLogin());
-            providerRep.setConfig(provider.getConfig());
-
-            rep.addIdentityProvider(providerRep);
+            rep.addIdentityProvider(toRepresentation(provider));
         }
 
         return rep;
@@ -258,6 +249,10 @@ public class ModelToRepresentation {
             rep.setRegisteredNodes(new HashMap<String, Integer>(applicationModel.getRegisteredNodes()));
         }
 
+        if (!applicationModel.getAllowedIdentityProviders().isEmpty()) {
+            rep.setAllowedIdentityProviders(applicationModel.getAllowedIdentityProviders());
+        }
+
         return rep;
     }
 
@@ -282,6 +277,11 @@ public class ModelToRepresentation {
             rep.setWebOrigins(new LinkedList<String>(webOrigins));
         }
         rep.setNotBefore(model.getNotBefore());
+
+        if (!model.getAllowedIdentityProviders().isEmpty()) {
+            rep.setAllowedIdentityProviders(model.getAllowedIdentityProviders());
+        }
+
         return rep;
     }
 
@@ -296,5 +296,20 @@ public class ModelToRepresentation {
         rep.setChangedSyncPeriod(model.getChangedSyncPeriod());
         rep.setLastSync(model.getLastSync());
         return rep;
+    }
+
+    public static IdentityProviderRepresentation toRepresentation(IdentityProviderModel identityProviderModel) {
+        IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
+
+        providerRep.setInternalId(identityProviderModel.getInternalId());
+        providerRep.setProviderId(identityProviderModel.getProviderId());
+        providerRep.setId(identityProviderModel.getId());
+        providerRep.setName(identityProviderModel.getName());
+        providerRep.setEnabled(identityProviderModel.isEnabled());
+        providerRep.setStoreToken(identityProviderModel.isStoreToken());
+        providerRep.setUpdateProfileFirstLogin(identityProviderModel.isUpdateProfileFirstLogin());
+        providerRep.setConfig(identityProviderModel.getConfig());
+
+        return providerRep;
     }
 }

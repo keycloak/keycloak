@@ -8,6 +8,7 @@ import org.keycloak.models.cache.entities.CachedClient;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -258,5 +259,23 @@ public abstract class ClientAdapter implements ClientModel {
         Map<String, String> copy = new HashMap<String, String>();
         copy.putAll(cachedClient.getAttributes());
         return copy;
+    }
+
+    @Override
+    public void updateAllowedIdentityProviders(List<String> identityProviders) {
+        getDelegateForUpdate();
+        updatedClient.updateAllowedIdentityProviders(identityProviders);
+    }
+
+    @Override
+    public List<String> getAllowedIdentityProviders() {
+        if (updatedClient != null) return updatedClient.getAllowedIdentityProviders();
+        return cachedClient.getAllowedIdentityProviders();
+    }
+
+    @Override
+    public boolean hasIdentityProvider(String providerId) {
+        if (updatedClient != null) return updatedClient.hasIdentityProvider(providerId);
+        return cachedClient.hasIdentityProvider(providerId);
     }
 }

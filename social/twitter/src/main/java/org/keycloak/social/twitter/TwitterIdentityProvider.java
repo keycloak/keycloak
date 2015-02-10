@@ -27,12 +27,16 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.social.SocialIdentityProvider;
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
+import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 
@@ -96,17 +100,33 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
             RequestToken requestToken = new RequestToken(twitterToken, twitterSecret);
 
-            twitter.getOAuthAccessToken(requestToken, verifier);
+            AccessToken oAuthAccessToken = twitter.getOAuthAccessToken(requestToken, verifier);
             twitter4j.User twitterUser = twitter.verifyCredentials();
 
-            FederatedIdentity user = new FederatedIdentity(Long.toString(twitterUser.getId()));
+            FederatedIdentity identity = new FederatedIdentity(Long.toString(twitterUser.getId()));
 
-            user.setUsername(twitterUser.getScreenName());
-            user.setName(twitterUser.getName());
+            identity.setUsername(twitterUser.getScreenName());
+            identity.setName(twitterUser.getName());
 
-            return AuthenticationResponse.end(user);
+            StringBuilder tokenBuilder = new StringBuilder();
+
+            tokenBuilder.append("{");
+            tokenBuilder.append("\"oauth_token\":").append("\"").append(oAuthAccessToken.getToken()).append("\"").append(",");
+            tokenBuilder.append("\"oauth_token_secret\":").append("\"").append(oAuthAccessToken.getTokenSecret()).append("\"").append(",");
+            tokenBuilder.append("\"screen_name\":").append("\"").append(oAuthAccessToken.getScreenName()).append("\"").append(",");
+            tokenBuilder.append("\"user_id\":").append("\"").append(oAuthAccessToken.getUserId()).append("\"");
+            tokenBuilder.append("}");
+
+            identity.setToken(tokenBuilder.toString());
+
+            return AuthenticationResponse.end(identity);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Response retrieveToken(FederatedIdentityModel identity) {
+        return Response.ok(identity.getToken()).type(MediaType.APPLICATION_JSON).build();
     }
 }

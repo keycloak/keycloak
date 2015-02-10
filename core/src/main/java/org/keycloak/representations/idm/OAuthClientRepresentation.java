@@ -22,6 +22,7 @@ public class OAuthClientRepresentation {
     protected Boolean directGrantsOnly;
     protected Boolean fullScopeAllowed;
     protected Boolean frontchannelLogout;
+    protected List<String> allowedIdentityProviders;
 
 
     public String getId() {
@@ -134,5 +135,13 @@ public class OAuthClientRepresentation {
 
     public void setFrontchannelLogout(Boolean frontchannelLogout) {
         this.frontchannelLogout = frontchannelLogout;
+    }
+
+    public List<String> getAllowedIdentityProviders() {
+        return this.allowedIdentityProviders;
+    }
+
+    public void setAllowedIdentityProviders(List<String> allowedIdentityProviders) {
+        this.allowedIdentityProviders = allowedIdentityProviders;
     }
 }

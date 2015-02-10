@@ -28,6 +28,8 @@ import java.util.Map;
  */
 public class IdentityProviderModel {
 
+    private String internalId;
+
     /**
      * <p>An user-defined identifier to unique identify an identity provider instance.</p>
      */
@@ -48,6 +50,8 @@ public class IdentityProviderModel {
 
     private boolean updateProfileFirstLogin = true;
 
+    private boolean storeToken;
+
     /**
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
      * in the map are understood by the identity provider implementation.</p>
@@ -58,12 +62,22 @@ public class IdentityProviderModel {
     }
 
     public IdentityProviderModel(IdentityProviderModel model) {
+        this.internalId = model.getInternalId();
         this.providerId = model.getProviderId();
         this.id = model.getId();
         this.name = model.getName();
         this.config = new HashMap<String, String>(model.getConfig());
         this.enabled = model.isEnabled();
         this.updateProfileFirstLogin = model.isUpdateProfileFirstLogin();
+        this.storeToken = model.isStoreToken();
+    }
+
+    public String getInternalId() {
+        return this.internalId;
+    }
+
+    public void setInternalId(String internalId) {
+        this.internalId = internalId;
     }
 
     public String getId() {
@@ -104,6 +118,14 @@ public class IdentityProviderModel {
 
     public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
         this.updateProfileFirstLogin = updateProfileFirstLogin;
+    }
+
+    public boolean isStoreToken() {
+        return this.storeToken;
+    }
+
+    public void setStoreToken(boolean storeToken) {
+        this.storeToken = storeToken;
     }
 
     public Map<String, String> getConfig() {

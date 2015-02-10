@@ -35,7 +35,9 @@ public interface Errors {
     String NOT_ALLOWED = "not_allowed";
 
     String IDENTITY_PROVIDER_NOT_FOUND = "identity_provider_not_found";
-    String SOCIAL_ID_IN_USE = "social_id_in_use";
+    String FEDERATED_IDENTITY_EMAIL_EXISTS = "federated_identity_email_exists";
+    String FEDERATED_IDENTITY_USERNAME_EXISTS = "federated_identity_username_exists";
+    String FEDERATED_IDENTITY_DISABLED_REGISTRATION = "federated_identity_disabled_registration";
     String SSL_REQUIRED = "ssl_required";
 
     String USER_SESSION_NOT_FOUND = "user_session_not_found";

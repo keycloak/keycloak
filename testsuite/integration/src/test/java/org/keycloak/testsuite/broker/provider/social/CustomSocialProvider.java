@@ -20,8 +20,11 @@ package org.keycloak.testsuite.broker.provider.social;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.social.SocialIdentityProvider;
+
+import javax.ws.rs.core.Response;
 
 /**
  * @author pedroigor
@@ -44,6 +47,11 @@ public class CustomSocialProvider extends AbstractIdentityProvider<IdentityProvi
 
     @Override
     public AuthenticationResponse handleResponse(AuthenticationRequest request) {
+        return null;
+    }
+
+    @Override
+    public Response retrieveToken(FederatedIdentityModel identity) {
         return null;
     }
 }

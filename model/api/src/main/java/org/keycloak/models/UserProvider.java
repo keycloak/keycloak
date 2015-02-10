@@ -19,6 +19,7 @@ public interface UserProvider extends Provider {
 
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink);
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider);
+    void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel);
 
     UserModel getUserById(String id, RealmModel realm);
     UserModel getUserByUsername(String username, RealmModel realm);

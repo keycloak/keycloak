@@ -10,9 +10,22 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
         $scope.serverInfo = ServerInfo.get();
     };
 
+    function hasAnyAccess() {
+        var realmAccess = Auth.user && Auth.user['realm_access'];
+        if (realmAccess) {
+            for (var p in realmAccess){
+                return true;
+            }
+            return false;
+        } else {
+            return false;
+        }
+    }
+
     WhoAmI.get(function (data) {
         Auth.user = data;
         Auth.loggedIn = true;
+        Auth.hasAnyAccess = hasAnyAccess();
     });
 
     function getAccess(role) {
@@ -709,7 +722,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/broker/") + realm.realm + "/" ;
 
     $scope.addProvider = function(provider) {
-        $location.url("/realms/" + realm.realm + "/identity-provider-settings/provider/" + provider.id + "/" + provider.id);
+        $location.url("/create/identity-provider/" + realm.realm + "/" + provider.id);
     };
 
     $scope.remove = function() {
@@ -733,7 +746,8 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             });
         } else {
             IdentityProvider.update({
-                realm: $scope.realm.realm
+                realm: $scope.realm.realm,
+                id: $scope.identityProvider.internalId
             }, $scope.identityProvider, function () {
                 $location.url("/realms/" + realm.realm + "/identity-provider-settings");
                 Notifications.success("The " + $scope.identityProvider.name + " provider has been update.");
@@ -769,6 +783,14 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config.wantAuthnRequestsSigned = $scope.getBoolean($scope.identityProvider.config.wantAuthnRequestsSigned);
         } else {
             $scope.identityProvider.config.postBindingResponse = true;
+        }
+    }
+
+    $scope.initKerberosProvider = function() {
+        if (instance && instance.id) {
+            $scope.identityProvider.config.debug = $scope.getBoolean($scope.identityProvider.config.debug);
+        } else {
+            $scope.identityProvider.config.debug = false;
         }
     }
 });

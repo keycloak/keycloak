@@ -867,16 +867,6 @@ public class OpenIDConnectService {
         Response response = pageInitializer.processInput();
         if (response != null) return response;
         ClientSessionModel clientSession = pageInitializer.clientSession;
-
-
-        response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
-        if (response != null) return response;
-
-        if (prompt != null && prompt.equals("none")) {
-            OpenIDConnect oauth = new OpenIDConnect(session, realm, uriInfo);
-            return oauth.cancelLogin(clientSession);
-        }
-
         String accessCode = new ClientSessionCode(realm, clientSession).getCode();
 
         if (idpHint != null && !"".equals(idpHint)) {
@@ -890,6 +880,14 @@ public class OpenIDConnectService {
 
             return Response.temporaryRedirect(
                     Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviderModel, realm, accessCode)).build();
+        }
+
+        response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
+        if (response != null) return response;
+
+        if (prompt != null && prompt.equals("none")) {
+            OpenIDConnect oauth = new OpenIDConnect(session, realm, uriInfo);
+            return oauth.cancelLogin(clientSession);
         }
 
         List<RequiredCredentialModel> requiredCredentials = realm.getRequiredCredentials();

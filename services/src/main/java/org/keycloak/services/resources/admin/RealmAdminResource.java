@@ -447,7 +447,7 @@ public class RealmAdminResource {
     }
 
     @Path("identity-provider")
-    public IdentityProviderResource getIdentityProviderResource() {
-        return new IdentityProviderResource(realm, session);
+    public IdentityProvidersResource getIdentityProviderResource() {
+        return new IdentityProvidersResource(realm, session, this.auth);
     }
 }

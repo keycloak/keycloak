@@ -9,6 +9,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import java.util.Map;
 
@@ -17,6 +19,9 @@ import java.util.Map;
  */
 @Entity
 @Table(name="IDENTITY_PROVIDER")
+@NamedQueries({
+        @NamedQuery(name="findIdentityProviderById", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.id = :id")
+})
 public class IdentityProviderEntity {
 
     @Id
@@ -41,6 +46,9 @@ public class IdentityProviderEntity {
 
     @Column(name="UPDATE_PROFILE_FIRST_LOGIN")
     private boolean updateProfileFirstLogin;
+
+    @Column(name="STORE_TOKEN")
+    private boolean storeToken;
 
     @ElementCollection
     @MapKeyColumn(name="name")
@@ -102,6 +110,14 @@ public class IdentityProviderEntity {
 
     public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
         this.updateProfileFirstLogin = updateProfileFirstLogin;
+    }
+
+    public boolean isStoreToken() {
+        return this.storeToken;
+    }
+
+    public void setStoreToken(boolean storeToken) {
+        this.storeToken = storeToken;
     }
 
     public Map<String, String> getConfig() {

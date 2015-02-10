@@ -96,9 +96,20 @@ public class JpaUserProvider implements UserProvider {
         entity.setIdentityProvider(identity.getIdentityProvider());
         entity.setUserId(identity.getUserId());
         entity.setUserName(identity.getUserName());
+        entity.setToken(identity.getToken());
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         entity.setUser(userEntity);
         em.persist(entity);
+        em.flush();
+    }
+
+    @Override
+    public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        FederatedIdentityEntity federatedIdentity = findFederatedIdentity(federatedUser, federatedIdentityModel.getIdentityProvider());
+
+        federatedIdentity.setToken(federatedIdentityModel.getToken());
+
+        em.persist(federatedIdentity);
         em.flush();
     }
 
@@ -344,7 +355,7 @@ public class JpaUserProvider implements UserProvider {
         List<FederatedIdentityEntity> results = query.getResultList();
         Set<FederatedIdentityModel> set = new HashSet<FederatedIdentityModel>();
         for (FederatedIdentityEntity entity : results) {
-            set.add(new FederatedIdentityModel(entity.getIdentityProvider(), entity.getUserId(), entity.getUserName()));
+            set.add(new FederatedIdentityModel(entity.getIdentityProvider(), entity.getUserId(), entity.getUserName(), entity.getToken()));
         }
         return set;
     }
@@ -352,7 +363,7 @@ public class JpaUserProvider implements UserProvider {
     @Override
     public FederatedIdentityModel getFederatedIdentity(UserModel user, String identityProvider, RealmModel realm) {
         FederatedIdentityEntity entity = findFederatedIdentity(user, identityProvider);
-        return (entity != null) ? new FederatedIdentityModel(entity.getIdentityProvider(), entity.getUserId(), entity.getUserName()) : null;
+        return (entity != null) ? new FederatedIdentityModel(entity.getIdentityProvider(), entity.getUserId(), entity.getUserName(), entity.getToken()) : null;
     }
 
     @Override

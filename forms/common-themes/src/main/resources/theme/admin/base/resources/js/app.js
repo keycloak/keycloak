@@ -160,7 +160,25 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return {};
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
-                    return IdentityProviderFactoryLoader();
+                    return {};
+                }
+            },
+            controller : 'RealmIdentityProviderCtrl'
+        })
+        .when('/create/identity-provider/:realm/:provider_id', {
+            templateUrl : function(params){ return 'partials/realm-identity-provider-' + params.provider_id + '.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                instance : function(IdentityProviderLoader) {
+                    return {};
+                },
+                providerFactory : function(IdentityProviderFactoryLoader) {
+                    return new IdentityProviderFactoryLoader();
                 }
             },
             controller : 'RealmIdentityProviderCtrl'
@@ -464,6 +482,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationCredentialsCtrl'
         })
+        .when('/realms/:realm/applications/:application/identity-provider', {
+            templateUrl : 'partials/application-identity-provider.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                }
+            },
+            controller : 'ApplicationIdentityProviderCtrl'
+        })
         .when('/realms/:realm/applications/:application/clustering', {
             templateUrl : 'partials/application-clustering.html',
             resolve : {
@@ -749,6 +779,18 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'OAuthClientDetailCtrl'
+        })
+        .when('/realms/:realm/oauth-clients/:oauth/identity-provider', {
+            templateUrl : 'partials/oauth-client-identity-provider.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                oauth : function(OAuthClientLoader) {
+                    return OAuthClientLoader();
+                }
+            },
+            controller : 'OAuthClientIdentityProviderCtrl'
         })
         .when('/realms/:realm/oauth-clients', {
             templateUrl : 'partials/oauth-client-list.html',
@@ -1039,6 +1081,48 @@ module.directive('onoffswitch', function() {
             if (!attrs.offText) { attrs.offText = "OFF"; }
 
             element.bind('keydown', function(e){
+                var code = e.keyCode || e.which;
+                if (code === 32 || code === 13) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    $(e.target).find('input').click();
+                }
+            });
+        }
+    }
+});
+
+/**
+ * Directive for presenting an ON-OFF switch for checkbox.
+ * This directive provides some additional capabilities to the default onoffswitch such as:
+ *
+ * - Dynamic values for id and name attributes. Useful if you need to use this directive inside a ng-repeat
+ * - Specific scope to specify the value. Instead of just true or false.
+ *
+ * Usage: <input ng-model="mmm" name="nnn" id="iii" kc-onoffswitch-model [on-text="ooo" off-text="fff"] />
+ */
+module.directive('kc-onoffswitch-model', function() {
+    return {
+        restrict: "EA",
+        replace: true,
+        scope: {
+            name: '=',
+            id: '=',
+            value: '=',
+            ngModel: '=',
+            ngDisabled: '=',
+            kcOnText: '@onText',
+            kcOffText: '@offText'
+        },
+        // TODO - The same code acts differently when put into the templateURL. Find why and move the code there.
+        //templateUrl: "templates/kc-switch.html",
+        template: "<span><div class='onoffswitch' tabindex='0'><input type='checkbox' ng-true-value='{{value}}' ng-model='ngModel' ng-disabled='ngDisabled' class='onoffswitch-checkbox' name='kc{{name}}' id='kc{{id}}'><label for='kc{{id}}' class='onoffswitch-label'><span class='onoffswitch-inner'><span class='onoffswitch-active'>{{kcOnText}}</span><span class='onoffswitch-inactive'>{{kcOffText}}</span></span><span class='onoffswitch-switch'></span></label></div></span>",
+        compile: function(element, attrs) {
+
+            if (!attrs.onText) { attrs.onText = "ON"; }
+            if (!attrs.offText) { attrs.offText = "OFF"; }
+
+            element.bind('keydown click', function(e){
                 var code = e.keyCode || e.which;
                 if (code === 32 || code === 13) {
                     e.stopImmediatePropagation();

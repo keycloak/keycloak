@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Facebook Authentication Example</title>
+
+    <script src="js/lib/angular/angular.js"></script>
+    <script src="js/lib/angular/angular-resource.js"></script>
+    <script src="js/lib/angular/angular-route.js"></script>
+    <script src="js/lib/angular/ui-bootstrap-tpls-0.4.0.js"></script>
+
+    <script src="/auth/js/keycloak.js"></script>
+    <script src="js/app.js" type="text/javascript"></script>
+</head>
+
+<body data-ng-controller="GlobalCtrl">
+
+<div id="content-area" class="col-md-9" role="main">
+    <div id="content">
+        <h2>Hello, {{identity.name}} [<a href="" ng-click="logout()">Sign Out</a>]</h2>
+        <div>
+            <p><b>This is your KeyCloak Profile</b>:</p>
+            <p>
+                <ul>
+                    <li><b>Id</b>: {{identity.sub}}</li>
+                    <li><b>Username</b>: {{identity.preferred_username}}</li>
+                    <li><b>Email</b>: {{identity.email}}</li>
+                    <li><b>Full Name</b>: {{identity.name}}</li>
+                </ul>
+            </p>
+        </div>
+        <div>
+            <p><button type="submit" data-ng-click="loadSocialProfile()">Load your social profile</button></p>
+
+            <div data-ng-show="socialProfile">
+                <p><b>This is your Facebook Profile</b>:</p>
+                <p>
+                    <ul>
+                        <li><b>Id</b>: {{socialProfile.id}}</li>
+                        <li><b>First Name</b>: {{socialProfile.first_name}}</li>
+                        <li><b>Last Name</b>: {{socialProfile.last_name}}</li>
+                        <li><b>Gender</b>: {{socialProfile.gender}}</li>
+                        <li><b>Profile Link</b>: <a href="{{socialProfile.link}}">{{socialProfile.link}}</a></li>
+                    </ul>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

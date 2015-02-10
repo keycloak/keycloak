@@ -14,25 +14,35 @@
                         <span>
                         Personal Info:&nbsp;
                             <#list oauth.claimsRequested as claim>
-                                ${claim}&nbsp;
+                            ${claim}&nbsp;
                             </#list>
                         </span>
                     </li>
                 </#if>
-                <#list oauth.realmRolesRequested as role>
+                <#if oauth.accessRequestMessage??>
                     <li>
-                        <span><#if role.description??>${role.description}<#else>${role.name}</#if></span>
+                        <span>
+                            ${oauth.accessRequestMessage}
+                        </span>
                     </li>
-                </#list>
-
-                <#list oauth.resourceRolesRequested?keys as resource>
-                    <#list oauth.resourceRolesRequested[resource] as role>
+                </#if>
+                <#if oauth.realmRolesRequested??>
+                    <#list oauth.realmRolesRequested as role>
                         <li>
-                            <span class="kc-role"><#if role.description??>${role.description}<#else>${role.name}</#if></span>
-                            <span class="kc-resource">in <strong>${resource}</strong></span>
+                            <span><#if role.description??>${role.description}<#else>${role.name}</#if></span>
                         </li>
                     </#list>
-                </#list>
+                </#if>
+                <#if oauth.resourceRolesRequested??>
+                    <#list oauth.resourceRolesRequested?keys as resource>
+                        <#list oauth.resourceRolesRequested[resource] as role>
+                            <li>
+                                <span class="kc-role"><#if role.description??>${role.description}<#else>${role.name}</#if></span>
+                                <span class="kc-resource">in <strong>${resource}</strong></span>
+                            </li>
+                        </#list>
+                    </#list>
+                </#if>
             </ul>
 
             <form class="form-actions" action="${url.oauthAction}" method="POST">

@@ -17,8 +17,11 @@
  */
 package org.keycloak.broker.provider;
 
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.provider.Provider;
+
+import javax.ws.rs.core.Response;
 
 /**
  * @author Pedro Igor
@@ -64,4 +67,6 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      * @return
      */
     AuthenticationResponse handleResponse(AuthenticationRequest request);
+
+    Response retrieveToken(FederatedIdentityModel identity);
 }
