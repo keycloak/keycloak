@@ -3,6 +3,7 @@ package org.keycloak.broker.kerberos;
 import java.net.URI;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -14,6 +15,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.FederatedIdentityModel;
 
 /**
@@ -54,16 +56,16 @@ public class KerberosIdentityProvider extends AbstractIdentityProvider<KerberosI
 
         // Case when we don't yet have any Negotiate header
         if (authHeader == null) {
-            return sendNegotiateResponse(null);
+            return sendNegotiateResponse(request, null);
         }
 
         String[] tokens = authHeader.split(" ");
         if (tokens.length != 2) {
             logger.warn("Invalid length of tokens: " + tokens.length);
-            return sendNegotiateResponse(null);
+            return sendNegotiateResponse(request, null);
         } else if (!KerberosConstants.NEGOTIATE.equalsIgnoreCase(tokens[0])) {
             logger.warn("Unknown scheme " + tokens[0]);
-            return sendNegotiateResponse(null);
+            return sendNegotiateResponse(request, null);
         } else {
             String spnegoToken = tokens[1];
             SPNEGOAuthenticator spnegoAuthenticator = createSPNEGOAuthenticator(spnegoToken);
@@ -73,7 +75,7 @@ public class KerberosIdentityProvider extends AbstractIdentityProvider<KerberosI
                 FederatedIdentity federatedIdentity = getFederatedIdentity(spnegoAuthenticator);
                 return AuthenticationResponse.end(federatedIdentity);
             }  else {
-                return sendNegotiateResponse(spnegoAuthenticator.getResponseToken());
+                return sendNegotiateResponse(request, spnegoAuthenticator.getResponseToken());
             }
         }
     }
@@ -94,16 +96,22 @@ public class KerberosIdentityProvider extends AbstractIdentityProvider<KerberosI
      * @param negotiateToken token to be send back in response or null if just "WWW-Authenticate: Negotiate" should be sent
      * @return AuthenticationResponse
      */
-    protected AuthenticationResponse sendNegotiateResponse(String negotiateToken) {
+    protected AuthenticationResponse sendNegotiateResponse(AuthenticationRequest request, String negotiateToken) {
         String negotiateHeader = negotiateToken == null ? KerberosConstants.NEGOTIATE : KerberosConstants.NEGOTIATE + " " + negotiateToken;
 
         if (logger.isTraceEnabled()) {
             logger.trace("Sending back " + HttpHeaders.WWW_AUTHENTICATE + ": " + negotiateHeader);
         }
 
-        Response response = Response.status(Response.Status.UNAUTHORIZED)
-                .header(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
-                .build();
+        // Error page is rendered just if browser is unable to send Authorization header with SPNEGO token
+        Response response = request.getSession().getProvider(LoginFormsProvider.class)
+                .setRealm(request.getRealm())
+                .setUriInfo(request.getUriInfo())
+                .setError("errorKerberosLogin")
+                .setStatus(Response.Status.UNAUTHORIZED)
+                .createErrorPage();
+
+        response.getMetadata().putSingle(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader);
         return AuthenticationResponse.fromResponse(response);
     }
 
