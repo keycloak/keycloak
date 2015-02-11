@@ -275,8 +275,8 @@ public class LoginActionsService {
         ClientSessionModel clientSession = clientCode.getClientSession();
         if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientSession.getUserSession() != null) {
             clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
-            event.client(clientSession.getClient()).error(Errors.INVALID_CODE);
-            return Flows.forms(this.session, realm, clientSession.getClient(), uriInfo).setError(Messages.INVALID_USER)
+            event.client(clientSession.getClient()).error(Errors.EXPIRED_CODE);
+            return Flows.forms(this.session, realm, clientSession.getClient(), uriInfo).setError(Messages.EXPIRED_CODE)
                     .setClientSessionCode(clientCode.getCode())
                     .createLogin();
         }
