@@ -22,4 +22,9 @@ public class KerberosConstants {
      */
     public static final String SPNEGO_OID = "1.3.6.1.5.5.2";
 
+    /**
+     * OID of Kerberos v5 mechanism. See http://www.oid-info.com/get/1.2.840.113554.1.2.2
+     */
+    public static final String KRB5_OID = "1.2.840.113554.1.2.2";
+
 }

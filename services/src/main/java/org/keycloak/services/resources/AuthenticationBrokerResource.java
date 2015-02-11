@@ -422,7 +422,7 @@ public class AuthenticationBrokerResource {
     }
 
     private AuthenticationRequest createAuthenticationRequest(String providerId, String code, RealmModel realm, ClientSessionModel clientSession) {
-        return new AuthenticationRequest(realm, clientSession, this.request, this.uriInfo, code, getRedirectUri(providerId, realm));
+        return new AuthenticationRequest(this.session, realm, clientSession, this.request, this.uriInfo, code, getRedirectUri(providerId, realm));
     }
 
     private String getRedirectUri(String providerId, RealmModel realm) {
