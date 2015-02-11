@@ -39,6 +39,8 @@ public class Messages {
 
     public static final String INVALID_USER = "invalidUser";
 
+    public static final String EXPIRED_CODE = "expiredCode";
+
     public static final String READ_ONLY_USER = "readOnlyUser";
 
     public static final String READ_ONLY_PASSWORD = "readOnlyPassword";

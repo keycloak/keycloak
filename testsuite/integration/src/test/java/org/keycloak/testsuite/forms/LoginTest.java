@@ -42,6 +42,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -274,6 +275,24 @@ public class LoginTest {
         Assert.assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
 
         events.expectLogin().error("rejected_by_user").user((String) null).session((String) null).removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
+    }
+
+    // KEYCLOAK-1037
+    @Test
+    public void loginExpiredCode() {
+        try {
+            loginPage.open();
+            Time.setOffset(5000);
+            loginPage.login("login@test.com", "password");
+
+            loginPage.assertCurrent();
+            Assert.assertEquals("Login timeout or unknown action. Please login again", loginPage.getError());
+
+            events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails().assertEvent();
+
+        } finally {
+            Time.setOffset(0);
+        }
     }
 
 }
