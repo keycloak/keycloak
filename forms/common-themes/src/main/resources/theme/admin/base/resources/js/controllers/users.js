@@ -133,7 +133,6 @@ module.controller('UserFederatedIdentityCtrl', function($scope, realm, user, fed
     $scope.realm = realm;
     $scope.user = user;
     $scope.federatedIdentities = federatedIdentities;
-    console.log('showing federated identities of user');
 });
 
 

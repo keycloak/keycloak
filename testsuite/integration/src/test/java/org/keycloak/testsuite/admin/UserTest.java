@@ -114,7 +114,7 @@ public class UserTest extends AbstractClientTest {
     }
 
     @Test
-    public void addSocialLink() {
+    public void addFederatedIdentity() {
         createUser();
 
         UserResource user = realm.users().get("user1");
@@ -123,19 +123,19 @@ public class UserTest extends AbstractClientTest {
         link.setUserId("social-user-id");
         link.setUserName("social-username");
 
-        Response response = user.addSocialLink("social-provider-id", link);
+        Response response = user.addFederatedIdentity("social-provider-id", link);
         assertEquals(204, response.getStatus());
     }
 
     @Test
     @Ignore("Refactor based on KEYCLOAK-883")
-    public void getSocialLinks() {
-        addSocialLink();
+    public void getFederatedIdentities() {
+        addFederatedIdentity();
 
         UserResource user = realm.users().get("user1");
-        assertEquals(1, user.getSocialLinks().size());
+        assertEquals(1, user.getFederatedIdentity().size());
 
-        FederatedIdentityRepresentation link = user.getSocialLinks().get(0);
+        FederatedIdentityRepresentation link = user.getFederatedIdentity().get(0);
         assertEquals("social-provider-id", link.getIdentityProvider());
         assertEquals("social-user-id", link.getUserId());
         assertEquals("social-username", link.getUserName());
@@ -143,15 +143,15 @@ public class UserTest extends AbstractClientTest {
 
     @Test
     @Ignore("Refactor based on KEYCLOAK-883")
-    public void removeSocialLink() {
-        addSocialLink();
+    public void removeFederatedIdentity() {
+        addFederatedIdentity();
 
         UserResource user = realm.users().get("user1");
-        assertEquals(1, user.getSocialLinks().size());
+        assertEquals(1, user.getFederatedIdentity().size());
 
-        user.removeSocialLink("social-provider-id");
+        user.removeFederatedIdentity("social-provider-id");
 
-        assertEquals(0, user.getSocialLinks().size());
+        assertEquals(0, user.getFederatedIdentity().size());
     }
 
     @Test

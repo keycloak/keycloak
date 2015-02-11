@@ -54,16 +54,16 @@ public interface UserResource {
     public List<UserSessionRepresentation> getUserSessions();
 
     @GET
-    @Path("social-links")
-    public List<FederatedIdentityRepresentation> getSocialLinks();
+    @Path("federated-identity")
+    public List<FederatedIdentityRepresentation> getFederatedIdentity();
 
     @POST
-    @Path("social-links/{provider}")
-    public Response addSocialLink(@PathParam("provider") String provider, FederatedIdentityRepresentation rep);
+    @Path("federated-identity/{provider}")
+    public Response addFederatedIdentity(@PathParam("provider") String provider, FederatedIdentityRepresentation rep);
 
-    @Path("social-links/{provider}")
+    @Path("federated-identity/{provider}")
     @DELETE
-    public void removeSocialLink(final @PathParam("provider") String provider);
+    public void removeFederatedIdentity(final @PathParam("provider") String provider);
 
     @Path("role-mappings")
     public RoleMappingResource roles();
