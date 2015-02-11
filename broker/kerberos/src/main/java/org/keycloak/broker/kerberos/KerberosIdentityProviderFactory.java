@@ -1,6 +1,5 @@
 package org.keycloak.broker.kerberos;
 
-import org.keycloak.broker.kerberos.KerberosIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 

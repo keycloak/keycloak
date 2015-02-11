@@ -30,8 +30,6 @@ public class KerberosIdentityProvider extends AbstractIdentityProvider<KerberosI
 
     @Override
     public AuthenticationResponse handleRequest(AuthenticationRequest request) {
-        // TODO: trace
-        logger.info("handleRequest");
 
         // Just redirect to handleResponse for now
         URI redirectUri = UriBuilder.fromUri(request.getRedirectUri()).queryParam(KerberosConstants.RELAY_STATE_PARAM, request.getState()).build();
@@ -99,6 +97,10 @@ public class KerberosIdentityProvider extends AbstractIdentityProvider<KerberosI
     protected AuthenticationResponse sendNegotiateResponse(String negotiateToken) {
         String negotiateHeader = negotiateToken == null ? KerberosConstants.NEGOTIATE : KerberosConstants.NEGOTIATE + " " + negotiateToken;
 
+        if (logger.isTraceEnabled()) {
+            logger.trace("Sending back " + HttpHeaders.WWW_AUTHENTICATE + ": " + negotiateHeader);
+        }
+
         Response response = Response.status(Response.Status.UNAUTHORIZED)
                 .header(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
                 .build();
@@ -111,7 +113,7 @@ public class KerberosIdentityProvider extends AbstractIdentityProvider<KerberosI
         FederatedIdentity user = new FederatedIdentity(kerberosUsername);
         user.setUsername(kerberosUsername);
 
-        // Just guessing email, but likely can't do anything better...
+        // Just guessing email
         String[] tokens = kerberosUsername.split("@");
         String email = tokens[0] + "@" + tokens[1].toLowerCase();
         user.setEmail(email);

@@ -1,6 +1,7 @@
 package org.keycloak.broker.kerberos.impl;
 
 import java.io.IOException;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 import javax.security.auth.Subject;
@@ -10,16 +11,14 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.Oid;
 import org.jboss.logging.Logger;
-import org.keycloak.broker.kerberos.KerberosConstants;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class SPNEGOAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(SPNEGOAuthenticator.class);
+    private static final Logger log = Logger.getLogger(SPNEGOAuthenticator.class);
 
     private static final GSSManager GSS_MANAGER = GSSManager.getInstance();
 
@@ -37,18 +36,21 @@ public class SPNEGOAuthenticator {
     }
 
     public void authenticate() {
-        // TODO: debug
-        logger.info("SPNEGO Login with token: " + spnegoToken);
+        if (log.isTraceEnabled()) {
+            log.trace("SPNEGO Login with token: " + spnegoToken);
+        }
 
         try {
             Subject serverSubject = kerberosSubjectAuthenticator.authenticateServerSubject();
             authenticated = Subject.doAs(serverSubject, new AcceptSecContext());
         } catch (Exception e) {
-            logger.warn("SPNEGO login failed: " + e.getMessage());
-
-            // TODO: debug and check if it is shown in the log
-            if (logger.isInfoEnabled()) {
-                logger.info("SPNEGO login failed: " + e.getMessage(), e);
+            String message = e.getMessage();
+            if (e instanceof PrivilegedActionException && e.getCause() != null) {
+                message = e.getCause().getMessage();
+            }
+            log.warn("SPNEGO login failed: " + message);
+            if (log.isDebugEnabled()) {
+                log.debug("SPNEGO login failed: " + message, e);
             }
         } finally {
             kerberosSubjectAuthenticator.logoutServerSubject();
@@ -77,18 +79,21 @@ public class SPNEGOAuthenticator {
         public Boolean run() throws Exception {
             GSSContext gssContext = null;
             try {
-                // TODO: debug
-                logger.info("Going to establish security context");
+                if (log.isTraceEnabled()) {
+                    log.trace("Going to establish security context");
+                }
+
                 gssContext = establishContext();
                 logAuthDetails(gssContext);
 
-                // What should be done with delegation credential? Figure out if there are use-cases for storing it as claims in FederatedIdentity
-                if (gssContext.getCredDelegState()) {
-                    delegationCredential = gssContext.getDelegCred();
-                }
-
                 if (gssContext.isEstablished()) {
                     principal = gssContext.getSrcName().toString();
+
+                    // What should be done with delegation credential? Figure out if there are use-cases for storing it as claims in FederatedIdentity
+                    if (gssContext.getCredDelegState()) {
+                        delegationCredential = gssContext.getDelegCred();
+                    }
+
                     return true;
                 } else {
                     return false;
@@ -103,12 +108,7 @@ public class SPNEGOAuthenticator {
     }
 
     protected GSSContext establishContext() throws GSSException, IOException {
-        Oid spnegoOid = new Oid(KerberosConstants.SPNEGO_OID);
-        GSSCredential credential = GSS_MANAGER.createCredential(null,
-                GSSCredential.DEFAULT_LIFETIME,
-                spnegoOid,
-                GSSCredential.ACCEPT_ONLY);
-        GSSContext gssContext = GSS_MANAGER.createContext(credential);
+        GSSContext gssContext = GSS_MANAGER.createContext((GSSCredential) null);
 
         byte[] inputToken = Base64.decode(spnegoToken);
         byte[] respToken = gssContext.acceptSecContext(inputToken, 0, inputToken.length);
@@ -118,20 +118,18 @@ public class SPNEGOAuthenticator {
     }
 
     protected void logAuthDetails(GSSContext gssContext) throws GSSException {
-
-        // TODO: debug
-        if (logger.isInfoEnabled()) {
+        if (log.isDebugEnabled()) {
             String message = new StringBuilder("SPNEGO Security context accepted with token: " + responseToken)
-                    .append(", established: " + gssContext.isEstablished())
-                    .append(", credDelegState: " + gssContext.getCredDelegState())
-                    .append(", mutualAuthState: " + gssContext.getMutualAuthState())
-                    .append(", lifetime: " + gssContext.getLifetime())
-                    .append(", confState: " + gssContext.getConfState())
-                    .append(", integState: " + gssContext.getIntegState())
-                    .append(", srcName: " + gssContext.getSrcName())
-                    .append(", targName: " + gssContext.getTargName())
+                    .append(", established: ").append(gssContext.isEstablished())
+                    .append(", credDelegState: ").append(gssContext.getCredDelegState())
+                    .append(", mutualAuthState: ").append(gssContext.getMutualAuthState())
+                    .append(", lifetime: ").append(gssContext.getLifetime())
+                    .append(", confState: ").append(gssContext.getConfState())
+                    .append(", integState: ").append(gssContext.getIntegState())
+                    .append(", srcName: ").append(gssContext.getSrcName())
+                    .append(", targName: ").append(gssContext.getTargName())
                     .toString();
-            logger.info(message);
+            log.debug(message);
         }
     }
 
