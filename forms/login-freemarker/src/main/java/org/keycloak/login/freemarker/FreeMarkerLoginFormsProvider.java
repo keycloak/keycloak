@@ -53,7 +53,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private String message;
     private String accessCode;
-    private Response.Status status = Response.Status.OK;
+    private Response.Status status;
     private List<RoleModel> realmRolesRequested;
     private MultivaluedMap<String, RoleModel> resourceRolesRequested;
     private MultivaluedMap<String, String> queryParams;
@@ -218,6 +218,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
         }
 
+        if (status == null) {
+            status = Response.Status.OK;
+        }
+
         try {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
@@ -246,7 +250,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     public Response createErrorPage() {
-        setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+        if (status == null) {
+            status = Response.Status.INTERNAL_SERVER_ERROR;
+        }
         return createResponse(LoginFormsPages.ERROR);
     }
 

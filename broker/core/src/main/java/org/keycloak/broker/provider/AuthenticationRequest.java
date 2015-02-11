@@ -19,6 +19,7 @@ package org.keycloak.broker.provider;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 import javax.ws.rs.core.UriInfo;
@@ -28,6 +29,7 @@ import javax.ws.rs.core.UriInfo;
  */
 public class AuthenticationRequest {
 
+    private final KeycloakSession session;
     private final UriInfo uriInfo;
     private final String state;
     private final HttpRequest httpRequest;
@@ -35,13 +37,18 @@ public class AuthenticationRequest {
     private final String redirectUri;
     private final ClientSessionModel clientSession;
 
-    public AuthenticationRequest(RealmModel realm, ClientSessionModel clientSession, HttpRequest httpRequest, UriInfo uriInfo, String state, String redirectUri) {
+    public AuthenticationRequest(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession, HttpRequest httpRequest, UriInfo uriInfo, String state, String redirectUri) {
+        this.session = session;
         this.realm = realm;
         this.httpRequest = httpRequest;
         this.uriInfo = uriInfo;
         this.state = state;
         this.redirectUri = redirectUri;
         this.clientSession = clientSession;
+    }
+
+    public KeycloakSession getSession() {
+        return session;
     }
 
     public UriInfo getUriInfo() {

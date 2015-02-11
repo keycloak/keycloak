@@ -264,7 +264,7 @@ public class UsersResource {
 
         for (FederatedIdentityModel identity : identities) {
             for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
-                if (identityProviderModel.getProviderId().equals(identity.getIdentityProvider())) {
+                if (identityProviderModel.getId().equals(identity.getIdentityProvider())) {
                     FederatedIdentityRepresentation rep = ModelToRepresentation.toRepresentation(identity);
 
                     rep.setIdentityProvider(identityProviderModel.getName());
@@ -276,10 +276,10 @@ public class UsersResource {
         return result;
     }
 
-    @Path("{username}/social-links/{provider}")
+    @Path("{username}/federated-identity/{provider}")
     @POST
     @NoCache
-    public Response addSocialLink(final @PathParam("username") String username, final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
+    public Response addFederatedIdentity(final @PathParam("username") String username, final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
         auth.requireManage();
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
@@ -295,10 +295,10 @@ public class UsersResource {
         return Response.noContent().build();
     }
 
-    @Path("{username}/social-links/{provider}")
+    @Path("{username}/federated-identity/{provider}")
     @DELETE
     @NoCache
-    public void removeSocialLink(final @PathParam("username") String username, final @PathParam("provider") String provider) {
+    public void removeFederatedIdentity(final @PathParam("username") String username, final @PathParam("provider") String provider) {
         auth.requireManage();
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
