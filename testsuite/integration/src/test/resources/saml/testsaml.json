@@ -123,6 +123,8 @@
                 "http://localhost:8081/sales-post-sig-email/*"
             ],
             "attributes": {
+                "saml_force_name_id_format": "true",
+                "saml_name_id_format": "email",
                 "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post-sig-email",
                 "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post-sig-email",
                 "saml_single_logout_service_url_post": "http://localhost:8081/sales-post-sig-email",
@@ -205,11 +207,8 @@
             "redirectUris": [
                 "http://localhost:8081/employee-sig/*"
             ],
+            "adminUrl": "http://localhost:8081/employee-sig",
             "attributes": {
-                "saml_assertion_consumer_url_post": "http://localhost:8081/employee-sig",
-                "saml_assertion_consumer_url_redirect": "http://localhost:8081/employee-sig",
-                "saml_single_logout_service_url_post": "http://localhost:8081/employee-sig",
-                "saml_single_logout_service_url_redirect": "http://localhost:8081/employee-sig",
                 "saml.server.signature": "true",
                 "saml.client.signature": "true",
                 "saml.signature.algorithm": "RSA_SHA1",

@@ -245,7 +245,7 @@ public class SamlService {
 
             // Handle NameIDPolicy from SP
             NameIDPolicyType nameIdPolicy = requestAbstractType.getNameIDPolicy();
-            if(nameIdPolicy != null) {
+            if(nameIdPolicy != null && !SamlProtocol.forceNameIdFormat(client)) {
                 String nameIdFormat = nameIdPolicy.getFormat().toString();
                 // TODO: Handle AllowCreate too, relevant for persistent NameID.
                 if(isSupportedNameIdFormat(nameIdFormat)) {
@@ -254,8 +254,6 @@ public class SamlService {
                     event.error(Errors.INVALID_TOKEN);
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unsupported NameIDFormat.");
                 }
-            } else {
-                clientSession.setNote(GeneralConstants.NAMEID_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get());
             }
 
             Response response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);

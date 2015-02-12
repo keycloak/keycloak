@@ -21,7 +21,7 @@
                 class="org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler"/>
         <Handler
                 class="org.picketlink.identity.federation.web.handlers.saml2.SAML2AuthenticationHandler">
-            <Option Key="NAMEID_FORMAT" Value="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"/>
+            <!-- <Option Key="NAMEID_FORMAT" Value="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"/> -->
         </Handler>
         <Handler
                 class="org.picketlink.identity.federation.web.handlers.saml2.RolesGenerationHandler"/>

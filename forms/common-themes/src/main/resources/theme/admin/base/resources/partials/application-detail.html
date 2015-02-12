@@ -57,20 +57,6 @@
                     <span tooltip-placement="right" tooltip="'Confidential' applications require a secret to initiate login protocol.  'Public' clients do not require a secret.  'Bearer-only' applications are web services that never initiate a login." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="logoutPostBinding">Assertion Consumer Service POST Binding URL</label>
-                    <div class="col-sm-6">
-                        <input ng-model="application.attributes.saml_assertion_consumer_service_url_post" class="form-control" type="text" name="logoutPostBinding" id="logoutPostBinding" />
-                    </div>
-                    <span tooltip-placement="right" tooltip="SAML POST Binding URL for the application's single logout service (login responses.  If you leave this blank then the consumer URL is expected be sent with authn request from the SP.  This sent URL must be verified via the redirect URI pattern config option below." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="logoutPostBinding">Assertion Consumer Service Redirect Binding URL</label>
-                    <div class="col-sm-6">
-                        <input ng-model="application.attributes.saml_assertion_consumer_service_url_redirect" class="form-control" type="text" name="logoutRedirectBinding" id="logoutRedirectBinding" />
-                    </div>
-                    <span tooltip-placement="right" tooltip="SAML Redirect Binding URL for the application's assertion consumer service (login responses).  If you leave this blank then the consumer URL is expected be sent with authn request from the SP.  This sent URL must be verified via the redirect URI pattern config option below." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="samlServerSignature">Include AuthnStatement</label>
                     <div class="col-sm-6">
                         <input ng-model="samlAuthnStatement" ng-click="switchChange()" name="samlAuthnStatement" id="samlAuthnStatement" onoffswitch />
@@ -99,7 +85,7 @@
                     <span tooltip-placement="right" tooltip="Should assertions inside SAML documents be signed?  This setting isn't needed if document is already being signed." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-show="(samlAssertionSignature || samlServerSignature) && protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="protocol">Signature Algorithm</label>
+                    <label class="col-sm-2 control-label" for="signatureAlgorithm">Signature Algorithm</label>
                     <div class="col-sm-6">
                         <div class="select-kc">
                             <select id="signatureAlgorithm"
@@ -140,21 +126,27 @@
                     <span tooltip-placement="right" tooltip="When true, logout requires a browser redirect to application.  When false, server performs a background invocation for logout." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="logoutPostBinding">Logout Service POST Binding URL</label>
+                    <label class="col-sm-2 control-label" for="samlForceNameIdFormat">Force Name ID Format</label>
                     <div class="col-sm-6">
-                        <input ng-model="application.attributes.saml_single_logout_service_url_post" class="form-control" type="text" name="logoutPostBinding" id="logoutPostBinding" />
+                        <input ng-model="samlForceNameIdFormat" ng-click="switchChange()" name="samlForceNameIdFormat" id="samlForceNameIdFormat" onoffswitch />
                     </div>
-                    <span tooltip-placement="right" tooltip="SAML POST Binding URL for the application's single logout service.  You can leave this blank if you are using a differen binding" class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Ignore requested NameID subject format and use admin console configured one." class="fa fa-info-circle"></span>
                 </div>
-                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="logoutPostBinding">Logout Service Redirect Binding URL</label>
+                <div class="form-group" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlNameIdFormat">Name ID Format</label>
                     <div class="col-sm-6">
-                        <input ng-model="application.attributes.saml_single_logout_service_url_redirect" class="form-control" type="text" name="logoutRedirectBinding" id="logoutRedirectBinding" />
+                        <div class="select-kc">
+                            <select id="samlNameIdFormat"
+                                    ng-change="changeNameIdFormat()"
+                                    ng-model="nameIdFormat"
+                                    ng-options="format for format in nameIdFormats">
+                            </select>
+                        </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="SAML Redirect Binding URL for the application's single logout service.  You can leave this blank if you are using a different binding." class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="The name ID format to use for the subject." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="!application.bearerOnly">
-                    <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI <span class="required" data-ng-show="create && protocol != 'saml'">*</span></label>
+                    <label class="col-sm-2 control-label" for="newRedirectUri">Valid Redirect URIs <span class="required" data-ng-show="create && protocol != 'saml'">*</span></label>
                     <div class="col-sm-6 multiple" ng-repeat="redirectUri in application.redirectUris">
                         <div class="input-group kc-item-deletable">
                             <input class="form-control" type="text" data-ng-class="{'input-below':!$first}"
@@ -175,7 +167,7 @@
                             </span>
                         </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="Valid URI pattern a browser can redirect to after a successful login or logout.  Simple wildcards are allowed i.e. 'http://example.com/*'.  Relative path can be specified too i.e. /my/relative/path/*.  Relative paths will generate a redirect URI using the request's host and port." class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Valid URI pattern a browser can redirect to after a successful login or logout.  Simple wildcards are allowed i.e. 'http://example.com/*'.  Relative path can be specified too i.e. /my/relative/path/*.  Relative paths will generate a redirect URI using the request's host and port.  For SAML, you must set valid URI patterns if you are relying on the consumer service URL embedded with the login request." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-show="!application.bearerOnly && !create">
                     <label class="col-sm-2 control-label" for="baseUrl">Default Redirect URL</label>
@@ -183,7 +175,7 @@
                         <input class="form-control" type="text" name="baseUrl" id="baseUrl"
                                data-ng-model="application.baseUrl">
                     </div>
-                    <span tooltip-placement="right" tooltip="Default URL to use when no redirect URI is specified.  This URL will also be used when the auth server needs to link to the application for any reason." class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Default URL to use when the auth server needs to redirect back to the application.  This URL will also be used when the auth server needs to link to the application for any reason." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-hide="create || protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="adminUrl">Admin URL</label>
@@ -192,6 +184,14 @@
                                data-ng-model="application.adminUrl">
                     </div>
                     <span tooltip-placement="right" tooltip="URL to the admin interface of the application.  Set this if the application supports the adapter REST API.  This REST API allows the auth server to push revocation policies and other adminstrative tasks.  Usually this is set to the base URL of the application." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="masterSamlUrl">Master SAML Processing URL</label>
+                    <div class="col-sm-6">
+                        <input class="form-control" type="text" name="masterSamlUrl" id="masterSamlUrl"
+                               data-ng-model="application.adminUrl">
+                    </div>
+                    <span tooltip-placement="right" tooltip="If configured, this URL will be used for every binding to both the SP's Assertion Consumer and Single Logout Services.  This can be individually overiden for each binding and service in the Fine Grain SAML Endpoint Configuration." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-show="!application.bearerOnly && !create && protocol == 'openid-connect'">
                     <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
@@ -216,6 +216,37 @@
                         </div>
                     </div>
                     <span tooltip-placement="right" tooltip="Allowed CORS origins.  Only useful if the client adapter has CORS processing enabled." class="fa fa-info-circle"></span>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend collapsed><span class="text">Fine Grain SAML Endpoint Configuration</span>  <span tooltip-placement="right" tooltip="Expand this section to configure exact URLs for Assertion Consumer and Single Logout Service." class="fa fa-info-circle"></span></legend>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="consumerServicePost">Assertion Consumer Service POST Binding URL</label>
+                    <div class="col-sm-6">
+                        <input ng-model="application.attributes.saml_assertion_consumer_url_post" class="form-control" type="text" name="consumerServicePost" id="consumerServicePost" />
+                    </div>
+                    <span tooltip-placement="right" tooltip="SAML POST Binding URL for the application's assertion consumer service (login responses).  You can leave this blank if you do not have a URL for this binding." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="consumerServiceRedirect">Assertion Consumer Service Redirect Binding URL</label>
+                    <div class="col-sm-6">
+                        <input ng-model="application.attributes.saml_assertion_consumer_url_redirect" class="form-control" type="text" name="consumerServiceRedirect" id="consumerServiceRedirect" />
+                    </div>
+                    <span tooltip-placement="right" tooltip="SAML Redirect Binding URL for the application's assertion consumer service (login responses).  You can leave this blank if you do not have a URL for this binding." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="logoutPostBinding">Logout Service POST Binding URL</label>
+                    <div class="col-sm-6">
+                        <input ng-model="application.attributes.saml_single_logout_service_url_post" class="form-control" type="text" name="logoutPostBinding" id="logoutPostBinding" />
+                    </div>
+                    <span tooltip-placement="right" tooltip="SAML POST Binding URL for the application's single logout service.  You can leave this blank if you are using a different binding" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="logoutPostBinding">Logout Service Redirect Binding URL</label>
+                    <div class="col-sm-6">
+                        <input ng-model="application.attributes.saml_single_logout_service_url_redirect" class="form-control" type="text" name="logoutRedirectBinding" id="logoutRedirectBinding" />
+                    </div>
+                    <span tooltip-placement="right" tooltip="SAML Redirect Binding URL for the application's single logout service.  You can leave this blank if you are using a different binding." class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
 
