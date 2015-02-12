@@ -96,12 +96,78 @@
                     </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+                <term>Force Name ID Format</term>
+                <listitem>
+                    <para>
+                        If the request has a name ID policy, ignore it and used the value configured in the admin console
+                        under Name ID Format
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Name ID Format</term>
+                <listitem>
+                    <para>
+                        Name ID Format for the subject.  If no name ID policy is specified in the request or if the
+                        Force Name ID Format attribute is true, this value is used.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Master SAML Processing URL</term>
+                <listitem>
+                    <para>
+                        This URL will be used for all SAML requests and responsed directed to the SP.  It will be used
+                        as the Assertion Consumer Service URL and the Single Logout Service URL.  If a login request
+                        contains the Assertion Consumer Service URL, that will take precedence, but this URL must be valided
+                        by a registered Valid Redirect URI pattern
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Assertion Consumer Service POST Binding URL</term>
+                <listitem>
+                    <para>
+                        POST Binding URL for the Assertion Consumer Service.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Assertion Consumer Service Redirect Binding URL</term>
+                <listitem>
+                    <para>
+                        Redirect Binding URL for the Assertion Consumer Service.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Logout Service POST Binding URL</term>
+                <listitem>
+                    <para>
+                        POST Binding URL for the Logout Service.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Logout Service Redirect Binding URL</term>
+                <listitem>
+                    <para>
+                        Redirect Binding URL for the Logout Service.
+                    </para>
+                </listitem>
+            </varlistentry>
         </variablelist>
     </para>
     <para>
-        You have to specify an admin URL if you want logout to work.  This should be a URL that will except single logout
-        requests from the Keycloak server.  You should also specify a default redirect url.  Keycloak will redirect to this
-        url after single logout is complete.
+        For login to work, Keycloak needs to be able to resolve the URL for the Assertion Consumer Service of the SP.  If
+        you are relying on the SP to provide this URL in the login request, then you must register valid redirect uri patterns
+        so that this URL can be validated.  You can set the Master SAML Processing URL as well, or alternatively, you can
+        specify the Assertion Consumer Service URL per binding.
+    </para>
+    <para>
+        For logout to work, you must specify a Master SAML Processing URL, or the Loging Service URL for the binding
+        you want Keycloak to use.
     </para>
     <para>
         One thing to note is that roles are not treated as a hierarchy.  So, any role mappings will just be added

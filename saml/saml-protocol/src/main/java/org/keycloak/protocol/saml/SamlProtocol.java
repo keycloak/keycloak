@@ -51,6 +51,8 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE = "saml_assertion_consumer_url_redirect";
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE = "saml_single_logout_service_url_post";
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE = "saml_single_logout_service_url_redirect";
+    public static final String SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE = "saml_force_name_id_format";
+    public static final String SAML_NAME_ID_FORMAT_ATTRIBUTE = "saml_name_id_format";
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_POST_BINDING = "post";
@@ -175,8 +177,28 @@ public class SamlProtocol implements LoginProtocol {
 
     protected String getNameIdFormat(ClientSessionModel clientSession) {
         String nameIdFormat = clientSession.getNote(GeneralConstants.NAMEID_FORMAT);
+        ClientModel client = clientSession.getClient();
+        boolean forceFormat = forceNameIdFormat(client);
+        String configuredNameIdFormat = client.getAttribute(SAML_NAME_ID_FORMAT_ATTRIBUTE);
+        if ((nameIdFormat == null || forceFormat) && configuredNameIdFormat != null) {
+            if (configuredNameIdFormat.equals("email")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get();
+            } else if (configuredNameIdFormat.equals("persistent")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
+            } else if (configuredNameIdFormat.equals("transient")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get();
+            } else if (configuredNameIdFormat.equals("username")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
+            } else {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
+            }
+        }
         if(nameIdFormat == null) return SAML_DEFAULT_NAMEID_FORMAT;
         return nameIdFormat;
+    }
+
+    public static boolean forceNameIdFormat(ClientModel client) {
+        return "true".equals(client.getAttribute(SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE));
     }
 
     protected String getNameId(String nameIdFormat, ClientSessionModel clientSession, UserSessionModel userSession) {

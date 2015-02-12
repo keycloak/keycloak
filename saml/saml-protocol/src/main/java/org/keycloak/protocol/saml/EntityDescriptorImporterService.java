@@ -89,15 +89,20 @@ public class EntityDescriptorImporterService {
             if (spDescriptorType.isWantAssertionsSigned()) {
                 app.setAttribute(SamlProtocol.SAML_ASSERTION_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
             }
-            String adminUrl = getLogoutLocation(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
-            if (adminUrl != null) app.setManagementUrl(adminUrl);
+            String logoutPost = getLogoutLocation(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
+            if (logoutPost != null) app.setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, logoutPost);
+            String logoutRedirect = getLogoutLocation(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
+            if (logoutPost != null) app.setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, logoutRedirect);
 
-            String urlPattern = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
-            if (urlPattern == null) {
-                urlPattern = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
+            String assertionConsumerServicePostBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
+            if (assertionConsumerServicePostBinding != null) {
+                app.setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, assertionConsumerServicePostBinding);
+                app.addRedirectUri(assertionConsumerServicePostBinding);
             }
-            if (urlPattern != null) {
-                app.addRedirectUri(urlPattern);
+            String assertionConsumerServiceRedirectBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
+            if (assertionConsumerServiceRedirectBinding != null) {
+                app.setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, assertionConsumerServiceRedirectBinding);
+                app.addRedirectUri(assertionConsumerServiceRedirectBinding);
             }
 
             for (KeyDescriptorType keyDescriptor : spDescriptorType.getKeyDescriptor()) {

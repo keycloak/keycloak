@@ -123,6 +123,8 @@
                 "http://localhost:8081/sales-post-sig-email/*"
             ],
             "attributes": {
+                "saml_force_name_id_format": "true",
+                "saml_name_id_format": "email",
                 "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post-sig-email",
                 "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post-sig-email",
                 "saml_single_logout_service_url_post": "http://localhost:8081/sales-post-sig-email",

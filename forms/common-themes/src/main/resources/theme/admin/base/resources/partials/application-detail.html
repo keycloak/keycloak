@@ -221,16 +221,16 @@
             <fieldset>
                 <legend collapsed><span class="text">Fine Grain SAML Endpoint Configuration</span>  <span tooltip-placement="right" tooltip="Expand this section to configure exact URLs for Assertion Consumer and Single Logout Service." class="fa fa-info-circle"></span></legend>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="logoutPostBinding">Assertion Consumer Service POST Binding URL</label>
+                    <label class="col-sm-2 control-label" for="consumerServicePost">Assertion Consumer Service POST Binding URL</label>
                     <div class="col-sm-6">
-                        <input ng-model="application.attributes.saml_assertion_consumer_service_url_post" class="form-control" type="text" name="logoutPostBinding" id="logoutPostBinding" />
+                        <input ng-model="application.attributes.saml_assertion_consumer_url_post" class="form-control" type="text" name="consumerServicePost" id="consumerServicePost" />
                     </div>
                     <span tooltip-placement="right" tooltip="SAML POST Binding URL for the application's assertion consumer service (login responses).  You can leave this blank if you do not have a URL for this binding." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="logoutPostBinding">Assertion Consumer Service Redirect Binding URL</label>
+                    <label class="col-sm-2 control-label" for="consumerServiceRedirect">Assertion Consumer Service Redirect Binding URL</label>
                     <div class="col-sm-6">
-                        <input ng-model="application.attributes.saml_assertion_consumer_service_url_redirect" class="form-control" type="text" name="logoutRedirectBinding" id="logoutRedirectBinding" />
+                        <input ng-model="application.attributes.saml_assertion_consumer_url_redirect" class="form-control" type="text" name="consumerServiceRedirect" id="consumerServiceRedirect" />
                     </div>
                     <span tooltip-placement="right" tooltip="SAML Redirect Binding URL for the application's assertion consumer service (login responses).  You can leave this blank if you do not have a URL for this binding." class="fa fa-info-circle"></span>
                 </div>
