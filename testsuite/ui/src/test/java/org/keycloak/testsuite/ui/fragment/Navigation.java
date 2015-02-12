@@ -1,7 +1,10 @@
 package org.keycloak.testsuite.ui.fragment;
 import static org.jboss.arquillian.graphene.Graphene.waitModel;
+import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElement;
+
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 
 public class Navigation {
@@ -32,7 +35,11 @@ public class Navigation {
 	
 	@FindByJQuery("a:contains('Login')")
     private WebElement loginLink;
-	
+
+    //@FindByJQuery("a:contains('Themes')")
+    @FindBy(css = ".nav-tabs > li:nth-child(7) > a:nth-child(1)")
+    private WebElement themesLink;
+
 	@FindByJQuery("a:contains('Role Mappings')")
     private WebElement usersRoleMappings;
 	
@@ -48,7 +55,8 @@ public class Navigation {
 	@FindByJQuery("a:contains('Attributes')")
     private WebElement attributes;
 	
-    @FindByJQuery("div[id='content'] h2:visible")
+    //@FindByJQuery("div[id='content'] h2:visible")
+    @FindBy(css = "#content > div:nth-child(1) > h2:nth-child(1)")
     private WebElement currentHeader;
 
     public void settings() {
@@ -86,8 +94,10 @@ public class Navigation {
 	public void login() {
 		openPage(loginLink, "Login Settings");
 	}
-	
-	public void roleMappings() {
+
+    public void themes() { openPage(themesLink, "Theme Settings"); }
+
+    public void roleMappings() {
 		openPage(usersRoleMappings, "Role Mappings");
 	}
 	
@@ -108,6 +118,7 @@ public class Navigation {
 	}
 
     private void openPage(WebElement page, String headerText) {
+        waitGuiForElement(page);
         page.click();
         waitModel().until().element(currentHeader).text().contains(headerText);
     }

@@ -19,14 +19,14 @@ public final class SeleniumUtils {
 
     private SeleniumUtils() {
     }
-    
+
     public static void waitAjaxForElement(By element) {
         waitAjax().until()
                 .element(element)
                 .is()
                 .present();
     }
-    
+
     public static void waitAjaxForElement(WebElement element) {
         waitAjax().until()
                 .element(element)
@@ -40,19 +40,27 @@ public final class SeleniumUtils {
                 .is()
                 .present();
 	}
-	
+
     public static void waitGuiForElement(By element) {
 		waitGuiForElement(element, null);
 	}
-    
+
     public static void waitGuiForElement(WebElement element) {
 		waitGuiForElement(element, null);
 	}
-	
+
 	public static void waitGuiForElement(WebElement element, String message) {
         waitGui().until(message)
                 .element(element)
                 .is()
+                .present();
+    }
+
+    public static void waitGuiForElementNotPresent(WebElement element) {
+        waitGui().until()
+                .element(element)
+                .is()
+                .not()
                 .present();
     }
 }

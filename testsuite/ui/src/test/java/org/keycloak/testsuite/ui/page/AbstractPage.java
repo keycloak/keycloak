@@ -25,8 +25,9 @@ public class AbstractPage {
 	@FindBy(css = ".btn-danger")
 	protected WebElement dangerButton;
 	
-	@FindByJQuery(".btn-primary:visible")
-	protected WebElement primaryButton;
+	//@FindByJQuery(".btn-primary:visible")
+    @FindBy(css = ".btn-primary")
+    protected WebElement primaryButton;
 	
 	@FindBy(css = ".ng-binding.btn.btn-danger")
 	protected WebElement deleteConfirmationButton;
