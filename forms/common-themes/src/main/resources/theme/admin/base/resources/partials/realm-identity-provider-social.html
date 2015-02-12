@@ -70,6 +70,13 @@
                         </div>
                         <span tooltip-placement="right" tooltip="Indicates if user must update his profile right after the first login." class="fa fa-info-circle"></span>
                     </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="authenticateByDefault">Authenticate By Default</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Indicates if this provider should be tried by default for authentication even before displaying login screen" class="fa fa-info-circle"></span>
+                    </div>
                 </fieldset>
 
                 <div class="pull-right form-actions">

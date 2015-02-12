@@ -23,6 +23,7 @@
             <column name="PROVIDER_ID" type="VARCHAR(255)"/>
             <column name="UPDATE_PROFILE_FIRST_LOGIN" type="BOOLEAN(1)"/>
             <column name="STORE_TOKEN" type="BOOLEAN(1)"/>
+            <column name="AUTHENTICATE_BY_DEFAULT" type="BOOLEAN(1)"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
         </createTable>
         <createTable tableName="IDENTITY_PROVIDER_CONFIG">

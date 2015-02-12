@@ -15,6 +15,7 @@
             "name" : "Google",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
+            "storeToken": "true",
             "config": {
                 "clientId": "clientId",
                 "clientSecret": "clientSecret"
@@ -40,6 +41,7 @@
             "name" : "GitHub",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
+            "storeToken": "false",
             "config": {
                 "authorizationUrl": "authorizationUrl",
                 "tokenUrl": "tokenUrl",
@@ -54,6 +56,7 @@
             "name" : "Twitter",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
+            "storeToken": true,
             "config": {
                 "authorizationUrl": "authorizationUrl",
                 "tokenUrl": "tokenUrl",
@@ -116,6 +119,7 @@
             "name" : "OIDC IdP",
             "enabled": false,
             "updateProfileFirstLogin" : "false",
+            "authenticateByDefault" : "false",
             "config": {
                 "clientId": "clientId",
                 "clientSecret": "clientSecret",
@@ -148,6 +152,7 @@
             "name" : "Kerberos",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
+            "authenticateByDefault" : "false",
             "config": {
                 "serverPrincipal": "HTTP/server.domain.org@DOMAIN.ORG",
                 "keyTab": "/etc/http.keytab",

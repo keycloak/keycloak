@@ -8,6 +8,7 @@ import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -52,11 +53,14 @@ public class Update1_2_0_Beta1 extends Update {
                                 .add("clientSecret", clientSecret).get();
 
                         DBObject identityProvider = new BasicDBObjectBuilder()
+                                .add("internalId", KeycloakModelUtils.generateId())
                                 .add("providerId", socialProviderId)
                                 .add("name", socialProviderId)
                                 .add("id", socialProviderId)
                                 .add("updateProfileFirstLogin", updateProfileOnInitialSocialLogin)
                                 .add("enabled", true)
+                                .add("storeToken", false)
+                                .add("authenticateByDefault", false)
                                 .add("config", identityProviderConfig).get();
 
                         identityProviders.add(identityProvider);

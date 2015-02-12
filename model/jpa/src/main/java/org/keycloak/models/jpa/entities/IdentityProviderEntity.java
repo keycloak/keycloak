@@ -50,6 +50,9 @@ public class IdentityProviderEntity {
     @Column(name="STORE_TOKEN")
     private boolean storeToken;
 
+    @Column(name="AUTHENTICATE_BY_DEFAULT")
+    private boolean authenticateByDefault;
+
     @ElementCollection
     @MapKeyColumn(name="name")
     @Column(name="value", columnDefinition = "TEXT")
@@ -118,6 +121,14 @@ public class IdentityProviderEntity {
 
     public void setStoreToken(boolean storeToken) {
         this.storeToken = storeToken;
+    }
+
+    public boolean isAuthenticateByDefault() {
+        return authenticateByDefault;
+    }
+
+    public void setAuthenticateByDefault(boolean authenticateByDefault) {
+        this.authenticateByDefault = authenticateByDefault;
     }
 
     public Map<String, String> getConfig() {

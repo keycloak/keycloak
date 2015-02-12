@@ -308,6 +308,7 @@ public class ModelToRepresentation {
         providerRep.setEnabled(identityProviderModel.isEnabled());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setUpdateProfileFirstLogin(identityProviderModel.isUpdateProfileFirstLogin());
+        providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
         providerRep.setConfig(identityProviderModel.getConfig());
 
         return providerRep;
