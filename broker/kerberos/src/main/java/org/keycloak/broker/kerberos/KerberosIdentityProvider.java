@@ -107,9 +107,11 @@ public class KerberosIdentityProvider extends AbstractIdentityProvider<KerberosI
         Response response = request.getSession().getProvider(LoginFormsProvider.class)
                 .setRealm(request.getRealm())
                 .setUriInfo(request.getUriInfo())
-                .setError("errorKerberosLogin")
+                .setClient(request.getClientSession().getClient())
+                .setClientSessionCode(getRelayState(request))
+                .setWarning("errorKerberosLogin")
                 .setStatus(Response.Status.UNAUTHORIZED)
-                .createErrorPage();
+                .createLogin();
 
         response.getMetadata().putSingle(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader);
         return AuthenticationResponse.fromResponse(response);

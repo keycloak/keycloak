@@ -27,6 +27,7 @@ public interface Errors {
     String INVALID_SIGNATURE = "invalid_signature";
     String INVALID_REGISTRATION = "invalid_registration";
     String INVALID_FORM = "invalid_form";
+    String EXPIRED_CODE = "expired_code";
 
     String REGISTRATION_DISABLED = "registration_disabled";
 
