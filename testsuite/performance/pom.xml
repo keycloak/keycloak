@@ -201,8 +201,8 @@
                             </dependency>
                             <dependency>
                                 <groupId>org.bouncycastle</groupId>
-                                <artifactId>bcprov-jdk16</artifactId>
-                                <version>${bouncycastle.version}</version>
+                                <artifactId>>bcprov-jdk15on</artifactId>
+                                <version>${bouncycastle.crypto.version}</version>
                             </dependency>
                             <!--
                             <dependency>

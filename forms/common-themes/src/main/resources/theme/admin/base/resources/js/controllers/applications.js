@@ -553,6 +553,12 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         "RSA_SHA512",
         "DSA_SHA1"
     ];
+    $scope.nameIdFormats = [
+        "username",
+        "email",
+        "transient",
+        "persistent"
+    ];
 
     $scope.realm = realm;
     $scope.create = !application.name;
@@ -563,6 +569,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     $scope.samlClientSignature = false;
     $scope.samlEncrypt = false;
     $scope.samlForcePostBinding = false;
+    $scope.samlForceNameIdFormat = false;
     if (!$scope.create) {
         if (!application.attributes) {
             application.attributes = {};
@@ -588,13 +595,25 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         } else if (application.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[3];
         }
+        if (application.attributes['saml_name_id_format'] == 'unspecified') {
+            $scope.nameIdFormat = $scope.nameIdFormats[0];
+        } else if (application.attributes['saml_name_id_format'] == 'email') {
+            $scope.nameIdFormat = $scope.nameIdFormats[1];
+        } else if (application.attributes['saml_name_id_format'] == 'transient') {
+            $scope.nameIdFormat = $scope.nameIdFormats[2];
+        } else if (application.attributes['saml_name_id_format'] == 'persistent') {
+            $scope.nameIdFormat = $scope.nameIdFormats[3];
+        }
+
     } else {
         $scope.application = { enabled: true, attributes: {}};
         $scope.application.redirectUris = [];
         $scope.accessType = $scope.accessTypes[0];
         $scope.protocol = $scope.protocols[0];
         $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
+        $scope.nameIdFormat = $scope.nameIdFormats[0];
         $scope.samlAuthnStatement = true;
+        $scope.samlForceNameIdFormat = false;
     }
 
     if ($scope.application.attributes["saml.server.signature"]) {
@@ -631,6 +650,13 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             $scope.samlAuthnStatement = true;
         } else {
             $scope.samlAuthnStatement = false;
+        }
+    }
+    if ($scope.application.attributes["saml_force_name_id_format"]) {
+        if ($scope.application.attributes["saml_force_name_id_format"] == "true") {
+            $scope.samlForceNameIdFormat = true;
+        } else {
+            $scope.samlForceNameIdFormat = false;
         }
     }
     if ($scope.application.attributes["saml.multivalued.roles"]) {
@@ -675,6 +701,10 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
 
     $scope.changeAlgorithm = function() {
         $scope.application.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
+    };
+
+    $scope.changeNameIdFormat = function() {
+        $scope.application.attributes['saml_name_id_format'] = $scope.nameIdFormat;
     };
 
     $scope.$watch(function() {
@@ -734,6 +764,12 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             $scope.application.attributes["saml.authnstatement"] = "false";
 
         }
+        if ($scope.samlForceNameIdFormat == true) {
+            $scope.application.attributes["saml_force_name_id_format"] = "true";
+        } else {
+            $scope.application.attributes["saml_force_name_id_format"] = "false";
+
+        }
         if ($scope.samlMultiValuedRoles == true) {
             $scope.application.attributes["saml.multivalued.roles"] = "true";
         } else {
@@ -749,6 +785,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
 
         $scope.application.protocol = $scope.protocol;
         $scope.application.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
+        $scope.application.attributes['saml_name_id_format'] = $scope.nameIdFormat;
 
         if ($scope.application.protocol != 'saml' && !$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
