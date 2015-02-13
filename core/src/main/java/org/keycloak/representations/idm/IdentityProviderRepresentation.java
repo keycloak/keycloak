@@ -32,6 +32,7 @@ public class IdentityProviderRepresentation {
     protected boolean enabled = true;
     protected boolean updateProfileFirstLogin = true;
     protected boolean storeToken;
+    protected boolean authenticateByDefault;
     protected String groupName;
     protected Map<String, String> config = new HashMap<String, String>();
 
@@ -89,6 +90,14 @@ public class IdentityProviderRepresentation {
 
     public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
         this.updateProfileFirstLogin = updateProfileFirstLogin;
+    }
+
+    public boolean isAuthenticateByDefault() {
+        return authenticateByDefault;
+    }
+
+    public void setAuthenticateByDefault(boolean authenticateByDefault) {
+        this.authenticateByDefault = authenticateByDefault;
     }
 
     public boolean isStoreToken() {

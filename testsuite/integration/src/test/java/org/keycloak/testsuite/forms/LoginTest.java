@@ -286,7 +286,7 @@ public class LoginTest {
             loginPage.login("login@test.com", "password");
 
             loginPage.assertCurrent();
-            Assert.assertEquals("Login timeout or unknown action. Please login again", loginPage.getError());
+            Assert.assertEquals("Login timeout. Please login again", loginPage.getError());
 
             events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails().assertEvent();
 
