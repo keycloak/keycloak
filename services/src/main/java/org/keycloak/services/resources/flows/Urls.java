@@ -22,12 +22,10 @@
 package org.keycloak.services.resources.flows;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OpenIDConnect;
 import org.keycloak.protocol.oidc.OpenIDConnectService;
 import org.keycloak.services.resources.AccountService;
-import org.keycloak.services.resources.AuthenticationBrokerResource;
+import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.ThemeResource;
@@ -68,21 +66,31 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "processFederatedIdentityUpdate").build(realmName);
     }
 
-    public static URI identityProviderAuthnRequest(URI baseURI, IdentityProviderModel identityProvider, RealmModel realm, String accessCode) {
-        UriBuilder uriBuilder = UriBuilder.fromUri(baseURI)
-                .path(AuthenticationBrokerResource.class)
-                .path(AuthenticationBrokerResource.class, "performLogin")
-                .replaceQueryParam("provider_id", identityProvider.getId());
+    public static URI identityProviderAuthnResponse(URI baseUri, String providerId, String realmName) {
+        return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
+                .path(IdentityBrokerService.class, "handleResponseGet")
+                .build(realmName, providerId);
+    }
+
+    public static URI identityProviderAuthnRequest(URI baseUri, String providerId, String realmName, String accessCode) {
+        UriBuilder uriBuilder = realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
+                .path(IdentityBrokerService.class, "performLogin");
 
         if (accessCode != null) {
             uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
         }
 
-        return uriBuilder.build(realm.getName());
+        return uriBuilder.build(realmName, providerId);
     }
 
-    public static URI identityProviderAuthnRequest(URI baseURI, IdentityProviderModel identityProvider, RealmModel realm) {
-        return identityProviderAuthnRequest(baseURI, identityProvider, realm, null);
+    public static URI identityProviderRetrieveToken(URI baseUri, String providerId, String realmName) {
+        return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
+                .path(IdentityBrokerService.class, "retrieveToken")
+                .build(realmName, providerId);
+    }
+
+    public static URI identityProviderAuthnRequest(URI baseURI, String providerId, String realmName) {
+        return identityProviderAuthnRequest(baseURI, providerId, realmName, null);
     }
 
     public static URI accountTotpPage(URI baseUri, String realmId) {

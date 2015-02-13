@@ -21,6 +21,7 @@ import org.codehaus.jackson.JsonNode;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.jose.jws.JWSInput;
 
 import javax.ws.rs.core.UriBuilder;
@@ -62,7 +63,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
 
         if (accessToken == null) {
-            throw new RuntimeException("No access_token from server.");
+            throw new IdentityBrokerException("No access_token from server.");
         }
 
         String idToken = extractTokenFromResponse(response, OIDC_PARAMETER_ID_TOKEN);
@@ -101,13 +102,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
             return identity;
         } catch (Exception e) {
-            throw new RuntimeException("Could not fetch attributes from userinfo endpoint.", e);
+            throw new IdentityBrokerException("Could not fetch attributes from userinfo endpoint.", e);
         }
     }
 
     private void validateIdToken(String idToken) {
         if (idToken == null) {
-            throw new RuntimeException("No id_token from server.");
+            throw new IdentityBrokerException("No id_token from server.");
         }
 
         try {
@@ -131,10 +132,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     }
                 }
 
-                throw new RuntimeException("Wrong issuer from id_token..");
+                throw new IdentityBrokerException("Wrong issuer from id_token..");
             }
         } catch (IOException e) {
-            throw new RuntimeException("Could not decode id token.", e);
+            throw new IdentityBrokerException("Could not decode id token.", e);
         }
     }
 

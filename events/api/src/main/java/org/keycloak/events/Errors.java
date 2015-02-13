@@ -35,7 +35,6 @@ public interface Errors {
 
     String NOT_ALLOWED = "not_allowed";
 
-    String IDENTITY_PROVIDER_NOT_FOUND = "identity_provider_not_found";
     String FEDERATED_IDENTITY_EMAIL_EXISTS = "federated_identity_email_exists";
     String FEDERATED_IDENTITY_USERNAME_EXISTS = "federated_identity_username_exists";
     String FEDERATED_IDENTITY_DISABLED_REGISTRATION = "federated_identity_disabled_registration";

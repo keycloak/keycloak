@@ -22,6 +22,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.protocol.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.protocol.saml.SAML2NameIDPolicyBuilder;
@@ -112,11 +113,11 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 PublicKey publicKey = request.getRealm().getPublicKey();
 
                 if (privateKey == null) {
-                    throw new RuntimeException("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + request.getRealm().getName() + "] does not have a private key.");
+                    throw new IdentityBrokerException("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + request.getRealm().getName() + "] does not have a private key.");
                 }
 
                 if (publicKey == null) {
-                    throw new RuntimeException("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + request.getRealm().getName() + "] does not have a public key.");
+                    throw new IdentityBrokerException("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + request.getRealm().getName() + "] does not have a public key.");
                 }
 
                 KeyPair keypair = new KeyPair(publicKey, privateKey);
@@ -131,7 +132,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 return AuthenticationResponse.fromResponse(authnRequestBuilder.redirectBinding().request());
             }
         } catch (Exception e) {
-            throw new RuntimeException("Could not create authentication request.", e);
+            throw new IdentityBrokerException("Could not create authentication request.", e);
         }
     }
 
@@ -145,7 +146,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         String samlResponse = getRequestParameter(request, SAML_RESPONSE_PARAMETER);
 
         if (samlResponse == null) {
-            throw new RuntimeException("No response from SAML identity provider.");
+            throw new IdentityBrokerException("No response from SAML identity provider.");
         }
 
         try {
@@ -167,7 +168,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
             return AuthenticationResponse.end(identity);
         } catch (Exception e) {
-            throw new RuntimeException("Could not process response from SAML identity provider.", e);
+            throw new IdentityBrokerException("Could not process response from SAML identity provider.", e);
         }
     }
 
@@ -194,7 +195,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         List<RTChoiceType> assertions = responseType.getAssertions();
 
         if (assertions.isEmpty()) {
-            throw new RuntimeException("No assertion from response.");
+            throw new IdentityBrokerException("No assertion from response.");
         }
 
         RTChoiceType rtChoiceType = assertions.get(0);
@@ -234,7 +235,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 detailMessage.append("none");
             }
 
-            throw new RuntimeException("Authentication failed with code [" + statusCode.getValue() + " and detail [" + detailMessage.toString() + ".");
+            throw new IdentityBrokerException("Authentication failed with code [" + statusCode.getValue() + " and detail [" + detailMessage.toString() + ".");
         }
     }
 
@@ -246,7 +247,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             Element enc = DocumentUtil.getElement(doc, new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
 
             if (enc == null) {
-                throw new RuntimeException("No encrypted assertion found.");
+                throw new IdentityBrokerException("No encrypted assertion found.");
             }
 
             String oldID = enc.getAttribute(JBossSAMLConstants.ID.get());
@@ -265,7 +266,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
             return responseType;
         } catch (Exception e) {
-            throw new RuntimeException("Could not decrypt assertion.", e);
+            throw new IdentityBrokerException("Could not decrypt assertion.", e);
         }
     }
 

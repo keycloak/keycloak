@@ -879,7 +879,7 @@ public class OpenIDConnectService {
             }
 
             return Response.temporaryRedirect(
-                    Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviderModel, realm, accessCode)).build();
+                    Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), idpHint, this.realm.getName(), accessCode)).build();
         }
 
         response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
@@ -898,7 +898,7 @@ public class OpenIDConnectService {
             if (!identityProviders.isEmpty()) {
                 if (identityProviders.size() == 1) {
                     return Response.temporaryRedirect(
-                            Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviders.get(0), this.realm, accessCode))
+                            Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviders.get(0).getId(), this.realm.getName(), accessCode))
                             .build();
                 }
 

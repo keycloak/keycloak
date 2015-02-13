@@ -68,5 +68,12 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      */
     AuthenticationResponse handleResponse(AuthenticationRequest request);
 
+    /**
+     * <p>Returns a {@link javax.ws.rs.core.Response} containing the token previously stored during the authentication process for a
+     * specific user.</p>
+     *
+     * @param identity
+     * @return
+     */
     Response retrieveToken(FederatedIdentityModel identity);
 }

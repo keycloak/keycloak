@@ -30,6 +30,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.IDToken;
+import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
@@ -53,8 +54,10 @@ import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
@@ -68,6 +71,8 @@ import static org.junit.Assert.assertTrue;
  * @author pedroigor
  */
 public abstract class AbstractIdentityProviderTest {
+
+    private static final URI BASE_URI = UriBuilder.fromUri("http://localhost:8081/auth").build();
 
     @ClassRule
     public static BrokerKeyCloakRule brokerServerRule = new BrokerKeyCloakRule();
@@ -308,7 +313,7 @@ public abstract class AbstractIdentityProviderTest {
 
         UserSessionStatus userSessionStatus = retrieveSessionStatus();
         String accessToken = userSessionStatus.getAccessTokenString();
-        String tokenEndpointUrl = "http://localhost:8081/auth/broker/realm-with-broker/" + getProviderId() + "/token";
+        URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), realm.getName());
         final String authHeader = "Bearer " + accessToken;
         ClientRequestFilter authFilter = new ClientRequestFilter() {
             @Override
@@ -317,11 +322,10 @@ public abstract class AbstractIdentityProviderTest {
             }
         };
         Client client = ClientBuilder.newBuilder().register(authFilter).build();
-        UriBuilder authBase = UriBuilder.fromUri(tokenEndpointUrl);
-        WebTarget tokenEndpoint = client.target(authBase);
+        WebTarget tokenEndpoint = client.target(tokenEndpointUrl);
         Response response = tokenEndpoint.request().get();
 
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
         assertNotNull(response.readEntity(String.class));
 
         driver.navigate().to("http://localhost:8081/test-app/logout");
@@ -364,14 +368,15 @@ public abstract class AbstractIdentityProviderTest {
         grantPage.accept();
 
         assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+
         AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
-        String tokenEndpointUrl = "http://localhost:8081/auth/broker/realm-with-broker/" + getProviderId() + "/token";
+        URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), getRealm().getName());
         String authHeader = "Bearer " + accessToken.getAccessToken();
         HtmlUnitDriver htmlUnitDriver = (WebRule.HtmlUnitDriver) this.driver;
 
         htmlUnitDriver.getWebClient().addRequestHeader(HttpHeaders.AUTHORIZATION, authHeader);
 
-        htmlUnitDriver.navigate().to(tokenEndpointUrl);
+        htmlUnitDriver.navigate().to(tokenEndpointUrl.toString());
 
         grantPage.assertCurrent();
         grantPage.accept();

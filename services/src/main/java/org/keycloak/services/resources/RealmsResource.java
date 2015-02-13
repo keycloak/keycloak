@@ -1,14 +1,11 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
-import org.keycloak.Config;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -20,22 +17,18 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.util.StreamUtil;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -190,7 +183,18 @@ public class RealmsResource {
         return realmResource;
     }
 
+    @Path("{realm}/broker")
+    public IdentityBrokerService getBrokerService(final @PathParam("realm") String name) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = locateRealm(name, realmManager);
 
+        IdentityBrokerService brokerService = new IdentityBrokerService(realm);
+        ResteasyProviderFactory.getInstance().injectProperties(brokerService);
+        
+        brokerService.init();
+
+        return brokerService;
+    }
 
 
 }

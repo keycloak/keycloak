@@ -12,6 +12,8 @@ public interface Details {
     String REDIRECT_URI = "redirect_uri";
     String RESPONSE_TYPE = "response_type";
     String AUTH_METHOD = "auth_method";
+    String IDENTITY_PROVIDER = "identity_provider";
+    String IDENTITY_PROVIDER_IDENTITY = "identity_provider_identity";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
     String REMEMBER_ME = "remember_me";

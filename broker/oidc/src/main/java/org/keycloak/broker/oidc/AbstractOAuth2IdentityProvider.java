@@ -25,6 +25,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.FederatedIdentityModel;
 
 import javax.ws.rs.core.Response;
@@ -68,7 +69,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
             return AuthenticationResponse.temporaryRedirect(authorizationUrl);
         } catch (Exception e) {
-            throw new RuntimeException("Could not create authentication request.", e);
+            throw new IdentityBrokerException("Could not create authentication request.", e);
         }
     }
 
@@ -85,9 +86,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         if (error != null) {
             if (error.equals("access_denied")) {
-                throw new RuntimeException("Access denied.");
+                throw new IdentityBrokerException("Access denied.");
             } else {
-                throw new RuntimeException(error);
+                throw new IdentityBrokerException(error);
             }
         }
 
@@ -111,9 +112,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 return AuthenticationResponse.end(federatedIdentity);
             }
 
-            throw new RuntimeException("No authorization code from identity provider.");
+            throw new IdentityBrokerException("No authorization code from identity provider.");
         } catch (Exception e) {
-            throw new RuntimeException("Could not process response from identity provider.", e);
+            throw new IdentityBrokerException("Could not process response from identity provider.", e);
         }
     }
 
@@ -132,7 +133,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             try {
                 return mapper.readTree(response).get(tokenName).getTextValue();
             } catch (IOException e) {
-                throw new RuntimeException("Could not extract token [" + tokenName + "] from response [" + response + "].", e);
+                throw new IdentityBrokerException("Could not extract token [" + tokenName + "] from response [" + response + "].", e);
             }
         } else {
             Matcher matcher = Pattern.compile(tokenName + "=([^&]+)").matcher(response);
@@ -149,7 +150,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
 
         if (accessToken == null) {
-            throw new RuntimeException("No access token from server.");
+            throw new IdentityBrokerException("No access token from server.");
         }
 
         return doGetFederatedIdentity(accessToken);
