@@ -61,7 +61,7 @@ public class IdentityProviderBean {
                         }
                     }
 
-                    String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider, realm).toString();
+                    String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getId(), realm.getName()).toString();
                     providers.add(new IdentityProvider(identityProvider.getId(), identityProvider.getName(), loginUrl));
                 }
             }

@@ -11,7 +11,7 @@
             "name": "http://localhost:8081/auth/",
             "enabled": true,
             "redirectUris": [
-                "http://localhost:8081/auth/broker/realm-with-broker/kc-saml-signed-idp"
+                "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-saml-signed-idp"
             ],
             "attributes": {
                 "saml.assertion.signature": "true",

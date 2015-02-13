@@ -31,7 +31,7 @@
             "name": "http://localhost:8080/auth/",
             "enabled": true,
             "redirectUris": [
-              "http://localhost:8080/auth/broker/saml-broker-authentication-realm/saml-identity-provider"
+              "http://localhost:8080/auth/realms/saml-broker-authentication-realm/broker/saml-identity-provider"
             ],
           "attributes": {
             "saml.assertion.signature": "true",

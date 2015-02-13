@@ -31,6 +31,7 @@ public class FederatedIdentity {
     private String lastName;
     private String email;
     private String token;
+    private String identityProviderId;
 
     public FederatedIdentity(String id) {
         if (id == null) {
@@ -91,5 +92,26 @@ public class FederatedIdentity {
 
     public String getToken() {
         return this.token;
+    }
+
+    public String getIdentityProviderId() {
+        return this.identityProviderId;
+    }
+
+    public void setIdentityProviderId(String identityProviderId) {
+        this.identityProviderId = identityProviderId;
+    }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", token='" + token + '\'' +
+                ", identityProviderId='" + identityProviderId + '\'' +
+                '}';
     }
 }
