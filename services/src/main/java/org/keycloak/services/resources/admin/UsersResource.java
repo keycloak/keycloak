@@ -730,7 +730,7 @@ public class UsersResource {
         }
 
 
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", null, false);
         //audit.session(userSession);
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
         clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);

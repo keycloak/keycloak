@@ -7,6 +7,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity;
+import org.keycloak.util.MultivaluedHashMap;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -59,6 +60,11 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     @Override
     public String getAuthMethod() {
         return entity.getAuthMethod();
+    }
+
+    @Override
+    public MultivaluedHashMap<String, String> getClaims() {
+        return entity.getClaims();
     }
 
     @Override

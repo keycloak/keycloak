@@ -1,5 +1,7 @@
 package org.keycloak.models;
 
+import org.keycloak.util.MultivaluedHashMap;
+
 import java.util.List;
 
 /**
@@ -16,6 +18,8 @@ public interface UserSessionModel {
     String getIpAddress();
 
     String getAuthMethod();
+
+    public MultivaluedHashMap<String, String> getClaims();
 
     boolean isRememberMe();
 

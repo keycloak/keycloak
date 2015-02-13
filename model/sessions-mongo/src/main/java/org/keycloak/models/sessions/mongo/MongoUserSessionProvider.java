@@ -17,6 +17,7 @@ import org.keycloak.models.sessions.mongo.entities.MongoClientSessionEntity;
 import org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity;
 import org.keycloak.models.sessions.mongo.entities.MongoUsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.Time;
 
 import java.util.LinkedList;
@@ -73,13 +74,14 @@ public class MongoUserSessionProvider implements UserSessionProvider {
 
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, MultivaluedHashMap<String, String> claims, boolean rememberMe) {
         MongoUserSessionEntity entity = new MongoUserSessionEntity();
         entity.setRealmId(realm.getId());
         entity.setUser(user.getId());
         entity.setLoginUsername(loginUsername);
         entity.setIpAddress(ipAddress);
         entity.setAuthMethod(authMethod);
+        entity.setClaims(claims);
         entity.setRememberMe(rememberMe);
         entity.setRealmId(realm.getId());
 

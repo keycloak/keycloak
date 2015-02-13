@@ -7,6 +7,7 @@ import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.entities.AbstractIdentifiableEntity;
+import org.keycloak.util.MultivaluedHashMap;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +29,8 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
     private String ipAddress;
 
     private String authMethod;
+
+    private MultivaluedHashMap<String, String> claims;
 
     private boolean rememberMe;
 
@@ -135,5 +138,13 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
 
     public void setState(UserSessionModel.State state) {
         this.state = state;
+    }
+
+    public MultivaluedHashMap<String, String> getClaims() {
+        return claims;
+    }
+
+    public void setClaims(MultivaluedHashMap<String, String> claims) {
+        this.claims = claims;
     }
 }

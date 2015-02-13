@@ -1,6 +1,7 @@
 package org.keycloak.models.sessions.mem.entities;
 
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.util.MultivaluedHashMap;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ public class UserSessionEntity {
     private String loginUsername;
     private String ipAddress;
     private String authMethod;
+    private MultivaluedHashMap<String, String> claims;
     private boolean rememberMe;
     private int started;
     private int lastSessionRefresh;
@@ -125,5 +127,13 @@ public class UserSessionEntity {
 
     public void setState(UserSessionModel.State state) {
         this.state = state;
+    }
+
+    public MultivaluedHashMap<String, String> getClaims() {
+        return claims;
+    }
+
+    public void setClaims(MultivaluedHashMap<String, String> claims) {
+        this.claims = claims;
     }
 }

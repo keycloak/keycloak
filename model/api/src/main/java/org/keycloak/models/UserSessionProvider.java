@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.util.MultivaluedHashMap;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ public interface UserSessionProvider extends Provider {
     ClientSessionModel getClientSession(RealmModel realm, String id);
     ClientSessionModel getClientSession(String id);
 
-    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe);
+    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, MultivaluedHashMap<String, String> claims, boolean rememberMe);
     UserSessionModel getUserSession(RealmModel realm, String id);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);

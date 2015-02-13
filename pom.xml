@@ -12,13 +12,14 @@
     <packaging>pom</packaging>
 
     <properties>
+        <apache.commons.collections.version>4.0</apache.commons.collections.version>
         <aesh.version>0.33.12</aesh.version>
         <base64.version>2.3.8</base64.version>
         <bouncycastle.version>1.46</bouncycastle.version>
         <jackson.version>1.9.9</jackson.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
-        <resteasy.version>2.3.7.Final</resteasy.version>
-        <resteasy.version.latest>3.0.9.Final</resteasy.version.latest>
+        <resteasy.version>3.0.7.Final</resteasy.version>
+        <resteasy.version.latest>3.0.7.Final</resteasy.version.latest>
         <!-- <undertow.version>1.1.0.Final</undertow.version> -->
         <undertow.version>1.1.1.Final</undertow.version>
         <picketlink.version>2.7.0.CR3</picketlink.version>
@@ -115,6 +116,7 @@
         <module>picketlink</module>
         <module>federation</module>
         <module>services</module>
+        <module>claims</module>
         <module>saml</module>
         <module>broker</module>
         <module>social</module>
@@ -129,6 +131,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${apache.commons.collections.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk16</artifactId>

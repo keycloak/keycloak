@@ -12,6 +12,7 @@ import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
@@ -83,7 +84,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, MultivaluedHashMap<String, String> claims, boolean rememberMe) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setRealmId(realm.getId());
@@ -91,6 +92,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
         entity.setLoginUsername(loginUsername);
         entity.setIpAddress(ipAddress);
         entity.setAuthMethod(authMethod);
+        //entity.setClaims() //How do we handle claims in JPA
         entity.setRememberMe(rememberMe);
 
         int currentTime = Time.currentTime();

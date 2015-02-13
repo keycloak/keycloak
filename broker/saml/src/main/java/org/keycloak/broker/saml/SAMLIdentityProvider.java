@@ -17,6 +17,9 @@
  */
 package org.keycloak.broker.saml;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.Predicate;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
@@ -24,6 +27,8 @@ import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.protocol.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.protocol.saml.SAML2NameIDPolicyBuilder;
+import org.keycloak.util.CollectionUtil;
+import org.keycloak.util.MultivaluedHashMap;
 import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ProcessingException;
@@ -37,10 +42,7 @@ import org.picketlink.identity.federation.core.saml.v2.common.SAMLDocumentHolder
 import org.picketlink.identity.federation.core.util.JAXPValidationUtil;
 import org.picketlink.identity.federation.core.util.XMLEncryptionUtil;
 import org.picketlink.identity.federation.core.util.XMLSignatureUtil;
-import org.picketlink.identity.federation.saml.v2.assertion.AssertionType;
-import org.picketlink.identity.federation.saml.v2.assertion.EncryptedAssertionType;
-import org.picketlink.identity.federation.saml.v2.assertion.NameIDType;
-import org.picketlink.identity.federation.saml.v2.assertion.SubjectType;
+import org.picketlink.identity.federation.saml.v2.assertion.*;
 import org.picketlink.identity.federation.saml.v2.assertion.SubjectType.STSubType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType.RTChoiceType;
@@ -68,6 +70,7 @@ import java.util.List;
  * @author Pedro Igor
  */
 public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityProviderConfig> {
+    private static final Logger logger = Logger.getLogger(SAMLIdentityProvider.class);
 
     private static final String SAML_RESPONSE_PARAMETER = "SAMLResponse";
     private static final String RELAY_STATE_PARAMETER = "RelayState";
@@ -110,10 +113,12 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 PublicKey publicKey = request.getRealm().getPublicKey();
 
                 if (privateKey == null) {
+                    logger.error("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + request.getRealm().getName() + "] does not have a private key.");
                     throw new RuntimeException("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + request.getRealm().getName() + "] does not have a private key.");
                 }
 
                 if (publicKey == null) {
+                    logger.error("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + request.getRealm().getName() + "] does not have a public key.");
                     throw new RuntimeException("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + request.getRealm().getName() + "] does not have a public key.");
                 }
 
@@ -129,6 +134,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 return AuthenticationResponse.fromResponse(authnRequestBuilder.redirectBinding().request());
             }
         } catch (Exception e) {
+            logger.error("Could not create authentication request", e);
             throw new RuntimeException("Could not create authentication request.", e);
         }
     }
@@ -148,15 +154,47 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             FederatedIdentity identity = new FederatedIdentity(subjectNameID.getValue());
 
             identity.setUsername(subjectNameID.getValue());
+            identity.setClaims(getClaims(assertion));
 
-            if (subjectNameID.getFormat().toString().equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
+            identity.setEmail(identity.getClaims().getFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"));
+
+            String givenname = identity.getClaims().getFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname");
+            String surname = identity.getClaims().getFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname");
+            identity.setName(String.format("%s %s", givenname, surname));
+
+            if (subjectNameID.getFormat() != null && subjectNameID.getFormat().toString().equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
                 identity.setEmail(subjectNameID.getValue());
             }
 
             return AuthenticationResponse.end(identity);
         } catch (Exception e) {
+            logger.error("Could not process response from SAML identity provider.", e);
             throw new RuntimeException("Could not process response from SAML identity provider.", e);
         }
+    }
+
+    private MultivaluedHashMap<String, String> getClaims(AssertionType assertion) {
+        MultivaluedHashMap<String, String> claims = new MultivaluedHashMap<String, String>();;
+
+        AttributeStatementType attributes = (AttributeStatementType)CollectionUtils.find(assertion.getStatements(), new Predicate<StatementAbstractType>() {
+            @Override
+            public boolean evaluate(StatementAbstractType object) {
+                return object instanceof AttributeStatementType;
+            }
+        });
+
+        if(attributes != null) {
+            for (AttributeStatementType.ASTChoiceType attr : attributes.getAttributes()) {
+                for (Object value : attr.getAttribute().getAttributeValue()) {
+                    claims.add(attr.getAttribute().getName(), value.toString());
+                }
+            }
+        }
+
+        //Add our claims
+        claims.add("http://schemas.software.dell.com/DellIdentityBroker/claims/authenticatingIdp", getConfig().getId());
+
+        return claims;
     }
 
     private AssertionType getAssertion(AuthenticationRequest request) throws Exception {
@@ -183,6 +221,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         List<RTChoiceType> assertions = responseType.getAssertions();
 
         if (assertions.isEmpty()) {
+            logger.error("No assertion from response.");
             throw new RuntimeException("No assertion from response.");
         }
 
@@ -223,6 +262,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 detailMessage.append("none");
             }
 
+            logger.error("Authentication failed with code [" + statusCode.getValue() + " and detail [" + detailMessage.toString() + ".");
             throw new RuntimeException("Authentication failed with code [" + statusCode.getValue() + " and detail [" + detailMessage.toString() + ".");
         }
     }
@@ -235,6 +275,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             Element enc = DocumentUtil.getElement(doc, new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
 
             if (enc == null) {
+                logger.error("No encrypted assertion found.");
                 throw new RuntimeException("No encrypted assertion found.");
             }
 
@@ -254,6 +295,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
             return responseType;
         } catch (Exception e) {
+            logger.error("Could not decrypt assertion.", e);
             throw new RuntimeException("Could not decrypt assertion.", e);
         }
     }

@@ -1,5 +1,7 @@
 package org.keycloak.protocol.saml;
 
+import com.dell.software.ce.dib.claims.ClaimsManipulation;
+import com.dell.software.ce.dib.claims.ClaimsManipulationFactory;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
@@ -14,11 +16,13 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.admin.ClientAttributeCertificateResource;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.util.MultivaluedHashMap;
 import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ConfigurationException;
@@ -32,6 +36,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -195,7 +201,7 @@ public class SamlProtocol implements LoginProtocol {
                .requestIssuer(clientSession.getClient().getClientId())
                .nameIdentifier(nameIdFormat, nameId)
                .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
-        initClaims(builder, clientSession.getClient(), userSession.getUser());
+        initClaims(builder, userSession, clientSession.getClient(), userSession.getUser());
         if (clientSession.getRoles() != null) {
             if (multivaluedRoles(client)) {
                 builder.multiValuedRoles(true);
@@ -270,20 +276,61 @@ public class SamlProtocol implements LoginProtocol {
         return "true".equals(client.getAttribute(SAML_ENCRYPT));
     }
 
-    public void initClaims(SALM2LoginResponseBuilder builder, ClientModel model, UserModel user) {
+    public void initClaims(SALM2LoginResponseBuilder builder, UserSessionModel userSession, ClientModel model, UserModel user) {
+        MultivaluedHashMap<String, String> claims = (MultivaluedHashMap<String, String>)userSession.getClaims().clone();
+
         if (ClaimMask.hasEmail(model.getAllowedClaimsMask())) {
-            builder.attribute(X500SAMLProfileConstants.EMAIL_ADDRESS.getFriendlyName(), user.getEmail());
+            claims.add(X500SAMLProfileConstants.EMAIL_ADDRESS.getFriendlyName(), user.getEmail());
+            //builder.attribute(X500SAMLProfileConstants.EMAIL_ADDRESS.getFriendlyName(), user.getEmail());
         }
         if (ClaimMask.hasName(model.getAllowedClaimsMask())) {
-            builder.attribute(X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(), user.getFirstName());
-            builder.attribute(X500SAMLProfileConstants.SURNAME.getFriendlyName(), user.getLastName());
+            claims.add(X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(), user.getFirstName());
+            claims.add(X500SAMLProfileConstants.SURNAME.getFriendlyName(), user.getLastName());
+            //builder.attribute(X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(), user.getFirstName());
+            //builder.attribute(X500SAMLProfileConstants.SURNAME.getFriendlyName(), user.getLastName());
         }
         if (ClaimMask.hasUsername(model.getAllowedClaimsMask())) {
-            builder.attribute(X500SAMLProfileConstants.USERID.getFriendlyName(), user.getUsername());
+            claims.add(X500SAMLProfileConstants.USERID.getFriendlyName(), user.getUsername());
+            //builder.attribute(X500SAMLProfileConstants.USERID.getFriendlyName(), user.getUsername());
         }
+
+        initClaimsSpi(builder, claims, userSession, model, user);
     }
 
+    protected void initClaimsSpi(SALM2LoginResponseBuilder builder, MultivaluedHashMap<String, String> claims, UserSessionModel userSession, ClientModel model, UserModel user) {
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(ClaimsManipulation.class);
 
+        if(factories == null) {
+            return;
+        }
+
+        if(claims == null /* || !should pass through claims model.getAllowedClaimsMask() */) {
+            claims = new MultivaluedHashMap<String, String>();
+        }
+
+        for(ProviderFactory factory : factories) {
+            ClaimsManipulation provider = (ClaimsManipulation) factory.create(session);
+
+            try {
+                provider.initClaims(claims, userSession, model, user);
+            }
+            finally {
+                provider.close();
+            }
+        }
+
+        addClaims(builder, claims);
+    }
+
+    private void addClaims(SALM2LoginResponseBuilder builder, MultivaluedHashMap<String, String> claims) {
+        if(claims == null) {
+            return;
+        }
+
+        for(Map.Entry<String, List<String>> claim : claims.entrySet()) {
+            builder.attribute(claim.getKey(), claim.getValue());
+        }
+    }
 
     @Override
     public Response consentDenied(ClientSessionModel clientSession) {

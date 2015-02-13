@@ -9,6 +9,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.util.MultivaluedHashMap;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,6 +59,11 @@ public class UserSessionAdapter implements UserSessionModel {
     @Override
     public String getAuthMethod() {
         return entity.getAuthMethod();
+    }
+
+    @Override
+    public MultivaluedHashMap<String, String> getClaims() {
+        return entity.getClaims();
     }
 
     @Override

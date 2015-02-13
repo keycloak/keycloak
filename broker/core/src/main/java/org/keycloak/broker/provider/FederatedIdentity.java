@@ -17,6 +17,9 @@
  */
 package org.keycloak.broker.provider;
 
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.util.MultivaluedHashMap;
+
 /**
  * <p>Represents all identity information obtained from an {@link IdentityProvider} after a
  * successful authentication.</p>
@@ -30,6 +33,7 @@ public class FederatedIdentity {
     private String firstName;
     private String lastName;
     private String email;
+    private MultivaluedHashMap<String, String> claims;
 
     public FederatedIdentity(String id) {
         if (id == null) {
@@ -83,5 +87,11 @@ public class FederatedIdentity {
         this.email = email;
     }
 
+    public MultivaluedHashMap<String, String> getClaims() {
+        return claims;
+    }
 
+    public void setClaims(MultivaluedHashMap<String, String> claims) {
+        this.claims = claims;
+    }
 }

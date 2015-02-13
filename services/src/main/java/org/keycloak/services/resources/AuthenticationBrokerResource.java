@@ -17,6 +17,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.broker.provider.AuthenticationRequest;
@@ -68,6 +69,7 @@ import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
  */
 @Path("/broker")
 public class AuthenticationBrokerResource {
+    private static final Logger logger = Logger.getLogger(AuthenticationBrokerResource.class);
 
     @Context
     private UriInfo uriInfo;
@@ -116,6 +118,7 @@ public class AuthenticationBrokerResource {
                 return response;
             }
         } catch (Exception e) {
+            logger.error("Could not send authentication request to identity provider", e);
             String message = "Could not send authentication request to identity provider";
             event.error(message);
             return redirectToErrorPage(realm, message);
@@ -125,6 +128,7 @@ public class AuthenticationBrokerResource {
 
         event.error(message);
 
+        logger.error("Could not send authentication request to identity provider");
         return redirectToErrorPage(realm, message);
     }
 
@@ -156,12 +160,14 @@ public class AuthenticationBrokerResource {
             String relayState = provider.getRelayState(createAuthenticationRequest(providerId, null, realm, null));
 
             if (relayState == null) {
-                return redirectToErrorPage(realm, "No relay state from identity provider.");
+                logger.error("No authorization code provided.");
+                return redirectToErrorPage(realm, "No authorization code provided.");
             }
 
             ClientSessionCode clientCode = isValidAuthorizationCode(relayState, realm);
 
             if (clientCode == null) {
+                logger.error("Invalid authorization code, please login again through your application.");
                 return redirectToErrorPage(realm, "Invalid authorization code, please login again through your application.");
             }
 
@@ -184,6 +190,7 @@ public class AuthenticationBrokerResource {
 
             IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(realm, providerId);
 
+            logger.error("Authentication failed. Could not authenticate against Identity Provider [" + identityProviderConfig.getName() + "].", e);
             return Flows.forms(session, realm, null, uriInfo).setError("Authentication failed. Could not authenticate against Identity Provider [" + identityProviderConfig.getName() + "].").createErrorPage();
         } finally {
             if (session.getTransaction().isActive()) {
@@ -229,7 +236,6 @@ public class AuthenticationBrokerResource {
             }
 
             session.users().addFederatedIdentity(realm, authenticatedUser, socialLink);
-
             event.success();
 
             return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
@@ -275,7 +281,7 @@ public class AuthenticationBrokerResource {
         String username = socialLink.getUserId() + "@" + identityProviderConfig.getName();
 
         UserSessionModel userSession = session.sessions()
-                .createUserSession(realm, federatedUser, username, clientConnection.getRemoteAddr(), "broker", false);
+                .createUserSession(realm, federatedUser, username, clientConnection.getRemoteAddr(), "broker", socialUser.getClaims(), false);
 
         event.session(userSession);
 

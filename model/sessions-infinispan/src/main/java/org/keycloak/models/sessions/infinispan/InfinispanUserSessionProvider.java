@@ -22,6 +22,7 @@ import org.keycloak.models.sessions.infinispan.mapreduce.LargestResultReducer;
 import org.keycloak.models.sessions.infinispan.mapreduce.SessionMapper;
 import org.keycloak.models.sessions.infinispan.mapreduce.UserSessionMapper;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.Time;
 
 import java.util.Collection;
@@ -68,7 +69,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, MultivaluedHashMap<String, String> claims, boolean rememberMe) {
         String id = KeycloakModelUtils.generateId();
 
         UserSessionEntity entity = new UserSessionEntity();
@@ -78,6 +79,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setLoginUsername(loginUsername);
         entity.setIpAddress(ipAddress);
         entity.setAuthMethod(authMethod);
+        entity.setClaims(claims);
         entity.setRememberMe(rememberMe);
 
         int currentTime = Time.currentTime();

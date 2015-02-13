@@ -95,6 +95,22 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>claims-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- TODO: Figure out how to do this dynamically in openshift. But for now cheat -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>claims-injection</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>claims-transformation</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-social-github</artifactId>
             <version>${project.version}</version>
         </dependency>

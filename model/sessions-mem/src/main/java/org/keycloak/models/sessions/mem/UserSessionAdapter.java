@@ -7,6 +7,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.mem.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
+import org.keycloak.util.MultivaluedHashMap;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -62,6 +63,11 @@ public class UserSessionAdapter implements UserSessionModel {
     @Override
     public String getAuthMethod() {
         return entity.getAuthMethod();
+    }
+
+    @Override
+    public MultivaluedHashMap<String, String> getClaims() {
+        return entity.getClaims();
     }
 
     @Override

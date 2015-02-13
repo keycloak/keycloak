@@ -31,6 +31,15 @@
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-federation</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>        
     </dependencies>
 
 </project>

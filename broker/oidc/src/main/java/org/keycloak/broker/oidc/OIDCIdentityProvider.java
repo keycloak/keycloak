@@ -17,15 +17,20 @@
  */
 package org.keycloak.broker.oidc;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.util.MultivaluedHashMap;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.util.*;
 
 /**
  * @author Pedro Igor
@@ -82,12 +87,61 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
 
             identity.setUsername(preferredUsername);
+            identity.setClaims(getClaims(userInfo));
 
             return AuthenticationResponse.end(identity);
         } catch (Exception e) {
             throw new RuntimeException("Could not fetch attributes from userinfo endpoint.", e);
         }
     }
+
+    private MultivaluedHashMap<String, String> getClaims(JsonNode userInfo) {
+        MultivaluedHashMap<String, String> claims = null;
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+
+            //Note does this need to be String, Object
+            LinkedHashMap<String, Object> hm = mapper.readValue(userInfo, LinkedHashMap.class);
+
+            if(hm.size() > 0) {
+                claims = new MultivaluedHashMap<String, String>();
+                appendClaims(claims, hm, "idp");
+            }
+        }
+        catch(Exception e) {
+            throw new RuntimeException("Could not fetch attributes from userinfo endpoint.", e);
+        }
+
+        claims.add("authenticatingIdp", getConfig().getId());
+
+        return claims;
+    }
+
+    private void appendClaims(MultivaluedHashMap<String, String> claims, LinkedHashMap<String, Object> hm, String prefix) {
+        for(Map.Entry<String, Object> entry : hm.entrySet()) {
+            //Todo: this is kind of a pain. I'm sure this doesn't cover everything.
+            if(entry.getValue() instanceof LinkedHashMap) {
+                appendClaims(claims, (LinkedHashMap<String, Object>) entry.getValue(), prefix + "." + entry.getKey());
+            }
+            else if(entry.getValue() instanceof ArrayList && ((ArrayList<?>)entry.getValue()).get(0) instanceof LinkedHashMap) {
+                for(Object obj : (ArrayList)entry.getValue()) {
+                    appendClaims(claims, (LinkedHashMap<String, Object>) obj, prefix + "." + entry.getKey());
+                }
+            }
+            else {
+                claims.add(prefix + "." + entry.getKey(), entry.getValue().toString());
+            }
+        }
+    }
+
+    /*private void appendClaims(MultivaluedHashMap<String, Object> claims, Map.Entry<String, Object> entry, String prefix) {
+
+    }*/
+
+    //private void appendClaims(MultivaluedHashMap<String, Object> claims, LinkedHashMap<String, Object> hm, String prefix) {
+
+    //}
 
     private void validateIdToken(String idToken) {
         if (idToken == null) {

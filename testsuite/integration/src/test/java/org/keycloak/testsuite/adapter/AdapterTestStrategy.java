@@ -142,7 +142,7 @@ public class AdapterTestStrategy extends ExternalResource {
             ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
-            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", false);
+            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", null, false);
             AccessToken token = tm.createClientAccessToken(TokenManager.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession);
             return tm.encodeToken(adminRealm, token);
         } finally {

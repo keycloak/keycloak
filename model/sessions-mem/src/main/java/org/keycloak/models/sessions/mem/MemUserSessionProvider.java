@@ -14,6 +14,7 @@ import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureKey;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.Time;
 
 import java.util.Collections;
@@ -68,7 +69,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, MultivaluedHashMap<String, String> claims, boolean rememberMe) {
         String id = KeycloakModelUtils.generateId();
 
         UserSessionEntity entity = new UserSessionEntity();
@@ -78,6 +79,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
         entity.setLoginUsername(loginUsername);
         entity.setIpAddress(ipAddress);
         entity.setAuthMethod(authMethod);
+        entity.setClaims(claims);
         entity.setRememberMe(rememberMe);
 
         int currentTime = Time.currentTime();

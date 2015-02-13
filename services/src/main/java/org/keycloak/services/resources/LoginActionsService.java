@@ -331,7 +331,7 @@ public class LoginActionsService {
         switch (status) {
             case SUCCESS:
             case ACTIONS_REQUIRED:
-                UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", remember);
+                UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", null, remember);
                 TokenManager.attachClientSession(userSession, clientSession);
                 event.session(userSession);
                 return authManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
@@ -838,7 +838,7 @@ public class LoginActionsService {
         } else{
             event.user(user);
 
-            UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
+            UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", null, false);
             event.session(userSession);
             TokenManager.attachClientSession(userSession, clientSession);
 
