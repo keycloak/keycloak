@@ -114,10 +114,6 @@
             <artifactId>javase</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>${keycloak.apache.httpcomponents.version}</version>
@@ -212,15 +208,31 @@
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-chrome-driver</artifactId>
         </dependency>
+
+        <!-- Apache DS -->
         <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox-ldap</artifactId>
-            <type>test-jar</type>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-core-annotations</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox-ldap</artifactId>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-interceptor-kerberos</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-server-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.api</groupId>
+            <artifactId>api-ldap-codec-standalone</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-wildfly-common</artifactId>
@@ -270,6 +282,12 @@
                     <workingDirectory>${project.basedir}</workingDirectory>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <inherited>true</inherited>
+                <extensions>true</extensions>
+            </plugin>
         </plugins>
     </build>
 
@@ -311,6 +329,34 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
                             <mainClass>org.keycloak.testutils.TotpGenerator</mainClass>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>ldap</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <mainClass>org.keycloak.testutils.ldap.LDAPEmbeddedServer</mainClass>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>kerberos</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <mainClass>org.keycloak.testutils.ldap.KerberosEmbeddedServer</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
