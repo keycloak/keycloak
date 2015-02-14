@@ -106,7 +106,12 @@ public class IdentityProvidersResource {
         String providerId = formDataMap.get("providerId").get(0).getBodyAsString();
         String enabled = formDataMap.get("enabled").get(0).getBodyAsString();
         String updateProfileFirstLogin = formDataMap.get("updateProfileFirstLogin").get(0).getBodyAsString();
-        String storeToken = formDataMap.get("storeToken").get(0).getBodyAsString();
+        String storeToken = "false";
+
+        if (formDataMap.containsKey("storeToken")) {
+            storeToken = formDataMap.get("storeToken").get(0).getBodyAsString();
+        }
+
         InputPart file = formDataMap.get("file").get(0);
         InputStream inputStream = file.getBody(InputStream.class, null);
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);

@@ -251,7 +251,8 @@ public class MongoUserProvider implements UserProvider {
     @Override
     public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
         FederatedIdentityEntity federatedIdentityEntity = findSocialLink(user, socialProvider, realm);
-        return federatedIdentityEntity != null ? new FederatedIdentityModel(federatedIdentityEntity.getIdentityProvider(), federatedIdentityEntity.getUserId(), federatedIdentityEntity.getUserName()) : null;
+        return federatedIdentityEntity != null ? new FederatedIdentityModel(federatedIdentityEntity.getIdentityProvider(), federatedIdentityEntity.getUserId(),
+                federatedIdentityEntity.getUserName(), federatedIdentityEntity.getToken()) : null;
     }
 
     @Override

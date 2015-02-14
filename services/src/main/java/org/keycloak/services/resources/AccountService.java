@@ -46,7 +46,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OpenIDConnect;
@@ -684,14 +683,9 @@ public class AccountService {
                     clientSession.setRedirectUri(redirectUri);
                     clientSession.setNote(OpenIDConnect.STATE_PARAM, UUID.randomUUID().toString());
 
-                    URI url = UriBuilder.fromUri(this.uriInfo.getBaseUri())
-                            .path(AuthenticationBrokerResource.class)
-                            .path(AuthenticationBrokerResource.class, "performLogin")
-                            .queryParam("provider_id", providerId)
-                            .queryParam("code", clientSessionCode.getCode())
-                            .build(this.realm.getName());
-
-                    return Response.temporaryRedirect(url).build();
+                    return Response.temporaryRedirect(
+                            Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), providerId, realm.getName(), clientSessionCode.getCode()))
+                            .build();
                 } catch (Exception spe) {
                     setReferrerOnPage();
                     return account.setError(Messages.IDENTITY_PROVIDER_REDIRECT_ERROR).createResponse(AccountPages.FEDERATED_IDENTITY);

@@ -653,6 +653,8 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.identityProvider.name = providerFactory.name;
         $scope.identityProvider.enabled = true;
         $scope.identityProvider.updateProfileFirstLogin = true;
+        // Kerberos is suggested as default provider, others not
+        $scope.identityProvider.authenticateByDefault = (providerFactory.id === "kerberos");
         $scope.newIdentityProvider = true;
     }
 
@@ -719,7 +721,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         }
     }, true);
 
-    $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/broker/") + realm.realm + "/" ;
+    $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/realms/") + realm.realm + "/broker/" ;
 
     $scope.addProvider = function(provider) {
         $location.url("/create/identity-provider/" + realm.realm + "/" + provider.id);

@@ -164,7 +164,7 @@ public class LoginTotpTest {
             loginTotpPage.login(totp.generate("totpSecret"));
 
             loginPage.assertCurrent();
-            Assert.assertEquals("Login timeout or unknown action. Please login again", loginPage.getError());
+            Assert.assertEquals("Login timeout. Please login again", loginPage.getError());
 
             AssertEvents.ExpectedEvent expectedEvent = events.expectLogin().error("expired_code")
                     .user((String)null)

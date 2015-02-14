@@ -5,6 +5,7 @@ import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.social.SocialIdentityProvider;
 
 /**
@@ -61,7 +62,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
 
             return user;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IdentityBrokerException("Could not obtain user profile from facebook.", e);
         }
     }
 

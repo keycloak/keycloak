@@ -53,6 +53,11 @@ public class IdentityProviderModel {
     private boolean storeToken;
 
     /**
+     * Specifies if particular provider should be used by default for authentication even before displaying login screen
+     */
+    private boolean authenticateByDefault;
+
+    /**
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
      * in the map are understood by the identity provider implementation.</p>
      */
@@ -70,6 +75,7 @@ public class IdentityProviderModel {
         this.enabled = model.isEnabled();
         this.updateProfileFirstLogin = model.isUpdateProfileFirstLogin();
         this.storeToken = model.isStoreToken();
+        this.authenticateByDefault = model.isAuthenticateByDefault();
     }
 
     public String getInternalId() {
@@ -126,6 +132,14 @@ public class IdentityProviderModel {
 
     public void setStoreToken(boolean storeToken) {
         this.storeToken = storeToken;
+    }
+
+    public boolean isAuthenticateByDefault() {
+        return authenticateByDefault;
+    }
+
+    public void setAuthenticateByDefault(boolean authenticateByDefault) {
+        this.authenticateByDefault = authenticateByDefault;
     }
 
     public Map<String, String> getConfig() {

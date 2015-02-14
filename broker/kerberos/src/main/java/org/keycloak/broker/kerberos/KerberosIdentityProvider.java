@@ -103,15 +103,23 @@ public class KerberosIdentityProvider extends AbstractIdentityProvider<KerberosI
             logger.trace("Sending back " + HttpHeaders.WWW_AUTHENTICATE + ": " + negotiateHeader);
         }
 
-        // Error page is rendered just if browser is unable to send Authorization header with SPNEGO token
-        Response response = request.getSession().getProvider(LoginFormsProvider.class)
+        Response response;
+        LoginFormsProvider loginFormsProvider = request.getSession().getProvider(LoginFormsProvider.class)
                 .setRealm(request.getRealm())
                 .setUriInfo(request.getUriInfo())
-                .setClient(request.getClientSession().getClient())
-                .setClientSessionCode(getRelayState(request))
-                .setWarning("errorKerberosLogin")
-                .setStatus(Response.Status.UNAUTHORIZED)
-                .createLogin();
+                .setStatus(Response.Status.UNAUTHORIZED);
+
+        if (request.getClientSession().getUserSession() == null) {
+            // User not logged. Display HTML with login form as fallback if SPNEGO token not found
+            response = loginFormsProvider.setClient(request.getClientSession().getClient())
+                    .setClientSessionCode(getRelayState(request))
+                    .setWarning("errorKerberosLogin")
+                    .createLogin();
+        } else {
+            // User logged and linking account. Display HTML with error if SPNEGO token not found
+            response = loginFormsProvider.setError("errorKerberosLinkAccount")
+                    .createErrorPage();
+        }
 
         response.getMetadata().putSingle(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader);
         return AuthenticationResponse.fromResponse(response);

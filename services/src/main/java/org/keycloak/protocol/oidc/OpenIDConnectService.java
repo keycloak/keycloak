@@ -877,9 +877,7 @@ public class OpenIDConnectService {
                         .setError("Could not find an identity provider with the identifier [" + idpHint + "].")
                         .createErrorPage();
             }
-
-            return Response.temporaryRedirect(
-                    Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviderModel, realm, accessCode)).build();
+            return redirectToIdentityProvider(idpHint, accessCode);
         }
 
         response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
@@ -890,16 +888,18 @@ public class OpenIDConnectService {
             return oauth.cancelLogin(clientSession);
         }
 
+        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+        for (IdentityProviderModel identityProvider : identityProviders) {
+            if (identityProvider.isAuthenticateByDefault()) {
+                return redirectToIdentityProvider(identityProvider.getId(), accessCode);
+            }
+        }
+
         List<RequiredCredentialModel> requiredCredentials = realm.getRequiredCredentials();
-
         if (requiredCredentials.isEmpty()) {
-            List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
-
             if (!identityProviders.isEmpty()) {
                 if (identityProviders.size() == 1) {
-                    return Response.temporaryRedirect(
-                            Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), identityProviders.get(0), this.realm, accessCode))
-                            .build();
+                    return redirectToIdentityProvider(identityProviders.get(0).getId(), accessCode);
                 }
 
                 return Flows.forms(session, realm, null, uriInfo).setError("Realm [" + this.realm.getName() + "] supports multiple identity providers. Could not determine which identity provider should be used to authenticate with.").createErrorPage();
@@ -1195,6 +1195,13 @@ public class OpenIDConnectService {
             e.put(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
         }
         return Response.status(status).entity(e).type("application/json").build();
+    }
+
+    private Response redirectToIdentityProvider(String providerId, String accessCode) {
+        logger.debug("Automatically redirect to identity provider: " + providerId);
+        return Response.temporaryRedirect(
+                Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), providerId, this.realm.getName(), accessCode))
+                .build();
     }
 
     TokenManager getTokenManager() {

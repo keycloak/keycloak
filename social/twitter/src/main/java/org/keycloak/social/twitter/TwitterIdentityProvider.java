@@ -26,6 +26,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.social.SocialIdentityProvider;
@@ -68,7 +69,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
             return AuthenticationResponse.temporaryRedirect(authenticationUrl);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IdentityBrokerException("Could send authentication request to twitter.", e);
         }
     }
 
@@ -83,7 +84,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         MultivaluedMap<String, String> queryParameters = request.getUriInfo().getQueryParameters();
 
         if (queryParameters.getFirst("denied") != null) {
-            throw new RuntimeException("Access denied.");
+            throw new IdentityBrokerException("Access denied.");
         }
 
         try {
@@ -121,7 +122,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
             return AuthenticationResponse.end(identity);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IdentityBrokerException("Could get user profile from twitter.", e);
         }
     }
 

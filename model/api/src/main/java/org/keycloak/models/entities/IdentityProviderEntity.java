@@ -32,6 +32,7 @@ public class IdentityProviderEntity {
     private boolean enabled;
     private boolean updateProfileFirstLogin;
     private boolean storeToken;
+    private boolean authenticateByDefault;
 
     private Map<String, String> config = new HashMap<String, String>();
 
@@ -65,6 +66,14 @@ public class IdentityProviderEntity {
 
     public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
         this.updateProfileFirstLogin = updateProfileFirstLogin;
+    }
+
+    public boolean isAuthenticateByDefault() {
+        return authenticateByDefault;
+    }
+
+    public void setAuthenticateByDefault(boolean authenticateByDefault) {
+        this.authenticateByDefault = authenticateByDefault;
     }
 
     public boolean isStoreToken() {
