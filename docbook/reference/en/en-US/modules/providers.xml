@@ -80,9 +80,7 @@ public class MyEventListenerProvider implements EventListenerProvider {
         <para>
             The file <literal>META-INF/services/org.keycloak.events.EventListenerProviderFactory</literal> should
             contain the full name of your ProviderFactory implementation:
-<programlisting><![CDATA[{
-org.acme.provider.MyEventListenerProviderFactory
-}]]></programlisting>
+<programlisting><![CDATA[org.acme.provider.MyEventListenerProviderFactory]]></programlisting>
         </para>
     </section>
 
@@ -142,7 +140,7 @@ org.acme.provider.MyEventListenerProviderFactory
                 <varlistentry>
                     <term>Connections Jpa</term>
                     <listitem>
-                        Loads and configures Infinispan connections. The default implementation can load datasources
+                        Loads and configures Jpa connections. The default implementation can load datasources
                         from
                         WildFly/EAP, or alternatively can be manually configured in keycloak-server.json.
                     </listitem>
@@ -188,15 +186,15 @@ org.acme.provider.MyEventListenerProviderFactory
                     <listitem>
                         Exports the Keycloak database. Keycloak provides implementations that export to JSON files
                         either
-                        as a single file, multiple file in a directory or a encrypted ZIP archive.
+                        as a single file, multiple files in a directory or a encrypted ZIP archive.
                     </listitem>
                 </varlistentry>
                 <varlistentry>
                     <term>Import</term>
                     <listitem>
-                        Imports and exported Keycloak database. Keycloak provides implementations that import from JSON
+                        Imports an exported Keycloak database. Keycloak provides implementations that import from JSON
                         files either
-                        as a single file, multiple file in a directory or a encrypted ZIP archive.
+                        as a single file, multiple files in a directory or a encrypted ZIP archive.
                     </listitem>
                 </varlistentry>
                 <varlistentry>
