@@ -2,9 +2,11 @@ package org.keycloak.models.cache.entities;
 
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ProtocolClaimMappingModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
@@ -68,6 +70,8 @@ public class CachedRealm {
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
     private List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
+    private Set<ClaimTypeModel> claimTypes = new HashSet<ClaimTypeModel>();
+    private Set<ProtocolClaimMappingModel> claimMappings = new HashSet<ProtocolClaimMappingModel>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
@@ -129,6 +133,10 @@ public class CachedRealm {
 
         for (IdentityProviderModel identityProviderModel : model.getIdentityProviders()) {
             this.identityProviders.add(new IdentityProviderModel(identityProviderModel));
+        }
+
+        for (ClaimTypeModel claimType : model.getClaimTypes()) {
+            this.claimTypes.add(new ClaimTypeModel(claimType));
         }
 
         smtpConfig.putAll(model.getSmtpConfig());
@@ -339,5 +347,13 @@ public class CachedRealm {
 
     public List<IdentityProviderModel> getIdentityProviders() {
         return identityProviders;
+    }
+
+    public Set<ClaimTypeModel> getClaimTypes() {
+        return claimTypes;
+    }
+
+    public Set<ProtocolClaimMappingModel> getClaimMappings() {
+        return claimMappings;
     }
 }

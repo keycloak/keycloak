@@ -5,17 +5,21 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ProtocolClaimMappingModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.entities.ClaimTypeEntity;
 import org.keycloak.models.entities.IdentityProviderEntity;
+import org.keycloak.models.entities.ProtocolClaimMappingEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
@@ -781,6 +785,146 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.setSmtpConfig(smtpConfig);
         updateRealm();
     }
+
+    @Override
+    public Set<ProtocolClaimMappingModel> getProtocolClaimMappings() {
+        Set<ProtocolClaimMappingModel> result = new HashSet<ProtocolClaimMappingModel>();
+        for (ProtocolClaimMappingEntity entity : realm.getClaimMappings()) {
+            ProtocolClaimMappingModel mapping = new ProtocolClaimMappingModel();
+            mapping.setId(entity.getId());
+            mapping.setProtocolClaim(entity.getProtocolClaim());
+            mapping.setProtocol(entity.getProtocol());
+            mapping.setSource(entity.getSource());
+            mapping.setSourceAttribute(entity.getSourceAttribute());
+            mapping.setAppliedByDefault(entity.isAppliedByDefault());
+        }
+        return result;
+    }
+
+    @Override
+    public ProtocolClaimMappingModel addProtocolClaimMapping(String protocolClaim, String protocol, String sourceAttribute, ProtocolClaimMappingModel.Source source, boolean appliedByDefault) {
+        ProtocolClaimMappingEntity entity = new ProtocolClaimMappingEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setSourceAttribute(sourceAttribute);
+        entity.setProtocol(protocol);
+        entity.setProtocolClaim(protocolClaim);
+        entity.setSource(source);
+        entity.setAppliedByDefault(appliedByDefault);
+        realm.getClaimMappings().add(entity);
+        updateRealm();
+        ProtocolClaimMappingModel mapping = new ProtocolClaimMappingModel();
+        mapping.setId(entity.getId());
+        mapping.setProtocol(entity.getProtocol());
+        mapping.setProtocolClaim(entity.getProtocolClaim());
+        mapping.setAppliedByDefault(entity.isAppliedByDefault());
+        mapping.setSource(entity.getSource());
+        mapping.setSourceAttribute(entity.getSourceAttribute());
+        return mapping;
+    }
+
+    @Override
+    public void removeProtocolClaimMapping(ProtocolClaimMappingModel mapping) {
+        for (ProtocolClaimMappingEntity entity : realm.getClaimMappings()) {
+            if (entity.getId().equals(mapping.getId())) {
+                realm.getClaimMappings().remove(entity);
+                updateRealm();
+                break;
+            }
+        }
+
+    }
+
+    protected ProtocolClaimMappingEntity getProtocolClaimMapping(String id) {
+        for (ProtocolClaimMappingEntity entity : realm.getClaimMappings()) {
+            if (entity.getId().equals(id)) {
+                return entity;
+            }
+        }
+        return null;
+
+    }
+
+
+    @Override
+    public void updateProtocolClaimMapping(ProtocolClaimMappingModel mapping) {
+        ProtocolClaimMappingEntity entity = getProtocolClaimMapping(mapping.getId());
+        entity.setProtocol(mapping.getProtocol());
+        entity.setProtocolClaim(mapping.getProtocolClaim());
+        entity.setAppliedByDefault(mapping.isAppliedByDefault());
+        entity.setSource(mapping.getSource());
+        entity.setSourceAttribute(mapping.getSourceAttribute());
+        updateRealm();
+
+    }
+
+    @Override
+    public ProtocolClaimMappingModel getProtocolClaimMappingById(String id) {
+        ProtocolClaimMappingEntity entity = getProtocolClaimMapping(id);
+        if (entity == null) return null;
+        ProtocolClaimMappingModel mapping = new ProtocolClaimMappingModel();
+        mapping.setId(entity.getId());
+        mapping.setProtocol(entity.getProtocol());
+        mapping.setProtocolClaim(entity.getProtocolClaim());
+        mapping.setAppliedByDefault(entity.isAppliedByDefault());
+        mapping.setSource(entity.getSource());
+        mapping.setSourceAttribute(entity.getSourceAttribute());
+        return mapping;
+    }
+
+    @Override
+    public Set<ClaimTypeModel> getClaimTypes() {
+        Set<ClaimTypeModel> result = new HashSet<ClaimTypeModel>();
+        for (ClaimTypeEntity entity : realm.getClaimTypes()) {
+            result.add(new ClaimTypeModel(entity.getId(), entity.getName(), entity.isBuiltIn(), entity.getType()));
+        }
+       return result;
+    }
+
+    @Override
+    public ClaimTypeModel addClaimType(String name, ClaimTypeModel.ValueType type, boolean builtIn) {
+        ClaimTypeModel claim = new ClaimTypeModel(KeycloakModelUtils.generateId(), name, builtIn, type);
+        ClaimTypeEntity entity = new ClaimTypeEntity();
+        entity.setId(claim.getId());
+        entity.setType(type);
+        entity.setBuiltIn(builtIn);
+        entity.setName(name);
+        realm.getClaimTypes().add(entity);
+        updateRealm();
+        return claim;
+    }
+
+    @Override
+    public void removeClaimType(ClaimTypeModel claimType) {
+        for (ClaimTypeEntity entity : realm.getClaimTypes()) {
+            if (entity.getId().equals(claimType.getId())) {
+                realm.getClaimTypes().remove(entity);
+                updateRealm();
+                break;
+            }
+        }
+    }
+
+    @Override
+    public ClaimTypeModel getClaimType(String name) {
+        for (ClaimTypeModel claimType : getClaimTypes()) {
+            if (claimType.getName().equals(name)) return claimType;
+        }
+        return null;
+    }
+
+    @Override
+    public void updateClaimType(ClaimTypeModel claimType) {
+        for (ClaimTypeEntity entity : realm.getClaimTypes()) {
+            if (entity.getId().equals(claimType.getId())) {
+                entity.setName(claimType.getName());
+                entity.setBuiltIn(claimType.isBuiltIn());
+                entity.setType(claimType.getType());
+                updateRealm();
+                break;
+            }
+        }
+    }
+
 
     @Override
     public List<IdentityProviderModel> getIdentityProviders() {

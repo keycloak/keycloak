@@ -2,6 +2,7 @@ package org.keycloak.models.utils;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
+import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -16,6 +17,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
+import org.keycloak.representations.idm.ClaimTypeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -147,6 +149,10 @@ public class ModelToRepresentation {
 
         for (IdentityProviderModel provider : realm.getIdentityProviders()) {
             rep.addIdentityProvider(toRepresentation(provider));
+        }
+
+        for (ClaimTypeModel claimType : realm.getClaimTypes()) {
+            rep.getClaimTypes().add(toRepresentation(claimType));
         }
 
         return rep;
@@ -311,5 +317,14 @@ public class ModelToRepresentation {
         providerRep.setConfig(identityProviderModel.getConfig());
 
         return providerRep;
+    }
+
+    public static ClaimTypeRepresentation toRepresentation(ClaimTypeModel claimType) {
+        ClaimTypeRepresentation rep = new ClaimTypeRepresentation();
+        rep.setId(claimType.getId());
+        rep.setName(claimType.getName());
+        rep.setBuiltIn(claimType.isBuiltIn());
+        rep.setType(claimType.getType().name().toLowerCase());
+        return rep;
     }
 }

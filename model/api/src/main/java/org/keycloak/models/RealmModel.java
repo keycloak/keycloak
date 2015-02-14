@@ -223,4 +223,19 @@ public interface RealmModel extends RoleContainerModel {
     ClientModel findClientById(String id);
 
     boolean isIdentityFederationEnabled();
+
+    Set<ClaimTypeModel> getClaimTypes();
+    ClaimTypeModel addClaimType(String name, ClaimTypeModel.ValueType type, boolean builtIn);
+    void removeClaimType(ClaimTypeModel claimType);
+    ClaimTypeModel getClaimType(String name);
+    void updateClaimType(ClaimTypeModel claimType);
+
+    Set<ProtocolClaimMappingModel> getProtocolClaimMappings();
+    ProtocolClaimMappingModel addProtocolClaimMapping(String protocolClaim, String protocol, String sourceAttribute,
+                                                      ProtocolClaimMappingModel.Source source, boolean appliedByDefault);
+    void removeProtocolClaimMapping(ProtocolClaimMappingModel mapping);
+    void updateProtocolClaimMapping(ProtocolClaimMappingModel mapping);
+    public ProtocolClaimMappingModel getProtocolClaimMappingById(String id);
+
+
 }
