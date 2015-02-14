@@ -212,7 +212,7 @@ public final class KeycloakModelUtils {
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
         UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null && username.contains("@")) {
+        if (user != null && username.contains("@")) {
             user =  session.users().getUserByEmail(username, realm);
         }
         return user;
