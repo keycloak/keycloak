@@ -38,7 +38,7 @@
         Some of these configuration switches may be adapter specific and some are common across all adapters.
         For Java adapters you can use <literal>${...}</literal> enclosure as System property replacement.
         For example <literal>${jboss.server.config.dir}</literal>.  Also, you can obtain a template
-        for this config file from the admin console.  Go to the realm and application you want a template for.
+        for this config file from the admin console.  Go to the realm and select the application you want a template for.
         Go to the <literal>Installation</literal> tab and this will provide you with a template that includes
         the public key of the realm.
     </para>
@@ -348,7 +348,7 @@
                 <listitem>
                     <para>
                         If <emphasis>true</emphasis>, then adapter will send registration request to Keycloak. It's <emphasis>false</emphasis>
-                        by default as useful just in cluster (See <link linkend="registration-app-nodes">Registration of application nodes to Keycloak</link>)
+                        by default and useful just in cluster (See <link linkend="registration-app-nodes">Registration of application nodes to Keycloak</link>)
                     </para>
                 </listitem>
             </varlistentry>

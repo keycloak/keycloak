@@ -155,7 +155,7 @@
         <para>
             The keycloak examples directory contains an example of a simple User Federation Provider backed by
             a simple properties file.  See <literal>examples/providers/federation-provider</literal>.  Most of how
-            to create a federation provider is explain directly within the example code, but some information is here too.
+            to create a federation provider is explained directly within the example code, but some information is here too.
         </para>
         <para>
             Writing a User Federation Provider starts by implementing the <literal>UserFederationProvider</literal>
