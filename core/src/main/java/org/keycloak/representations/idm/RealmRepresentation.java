@@ -63,7 +63,8 @@ public class RealmRepresentation {
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
     private List<IdentityProviderRepresentation> identityProviders;
-    private boolean identityFederationEnabled;
+    private List<ClaimTypeRepresentation> claimTypes;
+    private Boolean identityFederationEnabled;
 
     public String getId() {
         return id;
@@ -479,5 +480,14 @@ public class RealmRepresentation {
 
     public boolean isIdentityFederationEnabled() {
         return !getIdentityProviders().isEmpty();
+    }
+
+    public List<ClaimTypeRepresentation> getClaimTypes() {
+        if (claimTypes == null) claimTypes = new ArrayList<ClaimTypeRepresentation>();
+        return claimTypes;
+    }
+
+    public void setClaimTypes(List<ClaimTypeRepresentation> claimTypes) {
+        this.claimTypes = claimTypes;
     }
 }

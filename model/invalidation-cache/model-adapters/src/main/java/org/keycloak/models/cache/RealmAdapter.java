@@ -3,10 +3,12 @@ package org.keycloak.models.cache;
 import org.keycloak.Config;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ProtocolClaimMappingModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -609,6 +611,7 @@ public class RealmAdapter implements RealmModel {
         updated.setSmtpConfig(smtpConfig);
     }
 
+
     @Override
     public List<IdentityProviderModel> getIdentityProviders() {
         if (updated != null) return updated.getIdentityProviders();
@@ -847,6 +850,74 @@ public class RealmAdapter implements RealmModel {
         return cached.isIdentityFederationEnabled();
     }
 
+    @Override
+    public Set<ClaimTypeModel> getClaimTypes() {
+        if (updated != null) return updated.getClaimTypes();
+        return cached.getClaimTypes();
+    }
+
+    @Override
+    public ClaimTypeModel addClaimType(String name, ClaimTypeModel.ValueType type, boolean builtIn) {
+        getDelegateForUpdate();
+        return updated.addClaimType(name, type, builtIn);
+    }
+
+    @Override
+    public void removeClaimType(ClaimTypeModel claimType) {
+        getDelegateForUpdate();
+        updated.removeClaimType(claimType);
+
+    }
+
+    @Override
+    public ClaimTypeModel getClaimType(String name) {
+        for (ClaimTypeModel claimType : getClaimTypes())  {
+            if (claimType.getName().equals(name)) return claimType;
+        }
+        return null;
+    }
+
+    @Override
+    public void updateClaimType(ClaimTypeModel claimType) {
+        getDelegateForUpdate();
+        updated.updateClaimType(claimType);
+
+    }
+
+
+    @Override
+    public Set<ProtocolClaimMappingModel> getProtocolClaimMappings() {
+        if (updated != null) return updated.getProtocolClaimMappings();
+        return cached.getClaimMappings();
+     }
+
+    @Override
+    public ProtocolClaimMappingModel addProtocolClaimMapping(String protocolClaim, String protocol, String sourceAttribute, ProtocolClaimMappingModel.Source source, boolean appliedByDefault) {
+        getDelegateForUpdate();
+        return updated.addProtocolClaimMapping(protocolClaim, protocol, sourceAttribute, source, appliedByDefault);
+    }
+
+    @Override
+    public void removeProtocolClaimMapping(ProtocolClaimMappingModel mapping) {
+        getDelegateForUpdate();
+        updated.removeProtocolClaimMapping(mapping);
+
+    }
+
+    @Override
+    public void updateProtocolClaimMapping(ProtocolClaimMappingModel mapping) {
+        getDelegateForUpdate();
+        updated.updateProtocolClaimMapping(mapping);
+
+    }
+
+    @Override
+    public ProtocolClaimMappingModel getProtocolClaimMappingById(String id) {
+        for (ProtocolClaimMappingModel mapping : cached.getClaimMappings()) {
+            if (mapping.getId().equals(id)) return mapping;
+        }
+        return null;
+    }
 
     @Override
     public boolean equals(Object o) {

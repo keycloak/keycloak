@@ -18,6 +18,8 @@
         <class>org.keycloak.models.jpa.entities.UserRoleMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ScopeMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.IdentityProviderEntity</class>
+        <class>org.keycloak.models.jpa.entities.ClaimTypeEntity</class>
+        <class>org.keycloak.models.jpa.entities.ProtocolClaimMappingEntity</class>
 
         <!-- JpaUserSessionProvider -->
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionEntity</class>
