@@ -64,6 +64,7 @@ public class RealmRepresentation {
     protected List<String> eventsListeners;
     private List<IdentityProviderRepresentation> identityProviders;
     private List<ClaimTypeRepresentation> claimTypes;
+    private List<ProtocolClaimMappingRepresentation> protocolClaimMappings;
     private Boolean identityFederationEnabled;
 
     public String getId() {
@@ -489,5 +490,13 @@ public class RealmRepresentation {
 
     public void setClaimTypes(List<ClaimTypeRepresentation> claimTypes) {
         this.claimTypes = claimTypes;
+    }
+
+    public List<ProtocolClaimMappingRepresentation> getProtocolClaimMappings() {
+        return protocolClaimMappings;
+    }
+
+    public void setProtocolClaimMappings(List<ProtocolClaimMappingRepresentation> protocolClaimMappings) {
+        this.protocolClaimMappings = protocolClaimMappings;
     }
 }

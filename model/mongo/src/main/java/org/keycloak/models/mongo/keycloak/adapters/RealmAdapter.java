@@ -802,14 +802,15 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public ProtocolClaimMappingModel addProtocolClaimMapping(String protocolClaim, String protocol, String sourceAttribute, ProtocolClaimMappingModel.Source source, boolean appliedByDefault) {
+    public ProtocolClaimMappingModel addProtocolClaimMapping(ProtocolClaimMappingModel model) {
         ProtocolClaimMappingEntity entity = new ProtocolClaimMappingEntity();
-        entity.setId(KeycloakModelUtils.generateId());
-        entity.setSourceAttribute(sourceAttribute);
-        entity.setProtocol(protocol);
-        entity.setProtocolClaim(protocolClaim);
-        entity.setSource(source);
-        entity.setAppliedByDefault(appliedByDefault);
+        if (model.getId() != null) entity.setId(model.getId());
+        else entity.setId(KeycloakModelUtils.generateId());
+        entity.setSourceAttribute(model.getSourceAttribute());
+        entity.setProtocol(model.getProtocol());
+        entity.setProtocolClaim(model.getProtocolClaim());
+        entity.setSource(model.getSource());
+        entity.setAppliedByDefault(model.isAppliedByDefault());
         realm.getClaimMappings().add(entity);
         updateRealm();
         ProtocolClaimMappingModel mapping = new ProtocolClaimMappingModel();
@@ -881,13 +882,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public ClaimTypeModel addClaimType(String name, ClaimTypeModel.ValueType type, boolean builtIn) {
-        ClaimTypeModel claim = new ClaimTypeModel(KeycloakModelUtils.generateId(), name, builtIn, type);
+    public ClaimTypeModel addClaimType(ClaimTypeModel model) {
+        String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
+        ClaimTypeModel claim = new ClaimTypeModel(id, model.getName(), model.isBuiltIn(), model.getType());
         ClaimTypeEntity entity = new ClaimTypeEntity();
         entity.setId(claim.getId());
-        entity.setType(type);
-        entity.setBuiltIn(builtIn);
-        entity.setName(name);
+        entity.setType(model.getType());
+        entity.setBuiltIn(model.isBuiltIn());
+        entity.setName(model.getName());
         realm.getClaimTypes().add(entity);
         updateRealm();
         return claim;
