@@ -80,4 +80,10 @@
         <addUniqueConstraint columnNames="INTERNAL_ID,CLIENT_ID" constraintName="UK_7CAELWNIBJI49AVXSRTUF6XJ12" tableName="CLIENT_ALLOWED_IDENTITY_PROVIDER"/>
         <addUniqueConstraint columnNames="PROVIDER_NONIMAL_ID" constraintName="UK_2DAELWNIBJI49AVXSRTUF6XJ33" tableName="IDENTITY_PROVIDER"/>
     </changeSet>
+    <changeSet author="jean.merelis@gmail.com" id="1.2.0.Beta1-KEYCLOAK-1031">
+        <update 
+            tableName="USER_ENTITY">
+            <column name="EMAIL_CONSTRAINT" type="varchar(255)" valueComputed="LOWER(EMAIL_CONSTRAINT)"/>        
+        </update>        
+    </changeSet>
 </databaseChangeLog>
