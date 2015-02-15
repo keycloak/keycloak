@@ -2,8 +2,10 @@ package org.keycloak.models.entities;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -28,6 +30,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private List<String> redirectUris = new ArrayList<String>();
     private List<String> scopeIds = new ArrayList<String>();
     private List<String> allowedIdentityProviders = new ArrayList<String>();
+    private Set<String> protocolClaimMappings = new HashSet<String>();
 
     public String getName() {
         return name;
@@ -147,5 +150,13 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setAllowedIdentityProviders(List<String> allowedIdentityProviders) {
         this.allowedIdentityProviders = allowedIdentityProviders;
+    }
+
+    public Set<String> getProtocolClaimMappings() {
+        return protocolClaimMappings;
+    }
+
+    public void setProtocolClaimMappings(Set<String> protocolClaimMappings) {
+        this.protocolClaimMappings = protocolClaimMappings;
     }
 }

@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -75,6 +76,10 @@ public abstract class ClientEntity {
     @OneToMany(fetch = FetchType.LAZY)
     @JoinTable(name="CLIENT_ALLOWED_IDENTITY_PROVIDER", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="INTERNAL_ID")})
     Collection<IdentityProviderEntity> allowedIdentityProviders = new ArrayList<IdentityProviderEntity>();
+
+    @OneToMany(cascade ={CascadeType.REMOVE})
+    @JoinTable(name="CLIENT_PROTOCOL_CLAIM_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="MAPPING_ID")})
+    Collection<ProtocolClaimMappingEntity> protocolClaimMappings = new ArrayList<ProtocolClaimMappingEntity>();
 
     public RealmEntity getRealm() {
         return realm;
@@ -194,5 +199,13 @@ public abstract class ClientEntity {
 
     public void setAllowedIdentityProviders(Collection<IdentityProviderEntity> allowedIdentityProviders) {
         this.allowedIdentityProviders = allowedIdentityProviders;
+    }
+
+    public Collection<ProtocolClaimMappingEntity> getProtocolClaimMappings() {
+        return protocolClaimMappings;
+    }
+
+    public void setProtocolClaimMappings(Collection<ProtocolClaimMappingEntity> protocolClaimMappings) {
+        this.protocolClaimMappings = protocolClaimMappings;
     }
 }

@@ -2,6 +2,7 @@ package org.keycloak.representations.idm;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -29,6 +30,7 @@ public class ApplicationRepresentation {
     protected Integer nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
     protected List<String> allowedIdentityProviders;
+    protected Set<String> protocolClaimMappings;
 
     public String getId() {
         return id;
@@ -196,5 +198,13 @@ public class ApplicationRepresentation {
 
     public void setAllowedIdentityProviders(List<String> allowedIdentityProviders) {
         this.allowedIdentityProviders = allowedIdentityProviders;
+    }
+
+    public Set<String> getProtocolClaimMappings() {
+        return protocolClaimMappings;
+    }
+
+    public void setProtocolClaimMappings(Set<String> protocolClaimMappings) {
+        this.protocolClaimMappings = protocolClaimMappings;
     }
 }

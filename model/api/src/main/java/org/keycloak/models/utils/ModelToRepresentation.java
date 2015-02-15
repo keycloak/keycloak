@@ -265,6 +265,12 @@ public class ModelToRepresentation {
             rep.setAllowedIdentityProviders(applicationModel.getAllowedIdentityProviders());
         }
 
+        if (!applicationModel.getProtocolClaimMappings().isEmpty()) {
+            Set<String> mappings = new HashSet<String>();
+            for (ProtocolClaimMappingModel model : applicationModel.getProtocolClaimMappings()) mappings.add(model.getId());
+            rep.setProtocolClaimMappings(mappings);
+        }
+
         return rep;
     }
 
@@ -294,6 +300,11 @@ public class ModelToRepresentation {
             rep.setAllowedIdentityProviders(model.getAllowedIdentityProviders());
         }
 
+        if (!model.getProtocolClaimMappings().isEmpty()) {
+            Set<String> mappings = new HashSet<String>();
+            for (ProtocolClaimMappingModel mappingMoel : model.getProtocolClaimMappings()) mappings.add(mappingMoel.getId());
+            rep.setProtocolClaimMappings(mappings);
+        }
         return rep;
     }
 

@@ -460,6 +460,10 @@ public class RepresentationToModel {
             applicationModel.setAllowedClaimsMask(ClaimMask.ALL);
         }
 
+        if (resourceRep.getProtocolClaimMappings() != null) {
+            applicationModel.addProtocolClaimMappings(resourceRep.getProtocolClaimMappings());
+        }
+
         return applicationModel;
     }
 
@@ -632,6 +636,11 @@ public class RepresentationToModel {
         if (rep.getAllowedIdentityProviders() != null) {
             model.updateAllowedIdentityProviders(rep.getAllowedIdentityProviders());
         }
+
+        if (rep.getProtocolClaimMappings() != null) {
+            model.addProtocolClaimMappings(rep.getProtocolClaimMappings());
+        }
+
     }
 
     // Scope mappings

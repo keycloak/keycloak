@@ -138,4 +138,6 @@ public class IdentityProviderEntity {
     public void setConfig(Map<String, String> config) {
         this.config = config;
     }
+
+
 }

@@ -93,7 +93,7 @@ public class JpaRealmProvider implements RealmProvider {
             adapter.removeOAuthClient(oauth.getId());
         }
 
-       em.remove(realm);
+        em.remove(realm);
         return true;
     }
 

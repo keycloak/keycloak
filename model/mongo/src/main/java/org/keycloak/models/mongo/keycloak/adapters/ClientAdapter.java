@@ -4,6 +4,7 @@ import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolClaimMappingModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
@@ -289,6 +290,29 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
         Map<String, String> copy = new HashMap<String, String>();
         copy.putAll(getMongoEntityAsClient().getAttributes());
         return copy;
+    }
+
+    @Override
+    public Set<ProtocolClaimMappingModel> getProtocolClaimMappings() {
+        Set<ProtocolClaimMappingModel> result = new HashSet<ProtocolClaimMappingModel>();
+        for (String id : getMongoEntityAsClient().getProtocolClaimMappings()) {
+            ProtocolClaimMappingModel model = getRealm().getProtocolClaimMappingById(id);
+            if (model != null) result.add(model);
+        }
+        return result;
+    }
+
+    @Override
+    public void addProtocolClaimMappings(Set<String> mappingIds) {
+        getMongoEntityAsClient().getProtocolClaimMappings().addAll(mappingIds);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public void removeProtocolClaimMappings(Set<String> mappingIds) {
+        getMongoEntityAsClient().getProtocolClaimMappings().removeAll(mappingIds);
+        updateMongoEntity();
     }
 
     @Override
