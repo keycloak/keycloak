@@ -17,6 +17,7 @@
 
     <modules>
         <module>ldap</module>
+        <module>kerberos</module>
     </modules>
 
 </project>

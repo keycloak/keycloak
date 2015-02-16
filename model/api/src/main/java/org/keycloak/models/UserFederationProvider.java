@@ -131,6 +131,14 @@ public interface UserFederationProvider extends Provider {
     Set<String> getSupportedCredentialTypes(UserModel user);
 
     /**
+     * What UserCredentialModel types should be handled by this provider? This is called in scenarios when we don't know user,
+     * who is going to authenticate (For example Kerberos authentication).
+     *
+     * @return
+     */
+    Set<String> getSupportedCredentialTypes();
+
+    /**
      * Validate credentials for this user.  This method will only be called with credential parameters supported
      * by this provider
      *
@@ -141,6 +149,15 @@ public interface UserFederationProvider extends Provider {
      */
     boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input);
     boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input);
+
+    /**
+     * Validate credentials of unknown user. The authenticated user is recognized based on provided credentials and returned back in CredentialValidationOutput
+     * @param realm
+     * @param input
+     * @return
+     */
+    CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential);
+
     void close();
 
 }

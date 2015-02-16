@@ -2,6 +2,11 @@ package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.federation.kerberos.KerberosConfig;
+import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
+import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
+import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -45,7 +50,7 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
     public LDAPFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model) {
         PartitionManagerProvider idmProvider = session.getProvider(PartitionManagerProvider.class);
         PartitionManager partition = idmProvider.getPartitionManager(model);
-        return new LDAPFederationProvider(session, model, partition);
+        return new LDAPFederationProvider(this, session, model, partition);
     }
 
     @Override
@@ -139,5 +144,18 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
         RealmModel realm = session.realms().getRealm(realmId);
         LDAPFederationProvider ldapFedProvider = getInstance(session, fedModel);
         ldapFedProvider.importPicketlinkUsers(realm, users, fedModel);
+    }
+
+    protected SPNEGOAuthenticator createSPNEGOAuthenticator(String spnegoToken, CommonKerberosConfig kerberosConfig) {
+        KerberosServerSubjectAuthenticator kerberosAuth = createKerberosSubjectAuthenticator(kerberosConfig);
+        return new SPNEGOAuthenticator(kerberosConfig, kerberosAuth, spnegoToken);
+    }
+
+    protected KerberosServerSubjectAuthenticator createKerberosSubjectAuthenticator(CommonKerberosConfig kerberosConfig) {
+        return new KerberosServerSubjectAuthenticator(kerberosConfig);
+    }
+
+    protected KerberosUsernamePasswordAuthenticator createKerberosUsernamePasswordAuthenticator(CommonKerberosConfig kerberosConfig) {
+        return new KerberosUsernamePasswordAuthenticator(kerberosConfig);
     }
 }

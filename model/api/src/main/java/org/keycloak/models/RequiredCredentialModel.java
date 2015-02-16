@@ -54,6 +54,7 @@ public class RequiredCredentialModel {
     public static final RequiredCredentialModel TOTP;
     public static final RequiredCredentialModel CLIENT_CERT;
     public static final RequiredCredentialModel SECRET;
+    public static final RequiredCredentialModel KERBEROS;
 
     static {
         Map<String, RequiredCredentialModel> map = new HashMap<String, RequiredCredentialModel>();
@@ -81,6 +82,12 @@ public class RequiredCredentialModel {
         CLIENT_CERT.setSecret(false);
         CLIENT_CERT.setFormLabel("clientCertificate");
         map.put(CLIENT_CERT.getType(), CLIENT_CERT);
+        KERBEROS = new RequiredCredentialModel();
+        KERBEROS.setType(UserCredentialModel.KERBEROS);
+        KERBEROS.setInput(false);
+        KERBEROS.setSecret(false);
+        KERBEROS.setFormLabel("kerberos");
+        map.put(KERBEROS.getType(), KERBEROS);
         BUILT_IN = Collections.unmodifiableMap(map);
     }
 }

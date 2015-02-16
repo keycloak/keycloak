@@ -1,4 +1,4 @@
-package org.keycloak.broker.kerberos.impl;
+package org.keycloak.federation.kerberos.impl;
 
 import java.io.IOException;
 import java.security.PrivilegedActionException;
@@ -12,6 +12,7 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.jboss.logging.Logger;
+import org.keycloak.federation.kerberos.CommonKerberosConfig;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -24,13 +25,15 @@ public class SPNEGOAuthenticator {
 
     private final KerberosServerSubjectAuthenticator kerberosSubjectAuthenticator;
     private final String spnegoToken;
+    private final CommonKerberosConfig kerberosConfig;
 
     private boolean authenticated = false;
-    private String principal = null;
+    private String authenticatedKerberosPrincipal = null;
     private GSSCredential delegationCredential;
     private String responseToken = null;
 
-    public SPNEGOAuthenticator(KerberosServerSubjectAuthenticator kerberosSubjectAuthenticator, String spnegoToken) {
+    public SPNEGOAuthenticator(CommonKerberosConfig kerberosConfig, KerberosServerSubjectAuthenticator kerberosSubjectAuthenticator, String spnegoToken) {
+        this.kerberosConfig = kerberosConfig;
         this.kerberosSubjectAuthenticator = kerberosSubjectAuthenticator;
         this.spnegoToken = spnegoToken;
     }
@@ -61,10 +64,6 @@ public class SPNEGOAuthenticator {
         return authenticated;
     }
 
-    public String getPrincipal() {
-        return principal;
-    }
-
     public String getResponseToken() {
         return responseToken;
     }
@@ -72,6 +71,19 @@ public class SPNEGOAuthenticator {
     public GSSCredential getDelegationCredential() {
         return delegationCredential;
     }
+
+    /**
+     * @return username to be used in Keycloak. Username is authenticated kerberos principal without realm name
+     */
+    public String getAuthenticatedUsername() {
+        String[] tokens = authenticatedKerberosPrincipal.split("@");
+        String username = tokens[0];
+        if (!tokens[1].equalsIgnoreCase(kerberosConfig.getKerberosRealm())) {
+            throw new IllegalStateException("Invalid kerberos realm. Realm from the ticket: " + tokens[1] + ", configured realm: " + kerberosConfig.getKerberosRealm());
+        }
+        return username;
+    }
+
 
     private class AcceptSecContext implements PrivilegedExceptionAction<Boolean> {
 
@@ -87,7 +99,7 @@ public class SPNEGOAuthenticator {
                 logAuthDetails(gssContext);
 
                 if (gssContext.isEstablished()) {
-                    principal = gssContext.getSrcName().toString();
+                    authenticatedKerberosPrincipal = gssContext.getSrcName().toString();
 
                     // What should be done with delegation credential? Figure out if there are use-cases for storing it as claims in FederatedIdentity
                     if (gssContext.getCredDelegState()) {
@@ -107,6 +119,7 @@ public class SPNEGOAuthenticator {
 
     }
 
+
     protected GSSContext establishContext() throws GSSException, IOException {
         GSSContext gssContext = GSS_MANAGER.createContext((GSSCredential) null);
 
@@ -116,6 +129,7 @@ public class SPNEGOAuthenticator {
 
         return gssContext;
     }
+
 
     protected void logAuthDetails(GSSContext gssContext) throws GSSException {
         if (log.isDebugEnabled()) {

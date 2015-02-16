@@ -54,6 +54,8 @@ public interface LoginFormsProvider extends Provider {
 
     public LoginFormsProvider setQueryParams(MultivaluedMap<String, String> queryParams);
 
+    public LoginFormsProvider setResponseHeader(String headerName, String headerValue);
+
     public LoginFormsProvider setFormData(MultivaluedMap<String, String> formData);
 
     public LoginFormsProvider setStatus(Response.Status status);

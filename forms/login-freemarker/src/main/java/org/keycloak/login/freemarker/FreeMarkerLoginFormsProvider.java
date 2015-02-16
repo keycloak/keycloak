@@ -57,6 +57,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     private List<RoleModel> realmRolesRequested;
     private MultivaluedMap<String, RoleModel> resourceRolesRequested;
     private MultivaluedMap<String, String> queryParams;
+    private Map<String, String> httpResponseHeaders = new HashMap<String, String>();
     private String accessRequestMessage;
     private URI actionUri;
 
@@ -226,6 +227,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
+            for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
+                builder.header(entry.getKey(), entry.getValue());
+            }
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -332,6 +336,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setActionUri(URI actionUri) {
         this.actionUri = actionUri;
+        return this;
+    }
+
+    @Override
+    public LoginFormsProvider setResponseHeader(String headerName, String headerValue) {
+        this.httpResponseHeaders.put(headerName, headerValue);
         return this;
     }
 

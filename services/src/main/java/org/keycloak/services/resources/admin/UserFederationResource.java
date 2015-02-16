@@ -5,9 +5,12 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.utils.KerberosConstants;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
@@ -118,6 +121,7 @@ public class UserFederationResource {
         UserFederationProviderModel model = realm.addUserFederationProvider(rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
+        checkKerberosCredential(model);
 
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
@@ -141,6 +145,7 @@ public class UserFederationResource {
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         realm.updateUserFederationProvider(model);
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
+        checkKerberosCredential(model);
     }
 
     /**
@@ -223,5 +228,23 @@ public class UserFederationResource {
         throw new NotFoundException("could not find provider");
     }
 
+    // Automatically add "kerberos" to required realm credentials if it's supported by saved provider
+    private void checkKerberosCredential(UserFederationProviderModel model) {
+        String allowKerberosCfg = model.getConfig().get(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
+        if (Boolean.valueOf(allowKerberosCfg)) {
+            boolean found = false;
+            List<RequiredCredentialModel> currentCreds = realm.getRequiredCredentials();
+            for (RequiredCredentialModel cred : currentCreds) {
+                if (cred.getType().equals(UserCredentialModel.KERBEROS)) {
+                    found = true;
+                }
+            }
+
+            if (!found) {
+                realm.addRequiredCredential(UserCredentialModel.KERBEROS);
+                logger.info("Added 'kerberos' to required realm credentials");
+            }
+        }
+    }
 
 }

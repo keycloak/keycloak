@@ -1,6 +1,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -374,5 +375,11 @@ public class JpaUserProvider implements UserProvider {
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
         return CredentialValidation.validCredentials(realm, user, input);
+    }
+
+    @Override
+    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
+        // Not supported yet
+        return null;
     }
 }
