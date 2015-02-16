@@ -225,14 +225,13 @@ public interface RealmModel extends RoleContainerModel {
     boolean isIdentityFederationEnabled();
 
     Set<ClaimTypeModel> getClaimTypes();
-    ClaimTypeModel addClaimType(String name, ClaimTypeModel.ValueType type, boolean builtIn);
+    ClaimTypeModel addClaimType(ClaimTypeModel model);
     void removeClaimType(ClaimTypeModel claimType);
     ClaimTypeModel getClaimType(String name);
     void updateClaimType(ClaimTypeModel claimType);
 
     Set<ProtocolClaimMappingModel> getProtocolClaimMappings();
-    ProtocolClaimMappingModel addProtocolClaimMapping(String protocolClaim, String protocol, String sourceAttribute,
-                                                      ProtocolClaimMappingModel.Source source, boolean appliedByDefault);
+    ProtocolClaimMappingModel addProtocolClaimMapping(ProtocolClaimMappingModel model);
     void removeProtocolClaimMapping(ProtocolClaimMappingModel mapping);
     void updateProtocolClaimMapping(ProtocolClaimMappingModel mapping);
     public ProtocolClaimMappingModel getProtocolClaimMappingById(String id);

@@ -1206,15 +1206,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ClaimTypeModel addClaimType(String name, ClaimTypeModel.ValueType type, boolean builtIn) {
+    public ClaimTypeModel addClaimType(ClaimTypeModel model) {
+        String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         ClaimTypeEntity claimEntity = new ClaimTypeEntity();
-        claimEntity.setId(KeycloakModelUtils.generateId());
-        claimEntity.setType(type.name());
-        claimEntity.setBuiltIn(builtIn);
+        claimEntity.setId(id);
+        claimEntity.setType(model.getType().name());
+        claimEntity.setBuiltIn(model.isBuiltIn());
         claimEntity.setRealm(realm);
         em.persist(claimEntity);
         realm.getClaimTypes().add(claimEntity);
-        return new ClaimTypeModel(claimEntity.getId(), name, builtIn, type);
+        return new ClaimTypeModel(claimEntity.getId(), model.getName(), model.isBuiltIn(), model.getType());
     }
 
     protected ClaimTypeEntity getClaimTypeEntity(ClaimTypeModel claim) {
@@ -1272,14 +1273,15 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ProtocolClaimMappingModel addProtocolClaimMapping(String protocolClaim, String protocol, String sourceAttribute, ProtocolClaimMappingModel.Source source, boolean appliedByDefault) {
+    public ProtocolClaimMappingModel addProtocolClaimMapping(ProtocolClaimMappingModel model) {
+        String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         ProtocolClaimMappingEntity entity = new ProtocolClaimMappingEntity();
-        entity.setId(KeycloakModelUtils.generateId());
-        entity.setSourceAttribute(sourceAttribute);
-        entity.setProtocol(protocol);
-        entity.setProtocolClaim(protocolClaim);
-        entity.setSource(source.name());
-        entity.setAppliedByDefault(appliedByDefault);
+        entity.setId(id);
+        entity.setSourceAttribute(model.getSourceAttribute());
+        entity.setProtocol(model.getProtocol());
+        entity.setProtocolClaim(model.getProtocolClaim());
+        entity.setSource(model.getSource().name());
+        entity.setAppliedByDefault(model.isAppliedByDefault());
         entity.setRealm(realm);
         em.persist(entity);
         ProtocolClaimMappingModel mapping = new ProtocolClaimMappingModel();

@@ -6,12 +6,14 @@ import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
+import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ProtocolClaimMappingModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -20,10 +22,12 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
+import org.keycloak.representations.idm.ClaimTypeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.representations.idm.ProtocolClaimMappingRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
@@ -113,6 +117,8 @@ public class RepresentationToModel {
         if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
         importIdentityProviders(rep, newRealm);
+        importClaimTypes(rep, newRealm);
+        importProtocolClaimMappings(rep, newRealm);
 
         if (rep.getApplications() != null) {
             Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
@@ -454,6 +460,10 @@ public class RepresentationToModel {
             applicationModel.setAllowedClaimsMask(ClaimMask.ALL);
         }
 
+        if (resourceRep.getProtocolClaimMappings() != null) {
+            applicationModel.addProtocolClaimMappings(resourceRep.getProtocolClaimMappings());
+        }
+
         return applicationModel;
     }
 
@@ -626,6 +636,11 @@ public class RepresentationToModel {
         if (rep.getAllowedIdentityProviders() != null) {
             model.updateAllowedIdentityProviders(rep.getAllowedIdentityProviders());
         }
+
+        if (rep.getProtocolClaimMappings() != null) {
+            model.addProtocolClaimMappings(rep.getProtocolClaimMappings());
+        }
+
     }
 
     // Scope mappings
@@ -749,6 +764,21 @@ public class RepresentationToModel {
             }
         }
     }
+    private static void importClaimTypes(RealmRepresentation rep, RealmModel newRealm) {
+        if (rep.getClaimTypes() != null) {
+            for (ClaimTypeRepresentation representation : rep.getClaimTypes()) {
+                newRealm.addClaimType(toModel(representation));
+            }
+        }
+    }
+
+    private static void importProtocolClaimMappings(RealmRepresentation rep, RealmModel newRealm) {
+        if (rep.getProtocolClaimMappings() != null) {
+            for (ProtocolClaimMappingRepresentation representation : rep.getProtocolClaimMappings()) {
+                newRealm.addProtocolClaimMapping(toModel(representation));
+            }
+        }
+    }
 
     public static IdentityProviderModel toModel(IdentityProviderRepresentation representation) {
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
@@ -764,5 +794,25 @@ public class RepresentationToModel {
         identityProviderModel.setConfig(representation.getConfig());
 
         return identityProviderModel;
+    }
+
+    public static ClaimTypeModel toModel(ClaimTypeRepresentation rep) {
+        ClaimTypeModel model = new ClaimTypeModel();
+        model.setId(rep.getId());
+        model.setType(ClaimTypeModel.ValueType.valueOf(rep.getType()));
+        model.setBuiltIn(rep.isBuiltIn());
+        model.setName(rep.getName());
+        return model;
+    }
+
+    public static ProtocolClaimMappingModel toModel(ProtocolClaimMappingRepresentation rep) {
+        ProtocolClaimMappingModel model = new ProtocolClaimMappingModel();
+        model.setId(rep.getId());
+        model.setAppliedByDefault(rep.isAppliedByDefault());
+        model.setSource(ProtocolClaimMappingModel.Source.valueOf(rep.getSource()));
+        model.setSourceAttribute(rep.getSourceAttribute());
+        model.setProtocol(rep.getProtocol());
+        model.setProtocolClaim(rep.getProtocolClaim());
+        return model;
     }
 }

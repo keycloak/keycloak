@@ -8,6 +8,7 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.ProtocolClaimMappingModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -22,6 +23,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.representations.idm.ProtocolClaimMappingRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -155,6 +157,10 @@ public class ModelToRepresentation {
             rep.getClaimTypes().add(toRepresentation(claimType));
         }
 
+        for (ProtocolClaimMappingModel mapping : realm.getProtocolClaimMappings()) {
+            rep.getProtocolClaimMappings().add(toRepresentation(mapping));
+        }
+
         return rep;
     }
 
@@ -259,6 +265,12 @@ public class ModelToRepresentation {
             rep.setAllowedIdentityProviders(applicationModel.getAllowedIdentityProviders());
         }
 
+        if (!applicationModel.getProtocolClaimMappings().isEmpty()) {
+            Set<String> mappings = new HashSet<String>();
+            for (ProtocolClaimMappingModel model : applicationModel.getProtocolClaimMappings()) mappings.add(model.getId());
+            rep.setProtocolClaimMappings(mappings);
+        }
+
         return rep;
     }
 
@@ -288,6 +300,11 @@ public class ModelToRepresentation {
             rep.setAllowedIdentityProviders(model.getAllowedIdentityProviders());
         }
 
+        if (!model.getProtocolClaimMappings().isEmpty()) {
+            Set<String> mappings = new HashSet<String>();
+            for (ProtocolClaimMappingModel mappingMoel : model.getProtocolClaimMappings()) mappings.add(mappingMoel.getId());
+            rep.setProtocolClaimMappings(mappings);
+        }
         return rep;
     }
 
@@ -318,6 +335,17 @@ public class ModelToRepresentation {
         providerRep.setConfig(identityProviderModel.getConfig());
 
         return providerRep;
+    }
+
+    public static ProtocolClaimMappingRepresentation toRepresentation(ProtocolClaimMappingModel model) {
+        ProtocolClaimMappingRepresentation rep = new ProtocolClaimMappingRepresentation();
+        rep.setId(model.getId());
+        rep.setProtocol(model.getProtocol());
+        rep.setProtocolClaim(model.getProtocolClaim());
+        rep.setSourceAttribute(model.getSourceAttribute());
+        rep.setSource(model.getSource().name());
+        rep.setAppliedByDefault(model.isAppliedByDefault());
+        return rep;
     }
 
     public static ClaimTypeRepresentation toRepresentation(ClaimTypeModel claimType) {

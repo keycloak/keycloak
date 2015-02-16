@@ -857,9 +857,9 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ClaimTypeModel addClaimType(String name, ClaimTypeModel.ValueType type, boolean builtIn) {
+    public ClaimTypeModel addClaimType(ClaimTypeModel claimType) {
         getDelegateForUpdate();
-        return updated.addClaimType(name, type, builtIn);
+        return updated.addClaimType(claimType);
     }
 
     @Override
@@ -892,9 +892,9 @@ public class RealmAdapter implements RealmModel {
      }
 
     @Override
-    public ProtocolClaimMappingModel addProtocolClaimMapping(String protocolClaim, String protocol, String sourceAttribute, ProtocolClaimMappingModel.Source source, boolean appliedByDefault) {
+    public ProtocolClaimMappingModel addProtocolClaimMapping(ProtocolClaimMappingModel model) {
         getDelegateForUpdate();
-        return updated.addProtocolClaimMapping(protocolClaim, protocol, sourceAttribute, source, appliedByDefault);
+        return updated.addProtocolClaimMapping(model);
     }
 
     @Override

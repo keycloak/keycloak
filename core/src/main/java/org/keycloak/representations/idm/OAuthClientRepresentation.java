@@ -2,6 +2,7 @@ package org.keycloak.representations.idm;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -23,6 +24,7 @@ public class OAuthClientRepresentation {
     protected Boolean fullScopeAllowed;
     protected Boolean frontchannelLogout;
     protected List<String> allowedIdentityProviders;
+    protected Set<String> protocolClaimMappings;
 
 
     public String getId() {
@@ -143,5 +145,13 @@ public class OAuthClientRepresentation {
 
     public void setAllowedIdentityProviders(List<String> allowedIdentityProviders) {
         this.allowedIdentityProviders = allowedIdentityProviders;
+    }
+
+    public Set<String> getProtocolClaimMappings() {
+        return protocolClaimMappings;
+    }
+
+    public void setProtocolClaimMappings(Set<String> protocolClaimMappings) {
+        this.protocolClaimMappings = protocolClaimMappings;
     }
 }

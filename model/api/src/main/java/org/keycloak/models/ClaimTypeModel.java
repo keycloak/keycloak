@@ -12,10 +12,10 @@ public class ClaimTypeModel {
         STRING
     }
 
-    private final String id;
-    private final String name;
-    private final boolean builtIn;
-    private final ValueType type;
+    private String id;
+    private String name;
+    private boolean builtIn;
+    private ValueType type;
 
     public ClaimTypeModel(ClaimTypeModel copy) {
         this(copy.getId(), copy.getName(), copy.isBuiltIn(), copy.getType());
@@ -26,6 +26,9 @@ public class ClaimTypeModel {
         this.name = name;
         this.builtIn = builtIn;
         this.type = type;
+    }
+
+    public ClaimTypeModel() {
     }
 
     public String getId() {
@@ -42,6 +45,22 @@ public class ClaimTypeModel {
 
     public ValueType getType() {
         return type;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setBuiltIn(boolean builtIn) {
+        this.builtIn = builtIn;
+    }
+
+    public void setType(ValueType type) {
+        this.type = type;
     }
 
     @Override
