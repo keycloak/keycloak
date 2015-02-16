@@ -27,7 +27,7 @@ public class MongoRealmProviderFactory implements RealmProviderFactory {
     @Override
     public RealmProvider create(KeycloakSession session) {
         MongoConnectionProvider connection = session.getProvider(MongoConnectionProvider.class);
-        return new MongoRealmProvider(session, connection.getMongoStore(), connection.getInvocationContext());
+        return new MongoRealmProvider(session, connection.getInvocationContext());
     }
 
     @Override

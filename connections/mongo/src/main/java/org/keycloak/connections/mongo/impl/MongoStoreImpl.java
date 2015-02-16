@@ -18,6 +18,7 @@ import org.keycloak.connections.mongo.api.types.Mapper;
 import org.keycloak.connections.mongo.api.types.MapperContext;
 import org.keycloak.connections.mongo.api.types.MapperRegistry;
 import org.keycloak.connections.mongo.impl.types.BasicDBListMapper;
+import org.keycloak.connections.mongo.impl.types.BasicDBListToSetMapper;
 import org.keycloak.connections.mongo.impl.types.BasicDBObjectMapper;
 import org.keycloak.connections.mongo.impl.types.BasicDBObjectToMapMapper;
 import org.keycloak.connections.mongo.impl.types.EnumToStringMapper;
@@ -35,8 +36,10 @@ import org.keycloak.models.utils.reflection.PropertyQueries;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -70,6 +73,10 @@ public class MongoStoreImpl implements MongoStore {
         mapperRegistry.addAppObjectMapper(new ListMapper(mapperRegistry, ArrayList.class));
         mapperRegistry.addAppObjectMapper(new ListMapper(mapperRegistry, List.class));
         mapperRegistry.addDBObjectMapper(new BasicDBListMapper(mapperRegistry));
+
+        mapperRegistry.addAppObjectMapper(new ListMapper(mapperRegistry, HashSet.class));
+        mapperRegistry.addAppObjectMapper(new ListMapper(mapperRegistry, Set.class));
+        mapperRegistry.addDBObjectMapper(new BasicDBListToSetMapper(mapperRegistry));
 
         mapperRegistry.addAppObjectMapper(new MapMapper(HashMap.class));
         mapperRegistry.addAppObjectMapper(new MapMapper(Map.class));

@@ -27,7 +27,7 @@ public class MongoUserProviderFactory implements UserProviderFactory {
     @Override
     public UserProvider create(KeycloakSession session) {
         MongoConnectionProvider connection = session.getProvider(MongoConnectionProvider.class);
-        return new MongoUserProvider(session, connection.getMongoStore(), connection.getInvocationContext());
+        return new MongoUserProvider(session, connection.getInvocationContext());
     }
 
     @Override
