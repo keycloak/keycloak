@@ -33,11 +33,9 @@ public class MongoUserProvider implements UserProvider {
 
     private final MongoStoreInvocationContext invocationContext;
     private final KeycloakSession session;
-    private final MongoStore mongoStore;
 
-    public MongoUserProvider(KeycloakSession session, MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
+    public MongoUserProvider(KeycloakSession session, MongoStoreInvocationContext invocationContext) {
         this.session = session;
-        this.mongoStore = mongoStore;
         this.invocationContext = invocationContext;
     }
 
@@ -311,6 +309,7 @@ public class MongoUserProvider implements UserProvider {
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        federatedUser = getUserById(federatedUser.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) federatedUser).getUser();
         FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, federatedIdentityModel.getIdentityProvider());
 

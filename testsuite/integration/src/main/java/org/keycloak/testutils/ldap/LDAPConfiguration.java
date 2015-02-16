@@ -1,32 +1,16 @@
-package org.keycloak.testutils;
+package org.keycloak.testutils.ldap;
 
-import org.keycloak.models.LDAPConstants;
-import org.picketbox.test.ldap.AbstractLDAPTest;
-
-import javax.naming.CompositeName;
-import javax.naming.Context;
-import javax.naming.ContextNotEmptyException;
-import javax.naming.Name;
-import javax.naming.NameClassPair;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 
+import org.keycloak.models.LDAPConstants;
+
 /**
- * Forked from Picketlink project
- *
- * Abstract base for all LDAP test suites. It handles
- * @author Peter Skopek: pskopek at redhat dot com
- *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LDAPEmbeddedServer extends AbstractLDAPTest {
+public class LDAPConfiguration {
 
     public static final String CONNECTION_PROPERTIES = "ldap/ldap-connection.properties";
 
@@ -64,10 +48,10 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     public static String IDM_TEST_LDAP_USER_OBJECT_CLASSES = "idm.test.ldap.user.object.classes";
     public static String IDM_TEST_LDAP_USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE = "idm.test.ldap.user.account.controls.after.password.update";
 
-
-    public LDAPEmbeddedServer() {
-        super();
-        loadConnectionProperties();
+    public static LDAPConfiguration readConfiguration() {
+        LDAPConfiguration ldapConfiguration = new LDAPConfiguration();
+        ldapConfiguration.loadConnectionProperties();
+        return ldapConfiguration;
     }
 
     protected void loadConnectionProperties() {
@@ -98,44 +82,6 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         userAccountControlsAfterPasswordUpdate = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE));
     }
 
-    @Override
-    public void setup() throws Exception {
-        // suppress emb. LDAP server start
-        if (isStartEmbeddedLdapLerver()) {
-            // On Windows, the directory may not be fully deleted from previous test
-            String tempDir = System.getProperty("java.io.tmpdir");
-            File workDir = new File(tempDir + File.separator + "server-work");
-            if (workDir.exists()) {
-                recursiveDeleteDir(workDir);
-            }
-
-            super.setup();
-        }
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        // suppress emb. LDAP server stop
-        if (isStartEmbeddedLdapLerver()) {
-
-            // clear data left in LDAP
-            DirContext ctx = getDirContext();
-            clearSubContexts(ctx, new CompositeName(baseDn));
-
-            super.tearDown();
-        }
-    }
-
-    private DirContext getDirContext() throws NamingException {
-        Hashtable<String, String> env = new Hashtable<String, String>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, connectionUrl);
-        env.put(Context.SECURITY_PRINCIPAL, bindDn);
-        env.put(Context.SECURITY_CREDENTIALS, bindCredential);
-        DirContext ctx = new InitialDirContext(env);
-        return ctx;
-    }
-
     public Map<String,String> getLDAPConfig() {
         Map<String,String> ldapConfig = new HashMap<String,String>();
         ldapConfig.put(LDAPConstants.CONNECTION_URL, getConnectionUrl());
@@ -151,37 +97,6 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         ldapConfig.put(LDAPConstants.USER_OBJECT_CLASSES, getUserObjectClasses());
         ldapConfig.put(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE, String.valueOf(isUserAccountControlsAfterPasswordUpdate()));
         return ldapConfig;
-    }
-
-
-    public static void clearSubContexts(DirContext ctx, Name name) throws NamingException {
-
-        NamingEnumeration<NameClassPair> enumeration = null;
-        try {
-            enumeration = ctx.list(name);
-            while (enumeration.hasMore()) {
-                NameClassPair pair = enumeration.next();
-                Name childName = ctx.composeName(new CompositeName(pair.getName()), name);
-                try {
-                    ctx.destroySubcontext(childName);
-                }
-                catch (ContextNotEmptyException e) {
-                    clearSubContexts(ctx, childName);
-                    ctx.destroySubcontext(childName);
-                }
-            }
-        }
-        catch (NamingException e) {
-            e.printStackTrace();
-        }
-        finally {
-            try {
-                enumeration.close();
-            }
-            catch (Exception e) {
-                // Never mind this
-            }
-        }
     }
 
     public String getConnectionUrl() {
@@ -247,18 +162,4 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     public boolean isUserAccountControlsAfterPasswordUpdate() {
         return userAccountControlsAfterPasswordUpdate;
     }
-
-    @Override
-    public void importLDIF(String fileName) throws Exception {
-        // import LDIF only in case we are running against embedded LDAP server
-        if (isStartEmbeddedLdapLerver()) {
-            super.importLDIF(fileName);
-        }
-    }
-
-    @Override
-    protected void createBaseDN() throws Exception {
-        ds.createBaseDN("keycloak", "dc=keycloak,dc=org");
-    }
-
 }

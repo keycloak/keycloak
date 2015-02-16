@@ -13,6 +13,8 @@
 
     <properties>
         <aesh.version>0.33.12</aesh.version>
+        <apacheds.version>2.0.0-M17</apacheds.version>
+        <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
         <base64.version>2.3.8</base64.version>
         <bouncycastle.crypto.version>1.50</bouncycastle.crypto.version>
         <bouncycastle.mail.version>1.50</bouncycastle.mail.version>
@@ -23,7 +25,6 @@
         <!-- <undertow.version>1.1.0.Final</undertow.version> -->
         <undertow.version>1.1.1.Final</undertow.version>
         <picketlink.version>2.7.0.CR3</picketlink.version>
-        <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>
         <syslog4j.version>0.9.30</syslog4j.version>
@@ -308,17 +309,6 @@
                 <version>${picketlink.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox-ldap</artifactId>
-                <version>${picketbox.ldap.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox-ldap</artifactId>
-                <version>${picketbox.ldap.version}</version>
-                <type>test-jar</type>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
                 <version>${jboss.logging.version}</version>
@@ -420,6 +410,28 @@
                 <groupId>de.idyl</groupId>
                 <artifactId>winzipaes</artifactId>
                 <version>${winzipaes.version}</version>
+            </dependency>
+
+            <!-- Apache DS -->
+            <dependency>
+                <groupId>org.apache.directory.server</groupId>
+                <artifactId>apacheds-core-annotations</artifactId>
+                <version>${apacheds.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.server</groupId>
+                <artifactId>apacheds-interceptor-kerberos</artifactId>
+                <version>${apacheds.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.server</groupId>
+                <artifactId>apacheds-server-annotations</artifactId>
+                <version>${apacheds.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-codec-standalone</artifactId>
+                <version>${apacheds.codec.version}</version>
             </dependency>
 
             <!-- Selenium -->

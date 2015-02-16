@@ -104,27 +104,8 @@ public class KeycloakServer {
     }
 
     public static void main(String[] args) throws Throwable {
-        //bootstrapLdap();  Can't seem to get this to work.
         bootstrapKeycloakServer(args);
     }
-    /*private static LDAPEmbeddedServer embeddedServer;
-    public static void bootstrapLdap() throws Exception {
-        embeddedServer = new LDAPEmbeddedServer();
-        embeddedServer.setup();
-        embeddedServer.importLDIF("ldap/users.ldif");
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                try {
-                    embeddedServer.tearDown();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-
-
-    } */
 
     public static KeycloakServer bootstrapKeycloakServer(String[] args) throws Throwable {
         KeycloakServerConfig config = new KeycloakServerConfig();

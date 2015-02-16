@@ -27,11 +27,9 @@ public class MongoRealmProvider implements RealmProvider {
 
     private final MongoStoreInvocationContext invocationContext;
     private final KeycloakSession session;
-    private final MongoStore mongoStore;
 
-    public MongoRealmProvider(KeycloakSession session, MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
+    public MongoRealmProvider(KeycloakSession session, MongoStoreInvocationContext invocationContext) {
         this.session = session;
-        this.mongoStore = mongoStore;
         this.invocationContext = invocationContext;
     }
 

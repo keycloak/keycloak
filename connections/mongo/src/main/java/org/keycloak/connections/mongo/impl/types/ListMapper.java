@@ -5,12 +5,12 @@ import org.keycloak.connections.mongo.api.types.Mapper;
 import org.keycloak.connections.mongo.api.types.MapperContext;
 import org.keycloak.connections.mongo.api.types.MapperRegistry;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ListMapper<T extends List> implements Mapper<T, BasicDBList> {
+public class ListMapper<T extends Collection> implements Mapper<T, BasicDBList> {
 
     private final MapperRegistry mapperRegistry;
     private final Class<T> listType;

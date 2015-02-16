@@ -22,7 +22,6 @@ import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testutils.DummyUserFederationProviderFactory;
-import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.Time;
 import org.picketlink.idm.PartitionManager;
@@ -49,8 +48,7 @@ public class SyncProvidersTest {
             // Other tests may left Time offset uncleared, which could cause issues
             Time.setOffset(0);
 
-            LDAPEmbeddedServer ldapServer = ldapRule.getEmbeddedServer();
-            Map<String,String> ldapConfig = ldapServer.getLDAPConfig();
+            Map<String,String> ldapConfig = ldapRule.getLdapConfig();
             ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "false");
             ldapConfig.put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.UNSYNCED.toString());
 
