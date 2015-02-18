@@ -1101,7 +1101,7 @@ module.directive('onoffswitch', function() {
  *
  * Usage: <input ng-model="mmm" name="nnn" id="iii" kc-onoffswitch-model [on-text="ooo" off-text="fff"] />
  */
-module.directive('kc-onoffswitch-model', function() {
+module.directive('onoffswitchmodel', function() {
     return {
         restrict: "EA",
         replace: true,
