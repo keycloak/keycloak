@@ -875,6 +875,36 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'LDAPCtrl'
         })
+        .when('/realms/:realm/user-federation/providers/kerberos/:instance', {
+            templateUrl : 'partials/federated-kerberos.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(UserFederationInstanceLoader) {
+                    return UserFederationInstanceLoader();
+                },
+                providerFactory : function() {
+                    return { id: "kerberos" };
+                }
+            },
+            controller : 'GenericUserFederationCtrl'
+        })
+        .when('/create/user-federation/:realm/providers/kerberos', {
+            templateUrl : 'partials/federated-kerberos.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function() {
+                    return {};
+                },
+                providerFactory : function() {
+                    return { id: "kerberos" };
+                }
+            },
+            controller : 'GenericUserFederationCtrl'
+        })
         .when('/create/user-federation/:realm/providers/:provider', {
             templateUrl : 'partials/federated-generic.html',
             resolve : {

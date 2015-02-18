@@ -378,9 +378,23 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
             instance.priority = 0;
             $scope.fullSyncEnabled = false;
             $scope.changedSyncEnabled = false;
+
+            if (providerFactory.id === 'kerberos') {
+                instance.config.debug = false;
+                instance.config.allowPasswordAuthentication = true;
+                instance.config.editMode = 'UNSYNCED';
+                instance.config.updateProfileFirstLogin = true;
+                instance.config.allowKerberosAuthentication = true;
+            }
         } else {
             $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
             $scope.changedSyncEnabled = (instance.changedSyncPeriod && instance.changedSyncPeriod > 0);
+
+            if (providerFactory.id === 'kerberos') {
+                instance.config.debug = (instance.config.debug === 'true' || instance.config.debug === true);
+                instance.config.allowPasswordAuthentication = (instance.config.allowPasswordAuthentication === 'true' || instance.config.allowPasswordAuthentication === true);
+                instance.config.updateProfileFirstLogin = (instance.config.updateProfileFirstLogin === 'true' || instance.config.updateProfileFirstLogin === true);
+            }
         }
 
         $scope.changed = false;
@@ -488,25 +502,30 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
             instance.providerName = "ldap";
             instance.config = {};
             instance.priority = 0;
-            $scope.syncRegistrations = false;
 
-            $scope.userAccountControlsAfterPasswordUpdate = true;
-            instance.config.userAccountControlsAfterPasswordUpdate = "true";
+            instance.config.syncRegistrations = false;
+            instance.config.userAccountControlsAfterPasswordUpdate = true;
+            instance.config.connectionPooling = true;
+            instance.config.pagination = true;
 
-            $scope.connectionPooling = true;
-            instance.config.connectionPooling = "true";
+            instance.config.allowKerberosAuthentication = false;
+            instance.config.debug = false;
+            instance.config.useKerberosForPasswordAuthentication = false;
 
-            $scope.pagination = true;
-            instance.config.pagination = "true";
             instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
 
             $scope.fullSyncEnabled = false;
             $scope.changedSyncEnabled = false;
         } else {
-            $scope.syncRegistrations = instance.config.syncRegistrations && instance.config.syncRegistrations == "true";
-            $scope.userAccountControlsAfterPasswordUpdate = instance.config.userAccountControlsAfterPasswordUpdate && instance.config.userAccountControlsAfterPasswordUpdate == "true";
-            $scope.connectionPooling = instance.config.connectionPooling && instance.config.connectionPooling == "true";
-            $scope.pagination = instance.config.pagination && instance.config.pagination == "true";
+            instance.config.syncRegistrations = (instance.config.syncRegistrations === 'true' || instance.config.syncRegistrations === true);
+            instance.config.userAccountControlsAfterPasswordUpdate = (instance.config.userAccountControlsAfterPasswordUpdate === 'true' || instance.config.userAccountControlsAfterPasswordUpdate === true);
+            instance.config.connectionPooling = (instance.config.connectionPooling === 'true' || instance.config.connectionPooling === true);
+            instance.config.pagination = (instance.config.pagination === 'true' || instance.config.pagination === true);
+
+            instance.config.allowKerberosAuthentication = (instance.config.allowKerberosAuthentication === 'true' || instance.config.allowKerberosAuthentication === true);
+            instance.config.debug = (instance.config.debug === 'true' || instance.config.debug === true);
+            instance.config.useKerberosForPasswordAuthentication = (instance.config.useKerberosForPasswordAuthentication === 'true' || instance.config.useKerberosForPasswordAuthentication === true);
+
             if (!instance.config.batchSizeForSync) {
                 instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
             }
@@ -533,21 +552,6 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     ];
 
     $scope.realm = realm;
-
-    function watchBooleanProperty(propertyName) {
-        $scope.$watch(propertyName, function() {
-            if ($scope[propertyName]) {
-                $scope.instance.config[propertyName] = "true";
-            } else {
-                $scope.instance.config[propertyName] = "false";
-            }
-        })
-    }
-
-    watchBooleanProperty('syncRegistrations');
-    watchBooleanProperty('userAccountControlsAfterPasswordUpdate');
-    watchBooleanProperty('connectionPooling');
-    watchBooleanProperty('pagination');
 
     $scope.$watch('fullSyncEnabled', function(newVal, oldVal) {
         if (oldVal == newVal) {

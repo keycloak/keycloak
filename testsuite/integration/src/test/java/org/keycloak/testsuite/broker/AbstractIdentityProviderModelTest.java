@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.broker;
 
 import org.junit.Before;
-import org.keycloak.broker.kerberos.KerberosIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.social.facebook.FacebookIdentityProviderFactory;
@@ -48,7 +47,6 @@ public abstract class AbstractIdentityProviderModelTest extends AbstractModelTes
         this.expectedProviders.add(FacebookIdentityProviderFactory.PROVIDER_ID);
         this.expectedProviders.add(GitHubIdentityProviderFactory.PROVIDER_ID);
         this.expectedProviders.add(TwitterIdentityProviderFactory.PROVIDER_ID);
-        this.expectedProviders.add(KerberosIdentityProviderFactory.PROVIDER_ID);
 
         this.expectedProviders = Collections.unmodifiableSet(this.expectedProviders);
     }

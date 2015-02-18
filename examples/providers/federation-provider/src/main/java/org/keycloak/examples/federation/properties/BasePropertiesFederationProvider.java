@@ -1,5 +1,6 @@
 package org.keycloak.examples.federation.properties;
 
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -128,6 +129,11 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
     }
 
     @Override
+    public Set<String> getSupportedCredentialTypes() {
+        return supportedCredentialTypes;
+    }
+
+    @Override
     public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
         for (UserCredentialModel cred : input) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
@@ -153,6 +159,11 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
             }
         }
         return true;
+    }
+
+    @Override
+    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
+        return CredentialValidationOutput.failed();
     }
 
     @Override

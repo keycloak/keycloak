@@ -3,6 +3,7 @@ package org.keycloak.models;
 import org.jboss.logging.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -355,27 +356,40 @@ public class UserFederationManager implements UserProvider {
 
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        UserFederationProvider link = getFederationLink(realm, user);
-        if (link != null) {
-            validateUser(realm, user);
-            Set<String> supportedCredentialTypes = link.getSupportedCredentialTypes(user);
-            if (supportedCredentialTypes.size() > 0) {
-                List<UserCredentialModel> fedCreds = new ArrayList<UserCredentialModel>();
-                List<UserCredentialModel> localCreds = new ArrayList<UserCredentialModel>();
-                for (UserCredentialModel cred : input) {
-                    if (supportedCredentialTypes.contains(cred.getType())) {
-                        fedCreds.add(cred);
-                    } else {
-                        localCreds.add(cred);
-                    }
-                }
-                if (!link.validCredentials(realm, user, fedCreds)) {
-                    return false;
-                }
-                return session.userStorage().validCredentials(realm, user, localCreds);
-            }
+        return validCredentials(realm, user, Arrays.asList(input));
+    }
+
+    @Override
+    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
+        List<UserFederationProviderModel> fedProviderModels = realm.getUserFederationProviders();
+        List<UserFederationProvider> fedProviders = new ArrayList<UserFederationProvider>();
+        for (UserFederationProviderModel fedProviderModel : fedProviderModels) {
+            fedProviders.add(getFederationProvider(fedProviderModel));
         }
-        return session.userStorage().validCredentials(realm, user, input);
+
+        CredentialValidationOutput result = null;
+        for (UserCredentialModel cred : input) {
+            UserFederationProvider providerSupportingCreds = null;
+
+            // Find provider, which supports required credential type
+            for (UserFederationProvider fedProvider : fedProviders) {
+                if (fedProvider.getSupportedCredentialTypes().contains(cred.getType())) {
+                    providerSupportingCreds = fedProvider;
+                    break;
+                }
+            }
+
+            if (providerSupportingCreds == null) {
+                logger.warn("Don't have provider supporting credentials of type " + cred.getType());
+                return CredentialValidationOutput.failed();
+            }
+
+            CredentialValidationOutput currentResult = providerSupportingCreds.validCredentials(realm, cred);
+            result = (result == null) ? currentResult : result.merge(currentResult);
+        }
+
+        // For now, validCredentials(realm, input) is not supported for local userProviders
+        return (result != null) ? result : CredentialValidationOutput.failed();
     }
 
     @Override

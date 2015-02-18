@@ -18,9 +18,6 @@
 package org.keycloak.testsuite.broker;
 
 import org.junit.Test;
-import org.keycloak.broker.kerberos.KerberosIdentityProvider;
-import org.keycloak.broker.kerberos.KerberosIdentityProviderConfig;
-import org.keycloak.broker.kerberos.KerberosIdentityProviderFactory;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -157,8 +154,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
                     assertGitHubIdentityProviderConfig(identityProvider);
                 } else if (TwitterIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertTwitterIdentityProviderConfig(identityProvider);
-                } else if (KerberosIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                    assertKerberosIdentityProviderConfig(identityProvider);
                 } else {
                     continue;
                 }
@@ -274,21 +269,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals(true, config.isStoreToken());
         assertEquals("clientId", config.getClientId());
         assertEquals("clientSecret", config.getClientSecret());
-    }
-
-    private void assertKerberosIdentityProviderConfig(IdentityProviderModel identityProvider) {
-        KerberosIdentityProvider kerberosIdentityProvider = new KerberosIdentityProviderFactory().create(identityProvider);
-        KerberosIdentityProviderConfig config = kerberosIdentityProvider.getConfig();
-
-        assertEquals("model-kerberos", config.getId());
-        assertEquals(KerberosIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
-        assertEquals("Kerberos", config.getName());
-        assertEquals(true, config.isEnabled());
-        assertEquals(true, config.isUpdateProfileFirstLogin());
-        assertEquals(false, config.isAuthenticateByDefault());
-        assertEquals("HTTP/server.domain.org@DOMAIN.ORG", config.getServerPrincipal());
-        assertEquals("/etc/http.keytab", config.getKeyTab());
-        assertTrue(config.getDebug());
     }
 
     private RealmModel installTestRealm() throws IOException {

@@ -1,6 +1,10 @@
 package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
+import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
+import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
+import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -10,6 +14,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KerberosConstants;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
@@ -17,7 +22,7 @@ import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
 import org.picketlink.idm.query.IdentityQuery;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -36,27 +41,31 @@ public class LDAPFederationProvider implements UserFederationProvider {
     public static final String SYNC_REGISTRATIONS = "syncRegistrations";
     public static final String EDIT_MODE = "editMode";
 
+    protected LDAPFederationProviderFactory factory;
     protected KeycloakSession session;
     protected UserFederationProviderModel model;
     protected PartitionManager partitionManager;
     protected EditMode editMode;
+    protected LDAPProviderKerberosConfig kerberosConfig;
 
-    protected static final Set<String> supportedCredentialTypes = new HashSet<String>();
+    protected final Set<String> supportedCredentialTypes = new HashSet<String>();
 
-    static
-    {
-        supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
-    }
-
-    public LDAPFederationProvider(KeycloakSession session, UserFederationProviderModel model, PartitionManager partitionManager) {
+    public LDAPFederationProvider(LDAPFederationProviderFactory factory, KeycloakSession session, UserFederationProviderModel model, PartitionManager partitionManager) {
+        this.factory = factory;
         this.session = session;
         this.model = model;
         this.partitionManager = partitionManager;
+        this.kerberosConfig = new LDAPProviderKerberosConfig(model);
         String editModeString = model.getConfig().get(EDIT_MODE);
         if (editModeString == null) {
             editMode = EditMode.READ_ONLY;
         } else {
             editMode = EditMode.valueOf(editModeString);
+        }
+
+        supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
+        if (kerberosConfig.isAllowKerberosAuthentication()) {
+            supportedCredentialTypes.add(UserCredentialModel.KERBEROS);
         }
     }
 
@@ -97,14 +106,21 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public Set<String> getSupportedCredentialTypes(UserModel local) {
+        Set<String> supportedCredentialTypes = new HashSet<String>(this.supportedCredentialTypes);
         if (editMode == EditMode.UNSYNCED ) {
             for (UserCredentialValueModel cred : local.getCredentialsDirectly()) {
                 if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                    return Collections.emptySet();
+                    // User has changed password in KC local database. Use KC password instead of LDAP password
+                    supportedCredentialTypes.remove(UserCredentialModel.PASSWORD);
                 }
             }
         }
         return supportedCredentialTypes;
+    }
+
+    @Override
+    public Set<String> getSupportedCredentialTypes() {
+        return new HashSet<String>(this.supportedCredentialTypes);
     }
 
     @Override
@@ -244,6 +260,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
         imported.setLastName(picketlinkUser.getLastName());
         imported.setFederationLink(model.getId());
         imported.setAttribute(LDAP_ID, picketlinkUser.getId());
+
+        logger.debugf("Added new user from LDAP. Username: " + imported.getUsername() + ", Email: ", imported.getEmail() + ", LDAP_ID: " + picketlinkUser.getId());
         return proxy(imported);
     }
 
@@ -285,10 +303,17 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     public boolean validPassword(String username, String password) {
-        try {
-            return LDAPUtils.validatePassword(partitionManager, username, password);
-        } catch (IdentityManagementException ie) {
-            throw convertIDMException(ie);
+        if (kerberosConfig.isAllowKerberosAuthentication() && kerberosConfig.isUseKerberosForPasswordAuthentication()) {
+            // Use Kerberos JAAS (Krb5LoginModule)
+            KerberosUsernamePasswordAuthenticator authenticator = factory.createKerberosUsernamePasswordAuthenticator(kerberosConfig);
+            return authenticator.validUser(username, password);
+        } else {
+            // Use Naming LDAP API
+            try {
+                return LDAPUtils.validatePassword(partitionManager, username, password);
+            } catch (IdentityManagementException ie) {
+                throw convertIDMException(ie);
+            }
         }
     }
 
@@ -307,14 +332,37 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        for (UserCredentialModel cred : input) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return validPassword(user.getUsername(), cred.getValue());
-            } else {
-                return false; // invalid cred type
+        return validCredentials(realm, user, Arrays.asList(input));
+    }
+
+    @Override
+    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
+        if (credential.getType().equals(UserCredentialModel.KERBEROS)) {
+            if (kerberosConfig.isAllowKerberosAuthentication()) {
+                String spnegoToken = credential.getValue();
+                SPNEGOAuthenticator spnegoAuthenticator = factory.createSPNEGOAuthenticator(spnegoToken, kerberosConfig);
+
+                spnegoAuthenticator.authenticate();
+
+                if (spnegoAuthenticator.isAuthenticated()) {
+                    Map<String, Object> state = new HashMap<String, Object>();
+                    state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, spnegoAuthenticator.getDelegationCredential());
+
+                    // TODO: This assumes that LDAP "uid" is equal to kerberos principal name. Like uid "hnelson" and kerberos principal "hnelson@KEYCLOAK.ORG".
+                    // Check if it's correct or if LDAP attribute for mapping kerberos principal should be available (For ApacheDS it seems to be attribute "krb5PrincipalName" but on MSAD it's likely different)
+                    String username = spnegoAuthenticator.getAuthenticatedUsername();
+                    UserModel user = findOrCreateAuthenticatedUser(realm, username);
+
+                    return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
+                }  else {
+                    Map<String, Object> state = new HashMap<String, Object>();
+                    state.put(KerberosConstants.RESPONSE_TOKEN, spnegoAuthenticator.getResponseToken());
+                    return new CredentialValidationOutput(null, CredentialValidationOutput.Status.CONTINUE, state);
+                }
             }
         }
-        return true;
+
+        return CredentialValidationOutput.failed();
     }
 
     @Override
@@ -330,7 +378,6 @@ public class LDAPFederationProvider implements UserFederationProvider {
             if (currentUser == null) {
                 // Add new user to Keycloak
                 importUserFromPicketlink(realm, picketlinkUser);
-                logger.debugf("Added new user from LDAP: %s", username);
             } else {
                 if ((fedModel.getId().equals(currentUser.getFederationLink())) && (picketlinkUser.getId().equals(currentUser.getAttribute(LDAPFederationProvider.LDAP_ID)))) {
                     // Update keycloak user
@@ -343,6 +390,29 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     logger.warnf("User '%s' is not updated during sync as he is not linked to federation provider '%s'", username, fedModel.getDisplayName());
                 }
             }
+        }
+    }
+
+    /**
+     * Called after successful kerberos authentication
+     *
+     * @param realm
+     * @param username username without realm prefix
+     * @return
+     */
+    protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
+        UserModel user = session.userStorage().getUserByUsername(username, realm);
+        if (user != null) {
+            logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
+            if (!isValid(user)) {
+                throw new IllegalStateException("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() +
+                        "] or LDAP_ID is not correct. LDAP_ID on user is: " + user.getAttribute(LDAP_ID));
+            }
+
+            return proxy(user);
+        } else {
+            // Creating user to local storage
+            return getUserByUsername(realm, username);
         }
     }
 }

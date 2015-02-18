@@ -43,5 +43,7 @@ public interface UserProvider extends Provider {
 
     boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input);
     boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input);
+    CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input);
+
     void close();
 }
