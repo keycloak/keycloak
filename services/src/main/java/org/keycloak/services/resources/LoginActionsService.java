@@ -456,6 +456,7 @@ public class LoginActionsService {
         }
 
         // Validate that user with this username doesn't exist in realm or any federation provider
+        username=username.trim().toLowerCase(); //FIXME: Can I do it here?
         if (session.users().getUserByUsername(username, realm) != null) {
             event.error(Errors.USERNAME_IN_USE);
             return Flows.forms(session, realm, client, uriInfo)
@@ -466,6 +467,7 @@ public class LoginActionsService {
         }
 
         // Validate that user with this email doesn't exist in realm or any federation provider
+        email = email.trim().toLowerCase();
         if (session.users().getUserByEmail(email, realm) != null) {
             event.error(Errors.EMAIL_IN_USE);
             return Flows.forms(session, realm, client, uriInfo)

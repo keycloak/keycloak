@@ -22,7 +22,7 @@ import java.util.Collection;
         @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.username"),
         @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realmId = :realmId and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username"),
         @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realmId = :realmId"),
-        @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where LOWER(u.username) = LOWER(:username) and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realmId = :realmId"),
@@ -45,7 +45,7 @@ public class UserEntity {
     @Column(name = "FIRST_NAME")
     protected String firstName;
     @Column(name = "LAST_NAME")
-    protected String lastName;
+    protected String lastName;    
     @Column(name = "EMAIL")
     protected String email;
     @Column(name = "ENABLED")
@@ -87,6 +87,9 @@ public class UserEntity {
     }
 
     public void setUsername(String username) {
+        if (username != null){
+            username = username.trim().toLowerCase();
+        }        
         this.username = username;
     }
 
@@ -111,6 +114,9 @@ public class UserEntity {
     }
 
     public void setEmail(String email) {
+        if (email != null){
+            email = email.trim().toLowerCase();
+        }
         this.email = email;
         this.emailConstraint = email != null ? email : KeycloakModelUtils.generateId();
     }

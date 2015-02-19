@@ -11,7 +11,10 @@ import java.util.regex.Pattern;
 public class Validation {
 
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
+    private final static Pattern EMAIL_PATTERN = java.util.regex.Pattern.compile(
+            "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$",
+            Pattern.CASE_INSENSITIVE
+    );
 
     public static String validateRegistrationForm(MultivaluedMap<String, String> formData, List<String> requiredCredentialTypes) {
         if (isEmpty(formData.getFirst("firstName"))) {
@@ -78,6 +81,5 @@ public class Validation {
     public static boolean isEmailValid(String email) {
         return EMAIL_PATTERN.matcher(email).matches();
     }
-
 
 }
