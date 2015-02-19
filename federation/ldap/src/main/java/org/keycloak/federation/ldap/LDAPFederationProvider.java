@@ -6,6 +6,7 @@ import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -14,7 +15,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KerberosConstants;
+import org.keycloak.models.KerberosConstants;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
@@ -39,7 +40,6 @@ public class LDAPFederationProvider implements UserFederationProvider {
     private static final Logger logger = Logger.getLogger(LDAPFederationProvider.class);
     public static final String LDAP_ID = "LDAP_ID";
     public static final String SYNC_REGISTRATIONS = "syncRegistrations";
-    public static final String EDIT_MODE = "editMode";
 
     protected LDAPFederationProviderFactory factory;
     protected KeycloakSession session;
@@ -56,7 +56,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         this.model = model;
         this.partitionManager = partitionManager;
         this.kerberosConfig = new LDAPProviderKerberosConfig(model);
-        String editModeString = model.getConfig().get(EDIT_MODE);
+        String editModeString = model.getConfig().get(LDAPConstants.EDIT_MODE);
         if (editModeString == null) {
             editMode = EditMode.READ_ONLY;
         } else {

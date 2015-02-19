@@ -7,6 +7,7 @@ import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.login.LoginFormsProvider;
@@ -18,7 +19,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KerberosConstants;
+import org.keycloak.models.KerberosConstants;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
@@ -59,9 +60,13 @@ public class HttpAuthenticationManager {
         boolean kerberosSupported = false;
         for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
             if (c.getType().equals(CredentialRepresentation.KERBEROS)) {
-                logger.debug("Kerberos authentication is supported");
                 kerberosSupported = true;
             }
+        }
+
+        if (logger.isTraceEnabled()) {
+            String log = kerberosSupported ? "SPNEGO authentication is supported" : "SPNEGO authentication is not supported";
+            logger.trace(log);
         }
 
         if (!kerberosSupported) {
@@ -100,6 +105,10 @@ public class HttpAuthenticationManager {
 
     // Send response after successful authentication
     private HttpAuthOutput sendResponse(UserModel user, String authMethod) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("User " + user.getUsername() + " authenticated with " + authMethod);
+        }
+
         Response response;
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
@@ -107,7 +116,10 @@ public class HttpAuthenticationManager {
         } else {
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), authMethod, false);
             TokenManager.attachClientSession(userSession, clientSession);
-            event.session(userSession);
+            event.user(user)
+                    .session(userSession)
+                    .detail(Details.AUTH_METHOD, authMethod)
+                    .detail(Details.USERNAME, user.getUsername());
             response = AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
         }
 

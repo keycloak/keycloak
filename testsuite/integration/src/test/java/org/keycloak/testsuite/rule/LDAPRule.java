@@ -12,16 +12,19 @@ import org.keycloak.testutils.ldap.LDAPEmbeddedServer;
  */
 public class LDAPRule extends ExternalResource {
 
-    private LDAPConfiguration ldapConfiguration;
-    private LDAPEmbeddedServer ldapEmbeddedServer;
+    public static final String LDAP_CONNECTION_PROPERTIES_LOCATION = "ldap/ldap-connection.properties";
+
+    protected LDAPConfiguration ldapConfiguration;
+    protected LDAPEmbeddedServer ldapEmbeddedServer;
 
     @Override
     protected void before() throws Throwable {
-        ldapConfiguration = LDAPConfiguration.readConfiguration();
+        String connectionPropsLocation = getConnectionPropertiesLocation();
+        ldapConfiguration = LDAPConfiguration.readConfiguration(connectionPropsLocation);
 
         if (ldapConfiguration.isStartEmbeddedLdapLerver()) {
             EmbeddedServersFactory factory = EmbeddedServersFactory.readConfiguration();
-            ldapEmbeddedServer = factory.createLdapServer();
+            ldapEmbeddedServer = createServer(factory);
             ldapEmbeddedServer.init();
             ldapEmbeddedServer.start();
         }
@@ -40,7 +43,15 @@ public class LDAPRule extends ExternalResource {
         }
     }
 
-    public Map<String, String> getLdapConfig() {
+    protected String getConnectionPropertiesLocation() {
+        return LDAP_CONNECTION_PROPERTIES_LOCATION;
+    }
+
+    protected LDAPEmbeddedServer createServer(EmbeddedServersFactory factory) {
+        return factory.createLdapServer();
+    }
+
+    public Map<String, String> getConfig() {
         return ldapConfiguration.getLDAPConfig();
     }
 }

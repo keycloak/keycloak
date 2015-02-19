@@ -3,7 +3,7 @@ package org.keycloak.federation.kerberos;
 import java.util.Map;
 
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.utils.KerberosConstants;
+import org.keycloak.models.KerberosConstants;
 
 /**
  * Common configuration useful for all providers
@@ -24,19 +24,19 @@ public abstract class CommonKerberosConfig {
     }
 
     public String getKerberosRealm() {
-        return getConfig().get("kerberosRealm");
+        return getConfig().get(KerberosConstants.KERBEROS_REALM);
     }
 
     public String getServerPrincipal() {
-        return getConfig().get("serverPrincipal");
+        return getConfig().get(KerberosConstants.SERVER_PRINCIPAL);
     }
 
     public String getKeyTab() {
-        return getConfig().get("keyTab");
+        return getConfig().get(KerberosConstants.KEYTAB);
     }
 
     public boolean getDebug() {
-        return Boolean.valueOf(getConfig().get("debug"));
+        return Boolean.valueOf(getConfig().get(KerberosConstants.DEBUG));
     }
 
     protected Map<String, String> getConfig() {

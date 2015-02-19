@@ -1,6 +1,7 @@
 package org.keycloak.federation.ldap.kerberos;
 
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.models.KerberosConstants;
 import org.keycloak.models.UserFederationProviderModel;
 
 /**
@@ -15,6 +16,6 @@ public class LDAPProviderKerberosConfig extends CommonKerberosConfig {
     }
 
     public boolean isUseKerberosForPasswordAuthentication() {
-        return Boolean.valueOf(getConfig().get("useKerberosForPasswordAuthentication"));
+        return Boolean.valueOf(getConfig().get(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION));
     }
 }
