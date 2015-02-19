@@ -1,0 +1,16 @@
+.login-pf body {
+    background: #034672 url("../img/login-bg.png") top left no-repeat;
+    background-size: 100% auto;
+}
+
+.login-pf .container {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.login-pf .container .details {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-pf .form-control {
+    font-size: 12px;
+}

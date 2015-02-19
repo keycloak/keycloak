@@ -45,3 +45,7 @@ catalog.xml
 #########
 target
 
+# vim #
+#######
+*.*~
+
