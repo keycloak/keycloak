@@ -1,37 +1,46 @@
 package org.keycloak.testsuite.rule;
 
+import java.util.Map;
+
 import org.junit.rules.ExternalResource;
-import org.keycloak.testutils.LDAPEmbeddedServer;
+import org.keycloak.testutils.ldap.EmbeddedServersFactory;
+import org.keycloak.testutils.ldap.LDAPConfiguration;
+import org.keycloak.testutils.ldap.LDAPEmbeddedServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPRule extends ExternalResource {
 
-    private LDAPEmbeddedServer embeddedServer;
+    private LDAPConfiguration ldapConfiguration;
+    private LDAPEmbeddedServer ldapEmbeddedServer;
 
     @Override
     protected void before() throws Throwable {
-        try {
-            embeddedServer = new LDAPEmbeddedServer();
-            embeddedServer.setup();
-            embeddedServer.importLDIF("ldap/users.ldif");
-        } catch (Exception e) {
-            throw new RuntimeException("Error starting Embedded LDAP server.", e);
+        ldapConfiguration = LDAPConfiguration.readConfiguration();
+
+        if (ldapConfiguration.isStartEmbeddedLdapLerver()) {
+            EmbeddedServersFactory factory = EmbeddedServersFactory.readConfiguration();
+            ldapEmbeddedServer = factory.createLdapServer();
+            ldapEmbeddedServer.init();
+            ldapEmbeddedServer.start();
         }
     }
 
     @Override
     protected void after() {
         try {
-            embeddedServer.tearDown();
-            embeddedServer = null;
+            if (ldapEmbeddedServer != null) {
+                ldapEmbeddedServer.stop();
+                ldapEmbeddedServer = null;
+                ldapConfiguration = null;
+            }
         } catch (Exception e) {
             throw new RuntimeException("Error tearDown Embedded LDAP server.", e);
         }
     }
 
-    public LDAPEmbeddedServer getEmbeddedServer() {
-        return embeddedServer;
+    public Map<String, String> getLdapConfig() {
+        return ldapConfiguration.getLDAPConfig();
     }
 }

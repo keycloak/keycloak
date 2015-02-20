@@ -58,7 +58,7 @@
                 <div class="form-group clearfix block">
                     <label class="col-sm-2 control-label" for="syncRegistrations">Sync Registrations</label>
                     <div class="col-sm-4">
-                        <input ng-model="syncRegistrations" name="syncRegistrations" id="syncRegistrations" onoffswitch />
+                        <input ng-model="instance.config.syncRegistrations" name="syncRegistrations" id="syncRegistrations" onoffswitch />
                     </div>
                     <span tooltip-placement="right" tooltip="Should newly created users be created within LDAP store?  Priority effects which provider is chose to sync the new user." class="fa fa-info-circle"></span>
                 </div>
@@ -139,24 +139,70 @@
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="connectionPooling">Connection pooling</label>
                     <div class="col-sm-4">
-                        <input ng-model="connectionPooling" name="connectionPooling" id="connectionPooling" onoffswitch />
+                        <input ng-model="instance.config.connectionPooling" name="connectionPooling" id="connectionPooling" onoffswitch />
                     </div>
                     <span tooltip-placement="right" tooltip="Does Keycloak should use connection pooling for accessing LDAP server" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="pagination">Pagination</label>
                     <div class="col-sm-4">
-                        <input ng-model="pagination" name="pagination" id="pagination" onoffswitch />
+                        <input ng-model="instance.config.pagination" name="pagination" id="pagination" onoffswitch />
                     </div>
                     <span tooltip-placement="right" tooltip="Does the LDAP server support pagination." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix" data-ng-show="instance.config.vendor === 'ad' ">
                     <label class="col-sm-2 control-label" for="userAccountControlsAfterPasswordUpdate">Enable Account After Password Update</label>
                     <div class="col-sm-4">
-                        <input ng-model="userAccountControlsAfterPasswordUpdate" name="userAccountControlsAfterPasswordUpdate" id="userAccountControlsAfterPasswordUpdate" onoffswitch />
+                        <input ng-model="instance.config.userAccountControlsAfterPasswordUpdate" name="userAccountControlsAfterPasswordUpdate" id="userAccountControlsAfterPasswordUpdate" onoffswitch />
                     </div>
                     <span tooltip-placement="right" tooltip="Useful just for Active Directory. If enabled, then Keycloak will always set
                     Active Directory userAccountControl attribute to 512 after password update. This would mean that particular user will be enabled in Active Directory" class="fa fa-info-circle"></span>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend><span class="text">Kerberos integration</span></legend>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="allowKerberosAuthentication">Allow Kerberos authentication </label>
+                    <div class="col-sm-4">
+                        <input ng-model="instance.config.allowKerberosAuthentication" id="allowKerberosAuthentication" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Enable/disable HTTP authentication of users with SPNEGO/Kerberos tokens. The data about authenticated users will be provisioned from this LDAP server" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
+                    <label class="col-sm-2 control-label" for="kerberosRealm">Kerberos Realm <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="kerberosRealm" type="text" ng-model="instance.config.kerberosRealm" ng-required="instance.config.allowKerberosAuthentication">
+                    </div>
+                    <span tooltip-placement="right" tooltip="Name of kerberos realm. For example FOO.ORG" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
+                    <label class="col-sm-2 control-label" for="serverPrincipal">Server principal <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="serverPrincipal" type="text" ng-model="instance.config.serverPrincipal" ng-required="instance.config.allowKerberosAuthentication">
+                    </div>
+                    <span tooltip-placement="right" tooltip="Full name of server principal for HTTP service including server and domain name. For example HTTP/host.foo.org@FOO.ORG" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
+                    <label class="col-sm-2 control-label" for="keyTab">KeyTab <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="keyTab" type="text" ng-model="instance.config.keyTab" ng-required="instance.config.allowKerberosAuthentication">
+                    </div>
+                    <span tooltip-placement="right" tooltip="Location of Kerberos KeyTab file containing the credentials of server principal. For example /etc/krb5.keytab" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="instance.config.allowKerberosAuthentication">
+                    <label class="col-sm-2 control-label" for="debug">Debug </label>
+                    <div class="col-sm-4">
+                        <input ng-model="instance.config.debug" id="debug" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Enable/disable debug logging to standard output for Krb5LoginModule." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="instance.config.allowKerberosAuthentication">
+                    <label class="col-sm-2 control-label" for="debug">Use Kerberos For Password Authentication </label>
+                    <div class="col-sm-4">
+                        <input ng-model="instance.config.useKerberosForPasswordAuthentication" id="useKerberosForPasswordAuthentication" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Use Kerberos login module for authenticate username/password against Kerberos server instead of authenticating against LDAP server with Directory Service API" class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
 

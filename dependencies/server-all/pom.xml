@@ -95,7 +95,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-broker-kerberos</artifactId>
+            <artifactId>keycloak-kerberos-federation</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

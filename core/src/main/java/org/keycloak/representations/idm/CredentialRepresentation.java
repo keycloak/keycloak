@@ -10,6 +10,7 @@ public class CredentialRepresentation {
     public static final String PASSWORD_TOKEN = "password-token";
     public static final String TOTP = "totp";
     public static final String CLIENT_CERT = "cert";
+    public static final String KERBEROS = "kerberos";
 
     protected String type;
     protected String device;

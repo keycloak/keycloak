@@ -1,4 +1,4 @@
-package org.keycloak.broker.kerberos.impl;
+package org.keycloak.federation.kerberos.impl;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +10,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
 import org.jboss.logging.Logger;
-import org.keycloak.broker.kerberos.KerberosIdentityProviderConfig;
+import org.keycloak.federation.kerberos.CommonKerberosConfig;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -19,10 +19,10 @@ public class KerberosServerSubjectAuthenticator {
 
     private static final Logger logger = Logger.getLogger(KerberosServerSubjectAuthenticator.class);
 
-    private final KerberosIdentityProviderConfig config;
+    private final CommonKerberosConfig config;
     private LoginContext loginContext;
 
-    public KerberosServerSubjectAuthenticator(KerberosIdentityProviderConfig config) {
+    public KerberosServerSubjectAuthenticator(CommonKerberosConfig config) {
         this.config = config;
     }
 

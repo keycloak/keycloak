@@ -94,8 +94,8 @@ keycloak-war-dist-all-&project.version;/
         <para>
 <programlisting>
     $ cd keycloak-war-dist-all-&project.version;
-    $ cp -r deployments $JBOSS_HOME/standalone
-    $ cp -r configuration $JBOSS_HOME/standalone
+    $ cp -r deployments $JBOSS_HOME/standalone/deployments
+    $ cp -r configuration $JBOSS_HOME/standalone/configuration
 </programlisting>
         </para>
         <para>
@@ -515,7 +515,7 @@ keycloak-war-dist-all-&project.version;/
     </programlisting>
                         </para>
                         <para>
-                            You should answer the <literal>What is your first and last name?</literal> question with
+                            You should answer <literal>What is your first and last name ?</literal> question with
                             the DNS name of the machine you're installing the server on.  For testing purposes,
                             <literal>localhost</literal> should be used.  After executing this command, the
                             <literal>keycloak.jks</literal> file will be generated in the same directory as you executed

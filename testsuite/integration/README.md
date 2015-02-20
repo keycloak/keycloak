@@ -90,4 +90,34 @@ To configure Keycloak to use the above server add the following system propertie
 For example if using the test utils Keycloak server start it with:
 
     mvn exec:java -Pkeycloak-server -Dkeycloak.mail.smtp.from=auto@keycloak.org -Dkeycloak.mail.smtp.host=localhost -Dkeycloak.mail.smtp.port=3025
+    
+LDAP server
+-----------
+
+To start a ApacheDS based LDAP server for testing LDAP sending run:
+    
+    mvn exec:java -Pldap
+    
+There are additional system properties you can use to configure (See EmbeddedServersFactory class for details). Once done, you can create LDAP Federation provider
+in Keycloak admin console with the settings like:
+Vendor: Other
+Connection URL: ldap://localhost:10389
+Base DN: dc=keycloak,dc=org
+User DN Suffix: ou=People,dc=keycloak,dc=org
+Bind DN: uid=admin,ou=system
+Bind credential: secret
+
+Kerberos server
+---------------
+
+To start a ApacheDS based Kerberos server for testing Kerberos + LDAP sending run:
+    
+    mvn exec:java -Pkerberos
+    
+There are additional system properties you can use to configure (See EmbeddedServersFactory class for details). Once done, you can create LDAP Federation provider
+in Keycloak admin console with same settings like mentioned in previous LDAP section. And you can enable Kerberos with the settings like:
+
+Server Principal: HTTP/localhost@KEYCLOAK.ORG
+KeyTab: $KEYCLOAK_SOURCES/testsuite/integration/src/main/resources/kerberos/http.keytab
+
 

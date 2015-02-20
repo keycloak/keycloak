@@ -1,5 +1,6 @@
 package org.keycloak.models.cache;
 
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -153,6 +154,11 @@ public class NoCacheUserProvider implements CacheUserProvider {
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
         return getDelegate().validCredentials(realm, user, input);
+    }
+
+    @Override
+    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
+        return getDelegate().validCredentials(realm, input);
     }
 
     @Override

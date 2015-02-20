@@ -27,11 +27,10 @@ public class LDAPConnectionTestManager {
         try {
             Hashtable<String, Object> env = new Hashtable<String, Object>();
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-            env.put(Context.SECURITY_AUTHENTICATION, "simple");
-
             env.put(Context.PROVIDER_URL, connectionUrl);
 
             if (TEST_AUTHENTICATION.equals(action)) {
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
                 env.put(Context.SECURITY_PRINCIPAL, bindDn);
 
                 char[] bindCredentialChar = null;

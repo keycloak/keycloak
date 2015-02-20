@@ -435,7 +435,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
     $scope.userCredentialOptions = {
         'multiple' : true,
         'simple_tags' : true,
-        'tags' : ['password', 'totp', 'cert']
+        'tags' : ['password', 'totp', 'cert', 'kerberos']
     };
 
     $scope.changed = false;
@@ -653,8 +653,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.identityProvider.name = providerFactory.name;
         $scope.identityProvider.enabled = true;
         $scope.identityProvider.updateProfileFirstLogin = true;
-        // Kerberos is suggested as default provider, others not
-        $scope.identityProvider.authenticateByDefault = (providerFactory.id === "kerberos");
+        $scope.identityProvider.authenticateByDefault = false;
         $scope.newIdentityProvider = true;
     }
 

@@ -11,7 +11,7 @@
             If you go to the admin console page of Settings->General, you should see a <literal>Remember Me</literal> on/off switch.
             Your realm sets a SSO cookie so that you only have to enter in your login credentials once.
             This <literal>Remember Me</literal> admin config option, when turned on, will show a "Remember Me" checkbox on the user's login page.
-            If the user clicks this, the realm's SSO. cookie will be persistent.   This means that if the user closes their browser
+            If the user clicks this, the realm's SSO cookie will be persistent.   This means that if the user closes their browser
             they will still be logged in the next time they start up their browser.
         </para>
     </section>

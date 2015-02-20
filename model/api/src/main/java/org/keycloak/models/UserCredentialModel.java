@@ -14,6 +14,7 @@ public class UserCredentialModel {
     public static final String SECRET = "secret";
     public static final String TOTP = "totp";
     public static final String CLIENT_CERT = "cert";
+    public static final String KERBEROS = "kerberos";
 
     protected String type;
     protected String value;
@@ -46,6 +47,13 @@ public class UserCredentialModel {
         UserCredentialModel model = new UserCredentialModel();
         model.setType(TOTP);
         model.setValue(key);
+        return model;
+    }
+
+    public static UserCredentialModel kerberos(String token) {
+        UserCredentialModel model = new UserCredentialModel();
+        model.setType(KERBEROS);
+        model.setValue(token);
         return model;
     }
 

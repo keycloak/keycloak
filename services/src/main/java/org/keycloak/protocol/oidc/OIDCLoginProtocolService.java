@@ -41,6 +41,7 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.HttpAuthenticationManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
@@ -883,6 +884,11 @@ public class OIDCLoginProtocolService {
         response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
         if (response != null) return response;
 
+        // SPNEGO/Kerberos authentication TODO: This should be somehow pluggable instead of hardcoded this way (Authentication interceptors?)
+        HttpAuthenticationManager httpAuthManager = new HttpAuthenticationManager(session, clientSession, realm, uriInfo, request, clientConnection, event);
+        HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate();
+        if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
+
         if (prompt != null && prompt.equals("none")) {
             OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo);
             return oauth.cancelLogin(clientSession);
@@ -910,6 +916,11 @@ public class OIDCLoginProtocolService {
 
         LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
                 .setClientSessionCode(accessCode);
+
+        // Attach state from SPNEGO authentication
+        if (httpAuthOutput.getChallenge() != null) {
+            httpAuthOutput.getChallenge().sendChallenge(forms);
+        }
 
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(realm, headers);
 

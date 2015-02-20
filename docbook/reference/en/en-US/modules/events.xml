@@ -40,7 +40,7 @@
     <section>
         <title>Event Listener</title>
         <para>
-            Keycloak comes with an Email Event Listener and a JBogg Logging Event Listener. The Email Event Listener
+            Keycloak comes with an Email Event Listener and a JBoss Logging Event Listener. The Email Event Listener
             sends an email to the users account when an event occurs. The JBoss Logging Event Listener writes to a log
             file when an events occurs.
         </para>

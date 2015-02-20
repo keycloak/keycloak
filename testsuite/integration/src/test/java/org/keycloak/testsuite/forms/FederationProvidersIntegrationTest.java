@@ -33,7 +33,6 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testutils.LDAPEmbeddedServer;
 import org.openqa.selenium.WebDriver;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.model.basic.User;
@@ -56,8 +55,7 @@ public class FederationProvidersIntegrationTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             addUser(manager.getSession(), appRealm, "mary", "mary@test.com", "password-app");
 
-            LDAPEmbeddedServer ldapServer = ldapRule.getEmbeddedServer();
-            Map<String,String> ldapConfig = ldapServer.getLDAPConfig();
+            Map<String,String> ldapConfig = ldapRule.getLdapConfig();
             ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "true");
             ldapConfig.put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.WRITABLE.toString());
 

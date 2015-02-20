@@ -1,5 +1,6 @@
 package org.keycloak.testutils;
 
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -77,6 +78,11 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
+    public Set<String> getSupportedCredentialTypes() {
+        return Collections.emptySet();
+    }
+
+    @Override
     public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
         return false;
     }
@@ -84,6 +90,11 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
         return false;
+    }
+
+    @Override
+    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
+        return CredentialValidationOutput.failed();
     }
 
     @Override

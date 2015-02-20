@@ -6,6 +6,7 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -33,11 +34,9 @@ public class MongoUserProvider implements UserProvider {
 
     private final MongoStoreInvocationContext invocationContext;
     private final KeycloakSession session;
-    private final MongoStore mongoStore;
 
-    public MongoUserProvider(KeycloakSession session, MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
+    public MongoUserProvider(KeycloakSession session, MongoStoreInvocationContext invocationContext) {
         this.session = session;
-        this.mongoStore = mongoStore;
         this.invocationContext = invocationContext;
     }
 
@@ -311,6 +310,7 @@ public class MongoUserProvider implements UserProvider {
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        federatedUser = getUserById(federatedUser.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) federatedUser).getUser();
         FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, federatedIdentityModel.getIdentityProvider());
 
@@ -378,5 +378,11 @@ public class MongoUserProvider implements UserProvider {
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
         return CredentialValidation.validCredentials(realm, user, input);
+    }
+
+    @Override
+    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
+        // Not supported yet
+        return null;
     }
 }
