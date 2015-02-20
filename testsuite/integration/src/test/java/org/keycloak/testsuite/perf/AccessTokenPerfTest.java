@@ -34,7 +34,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.OAuthClient;
@@ -136,7 +136,7 @@ public class AccessTokenPerfTest {
         }
 
         public String getLoginFormUrl(String state) {
-            UriBuilder b = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri(baseUrl));
+            UriBuilder b = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri(baseUrl));
             if (responseType != null) {
                 b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
             }
@@ -204,7 +204,7 @@ public class AccessTokenPerfTest {
 
             String authorization = BasicAuthHelper.createHeader(clientId, "password");
 
-            String res = client.target(OpenIDConnectService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl)).build(realm)).request()
+            String res = client.target(OIDCLoginProtocolService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl)).build(realm)).request()
                     .header(HttpHeaders.AUTHORIZATION, authorization)
                     .post(Entity.form(form), String.class);
             count.incrementAndGet();

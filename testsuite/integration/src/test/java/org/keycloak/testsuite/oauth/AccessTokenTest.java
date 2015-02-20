@@ -36,7 +36,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
@@ -323,10 +323,10 @@ public class AccessTokenTest {
     public void testValidateAccessToken() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = OpenIDConnectService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI validateUri = OpenIDConnectService.validateAccessTokenUrl(builder).build("test");
+        URI validateUri = OIDCLoginProtocolService.validateAccessTokenUrl(builder).build("test");
         WebTarget validateTarget = client.target(validateUri);
 
         {
@@ -354,7 +354,7 @@ public class AccessTokenTest {
         }
         {
             builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-            URI logoutUri = OpenIDConnectService.logoutUrl(builder).build("test");
+            URI logoutUri = OIDCLoginProtocolService.logoutUrl(builder).build("test");
             String header = BasicAuthHelper.createHeader("test-app", "password");
             Form form = new Form();
             form.param("refresh_token", tokenResponse.getRefreshToken());
@@ -380,7 +380,7 @@ public class AccessTokenTest {
     public void testGrantAccessToken() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = OpenIDConnectService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
 
         {   // test checkSsl

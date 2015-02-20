@@ -1,17 +1,19 @@
-package org.keycloak.representations.idm;
+package org.keycloak.models.entities;
+
+import org.keycloak.models.ProtocolMapperModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ProtocolClaimMappingRepresentation {
+public class ProtocolMapperEntity {
     protected String id;
     protected String protocolClaim;
     protected String protocol;
-    protected String source;
+    protected ProtocolMapperModel.Source source;
     protected String sourceAttribute;
+    protected String protocolMapper;
     protected boolean appliedByDefault;
-
 
     public String getId() {
         return id;
@@ -37,6 +39,14 @@ public class ProtocolClaimMappingRepresentation {
         this.protocol = protocol;
     }
 
+    public ProtocolMapperModel.Source getSource() {
+        return source;
+    }
+
+    public void setSource(ProtocolMapperModel.Source source) {
+        this.source = source;
+    }
+
     public String getSourceAttribute() {
         return sourceAttribute;
     }
@@ -53,12 +63,11 @@ public class ProtocolClaimMappingRepresentation {
         this.appliedByDefault = appliedByDefault;
     }
 
-    public String getSource() {
-        return source;
+    public String getProtocolMapper() {
+        return protocolMapper;
     }
 
-    public void setSource(String source) {
-        this.source = source;
+    public void setProtocolMapper(String protocolMapper) {
+        this.protocolMapper = protocolMapper;
     }
-
 }

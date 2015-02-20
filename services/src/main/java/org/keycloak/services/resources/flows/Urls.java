@@ -22,8 +22,8 @@
 package org.keycloak.services.resources.flows;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.protocol.oidc.OpenIDConnect;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
@@ -170,7 +170,7 @@ public class Urls {
     }
 
     private static UriBuilder realmLogout(URI baseUri) {
-        return tokenBase(baseUri).path(OpenIDConnectService.class, "logout");
+        return tokenBase(baseUri).path(OIDCLoginProtocolService.class, "logout");
     }
 
     public static URI realmRegisterAction(URI baseUri, String realmId) {
@@ -182,7 +182,7 @@ public class Urls {
     }
 
     public static URI realmInstalledAppUrnCallback(URI baseUri, String realmId) {
-        return tokenBase(baseUri).path(OpenIDConnectService.class, "installedAppUrnCallback").build(realmId);
+        return tokenBase(baseUri).path(OIDCLoginProtocolService.class, "installedAppUrnCallback").build(realmId);
     }
 
     public static URI realmOauthAction(URI baseUri, String realmId) {
@@ -198,7 +198,7 @@ public class Urls {
     }
 
     private static UriBuilder tokenBase(URI baseUri) {
-        return realmBase(baseUri).path("{realm}/protocol/" + OpenIDConnect.LOGIN_PROTOCOL);
+        return realmBase(baseUri).path("{realm}/protocol/" + OIDCLoginProtocol.LOGIN_PROTOCOL);
     }
 
     private static UriBuilder themeBase(URI baseUri) {

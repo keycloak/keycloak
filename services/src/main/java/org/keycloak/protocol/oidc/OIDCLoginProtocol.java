@@ -41,7 +41,7 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class OpenIDConnect implements LoginProtocol {
+public class OIDCLoginProtocol implements LoginProtocol {
 
     public static final String LOGIN_PROTOCOL = "openid-connect";
     public static final String STATE_PARAM = "state";
@@ -51,7 +51,7 @@ public class OpenIDConnect implements LoginProtocol {
     public static final String CLIENT_ID_PARAM = "client_id";
     public static final String PROMPT_PARAM = "prompt";
     public static final String LOGIN_HINT_PARAM = "login_hint";
-    private static final Logger log = Logger.getLogger(OpenIDConnect.class);
+    private static final Logger log = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;
 
@@ -59,29 +59,29 @@ public class OpenIDConnect implements LoginProtocol {
 
     protected UriInfo uriInfo;
 
-    public OpenIDConnect(KeycloakSession session, RealmModel realm, UriInfo uriInfo) {
+    public OIDCLoginProtocol(KeycloakSession session, RealmModel realm, UriInfo uriInfo) {
         this.session = session;
         this.realm = realm;
         this.uriInfo = uriInfo;
     }
 
-    public OpenIDConnect() {
+    public OIDCLoginProtocol() {
     }
 
     @Override
-    public OpenIDConnect setSession(KeycloakSession session) {
+    public OIDCLoginProtocol setSession(KeycloakSession session) {
         this.session = session;
         return this;
     }
 
     @Override
-    public OpenIDConnect setRealm(RealmModel realm) {
+    public OIDCLoginProtocol setRealm(RealmModel realm) {
         this.realm = realm;
         return this;
     }
 
     @Override
-    public OpenIDConnect setUriInfo(UriInfo uriInfo) {
+    public OIDCLoginProtocol setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
         return this;
     }
@@ -89,7 +89,7 @@ public class OpenIDConnect implements LoginProtocol {
     @Override
     public Response cancelLogin(ClientSessionModel clientSession) {
         String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
+        String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null) {
             redirectUri.queryParam(OAuth2Constants.STATE, state);
@@ -101,7 +101,7 @@ public class OpenIDConnect implements LoginProtocol {
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
         String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
+        String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
         accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, accessCode.getCode());
         log.debugv("redirectAccessCode: state: {0}", state);
@@ -114,7 +114,7 @@ public class OpenIDConnect implements LoginProtocol {
 
     public Response consentDenied(ClientSessionModel clientSession) {
         String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
+        String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null)
             redirectUri.queryParam(OAuth2Constants.STATE, state);
@@ -125,7 +125,7 @@ public class OpenIDConnect implements LoginProtocol {
 
     public Response invalidSessionError(ClientSessionModel clientSession) {
         String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OpenIDConnect.STATE_PARAM);
+        String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null) {
             redirectUri.queryParam(OAuth2Constants.STATE, state);

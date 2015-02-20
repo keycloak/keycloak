@@ -18,7 +18,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -252,7 +252,7 @@ public class AdminConsole {
         URI redirect = AdminRoot.adminConsoleUrl(uriInfo).path("index.html").build(realm.getName());
 
         return Response.status(302).location(
-                OpenIDConnectService.logoutUrl(uriInfo).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
+                OIDCLoginProtocolService.logoutUrl(uriInfo).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
         ).build();
     }
 

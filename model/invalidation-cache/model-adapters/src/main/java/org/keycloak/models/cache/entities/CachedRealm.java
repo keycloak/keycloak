@@ -6,7 +6,7 @@ import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolClaimMappingModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
@@ -71,7 +71,7 @@ public class CachedRealm {
     private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
     private List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
     private Set<ClaimTypeModel> claimTypes = new HashSet<ClaimTypeModel>();
-    private Set<ProtocolClaimMappingModel> claimMappings = new HashSet<ProtocolClaimMappingModel>();
+    private Set<ProtocolMapperModel> claimMappings = new HashSet<ProtocolMapperModel>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
@@ -353,7 +353,7 @@ public class CachedRealm {
         return claimTypes;
     }
 
-    public Set<ProtocolClaimMappingModel> getClaimMappings() {
+    public Set<ProtocolMapperModel> getClaimMappings() {
         return claimMappings;
     }
 }

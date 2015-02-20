@@ -12,10 +12,10 @@ import org.keycloak.services.managers.AuthenticationManager;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OpenIDConnectFactory implements LoginProtocolFactory {
+public class OIDCLoginProtocolFactory implements LoginProtocolFactory {
     @Override
     public LoginProtocol create(KeycloakSession session) {
-        return new OpenIDConnect().setSession(session);
+        return new OIDCLoginProtocol().setSession(session);
     }
 
     @Override
@@ -25,7 +25,7 @@ public class OpenIDConnectFactory implements LoginProtocolFactory {
 
     @Override
     public Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
-        return new OpenIDConnectService(realm, event, authManager);
+        return new OIDCLoginProtocolService(realm, event, authManager);
     }
 
     @Override

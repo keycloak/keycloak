@@ -96,7 +96,7 @@ public class RealmEntity {
     Collection<ClaimTypeEntity> claimTypes = new ArrayList<ClaimTypeEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<ProtocolClaimMappingEntity> protocolClaimMappings = new ArrayList<ProtocolClaimMappingEntity>();
+    Collection<ProtocolMapperEntity> protocolClaimMappings = new ArrayList<ProtocolMapperEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
@@ -447,11 +447,11 @@ public class RealmEntity {
         this.claimTypes = claimTypes;
     }
 
-    public Collection<ProtocolClaimMappingEntity> getProtocolClaimMappings() {
+    public Collection<ProtocolMapperEntity> getProtocolClaimMappings() {
         return protocolClaimMappings;
     }
 
-    public void setProtocolClaimMappings(Collection<ProtocolClaimMappingEntity> protocolClaimMappings) {
+    public void setProtocolClaimMappings(Collection<ProtocolMapperEntity> protocolClaimMappings) {
         this.protocolClaimMappings = protocolClaimMappings;
     }
 }

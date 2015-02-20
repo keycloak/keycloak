@@ -230,11 +230,11 @@ public interface RealmModel extends RoleContainerModel {
     ClaimTypeModel getClaimType(String name);
     void updateClaimType(ClaimTypeModel claimType);
 
-    Set<ProtocolClaimMappingModel> getProtocolClaimMappings();
-    ProtocolClaimMappingModel addProtocolClaimMapping(ProtocolClaimMappingModel model);
-    void removeProtocolClaimMapping(ProtocolClaimMappingModel mapping);
-    void updateProtocolClaimMapping(ProtocolClaimMappingModel mapping);
-    public ProtocolClaimMappingModel getProtocolClaimMappingById(String id);
+    Set<ProtocolMapperModel> getProtocolMappers();
+    ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model);
+    void removeProtocolMapper(ProtocolMapperModel mapping);
+    void updateProtocolMapper(ProtocolMapperModel mapping);
+    public ProtocolMapperModel getProtocolMapperById(String id);
 
 
 }

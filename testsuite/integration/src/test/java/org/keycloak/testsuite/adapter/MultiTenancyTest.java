@@ -23,7 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -126,7 +126,7 @@ public class MultiTenancyTest {
     }
 
     private void doTenantRequests(String tenant, boolean logout) {
-        String tenantLoginUrl = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build(tenant).toString();
+        String tenantLoginUrl = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build(tenant).toString();
 
         driver.navigate().to("http://localhost:8081/multi-tenant?realm="+tenant);
         System.out.println("Current url: " + driver.getCurrentUrl());

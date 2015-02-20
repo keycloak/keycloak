@@ -25,7 +25,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -68,7 +68,7 @@ public class UserInfoTest {
     public void testSuccessfulUserInfoRequest() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = OpenIDConnectService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(grantTarget);
         Response response = executeUserInfoRequest(accessTokenResponse.getToken());
@@ -117,8 +117,8 @@ public class UserInfoTest {
 
     private Response executeUserInfoRequest(String accessToken) {
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        UriBuilder uriBuilder = OpenIDConnectService.tokenServiceBaseUrl(builder);
-        URI userInfoUri = uriBuilder.path(OpenIDConnectService.class, "issueUserInfo").build("test");
+        UriBuilder uriBuilder = OIDCLoginProtocolService.tokenServiceBaseUrl(builder);
+        URI userInfoUri = uriBuilder.path(OIDCLoginProtocolService.class, "issueUserInfo").build("test");
         Client client = ClientBuilder.newClient();
         WebTarget userInfoTarget = client.target(userInfoUri);
 

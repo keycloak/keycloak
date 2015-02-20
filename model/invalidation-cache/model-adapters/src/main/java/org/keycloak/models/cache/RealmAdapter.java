@@ -8,7 +8,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolClaimMappingModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -886,34 +886,34 @@ public class RealmAdapter implements RealmModel {
 
 
     @Override
-    public Set<ProtocolClaimMappingModel> getProtocolClaimMappings() {
-        if (updated != null) return updated.getProtocolClaimMappings();
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        if (updated != null) return updated.getProtocolMappers();
         return cached.getClaimMappings();
      }
 
     @Override
-    public ProtocolClaimMappingModel addProtocolClaimMapping(ProtocolClaimMappingModel model) {
+    public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
         getDelegateForUpdate();
-        return updated.addProtocolClaimMapping(model);
+        return updated.addProtocolMapper(model);
     }
 
     @Override
-    public void removeProtocolClaimMapping(ProtocolClaimMappingModel mapping) {
+    public void removeProtocolMapper(ProtocolMapperModel mapping) {
         getDelegateForUpdate();
-        updated.removeProtocolClaimMapping(mapping);
-
-    }
-
-    @Override
-    public void updateProtocolClaimMapping(ProtocolClaimMappingModel mapping) {
-        getDelegateForUpdate();
-        updated.updateProtocolClaimMapping(mapping);
+        updated.removeProtocolMapper(mapping);
 
     }
 
     @Override
-    public ProtocolClaimMappingModel getProtocolClaimMappingById(String id) {
-        for (ProtocolClaimMappingModel mapping : cached.getClaimMappings()) {
+    public void updateProtocolMapper(ProtocolMapperModel mapping) {
+        getDelegateForUpdate();
+        updated.updateProtocolMapper(mapping);
+
+    }
+
+    @Override
+    public ProtocolMapperModel getProtocolMapperById(String id) {
+        for (ProtocolMapperModel mapping : cached.getClaimMappings()) {
             if (mapping.getId().equals(id)) return mapping;
         }
         return null;

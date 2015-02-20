@@ -5,7 +5,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.services.resources.admin.AdminRoot;
 
@@ -68,7 +68,7 @@ public class PublicRealmResource {
     public static PublishedRealmRepresentation realmRep(RealmModel realm, UriInfo uriInfo) {
         PublishedRealmRepresentation rep = new PublishedRealmRepresentation();
         rep.setRealm(realm.getName());
-        rep.setTokenServiceUrl(OpenIDConnectService.tokenServiceBaseUrl(uriInfo).build(realm.getName()).toString());
+        rep.setTokenServiceUrl(OIDCLoginProtocolService.tokenServiceBaseUrl(uriInfo).build(realm.getName()).toString());
         rep.setAccountServiceUrl(AccountService.accountServiceBaseUrl(uriInfo).build(realm.getName()).toString());
         rep.setAdminApiUrl(uriInfo.getBaseUriBuilder().path(AdminRoot.class).build().toString());
         rep.setPublicKeyPem(realm.getPublicKeyPem());

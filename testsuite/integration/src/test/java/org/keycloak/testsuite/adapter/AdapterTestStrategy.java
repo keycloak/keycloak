@@ -22,7 +22,6 @@
 package org.keycloak.testsuite.adapter;
 
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
@@ -36,16 +35,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.services.resources.admin.ApplicationsResource;
-import org.keycloak.services.resources.admin.RealmAdminResource;
-import org.keycloak.services.resources.admin.RealmsAdminResource;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
@@ -96,7 +92,7 @@ public class AdapterTestStrategy extends ExternalResource {
     @WebResource
     protected InputPage inputPage;
 
-    protected String LOGIN_URL = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri(AUTH_SERVER_URL)).build("demo").toString();
+    protected String LOGIN_URL = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri(AUTH_SERVER_URL)).build("demo").toString();
 
     public AdapterTestStrategy(String AUTH_SERVER_URL, String APP_SERVER_BASE_URL, AbstractKeycloakRule keycloakRule) {
         this.AUTH_SERVER_URL = AUTH_SERVER_URL;
@@ -143,7 +139,7 @@ public class AdapterTestStrategy extends ExternalResource {
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", false);
-            AccessToken token = tm.createClientAccessToken(TokenManager.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession);
+            AccessToken token = tm.createClientAccessToken(TokenManager.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession, null);
             return tm.encodeToken(adminRealm, token);
         } finally {
             keycloakRule.stopSession(session, true);
@@ -168,7 +164,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         // test logout
 
-        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
                 .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
@@ -231,7 +227,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         // test logout
 
-        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
                 .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
@@ -424,7 +420,7 @@ public class AdapterTestStrategy extends ExternalResource {
     public void testBadUser() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_URL);
-        URI uri = OpenIDConnectService.grantAccessTokenUrl(builder).build("demo");
+        URI uri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("demo");
         WebTarget target = client.target(uri);
         String header = BasicAuthHelper.createHeader("customer-portal", "password");
         Form form = new Form();
@@ -477,7 +473,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         // test logout
 
-        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
                 .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/secure-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
@@ -503,7 +499,7 @@ public class AdapterTestStrategy extends ExternalResource {
             loginAndCheckSession(browser2.driver, browser2.loginPage);
 
             // Logout in browser1
-            String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
+            String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
                     .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/session-portal").build("demo").toString();
             browser1.driver.navigate().to(logoutUri);
             Assert.assertTrue(browser1.driver.getCurrentUrl().startsWith(LOGIN_URL));
@@ -548,7 +544,7 @@ public class AdapterTestStrategy extends ExternalResource {
         loginAndCheckSession(driver, loginPage);
 
         // Logout
-        String logoutUri = OpenIDConnectService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
                 .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/session-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
 

@@ -11,8 +11,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.oidc.OpenIDConnect;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.EventsManager;
@@ -91,8 +91,8 @@ public class RealmsResource {
         EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
         AuthenticationManager authManager = new AuthenticationManager(protector);
 
-        LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OpenIDConnect.LOGIN_PROTOCOL);
-        OpenIDConnectService endpoint = (OpenIDConnectService)factory.createProtocolEndpoint(realm, event, authManager);
+        LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        OIDCLoginProtocolService endpoint = (OIDCLoginProtocolService)factory.createProtocolEndpoint(realm, event, authManager);
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.getLoginStatusIframe(client_id, origin);
@@ -149,7 +149,7 @@ public class RealmsResource {
     protected RealmModel locateRealm(String name, RealmManager realmManager) {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) {
-            throw new NotFoundException("Realm " + name + " does not exist");
+            throw new NotFoundException("Realm does not exist");
         }
         return realm;
     }
