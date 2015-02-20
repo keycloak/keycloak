@@ -195,7 +195,7 @@ public class OpenIDConnectService {
 
         ClientModel client = realm.findClient(client_id);
         if (client == null) {
-            throw new NotFoundException("could not find client: " + client_id);
+            throw new NotFoundException("could not find client");
         }
 
         InputStream is = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");

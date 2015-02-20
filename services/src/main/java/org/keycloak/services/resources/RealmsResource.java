@@ -156,7 +156,7 @@ public class RealmsResource {
     protected RealmModel locateRealm(String name, RealmManager realmManager) {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) {
-            throw new NotFoundException("Realm " + name + " does not exist");
+            throw new NotFoundException("Realm does not exist");
         }
         return realm;
     }
