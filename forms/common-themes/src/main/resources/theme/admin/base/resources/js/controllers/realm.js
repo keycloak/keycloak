@@ -402,6 +402,18 @@ module.controller('RealmLoginSettingsCtrl', function($scope, Current, Realm, rea
 
 module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/theme-settings");
+
+    $scope.supportedLocalesOptions = {
+        'multiple' : true,
+        'simple_tags' : true,
+        'tags' : ['en', 'de', 'de_CH']
+    };
+
+    $scope.$watch('realm.supportedLocales', function(oldVal, newVal) {
+        if(angular.isUndefined(newVal) || (angular.isArray(newVal) && newVal.length == 0)){
+            $scope.realm.defaultLocale = undefined;
+        }
+    }, true);
 });
 
 module.controller('RealmCacheCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
