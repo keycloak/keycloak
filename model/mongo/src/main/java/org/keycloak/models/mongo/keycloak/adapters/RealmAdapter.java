@@ -1192,5 +1192,40 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return getId().hashCode();
     }
 
+    @Override
+    public boolean isLocalizationEnabled() {
+        return realm.isLocalizationEnabled();
+    }
 
+    @Override
+    public void setLocalizationEnabled(boolean enabled) {
+        realm.setLocalizationEnabled(enabled);
+        updateRealm();
+    }
+
+    @Override
+    public Set<String> getSupportedLocales() {
+        return new HashSet<String>(realm.getSupportedLocales());
+    }
+
+    @Override
+    public void setSupportedLocales(Set<String> locales) {
+        if (locales != null) {
+            realm.setEventsListeners(new ArrayList<String>(locales));
+        } else {
+            realm.setEventsListeners(Collections.EMPTY_LIST);
+        }
+        updateRealm();
+    }
+
+    @Override
+    public String getDefaultLocale() {
+        return realm.getDefaultLocale();
+    }
+
+    @Override
+    public void setDefaultLocale(String locale) {
+        realm.setDefaultLocale(locale);
+        updateRealm();
+    }
 }

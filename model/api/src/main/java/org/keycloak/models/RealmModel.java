@@ -236,5 +236,11 @@ public interface RealmModel extends RoleContainerModel {
     void updateProtocolMapper(ProtocolMapperModel mapping);
     public ProtocolMapperModel getProtocolMapperById(String id);
 
-
+    //i18n
+    boolean isLocalizationEnabled();
+    void setLocalizationEnabled(boolean enabled);
+    Set<String> getSupportedLocales();
+    void setSupportedLocales(Set<String> locales);
+    String getDefaultLocale();
+    void setDefaultLocale(String locale);
 }

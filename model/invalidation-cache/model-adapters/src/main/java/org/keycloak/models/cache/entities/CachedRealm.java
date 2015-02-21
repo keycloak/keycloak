@@ -83,6 +83,9 @@ public class CachedRealm {
     private Map<String, String> realmRoles = new HashMap<String, String>();
     private Map<String, String> applications = new HashMap<String, String>();
     private Map<String, String> clients = new HashMap<String, String>();
+    private boolean localizationEnabled;
+    private Set<String> supportedLocales = new HashSet<String>();
+    private String defaultLocale;
 
     public CachedRealm() {
     }
@@ -165,6 +168,10 @@ public class CachedRealm {
             CachedOAuthClient cachedApp = new CachedOAuthClient(cache, delegate, model, client);
             cache.addCachedOAuthClient(cachedApp);
         }
+
+        localizationEnabled = model.isLocalizationEnabled();
+        supportedLocales.addAll(model.getSupportedLocales());
+        defaultLocale = model.getDefaultLocale();
 
     }
 
@@ -355,5 +362,17 @@ public class CachedRealm {
 
     public Set<ProtocolMapperModel> getClaimMappings() {
         return claimMappings;
+    }
+
+    public boolean isLocalizationEnabled() {
+        return localizationEnabled;
+    }
+
+    public Set<String> getSupportedLocales() {
+        return supportedLocales;
+    }
+
+    public String getDefaultLocale() {
+        return defaultLocale;
     }
 }

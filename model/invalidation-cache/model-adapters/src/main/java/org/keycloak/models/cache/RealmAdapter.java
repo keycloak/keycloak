@@ -932,4 +932,39 @@ public class RealmAdapter implements RealmModel {
     public int hashCode() {
         return getId().hashCode();
     }
+
+    @Override
+    public boolean isLocalizationEnabled() {
+        if (updated != null) return updated.isLocalizationEnabled();
+        return cached.isLocalizationEnabled();
+    }
+
+    @Override
+    public void setLocalizationEnabled(boolean enabled) {
+        getDelegateForUpdate();
+        updated.setLocalizationEnabled(enabled);
+    }
+
+    @Override
+    public Set<String> getSupportedLocales() {
+        if (updated != null) return updated.getSupportedLocales();
+        return cached.getSupportedLocales();
+    }
+
+    @Override
+    public void setSupportedLocales(Set<String> locales) {
+        getDelegateForUpdate();
+        updated.setSupportedLocales(locales);
+    }
+
+    @Override
+    public String getDefaultLocale() {
+        if (updated != null) return updated.getDefaultLocale();
+        return cached.getDefaultLocale();
+    }
+
+    @Override
+    public void setDefaultLocale(String locale) {
+        updated.setDefaultLocale(locale);
+    }
 }
