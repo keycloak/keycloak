@@ -2,13 +2,13 @@
     <title>GitHub</title>
     <para>
         To enable login with GitHub you first have to create an application in
-        <ulink url="https://github.com/settings/applications">GitHub Settings</ulink>. Then you need to copy
+        <link xlink:href="https://github.com/settings/applications">GitHub Settings</link>. Then you need to copy
         the client id and secret into the Keycloak Admin Console.
     </para>
     <orderedlist>
         <listitem>
             <para>
-                Log in to <ulink url="https://github.com/settings/applications">GitHub Settings</ulink>. Click the
+                Log in to <link xlink:href="https://github.com/settings/applications">GitHub Settings</link>. Click the
                 <literal>Register new application</literal> button. Use any value for <literal>Application name</literal>,
                 <literal>Homepage URL</literal> and <literal>Application Description</literal> you want. In <literal>Authorization callback URL</literal>
                 enter the <link linkend="social-callbackurl">social callback url</link> for your realm. Click the
@@ -18,7 +18,7 @@
         <listitem>
             <para>
                 Copy <literal>Client ID</literal> and <literal>Client secret</literal> from the
-                <ulink url="https://github.com/settings/applications">GitHub Settings</ulink> into the settings
+                <link xlink:href="https://github.com/settings/applications">GitHub Settings</link> into the settings
                 page in the Keycloak Admin Console as the <literal>Key</literal> and <literal>Secret</literal>. Then click
                 <literal>Save</literal> in the Keycloak Admin Console to enable login with GitHub.
             </para>
