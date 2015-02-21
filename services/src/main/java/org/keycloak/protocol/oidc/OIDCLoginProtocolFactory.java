@@ -20,6 +20,7 @@ public class OIDCLoginProtocolFactory implements LoginProtocolFactory {
 
     @Override
     public void init(Config.Scope config) {
+        System.out.println("here");
 
     }
 

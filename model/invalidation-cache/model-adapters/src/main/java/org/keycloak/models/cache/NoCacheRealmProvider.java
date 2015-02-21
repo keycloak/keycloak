@@ -39,6 +39,16 @@ public class NoCacheRealmProvider implements CacheRealmProvider {
     }
 
     @Override
+    public void registerListener(RealmCreationListener listener) {
+        getDelegate().registerListener(listener);
+    }
+
+    @Override
+    public void unregisterListener(RealmCreationListener listener) {
+        getDelegate().unregisterListener(listener);
+
+    }
+    @Override
     public void registerRealmInvalidation(String id) {
     }
 

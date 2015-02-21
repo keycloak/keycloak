@@ -1,1 +1,1 @@
-org.keycloak.protocol.oidc.OIDCAttributeToTokenMapper
+org.keycloak.protocol.oidc.mappers.OIDCUserAttributeMapper

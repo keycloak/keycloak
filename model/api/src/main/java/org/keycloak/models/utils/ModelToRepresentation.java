@@ -341,11 +341,14 @@ public class ModelToRepresentation {
         ProtocolMapperRepresentation rep = new ProtocolMapperRepresentation();
         rep.setId(model.getId());
         rep.setProtocol(model.getProtocol());
-        rep.setProtocolClaim(model.getProtocolClaim());
-        rep.setSourceAttribute(model.getSourceAttribute());
-        rep.setSource(model.getSource().name());
+        Map<String, String> config = new HashMap<String, String>();
+        config.putAll(model.getConfig());
+        rep.setConfig(config);
+        rep.setName(model.getName());
         rep.setProtocolMapper(model.getProtocolMapper());
         rep.setAppliedByDefault(model.isAppliedByDefault());
+        rep.setConsentText(model.getConsentText());
+        rep.setConsentRequired(model.isConsentRequired());
         return rep;
     }
 
