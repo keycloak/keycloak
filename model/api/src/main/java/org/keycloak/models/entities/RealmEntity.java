@@ -53,7 +53,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
     private List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
     private List<ClaimTypeEntity> claimTypes = new ArrayList<ClaimTypeEntity>();
-    private List<ProtocolClaimMappingEntity> claimMappings = new ArrayList<ProtocolClaimMappingEntity>();
+    private List<ProtocolMapperEntity> claimMappings = new ArrayList<ProtocolMapperEntity>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
@@ -401,11 +401,11 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.claimTypes = claimTypes;
     }
 
-    public List<ProtocolClaimMappingEntity> getClaimMappings() {
+    public List<ProtocolMapperEntity> getClaimMappings() {
         return claimMappings;
     }
 
-    public void setClaimMappings(List<ProtocolClaimMappingEntity> claimMappings) {
+    public void setClaimMappings(List<ProtocolMapperEntity> claimMappings) {
         this.claimMappings = claimMappings;
     }
 }

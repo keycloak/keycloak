@@ -16,10 +16,10 @@ import javax.persistence.Table;
  */
 @Entity
 @NamedQueries({
-        @NamedQuery(name="deleteProtocolClaimMappingsByRealm", query="delete from ProtocolClaimMappingEntity attr where attr.realm = :realm")
+        @NamedQuery(name="deleteProtocolClaimMappersByRealm", query="delete from ProtocolMapperEntity attr where attr.realm = :realm")
 })
-@Table(name="PROTOCOL_CLAIM_MAPPING")
-public class ProtocolClaimMappingEntity {
+@Table(name="PROTOCOL_MAPPER")
+public class ProtocolMapperEntity {
 
     @Id
     @Column(name="ID", length = 36)
@@ -33,6 +33,8 @@ public class ProtocolClaimMappingEntity {
     protected String source;
     @Column(name = "SOURCE_ATTRIBUTE")
     protected String sourceAttribute;
+    @Column(name = "PROTOCOL_MAPPER_NAME")
+    protected String protocolMapper;
     @Column(name = "APPLIED_BY_DEFAULT")
     protected boolean appliedByDefault;
 
@@ -80,6 +82,14 @@ public class ProtocolClaimMappingEntity {
         this.sourceAttribute = sourceAttribute;
     }
 
+    public String getProtocolMapper() {
+        return protocolMapper;
+    }
+
+    public void setProtocolMapper(String protocolMapper) {
+        this.protocolMapper = protocolMapper;
+    }
+
     public boolean isAppliedByDefault() {
         return appliedByDefault;
     }
@@ -101,7 +111,7 @@ public class ProtocolClaimMappingEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ProtocolClaimMappingEntity that = (ProtocolClaimMappingEntity) o;
+        ProtocolMapperEntity that = (ProtocolMapperEntity) o;
 
         if (!id.equals(that.id)) return false;
 

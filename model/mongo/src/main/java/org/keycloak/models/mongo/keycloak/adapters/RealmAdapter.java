@@ -11,7 +11,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolClaimMappingModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
@@ -19,7 +19,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.entities.ClaimTypeEntity;
 import org.keycloak.models.entities.IdentityProviderEntity;
-import org.keycloak.models.entities.ProtocolClaimMappingEntity;
+import org.keycloak.models.entities.ProtocolMapperEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
@@ -787,10 +787,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public Set<ProtocolClaimMappingModel> getProtocolClaimMappings() {
-        Set<ProtocolClaimMappingModel> result = new HashSet<ProtocolClaimMappingModel>();
-        for (ProtocolClaimMappingEntity entity : realm.getClaimMappings()) {
-            ProtocolClaimMappingModel mapping = new ProtocolClaimMappingModel();
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        Set<ProtocolMapperModel> result = new HashSet<ProtocolMapperModel>();
+        for (ProtocolMapperEntity entity : realm.getClaimMappings()) {
+            ProtocolMapperModel mapping = new ProtocolMapperModel();
             mapping.setId(entity.getId());
             mapping.setProtocolClaim(entity.getProtocolClaim());
             mapping.setProtocol(entity.getProtocol());
@@ -802,8 +802,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public ProtocolClaimMappingModel addProtocolClaimMapping(ProtocolClaimMappingModel model) {
-        ProtocolClaimMappingEntity entity = new ProtocolClaimMappingEntity();
+    public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
+        ProtocolMapperEntity entity = new ProtocolMapperEntity();
         if (model.getId() != null) entity.setId(model.getId());
         else entity.setId(KeycloakModelUtils.generateId());
         entity.setSourceAttribute(model.getSourceAttribute());
@@ -811,21 +811,23 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setProtocolClaim(model.getProtocolClaim());
         entity.setSource(model.getSource());
         entity.setAppliedByDefault(model.isAppliedByDefault());
+        entity.setProtocolMapper(model.getProtocolMapper());
         realm.getClaimMappings().add(entity);
         updateRealm();
-        ProtocolClaimMappingModel mapping = new ProtocolClaimMappingModel();
+        ProtocolMapperModel mapping = new ProtocolMapperModel();
         mapping.setId(entity.getId());
         mapping.setProtocol(entity.getProtocol());
         mapping.setProtocolClaim(entity.getProtocolClaim());
         mapping.setAppliedByDefault(entity.isAppliedByDefault());
         mapping.setSource(entity.getSource());
         mapping.setSourceAttribute(entity.getSourceAttribute());
+        mapping.setProtocolMapper(entity.getProtocolMapper());
         return mapping;
     }
 
     @Override
-    public void removeProtocolClaimMapping(ProtocolClaimMappingModel mapping) {
-        for (ProtocolClaimMappingEntity entity : realm.getClaimMappings()) {
+    public void removeProtocolMapper(ProtocolMapperModel mapping) {
+        for (ProtocolMapperEntity entity : realm.getClaimMappings()) {
             if (entity.getId().equals(mapping.getId())) {
                 realm.getClaimMappings().remove(entity);
                 updateRealm();
@@ -835,8 +837,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     }
 
-    protected ProtocolClaimMappingEntity getProtocolClaimMapping(String id) {
-        for (ProtocolClaimMappingEntity entity : realm.getClaimMappings()) {
+    protected ProtocolMapperEntity getProtocolClaimMapping(String id) {
+        for (ProtocolMapperEntity entity : realm.getClaimMappings()) {
             if (entity.getId().equals(id)) {
                 return entity;
             }
@@ -847,28 +849,30 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
 
     @Override
-    public void updateProtocolClaimMapping(ProtocolClaimMappingModel mapping) {
-        ProtocolClaimMappingEntity entity = getProtocolClaimMapping(mapping.getId());
+    public void updateProtocolMapper(ProtocolMapperModel mapping) {
+        ProtocolMapperEntity entity = getProtocolClaimMapping(mapping.getId());
         entity.setProtocol(mapping.getProtocol());
         entity.setProtocolClaim(mapping.getProtocolClaim());
         entity.setAppliedByDefault(mapping.isAppliedByDefault());
         entity.setSource(mapping.getSource());
         entity.setSourceAttribute(mapping.getSourceAttribute());
+        entity.setProtocolMapper(mapping.getProtocolMapper());
         updateRealm();
 
     }
 
     @Override
-    public ProtocolClaimMappingModel getProtocolClaimMappingById(String id) {
-        ProtocolClaimMappingEntity entity = getProtocolClaimMapping(id);
+    public ProtocolMapperModel getProtocolMapperById(String id) {
+        ProtocolMapperEntity entity = getProtocolClaimMapping(id);
         if (entity == null) return null;
-        ProtocolClaimMappingModel mapping = new ProtocolClaimMappingModel();
+        ProtocolMapperModel mapping = new ProtocolMapperModel();
         mapping.setId(entity.getId());
         mapping.setProtocol(entity.getProtocol());
         mapping.setProtocolClaim(entity.getProtocolClaim());
         mapping.setAppliedByDefault(entity.isAppliedByDefault());
         mapping.setSource(entity.getSource());
         mapping.setSourceAttribute(entity.getSourceAttribute());
+        mapping.setProtocolMapper(entity.getProtocolMapper());
         return mapping;
     }
 

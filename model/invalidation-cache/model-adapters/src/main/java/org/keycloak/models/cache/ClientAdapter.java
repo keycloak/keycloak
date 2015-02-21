@@ -1,7 +1,7 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ProtocolClaimMappingModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -281,21 +281,21 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public Set<ProtocolClaimMappingModel> getProtocolClaimMappings() {
-        if (updatedClient != null) return updatedClient.getProtocolClaimMappings();
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        if (updatedClient != null) return updatedClient.getProtocolMappers();
         return cachedClient.getProtocolClaimMappings();    }
 
     @Override
-    public void addProtocolClaimMappings(Set<String> mappingIds) {
+    public void addProtocolMappers(Set<String> mappingIds) {
         getDelegateForUpdate();
-        updatedClient.addProtocolClaimMappings(mappingIds);
+        updatedClient.addProtocolMappers(mappingIds);
 
     }
 
     @Override
-    public void removeProtocolClaimMappings(Set<String> mappingIds) {
+    public void removeProtocolMappers(Set<String> mappingIds) {
         getDelegateForUpdate();
-        updatedClient.removeProtocolClaimMappings(mappingIds);
+        updatedClient.removeProtocolMappers(mappingIds);
 
     }
 }

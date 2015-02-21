@@ -78,8 +78,8 @@ public abstract class ClientEntity {
     Collection<IdentityProviderEntity> allowedIdentityProviders = new ArrayList<IdentityProviderEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE})
-    @JoinTable(name="CLIENT_PROTOCOL_CLAIM_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="MAPPING_ID")})
-    Collection<ProtocolClaimMappingEntity> protocolClaimMappings = new ArrayList<ProtocolClaimMappingEntity>();
+    @JoinTable(name="CLIENT_PROTOCOL_MAPPER", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="MAPPING_ID")})
+    Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 
     public RealmEntity getRealm() {
         return realm;
@@ -201,11 +201,11 @@ public abstract class ClientEntity {
         this.allowedIdentityProviders = allowedIdentityProviders;
     }
 
-    public Collection<ProtocolClaimMappingEntity> getProtocolClaimMappings() {
-        return protocolClaimMappings;
+    public Collection<ProtocolMapperEntity> getProtocolMappers() {
+        return protocolMappers;
     }
 
-    public void setProtocolClaimMappings(Collection<ProtocolClaimMappingEntity> protocolClaimMappings) {
-        this.protocolClaimMappings = protocolClaimMappings;
+    public void setProtocolMappers(Collection<ProtocolMapperEntity> protocolMappers) {
+        this.protocolMappers = protocolMappers;
     }
 }

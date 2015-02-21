@@ -68,10 +68,10 @@ public class UserInfoService {
 
     private final TokenManager tokenManager;
     private final AppAuthManager appAuthManager;
-    private final OpenIDConnectService openIdConnectService;
+    private final OIDCLoginProtocolService openIdConnectService;
     private final RealmModel realmModel;
 
-    public UserInfoService(OpenIDConnectService openIDConnectService) {
+    public UserInfoService(OIDCLoginProtocolService openIDConnectService) {
         this.realmModel = openIDConnectService.getRealm();
 
         if (this.realmModel == null) {

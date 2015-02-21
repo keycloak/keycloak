@@ -17,10 +17,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.StreamUtil;
@@ -215,7 +214,7 @@ public class SamlService {
             String redirect = null;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
             if (redirectUri != null && !"null".equals(redirectUri)) {  // "null" is for testing purposes
-                redirect = OpenIDConnectService.verifyRedirectUri(uriInfo, redirectUri.toString(), realm, client);
+                redirect = OIDCLoginProtocolService.verifyRedirectUri(uriInfo, redirectUri.toString(), realm, client);
             } else {
                 if (bindingType.equals(SamlProtocol.SAML_POST_BINDING)) {
                     redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
@@ -339,7 +338,7 @@ public class SamlService {
             }
 
             if (redirectUri != null) {
-                redirectUri = OpenIDConnectService.verifyRedirectUri(uriInfo, redirectUri, realm, client);
+                redirectUri = OIDCLoginProtocolService.verifyRedirectUri(uriInfo, redirectUri, realm, client);
                 if (redirectUri == null) {
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect uri.");
                 }

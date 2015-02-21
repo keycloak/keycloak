@@ -13,7 +13,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolClaimMappingModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
-import org.keycloak.representations.idm.ProtocolClaimMappingRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
@@ -461,7 +461,7 @@ public class RepresentationToModel {
         }
 
         if (resourceRep.getProtocolClaimMappings() != null) {
-            applicationModel.addProtocolClaimMappings(resourceRep.getProtocolClaimMappings());
+            applicationModel.addProtocolMappers(resourceRep.getProtocolClaimMappings());
         }
 
         return applicationModel;
@@ -638,7 +638,7 @@ public class RepresentationToModel {
         }
 
         if (rep.getProtocolClaimMappings() != null) {
-            model.addProtocolClaimMappings(rep.getProtocolClaimMappings());
+            model.addProtocolMappers(rep.getProtocolClaimMappings());
         }
 
     }
@@ -774,8 +774,8 @@ public class RepresentationToModel {
 
     private static void importProtocolClaimMappings(RealmRepresentation rep, RealmModel newRealm) {
         if (rep.getProtocolClaimMappings() != null) {
-            for (ProtocolClaimMappingRepresentation representation : rep.getProtocolClaimMappings()) {
-                newRealm.addProtocolClaimMapping(toModel(representation));
+            for (ProtocolMapperRepresentation representation : rep.getProtocolClaimMappings()) {
+                newRealm.addProtocolMapper(toModel(representation));
             }
         }
     }
@@ -805,14 +805,15 @@ public class RepresentationToModel {
         return model;
     }
 
-    public static ProtocolClaimMappingModel toModel(ProtocolClaimMappingRepresentation rep) {
-        ProtocolClaimMappingModel model = new ProtocolClaimMappingModel();
+    public static ProtocolMapperModel toModel(ProtocolMapperRepresentation rep) {
+        ProtocolMapperModel model = new ProtocolMapperModel();
         model.setId(rep.getId());
         model.setAppliedByDefault(rep.isAppliedByDefault());
-        model.setSource(ProtocolClaimMappingModel.Source.valueOf(rep.getSource()));
+        model.setSource(ProtocolMapperModel.Source.valueOf(rep.getSource()));
         model.setSourceAttribute(rep.getSourceAttribute());
         model.setProtocol(rep.getProtocol());
         model.setProtocolClaim(rep.getProtocolClaim());
+        model.setProtocolMapper(rep.getProtocolMapper());
         return model;
     }
 }

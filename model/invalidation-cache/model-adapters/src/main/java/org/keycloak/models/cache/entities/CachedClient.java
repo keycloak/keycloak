@@ -1,7 +1,7 @@
 package org.keycloak.models.cache.entities;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ProtocolClaimMappingModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
@@ -36,7 +36,7 @@ public class CachedClient {
     protected Set<String> scope = new HashSet<String>();
     protected Set<String> webOrigins = new HashSet<String>();
     private List<String> allowedIdentityProviders = new ArrayList<String>();
-    private Set<ProtocolClaimMappingModel> protocolClaimMappings = new HashSet<ProtocolClaimMappingModel>();
+    private Set<ProtocolMapperModel> protocolClaimMappings = new HashSet<ProtocolMapperModel>();
 
     public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
@@ -58,7 +58,7 @@ public class CachedClient {
             scope.add(role.getId());
         }
         this.allowedIdentityProviders = model.getAllowedIdentityProviders();
-        protocolClaimMappings.addAll(model.getProtocolClaimMappings());
+        protocolClaimMappings.addAll(model.getProtocolMappers());
     }
 
     public String getId() {
@@ -137,7 +137,7 @@ public class CachedClient {
         return this.allowedIdentityProviders.contains(providerId);
     }
 
-    public Set<ProtocolClaimMappingModel> getProtocolClaimMappings() {
+    public Set<ProtocolMapperModel> getProtocolClaimMappings() {
         return protocolClaimMappings;
     }
 }

@@ -23,8 +23,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.protocol.oidc.OpenIDConnect;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -690,7 +690,7 @@ public class UsersResource {
     @Path("{username}/reset-password-email")
     @PUT
     @Consumes("application/json")
-    public Response resetPasswordEmail(@PathParam("username") String username, @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OpenIDConnect.CLIENT_ID_PARAM) String clientId) {
+    public Response resetPasswordEmail(@PathParam("username") String username, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
         auth.requireManage();
 
         UserModel user = session.users().getUserByUsername(username, realm);
@@ -721,7 +721,7 @@ public class UsersResource {
 
         String redirect;
         if(redirectUri != null){
-            redirect = OpenIDConnectService.verifyRedirectUri(uriInfo,redirectUri,realm,client);
+            redirect = OIDCLoginProtocolService.verifyRedirectUri(uriInfo, redirectUri, realm, client);
             if(redirect == null){
                 return Flows.errors().error("Invalid redirect uri.", Response.Status.BAD_REQUEST);
             }
@@ -733,7 +733,7 @@ public class UsersResource {
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
         //audit.session(userSession);
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);
+        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientSession.setRedirectUri(redirect);
         clientSession.setUserSession(userSession);
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);

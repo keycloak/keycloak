@@ -16,7 +16,7 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.BasicAuthHelper;
@@ -199,7 +199,7 @@ public class OAuthClient {
     }
 
     public String getLoginFormUrl() {
-        UriBuilder b = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri(baseUrl));
         if (responseType != null) {
             b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
         }
@@ -216,12 +216,12 @@ public class OAuthClient {
     }
 
     public String getAccessTokenUrl() {
-        UriBuilder b = OpenIDConnectService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
     public String getLogoutUrl(String redirectUri, String sessionState) {
-        UriBuilder b = OpenIDConnectService.logoutUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
         if (redirectUri != null) {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
@@ -232,12 +232,12 @@ public class OAuthClient {
     }
 
     public String getResourceOwnerPasswordCredentialGrantUrl() {
-        UriBuilder b = OpenIDConnectService.grantAccessTokenUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.grantAccessTokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
     public String getRefreshTokenUrl() {
-        UriBuilder b = OpenIDConnectService.refreshUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.refreshUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 

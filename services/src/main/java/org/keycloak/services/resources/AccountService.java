@@ -48,8 +48,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.protocol.oidc.OpenIDConnect;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
@@ -681,7 +681,7 @@ public class AccountService {
                     ClientSessionCode clientSessionCode = new ClientSessionCode(realm, clientSession);
                     clientSessionCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
                     clientSession.setRedirectUri(redirectUri);
-                    clientSession.setNote(OpenIDConnect.STATE_PARAM, UUID.randomUUID().toString());
+                    clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
 
                     return Response.temporaryRedirect(
                             Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), providerId, realm.getName(), clientSessionCode.getCode()))
@@ -769,7 +769,7 @@ public class AccountService {
 
     private Response login(String path) {
         OAuthRedirect oauth = new OAuthRedirect();
-        String authUrl = OpenIDConnectService.loginPageUrl(uriInfo).build(realm.getName()).toString();
+        String authUrl = OIDCLoginProtocolService.loginPageUrl(uriInfo).build(realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 
         oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_APP);
@@ -822,7 +822,7 @@ public class AccountService {
         ApplicationModel application = realm.getApplicationByName(referrer);
         if (application != null) {
             if (referrerUri != null) {
-                referrerUri = OpenIDConnectService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
+                referrerUri = OIDCLoginProtocolService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
             } else {
                 referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), application.getBaseUrl());
             }
@@ -833,7 +833,7 @@ public class AccountService {
         } else if (referrerUri != null) {
             ClientModel client = realm.getOAuthClient(referrer);
             if (client != null) {
-                referrerUri = OpenIDConnectService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
+                referrerUri = OIDCLoginProtocolService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};

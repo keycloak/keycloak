@@ -85,9 +85,9 @@ import static org.keycloak.constants.AdapterConstants.K_IDP_HINT;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OpenIDConnectService {
+public class OIDCLoginProtocolService {
 
-    protected static final Logger logger = Logger.getLogger(OpenIDConnectService.class);
+    protected static final Logger logger = Logger.getLogger(OIDCLoginProtocolService.class);
 
     protected RealmModel realm;
     protected TokenManager tokenManager;
@@ -116,7 +116,7 @@ public class OpenIDConnectService {
     protected ResourceContext resourceContext;
     */
 
-    public OpenIDConnectService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
+    public OIDCLoginProtocolService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
         this.realm = realm;
         this.tokenManager = new TokenManager();
         this.event = event;
@@ -129,7 +129,7 @@ public class OpenIDConnectService {
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriBuilder baseUriBuilder) {
-        return baseUriBuilder.path(RealmsResource.class).path("{realm}/protocol/" + OpenIDConnect.LOGIN_PROTOCOL);
+        return baseUriBuilder.path(RealmsResource.class).path("{realm}/protocol/" + OIDCLoginProtocol.LOGIN_PROTOCOL);
     }
 
     public static UriBuilder accessCodeToTokenUrl(UriInfo uriInfo) {
@@ -140,12 +140,12 @@ public class OpenIDConnectService {
 
     public static UriBuilder accessCodeToTokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OpenIDConnectService.class, "accessCodeToToken");
+        return uriBuilder.path(OIDCLoginProtocolService.class, "accessCodeToToken");
     }
 
     public static UriBuilder validateAccessTokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OpenIDConnectService.class, "validateAccessToken");
+        return uriBuilder.path(OIDCLoginProtocolService.class, "validateAccessToken");
     }
 
     public static UriBuilder grantAccessTokenUrl(UriInfo uriInfo) {
@@ -156,7 +156,7 @@ public class OpenIDConnectService {
 
     public static UriBuilder grantAccessTokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OpenIDConnectService.class, "grantAccessToken");
+        return uriBuilder.path(OIDCLoginProtocolService.class, "grantAccessToken");
     }
 
     public static UriBuilder loginPageUrl(UriInfo uriInfo) {
@@ -166,7 +166,7 @@ public class OpenIDConnectService {
 
     public static UriBuilder loginPageUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OpenIDConnectService.class, "loginPage");
+        return uriBuilder.path(OIDCLoginProtocolService.class, "loginPage");
     }
 
     public static UriBuilder logoutUrl(UriInfo uriInfo) {
@@ -176,12 +176,12 @@ public class OpenIDConnectService {
 
     public static UriBuilder logoutUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OpenIDConnectService.class, "logout");
+        return uriBuilder.path(OIDCLoginProtocolService.class, "logout");
     }
 
     public static UriBuilder refreshUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OpenIDConnectService.class, "refreshAccessToken");
+        return uriBuilder.path(OIDCLoginProtocolService.class, "refreshAccessToken");
     }
 
     /**
@@ -202,7 +202,7 @@ public class OpenIDConnectService {
 
         ClientModel client = realm.findClient(client_id);
         if (client == null) {
-            throw new NotFoundException("could not find client: " + client_id);
+            throw new NotFoundException("could not find client");
         }
 
         InputStream is = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
@@ -216,7 +216,7 @@ public class OpenIDConnectService {
             }
         }
 
-        for (String r : OpenIDConnectService.resolveValidRedirects(uriInfo, client.getRedirectUris())) {
+        for (String r : OIDCLoginProtocolService.resolveValidRedirects(uriInfo, client.getRedirectUris())) {
             int i = r.indexOf('/', 8);
             if (i != -1) {
                 r = r.substring(0, i);
@@ -335,12 +335,12 @@ public class OpenIDConnectService {
         event.session(userSession);
 
         ClientSessionModel clientSession = sessions.createClientSession(realm, client);
-        clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);
+        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         TokenManager.attachClientSession(userSession, clientSession);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event)
-                .generateAccessToken(scope, client, user, userSession)
+                .generateAccessToken(scope, client, user, userSession, clientSession)
                 .generateRefreshToken()
                 .generateIDToken()
                 .build();
@@ -609,7 +609,7 @@ public class OpenIDConnectService {
 
         ClientModel client = authorizeClient(authorizationHeader, formData, event);
 
-        String redirectUri = clientSession.getNote(OpenIDConnect.REDIRECT_URI_PARAM);
+        String redirectUri = clientSession.getNote(OIDCLoginProtocol.REDIRECT_URI_PARAM);
         if (redirectUri != null && !redirectUri.equals(formData.getFirst(OAuth2Constants.REDIRECT_URI))) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
@@ -668,7 +668,7 @@ public class OpenIDConnectService {
             clientSession.setNote(AdapterConstants.APPLICATION_SESSION_HOST, adapterSessionHost);
         }
 
-        AccessToken token = tokenManager.createClientAccessToken(accessCode.getRequestedRoles(), realm, client, user, userSession);
+        AccessToken token = tokenManager.createClientAccessToken(accessCode.getRequestedRoles(), realm, client, user, userSession, clientSession);
 
         try {
             tokenManager.verifyAccess(token, realm, client, user);
@@ -818,16 +818,16 @@ public class OpenIDConnectService {
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
             }
             clientSession = session.sessions().createClientSession(realm, client);
-            clientSession.setAuthMethod(OpenIDConnect.LOGIN_PROTOCOL);
+            clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
             clientSession.setRedirectUri(redirect);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
             clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
-            clientSession.setNote(OpenIDConnect.STATE_PARAM, state);
-            clientSession.setNote(OpenIDConnect.REDIRECT_URI_PARAM, redirectUriParam);
-            if (scopeParam != null) clientSession.setNote(OpenIDConnect.SCOPE_PARAM, scopeParam);
-            if (responseType != null) clientSession.setNote(OpenIDConnect.RESPONSE_TYPE_PARAM, responseType);
-            if (loginHint != null) clientSession.setNote(OpenIDConnect.LOGIN_HINT_PARAM, loginHint);
-            if (prompt != null) clientSession.setNote(OpenIDConnect.PROMPT_PARAM, prompt);
+            clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
+            clientSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUriParam);
+            if (scopeParam != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
+            if (responseType != null) clientSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, responseType);
+            if (loginHint != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
+            if (prompt != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, prompt);
             return null;
         }
     }
@@ -848,13 +848,13 @@ public class OpenIDConnectService {
      */
     @Path("login")
     @GET
-    public Response loginPage(@QueryParam(OpenIDConnect.RESPONSE_TYPE_PARAM) String responseType,
-                              @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirect,
-                              @QueryParam(OpenIDConnect.CLIENT_ID_PARAM) String clientId,
-                              @QueryParam(OpenIDConnect.SCOPE_PARAM) String scopeParam,
-                              @QueryParam(OpenIDConnect.STATE_PARAM) String state,
-                              @QueryParam(OpenIDConnect.PROMPT_PARAM) String prompt,
-                              @QueryParam(OpenIDConnect.LOGIN_HINT_PARAM) String loginHint,
+    public Response loginPage(@QueryParam(OIDCLoginProtocol.RESPONSE_TYPE_PARAM) String responseType,
+                              @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirect,
+                              @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
+                              @QueryParam(OIDCLoginProtocol.SCOPE_PARAM) String scopeParam,
+                              @QueryParam(OIDCLoginProtocol.STATE_PARAM) String state,
+                              @QueryParam(OIDCLoginProtocol.PROMPT_PARAM) String prompt,
+                              @QueryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM) String loginHint,
                               @QueryParam(K_IDP_HINT) String idpHint) {
         event.event(EventType.LOGIN);
         FrontPageInitializer pageInitializer = new FrontPageInitializer();
@@ -890,7 +890,7 @@ public class OpenIDConnectService {
         if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
 
         if (prompt != null && prompt.equals("none")) {
-            OpenIDConnect oauth = new OpenIDConnect(session, realm, uriInfo);
+            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo);
             return oauth.cancelLogin(clientSession);
         }
 
@@ -952,11 +952,11 @@ public class OpenIDConnectService {
      */
     @Path("registrations")
     @GET
-    public Response registerPage(@QueryParam(OpenIDConnect.RESPONSE_TYPE_PARAM) String responseType,
-                                 @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirect,
-                                 @QueryParam(OpenIDConnect.CLIENT_ID_PARAM) String clientId,
-                                 @QueryParam(OpenIDConnect.SCOPE_PARAM) String scopeParam,
-                                 @QueryParam(OpenIDConnect.STATE_PARAM) String state) {
+    public Response registerPage(@QueryParam(OIDCLoginProtocol.RESPONSE_TYPE_PARAM) String responseType,
+                                 @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirect,
+                                 @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
+                                 @QueryParam(OIDCLoginProtocol.SCOPE_PARAM) String scopeParam,
+                                 @QueryParam(OIDCLoginProtocol.STATE_PARAM) String state) {
         event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
@@ -990,7 +990,7 @@ public class OpenIDConnectService {
     @Path("logout")
     @GET
     @NoCache
-    public Response logout(final @QueryParam(OpenIDConnect.REDIRECT_URI_PARAM) String redirectUri) {
+    public Response logout(final @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri) {
         event.event(EventType.LOGOUT);
         if (redirectUri != null) {
             event.detail(Details.REDIRECT_URI, redirectUri);

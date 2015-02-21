@@ -1,13 +1,13 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ProtocolClaimMappingModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
-import org.keycloak.models.jpa.entities.ProtocolClaimMappingEntity;
+import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 
@@ -357,15 +357,15 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public Set<ProtocolClaimMappingModel> getProtocolClaimMappings() {
-        Set<ProtocolClaimMappingModel> mappings = new HashSet<ProtocolClaimMappingModel>();
-        for (ProtocolClaimMappingEntity entity : this.entity.getProtocolClaimMappings()) {
-            ProtocolClaimMappingModel mapping = new ProtocolClaimMappingModel();
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        Set<ProtocolMapperModel> mappings = new HashSet<ProtocolMapperModel>();
+        for (ProtocolMapperEntity entity : this.entity.getProtocolMappers()) {
+            ProtocolMapperModel mapping = new ProtocolMapperModel();
             mapping.setId(entity.getId());
             mapping.setProtocol(entity.getProtocol());
             mapping.setProtocolClaim(entity.getProtocolClaim());
             mapping.setAppliedByDefault(entity.isAppliedByDefault());
-            mapping.setSource(ProtocolClaimMappingModel.Source.valueOf(entity.getSource()));
+            mapping.setSource(ProtocolMapperModel.Source.valueOf(entity.getSource()));
             mapping.setSourceAttribute(entity.getSourceAttribute());
             mappings.add(mapping);
         }
@@ -373,15 +373,15 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void addProtocolClaimMappings(Set<String> mappings) {
-        Collection<ProtocolClaimMappingEntity> entities = entity.getProtocolClaimMappings();
+    public void addProtocolMappers(Set<String> mappings) {
+        Collection<ProtocolMapperEntity> entities = entity.getProtocolMappers();
         Set<String> already = new HashSet<String>();
-        for (ProtocolClaimMappingEntity rel : entities) {
+        for (ProtocolMapperEntity rel : entities) {
             already.add(rel.getId());
         }
         for (String providerId : mappings) {
             if (!already.contains(providerId)) {
-                ProtocolClaimMappingEntity mapping = em.find(ProtocolClaimMappingEntity.class, providerId);
+                ProtocolMapperEntity mapping = em.find(ProtocolMapperEntity.class, providerId);
                 if (mapping != null) {
                     entities.add(mapping);
                 }
@@ -391,13 +391,13 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void removeProtocolClaimMappings(Set<String> mappings) {
-        Collection<ProtocolClaimMappingEntity> entities = entity.getProtocolClaimMappings();
-        List<ProtocolClaimMappingEntity> remove = new LinkedList<ProtocolClaimMappingEntity>();
-        for (ProtocolClaimMappingEntity rel : entities) {
+    public void removeProtocolMappers(Set<String> mappings) {
+        Collection<ProtocolMapperEntity> entities = entity.getProtocolMappers();
+        List<ProtocolMapperEntity> remove = new LinkedList<ProtocolMapperEntity>();
+        for (ProtocolMapperEntity rel : entities) {
             if (mappings.contains(rel.getId())) remove.add(rel);
         }
-        for (ProtocolClaimMappingEntity entity : remove) {
+        for (ProtocolMapperEntity entity : remove) {
             entities.remove(entity);
         }
         em.flush();

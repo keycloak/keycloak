@@ -104,7 +104,7 @@ public interface ClientModel {
 
     boolean hasIdentityProvider(String providerId);
 
-    Set<ProtocolClaimMappingModel> getProtocolClaimMappings();
-    void addProtocolClaimMappings(Set<String> mappingIds);
-    void removeProtocolClaimMappings(Set<String> mappingIds);
+    Set<ProtocolMapperModel> getProtocolMappers();
+    void addProtocolMappers(Set<String> mapperIds);
+    void removeProtocolMappers(Set<String> mapperIds);
 }

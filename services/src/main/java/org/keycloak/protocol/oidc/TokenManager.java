@@ -13,6 +13,7 @@ import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -85,11 +86,25 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
         }
 
+        ClientSessionModel clientSession = null;
+        for (ClientSessionModel clientSessionModel : userSession.getClientSessions()) {
+            if (clientSessionModel.getId().equals(refreshToken.getClientSession())) {
+                clientSession = clientSessionModel;
+                break;
+            }
+        }
+
+        if (clientSession == null) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Client session not active", "Client session not active");
+
+        }
+
         verifyAccess(refreshToken, realm, client, user);
 
-        AccessToken accessToken = initToken(realm, client, user, userSession);
+        AccessToken accessToken = initToken(realm, client, user, userSession, clientSession);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
+        accessToken = transformToken(accessToken, realm, client, user, userSession, clientSession);
 
         userSession.setLastSessionRefresh(currentTime);
 
@@ -117,11 +132,12 @@ public class TokenManager {
         return refreshToken;
     }
 
-    public AccessToken createClientAccessToken(Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
-        AccessToken token = initToken(realm, client, user, session);
+    public AccessToken createClientAccessToken(Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, ClientSessionModel clientSession) {
+        AccessToken token = initToken(realm, client, user, session, clientSession);
         for (RoleModel role : requestedRoles) {
             addComposites(token, role);
         }
+        token = transformToken(token, realm, client, user, session, clientSession);
         return token;
     }
 
@@ -234,28 +250,25 @@ public class TokenManager {
             if (user.getLastName() != null) fullName.append(user.getLastName());
             claimSet.setName(fullName.toString());
         }
+
+        Set<ProtocolMapperModel> mappings = model.getProtocolMappers();
+        for (ProtocolMapperModel mapping : mappings) {
+            if (!mapping.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) continue;
+
+        }
     }
 
-    protected IDToken initIDToken(RealmModel realm, ClientModel claimer, UserModel client, UserModel user) {
-        IDToken token = new IDToken();
-        token.id(KeycloakModelUtils.generateId());
-        token.subject(user.getId());
-        token.audience(claimer.getClientId());
-        token.issuedNow();
-        token.issuedFor(client.getUsername());
-        token.issuer(realm.getName());
-        if (realm.getAccessTokenLifespan() > 0) {
-            token.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
-        }
+    protected AccessToken transformToken(AccessToken token, RealmModel realm, ClientModel client, UserModel user,
+                                         UserSessionModel session, ClientSessionModel clientSession) {
         UserClaimSet claimSet = token.getUserClaimSet();
-        initClaims(claimSet, claimer, user);
+        initClaims(claimSet, client, user);
         return token;
     }
 
 
-
-    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
+    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, ClientSessionModel clientSession) {
         AccessToken token = new AccessToken();
+        if (clientSession != null) token.clientSession(clientSession.getId());
         token.id(KeycloakModelUtils.generateId());
         token.subject(user.getId());
         token.audience(client.getClientId());
@@ -272,8 +285,6 @@ public class TokenManager {
         if (allowedOrigins != null) {
             token.setAllowedOrigins(allowedOrigins);
         }
-        UserClaimSet claimSet = token.getUserClaimSet();
-        initClaims(claimSet, client, user);
         return token;
     }
 
@@ -339,9 +350,9 @@ public class TokenManager {
             return this;
         }
 
-        public AccessTokenResponseBuilder generateAccessToken(String scopeParam, ClientModel client, UserModel user, UserSessionModel session) {
+        public AccessTokenResponseBuilder generateAccessToken(String scopeParam, ClientModel client, UserModel user, UserSessionModel session, ClientSessionModel clientSession) {
             Set<RoleModel> requestedRoles = getAccess(scopeParam, client, user);
-            accessToken = createClientAccessToken(requestedRoles, realm, client, user, session);
+            accessToken = createClientAccessToken(requestedRoles, realm, client, user, session, clientSession);
             return this;
         }
 

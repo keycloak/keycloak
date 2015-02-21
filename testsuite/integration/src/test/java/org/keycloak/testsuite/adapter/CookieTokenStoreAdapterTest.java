@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
@@ -31,7 +31,7 @@ import org.openqa.selenium.WebDriver;
  */
 public class CookieTokenStoreAdapterTest {
 
-    public static final String LOGIN_URL = OpenIDConnectService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
+    public static final String LOGIN_URL = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
 
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {

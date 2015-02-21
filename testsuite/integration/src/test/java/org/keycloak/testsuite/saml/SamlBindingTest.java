@@ -247,7 +247,7 @@ public class SamlBindingTest {
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", false);
-            AccessToken token = tm.createClientAccessToken(tm.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession);
+            AccessToken token = tm.createClientAccessToken(tm.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession, null);
             return tm.encodeToken(adminRealm, token);
         } finally {
             keycloakRule.stopSession(session, true);

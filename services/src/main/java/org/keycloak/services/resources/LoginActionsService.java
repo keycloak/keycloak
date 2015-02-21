@@ -44,7 +44,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.OpenIDConnectService;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.PasswordToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -119,7 +119,7 @@ public class LoginActionsService {
 
     public static UriBuilder processLoginUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = loginActionsBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OpenIDConnectService.class, "processLogin");
+        return uriBuilder.path(OIDCLoginProtocolService.class, "processLogin");
     }
 
     public static UriBuilder processOAuthUrl(UriInfo uriInfo) {
@@ -129,7 +129,7 @@ public class LoginActionsService {
 
     public static UriBuilder processOAuthUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = loginActionsBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OpenIDConnectService.class, "processOAuth");
+        return uriBuilder.path(OIDCLoginProtocolService.class, "processOAuth");
     }
 
     public LoginActionsService(RealmModel realm, AuthenticationManager authManager, EventBuilder event) {

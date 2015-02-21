@@ -11,7 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
-import org.keycloak.protocol.oidc.OpenIDConnect;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.util.Time;
@@ -97,7 +97,7 @@ public class UserSessionProviderTest {
         assertEquals(realm.findClient("test-app").getClientId(), session1.getClient().getClientId());
         assertEquals(sessions[0].getId(), session1.getUserSession().getId());
         assertEquals("http://redirect", session1.getRedirectUri());
-        assertEquals("state", session1.getNote(OpenIDConnect.STATE_PARAM));
+        assertEquals("state", session1.getNote(OIDCLoginProtocol.STATE_PARAM));
         assertEquals(2, session1.getRoles().size());
         assertTrue(session1.getRoles().contains("one"));
         assertTrue(session1.getRoles().contains("two"));
@@ -311,7 +311,7 @@ public class UserSessionProviderTest {
                 clientSession.setUserSession(userSession);
                 clientSession.setRedirectUri("http://redirect");
                 clientSession.setRoles(new HashSet<String>());
-                clientSession.setNote(OpenIDConnect.STATE_PARAM, "state");
+                clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, "state");
                 clientSession.setTimestamp(userSession.getStarted());
             }
         } finally {
@@ -404,7 +404,7 @@ public class UserSessionProviderTest {
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
         if (userSession != null) clientSession.setUserSession(userSession);
         clientSession.setRedirectUri(redirect);
-        if (state != null) clientSession.setNote(OpenIDConnect.STATE_PARAM, state);
+        if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
         if (roles != null) clientSession.setRoles(roles);
         return clientSession;
     }
