@@ -2,13 +2,13 @@
     <title>Twitter</title>
     <para>
         To enable login with Twtter you first have to create an application in the
-        <ulink url="https://dev.twitter.com/apps">Twitter Developer Console</ulink>. Then you need to copy
+        <link xlink:href="https://dev.twitter.com/apps">Twitter Developer Console</link>. Then you need to copy
         the consumer key and secret into the Keycloak Admin Console.
     </para>
     <orderedlist>
         <listitem>
             <para>
-                Log in to the <ulink url="https://dev.twitter.com/apps">Twitter Developer Console</ulink>. Click the
+                Log in to the <link xlink:href="https://dev.twitter.com/apps">Twitter Developer Console</link>. Click the
                 <literal>Create a new application</literal> button. Use any value for <literal>Name</literal>,
                 <literal>Description</literal> and <literal>Website</literal> you want. Insert the social callback url
                 in <literal>Callback URL</literal>. Then click <literal>Create your Twitter application</literal>.
@@ -23,7 +23,7 @@
         <listitem>
             <para>
                 Now click <literal>API Keys</literal> tab. Copy <literal>API key</literal> and <literal>API secret</literal> from the
-                <ulink url="https://dev.twitter.com/apps">Twitter Developer Console</ulink> into the settings
+                <link xlink:href="https://dev.twitter.com/apps">Twitter Developer Console</link> into the settings
                 page in the Keycloak Admin Console as the <literal>Key</literal> and <literal>Secret</literal>. Then click
                 <literal>Save</literal> in the Keycloak Admin Console to enable login with Twitter.
             </para>

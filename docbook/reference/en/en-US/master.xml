@@ -21,12 +21,7 @@
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
                 <!ENTITY SAML SYSTEM "modules/saml.xml">
                 <!ENTITY JAAS SYSTEM "modules/jaas.xml">
-                <!ENTITY SocialConfig SYSTEM "modules/social-config.xml">
-                <!ENTITY SocialFacebook SYSTEM "modules/social-facebook.xml">
-                <!ENTITY SocialGitHub SYSTEM "modules/social-github.xml">
-                <!ENTITY SocialGoogle SYSTEM "modules/social-google.xml">
-                <!ENTITY SocialTwitter SYSTEM "modules/social-twitter.xml">
-                <!ENTITY SocialProviderSPI SYSTEM "modules/social-spi.xml">
+                <!ENTITY IdentityBroker SYSTEM "modules/identity-broker.xml">
                 <!ENTITY Themes SYSTEM "modules/themes.xml">
                 <!ENTITY Migration SYSTEM "modules/MigrationFromOlderVersions.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
@@ -105,21 +100,7 @@ This one is short
         &JAAS;
     </chapter>
 
-    <chapter>
-        <title>Social</title>
-        <para>
-            Keycloak makes it easy to let users log in to your application using an existing account with a social network.
-            Currently Facebook, Google and Twitter is supported with more planned for the future. There's also a Social
-            Provider SPI that makes it relatively simple to add additional social networks.
-        </para>
-        &SocialConfig;
-        &SocialFacebook;
-        &SocialGitHub;
-        &SocialGoogle;
-        &SocialTwitter;
-        &SocialProviderSPI;
-    </chapter>
-
+    &IdentityBroker;
     &Themes;
 
     <chapter>

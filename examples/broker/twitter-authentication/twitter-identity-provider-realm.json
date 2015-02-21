@@ -39,7 +39,7 @@
             "adminUrl": "/twitter-authentication",
             "baseUrl": "/twitter-authentication",
             "redirectUris": [
-                "/twitter-authentication/*",
+                "/twitter-authentication/*"
             ]
         },
         {
