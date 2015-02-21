@@ -1,9 +1,9 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout; section>
     <#if section = "title">
-        ${rb.registerWith} ${realm.name}
+        ${formatter.format(rb.registerWithTitle,(realm.name!''))}
     <#elseif section = "header">
-        ${rb.registerWith} <strong>${realm.name}</strong>
+         ${formatter.format(rb.registerWithTitleHtml,(realm.name!''))}
     <#elseif section = "form">
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
           <#if !realm.registrationEmailAsUsername>
@@ -116,7 +116,7 @@
                 </div>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="btn btn-primary btn-lg" type="submit" value="${rb.register}"/>
+                    <input class="btn btn-primary btn-lg" type="submit" value="${rb.doRegister}"/>
                 </div>
             </div>
         </form>

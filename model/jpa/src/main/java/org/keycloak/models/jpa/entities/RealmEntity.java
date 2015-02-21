@@ -137,6 +137,18 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     protected List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
 
+    @Column(name="INTERNATIONALIZATION_ENABLED")
+    protected boolean internationalizationEnabled;
+
+    @ElementCollection
+    @Column(name="VALUE")
+    @CollectionTable(name="REALM_SUPPORTED_LOCALES", joinColumns={ @JoinColumn(name="REALM_ID") })
+    protected Set<String> supportedLocales = new HashSet<String>();
+
+    @Column(name="DEFAULT_LOCALE")
+    protected String defaultLocale;
+
+
     public String getId() {
         return id;
     }
@@ -452,5 +464,28 @@ public class RealmEntity {
         getIdentityProviders().add(entity);
     }
 
+    public boolean isInternationalizationEnabled() {
+        return internationalizationEnabled;
+    }
+
+    public void setInternationalizationEnabled(boolean internationalizationEnabled) {
+        this.internationalizationEnabled = internationalizationEnabled;
+    }
+
+    public Set<String> getSupportedLocales() {
+        return supportedLocales;
+    }
+
+    public void setSupportedLocales(Set<String> supportedLocales) {
+        this.supportedLocales = supportedLocales;
+    }
+
+    public String getDefaultLocale() {
+        return defaultLocale;
+    }
+
+    public void setDefaultLocale(String defaultLocale) {
+        this.defaultLocale = defaultLocale;
+    }
 }
 

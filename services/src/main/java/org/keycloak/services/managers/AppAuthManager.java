@@ -42,7 +42,7 @@ public class AppAuthManager extends AuthenticationManager {
     public AuthResult authenticateBearerToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         String tokenString = extractAuthorizationHeaderToken(headers);
         if (tokenString == null) return null;
-        AuthResult authResult = verifyIdentityToken(session, realm, uriInfo, connection, true, tokenString);
+        AuthResult authResult = verifyIdentityToken(session, realm, uriInfo, connection, true, tokenString, headers);
         return authResult;
     }
 

@@ -108,7 +108,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        Assert.assertEquals("Please specify first name", updateProfilePage.getError());
+        Assert.assertEquals("Please specify first name.", updateProfilePage.getError());
 
         events.assertEmpty();
     }
@@ -125,7 +125,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        Assert.assertEquals("Please specify last name", updateProfilePage.getError());
+        Assert.assertEquals("Please specify last name.", updateProfilePage.getError());
 
         events.assertEmpty();
     }
@@ -142,7 +142,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        Assert.assertEquals("Please specify email", updateProfilePage.getError());
+        Assert.assertEquals("Please specify email.", updateProfilePage.getError());
 
         events.assertEmpty();
     }
@@ -159,7 +159,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        Assert.assertEquals("Email already exists", updateProfilePage.getError());
+        Assert.assertEquals("Email already exists.", updateProfilePage.getError());
 
         events.assertEmpty();
     }

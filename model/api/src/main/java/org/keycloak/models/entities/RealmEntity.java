@@ -65,6 +65,10 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     private String adminAppId;
 
+    private boolean internationalizationEnabled;
+    private List<String> supportedLocales = new ArrayList<String>();
+    private String defaultLocale;
+
     public String getName() {
         return name;
     }
@@ -406,6 +410,30 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setCertificatePem(String certificatePem) {
         this.certificatePem = certificatePem;
+    }
+
+    public boolean isInternationalizationEnabled() {
+        return internationalizationEnabled;
+    }
+
+    public void setInternationalizationEnabled(boolean internationalizationEnabled) {
+        this.internationalizationEnabled = internationalizationEnabled;
+    }
+
+    public List<String> getSupportedLocales() {
+        return supportedLocales;
+    }
+
+    public void setSupportedLocales(List<String> supportedLocales) {
+        this.supportedLocales = supportedLocales;
+    }
+
+    public String getDefaultLocale() {
+        return defaultLocale;
+    }
+
+    public void setDefaultLocale(String defaultLocale) {
+        this.defaultLocale = defaultLocale;
     }
 }
 

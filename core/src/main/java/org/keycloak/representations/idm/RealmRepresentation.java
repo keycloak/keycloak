@@ -1,10 +1,6 @@
 package org.keycloak.representations.idm;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -68,6 +64,10 @@ public class RealmRepresentation {
     private List<IdentityProviderRepresentation> identityProviders;
     private List<ProtocolMapperRepresentation> protocolMappers;
     private Boolean identityFederationEnabled;
+    protected Boolean internationalizationEnabled;
+    protected Set<String> supportedLocales;
+    protected String defaultLocale;
+
 
     public String getId() {
         return id;
@@ -512,5 +512,32 @@ public class RealmRepresentation {
 
     public void setProtocolMappers(List<ProtocolMapperRepresentation> protocolMappers) {
         this.protocolMappers = protocolMappers;
+    }
+
+    public Boolean isInternationalizationEnabled() {
+        return internationalizationEnabled;
+    }
+
+    public void setInternationalizationEnabled(Boolean internationalizationEnabled) {
+        this.internationalizationEnabled = internationalizationEnabled;
+    }
+
+    public Set<String> getSupportedLocales() {
+        if(supportedLocales == null){
+            supportedLocales = new HashSet<String>();
+        }
+        return supportedLocales;
+    }
+
+    public void setSupportedLocales(Set<String> supportedLocales) {
+        this.supportedLocales = supportedLocales;
+    }
+
+    public String getDefaultLocale() {
+        return defaultLocale;
+    }
+
+    public void setDefaultLocale(String defaultLocale) {
+        this.defaultLocale = defaultLocale;
     }
 }

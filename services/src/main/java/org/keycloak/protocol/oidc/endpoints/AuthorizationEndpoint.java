@@ -24,6 +24,7 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.HttpAuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 
@@ -116,7 +117,7 @@ public class AuthorizationEndpoint {
         action = Action.REGISTER;
 
         if (!realm.isRegistrationAllowed()) {
-            throw new ErrorPageException(session, realm, uriInfo, "Registration not allowed");
+            throw new ErrorPageException(session, realm, uriInfo, headers, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
         return this;
@@ -148,21 +149,21 @@ public class AuthorizationEndpoint {
     private void checkSsl() {
         if (!uriInfo.getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
             event.error(Errors.SSL_REQUIRED);
-            throw new ErrorPageException(session, realm, uriInfo, "HTTPS required");
+            throw new ErrorPageException(session, realm, uriInfo, headers, Messages.HTTPS_REQUIRED);
         }
     }
 
     private void checkRealm() {
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            throw new ErrorPageException(session, realm, uriInfo, "Realm not enabled");
+            throw new ErrorPageException(session, realm, uriInfo, headers, Messages.REALM_NOT_ENABLED);
         }
     }
 
     private void checkClient() {
         if (clientId == null) {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, realm, uriInfo, "Missing paramater: " + OIDCLoginProtocol.CLIENT_ID_PARAM);
+            throw new ErrorPageException(session, realm, uriInfo, headers, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM );
         }
 
         event.client(clientId);
@@ -170,17 +171,17 @@ public class AuthorizationEndpoint {
         client = realm.findClient(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorPageException(session, realm, uriInfo, "Client not found");
+            throw new ErrorPageException(session, realm, uriInfo, headers, Messages.CLIENT_NOT_FOUND );
         }
 
         if ((client instanceof ApplicationModel) && ((ApplicationModel) client).isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, realm, uriInfo, "Bearer only clients are not allowed to initiate browser login");
+            throw new ErrorPageException(session, realm, uriInfo, headers, Messages.BEARER_ONLY );
         }
 
         if (client.isDirectGrantsOnly()) {
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, realm, uriInfo, "Direct grants only clients are not allowed to initiate browser login");
+            throw new ErrorPageException(session, realm, uriInfo, headers, Messages.DIRECT_GRANTS_ONLY);
         }
     }
 
@@ -190,7 +191,7 @@ public class AuthorizationEndpoint {
                 responseType = legacyResponseType;
             } else {
                 event.error(Errors.INVALID_REQUEST);
-                throw new ErrorPageException(session, realm, uriInfo, "Missing query parameter: " + OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+                throw new ErrorPageException(session, realm, uriInfo, headers, Messages.MISSING_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM );
             }
         }
 
@@ -200,7 +201,7 @@ public class AuthorizationEndpoint {
             action = Action.CODE;
         } else {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, realm, uriInfo, "Invalid " + OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+            throw new ErrorPageException(session, realm, uriInfo, headers, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM );
         }
     }
 
@@ -210,7 +211,7 @@ public class AuthorizationEndpoint {
         redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUriParam, realm, client);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
-            throw new ErrorPageException(session, realm, uriInfo, "Invalid " + OIDCLoginProtocol.REDIRECT_URI_PARAM);
+            throw new ErrorPageException(session, realm, uriInfo, headers, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
     }
 
@@ -237,8 +238,8 @@ public class AuthorizationEndpoint {
             IdentityProviderModel identityProviderModel = realm.getIdentityProviderById(idpHint);
 
             if (identityProviderModel == null) {
-                return Flows.forms(session, realm, null, uriInfo)
-                        .setError("Could not find an identity provider with the identifier [" + idpHint + "].")
+                return Flows.forms(session, realm, null, uriInfo, headers)
+                        .setError(Messages.IDENTITY_PROVIDER_NOT_FOUND, idpHint)
                         .createErrorPage();
             }
             return buildRedirectToIdentityProvider(idpHint, accessCode);
@@ -249,11 +250,11 @@ public class AuthorizationEndpoint {
 
         // SPNEGO/Kerberos authentication TODO: This should be somehow pluggable instead of hardcoded this way (Authentication interceptors?)
         HttpAuthenticationManager httpAuthManager = new HttpAuthenticationManager(session, clientSession, realm, uriInfo, request, clientConnection, event);
-        HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate();
+        HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate(headers);
         if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
 
         if (prompt != null && prompt.equals("none")) {
-            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo);
+            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers);
             return oauth.cancelLogin(clientSession);
         }
 
@@ -271,13 +272,13 @@ public class AuthorizationEndpoint {
                     return buildRedirectToIdentityProvider(identityProviders.get(0).getId(), accessCode);
                 }
 
-                return Flows.forms(session, realm, null, uriInfo).setError("Realm [" + realm.getName() + "] supports multiple identity providers. Could not determine which identity provider should be used to authenticate with.").createErrorPage();
+                return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.IDENTITY_PROVIDER_NOT_UNIQUE, realm.getName()).createErrorPage();
             }
 
-            return Flows.forms(session, realm, null, uriInfo).setError("Realm [" + realm.getName() + "] does not support any credential type.").createErrorPage();
+            return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.REALM_SUPPORTS_NO_CREDENTIALS, realm.getName()).createErrorPage();
         }
 
-        LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
+        LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo, headers)
                 .setClientSessionCode(accessCode);
 
         // Attach state from SPNEGO authentication
@@ -306,7 +307,7 @@ public class AuthorizationEndpoint {
     private Response buildRegister() {
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return Flows.forms(session, realm, client, uriInfo)
+        return Flows.forms(session, realm, client, uriInfo, headers)
                 .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode())
                 .createRegistration();
     }

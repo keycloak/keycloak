@@ -276,7 +276,7 @@ public class TokenEndpoint {
 
         AccessTokenResponse res;
         try {
-            res = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event);
+            res = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
         } catch (OAuthErrorException e) {
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);

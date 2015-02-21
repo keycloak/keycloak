@@ -23,6 +23,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.HttpAuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.StreamUtil;
@@ -106,18 +107,18 @@ public class SamlService {
             if (!checkSsl()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.SSL_REQUIRED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.HTTPS_REQUIRED );
             }
             if (!realm.isEnabled()) {
                 event.event(EventType.LOGIN_ERROR);
                 event.error(Errors.REALM_DISABLED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REALM_NOT_ENABLED);
             }
 
             if (samlRequest == null && samlResponse == null) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_TOKEN);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST );
 
             }
             return null;
@@ -131,7 +132,7 @@ public class SamlService {
             if (!uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid request.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
             }
 
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
@@ -139,7 +140,7 @@ public class SamlService {
                 logger.warn("Unknown saml response.");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_TOKEN);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
             }
             // assume this is a logout response
             UserSessionModel userSession = authResult.getSession();
@@ -148,10 +149,10 @@ public class SamlService {
                 logger.warn("UserSession is not tagged as logging out.");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
             }
             logger.debug("logout response");
-            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
+            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
             event.success();
             return response;
         }
@@ -161,7 +162,7 @@ public class SamlService {
             if (documentHolder == null) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_TOKEN);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
             }
 
             SAML2Object samlObject = documentHolder.getSamlObject();
@@ -173,23 +174,23 @@ public class SamlService {
             if (client == null) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.CLIENT_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_LOGIN_REQUESTER);
             }
 
             if (!client.isEnabled()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.CLIENT_DISABLED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             }
             if ((client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.NOT_ALLOWED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Bearer-only applications are not allowed to initiate browser login");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.BEARER_ONLY);
             }
             if (client.isDirectGrantsOnly()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.NOT_ALLOWED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.DIRECT_GRANTS_ONLY );
             }
 
             try {
@@ -198,7 +199,7 @@ public class SamlService {
                 SamlService.logger.error("request validation failed", e);
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_SIGNATURE);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid requester.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUESTER);
             }
             logger.debug("verified request");
             if (samlObject instanceof AuthnRequestType) {
@@ -216,7 +217,7 @@ public class SamlService {
             } else {
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_TOKEN);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
             }
         }
 
@@ -230,7 +231,7 @@ public class SamlService {
             if (!uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
                 event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                 event.detail(Details.REASON, "invalid_destination");
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid request.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
             }
             String bindingType = getBindingType(requestAbstractType);
             if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING))) bindingType = SamlProtocol.SAML_POST_BINDING;
@@ -252,7 +253,7 @@ public class SamlService {
 
             if (redirect == null) {
                 event.error(Errors.INVALID_REDIRECT_URI);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REDIRECT_URI );
             }
 
 
@@ -275,7 +276,7 @@ public class SamlService {
                 } else {
                     event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                     event.detail(Details.REASON, "unsupported_nameid_format");
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unsupported NameIDFormat.");
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNSUPPORTED_NAME_ID_FORMAT);
                 }
             }
 
@@ -284,10 +285,10 @@ public class SamlService {
 
             // SPNEGO/Kerberos authentication TODO: This should be somehow pluggable instead of hardcoded this way (Authentication interceptors?)
             HttpAuthenticationManager httpAuthManager = new HttpAuthenticationManager(session, clientSession, realm, uriInfo, request, clientConnection, event);
-            HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate();
+            HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate(headers);
             if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
 
-            LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
+            LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo, headers)
                     .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode());
 
             // Attach state from SPNEGO authentication
@@ -339,7 +340,7 @@ public class SamlService {
             if (!uriInfo.getAbsolutePath().equals(logoutRequest.getDestination())) {
                 event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
                 event.detail(Details.REASON, "invalid_destination");
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid request.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
             }
 
             // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
@@ -366,7 +367,7 @@ public class SamlService {
                     }
                 }
                 logger.debug("browser Logout");
-                return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
+                return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
             }
 
 
@@ -379,7 +380,7 @@ public class SamlService {
             if (redirectUri != null) {
                 redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
                 if (redirectUri == null) {
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect uri.");
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REDIRECT_URI );
                 }
             }
             if (redirectUri != null) {
@@ -391,7 +392,7 @@ public class SamlService {
         }
 
         private Response logout(UserSessionModel userSession) {
-            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
+            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
             if (response == null) event.user(userSession.getUser()).session(userSession).success();
             return response;
         }

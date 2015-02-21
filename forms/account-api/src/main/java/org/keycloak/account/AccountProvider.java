@@ -1,11 +1,13 @@
 package org.keycloak.account;
 
+import org.apache.http.client.methods.HttpHead;
 import org.keycloak.events.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -18,13 +20,15 @@ public interface AccountProvider extends Provider {
 
     AccountProvider setUriInfo(UriInfo uriInfo);
 
+    AccountProvider setHttpHeaders(HttpHeaders httpHeaders);
+
     Response createResponse(AccountPages page);
 
-    AccountProvider setError(String message);
+    AccountProvider setError(String message, Object ... parameters);
 
-    AccountProvider setSuccess(String message);
+    AccountProvider setSuccess(String message, Object ... parameters);
 
-    AccountProvider setWarning(String message);
+    AccountProvider setWarning(String message, Object ... parameters);
 
     AccountProvider setUser(UserModel user);
 

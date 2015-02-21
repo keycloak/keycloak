@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +10,13 @@ import java.util.List;
  */
 public class PasswordPolicy {
 
+    public static final String INVALID_PASSWORD_MIN_LENGTH_MESSAGE = "invalidPasswordMinLengthMessage";
+    public static final String INVALID_PASSWORD_MIN_DIGITS_MESSAGE = "invalidPasswordMinDigitsMessage";
+    public static final String INVALID_PASSWORD_MIN_LOWER_CASE_CHARS_MESSAGE = "invalidPasswordMinLowerCaseCharsMessage";
+    public static final String INVALID_PASSWORD_MIN_UPPER_CASE_CHARS_MESSAGE = "invalidPasswordMinUpperCaseCharsMessage";
+    public static final String INVALID_PASSWORD_MIN_SPECIAL_CHARS_MESSAGE = "invalidPasswordMinSpecialCharsMessage";
+    public static final String INVALID_PASSWORD_NOT_USERNAME = "invalidPasswordNotUsernameMessage";
+    
     private List<Policy> policies;
     private String policyString;
 
@@ -76,9 +84,9 @@ public class PasswordPolicy {
         return -1;
     }
 
-    public String validate(String username, String password) {
+    public Error validate(String username, String password) {
         for (Policy p : policies) {
-            String error = p.validate(username, password);
+            Error error = p.validate(username, password);
             if (error != null) {
                 return error;
             }
@@ -87,7 +95,25 @@ public class PasswordPolicy {
     }
 
     private static interface Policy {
-        public String validate(String username, String password);
+        public Error validate(String username, String password);
+    }
+
+    public static class Error{
+        private String message;
+        private Object[] parameters;
+
+        private Error(String message, Object ... parameters){
+            this.message = message;
+            this.parameters = parameters;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public Object[] getParameters() {
+            return parameters;
+        }
     }
 
     private static class HashIterations implements Policy {
@@ -99,7 +125,7 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String username, String password) {
+        public Error validate(String username, String password) {
             return null;
         }
     }
@@ -111,8 +137,8 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String username, String password) {
-            return username.equals(password) ? "Invalid password: must not be equal to the username" : null;
+        public Error validate(String username, String password) {
+            return username.equals(password) ? new Error(INVALID_PASSWORD_NOT_USERNAME) : null;
         }
     }
 
@@ -125,8 +151,8 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String username, String password) {
-            return password.length() < min ? "Invalid password: minimum length " + min : null;
+        public Error validate(String username, String password) {
+            return password.length() < min ? new Error(INVALID_PASSWORD_MIN_LENGTH_MESSAGE, min) : null;
         }
     }
 
@@ -139,14 +165,14 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String username, String password) {
+        public Error validate(String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isDigit(c)) {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + min + " numerical digits" : null;
+            return count < min ? new Error(INVALID_PASSWORD_MIN_DIGITS_MESSAGE, min) : null;
         }
     }
 
@@ -159,14 +185,14 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String username, String password) {
+        public Error validate(String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isLowerCase(c)) {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + min + " lower case characters": null;
+            return count < min ? new Error(INVALID_PASSWORD_MIN_LOWER_CASE_CHARS_MESSAGE, min): null;
         }
     }
 
@@ -179,14 +205,14 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String username, String password) {
+        public Error validate(String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isUpperCase(c)) {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + min + " upper case characters" : null;
+            return count < min ? new Error(INVALID_PASSWORD_MIN_UPPER_CASE_CHARS_MESSAGE, min) : null;
         }
     }
 
@@ -199,14 +225,14 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String username, String password) {
+        public Error validate(String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (!Character.isLetterOrDigit(c)) {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + min + " special characters" : null;
+            return count < min ? new Error(INVALID_PASSWORD_MIN_SPECIAL_CHARS_MESSAGE, min) : null;
         }
     }
 
