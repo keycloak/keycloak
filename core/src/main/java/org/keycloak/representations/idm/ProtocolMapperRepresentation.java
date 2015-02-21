@@ -1,17 +1,21 @@
 package org.keycloak.representations.idm;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ProtocolMapperRepresentation {
     protected String id;
-    protected String protocolClaim;
+    protected String name;
     protected String protocol;
-    protected String source;
-    protected String sourceAttribute;
     protected String protocolMapper;
     protected boolean appliedByDefault;
+    protected boolean consentRequired;
+    protected String consentText;
+    protected Map<String, String> config = new HashMap<String, String>();
 
 
     public String getId() {
@@ -22,12 +26,12 @@ public class ProtocolMapperRepresentation {
         this.id = id;
     }
 
-    public String getProtocolClaim() {
-        return protocolClaim;
+    public String getName() {
+        return name;
     }
 
-    public void setProtocolClaim(String protocolClaim) {
-        this.protocolClaim = protocolClaim;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getProtocol() {
@@ -38,14 +42,6 @@ public class ProtocolMapperRepresentation {
         this.protocol = protocol;
     }
 
-    public String getSourceAttribute() {
-        return sourceAttribute;
-    }
-
-    public void setSourceAttribute(String sourceAttribute) {
-        this.sourceAttribute = sourceAttribute;
-    }
-
     public boolean isAppliedByDefault() {
         return appliedByDefault;
     }
@@ -54,19 +50,35 @@ public class ProtocolMapperRepresentation {
         this.appliedByDefault = appliedByDefault;
     }
 
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
     public String getProtocolMapper() {
         return protocolMapper;
     }
 
     public void setProtocolMapper(String protocolMapper) {
         this.protocolMapper = protocolMapper;
+    }
+
+    public Map<String, String> getConfig() {
+        return config;
+    }
+
+    public void setConfig(Map<String, String> config) {
+        this.config = config;
+    }
+
+    public boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public void setConsentRequired(boolean consentRequired) {
+        this.consentRequired = consentRequired;
+    }
+
+    public String getConsentText() {
+        return consentText;
+    }
+
+    public void setConsentText(String consentText) {
+        this.consentText = consentText;
     }
 }

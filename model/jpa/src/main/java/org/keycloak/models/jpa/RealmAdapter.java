@@ -1262,12 +1262,17 @@ public class RealmAdapter implements RealmModel {
         for (ProtocolMapperEntity entity : realm.getProtocolClaimMappings()) {
             ProtocolMapperModel mapping = new ProtocolMapperModel();
             mapping.setId(entity.getId());
+            mapping.setName(entity.getName());
             mapping.setProtocol(entity.getProtocol());
-            mapping.setProtocolClaim(entity.getProtocolClaim());
             mapping.setAppliedByDefault(entity.isAppliedByDefault());
-            mapping.setSource(ProtocolMapperModel.Source.valueOf(entity.getSource()));
-            mapping.setSourceAttribute(entity.getSourceAttribute());
             mapping.setProtocolMapper(entity.getProtocolMapper());
+            mapping.setConsentRequired(entity.isConsentRequired());
+            mapping.setConsentText(entity.getConsentText());
+            Map<String, String> config = new HashMap<String, String>();
+            if (entity.getConfig() != null) {
+                config.putAll(entity.getConfig());
+            }
+            mapping.setConfig(config);
             mappings.add(mapping);
         }
         return mappings;
@@ -1278,26 +1283,29 @@ public class RealmAdapter implements RealmModel {
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
         entity.setId(id);
-        entity.setSourceAttribute(model.getSourceAttribute());
+        entity.setName(model.getName());
         entity.setProtocol(model.getProtocol());
-        entity.setProtocolClaim(model.getProtocolClaim());
-        entity.setSource(model.getSource().name());
         entity.setProtocolMapper(model.getProtocolMapper());
         entity.setAppliedByDefault(model.isAppliedByDefault());
         entity.setRealm(realm);
+        entity.setConfig(model.getConfig());
+        entity.setConsentRequired(model.isConsentRequired());
+        entity.setConsentText(model.getConsentText());
+
         em.persist(entity);
         ProtocolMapperModel mapping = new ProtocolMapperModel();
         mapping.setId(entity.getId());
+        mapping.setName(model.getName());
         mapping.setProtocol(entity.getProtocol());
         mapping.setProtocolMapper(entity.getProtocolMapper());
-        mapping.setProtocolClaim(entity.getProtocolClaim());
         mapping.setAppliedByDefault(entity.isAppliedByDefault());
-        mapping.setSource(ProtocolMapperModel.Source.valueOf(entity.getSource()));
-        mapping.setSourceAttribute(entity.getSourceAttribute());
+        mapping.setConfig(model.getConfig());
+        mapping.setConsentRequired(entity.isConsentRequired());
+        mapping.setConsentText(entity.getConsentText());
         return mapping;
     }
 
-    protected ProtocolMapperEntity getProtocolClaimMapping(String id) {
+    protected ProtocolMapperEntity getProtocolMapper(String id) {
         for (ProtocolMapperEntity entity : realm.getProtocolClaimMappings()) {
             if (entity.getId().equals(id)) {
                 return entity;
@@ -1309,7 +1317,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void removeProtocolMapper(ProtocolMapperModel mapping) {
-        ProtocolMapperEntity toDelete = getProtocolClaimMapping(mapping.getId());
+        ProtocolMapperEntity toDelete = getProtocolMapper(mapping.getId());
         if (toDelete != null) {
             realm.getProtocolClaimMappings().remove(toDelete);
             em.remove(toDelete);
@@ -1319,27 +1327,35 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
-        ProtocolMapperEntity entity = getProtocolClaimMapping(mapping.getId());
-        entity.setProtocol(mapping.getProtocol());
-        entity.setProtocolClaim(mapping.getProtocolClaim());
+        ProtocolMapperEntity entity = getProtocolMapper(mapping.getId());
+        entity.setProtocolMapper(mapping.getProtocolMapper());
         entity.setAppliedByDefault(mapping.isAppliedByDefault());
-        entity.setSource(mapping.getSource().name());
-        entity.setSourceAttribute(mapping.getSourceAttribute());
+        entity.setConsentRequired(mapping.isConsentRequired());
+        entity.setConsentText(mapping.getConsentText());
+        if (entity.getConfig() == null) {
+            entity.setConfig(mapping.getConfig());
+        } else {
+            entity.getConfig().clear();
+            entity.getConfig().putAll(mapping.getConfig());
+        }
         em.flush();
 
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        ProtocolMapperEntity entity = getProtocolClaimMapping(id);
+        ProtocolMapperEntity entity = getProtocolMapper(id);
         if (entity == null) return null;
         ProtocolMapperModel mapping = new ProtocolMapperModel();
         mapping.setId(entity.getId());
+        mapping.setName(entity.getName());
         mapping.setProtocol(entity.getProtocol());
-        mapping.setProtocolClaim(entity.getProtocolClaim());
         mapping.setAppliedByDefault(entity.isAppliedByDefault());
-        mapping.setSource(ProtocolMapperModel.Source.valueOf(entity.getSource()));
-        mapping.setSourceAttribute(entity.getSourceAttribute());
+        mapping.setConsentRequired(entity.isConsentRequired());
+        mapping.setConsentText(entity.getConsentText());
+        Map<String, String> config = new HashMap<String, String>();
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
+        mapping.setConfig(config);
         return mapping;
     }
 

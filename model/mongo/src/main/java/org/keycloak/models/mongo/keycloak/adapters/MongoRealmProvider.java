@@ -8,6 +8,7 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.RealmListenerHelper;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
@@ -27,16 +28,30 @@ public class MongoRealmProvider implements RealmProvider {
 
     private final MongoStoreInvocationContext invocationContext;
     private final KeycloakSession session;
+    protected RealmListenerHelper listeners;
 
-    public MongoRealmProvider(KeycloakSession session, MongoStoreInvocationContext invocationContext) {
+    public MongoRealmProvider(KeycloakSession session, MongoStoreInvocationContext invocationContext, RealmListenerHelper listeners) {
         this.session = session;
         this.invocationContext = invocationContext;
+        this.listeners = listeners;
     }
 
     @Override
     public void close() {
         // TODO
     }
+
+    @Override
+    public void registerListener(RealmCreationListener listener) {
+        listeners.registerListener(listener);
+    }
+
+    @Override
+    public void unregisterListener(RealmCreationListener listener) {
+        listeners.unregisterListener(listener);
+
+    }
+
 
     @Override
     public RealmModel createRealm(String name) {
@@ -51,7 +66,9 @@ public class MongoRealmProvider implements RealmProvider {
 
         getMongoStore().insertEntity(newRealm, invocationContext);
 
-        return new RealmAdapter(session, newRealm, invocationContext);
+        RealmModel model = new RealmAdapter(session, newRealm, invocationContext);
+        listeners.executeCreationListeners(model);
+        return model;
     }
 
     @Override

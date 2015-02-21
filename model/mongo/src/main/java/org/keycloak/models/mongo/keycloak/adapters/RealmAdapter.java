@@ -789,14 +789,19 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
         Set<ProtocolMapperModel> result = new HashSet<ProtocolMapperModel>();
-        for (ProtocolMapperEntity entity : realm.getClaimMappings()) {
+        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
             ProtocolMapperModel mapping = new ProtocolMapperModel();
             mapping.setId(entity.getId());
-            mapping.setProtocolClaim(entity.getProtocolClaim());
+            mapping.setName(entity.getName());
             mapping.setProtocol(entity.getProtocol());
-            mapping.setSource(entity.getSource());
-            mapping.setSourceAttribute(entity.getSourceAttribute());
             mapping.setAppliedByDefault(entity.isAppliedByDefault());
+            mapping.setConsentRequired(entity.isConsentRequired());
+            mapping.setConsentText(entity.getConsentText());
+            Map<String, String> config = new HashMap<String, String>();
+            if (entity.getConfig() != null) {
+                config.putAll(entity.getConfig());
+            }
+            mapping.setConfig(config);
         }
         return result;
     }
@@ -806,30 +811,31 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
         if (model.getId() != null) entity.setId(model.getId());
         else entity.setId(KeycloakModelUtils.generateId());
-        entity.setSourceAttribute(model.getSourceAttribute());
         entity.setProtocol(model.getProtocol());
-        entity.setProtocolClaim(model.getProtocolClaim());
-        entity.setSource(model.getSource());
+        entity.setName(model.getName());
         entity.setAppliedByDefault(model.isAppliedByDefault());
         entity.setProtocolMapper(model.getProtocolMapper());
-        realm.getClaimMappings().add(entity);
+        entity.setConfig(model.getConfig());
+        entity.setConsentRequired(model.isConsentRequired());
+        entity.setConsentText(model.getConsentText());
+        realm.getProtocolMappers().add(entity);
         updateRealm();
         ProtocolMapperModel mapping = new ProtocolMapperModel();
         mapping.setId(entity.getId());
-        mapping.setProtocol(entity.getProtocol());
-        mapping.setProtocolClaim(entity.getProtocolClaim());
-        mapping.setAppliedByDefault(entity.isAppliedByDefault());
-        mapping.setSource(entity.getSource());
-        mapping.setSourceAttribute(entity.getSourceAttribute());
-        mapping.setProtocolMapper(entity.getProtocolMapper());
+        mapping.setProtocol(model.getProtocol());
+        mapping.setAppliedByDefault(model.isAppliedByDefault());
+        mapping.setProtocolMapper(model.getProtocolMapper());
+        mapping.setConfig(model.getConfig());
+        mapping.setConsentText(model.getConsentText());
+        mapping.setConsentRequired(model.isConsentRequired());
         return mapping;
     }
 
     @Override
     public void removeProtocolMapper(ProtocolMapperModel mapping) {
-        for (ProtocolMapperEntity entity : realm.getClaimMappings()) {
+        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
             if (entity.getId().equals(mapping.getId())) {
-                realm.getClaimMappings().remove(entity);
+                realm.getProtocolMappers().remove(entity);
                 updateRealm();
                 break;
             }
@@ -837,8 +843,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     }
 
-    protected ProtocolMapperEntity getProtocolClaimMapping(String id) {
-        for (ProtocolMapperEntity entity : realm.getClaimMappings()) {
+    protected ProtocolMapperEntity getProtocolMapper(String id) {
+        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
             if (entity.getId().equals(id)) {
                 return entity;
             }
@@ -850,29 +856,36 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
-        ProtocolMapperEntity entity = getProtocolClaimMapping(mapping.getId());
-        entity.setProtocol(mapping.getProtocol());
-        entity.setProtocolClaim(mapping.getProtocolClaim());
+        ProtocolMapperEntity entity = getProtocolMapper(mapping.getId());
         entity.setAppliedByDefault(mapping.isAppliedByDefault());
-        entity.setSource(mapping.getSource());
-        entity.setSourceAttribute(mapping.getSourceAttribute());
         entity.setProtocolMapper(mapping.getProtocolMapper());
+        entity.setConsentRequired(mapping.isConsentRequired());
+        entity.setConsentText(mapping.getConsentText());
+        if (entity.getConfig() != null) {
+            entity.getConfig().clear();
+            entity.getConfig().putAll(mapping.getConfig());
+        } else {
+            entity.setConfig(mapping.getConfig());
+        }
         updateRealm();
 
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        ProtocolMapperEntity entity = getProtocolClaimMapping(id);
+        ProtocolMapperEntity entity = getProtocolMapper(id);
         if (entity == null) return null;
         ProtocolMapperModel mapping = new ProtocolMapperModel();
         mapping.setId(entity.getId());
+        mapping.setName(entity.getName());
         mapping.setProtocol(entity.getProtocol());
-        mapping.setProtocolClaim(entity.getProtocolClaim());
         mapping.setAppliedByDefault(entity.isAppliedByDefault());
-        mapping.setSource(entity.getSource());
-        mapping.setSourceAttribute(entity.getSourceAttribute());
         mapping.setProtocolMapper(entity.getProtocolMapper());
+        mapping.setConsentRequired(entity.isConsentRequired());
+        mapping.setConsentText(entity.getConsentText());
+        Map<String, String> config = new HashMap<String, String>();
+        if (entity.getConfig() != null) config.putAll(config);
+        mapping.setConfig(config);
         return mapping;
     }
 

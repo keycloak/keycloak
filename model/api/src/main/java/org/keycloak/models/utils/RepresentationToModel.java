@@ -118,7 +118,7 @@ public class RepresentationToModel {
 
         importIdentityProviders(rep, newRealm);
         importClaimTypes(rep, newRealm);
-        importProtocolClaimMappings(rep, newRealm);
+        importProtocolMappers(rep, newRealm);
 
         if (rep.getApplications() != null) {
             Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
@@ -772,10 +772,15 @@ public class RepresentationToModel {
         }
     }
 
-    private static void importProtocolClaimMappings(RealmRepresentation rep, RealmModel newRealm) {
+    private static void importProtocolMappers(RealmRepresentation rep, RealmModel newRealm) {
         if (rep.getProtocolClaimMappings() != null) {
+            // we make sure we don't recreate mappers that are automatically created by the protocol providers.
             for (ProtocolMapperRepresentation representation : rep.getProtocolClaimMappings()) {
-                newRealm.addProtocolMapper(toModel(representation));
+                if (representation.getId() == null || newRealm.getProtocolMapperById(representation.getId()) == null) {
+                    newRealm.addProtocolMapper(toModel(representation));
+                } else {
+                    newRealm.updateProtocolMapper(toModel(representation));
+                }
             }
         }
     }
@@ -808,12 +813,13 @@ public class RepresentationToModel {
     public static ProtocolMapperModel toModel(ProtocolMapperRepresentation rep) {
         ProtocolMapperModel model = new ProtocolMapperModel();
         model.setId(rep.getId());
+        model.setName(rep.getName());
         model.setAppliedByDefault(rep.isAppliedByDefault());
-        model.setSource(ProtocolMapperModel.Source.valueOf(rep.getSource()));
-        model.setSourceAttribute(rep.getSourceAttribute());
+        model.setConsentRequired(rep.isConsentRequired());
+        model.setConsentText(rep.getConsentText());
         model.setProtocol(rep.getProtocol());
-        model.setProtocolClaim(rep.getProtocolClaim());
         model.setProtocolMapper(rep.getProtocolMapper());
+        model.setConfig(rep.getConfig());
         return model;
     }
 }

@@ -1,5 +1,7 @@
 package org.keycloak.models;
 
+import java.util.Map;
+
 /**
  * Specifies a mapping from user data to a protocol claim assertion.  If protocolMapper is set, this points
  * to a @Provider that will perform the mapping.  If you have this set, then no other attributes of this class need to be set.
@@ -10,21 +12,14 @@ package org.keycloak.models;
  * @version $Revision: 1 $
  */
 public class ProtocolMapperModel {
-    public static enum Source {
-        USER_MODEL,
-        USER_ATTRIBUTE,
-        USER_SESSION_NOTE,
-        CLIENT_SESSION_NOTE
-    }
-
     protected String id;
     protected String name;
-    protected String protocolClaim;
     protected String protocol;
-    protected Source source;
-    protected String sourceAttribute;
     protected String protocolMapper;
+    protected boolean consentRequired;
+    protected String consentText;
     protected boolean appliedByDefault;
+    protected Map<String, String> config;
 
 
     public String getId() {
@@ -43,28 +38,12 @@ public class ProtocolMapperModel {
         this.name = name;
     }
 
-    public String getProtocolClaim() {
-        return protocolClaim;
-    }
-
-    public void setProtocolClaim(String protocolClaim) {
-        this.protocolClaim = protocolClaim;
-    }
-
     public String getProtocol() {
         return protocol;
     }
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
-    }
-
-    public String getSourceAttribute() {
-        return sourceAttribute;
-    }
-
-    public void setSourceAttribute(String sourceAttribute) {
-        this.sourceAttribute = sourceAttribute;
     }
 
     public boolean isAppliedByDefault() {
@@ -75,20 +54,36 @@ public class ProtocolMapperModel {
         this.appliedByDefault = appliedByDefault;
     }
 
-    public Source getSource() {
-        return source;
-    }
-
-    public void setSource(Source source) {
-        this.source = source;
-    }
-
     public String getProtocolMapper() {
         return protocolMapper;
     }
 
     public void setProtocolMapper(String protocolMapper) {
         this.protocolMapper = protocolMapper;
+    }
+
+    public boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public void setConsentRequired(boolean consentRequired) {
+        this.consentRequired = consentRequired;
+    }
+
+    public String getConsentText() {
+        return consentText;
+    }
+
+    public void setConsentText(String consentText) {
+        this.consentText = consentText;
+    }
+
+    public Map<String, String> getConfig() {
+        return config;
+    }
+
+    public void setConfig(Map<String, String> config) {
+        this.config = config;
     }
 
     @Override
