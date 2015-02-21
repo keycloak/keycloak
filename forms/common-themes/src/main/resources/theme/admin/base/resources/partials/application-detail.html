@@ -218,7 +218,7 @@
                     <span tooltip-placement="right" tooltip="Allowed CORS origins.  Only useful if the client adapter has CORS processing enabled." class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
-            <fieldset>
+            <fieldset data-ng-show="protocol == 'saml'">
                 <legend collapsed><span class="text">Fine Grain SAML Endpoint Configuration</span>  <span tooltip-placement="right" tooltip="Expand this section to configure exact URLs for Assertion Consumer and Single Logout Service." class="fa fa-info-circle"></span></legend>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="consumerServicePost">Assertion Consumer Service POST Binding URL</label>

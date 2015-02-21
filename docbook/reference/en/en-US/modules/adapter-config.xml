@@ -14,7 +14,7 @@
   "use-resource-role-mappings" : false,
   "enable-cors" : true,
   "cors-max-age" : 1000,
-  "cors-allowed-methods" : [ "POST", "PUT", "DELETE", "GET" ],
+  "cors-allowed-methods" : "POST, PUT, DELETE, GET",
   "bearer-only" : false,
   "enable-basic-auth" : false,
   "expose-token" : true,

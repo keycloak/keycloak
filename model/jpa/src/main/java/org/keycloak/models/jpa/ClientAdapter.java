@@ -362,11 +362,16 @@ public abstract class ClientAdapter implements ClientModel {
         for (ProtocolMapperEntity entity : this.entity.getProtocolMappers()) {
             ProtocolMapperModel mapping = new ProtocolMapperModel();
             mapping.setId(entity.getId());
+            mapping.setName(entity.getName());
             mapping.setProtocol(entity.getProtocol());
-            mapping.setProtocolClaim(entity.getProtocolClaim());
             mapping.setAppliedByDefault(entity.isAppliedByDefault());
-            mapping.setSource(ProtocolMapperModel.Source.valueOf(entity.getSource()));
-            mapping.setSourceAttribute(entity.getSourceAttribute());
+            mapping.setConsentRequired(entity.isConsentRequired());
+            mapping.setConsentText(entity.getConsentText());
+            Map<String, String> config = new HashMap<String, String>();
+            if (entity.getConfig() != null) {
+                config.putAll(entity.getConfig());
+            }
+            mapping.setConfig(config);
             mappings.add(mapping);
         }
         return mappings;

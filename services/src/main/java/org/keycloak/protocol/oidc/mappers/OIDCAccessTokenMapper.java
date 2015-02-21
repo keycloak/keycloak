@@ -1,4 +1,4 @@
-package org.keycloak.protocol.oidc;
+package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -10,7 +10,7 @@ import org.keycloak.representations.AccessToken;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface OIDCAccessTokenTransformer {
+public interface OIDCAccessTokenMapper {
 
     AccessToken transformToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                UserSessionModel userSession, ClientSessionModel clientSession);

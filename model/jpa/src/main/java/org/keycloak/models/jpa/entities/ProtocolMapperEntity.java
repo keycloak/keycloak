@@ -1,14 +1,18 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -25,18 +29,25 @@ public class ProtocolMapperEntity {
     @Column(name="ID", length = 36)
     protected String id;
 
-    @Column(name = "PROTOCOL_CLAIM")
-    protected String protocolClaim;
+    @Column(name="NAME")
+    protected String name;
+
     @Column(name = "PROTOCOL")
     protected String protocol;
-    @Column(name = "SOURCE")
-    protected String source;
-    @Column(name = "SOURCE_ATTRIBUTE")
-    protected String sourceAttribute;
     @Column(name = "PROTOCOL_MAPPER_NAME")
     protected String protocolMapper;
     @Column(name = "APPLIED_BY_DEFAULT")
     protected boolean appliedByDefault;
+    @Column(name="CONSENT_REQUIRED")
+    protected boolean consentRequired;
+    @Column(name="CONSENT_TEXT")
+    protected String consentText;
+
+    @ElementCollection
+    @MapKeyColumn(name="name")
+    @Column(name="value")
+    @CollectionTable(name="PROTOCOL_MAPPER_CONFIG", joinColumns={ @JoinColumn(name="PROTOCOL_MAPPER_ID") })
+    private Map<String, String> config;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "REALM_ID")
@@ -50,12 +61,12 @@ public class ProtocolMapperEntity {
         this.id = id;
     }
 
-    public String getProtocolClaim() {
-        return protocolClaim;
+    public String getName() {
+        return name;
     }
 
-    public void setProtocolClaim(String protocolClaim) {
-        this.protocolClaim = protocolClaim;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getProtocol() {
@@ -64,22 +75,6 @@ public class ProtocolMapperEntity {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public String getSourceAttribute() {
-        return sourceAttribute;
-    }
-
-    public void setSourceAttribute(String sourceAttribute) {
-        this.sourceAttribute = sourceAttribute;
     }
 
     public String getProtocolMapper() {
@@ -98,12 +93,36 @@ public class ProtocolMapperEntity {
         this.appliedByDefault = appliedByDefault;
     }
 
+    public Map<String, String> getConfig() {
+        return config;
+    }
+
+    public void setConfig(Map<String, String> config) {
+        this.config = config;
+    }
+
     public RealmEntity getRealm() {
         return realm;
     }
 
     public void setRealm(RealmEntity realm) {
         this.realm = realm;
+    }
+
+    public boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public void setConsentRequired(boolean consentRequired) {
+        this.consentRequired = consentRequired;
+    }
+
+    public String getConsentText() {
+        return consentText;
+    }
+
+    public void setConsentText(String consentText) {
+        this.consentText = consentText;
     }
 
     @Override
