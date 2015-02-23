@@ -3,7 +3,6 @@ package org.keycloak.models.jpa;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmListenerHelper;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
 
@@ -14,8 +13,6 @@ import javax.persistence.EntityManager;
  * @version $Revision: 1 $
  */
 public class JpaRealmProviderFactory implements RealmProviderFactory {
-
-    protected RealmListenerHelper listeners = new RealmListenerHelper();
 
     @Override
     public void init(Config.Scope config) {
@@ -29,7 +26,7 @@ public class JpaRealmProviderFactory implements RealmProviderFactory {
     @Override
     public RealmProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em, listeners);
+        return new JpaRealmProvider(session, em);
     }
 
     @Override

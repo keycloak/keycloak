@@ -20,7 +20,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KerberosConstants;
+import org.keycloak.models.KerberosConstants;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -210,15 +210,17 @@ public class KerberosFederationProvider implements UserFederationProvider {
         UserModel user = session.userStorage().getUserByUsername(username, realm);
         if (user != null) {
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
-            if (!isValid(user)) {
-                throw new IllegalStateException("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() +
+            if (isValid(user)) {
+                return proxy(user);
+            } else {
+                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() +
                         "] or kerberos principal is not correct. Kerberos principal on user is: " + user.getAttribute(KERBEROS_PRINCIPAL));
+                session.userStorage().removeUser(realm, user);
             }
-
-            return proxy(user);
-        } else {
-            return importUserToKeycloak(realm, username);
         }
+
+        logger.debug("Kerberos authenticated user " + username + " not in Keycloak storage. Creating him");
+        return importUserToKeycloak(realm, username);
     }
 
     protected UserModel importUserToKeycloak(RealmModel realm, String username) {

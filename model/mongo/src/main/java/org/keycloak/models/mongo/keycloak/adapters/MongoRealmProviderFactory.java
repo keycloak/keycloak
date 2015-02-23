@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmListenerHelper;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
 
@@ -16,7 +15,6 @@ import org.keycloak.models.RealmProviderFactory;
 public class MongoRealmProviderFactory implements RealmProviderFactory {
     protected static final Logger logger = Logger.getLogger(MongoRealmProviderFactory.class);
 
-    protected RealmListenerHelper listeners = new RealmListenerHelper();
 
     @Override
     public String getId() {
@@ -30,7 +28,7 @@ public class MongoRealmProviderFactory implements RealmProviderFactory {
     @Override
     public RealmProvider create(KeycloakSession session) {
         MongoConnectionProvider connection = session.getProvider(MongoConnectionProvider.class);
-        return new MongoRealmProvider(session, connection.getInvocationContext(), listeners);
+        return new MongoRealmProvider(session, connection.getInvocationContext());
     }
 
     @Override

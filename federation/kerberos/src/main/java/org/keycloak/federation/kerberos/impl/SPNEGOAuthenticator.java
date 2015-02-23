@@ -47,14 +47,7 @@ public class SPNEGOAuthenticator {
             Subject serverSubject = kerberosSubjectAuthenticator.authenticateServerSubject();
             authenticated = Subject.doAs(serverSubject, new AcceptSecContext());
         } catch (Exception e) {
-            String message = e.getMessage();
-            if (e instanceof PrivilegedActionException && e.getCause() != null) {
-                message = e.getCause().getMessage();
-            }
-            log.warn("SPNEGO login failed: " + message);
-            if (log.isDebugEnabled()) {
-                log.debug("SPNEGO login failed: " + message, e);
-            }
+            log.warn("SPNEGO login failed: " + e.getMessage(), e);
         } finally {
             kerberosSubjectAuthenticator.logoutServerSubject();
         }

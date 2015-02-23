@@ -78,15 +78,9 @@
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="usernameLDAPAttribute">Username LDAP attribute<span class="required">*</span></label>
                     <div class="col-sm-4">
-                        <div class="select-kc">
-                            <select id="usernameLDAPAttribute"
-                                    ng-model="instance.config.usernameLDAPAttribute"
-                                    ng-options="usernameLDAPAttribute for usernameLDAPAttribute in usernameLDAPAttributes"
-                                    required>
-                            </select>
-                        </div>
+                        <input class="form-control" id="usernameLDAPAttribute" type="text" ng-model="instance.config.usernameLDAPAttribute" placeholder="LDAP attribute for uid" required>
                     </div>
-                    <span tooltip-placement="right" tooltip="Name of LDAP attribute, which is mapped as Keycloak username" class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Name of LDAP attribute, which is mapped as Keycloak username. For many LDAP server vendors it's 'uid'. For Active directory it's usually 'sAMAccountName' or 'cn'" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="userObjectClasses">User Object Classes<span class="required">*</span></label>

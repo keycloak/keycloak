@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.forms;
+package org.keycloak.testsuite.federation;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -12,6 +12,7 @@ import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
@@ -48,9 +49,9 @@ public class SyncProvidersTest {
             // Other tests may left Time offset uncleared, which could cause issues
             Time.setOffset(0);
 
-            Map<String,String> ldapConfig = ldapRule.getLdapConfig();
+            Map<String,String> ldapConfig = ldapRule.getConfig();
             ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "false");
-            ldapConfig.put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.UNSYNCED.toString());
+            ldapConfig.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.UNSYNCED.toString());
 
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap",
                     -1, -1, 0);

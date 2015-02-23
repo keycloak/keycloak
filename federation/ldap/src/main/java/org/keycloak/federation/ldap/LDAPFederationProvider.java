@@ -6,6 +6,7 @@ import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -14,7 +15,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KerberosConstants;
+import org.keycloak.models.KerberosConstants;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
@@ -39,7 +40,6 @@ public class LDAPFederationProvider implements UserFederationProvider {
     private static final Logger logger = Logger.getLogger(LDAPFederationProvider.class);
     public static final String LDAP_ID = "LDAP_ID";
     public static final String SYNC_REGISTRATIONS = "syncRegistrations";
-    public static final String EDIT_MODE = "editMode";
 
     protected LDAPFederationProviderFactory factory;
     protected KeycloakSession session;
@@ -56,7 +56,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         this.model = model;
         this.partitionManager = partitionManager;
         this.kerberosConfig = new LDAPProviderKerberosConfig(model);
-        String editModeString = model.getConfig().get(EDIT_MODE);
+        String editModeString = model.getConfig().get(LDAPConstants.EDIT_MODE);
         if (editModeString == null) {
             editMode = EditMode.READ_ONLY;
         } else {
@@ -353,6 +353,11 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     String username = spnegoAuthenticator.getAuthenticatedUsername();
                     UserModel user = findOrCreateAuthenticatedUser(realm, username);
 
+                    if (user == null) {
+                        logger.warn("Kerberos/SPNEGO authentication succeeded with username [" + username + "], but couldn't find or create user with federation provider [" + model.getDisplayName() + "]");
+                        return CredentialValidationOutput.failed();
+                    }
+
                     return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
                 }  else {
                     Map<String, Object> state = new HashMap<String, Object>();
@@ -404,15 +409,17 @@ public class LDAPFederationProvider implements UserFederationProvider {
         UserModel user = session.userStorage().getUserByUsername(username, realm);
         if (user != null) {
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
-            if (!isValid(user)) {
-                throw new IllegalStateException("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() +
-                        "] or LDAP_ID is not correct. LDAP_ID on user is: " + user.getAttribute(LDAP_ID));
+            if (isValid(user)) {
+                return proxy(user);
+            } else {
+                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() +
+                        "] or LDAP_ID is not correct. Stale LDAP_ID on local user is: " + user.getAttribute(LDAP_ID));
+                session.userStorage().removeUser(realm, user);
             }
-
-            return proxy(user);
-        } else {
-            // Creating user to local storage
-            return getUserByUsername(realm, username);
         }
+
+        // Creating user to local storage
+        logger.debug("Kerberos authenticated user " + username + " not in Keycloak storage. Creating him");
+        return getUserByUsername(realm, username);
     }
 }

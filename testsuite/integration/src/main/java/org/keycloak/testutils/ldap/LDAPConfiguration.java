@@ -1,55 +1,88 @@
 package org.keycloak.testutils.ldap;
 
+import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.jboss.logging.Logger;
+import org.keycloak.models.KerberosConstants;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.UserFederationProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPConfiguration {
 
-    public static final String CONNECTION_PROPERTIES = "ldap/ldap-connection.properties";
+    private static final Logger log = Logger.getLogger(LDAPConfiguration.class);
 
-    protected String connectionUrl = "ldap://localhost:10389";
-    protected String baseDn =  "dc=keycloak,dc=org";
-    protected String userDnSuffix = "ou=People,dc=keycloak,dc=org";
-    protected String rolesDnSuffix = "ou=Roles,dc=keycloak,dc=org";
-    protected String groupDnSuffix = "ou=Groups,dc=keycloak,dc=org";
-    protected String agentDnSuffix = "ou=Agent,dc=keycloak,dc=org";
-    protected boolean startEmbeddedLdapLerver = true;
-    protected String bindDn = "uid=admin,ou=system";
-    protected String bindCredential = "secret";
-    protected String vendor = LDAPConstants.VENDOR_OTHER;
-    protected boolean connectionPooling = true;
-    protected boolean pagination = true;
-    protected int batchSizeForSync = LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
-    protected String usernameLDAPAttribute;
-    protected String userObjectClasses;
-    protected boolean userAccountControlsAfterPasswordUpdate;
+    private String connectionPropertiesLocation;
+    private boolean startEmbeddedLdapLerver = true;
+    private Map<String, String> config;
 
-    public static String IDM_TEST_LDAP_CONNECTION_URL = "idm.test.ldap.connection.url";
-    public static String IDM_TEST_LDAP_BASE_DN = "idm.test.ldap.base.dn";
-    public static String IDM_TEST_LDAP_ROLES_DN_SUFFIX = "idm.test.ldap.roles.dn.suffix";
-    public static String IDM_TEST_LDAP_GROUP_DN_SUFFIX = "idm.test.ldap.group.dn.suffix";
-    public static String IDM_TEST_LDAP_USER_DN_SUFFIX = "idm.test.ldap.user.dn.suffix";
-    public static String IDM_TEST_LDAP_AGENT_DN_SUFFIX = "idm.test.ldap.agent.dn.suffix";
-    public static String IDM_TEST_LDAP_START_EMBEDDED_LDAP_SERVER = "idm.test.ldap.start.embedded.ldap.server";
-    public static String IDM_TEST_LDAP_BIND_DN = "idm.test.ldap.bind.dn";
-    public static String IDM_TEST_LDAP_BIND_CREDENTIAL = "idm.test.ldap.bind.credential";
-    public static String IDM_TEST_LDAP_VENDOR = "idm.test.ldap.vendor";
-    public static String IDM_TEST_LDAP_CONNECTION_POOLING = "idm.test.ldap.connection.pooling";
-    public static String IDM_TEST_LDAP_PAGINATION = "idm.test.ldap.pagination";
-    public static String IDM_TEST_LDAP_BATCH_SIZE_FOR_SYNC = "idm.test.ldap.batch.size.for.sync";
-    public static String IDM_TEST_LDAP_USERNAME_LDAP_ATTRIBUTE = "idm.test.ldap.username.ldap.attribute";
-    public static String IDM_TEST_LDAP_USER_OBJECT_CLASSES = "idm.test.ldap.user.object.classes";
-    public static String IDM_TEST_LDAP_USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE = "idm.test.ldap.user.account.controls.after.password.update";
+    protected static final Map<String, String> PROP_MAPPINGS = new HashMap<String, String>();
+    protected static final Map<String, String> DEFAULT_VALUES = new HashMap<String, String>();
 
-    public static LDAPConfiguration readConfiguration() {
+    static {
+        PROP_MAPPINGS.put(LDAPConstants.CONNECTION_URL, "idm.test.ldap.connection.url");
+        PROP_MAPPINGS.put(LDAPConstants.BASE_DN, "idm.test.ldap.base.dn");
+        PROP_MAPPINGS.put("rolesDnSuffix", "idm.test.ldap.roles.dn.suffix");
+        PROP_MAPPINGS.put("groupDnSuffix", "idm.test.ldap.group.dn.suffix");
+        PROP_MAPPINGS.put(LDAPConstants.USER_DN_SUFFIX, "idm.test.ldap.user.dn.suffix");
+        PROP_MAPPINGS.put(LDAPConstants.BIND_DN, "idm.test.ldap.bind.dn");
+        PROP_MAPPINGS.put(LDAPConstants.BIND_CREDENTIAL, "idm.test.ldap.bind.credential");
+        PROP_MAPPINGS.put(LDAPConstants.VENDOR, "idm.test.ldap.vendor");
+        PROP_MAPPINGS.put(LDAPConstants.CONNECTION_POOLING, "idm.test.ldap.connection.pooling");
+        PROP_MAPPINGS.put(LDAPConstants.PAGINATION, "idm.test.ldap.pagination");
+        PROP_MAPPINGS.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, "idm.test.ldap.batch.size.for.sync");
+        PROP_MAPPINGS.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, "idm.test.ldap.username.ldap.attribute");
+        PROP_MAPPINGS.put(LDAPConstants.USER_OBJECT_CLASSES, "idm.test.ldap.user.object.classes");
+        PROP_MAPPINGS.put(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE, "idm.test.ldap.user.account.controls.after.password.update");
+        PROP_MAPPINGS.put(LDAPConstants.EDIT_MODE, "idm.test.ldap.edit.mode");
+
+        PROP_MAPPINGS.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "idm.test.kerberos.allow.kerberos.authentication");
+        PROP_MAPPINGS.put(KerberosConstants.KERBEROS_REALM, "idm.test.kerberos.realm");
+        PROP_MAPPINGS.put(KerberosConstants.SERVER_PRINCIPAL, "idm.test.kerberos.server.principal");
+        PROP_MAPPINGS.put(KerberosConstants.KEYTAB, "idm.test.kerberos.keytab");
+        PROP_MAPPINGS.put(KerberosConstants.DEBUG, "idm.test.kerberos.debug");
+        PROP_MAPPINGS.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "idm.test.kerberos.allow.password.authentication");
+        PROP_MAPPINGS.put(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "idm.test.kerberos.update.profile.first.login");
+        PROP_MAPPINGS.put(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION, "idm.test.kerberos.use.kerberos.for.password.authentication");
+
+        DEFAULT_VALUES.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        DEFAULT_VALUES.put(LDAPConstants.BASE_DN, "dc=keycloak,dc=org");
+        DEFAULT_VALUES.put("rolesDnSuffix", "ou=Roles,dc=keycloak,dc=org");
+        DEFAULT_VALUES.put("groupDnSuffix", "ou=Groups,dc=keycloak,dc=org");
+        DEFAULT_VALUES.put(LDAPConstants.USER_DN_SUFFIX, "ou=People,dc=keycloak,dc=org");
+        DEFAULT_VALUES.put(LDAPConstants.BIND_DN, "uid=admin,ou=system");
+        DEFAULT_VALUES.put(LDAPConstants.BIND_CREDENTIAL, "secret");
+        DEFAULT_VALUES.put(LDAPConstants.VENDOR, LDAPConstants.VENDOR_OTHER);
+        DEFAULT_VALUES.put(LDAPConstants.CONNECTION_POOLING, "true");
+        DEFAULT_VALUES.put(LDAPConstants.PAGINATION, "true");
+        DEFAULT_VALUES.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, String.valueOf(LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC));
+        DEFAULT_VALUES.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, null);
+        DEFAULT_VALUES.put(LDAPConstants.USER_OBJECT_CLASSES, null);
+        DEFAULT_VALUES.put(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE, "false");
+        DEFAULT_VALUES.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.READ_ONLY.toString());
+
+        DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
+        DEFAULT_VALUES.put(KerberosConstants.KERBEROS_REALM, "KEYCLOAK.ORG");
+        DEFAULT_VALUES.put(KerberosConstants.SERVER_PRINCIPAL, "HTTP/localhost@KEYCLOAK.ORG");
+        URL keytabUrl = LDAPConfiguration.class.getResource("/kerberos/http.keytab");
+        String keyTabPath = new File(keytabUrl.getFile()).getAbsolutePath();
+        DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
+        DEFAULT_VALUES.put(KerberosConstants.DEBUG, "true");
+        DEFAULT_VALUES.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "true");
+        DEFAULT_VALUES.put(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");
+        DEFAULT_VALUES.put(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION, "false");
+    }
+
+    public static LDAPConfiguration readConfiguration(String connectionPropertiesLocation) {
         LDAPConfiguration ldapConfiguration = new LDAPConfiguration();
+        ldapConfiguration.setConnectionPropertiesLocation(connectionPropertiesLocation);
         ldapConfiguration.loadConnectionProperties();
         return ldapConfiguration;
     }
@@ -57,109 +90,42 @@ public class LDAPConfiguration {
     protected void loadConnectionProperties() {
         Properties p = new Properties();
         try {
-            InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(CONNECTION_PROPERTIES);
+            log.info("Reading LDAP configuration from: " + connectionPropertiesLocation);
+            InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(connectionPropertiesLocation);
             p.load(is);
         }
         catch (Exception e) {
             throw new RuntimeException(e);
         }
 
-        connectionUrl = p.getProperty(IDM_TEST_LDAP_CONNECTION_URL, connectionUrl);
-        baseDn = p.getProperty(IDM_TEST_LDAP_BASE_DN, baseDn);
-        userDnSuffix = p.getProperty(IDM_TEST_LDAP_USER_DN_SUFFIX, userDnSuffix);
-        rolesDnSuffix = p.getProperty(IDM_TEST_LDAP_ROLES_DN_SUFFIX, rolesDnSuffix);
-        groupDnSuffix = p.getProperty(IDM_TEST_LDAP_GROUP_DN_SUFFIX, groupDnSuffix);
-        agentDnSuffix = p.getProperty(IDM_TEST_LDAP_AGENT_DN_SUFFIX, agentDnSuffix);
-        startEmbeddedLdapLerver = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_START_EMBEDDED_LDAP_SERVER, "true"));
-        bindDn = p.getProperty(IDM_TEST_LDAP_BIND_DN, bindDn);
-        bindCredential = p.getProperty(IDM_TEST_LDAP_BIND_CREDENTIAL, bindCredential);
-        vendor = p.getProperty(IDM_TEST_LDAP_VENDOR);
-        connectionPooling = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_CONNECTION_POOLING, "true"));
-        pagination = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_PAGINATION, "true"));
-        batchSizeForSync = Integer.parseInt(p.getProperty(IDM_TEST_LDAP_BATCH_SIZE_FOR_SYNC, String.valueOf(batchSizeForSync)));
-        usernameLDAPAttribute = p.getProperty(IDM_TEST_LDAP_USERNAME_LDAP_ATTRIBUTE);
-        userObjectClasses = p.getProperty(IDM_TEST_LDAP_USER_OBJECT_CLASSES);
-        userAccountControlsAfterPasswordUpdate = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE));
+        config = new HashMap<String, String>();
+        for (Map.Entry<String, String> property : PROP_MAPPINGS.entrySet()) {
+            String propertyName = property.getKey();
+            String configName = property.getValue();
+
+            String value = (String) p.get(configName);
+            if (value == null) {
+                value = DEFAULT_VALUES.get(propertyName);
+            }
+
+            config.put(propertyName, value);
+        }
+
+        startEmbeddedLdapLerver = Boolean.parseBoolean(p.getProperty("idm.test.ldap.start.embedded.ldap.server", "true"));
+        log.info("Start embedded server: " + startEmbeddedLdapLerver);
+        log.info("Read config: " + config);
     }
 
     public Map<String,String> getLDAPConfig() {
-        Map<String,String> ldapConfig = new HashMap<String,String>();
-        ldapConfig.put(LDAPConstants.CONNECTION_URL, getConnectionUrl());
-        ldapConfig.put(LDAPConstants.BASE_DN, getBaseDn());
-        ldapConfig.put(LDAPConstants.BIND_DN, getBindDn());
-        ldapConfig.put(LDAPConstants.BIND_CREDENTIAL, getBindCredential());
-        ldapConfig.put(LDAPConstants.USER_DN_SUFFIX, getUserDnSuffix());
-        ldapConfig.put(LDAPConstants.VENDOR, getVendor());
-        ldapConfig.put(LDAPConstants.CONNECTION_POOLING, String.valueOf(isConnectionPooling()));
-        ldapConfig.put(LDAPConstants.PAGINATION, String.valueOf(isPagination()));
-        ldapConfig.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, String.valueOf(getBatchSizeForSync()));
-        ldapConfig.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, getUsernameLDAPAttribute());
-        ldapConfig.put(LDAPConstants.USER_OBJECT_CLASSES, getUserObjectClasses());
-        ldapConfig.put(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE, String.valueOf(isUserAccountControlsAfterPasswordUpdate()));
-        return ldapConfig;
+        return config;
     }
 
-    public String getConnectionUrl() {
-        return connectionUrl;
-    }
-
-    public String getBaseDn() {
-        return baseDn;
-    }
-
-    public String getUserDnSuffix() {
-        return userDnSuffix;
-    }
-
-    public String getRolesDnSuffix() {
-        return rolesDnSuffix;
-    }
-
-    public String getGroupDnSuffix() {
-        return groupDnSuffix;
-    }
-
-    public String getAgentDnSuffix() {
-        return agentDnSuffix;
+    public void setConnectionPropertiesLocation(String connectionPropertiesLocation) {
+        this.connectionPropertiesLocation = connectionPropertiesLocation;
     }
 
     public boolean isStartEmbeddedLdapLerver() {
         return startEmbeddedLdapLerver;
     }
 
-    public String getBindDn() {
-        return bindDn;
-    }
-
-    public String getBindCredential() {
-        return bindCredential;
-    }
-
-    public String getVendor() {
-        return vendor;
-    }
-
-    public boolean isConnectionPooling() {
-        return connectionPooling;
-    }
-
-    public boolean isPagination() {
-        return pagination;
-    }
-
-    public int getBatchSizeForSync() {
-        return batchSizeForSync;
-    }
-
-    public String getUsernameLDAPAttribute() {
-        return usernameLDAPAttribute;
-    }
-
-    public String getUserObjectClasses() {
-        return userObjectClasses;
-    }
-
-    public boolean isUserAccountControlsAfterPasswordUpdate() {
-        return userAccountControlsAfterPasswordUpdate;
-    }
 }

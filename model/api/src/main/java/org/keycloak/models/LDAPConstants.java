@@ -23,6 +23,8 @@ public class LDAPConstants {
     public static final String CONNECTION_POOLING = "connectionPooling";
     public static final String PAGINATION = "pagination";
 
+    public static final String EDIT_MODE = "editMode";
+
     // Count of users processed per single transaction during sync process
     public static final String BATCH_SIZE_FOR_SYNC = "batchSizeForSync";
     public static final int DEFAULT_BATCH_SIZE_FOR_SYNC = 1000;
