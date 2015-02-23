@@ -140,7 +140,6 @@ public class HttpAuthenticationManager {
 
                 loginFormsProvider.setStatus(Response.Status.UNAUTHORIZED);
                 loginFormsProvider.setResponseHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader);
-                loginFormsProvider.setWarning("errorKerberosLogin");
             }
 
         });

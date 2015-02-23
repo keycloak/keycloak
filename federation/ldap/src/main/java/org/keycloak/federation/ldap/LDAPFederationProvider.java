@@ -353,6 +353,11 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     String username = spnegoAuthenticator.getAuthenticatedUsername();
                     UserModel user = findOrCreateAuthenticatedUser(realm, username);
 
+                    if (user == null) {
+                        logger.warn("Kerberos/SPNEGO authentication succeeded with username [" + username + "], but couldn't find or create user with federation provider [" + model.getDisplayName() + "]");
+                        return CredentialValidationOutput.failed();
+                    }
+
                     return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
                 }  else {
                     Map<String, Object> state = new HashMap<String, Object>();
@@ -404,15 +409,17 @@ public class LDAPFederationProvider implements UserFederationProvider {
         UserModel user = session.userStorage().getUserByUsername(username, realm);
         if (user != null) {
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
-            if (!isValid(user)) {
-                throw new IllegalStateException("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() +
-                        "] or LDAP_ID is not correct. LDAP_ID on user is: " + user.getAttribute(LDAP_ID));
+            if (isValid(user)) {
+                return proxy(user);
+            } else {
+                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() +
+                        "] or LDAP_ID is not correct. Stale LDAP_ID on local user is: " + user.getAttribute(LDAP_ID));
+                session.userStorage().removeUser(realm, user);
             }
-
-            return proxy(user);
-        } else {
-            // Creating user to local storage
-            return getUserByUsername(realm, username);
         }
+
+        // Creating user to local storage
+        logger.debug("Kerberos authenticated user " + username + " not in Keycloak storage. Creating him");
+        return getUserByUsername(realm, username);
     }
 }
