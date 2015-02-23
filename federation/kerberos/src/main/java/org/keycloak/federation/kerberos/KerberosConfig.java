@@ -1,5 +1,7 @@
 package org.keycloak.federation.kerberos;
 
+import org.keycloak.models.KerberosConstants;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 
@@ -15,7 +17,7 @@ public class KerberosConfig extends CommonKerberosConfig {
     }
 
     public UserFederationProvider.EditMode getEditMode() {
-        String editModeString = getConfig().get("editMode");
+        String editModeString = getConfig().get(LDAPConstants.EDIT_MODE);
         if (editModeString == null) {
             return UserFederationProvider.EditMode.UNSYNCED;
         } else {
@@ -24,11 +26,11 @@ public class KerberosConfig extends CommonKerberosConfig {
     }
 
     public boolean isAllowPasswordAuthentication() {
-        return Boolean.valueOf(getConfig().get("allowPasswordAuthentication"));
+        return Boolean.valueOf(getConfig().get(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION));
     }
 
     public boolean isUpdateProfileFirstLogin() {
-        return Boolean.valueOf(getConfig().get("updateProfileFirstLogin"));
+        return Boolean.valueOf(getConfig().get(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN));
     }
 
 }

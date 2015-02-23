@@ -27,7 +27,7 @@ import org.jboss.logging.Logger;
  */
 public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
 
-    private static final Logger log = Logger.getLogger(LDAPEmbeddedServer.class);
+    private static final Logger log = Logger.getLogger(KerberosEmbeddedServer.class);
 
     private final String kerberosRealm;
     private final int kdcPort;
@@ -117,7 +117,7 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
 
 
     protected void stopKerberosServer() {
-        log.info("Stoping Kerberos server.");
+        log.info("Stopping Kerberos server.");
         kdcServer.stop();
     }
 

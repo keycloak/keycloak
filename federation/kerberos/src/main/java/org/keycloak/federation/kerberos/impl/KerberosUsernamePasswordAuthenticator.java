@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -25,10 +26,12 @@ public class KerberosUsernamePasswordAuthenticator {
     private static final Logger logger = Logger.getLogger(KerberosUsernamePasswordAuthenticator.class);
 
     private final CommonKerberosConfig config;
+    private LoginContext loginContext;
 
     public KerberosUsernamePasswordAuthenticator(CommonKerberosConfig config) {
         this.config = config;
     }
+
 
     /**
      * Returns true if user with given username exists in kerberos database
@@ -41,7 +44,7 @@ public class KerberosUsernamePasswordAuthenticator {
 
         logger.debug("Checking existence of principal: " + principal);
         try {
-            LoginContext loginContext = new LoginContext("does-not-matter", null,
+            loginContext = new LoginContext("does-not-matter", null,
                     createJaasCallbackHandler(principal, "fake-password-which-nobody-has"),
                     createJaasConfiguration());
 
@@ -58,6 +61,7 @@ public class KerberosUsernamePasswordAuthenticator {
         }
     }
 
+
     /**
      * Returns true if user was successfully authenticated against Kerberos
      *
@@ -66,24 +70,47 @@ public class KerberosUsernamePasswordAuthenticator {
      * @return  true if user was successfully authenticated
      */
     public boolean validUser(String username, String password) {
-        String principal = getKerberosPrincipal(username);
-
-        logger.debug("Validating password of principal: " + principal);
         try {
-            LoginContext loginContext = new LoginContext("does-not-matter", null,
-                    createJaasCallbackHandler(principal, password),
-                    createJaasConfiguration());
-
-            loginContext.login();
-            logger.debug("Principal " + principal + " authenticated succesfully");
-
-            loginContext.logout();
+            authenticateSubject(username, password);
+            logoutSubject();
             return true;
         } catch (LoginException le) {
             logger.debug("Failed to authenticate user " + username, le);
             return false;
         }
     }
+
+
+    /**
+     * Returns true if user was successfully authenticated against Kerberos
+     *
+     * @param username username without Kerberos realm attached
+     * @param password kerberos password
+     * @return  true if user was successfully authenticated
+     */
+    public Subject authenticateSubject(String username, String password) throws LoginException {
+        String principal = getKerberosPrincipal(username);
+
+        logger.debug("Validating password of principal: " + principal);
+        loginContext = new LoginContext("does-not-matter", null,
+                createJaasCallbackHandler(principal, password),
+                createJaasConfiguration());
+
+        loginContext.login();
+        logger.debug("Principal " + principal + " authenticated succesfully");
+        return loginContext.getSubject();
+    }
+
+    public void logoutSubject() {
+        if (loginContext != null) {
+            try {
+                loginContext.logout();
+            } catch (LoginException le) {
+                logger.error("Failed to logout kerberos server subject: " + config.getServerPrincipal(), le);
+            }
+        }
+    }
+
 
 
     protected String getKerberosPrincipal(String username) {

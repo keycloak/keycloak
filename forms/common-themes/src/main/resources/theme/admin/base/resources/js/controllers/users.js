@@ -547,10 +547,6 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
         { "id": "other", "name": "Other" }
     ];
 
-    $scope.usernameLDAPAttributes = [
-        "uid", "cn", "sAMAccountName", "entryDN"
-    ];
-
     $scope.realm = realm;
 
     $scope.$watch('fullSyncEnabled', function(newVal, oldVal) {
@@ -581,7 +577,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
             $scope.lastVendor = $scope.instance.config.vendor;
 
             if ($scope.lastVendor === "ad") {
-                $scope.instance.config.usernameLDAPAttribute = "cn";
+                $scope.instance.config.usernameLDAPAttribute = "sAMAccountName";
                 $scope.instance.config.userObjectClasses = "person, organizationalPerson, user";
             } else {
                 $scope.instance.config.usernameLDAPAttribute = "uid";

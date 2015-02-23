@@ -54,8 +54,9 @@ objectClass: person
 objectClass: inetOrgPerson
 objectClass: krb5principal
 objectClass: krb5kdcentry
-cn: Horatio Nelson
+cn: Horatio
 sn: Nelson
+mail: hnelson@keycloak.org
 uid: hnelson
 userPassword: secret
 krb5PrincipalName: hnelson@KEYCLOAK.ORG
@@ -67,8 +68,9 @@ objectClass: person
 objectClass: inetOrgPerson
 objectClass: krb5principal
 objectClass: krb5kdcentry
-cn: Java Duke
-sn: duke
+cn: Java
+sn: Duke
+mail: jduke@keycloak.org
 uid: jduke
 userPassword: theduke
 krb5PrincipalName: jduke@KEYCLOAK.ORG

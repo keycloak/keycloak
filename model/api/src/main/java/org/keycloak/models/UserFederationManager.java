@@ -384,6 +384,7 @@ public class UserFederationManager implements UserProvider {
                 return CredentialValidationOutput.failed();
             }
 
+            logger.debug("Found provider [" + providerSupportingCreds + "] supporting credentials of type " + cred.getType());
             CredentialValidationOutput currentResult = providerSupportingCreds.validCredentials(realm, cred);
             result = (result == null) ? currentResult : result.merge(currentResult);
         }
