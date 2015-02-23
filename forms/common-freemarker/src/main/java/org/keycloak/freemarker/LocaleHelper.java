@@ -9,20 +9,24 @@ import javax.ws.rs.core.UriInfo;
 import java.util.*;
 
 /**
- * Created by michigerber on 23.02.15.
+ * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
  */
 public class LocaleHelper {
     private final static String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
-    private final static Logger LOGGER = Logger.getLogger(LocaleHelper.class);
     private static final String LOCALE_PARAM = "ui_locale";
+    private final static Logger LOGGER = Logger.getLogger(LocaleHelper.class);
 
     public static Locale getLocale(RealmModel realm, UserModel user, UriInfo uriInfo, HttpHeaders httpHeaders) {
+        if(!realm.isInternationalizationEnabled()){
+            return null;
+        }
 
         //1. Locale cookie
         if(httpHeaders != null && httpHeaders.getCookies().containsKey(LOCALE_COOKIE)){
             String localeString = httpHeaders.getCookies().get(LOCALE_COOKIE).getValue();
             Locale locale =  findLocale(localeString, realm.getSupportedLocales());
             if(locale != null){
+                user.setAttribute(UserModel.LOCALE, locale.toLanguageTag());
                 return locale;
             }else{
                 LOGGER.infof("Locale %s is not supported.", localeString);
@@ -34,6 +38,7 @@ public class LocaleHelper {
             String localeString = user.getAttribute(UserModel.LOCALE);
             Locale locale =  findLocale(localeString, realm.getSupportedLocales());
             if(locale != null){
+
                 return locale;
             }else{
                 LOGGER.infof("Locale %s is not supported.", localeString);
@@ -52,18 +57,24 @@ public class LocaleHelper {
         }
 
         //4. Accept-Language http header
-        if(httpHeaders !=null && httpHeaders.getLanguage() != null){
-            String localeString =httpHeaders.getLanguage().toLanguageTag();
-            Locale locale =  findLocale(localeString, realm.getSupportedLocales());
-            if(locale != null){
-                return locale;
-            }else{
-                LOGGER.infof("Locale %s is not supported.", localeString);
+        if(httpHeaders !=null && httpHeaders.getAcceptableLanguages() != null && !httpHeaders.getAcceptableLanguages().isEmpty()){
+            for(Locale l : httpHeaders.getAcceptableLanguages()){
+                String localeString = l.toLanguageTag();
+                Locale locale =  findLocale(localeString, realm.getSupportedLocales());
+                if(locale != null){
+                    return locale;
+                }else{
+                    LOGGER.infof("Locale %s is not supported.", localeString);
+                }
             }
         }
 
         //5. Default realm locale
-        return Locale.forLanguageTag(realm.getDefaultLocale());
+        if(realm.getDefaultLocale() != null){
+            return Locale.forLanguageTag(realm.getDefaultLocale());
+        }
+
+        return null;
     }
 
     private static Locale findLocale(String localeString, Set<String> supportedLocales) {
