@@ -9,6 +9,7 @@ import org.infinispan.notifications.cachelistener.event.CacheEntryRemovedEvent;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.cache.CacheUserProviderFactory;
 import org.keycloak.models.cache.DefaultCacheUserProvider;
@@ -60,6 +61,11 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
     @Override
     public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

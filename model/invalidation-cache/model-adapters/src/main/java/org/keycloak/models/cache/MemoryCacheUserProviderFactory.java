@@ -2,6 +2,7 @@ package org.keycloak.models.cache;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -21,6 +22,11 @@ public class MemoryCacheUserProviderFactory implements CacheUserProviderFactory 
         cache = new MemoryUserCache();
         int size = config.getInt("maxSize", 10000);
         cache.setMaxUserCacheSize(size);
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

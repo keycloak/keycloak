@@ -5,6 +5,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import javax.naming.InitialContext;
 import javax.persistence.EntityManager;
@@ -54,6 +55,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     @Override
     public void init(Config.Scope config) {
         this.config = config;
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     private void lazyInit(KeycloakSession session) {

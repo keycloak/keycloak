@@ -4,6 +4,7 @@ import org.infinispan.Cache;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
@@ -25,6 +26,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

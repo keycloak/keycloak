@@ -61,6 +61,11 @@ public class KerberosFederationProviderFactory implements UserFederationProvider
     }
 
     @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
+
+    @Override
     public void close() {
 
     }

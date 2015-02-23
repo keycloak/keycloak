@@ -5,6 +5,7 @@ import org.keycloak.email.EmailProvider;
 import org.keycloak.email.EmailProviderFactory;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -21,6 +22,11 @@ public class FreeMarkerEmailProviderFactory implements EmailProviderFactory {
     @Override
     public void init(Config.Scope config) {
         freeMarker = new FreeMarkerUtil();
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

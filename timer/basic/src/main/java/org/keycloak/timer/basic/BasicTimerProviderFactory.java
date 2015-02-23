@@ -2,6 +2,7 @@ package org.keycloak.timer.basic;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
 
@@ -27,6 +28,11 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
     @Override
     public void init(Config.Scope config) {
         timer = new Timer();
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

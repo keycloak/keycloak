@@ -4,6 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.exportimport.ApplicationImporter;
 import org.keycloak.exportimport.ApplicationImporterFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -25,6 +26,10 @@ public class EntityDescriptorImporterFactory implements ApplicationImporterFacto
 
     }
 
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
     @Override
     public void close() {
 

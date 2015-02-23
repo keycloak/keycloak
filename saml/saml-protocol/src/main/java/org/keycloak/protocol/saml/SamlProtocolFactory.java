@@ -3,6 +3,7 @@ package org.keycloak.protocol.saml;
 import org.keycloak.Config;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
@@ -31,6 +32,10 @@ public class SamlProtocolFactory implements LoginProtocolFactory {
         sts.installDefaultConfiguration();
     }
 
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
     @Override
     public void close() {
 
