@@ -19,7 +19,7 @@ public class LocaleHelper {
     public static Locale getLocale(RealmModel realm, UserModel user, UriInfo uriInfo, HttpHeaders httpHeaders) {
 
         //1. Locale cookie
-        if(httpHeaders.getCookies().containsKey(LOCALE_COOKIE)){
+        if(httpHeaders != null && httpHeaders.getCookies().containsKey(LOCALE_COOKIE)){
             String localeString = httpHeaders.getCookies().get(LOCALE_COOKIE).getValue();
             Locale locale =  findLocale(localeString, realm.getSupportedLocales());
             if(locale != null){
@@ -30,7 +30,7 @@ public class LocaleHelper {
         }
 
         //2. User profile
-        if(user.getAttributes().containsKey(UserModel.LOCALE)){
+        if(user != null && user.getAttributes().containsKey(UserModel.LOCALE)){
             String localeString = user.getAttribute(UserModel.LOCALE);
             Locale locale =  findLocale(localeString, realm.getSupportedLocales());
             if(locale != null){
@@ -41,7 +41,7 @@ public class LocaleHelper {
         }
 
         //3. ui_locales query parameter
-        if(uriInfo.getQueryParameters().containsKey(LOCALE_PARAM)){
+        if(uriInfo != null && uriInfo.getQueryParameters().containsKey(LOCALE_PARAM)){
             String localeString = uriInfo.getQueryParameters().getFirst(LOCALE_PARAM);
             Locale locale =  findLocale(localeString, realm.getSupportedLocales());
             if(locale != null){
@@ -52,7 +52,7 @@ public class LocaleHelper {
         }
 
         //4. Accept-Language http header
-        if(httpHeaders.getLanguage() != null){
+        if(httpHeaders !=null && httpHeaders.getLanguage() != null){
             String localeString =httpHeaders.getLanguage().toLanguageTag();
             Locale locale =  findLocale(localeString, realm.getSupportedLocales());
             if(locale != null){
