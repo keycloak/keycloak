@@ -93,6 +93,7 @@ public abstract class AbstractKerberosTest {
         Assert.assertEquals(KerberosConstants.NEGOTIATE, response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE));
         String responseText = response.readEntity(String.class);
         responseText.contains("Log in to test");
+        response.close();
     }
 
 
@@ -113,6 +114,8 @@ public abstract class AbstractKerberosTest {
         driver.navigate().to(location);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        spnegoResponse.close();
     }
 
 
@@ -158,6 +161,7 @@ public abstract class AbstractKerberosTest {
                 .detail(Details.AUTH_METHOD, "spnego")
                 .detail(Details.USERNAME, "jduke")
                 .assertEvent();
+        spnegoResponse.close();
     }
 
 

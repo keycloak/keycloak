@@ -141,6 +141,7 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         Assert.assertTrue(driver.getPageSource().contains("Your password has been updated"));
         changePasswordPage.logout();
 
+        spnegoResponse.close();
         events.clear();
     }
 

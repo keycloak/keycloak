@@ -106,6 +106,7 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         String responseText = spnegoResponse.readEntity(String.class);
         Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
         Assert.assertTrue(responseText.contains("hnelson@keycloak.org"));
+        spnegoResponse.close();
 
         // Assert user was imported and has required action on him
         assertUser("hnelson", "hnelson@keycloak.org", null, null, true);
