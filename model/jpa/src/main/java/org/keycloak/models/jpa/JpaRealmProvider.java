@@ -3,7 +3,6 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
-import org.keycloak.models.RealmListenerHelper;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
@@ -26,24 +25,11 @@ import java.util.List;
 public class JpaRealmProvider implements RealmProvider {
     private final KeycloakSession session;
     protected EntityManager em;
-    protected RealmListenerHelper listeners;
 
 
-    public JpaRealmProvider(KeycloakSession session, EntityManager em, RealmListenerHelper listeners) {
+    public JpaRealmProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
         this.em = em;
-        this.listeners = listeners;
-    }
-
-    @Override
-    public void registerListener(RealmCreationListener listener) {
-        listeners.registerListener(listener);
-    }
-
-    @Override
-    public void unregisterListener(RealmCreationListener listener) {
-        listeners.unregisterListener(listener);
-
     }
 
     @Override
@@ -58,8 +44,13 @@ public class JpaRealmProvider implements RealmProvider {
         realm.setId(id);
         em.persist(realm);
         em.flush();
-        RealmModel model = new RealmAdapter(session, em, realm);
-        listeners.executeCreationListeners(model);
+        final RealmModel model = new RealmAdapter(session, em, realm);
+        session.getKeycloakSessionFactory().publish(new RealmCreationEvent() {
+            @Override
+            public RealmModel getCreatedRealm() {
+                return model;
+            }
+        });
         return model;
     }
 

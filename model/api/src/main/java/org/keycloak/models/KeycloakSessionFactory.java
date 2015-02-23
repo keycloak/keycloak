@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderEventManager;
 import org.keycloak.provider.ProviderFactory;
 
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSessionFactory {
+public interface KeycloakSessionFactory extends ProviderEventManager {
     KeycloakSession create();
 
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz);
