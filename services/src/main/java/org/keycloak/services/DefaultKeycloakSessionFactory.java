@@ -4,7 +4,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
@@ -16,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
@@ -23,6 +28,24 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
     private Map<Class<? extends Provider>, String> provider = new HashMap<Class<? extends Provider>, String>();
     private Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<Class<? extends Provider>, Map<String, ProviderFactory>>();
+    protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<ProviderEventListener>();
+
+    @Override
+    public void register(ProviderEventListener listener) {
+        listeners.add(listener);
+    }
+
+    @Override
+    public void unregister(ProviderEventListener listener) {
+        listeners.remove(listener);
+    }
+
+    @Override
+    public void publish(ProviderEvent event) {
+        for (ProviderEventListener listener : listeners) {
+            listener.onEvent(event);
+        }
+    }
 
     public void init() {
         ProviderManager pm = new ProviderManager(getClass().getClassLoader(), Config.scope().getArray("providers"));
