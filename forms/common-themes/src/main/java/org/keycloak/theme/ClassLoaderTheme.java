@@ -1,6 +1,5 @@
 package org.keycloak.theme;
 
-import org.jboss.logging.Logger;
 import org.keycloak.freemarker.Theme;
 
 import java.io.File;
@@ -9,13 +8,12 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.ResourceBundle;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ClassLoaderTheme implements Theme {
-
-    private static final Logger LOGGER = Logger.getLogger(ClassLoaderTheme.class);
 
     private String name;
 
@@ -110,20 +108,14 @@ public class ClassLoaderTheme implements Theme {
     public Properties getMessages(Locale locale) throws IOException {
         Properties m = new Properties();
 
-        URL url = null;
-        if(locale != null) {
-            URL messageFile = classLoader.getResource(this.messageRoot + "messages_" + locale.toString() + ".properties");
-            if(messageFile != null){
-                url = messageFile;
-            }else{
-                LOGGER.warnf("Can not find message file %s", messageFile);
-            }
+        String message = null;
+        if(locale != null){
+            message = this.messageRoot + "messages_" + locale.toString() + ".properties";
+        }else{
+            message = this.messageRoot + "messages.properties";
         }
 
-        if(url == null){
-           url = classLoader.getResource(this.messageRoot + "messages.properties");
-        }
-
+        URL url = classLoader.getResource(message);
         if (url != null) {
             m.load(url.openStream());
         }

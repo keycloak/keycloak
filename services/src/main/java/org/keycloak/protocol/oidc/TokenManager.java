@@ -28,6 +28,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.Time;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashSet;
@@ -57,7 +58,7 @@ public class TokenManager {
         }
     }
 
-    public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, EventBuilder event) throws OAuthErrorException {
+    public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(realm, encodedRefreshToken);
 
         event.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
@@ -74,7 +75,7 @@ public class TokenManager {
         UserSessionModel userSession = session.sessions().getUserSession(realm, refreshToken.getSessionState());
         int currentTime = Time.currentTime();
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.logout(session, realm, userSession, uriInfo, connection);
+            AuthenticationManager.logout(session, realm, userSession, uriInfo, connection, headers);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
 

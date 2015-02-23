@@ -5,11 +5,7 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
-import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
-import org.keycloak.freemarker.FreeMarkerException;
-import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.freemarker.*;
 import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.freemarker.model.ClientBean;
@@ -31,11 +27,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Urls;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
@@ -74,6 +66,8 @@ import java.util.concurrent.TimeUnit;
 
     private UriInfo uriInfo;
 
+    private HttpHeaders httpHeaders;
+
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
@@ -86,6 +80,12 @@ import java.util.concurrent.TimeUnit;
 
     public LoginFormsProvider setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
+        return this;
+    }
+
+    @Override
+    public LoginFormsProvider setHttpHeaders(HttpHeaders httpHeaders) {
+        this.httpHeaders = httpHeaders;
         return this;
     }
 
@@ -170,7 +170,7 @@ import java.util.concurrent.TimeUnit;
 
         Properties messages;
         try {
-            messages = theme.getMessages(Locale.GERMAN);
+            messages = theme.getMessages(LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders));
             attributes.put("rb", messages);
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);

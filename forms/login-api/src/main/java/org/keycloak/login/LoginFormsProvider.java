@@ -6,6 +6,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -20,6 +21,8 @@ public interface LoginFormsProvider extends Provider {
     public LoginFormsProvider setRealm(RealmModel realm);
 
     public LoginFormsProvider setUriInfo(UriInfo uriInfo);
+
+    public LoginFormsProvider setHttpHeaders(HttpHeaders httpHeaders);
 
     public Response createResponse(UserModel.RequiredAction action);
 

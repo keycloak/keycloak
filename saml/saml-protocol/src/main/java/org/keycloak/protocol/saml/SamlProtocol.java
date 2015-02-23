@@ -82,6 +82,7 @@ public class SamlProtocol implements LoginProtocol {
 
     protected UriInfo uriInfo;
 
+    protected HttpHeaders headers;
 
 
     @Override
@@ -99,6 +100,12 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public SamlProtocol setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
+        return this;
+    }
+
+    @Override
+    public SamlProtocol setHttpHeaders(HttpHeaders headers){
+        this.headers = headers;
         return this;
     }
 
@@ -129,7 +136,7 @@ public class SamlProtocol implements LoginProtocol {
               return builder.redirectBinding().response();
           }
         } catch (Exception e) {
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response", headers);
         }
     }
 
@@ -279,7 +286,7 @@ public class SamlProtocol implements LoginProtocol {
                 publicKey = SamlProtocolUtils.getEncryptionValidationKey(client);
             } catch (Exception e) {
                 logger.error("failed", e);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response", headers);
             }
             builder.encrypt(publicKey);
         }
@@ -291,7 +298,7 @@ public class SamlProtocol implements LoginProtocol {
             }
         } catch (Exception e) {
             logger.error("failed", e);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response", headers);
         }
     }
 

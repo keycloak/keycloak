@@ -57,13 +57,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +92,10 @@ public class IdentityBrokerService {
 
     @Context
     private HttpRequest request;
+
+    @Context
+    private HttpHeaders headers;
+
     private EventBuilder event;
 
     public IdentityBrokerService(RealmModel realmModel) {
@@ -187,11 +186,10 @@ public class IdentityBrokerService {
                 }
 
                 if (OAuthClientModel.class.isInstance(clientModel) && !forceRetrieval) {
-                    return corsResponse(Flows.forms(this.session, this.realmModel, clientModel, this.uriInfo)
+                    return corsResponse(Flows.forms(this.session, this.realmModel, clientModel, this.uriInfo, headers)
                             .setClientSessionCode(authManager.extractAuthorizationHeaderToken(this.request.getHttpHeaders()))
                             .setAccessRequest("Your information from " + providerId + " identity provider.")
                             .setClient(clientModel)
-                            .setUriInfo(this.uriInfo)
                             .setActionUri(this.uriInfo.getRequestUri())
                             .createOAuthGrant(), clientModel);
                 }
@@ -439,7 +437,7 @@ public class IdentityBrokerService {
 
     private Response redirectToErrorPage(String message, Throwable throwable) {
         fireErrorEvent(message, throwable);
-        return Flows.forwardToSecurityFailurePage(this.session, this.realmModel, this.uriInfo, message);
+        return Flows.forwardToSecurityFailurePage(this.session, this.realmModel, this.uriInfo, message, headers);
     }
 
     private Response badRequest(String message) {
@@ -449,7 +447,7 @@ public class IdentityBrokerService {
 
     private Response redirectToLoginPage(String message, ClientSessionCode clientCode) {
         fireErrorEvent(message);
-        return Flows.forms(this.session, this.realmModel, clientCode.getClientSession().getClient(), this.uriInfo)
+        return Flows.forms(this.session, this.realmModel, clientCode.getClientSession().getClient(), this.uriInfo, headers)
                 .setClientSessionCode(clientCode.getCode())
                 .setError(message)
                 .createLogin();
