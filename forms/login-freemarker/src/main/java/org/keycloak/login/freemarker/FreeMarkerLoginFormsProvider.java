@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
+    public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private static final Logger logger = Logger.getLogger(FreeMarkerLoginFormsProvider.class);
 

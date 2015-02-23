@@ -1,5 +1,6 @@
 package org.keycloak.theme;
 
+import org.jboss.logging.Logger;
 import org.keycloak.freemarker.Theme;
 
 import java.io.File;
@@ -15,6 +16,7 @@ import java.util.Properties;
  */
 public class FolderTheme implements Theme {
 
+    private static final Logger LOGGER = Logger.getLogger(FolderTheme.class);
     private String parentName;
     private String importName;
     private File themeDir;
@@ -85,14 +87,20 @@ public class FolderTheme implements Theme {
     public Properties getMessages(Locale locale) throws IOException {
         Properties m = new Properties();
 
-        String message = null;
-        if(locale != null){
-            message = "messages_" + locale.toString() + ".properties";
-        }else{
-            message = "messages.properties";
+        File file = null;
+        if(locale != null) {
+            File messageFile = new File(themeDir, "messages" + File.separator + "messages_" + locale.toString() + ".properties");
+            if (messageFile.isFile()) {
+                file = messageFile;
+            } else {
+                LOGGER.warnf("Can not find message file %s", messageFile);
+            }
         }
 
-        File file = new File(themeDir, "messages" + File.separator + message);
+        if(file == null){
+            file = new File(themeDir, "messages" + File.separator + "messages.properties");
+        }
+
         if (file.isFile()) {
             m.load(new FileInputStream(file));
         }
