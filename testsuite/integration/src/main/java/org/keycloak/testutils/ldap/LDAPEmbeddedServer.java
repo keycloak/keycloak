@@ -150,7 +150,7 @@ public class LDAPEmbeddedServer {
         }
 
         final String ldifContent = StrSubstitutor.replace(StreamUtil.readString(is), map);
-        log.info("Importing LDIF: " + ldifContent);
+        log.info("Content of LDIF: " + ldifContent);
         final SchemaManager schemaManager = directoryService.getSchemaManager();
 
         for (LdifEntry ldifEntry : new LdifReader(IOUtils.toInputStream(ldifContent))) {
@@ -170,13 +170,13 @@ public class LDAPEmbeddedServer {
 
 
     protected void stopLdapServer() {
-        log.info("Stoping LDAP server.");
+        log.info("Stopping LDAP server.");
         ldapServer.stop();
     }
 
 
     protected void shutdownDirectoryService() throws Exception {
-        log.info("Stoping Directory service.");
+        log.info("Stopping Directory service.");
         directoryService.shutdown();
 
         log.info("Removing Directory service workfiles.");

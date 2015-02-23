@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.forms;
+package org.keycloak.testsuite.federation;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -13,6 +13,7 @@ import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -55,9 +56,9 @@ public class FederationProvidersIntegrationTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             addUser(manager.getSession(), appRealm, "mary", "mary@test.com", "password-app");
 
-            Map<String,String> ldapConfig = ldapRule.getLdapConfig();
+            Map<String,String> ldapConfig = ldapRule.getConfig();
             ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "true");
-            ldapConfig.put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.WRITABLE.toString());
+            ldapConfig.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.WRITABLE.toString());
 
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap", -1, -1, 0);
 
@@ -272,7 +273,7 @@ public class FederationProvidersIntegrationTest {
 
             UserFederationProviderModel model = new UserFederationProviderModel(ldapModel.getId(), ldapModel.getProviderName(), ldapModel.getConfig(),
                     ldapModel.getPriority(), ldapModel.getDisplayName(), -1, -1, 0);
-            model.getConfig().put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.READ_ONLY.toString());
+            model.getConfig().put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.READ_ONLY.toString());
             appRealm.updateUserFederationProvider(model);
             UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
             Assert.assertNotNull(user);
@@ -312,7 +313,7 @@ public class FederationProvidersIntegrationTest {
         session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
-            Assert.assertEquals(UserFederationProvider.EditMode.WRITABLE.toString(), appRealm.getUserFederationProviders().get(0).getConfig().get(LDAPFederationProvider.EDIT_MODE));
+            Assert.assertEquals(UserFederationProvider.EditMode.WRITABLE.toString(), appRealm.getUserFederationProviders().get(0).getConfig().get(LDAPConstants.EDIT_MODE));
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -380,7 +381,7 @@ public class FederationProvidersIntegrationTest {
 
             UserFederationProviderModel model = new UserFederationProviderModel(ldapModel.getId(), ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(),
                     ldapModel.getDisplayName(), -1, -1, 0);
-            model.getConfig().put(LDAPFederationProvider.EDIT_MODE, UserFederationProvider.EditMode.UNSYNCED.toString());
+            model.getConfig().put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.UNSYNCED.toString());
             appRealm.updateUserFederationProvider(model);
             UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
             Assert.assertNotNull(user);
@@ -405,7 +406,7 @@ public class FederationProvidersIntegrationTest {
         session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
-            Assert.assertEquals(UserFederationProvider.EditMode.WRITABLE.toString(), appRealm.getUserFederationProviders().get(0).getConfig().get(LDAPFederationProvider.EDIT_MODE));
+            Assert.assertEquals(UserFederationProvider.EditMode.WRITABLE.toString(), appRealm.getUserFederationProviders().get(0).getConfig().get(LDAPConstants.EDIT_MODE));
         } finally {
             keycloakRule.stopSession(session, false);
         }
