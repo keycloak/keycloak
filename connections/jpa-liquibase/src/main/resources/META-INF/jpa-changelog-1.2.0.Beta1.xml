@@ -92,7 +92,7 @@
             <column name="FRONTCHANNEL_LOGOUT" type="BOOLEAN" defaultValueBoolean="false"/>
         </addColumn>
         <addColumn tableName="REALM">
-            <column name="LOCALIZATION_ENABLED" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="INTERNATIONALIZATION_ENABLED" type="BOOLEAN" defaultValueBoolean="false"/>
             <column name="DEFAULT_LOCALE" type="VARCHAR(255)" />
         </addColumn>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_CT" tableName="CLAIM_TYPE"/>

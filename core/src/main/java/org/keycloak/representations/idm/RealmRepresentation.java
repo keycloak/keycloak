@@ -63,7 +63,7 @@ public class RealmRepresentation {
     private List<ClaimTypeRepresentation> claimTypes;
     private List<ProtocolMapperRepresentation> protocolClaimMappings;
     private Boolean identityFederationEnabled;
-    protected Boolean localizationEnabled;
+    protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
 
@@ -501,12 +501,12 @@ public class RealmRepresentation {
         this.protocolClaimMappings = protocolClaimMappings;
     }
 
-    public Boolean isLocalizationEnabled() {
-        return localizationEnabled;
+    public Boolean isInternationalizationEnabled() {
+        return internationalizationEnabled;
     }
 
-    public void setLocalizationEnabled(Boolean localizationEnabled) {
-        this.localizationEnabled = localizationEnabled;
+    public void setInternationalizationEnabled(Boolean internationalizationEnabled) {
+        this.internationalizationEnabled = internationalizationEnabled;
     }
 
     public Set<String> getSupportedLocales() {

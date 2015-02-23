@@ -161,7 +161,7 @@ public class ModelToRepresentation {
             rep.getProtocolClaimMappings().add(toRepresentation(mapping));
         }
 
-        rep.setLocalizationEnabled(realm.isLocalizationEnabled());
+        rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
         rep.getSupportedLocales().addAll(realm.getSupportedLocales());
         rep.setDefaultLocale(realm.getDefaultLocale());
 

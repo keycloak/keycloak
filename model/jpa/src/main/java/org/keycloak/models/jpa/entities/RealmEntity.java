@@ -139,8 +139,8 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     protected List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
 
-    @Column(name="LOCALIZATION_ENABLED")
-    protected boolean localizationEnabled;
+    @Column(name="INTERNATIONALIZATION_ENABLED")
+    protected boolean internationalizationEnabled;
 
     @ElementCollection
     @Column(name="VALUE")
@@ -467,12 +467,12 @@ public class RealmEntity {
         this.protocolClaimMappings = protocolClaimMappings;
     }
 
-    public boolean isLocalizationEnabled() {
-        return localizationEnabled;
+    public boolean isInternationalizationEnabled() {
+        return internationalizationEnabled;
     }
 
-    public void setLocalizationEnabled(boolean localizationEnabled) {
-        this.localizationEnabled = localizationEnabled;
+    public void setInternationalizationEnabled(boolean internationalizationEnabled) {
+        this.internationalizationEnabled = internationalizationEnabled;
     }
 
     public Set<String> getSupportedLocales() {

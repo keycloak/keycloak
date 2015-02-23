@@ -1206,13 +1206,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public boolean isLocalizationEnabled() {
-        return realm.isLocalizationEnabled();
+    public boolean isInternationalizationEnabled() {
+        return realm.isInternationalizationEnabled();
     }
 
     @Override
-    public void setLocalizationEnabled(boolean enabled) {
-        realm.setLocalizationEnabled(enabled);
+    public void setInternationalizationEnabled(boolean enabled) {
+        realm.setInternationalizationEnabled(enabled);
         updateRealm();
     }
 

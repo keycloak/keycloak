@@ -240,8 +240,8 @@ public class RepresentationToModel {
             }
         }
 
-        if(rep.isLocalizationEnabled() != null){
-            newRealm.setLocalizationEnabled(rep.isLocalizationEnabled());
+        if(rep.isInternationalizationEnabled() != null){
+            newRealm.setInternationalizationEnabled(rep.isInternationalizationEnabled());
         }
         if(rep.getSupportedLocales() != null){
             newRealm.setSupportedLocales(new HashSet<String>(rep.getSupportedLocales()));
@@ -310,8 +310,8 @@ public class RepresentationToModel {
             KeycloakModelUtils.generateRealmKeys(realm);
         }
 
-        if(rep.isLocalizationEnabled() != null){
-            realm.setLocalizationEnabled(rep.isLocalizationEnabled());
+        if(rep.isInternationalizationEnabled() != null){
+            realm.setInternationalizationEnabled(rep.isInternationalizationEnabled());
         }
         if(rep.getSupportedLocales() != null){
             realm.setSupportedLocales(new HashSet<String>(rep.getSupportedLocales()));

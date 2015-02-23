@@ -65,7 +65,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     private String adminAppId;
 
-    private boolean localizationEnabled;
+    private boolean internationalizationEnabled;
     private List<String> supportedLocales = new ArrayList<String>();
     private String defaultLocale;
 
@@ -413,12 +413,12 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.protocolMappers = protocolMappers;
     }
 
-    public boolean isLocalizationEnabled() {
-        return localizationEnabled;
+    public boolean isInternationalizationEnabled() {
+        return internationalizationEnabled;
     }
 
-    public void setLocalizationEnabled(boolean localizationEnabled) {
-        this.localizationEnabled = localizationEnabled;
+    public void setInternationalizationEnabled(boolean internationalizationEnabled) {
+        this.internationalizationEnabled = internationalizationEnabled;
     }
 
     public List<String> getSupportedLocales() {

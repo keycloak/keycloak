@@ -237,8 +237,8 @@ public interface RealmModel extends RoleContainerModel {
     public ProtocolMapperModel getProtocolMapperById(String id);
 
     //i18n
-    boolean isLocalizationEnabled();
-    void setLocalizationEnabled(boolean enabled);
+    boolean isInternationalizationEnabled();
+    void setInternationalizationEnabled(boolean enabled);
     Set<String> getSupportedLocales();
     void setSupportedLocales(Set<String> locales);
     String getDefaultLocale();

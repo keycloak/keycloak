@@ -934,15 +934,15 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isLocalizationEnabled() {
-        if (updated != null) return updated.isLocalizationEnabled();
-        return cached.isLocalizationEnabled();
+    public boolean isInternationalizationEnabled() {
+        if (updated != null) return updated.isInternationalizationEnabled();
+        return cached.isInternationalizationEnabled();
     }
 
     @Override
-    public void setLocalizationEnabled(boolean enabled) {
+    public void setInternationalizationEnabled(boolean enabled) {
         getDelegateForUpdate();
-        updated.setLocalizationEnabled(enabled);
+        updated.setInternationalizationEnabled(enabled);
     }
 
     @Override
