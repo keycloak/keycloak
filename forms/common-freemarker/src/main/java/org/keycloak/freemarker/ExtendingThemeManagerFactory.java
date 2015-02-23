@@ -2,6 +2,7 @@ package org.keycloak.freemarker;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,6 +25,11 @@ public class ExtendingThemeManagerFactory implements ThemeProviderFactory {
         if(Config.scope("theme").getBoolean("cacheThemes", true)) {
             themeCache = new ConcurrentHashMap<ThemeKey, Theme>();
         }
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

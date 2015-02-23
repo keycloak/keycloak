@@ -12,6 +12,7 @@ import org.keycloak.connections.mongo.impl.MongoStoreImpl;
 import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocationContext;
 import org.keycloak.connections.mongo.updater.DefaultMongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -59,6 +60,12 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     public void init(Config.Scope config) {
         this.config = config;
     }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
+
 
     private void lazyInit() {
         if (client == null) {

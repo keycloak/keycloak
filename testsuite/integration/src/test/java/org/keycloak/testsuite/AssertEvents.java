@@ -15,6 +15,7 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -199,6 +200,11 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
 
     @Override
     public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

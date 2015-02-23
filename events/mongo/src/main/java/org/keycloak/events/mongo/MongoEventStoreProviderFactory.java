@@ -9,6 +9,7 @@ import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventStoreProviderFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -53,6 +54,11 @@ public class MongoEventStoreProviderFactory implements EventStoreProviderFactory
                 includedEvents.remove(EventType.valueOf(e.toUpperCase()));
             }
         }
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

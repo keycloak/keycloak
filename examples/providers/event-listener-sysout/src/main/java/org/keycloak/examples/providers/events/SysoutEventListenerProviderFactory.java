@@ -5,6 +5,7 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -32,6 +33,10 @@ public class SysoutEventListenerProviderFactory implements EventListenerProvider
         }
     }
 
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
     @Override
     public void close() {
     }

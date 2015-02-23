@@ -5,6 +5,7 @@ import org.keycloak.account.AccountProvider;
 import org.keycloak.account.AccountProviderFactory;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -23,6 +24,10 @@ public class FreeMarkerAccountProviderFactory implements AccountProviderFactory 
         freeMarker = new FreeMarkerUtil();
     }
 
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
     @Override
     public void close() {
         freeMarker = null;

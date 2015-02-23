@@ -6,6 +6,7 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -46,6 +47,11 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
                 includedEvents.remove(EventType.valueOf(e.toUpperCase()));
             }
         }
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

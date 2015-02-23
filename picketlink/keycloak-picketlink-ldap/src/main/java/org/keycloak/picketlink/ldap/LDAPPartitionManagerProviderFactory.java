@@ -2,6 +2,7 @@ package org.keycloak.picketlink.ldap;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.picketlink.PartitionManagerProvider;
 import org.keycloak.picketlink.PartitionManagerProviderFactory;
 import org.picketlink.idm.PartitionManager;
@@ -23,6 +24,11 @@ public class LDAPPartitionManagerProviderFactory implements PartitionManagerProv
     @Override
     public void init(Config.Scope config) {
         partitionManagerRegistry = new PartitionManagerRegistry();
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

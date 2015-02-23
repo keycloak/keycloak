@@ -88,6 +88,11 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
     }
 
     @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
+
+    @Override
     public void close() {
 
     }

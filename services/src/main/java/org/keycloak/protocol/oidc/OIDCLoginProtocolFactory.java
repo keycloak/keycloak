@@ -3,6 +3,7 @@ package org.keycloak.protocol.oidc;
 import org.keycloak.Config;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
@@ -20,10 +21,12 @@ public class OIDCLoginProtocolFactory implements LoginProtocolFactory {
 
     @Override
     public void init(Config.Scope config) {
-        System.out.println("here");
-
     }
 
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
     @Override
     public Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
         return new OIDCLoginProtocolService(realm, event, authManager);

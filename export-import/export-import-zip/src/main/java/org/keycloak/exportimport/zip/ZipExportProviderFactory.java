@@ -5,6 +5,7 @@ import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.ExportProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import java.io.File;
 
@@ -31,6 +32,11 @@ public class ZipExportProviderFactory implements ExportProviderFactory {
 
     @Override
     public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override
