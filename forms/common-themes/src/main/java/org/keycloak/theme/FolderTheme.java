@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Properties;
 
 /**
@@ -81,9 +82,17 @@ public class FolderTheme implements Theme {
     }
 
     @Override
-    public Properties getMessages() throws IOException {
+    public Properties getMessages(Locale locale) throws IOException {
         Properties m = new Properties();
-        File file = new File(themeDir, "messages" + File.separator + "messages.properties");
+
+        String message = null;
+        if(locale != null){
+            message = "messages_" + locale.toString() + ".properties";
+        }else{
+            message = "messages.properties";
+        }
+
+        File file = new File(themeDir, "messages" + File.separator + message);
         if (file.isFile()) {
             m.load(new FileInputStream(file));
         }

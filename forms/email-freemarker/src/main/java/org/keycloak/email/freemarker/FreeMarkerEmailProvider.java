@@ -17,10 +17,7 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -82,7 +79,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
             Theme theme = themeProvider.getTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
 
-            String subject =  theme.getMessages().getProperty(subjectKey);
+            String subject =  theme.getMessages(Locale.GERMAN).getProperty(subjectKey);
             String body = freeMarker.processTemplate(attributes, template, theme);
 
             send(subject, body);

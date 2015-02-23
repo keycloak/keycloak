@@ -31,10 +31,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -96,7 +93,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         Properties messages;
         try {
-            messages = theme.getMessages();
+            messages = theme.getMessages(Locale.GERMAN);
             attributes.put("rb", messages);
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
