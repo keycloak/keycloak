@@ -1033,7 +1033,7 @@ module.factory('PasswordPolicy', function() {
 
     p.toString = function(policies) {
         if (!policies || policies.length == 0) {
-            return null;
+            return "";
         }
 
         var policyString = "";
