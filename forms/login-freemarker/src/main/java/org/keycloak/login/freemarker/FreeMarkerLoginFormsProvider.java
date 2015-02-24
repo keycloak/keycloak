@@ -170,6 +170,9 @@ import java.util.concurrent.TimeUnit;
 
         Properties messages;
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders);
+        if(locale != null){
+            attributes.put("locale", locale.toLanguageTag());
+        }
         try {
             messages = theme.getMessages(locale);
             attributes.put("rb", messages);
