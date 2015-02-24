@@ -42,7 +42,7 @@
                 <div class="container">
                     <ul class="nav navbar-nav navbar-utility">
                         <#if realm.internationalizationEnabled>
-                            <li> ${locale}
+                            <li>
                                 <select class="kc-locale-select">
                                     <#list realm.supportedLocales as l>
                                         <option value="${l}" <#if locale==l>selected="selected"</#if>>${l}</option>
