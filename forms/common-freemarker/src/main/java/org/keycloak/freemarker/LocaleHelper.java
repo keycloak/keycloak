@@ -19,6 +19,10 @@ public class LocaleHelper {
 
     private final static Logger LOGGER = Logger.getLogger(LocaleHelper.class);
 
+    public static Locale getLocale(RealmModel realm, UserModel user) {
+        return getLocale(realm, user, null, null);
+    }
+
     public static Locale getLocale(RealmModel realm, UserModel user, UriInfo uriInfo, HttpHeaders httpHeaders) {
         if(!realm.isInternationalizationEnabled()){
             return null;

@@ -1,0 +1,1 @@
+TOTP was updated for your account on ${event.date?datetime} from ${event.ipAddress}. If this was not you, please contact an admin.

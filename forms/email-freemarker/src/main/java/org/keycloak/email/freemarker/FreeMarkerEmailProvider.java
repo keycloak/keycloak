@@ -6,6 +6,7 @@ import org.keycloak.email.EmailProvider;
 import org.keycloak.email.freemarker.beans.EventBean;
 import org.keycloak.events.Event;
 import org.keycloak.freemarker.FreeMarkerUtil;
+import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
@@ -53,7 +54,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("event", new EventBean(event));
 
-        send("passwordResetSubject", "event-" + event.getType().toString().toLowerCase() + ".ftl", attributes);
+        send("passwordResetSubject", getTemplate("event-" + event.getType().toString().toLowerCase()), attributes);
     }
 
     @Override
@@ -62,7 +63,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        send("passwordResetSubject", "password-reset.ftl", attributes);
+        send("passwordResetSubject", getTemplate("password-reset"), attributes);
     }
 
     @Override
@@ -71,7 +72,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        send("emailVerificationSubject", "email-verification.ftl", attributes);
+        send("emailVerificationSubject", getTemplate("email-verification"), attributes);
     }
 
     private void send(String subjectKey, String template, Map<String, Object> attributes) throws EmailException {
@@ -79,7 +80,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
             Theme theme = themeProvider.getTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
 
-            String subject =  theme.getMessages(Locale.GERMAN).getProperty(subjectKey);
+            String subject =  theme.getMessages(LocaleHelper.getLocale(realm,user)).getProperty(subjectKey);
             String body = freeMarker.processTemplate(attributes, template, theme);
 
             send(subject, body);
@@ -147,4 +148,14 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     public void close() {
     }
 
+    private String getTemplate(String name){
+        StringBuilder sb = new StringBuilder(name);
+        Locale locale = LocaleHelper.getLocale(realm, user);
+        if(locale!=null){
+            sb.append("_").append(locale.toString());
+        }
+        sb.append(".ftl");
+
+        return sb.toString();
+    }
 }
