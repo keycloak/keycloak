@@ -21,17 +21,19 @@
             <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
         </#list>
     </#if>
-    <script type="text/javascript">
-        window.onload = function () {
-            var select = document.querySelector(".kc-locale-select");
-            select.onchange = function (event) {
-                document.cookie = "KEYCLOAK_LOCALE=" + select.value;
-                setTimeout(function () {
-                    window.location.reload();
-                }, 0);
+    <#if realm.internationalizationEnabled>
+        <script type="text/javascript">
+            window.onload = function () {
+                var select = document.querySelector(".kc-locale-select");
+                select.onchange = function (event) {
+                    document.cookie = "KEYCLOAK_LOCALE=" + select.value+"; path=${url.localeCookiePath}";
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 0);
+                }
             }
-        }
-    </script>
+        </script>
+    </#if>
 </head>
 
 <body class="${properties.kcBodyClass!}">

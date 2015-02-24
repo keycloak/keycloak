@@ -3,32 +3,16 @@ package org.keycloak.account.freemarker;
 import org.jboss.logging.Logger;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
-import org.keycloak.account.freemarker.model.AccountBean;
-import org.keycloak.account.freemarker.model.AccountFederatedIdentityBean;
-import org.keycloak.account.freemarker.model.FeaturesBean;
-import org.keycloak.account.freemarker.model.LogBean;
-import org.keycloak.account.freemarker.model.MessageBean;
-import org.keycloak.account.freemarker.model.PasswordBean;
-import org.keycloak.account.freemarker.model.ReferrerBean;
-import org.keycloak.account.freemarker.model.SessionsBean;
-import org.keycloak.account.freemarker.model.TotpBean;
-import org.keycloak.account.freemarker.model.UrlBean;
+import org.keycloak.account.freemarker.model.*;
 import org.keycloak.events.Event;
-import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
-import org.keycloak.freemarker.FreeMarkerException;
-import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.freemarker.*;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.services.resources.flows.Urls;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
@@ -54,6 +38,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private boolean passwordSet;
     private KeycloakSession session;
     private FreeMarkerUtil freeMarker;
+    private HttpHeaders headers;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
@@ -69,6 +54,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     public AccountProvider setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
+        return this;
+    }
+
+    @Override
+    public AccountProvider setHttpHeaders(HttpHeaders httpHeaders) {
+        this.headers = httpHeaders;
         return this;
     }
 
@@ -91,9 +82,13 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             logger.warn("Failed to load properties", e);
         }
 
+        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, headers);
+        if(locale != null){
+            attributes.put("locale", locale.toLanguageTag());
+        }
         Properties messages;
         try {
-            messages = theme.getMessages(Locale.GERMAN);
+            messages = theme.getMessages(locale);
             attributes.put("rb", messages);
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
@@ -117,6 +112,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         if (referrer != null) {
             attributes.put("referrer", new ReferrerBean(referrer));
+        }
+
+        if(realm != null){
+            attributes.put("realm", new RealmBean(realm));
         }
 
         attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
@@ -147,6 +146,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri,realm.getName()));
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);

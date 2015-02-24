@@ -231,20 +231,12 @@ import java.util.concurrent.TimeUnit;
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
-            updateLocaleCookie(builder, locale);
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri, realm.getName()));
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
             return Response.serverError().build();
         }
-    }
-
-    private void updateLocaleCookie(Response.ResponseBuilder builder, Locale locale) {
-        if (locale == null) {
-            return;
-        }
-        boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
-        builder.cookie(new NewCookie(LocaleHelper.LOCALE_COOKIE, locale.toLanguageTag(), null, null, null, 31536000, secure));
     }
 
     public Response createLogin() {

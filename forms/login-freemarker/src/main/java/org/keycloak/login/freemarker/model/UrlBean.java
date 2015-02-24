@@ -86,6 +86,10 @@ public class UrlBean {
         return Urls.loginActionEmailVerification(baseURI, realm).toString();
     }
 
+    public String getLocaleCookiePath(){
+        return Urls.localeCookiePath(baseURI, realm);
+    }
+
     public String getOauthAction() {
         if (this.actionuri != null) {
             return this.actionuri.getPath();

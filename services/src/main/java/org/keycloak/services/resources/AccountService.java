@@ -159,7 +159,7 @@ public class AccountService {
     public void init() {
         eventStore = session.getProvider(EventStoreProvider.class);
 
-        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
+        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo).setHttpHeaders(headers);
 
         AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {

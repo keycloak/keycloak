@@ -189,6 +189,10 @@ public class Urls {
         return requiredActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmId);
     }
 
+    public static String localeCookiePath(URI baseUri, String realmName){
+        return realmBase(baseUri).path(realmName).build().getRawPath();
+    }
+
     public static URI themeRoot(URI baseUri) {
         return themeBase(baseUri).build();
     }

@@ -5,6 +5,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.*;
 
@@ -78,6 +80,14 @@ public class LocaleHelper {
         }
 
         return null;
+    }
+
+    public static void updateLocaleCookie(Response.ResponseBuilder builder, Locale locale, RealmModel realm, UriInfo uriInfo, String path) {
+        if (locale == null) {
+            return;
+        }
+        boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
+        builder.cookie(new NewCookie(LocaleHelper.LOCALE_COOKIE, locale.toLanguageTag(), path, null, null, 31536000, secure));
     }
 
     private static Locale findLocale(String localeString, Set<String> supportedLocales) {

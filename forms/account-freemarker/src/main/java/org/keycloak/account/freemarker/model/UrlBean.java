@@ -59,6 +59,10 @@ public class UrlBean {
         return Urls.accountSessionsLogoutPage(baseQueryURI, realm, stateChecker).toString();
     }
 
+    public String getLocaleCookiePath(){
+        return Urls.localeCookiePath(baseURI, realm);
+    }
+
     public String getTotpRemoveUrl() {
         return Urls.accountTotpRemove(baseQueryURI, realm, stateChecker).toString();
     }
