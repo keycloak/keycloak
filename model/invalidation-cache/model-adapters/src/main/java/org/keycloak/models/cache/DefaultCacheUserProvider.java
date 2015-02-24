@@ -142,6 +142,9 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
+        
+        username = username.toLowerCase();
+        
         if (!cache.isEnabled()) return getDelegate().getUserByUsername(username, realm);
         if (realmInvalidations.contains(realm.getId())) {
             return getDelegate().getUserByUsername(username, realm);
@@ -165,6 +168,9 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
+        
+        email = email.toLowerCase();
+        
         if (!cache.isEnabled()) return getDelegate().getUserByEmail(email, realm);
         if (realmInvalidations.contains(realm.getId())) {
             return getDelegate().getUserByEmail(email, realm);

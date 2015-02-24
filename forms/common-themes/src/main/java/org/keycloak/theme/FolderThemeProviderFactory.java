@@ -4,6 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.ThemeProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import java.io.File;
 
@@ -27,6 +28,11 @@ public class FolderThemeProviderFactory implements ThemeProviderFactory {
             rootDir = new File(d);
         }
         themeProvider = new FolderThemeProvider(rootDir);
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

@@ -4,6 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.ThemeProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -20,6 +21,11 @@ public class DefaultKeycloakThemeProviderFactory implements ThemeProviderFactory
     @Override
     public void init(Config.Scope config) {
         themeProvider = new DefaultKeycloakThemeProvider();
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

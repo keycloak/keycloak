@@ -4,6 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.ThemeProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -20,6 +21,11 @@ public class AerogearThemeProviderFactory implements ThemeProviderFactory {
     @Override
     public void init(Config.Scope config) {
         theme = new AerogearThemeProvider();
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

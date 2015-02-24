@@ -2,6 +2,7 @@ package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
@@ -30,4 +31,8 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     public void init(Config.Scope config) {
     }
 
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
 }

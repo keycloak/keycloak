@@ -60,7 +60,7 @@ public class MongoUserProvider implements UserProvider {
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
         DBObject query = new QueryBuilder()
-                .and("username").is(username)
+                .and("username").is(username.toLowerCase())
                 .and("realmId").is(realm.getId())
                 .get();
         MongoUserEntity user = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
@@ -75,7 +75,7 @@ public class MongoUserProvider implements UserProvider {
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
         DBObject query = new QueryBuilder()
-                .and("email").is(email)
+                .and("email").is(email.toLowerCase())
                 .and("realmId").is(realm.getId())
                 .get();
         MongoUserEntity user = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
@@ -256,7 +256,7 @@ public class MongoUserProvider implements UserProvider {
 
     @Override
     public UserAdapter addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
-        UserAdapter userModel = addUserEntity(realm, id, username);
+        UserAdapter userModel = addUserEntity(realm, id, username.toLowerCase());
 
         if (addDefaultRoles) {
             for (String r : realm.getDefaultRoles()) {
@@ -302,7 +302,7 @@ public class MongoUserProvider implements UserProvider {
         FederatedIdentityEntity federatedIdentityEntity = new FederatedIdentityEntity();
         federatedIdentityEntity.setIdentityProvider(identity.getIdentityProvider());
         federatedIdentityEntity.setUserId(identity.getUserId());
-        federatedIdentityEntity.setUserName(identity.getUserName());
+        federatedIdentityEntity.setUserName(identity.getUserName().toLowerCase());
         federatedIdentityEntity.setToken(identity.getToken());
 
         getMongoStore().pushItemToList(userEntity, "federatedIdentities", federatedIdentityEntity, true, invocationContext);

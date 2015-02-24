@@ -2,6 +2,7 @@ package org.keycloak.models.cache;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -18,6 +19,11 @@ public class MemoryCacheRealmProviderFactory implements CacheRealmProviderFactor
     @Override
     public void init(Config.Scope config) {
         config.get("");
+
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
 
     }
 

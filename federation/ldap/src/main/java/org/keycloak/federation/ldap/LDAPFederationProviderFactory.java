@@ -58,6 +58,11 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
     }
 
     @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
+
+    @Override
     public void close() {
 
     }

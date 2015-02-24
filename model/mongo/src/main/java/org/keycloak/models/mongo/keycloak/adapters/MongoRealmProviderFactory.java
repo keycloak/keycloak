@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
 
@@ -23,6 +24,11 @@ public class MongoRealmProviderFactory implements RealmProviderFactory {
 
     @Override
     public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override

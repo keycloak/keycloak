@@ -4,6 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.productivity.java.syslog4j.Syslog;
 import org.productivity.java.syslog4j.SyslogIF;
 
@@ -33,6 +34,11 @@ public class SysLoggingEventListenerProviderFactory implements EventListenerProv
         syslogger = Syslog.getInstance(protocol);
         syslogger.getConfig().setHost(host);
         syslogger.getConfig().setPort(port);
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override
