@@ -166,7 +166,7 @@ public class ImportTest extends AbstractModelTest {
             } else if ("google".equals(federatedIdentityModel.getIdentityProvider())) {
                 googleFound = true;
                 Assert.assertEquals(federatedIdentityModel.getUserId(), "google1");
-                Assert.assertEquals(federatedIdentityModel.getUserName(), "mySocialUser@gmail.com");
+                Assert.assertEquals(federatedIdentityModel.getUserName(), "mysocialuser@gmail.com");
             } else if ("twitter".equals(federatedIdentityModel.getIdentityProvider())) {
                 twitterFound = true;
                 Assert.assertEquals(federatedIdentityModel.getUserId(), "twitter1");
