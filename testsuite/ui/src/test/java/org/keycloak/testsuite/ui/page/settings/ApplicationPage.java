@@ -121,7 +121,8 @@ public class ApplicationPage extends AbstractPage {
     }
 
     public Application findApplication(String applicationName) {
-        searchInput.sendKeys(applicationName);
+		waitAjaxForElement(searchInput);
+		searchInput.sendKeys(applicationName);
         searchButton.click();
         List<Application> applications = getAllRows();
         if(applications.isEmpty()) {

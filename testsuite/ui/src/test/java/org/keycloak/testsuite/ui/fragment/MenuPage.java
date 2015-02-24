@@ -7,8 +7,6 @@
 package org.keycloak.testsuite.ui.fragment;
 
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElement;
 import org.openqa.selenium.By;
 
@@ -21,7 +19,9 @@ import org.openqa.selenium.support.FindBy;
  */
 public class MenuPage {
 
-    @FindBy(css = "ul[class='dropdown-menu']")
+	private static final String MENU_LOCATOR = "ul[class='dropdown-menu']";
+	
+    @FindBy(css = MENU_LOCATOR)
 	private List<WebElement> menuList;
 	
     @FindBy(css = ".dropdown-toggle")
@@ -45,12 +45,7 @@ public class MenuPage {
 			case REALM: menuOrder = 1; break;
 			case USER: menuOrder = 0; break;
 		}
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(MenuPage.class.getName()).log(Level.SEVERE, null, ex);
-		}
-		waitGuiForElement(menuList.get(menuOrder), "User menu should be always visible.");
+		waitGuiForElement(By.cssSelector(MENU_LOCATOR));
         if (!menuList.get(menuOrder).isDisplayed()) 
 			toggle.get(menuOrder).click();
         for (WebElement item : menuList.get(menuOrder).findElements(By.cssSelector(".dropdown-menu a"))) {
