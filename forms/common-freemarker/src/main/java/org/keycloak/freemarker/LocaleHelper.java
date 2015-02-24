@@ -12,8 +12,9 @@ import java.util.*;
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
  */
 public class LocaleHelper {
-    private final static String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
-    private static final String LOCALE_PARAM = "ui_locale";
+    public final static String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
+    public static final String LOCALE_PARAM = "ui_locale";
+
     private final static Logger LOGGER = Logger.getLogger(LocaleHelper.class);
 
     public static Locale getLocale(RealmModel realm, UserModel user, UriInfo uriInfo, HttpHeaders httpHeaders) {
@@ -26,7 +27,9 @@ public class LocaleHelper {
             String localeString = httpHeaders.getCookies().get(LOCALE_COOKIE).getValue();
             Locale locale =  findLocale(localeString, realm.getSupportedLocales());
             if(locale != null){
-                user.setAttribute(UserModel.LOCALE, locale.toLanguageTag());
+                if(user != null){
+                    user.setAttribute(UserModel.LOCALE, locale.toLanguageTag());
+                }
                 return locale;
             }else{
                 LOGGER.infof("Locale %s is not supported.", localeString);

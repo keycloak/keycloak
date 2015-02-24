@@ -169,8 +169,9 @@ import java.util.concurrent.TimeUnit;
         }
 
         Properties messages;
+        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders);
         try {
-            messages = theme.getMessages(LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders));
+            messages = theme.getMessages(locale);
             attributes.put("rb", messages);
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
@@ -227,11 +228,20 @@ import java.util.concurrent.TimeUnit;
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
+            updateLocaleCookie(builder, locale);
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
             return Response.serverError().build();
         }
+    }
+
+    private void updateLocaleCookie(Response.ResponseBuilder builder, Locale locale) {
+        if (locale == null) {
+            return;
+        }
+        boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
+        builder.cookie(new NewCookie(LocaleHelper.LOCALE_COOKIE, locale.toLanguageTag(), null, null, null, 31536000, secure));
     }
 
     public Response createLogin() {
