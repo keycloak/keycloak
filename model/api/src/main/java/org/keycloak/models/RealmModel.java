@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import org.keycloak.enums.SslRequired;
+import org.keycloak.provider.ProviderEvent;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -15,6 +16,19 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface RealmModel extends RoleContainerModel {
+    interface RealmCreationEvent extends ProviderEvent {
+        RealmModel getCreatedRealm();
+    }
+    interface ClientCreationEvent extends ProviderEvent {
+        RealmModel getCreatedRealm();
+        ClientModel getCreatedClient();
+    }
+    interface ApplicationCreationEvent extends ClientCreationEvent {
+        ApplicationModel getCreatedApplication();
+    }
+    interface OAuthClientCreationEvent extends ClientCreationEvent {
+        OAuthClientModel getCreatedOAuthClient();
+    }
 
     String getId();
 
@@ -235,6 +249,7 @@ public interface RealmModel extends RoleContainerModel {
     void removeProtocolMapper(ProtocolMapperModel mapping);
     void updateProtocolMapper(ProtocolMapperModel mapping);
     public ProtocolMapperModel getProtocolMapperById(String id);
+    public ProtocolMapperModel getProtocolMapperByName(String name);
 
 
 }

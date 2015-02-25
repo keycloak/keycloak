@@ -158,7 +158,7 @@ public class ModelToRepresentation {
         }
 
         for (ProtocolMapperModel mapping : realm.getProtocolMappers()) {
-            rep.getProtocolClaimMappings().add(toRepresentation(mapping));
+            rep.addProtocolMapper(toRepresentation(mapping));
         }
 
         return rep;
@@ -267,8 +267,8 @@ public class ModelToRepresentation {
 
         if (!applicationModel.getProtocolMappers().isEmpty()) {
             Set<String> mappings = new HashSet<String>();
-            for (ProtocolMapperModel model : applicationModel.getProtocolMappers()) mappings.add(model.getId());
-            rep.setProtocolClaimMappings(mappings);
+            for (ProtocolMapperModel model : applicationModel.getProtocolMappers()) mappings.add(model.getName());
+            rep.setProtocolMappers(mappings);
         }
 
         return rep;
@@ -302,7 +302,7 @@ public class ModelToRepresentation {
 
         if (!model.getProtocolMappers().isEmpty()) {
             Set<String> mappings = new HashSet<String>();
-            for (ProtocolMapperModel mappingMoel : model.getProtocolMappers()) mappings.add(mappingMoel.getId());
+            for (ProtocolMapperModel mappingModel : model.getProtocolMappers()) mappings.add(mappingModel.getName());
             rep.setProtocolClaimMappings(mappings);
         }
         return rep;

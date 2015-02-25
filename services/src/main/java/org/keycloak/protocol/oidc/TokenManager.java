@@ -13,6 +13,7 @@ import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -20,6 +21,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.UserClaimSet;
@@ -104,7 +107,7 @@ public class TokenManager {
         AccessToken accessToken = initToken(realm, client, user, userSession, clientSession);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
-        accessToken = transformToken(accessToken, realm, client, user, userSession, clientSession);
+        accessToken = transformToken(session, accessToken, realm, client, user, userSession, clientSession);
 
         userSession.setLastSessionRefresh(currentTime);
 
@@ -132,12 +135,12 @@ public class TokenManager {
         return refreshToken;
     }
 
-    public AccessToken createClientAccessToken(Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, ClientSessionModel clientSession) {
-        AccessToken token = initToken(realm, client, user, session, clientSession);
+    public AccessToken createClientAccessToken(KeycloakSession session, Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession, ClientSessionModel clientSession) {
+        AccessToken token = initToken(realm, client, user, userSession, clientSession);
         for (RoleModel role : requestedRoles) {
             addComposites(token, role);
         }
-        token = transformToken(token, realm, client, user, session, clientSession);
+        token = transformToken(session, token, realm, client, user, userSession, clientSession);
         return token;
     }
 
@@ -232,36 +235,20 @@ public class TokenManager {
         }
     }
 
-    public void initClaims(UserClaimSet claimSet, ClientModel model, UserModel user) {
-        claimSet.setSubject(user.getId());
-
-        if (ClaimMask.hasUsername(model.getAllowedClaimsMask())) {
-            claimSet.setPreferredUsername(user.getUsername());
-        }
-        if (ClaimMask.hasEmail(model.getAllowedClaimsMask())) {
-            claimSet.setEmail(user.getEmail());
-            claimSet.setEmailVerified(user.isEmailVerified());
-        }
-        if (ClaimMask.hasName(model.getAllowedClaimsMask())) {
-            claimSet.setFamilyName(user.getLastName());
-            claimSet.setGivenName(user.getFirstName());
-            StringBuilder fullName = new StringBuilder();
-            if (user.getFirstName() != null) fullName.append(user.getFirstName()).append(" ");
-            if (user.getLastName() != null) fullName.append(user.getLastName());
-            claimSet.setName(fullName.toString());
-        }
-
-        Set<ProtocolMapperModel> mappings = model.getProtocolMappers();
+    public AccessToken transformToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
+                                         UserSessionModel userSession, ClientSessionModel clientSession) {
+        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
             if (!mapping.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) continue;
 
-        }
-    }
+            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            if (mapper == null || !(mapper instanceof OIDCAccessTokenMapper)) continue;
+            token = ((OIDCAccessTokenMapper)mapper).transformToken(token, mapping, session, userSession, clientSession);
 
-    protected AccessToken transformToken(AccessToken token, RealmModel realm, ClientModel client, UserModel user,
-                                         UserSessionModel session, ClientSessionModel clientSession) {
-        UserClaimSet claimSet = token.getUserClaimSet();
-        initClaims(claimSet, client, user);
+
+
+        }
         return token;
     }
 
@@ -350,9 +337,9 @@ public class TokenManager {
             return this;
         }
 
-        public AccessTokenResponseBuilder generateAccessToken(String scopeParam, ClientModel client, UserModel user, UserSessionModel session, ClientSessionModel clientSession) {
+        public AccessTokenResponseBuilder generateAccessToken(KeycloakSession session, String scopeParam, ClientModel client, UserModel user, UserSessionModel userSession, ClientSessionModel clientSession) {
             Set<RoleModel> requestedRoles = getAccess(scopeParam, client, user);
-            accessToken = createClientAccessToken(requestedRoles, realm, client, user, session, clientSession);
+            accessToken = createClientAccessToken(session, requestedRoles, realm, client, user, userSession, clientSession);
             return this;
         }
 
@@ -395,16 +382,11 @@ public class TokenManager {
             idToken.getUserClaimSet().setEmail(accessToken.getUserClaimSet().getEmail());
             idToken.getUserClaimSet().setEmailVerified(accessToken.getUserClaimSet().getEmailVerified());
             idToken.getUserClaimSet().setLocale(accessToken.getUserClaimSet().getLocale());
-            idToken.getUserClaimSet().setFormattedAddress(accessToken.getUserClaimSet().getFormattedAddress());
             idToken.getUserClaimSet().setAddress(accessToken.getUserClaimSet().getAddress());
-            idToken.getUserClaimSet().setStreetAddress(accessToken.getUserClaimSet().getStreetAddress());
-            idToken.getUserClaimSet().setLocality(accessToken.getUserClaimSet().getLocality());
-            idToken.getUserClaimSet().setRegion(accessToken.getUserClaimSet().getRegion());
-            idToken.getUserClaimSet().setPostalCode(accessToken.getUserClaimSet().getPostalCode());
-            idToken.getUserClaimSet().setCountry(accessToken.getUserClaimSet().getCountry());
             idToken.getUserClaimSet().setPhoneNumber(accessToken.getUserClaimSet().getPhoneNumber());
             idToken.getUserClaimSet().setPhoneNumberVerified(accessToken.getUserClaimSet().getPhoneNumberVerified());
             idToken.getUserClaimSet().setZoneinfo(accessToken.getUserClaimSet().getZoneinfo());
+            idToken.setOtherClaims(accessToken.getOtherClaims());
             return this;
         }
 

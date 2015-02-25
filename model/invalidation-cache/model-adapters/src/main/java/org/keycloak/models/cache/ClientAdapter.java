@@ -286,16 +286,23 @@ public abstract class ClientAdapter implements ClientModel {
         return cachedClient.getProtocolClaimMappings();    }
 
     @Override
-    public void addProtocolMappers(Set<String> mappingIds) {
+    public void addProtocolMappers(Set<String> mapperNames) {
         getDelegateForUpdate();
-        updatedClient.addProtocolMappers(mappingIds);
+        updatedClient.addProtocolMappers(mapperNames);
 
     }
 
     @Override
-    public void removeProtocolMappers(Set<String> mappingIds) {
+    public void removeProtocolMappers(Set<String> mapperNames) {
         getDelegateForUpdate();
-        updatedClient.removeProtocolMappers(mappingIds);
+        updatedClient.removeProtocolMappers(mapperNames);
+
+    }
+
+    @Override
+    public void setProtocolMappers(Set<String> mapperNames) {
+        getDelegateForUpdate();
+        updatedClient.setProtocolMappers(mapperNames);
 
     }
 }

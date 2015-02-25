@@ -920,6 +920,14 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public ProtocolMapperModel getProtocolMapperByName(String name) {
+        for (ProtocolMapperModel mapping : cached.getClaimMappings()) {
+            if (mapping.getName().equals(name)) return mapping;
+        }
+        return null;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof RealmModel)) return false;

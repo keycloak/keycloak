@@ -20,7 +20,7 @@ import java.util.Map;
  */
 @Entity
 @NamedQueries({
-        @NamedQuery(name="deleteProtocolClaimMappersByRealm", query="delete from ProtocolMapperEntity attr where attr.realm = :realm")
+        @NamedQuery(name="getProtocolMapperByName", query="select mapper from ProtocolMapperEntity mapper where mapper.name = :name and mapper.realm = :realm")
 })
 @Table(name="PROTOCOL_MAPPER")
 public class ProtocolMapperEntity {

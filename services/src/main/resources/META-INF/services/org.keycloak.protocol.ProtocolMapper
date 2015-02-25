@@ -1,1 +1,8 @@
 org.keycloak.protocol.oidc.mappers.OIDCUserAttributeMapper
+org.keycloak.protocol.oidc.mappers.OIDCClientSessionNoteMapper
+org.keycloak.protocol.oidc.mappers.OIDCFullNameMapper
+org.keycloak.protocol.oidc.mappers.OIDCUserModelMapper
+org.keycloak.protocol.oidc.mappers.OIDCUserSessionNoteMapper
+org.keycloak.protocol.oidc.mappers.OIDCAddressMapper
+
+

@@ -45,7 +45,7 @@ public class JpaRealmProvider implements RealmProvider {
         em.persist(realm);
         em.flush();
         final RealmModel model = new RealmAdapter(session, em, realm);
-        session.getKeycloakSessionFactory().publish(new RealmCreationEvent() {
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmCreationEvent() {
             @Override
             public RealmModel getCreatedRealm() {
                 return model;

@@ -460,8 +460,8 @@ public class RepresentationToModel {
             applicationModel.setAllowedClaimsMask(ClaimMask.ALL);
         }
 
-        if (resourceRep.getProtocolClaimMappings() != null) {
-            applicationModel.addProtocolMappers(resourceRep.getProtocolClaimMappings());
+        if (resourceRep.getProtocolMappers() != null) {
+            applicationModel.setProtocolMappers(resourceRep.getProtocolMappers());
         }
 
         return applicationModel;
@@ -773,13 +773,17 @@ public class RepresentationToModel {
     }
 
     private static void importProtocolMappers(RealmRepresentation rep, RealmModel newRealm) {
-        if (rep.getProtocolClaimMappings() != null) {
+        if (rep.getProtocolMappers() != null) {
             // we make sure we don't recreate mappers that are automatically created by the protocol providers.
-            for (ProtocolMapperRepresentation representation : rep.getProtocolClaimMappings()) {
-                if (representation.getId() == null || newRealm.getProtocolMapperById(representation.getId()) == null) {
+            Set<ProtocolMapperModel> mappers = newRealm.getProtocolMappers();
+            for (ProtocolMapperRepresentation representation : rep.getProtocolMappers()) {
+                ProtocolMapperModel existing = newRealm.getProtocolMapperByName(representation.getName());
+                if (existing == null) {
                     newRealm.addProtocolMapper(toModel(representation));
                 } else {
-                    newRealm.updateProtocolMapper(toModel(representation));
+                    ProtocolMapperModel mapping = toModel(representation);
+                    mapping.setId(existing.getId());
+                    newRealm.updateProtocolMapper(mapping);
                 }
             }
         }

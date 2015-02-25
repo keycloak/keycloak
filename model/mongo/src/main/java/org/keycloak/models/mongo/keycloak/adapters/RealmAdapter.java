@@ -616,6 +616,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return result;
     }
 
+    public void addDefaultClientProtocolMappers(ClientModel client) {
+        Set<String> adding = new HashSet<String>();
+        for (ProtocolMapperEntity mapper : realm.getProtocolMappers()) {
+            if (mapper.isAppliedByDefault()) adding.add(mapper.getName());
+        }
+        client.setProtocolMappers(adding);
+
+    }
     @Override
     public ApplicationModel addApplication(String name) {
         return this.addApplication(null, name);
@@ -630,7 +638,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         appData.setEnabled(true);
         getMongoStore().insertEntity(appData, invocationContext);
 
-        return new ApplicationAdapter(session, this, appData, invocationContext);
+        ApplicationModel model = new ApplicationAdapter(session, this, appData, invocationContext);
+        addDefaultClientProtocolMappers(model);
+        return model;
     }
 
     @Override
@@ -651,7 +661,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         oauthClient.setName(name);
         getMongoStore().insertEntity(oauthClient, invocationContext);
 
-        return new OAuthClientAdapter(session, this, oauthClient, invocationContext);
+        OAuthClientAdapter model = new OAuthClientAdapter(session, this, oauthClient, invocationContext);
+        addDefaultClientProtocolMappers(model);
+        return model;
     }
 
     @Override
@@ -809,8 +821,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
-        if (model.getId() != null) entity.setId(model.getId());
-        else entity.setId(KeycloakModelUtils.generateId());
+        entity.setId(KeycloakModelUtils.generateId());
         entity.setProtocol(model.getProtocol());
         entity.setName(model.getName());
         entity.setAppliedByDefault(model.isAppliedByDefault());
@@ -820,15 +831,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setConsentText(model.getConsentText());
         realm.getProtocolMappers().add(entity);
         updateRealm();
-        ProtocolMapperModel mapping = new ProtocolMapperModel();
-        mapping.setId(entity.getId());
-        mapping.setProtocol(model.getProtocol());
-        mapping.setAppliedByDefault(model.isAppliedByDefault());
-        mapping.setProtocolMapper(model.getProtocolMapper());
-        mapping.setConfig(model.getConfig());
-        mapping.setConsentText(model.getConsentText());
-        mapping.setConsentRequired(model.isConsentRequired());
-        return mapping;
+        return entityToModel(entity);
     }
 
     @Override
@@ -843,9 +846,18 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     }
 
-    protected ProtocolMapperEntity getProtocolMapper(String id) {
+    protected ProtocolMapperEntity getProtocolMapperyEntityById(String id) {
         for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
             if (entity.getId().equals(id)) {
+                return entity;
+            }
+        }
+        return null;
+
+    }
+    protected ProtocolMapperEntity getProtocolMapperyEntityByName(String name) {
+        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
+            if (entity.getName().equals(name)) {
                 return entity;
             }
         }
@@ -856,7 +868,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
-        ProtocolMapperEntity entity = getProtocolMapper(mapping.getId());
+        ProtocolMapperEntity entity = getProtocolMapperyEntityById(mapping.getId());
         entity.setAppliedByDefault(mapping.isAppliedByDefault());
         entity.setProtocolMapper(mapping.getProtocolMapper());
         entity.setConsentRequired(mapping.isConsentRequired());
@@ -873,8 +885,19 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        ProtocolMapperEntity entity = getProtocolMapper(id);
+        ProtocolMapperEntity entity = getProtocolMapperyEntityById(id);
         if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    @Override
+    public ProtocolMapperModel getProtocolMapperByName(String name) {
+        ProtocolMapperEntity entity = getProtocolMapperyEntityById(name);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    protected ProtocolMapperModel entityToModel(ProtocolMapperEntity entity) {
         ProtocolMapperModel mapping = new ProtocolMapperModel();
         mapping.setId(entity.getId());
         mapping.setName(entity.getName());

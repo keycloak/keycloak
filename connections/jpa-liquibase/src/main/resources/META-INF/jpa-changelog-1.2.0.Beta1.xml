@@ -5,14 +5,21 @@
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="NAME" type="VARCHAR(255)"/>
-            <column name="PROTOCOL" type="VARCHAR(255)"/>
-            <column name="SOURCE" type="VARCHAR(255)"/>
-            <column name="PROTOCOL_MAPPER_NAME" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PROTOCOL" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PROTOCOL_MAPPER_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
             <column name="APPLIED_BY_DEFAULT" type="BOOLEAN(1)"/>
             <column name="CONSENT_REQUIRED" type="BOOLEAN(1)"/>
             <column name="CONSENT_TEXT" type="VARCHAR(255)"/>
-            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
         <createTable tableName="PROTOCOL_MAPPER_CONFIG">
             <column name="PROTOCOL_MAPPER_ID" type="VARCHAR(36)">

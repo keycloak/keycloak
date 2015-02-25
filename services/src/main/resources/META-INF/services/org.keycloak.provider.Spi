@@ -1,2 +1,3 @@
 org.keycloak.protocol.LoginProtocolSpi
+org.keycloak.protocol.ProtocolMapperSpi
 org.keycloak.exportimport.ApplicationImportSpi

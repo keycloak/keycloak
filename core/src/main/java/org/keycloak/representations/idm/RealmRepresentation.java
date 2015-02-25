@@ -1,6 +1,7 @@
 package org.keycloak.representations.idm;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,7 +65,7 @@ public class RealmRepresentation {
     protected List<String> eventsListeners;
     private List<IdentityProviderRepresentation> identityProviders;
     private List<ClaimTypeRepresentation> claimTypes;
-    private List<ProtocolMapperRepresentation> protocolClaimMappings;
+    private List<ProtocolMapperRepresentation> protocolMappers;
     private Boolean identityFederationEnabled;
 
     public String getId() {
@@ -492,11 +493,16 @@ public class RealmRepresentation {
         this.claimTypes = claimTypes;
     }
 
-    public List<ProtocolMapperRepresentation> getProtocolClaimMappings() {
-        return protocolClaimMappings;
+    public List<ProtocolMapperRepresentation> getProtocolMappers() {
+        return protocolMappers;
     }
 
-    public void setProtocolClaimMappings(List<ProtocolMapperRepresentation> protocolClaimMappings) {
-        this.protocolClaimMappings = protocolClaimMappings;
+    public void addProtocolMapper(ProtocolMapperRepresentation rep) {
+        if (protocolMappers == null) protocolMappers = new LinkedList<ProtocolMapperRepresentation>();
+        protocolMappers.add(rep);
+    }
+
+    public void setProtocolMappers(List<ProtocolMapperRepresentation> protocolMappers) {
+        this.protocolMappers = protocolMappers;
     }
 }

@@ -295,7 +295,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
         Set<ProtocolMapperModel> result = new HashSet<ProtocolMapperModel>();
-        for (String id : getMongoEntityAsClient().getProtocolClaimMappings()) {
+        for (String id : getMongoEntityAsClient().getProtocolMappers()) {
             ProtocolMapperModel model = getRealm().getProtocolMapperById(id);
             if (model != null) result.add(model);
         }
@@ -303,15 +303,22 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     }
 
     @Override
-    public void addProtocolMappers(Set<String> mappingIds) {
-        getMongoEntityAsClient().getProtocolClaimMappings().addAll(mappingIds);
+    public void addProtocolMappers(Set<String> mapperNames) {
+        getMongoEntityAsClient().getProtocolMappers().addAll(mapperNames);
         updateMongoEntity();
 
     }
 
     @Override
-    public void removeProtocolMappers(Set<String> mappingIds) {
-        getMongoEntityAsClient().getProtocolClaimMappings().removeAll(mappingIds);
+    public void removeProtocolMappers(Set<String> mapperNames) {
+        getMongoEntityAsClient().getProtocolMappers().removeAll(mapperNames);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void setProtocolMappers(Set<String> mapperNames) {
+        getMongoEntityAsClient().getProtocolMappers().clear();
+        getMongoEntityAsClient().getProtocolMappers().addAll(mapperNames);
         updateMongoEntity();
     }
 
