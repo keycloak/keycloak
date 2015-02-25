@@ -22,7 +22,9 @@
 package org.keycloak.login.freemarker.model;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.flows.Urls;
@@ -57,12 +59,19 @@ public class IdentityProviderBean {
                         ClientModel clientModel = realm.findClient(clientId);
 
                         if (clientModel != null && !clientModel.hasIdentityProvider(identityProvider.getId())) {
+                            if (ApplicationModel.class.isInstance(clientModel)) {
+                                ApplicationModel applicationModel = (ApplicationModel) clientModel;
+
+                                if (applicationModel.getName().equals(Constants.ACCOUNT_MANAGEMENT_APP)) {
+                                    addIdentityProvider(realm, baseURI, identityProvider);
+                                }
+                            }
+
                             continue;
                         }
                     }
 
-                    String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getId(), realm.getName()).toString();
-                    providers.add(new IdentityProvider(identityProvider.getId(), identityProvider.getName(), loginUrl));
+                    addIdentityProvider(realm, baseURI, identityProvider);
                 }
             }
 
@@ -70,6 +79,11 @@ public class IdentityProviderBean {
                 displaySocial = true;
             }
         }
+    }
+
+    private void addIdentityProvider(RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
+        String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getId(), realm.getName()).toString();
+        providers.add(new IdentityProvider(identityProvider.getId(), identityProvider.getName(), loginUrl));
     }
 
     public List<IdentityProvider> getProviders() {

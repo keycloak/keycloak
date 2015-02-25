@@ -391,7 +391,6 @@ public class IdentityBrokerService {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realmModel);
 
         if (clientCode != null && clientCode.isValid(AUTHENTICATE)) {
-            validateClientPermissions(clientCode, providerId);
             ClientSessionModel clientSession = clientCode.getClientSession();
 
             if (clientSession != null) {
@@ -405,6 +404,8 @@ public class IdentityBrokerService {
                 if (clientSession.getUserSession() != null) {
                     this.event.session(clientSession.getUserSession());
                 }
+            } else {
+                validateClientPermissions(clientCode, providerId);
             }
 
             if (isDebugEnabled()) {

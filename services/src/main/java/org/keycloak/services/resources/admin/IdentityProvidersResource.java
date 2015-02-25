@@ -7,6 +7,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -89,6 +90,10 @@ public class IdentityProvidersResource {
 
         try {
             this.realm.addIdentityProvider(RepresentationToModel.toModel(representation));
+
+            updateClientIdentityProviders(this.realm.getApplications(), representation);
+            updateClientIdentityProviders(this.realm.getOAuthClients(), representation);
+
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Identity Provider " + representation.getId() + " already exists");
@@ -170,5 +175,15 @@ public class IdentityProvidersResource {
         allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class));
 
         return allProviders;
+    }
+
+    private void updateClientIdentityProviders(List<? extends ClientModel> clients, IdentityProviderRepresentation identityProvider) {
+        for (ClientModel clientModel : clients) {
+            List<String> allowedIdentityProviders = clientModel.getAllowedIdentityProviders();
+
+            allowedIdentityProviders.add(identityProvider.getId());
+
+            clientModel.updateAllowedIdentityProviders(allowedIdentityProviders);
+        }
     }
 }

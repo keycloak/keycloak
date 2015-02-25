@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -16,6 +17,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author Pedro Igor
@@ -42,6 +44,8 @@ public class IdentityProviderResource {
     @DELETE
     @NoCache
     public Response delete() {
+        removeClientIdentityProviders(this.realm.getApplications(), this.identityProviderModel);
+        removeClientIdentityProviders(this.realm.getApplications(), this.identityProviderModel);
         this.realm.removeIdentityProviderById(this.identityProviderModel.getId());
         return Response.noContent().build();
     }
@@ -56,4 +60,15 @@ public class IdentityProviderResource {
             return Flows.errors().exists("Identity Provider " + model.getId() + " already exists");
         }
     }
+
+    private void removeClientIdentityProviders(List<? extends ClientModel> clients, IdentityProviderModel identityProvider) {
+        for (ClientModel clientModel : clients) {
+            List<String> allowedIdentityProviders = clientModel.getAllowedIdentityProviders();
+
+            allowedIdentityProviders.remove(identityProvider.getId());
+
+            clientModel.updateAllowedIdentityProviders(allowedIdentityProviders);
+        }
+    }
+
 }

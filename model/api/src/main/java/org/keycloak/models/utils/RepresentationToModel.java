@@ -473,6 +473,17 @@ public class RepresentationToModel {
             applicationModel.setProtocolMappers(ids);
         }
 
+        List<String> allowedIdentityProviders = resourceRep.getAllowedIdentityProviders();
+
+        if (allowedIdentityProviders == null || allowedIdentityProviders.isEmpty()) {
+            allowedIdentityProviders = new ArrayList<String>();
+
+            for (IdentityProviderModel identityProvider : realm.getIdentityProviders()) {
+                allowedIdentityProviders.add(identityProvider.getId());
+            }
+        }
+
+        applicationModel.updateAllowedIdentityProviders(allowedIdentityProviders);
 
         return applicationModel;
     }
@@ -601,6 +612,19 @@ public class RepresentationToModel {
 
     public static OAuthClientModel createOAuthClient(OAuthClientRepresentation rep, RealmModel realm) {
         OAuthClientModel model = createOAuthClient(rep.getId(), rep.getName(), realm);
+
+        List<String> allowedIdentityProviders = rep.getAllowedIdentityProviders();
+
+        if (allowedIdentityProviders == null || allowedIdentityProviders.isEmpty()) {
+            allowedIdentityProviders = new ArrayList<String>();
+
+            for (IdentityProviderModel identityProvider : realm.getIdentityProviders()) {
+                allowedIdentityProviders.add(identityProvider.getId());
+            }
+        }
+
+        model.updateAllowedIdentityProviders(allowedIdentityProviders);
+
         updateOAuthClient(rep, model);
         return model;
     }

@@ -343,11 +343,6 @@ public abstract class ClientAdapter implements ClientModel {
     @Override
     public boolean hasIdentityProvider(String providerId) {
         List<String> allowedIdentityProviders = getAllowedIdentityProviders();
-
-        if (allowedIdentityProviders.isEmpty()) {
-            return true;
-        }
-
         return allowedIdentityProviders.contains(providerId);
     }
 
