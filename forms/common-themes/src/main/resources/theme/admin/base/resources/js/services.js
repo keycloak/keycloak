@@ -20,7 +20,7 @@ module.service('Dialog', function($modal) {
         };
 
         return $modal.open({
-            templateUrl: 'templates/kc-modal.html',
+            templateUrl: resourceUrl + '/templates/kc-modal.html',
             controller: controller,
             resolve: {
                 title: function() {

@@ -22,6 +22,7 @@
 package org.keycloak.services.resources.flows;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.Version;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.resources.AccountService;
@@ -194,7 +195,7 @@ public class Urls {
     }
 
     public static URI themeRoot(URI baseUri) {
-        return themeBase(baseUri).build();
+        return themeBase(baseUri).path(Version.RESOURCES_VERSION).build();
     }
 
     private static UriBuilder requiredActionsBase(URI baseUri) {
