@@ -6,13 +6,12 @@ consoleBaseUrl = consoleBaseUrl + "/console";
 var configUrl = consoleBaseUrl + "/config";
 
 var auth = {};
-var authUrl = window.location.href.substring(0, window.location.href.indexOf('/admin/'));
 
 var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload' ]);
 var resourceRequests = 0;
 var loadingTimer = -1;
 
-angular.element(document).ready(function ($http) {
+angular.element(document).ready(function () {
     var keycloakAuth = new Keycloak(configUrl);
 
     keycloakAuth.onAuthLogout = function() {
@@ -58,27 +57,15 @@ module.factory('authInterceptor', function($q, Auth) {
 
 module.config([ '$routeProvider', function($routeProvider) {
     $routeProvider
-        /*
         .when('/create/realm', {
-            templateUrl : 'partials/realm-detail.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return {};
-                }
-            },
-            controller : 'RealmDetailCtrl'
-        })
-        */
-
-        .when('/create/realm', {
-            templateUrl : 'partials/realm-create.html',
+            templateUrl : resourceUrl + '/partials/realm-create.html',
             resolve : {
 
             },
             controller : 'RealmCreateCtrl'
         })
         .when('/realms/:realm', {
-            templateUrl : 'partials/realm-detail.html',
+            templateUrl : resourceUrl + '/partials/realm-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -90,7 +77,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmDetailCtrl'
         })
         .when('/realms/:realm/login-settings', {
-            templateUrl : 'partials/realm-login-settings.html',
+            templateUrl : resourceUrl + '/partials/realm-login-settings.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -102,7 +89,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmLoginSettingsCtrl'
         })
         .when('/realms/:realm/theme-settings', {
-            templateUrl : 'partials/realm-theme-settings.html',
+            templateUrl : resourceUrl + '/partials/realm-theme-settings.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -114,7 +101,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmThemeCtrl'
         })
         .when('/realms/:realm/cache-settings', {
-            templateUrl : 'partials/realm-cache-settings.html',
+            templateUrl : resourceUrl + '/partials/realm-cache-settings.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -126,11 +113,11 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmCacheCtrl'
         })
         .when('/realms', {
-            templateUrl : 'partials/realm-list.html',
+            templateUrl : resourceUrl + '/partials/realm-list.html',
             controller : 'RealmListCtrl'
         })
         .when('/realms/:realm/token-settings', {
-            templateUrl : 'partials/realm-tokens.html',
+            templateUrl : resourceUrl + '/partials/realm-tokens.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -139,7 +126,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmTokenDetailCtrl'
         })
         .when('/realms/:realm/keys-settings', {
-            templateUrl : 'partials/realm-keys.html',
+            templateUrl : resourceUrl + '/partials/realm-keys.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -148,7 +135,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmKeysDetailCtrl'
         })
         .when('/realms/:realm/identity-provider-settings', {
-            templateUrl : 'partials/realm-identity-provider.html',
+            templateUrl : resourceUrl + '/partials/realm-identity-provider.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -166,7 +153,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmIdentityProviderCtrl'
         })
         .when('/create/identity-provider/:realm/:provider_id', {
-            templateUrl : function(params){ return 'partials/realm-identity-provider-' + params.provider_id + '.html'; },
+            templateUrl : function(params){ return resourceUrl + '/partials/realm-identity-provider-' + params.provider_id + '.html'; },
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -202,7 +189,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmIdentityProviderCtrl'
         })
         .when('/realms/:realm/default-roles', {
-            templateUrl : 'partials/realm-default-roles.html',
+            templateUrl : resourceUrl + '/partials/realm-default-roles.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -217,7 +204,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmDefaultRolesCtrl'
         })
         .when('/realms/:realm/required-credentials', {
-            templateUrl : 'partials/realm-credentials.html',
+            templateUrl : resourceUrl + '/partials/realm-credentials.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -226,7 +213,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmRequiredCredentialsCtrl'
         })
         .when('/realms/:realm/smtp-settings', {
-            templateUrl : 'partials/realm-smtp.html',
+            templateUrl : resourceUrl + '/partials/realm-smtp.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -235,7 +222,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmSMTPSettingsCtrl'
         })
         .when('/realms/:realm/events', {
-            templateUrl : 'partials/realm-events.html',
+            templateUrl : resourceUrl + '/partials/realm-events.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -244,7 +231,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmEventsCtrl'
         })
         .when('/realms/:realm/events-settings', {
-            templateUrl : 'partials/realm-events-config.html',
+            templateUrl : resourceUrl + '/partials/realm-events-config.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -259,7 +246,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmEventsConfigCtrl'
         })
         .when('/create/user/:realm', {
-            templateUrl : 'partials/user-detail.html',
+            templateUrl : resourceUrl + '/partials/user-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -271,7 +258,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserDetailCtrl'
         })
         .when('/realms/:realm/users/:user', {
-            templateUrl : 'partials/user-detail.html',
+            templateUrl : resourceUrl + '/partials/user-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -283,7 +270,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserDetailCtrl'
         })
         .when('/realms/:realm/users/:user/user-credentials', {
-            templateUrl : 'partials/user-credentials.html',
+            templateUrl : resourceUrl + '/partials/user-credentials.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -295,7 +282,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserCredentialsCtrl'
         })
         .when('/realms/:realm/users/:user/role-mappings', {
-            templateUrl : 'partials/role-mappings.html',
+            templateUrl : resourceUrl + '/partials/role-mappings.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -310,7 +297,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserRoleMappingCtrl'
         })
         .when('/realms/:realm/users/:user/sessions', {
-            templateUrl : 'partials/user-sessions.html',
+            templateUrl : resourceUrl + '/partials/user-sessions.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -325,7 +312,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserSessionsCtrl'
         })
         .when('/realms/:realm/users/:user/federated-identity', {
-            templateUrl : 'partials/user-federated-identity.html',
+            templateUrl : resourceUrl + '/partials/user-federated-identity.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -340,7 +327,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserFederatedIdentityCtrl'
         })
         .when('/realms/:realm/users', {
-            templateUrl : 'partials/user-list.html',
+            templateUrl : resourceUrl + '/partials/user-list.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -350,7 +337,7 @@ module.config([ '$routeProvider', function($routeProvider) {
         })
 
         .when('/create/role/:realm', {
-            templateUrl : 'partials/role-detail.html',
+            templateUrl : resourceUrl + '/partials/role-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -368,7 +355,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RoleDetailCtrl'
         })
         .when('/realms/:realm/roles/:role', {
-            templateUrl : 'partials/role-detail.html',
+            templateUrl : resourceUrl + '/partials/role-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -386,7 +373,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RoleDetailCtrl'
         })
         .when('/realms/:realm/roles', {
-            templateUrl : 'partials/role-list.html',
+            templateUrl : resourceUrl + '/partials/role-list.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -399,7 +386,7 @@ module.config([ '$routeProvider', function($routeProvider) {
         })
 
         .when('/create/role/:realm/applications/:application', {
-            templateUrl : 'partials/application-role-detail.html',
+            templateUrl : resourceUrl + '/partials/application-role-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -420,7 +407,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationRoleDetailCtrl'
         })
         .when('/realms/:realm/applications/:application/roles/:role', {
-            templateUrl : 'partials/application-role-detail.html',
+            templateUrl : resourceUrl + '/partials/application-role-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -441,7 +428,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationRoleDetailCtrl'
         })
         .when('/realms/:realm/applications/:application/claims', {
-            templateUrl : 'partials/application-claims.html',
+            templateUrl : resourceUrl + '/partials/application-claims.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -456,7 +443,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationClaimsCtrl'
         })
         .when('/realms/:realm/applications/:application/sessions', {
-            templateUrl : 'partials/application-sessions.html',
+            templateUrl : resourceUrl + '/partials/application-sessions.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -471,7 +458,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationSessionsCtrl'
         })
         .when('/realms/:realm/applications/:application/credentials', {
-            templateUrl : 'partials/application-credentials.html',
+            templateUrl : resourceUrl + '/partials/application-credentials.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -483,7 +470,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationCredentialsCtrl'
         })
         .when('/realms/:realm/applications/:application/identity-provider', {
-            templateUrl : 'partials/application-identity-provider.html',
+            templateUrl : resourceUrl + '/partials/application-identity-provider.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -495,7 +482,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationIdentityProviderCtrl'
         })
         .when('/realms/:realm/applications/:application/clustering', {
-            templateUrl : 'partials/application-clustering.html',
+            templateUrl : resourceUrl + '/partials/application-clustering.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -507,7 +494,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationClusteringCtrl'
         })
         .when('/register-node/realms/:realm/applications/:application/clustering', {
-            templateUrl : 'partials/application-clustering-node.html',
+            templateUrl : resourceUrl + '/partials/application-clustering-node.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -519,7 +506,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationClusteringNodeCtrl'
         })
         .when('/realms/:realm/applications/:application/clustering/:node', {
-            templateUrl : 'partials/application-clustering-node.html',
+            templateUrl : resourceUrl + '/partials/application-clustering-node.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -531,7 +518,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationClusteringNodeCtrl'
         })
         .when('/realms/:realm/applications/:application/saml/keys', {
-            templateUrl : 'partials/application-saml-keys.html',
+            templateUrl : resourceUrl + '/partials/application-saml-keys.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -543,7 +530,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationSamlKeyCtrl'
         })
         .when('/realms/:realm/applications/:application/saml/:keyType/import/:attribute', {
-            templateUrl : 'partials/application-saml-key-import.html',
+            templateUrl : resourceUrl + '/partials/application-saml-key-import.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -555,7 +542,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationCertificateImportCtrl'
         })
         .when('/realms/:realm/applications/:application/saml/:keyType/export/:attribute', {
-            templateUrl : 'partials/application-saml-key-export.html',
+            templateUrl : resourceUrl + '/partials/application-saml-key-export.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -567,7 +554,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationCertificateExportCtrl'
         })
         .when('/realms/:realm/applications/:application/roles', {
-            templateUrl : 'partials/application-role-list.html',
+            templateUrl : resourceUrl + '/partials/application-role-list.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -582,7 +569,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationRoleListCtrl'
         })
         .when('/realms/:realm/applications/:application/revocation', {
-            templateUrl : 'partials/application-revocation.html',
+            templateUrl : resourceUrl + '/partials/application-revocation.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -594,7 +581,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationRevocationCtrl'
         })
         .when('/realms/:realm/applications/:application/scope-mappings', {
-            templateUrl : 'partials/application-scope-mappings.html',
+            templateUrl : resourceUrl + '/partials/application-scope-mappings.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -609,7 +596,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationScopeMappingCtrl'
         })
         .when('/realms/:realm/applications/:application/installation', {
-            templateUrl : 'partials/application-installation.html',
+            templateUrl : resourceUrl + '/partials/application-installation.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -621,7 +608,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationInstallationCtrl'
         })
         .when('/create/application/:realm', {
-            templateUrl : 'partials/application-detail.html',
+            templateUrl : resourceUrl + '/partials/application-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -639,7 +626,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationDetailCtrl'
         })
         .when('/realms/:realm/applications/:application', {
-            templateUrl : 'partials/application-detail.html',
+            templateUrl : resourceUrl + '/partials/application-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -657,7 +644,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationDetailCtrl'
         })
         .when('/realms/:realm/applications', {
-            templateUrl : 'partials/application-list.html',
+            templateUrl : resourceUrl + '/partials/application-list.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -673,7 +660,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationListCtrl'
         })
         .when('/import/application/:realm', {
-            templateUrl : 'partials/application-import.html',
+            templateUrl : resourceUrl + '/partials/application-import.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -688,7 +675,7 @@ module.config([ '$routeProvider', function($routeProvider) {
         // OAUTH Client
 
         .when('/realms/:realm/oauth-clients/:oauth/claims', {
-            templateUrl : 'partials/oauth-client-claims.html',
+            templateUrl : resourceUrl + '/partials/oauth-client-claims.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -703,7 +690,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'OAuthClientClaimsCtrl'
         })
         .when('/realms/:realm/oauth-clients/:oauth/revocation', {
-            templateUrl : 'partials/oauth-client-revocation.html',
+            templateUrl : resourceUrl + '/partials/oauth-client-revocation.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -715,7 +702,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'OAuthClientRevocationCtrl'
         })
         .when('/realms/:realm/oauth-clients/:oauth/credentials', {
-            templateUrl : 'partials/oauth-client-credentials.html',
+            templateUrl : resourceUrl + '/partials/oauth-client-credentials.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -727,7 +714,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'OAuthClientCredentialsCtrl'
         })
         .when('/realms/:realm/oauth-clients/:oauth/scope-mappings', {
-            templateUrl : 'partials/oauth-client-scope-mappings.html',
+            templateUrl : resourceUrl + '/partials/oauth-client-scope-mappings.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -742,7 +729,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'OAuthClientScopeMappingCtrl'
         })
         .when('/realms/:realm/oauth-clients/:oauth/installation', {
-            templateUrl : 'partials/oauth-client-installation.html',
+            templateUrl : resourceUrl + '/partials/oauth-client-installation.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -757,7 +744,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'OAuthClientInstallationCtrl'
         })
         .when('/create/oauth-client/:realm', {
-            templateUrl : 'partials/oauth-client-detail.html',
+            templateUrl : resourceUrl + '/partials/oauth-client-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -769,7 +756,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'OAuthClientDetailCtrl'
         })
         .when('/realms/:realm/oauth-clients/:oauth', {
-            templateUrl : 'partials/oauth-client-detail.html',
+            templateUrl : resourceUrl + '/partials/oauth-client-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -781,7 +768,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'OAuthClientDetailCtrl'
         })
         .when('/realms/:realm/oauth-clients/:oauth/identity-provider', {
-            templateUrl : 'partials/oauth-client-identity-provider.html',
+            templateUrl : resourceUrl + '/partials/oauth-client-identity-provider.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -793,7 +780,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'OAuthClientIdentityProviderCtrl'
         })
         .when('/realms/:realm/oauth-clients', {
-            templateUrl : 'partials/oauth-client-list.html',
+            templateUrl : resourceUrl + '/partials/oauth-client-list.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -806,11 +793,11 @@ module.config([ '$routeProvider', function($routeProvider) {
         })
 
         .when('/', {
-            templateUrl : 'partials/home.html',
+            templateUrl : resourceUrl + '/partials/home.html',
             controller : 'HomeCtrl'
         })
         .when('/mocks/:realm', {
-            templateUrl : 'partials/realm-detail_mock.html',
+            templateUrl : resourceUrl + '/partials/realm-detail_mock.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -822,7 +809,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmDetailCtrl'
         })
         .when('/realms/:realm/sessions/revocation', {
-            templateUrl : 'partials/session-revocation.html',
+            templateUrl : resourceUrl + '/partials/session-revocation.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -831,7 +818,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmRevocationCtrl'
         })
          .when('/realms/:realm/sessions/realm', {
-            templateUrl : 'partials/session-realm.html',
+            templateUrl : resourceUrl + '/partials/session-realm.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -843,7 +830,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmSessionStatsCtrl'
         })
         .when('/realms/:realm/user-federation', {
-            templateUrl : 'partials/user-federation.html',
+            templateUrl : resourceUrl + '/partials/user-federation.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -852,7 +839,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserFederationCtrl'
         })
         .when('/realms/:realm/user-federation/providers/ldap/:instance', {
-            templateUrl : 'partials/federated-ldap.html',
+            templateUrl : resourceUrl + '/partials/federated-ldap.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -864,7 +851,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'LDAPCtrl'
         })
         .when('/create/user-federation/:realm/providers/ldap', {
-            templateUrl : 'partials/federated-ldap.html',
+            templateUrl : resourceUrl + '/partials/federated-ldap.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -876,7 +863,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'LDAPCtrl'
         })
         .when('/realms/:realm/user-federation/providers/kerberos/:instance', {
-            templateUrl : 'partials/federated-kerberos.html',
+            templateUrl : resourceUrl + '/partials/federated-kerberos.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -891,7 +878,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'GenericUserFederationCtrl'
         })
         .when('/create/user-federation/:realm/providers/kerberos', {
-            templateUrl : 'partials/federated-kerberos.html',
+            templateUrl : resourceUrl + '/partials/federated-kerberos.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -906,7 +893,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'GenericUserFederationCtrl'
         })
         .when('/create/user-federation/:realm/providers/:provider', {
-            templateUrl : 'partials/federated-generic.html',
+            templateUrl : resourceUrl + '/partials/federated-generic.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -923,7 +910,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'GenericUserFederationCtrl'
         })
         .when('/realms/:realm/user-federation/providers/:provider/:instance', {
-            templateUrl : 'partials/federated-generic.html',
+            templateUrl : resourceUrl + '/partials/federated-generic.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -938,7 +925,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'GenericUserFederationCtrl'
         })
         .when('/realms/:realm/defense/headers', {
-            templateUrl : 'partials/defense-headers.html',
+            templateUrl : resourceUrl + '/partials/defense-headers.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -951,7 +938,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'DefenseHeadersCtrl'
         })
         .when('/realms/:realm/defense/brute-force', {
-            templateUrl : 'partials/brute-force.html',
+            templateUrl : resourceUrl + '/partials/brute-force.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -960,14 +947,14 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmBruteForceCtrl'
         })
         .when('/server-info', {
-            templateUrl : 'partials/server-info.html'
+            templateUrl : resourceUrl + '/partials/server-info.html'
         })
         .when('/logout', {
-            templateUrl : 'partials/home.html',
+            templateUrl : resourceUrl + '/partials/home.html',
             controller : 'LogoutCtrl'
         })
         .otherwise({
-            templateUrl : 'partials/notfound.html'
+            templateUrl : resourceUrl + '/partials/notfound.html'
         });
 } ]);
 
@@ -1291,7 +1278,7 @@ module.directive('kcDropdown', function ($compile, Notifications) {
         },
         restrict: 'EA',
         replace: true,
-        templateUrl: 'templates/kc-select.html',
+        templateUrl: resourceUrl + '/templates/kc-select.html',
         link: function(scope, element, attr) {
             scope.updateModel = function(item) {
                 scope.kcModel = item;
@@ -1345,7 +1332,7 @@ module.directive('kcNavigation', function ($compile, Notifications) {
         scope: true,
         restrict: 'E',
         replace: true,
-        templateUrl: 'templates/kc-navigation.html',
+        templateUrl: resourceUrl + '/templates/kc-navigation.html',
 
         compile: function(element, attrs){
             if (!attrs.kcSocial) {
@@ -1360,7 +1347,7 @@ module.directive('kcNavigationApplication', function () {
         scope: true,
         restrict: 'E',
         replace: true,
-        templateUrl: 'templates/kc-navigation-application.html',
+        templateUrl: resourceUrl + '/templates/kc-navigation-application.html',
     }
 });
 
@@ -1369,7 +1356,7 @@ module.directive('kcNavigationOauthClient', function () {
         scope: true,
         restrict: 'E',
         replace: true,
-        templateUrl: 'templates/kc-navigation-oauth-client.html',
+        templateUrl: resourceUrl + '/templates/kc-navigation-oauth-client.html',
     }
 });
 

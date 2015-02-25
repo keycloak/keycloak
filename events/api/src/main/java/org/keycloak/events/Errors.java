@@ -37,7 +37,6 @@ public interface Errors {
 
     String FEDERATED_IDENTITY_EMAIL_EXISTS = "federated_identity_email_exists";
     String FEDERATED_IDENTITY_USERNAME_EXISTS = "federated_identity_username_exists";
-    String FEDERATED_IDENTITY_DISABLED_REGISTRATION = "federated_identity_disabled_registration";
     String SSL_REQUIRED = "ssl_required";
 
     String USER_SESSION_NOT_FOUND = "user_session_not_found";

@@ -526,12 +526,6 @@ public class IdentityBrokerService {
             throw new IdentityBrokerException("federatedIdentityUsernameExists");
         }
 
-        // Check if realm registration is allowed
-        if (!this.realmModel.isRegistrationAllowed()) {
-            fireErrorEvent(Errors.FEDERATED_IDENTITY_DISABLED_REGISTRATION);
-            throw new IdentityBrokerException("federatedIdentityDisabledRegistration");
-        }
-
         if (isDebugEnabled()) {
             LOGGER.debugf("Creating account from identity [%s].", federatedIdentityModel);
         }

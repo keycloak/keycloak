@@ -35,21 +35,254 @@
 
 
     <target name="modules">
-        <!--
-          ~ Complete list of modules to assemble.
-          ~
-          ~ +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-          ~ +++++++   KEEP THIS LIST ALPHABETICAL BY MODULE NAME!   +++++++
-          ~ +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-          -->
+
+        <!-- server min dependencies -->
+
+        <module-def name="org.keycloak.keycloak-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-core"/>
+        </module-def>
 
         <module-def name="net.iharder.base64">
             <maven-resource group="net.iharder" artifact="base64"/>
         </module-def>
 
-        <module-def name="org.bouncycastle">
-            <maven-resource group="org.bouncycastle" artifact="bcprov-jdk15on"/>
+        <module-def name="org.keycloak.keycloak-broker-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-broker-core"/>
         </module-def>
+
+        <module-def name="org.keycloak.keycloak-broker-oidc">
+            <maven-resource group="org.keycloak" artifact="keycloak-broker-oidc"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-broker-saml">
+            <maven-resource group="org.keycloak" artifact="keycloak-broker-saml"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-core-jaxrs">
+            <maven-resource group="org.keycloak" artifact="keycloak-core-jaxrs"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-services">
+            <maven-resource group="org.keycloak" artifact="keycloak-services"/>
+        </module-def>
+
+        <module-def name="com.google.zxing.core">
+            <maven-resource group="com.google.zxing" artifact="core"/>
+        </module-def>
+
+        <module-def name="com.google.zxing.javase">
+            <maven-resource group="com.google.zxing" artifact="javase"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-model-api">
+            <maven-resource group="org.keycloak" artifact="keycloak-model-api"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-invalidation-cache-model">
+            <maven-resource group="org.keycloak" artifact="keycloak-invalidation-cache-model"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-events-api">
+            <maven-resource group="org.keycloak" artifact="keycloak-events-api"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-events-jpa">
+            <maven-resource group="org.keycloak" artifact="keycloak-events-jpa"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-events-jboss-logging">
+            <maven-resource group="org.keycloak" artifact="keycloak-events-jboss-logging"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-js-adapter">
+            <maven-resource group="org.keycloak" artifact="keycloak-js-adapter"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-social-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-social-core"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-forms-common-freemarker">
+            <maven-resource group="org.keycloak" artifact="keycloak-forms-common-freemarker"/>
+        </module-def>
+
+        <module-def name="org.freemarker">
+            <maven-resource group="org.freemarker" artifact="freemarker"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-forms-common-themes">
+            <maven-resource group="org.keycloak" artifact="keycloak-forms-common-themes"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-account-api">
+            <maven-resource group="org.keycloak" artifact="keycloak-account-api"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-account-freemarker">
+            <maven-resource group="org.keycloak" artifact="keycloak-account-freemarker"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-email-api">
+            <maven-resource group="org.keycloak" artifact="keycloak-email-api"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-email-freemarker">
+            <maven-resource group="org.keycloak" artifact="keycloak-email-freemarker"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-login-api">
+            <maven-resource group="org.keycloak" artifact="keycloak-login-api"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-login-freemarker">
+            <maven-resource group="org.keycloak" artifact="keycloak-login-freemarker"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-timer-api">
+            <maven-resource group="org.keycloak" artifact="keycloak-timer-api"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-timer-basic">
+            <maven-resource group="org.keycloak" artifact="keycloak-timer-basic"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-export-import-api">
+            <maven-resource group="org.keycloak" artifact="keycloak-export-import-api"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-export-import-dir">
+            <maven-resource group="org.keycloak" artifact="keycloak-export-import-dir"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-export-import-single-file">
+            <maven-resource group="org.keycloak" artifact="keycloak-export-import-single-file"/>
+        </module-def>
+
+        <!-- server all dependencies -->
+
+        <module-def name="org.keycloak.keycloak-connections-jpa">
+            <maven-resource group="org.keycloak" artifact="keycloak-connections-jpa"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-connections-jpa-liquibase">
+            <maven-resource group="org.keycloak" artifact="keycloak-connections-jpa-liquibase"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-connections-infinispan">
+            <maven-resource group="org.keycloak" artifact="keycloak-connections-infinispan"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-model-jpa">
+            <maven-resource group="org.keycloak" artifact="keycloak-model-jpa"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-model-sessions-mem">
+            <maven-resource group="org.keycloak" artifact="keycloak-model-sessions-mem"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-model-sessions-jpa">
+            <maven-resource group="org.keycloak" artifact="keycloak-model-sessions-jpa"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-model-sessions-mongo">
+            <maven-resource group="org.keycloak" artifact="keycloak-model-sessions-mongo"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-model-sessions-infinispan">
+            <maven-resource group="org.keycloak" artifact="keycloak-model-sessions-infinispan"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-invalidation-cache-infinispan">
+            <maven-resource group="org.keycloak" artifact="keycloak-invalidation-cache-infinispan"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-events-jpa">
+            <maven-resource group="org.keycloak" artifact="keycloak-events-jpa"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-events-jboss-logging">
+            <maven-resource group="org.keycloak" artifact="keycloak-events-jboss-logging"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-events-email">
+            <maven-resource group="org.keycloak" artifact="keycloak-events-email"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-social-github">
+            <maven-resource group="org.keycloak" artifact="keycloak-social-github"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-social-google">
+            <maven-resource group="org.keycloak" artifact="keycloak-social-google"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-social-twitter">
+            <maven-resource group="org.keycloak" artifact="keycloak-social-twitter"/>
+        </module-def>
+
+        <module-def name="org.twitter4j">
+            <maven-resource group="org.twitter4j" artifact="twitter4j-core"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-social-facebook">
+            <maven-resource group="org.keycloak" artifact="keycloak-social-facebook"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-ldap-federation">
+            <maven-resource group="org.keycloak" artifact="keycloak-ldap-federation"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-picketlink-api">
+            <maven-resource group="org.keycloak" artifact="keycloak-picketlink-api"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-picketlink-ldap">
+            <maven-resource group="org.keycloak" artifact="keycloak-picketlink-ldap"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-saml-protocol">
+            <maven-resource group="org.keycloak" artifact="keycloak-saml-protocol"/>
+        </module-def>
+
+        <!-- mongo -->
+
+        <module-def name="org.keycloak.keycloak-connections-mongo">
+            <maven-resource group="org.keycloak" artifact="keycloak-connections-mongo"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-model-mongo">
+            <maven-resource group="org.keycloak" artifact="keycloak-model-mongo"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-events-mongo">
+            <maven-resource group="org.keycloak" artifact="keycloak-events-mongo"/>
+        </module-def>
+
+        <module-def name="org.mongodb.mongo-java-driver">
+            <maven-resource group="org.mongodb" artifact="mongo-java-driver"/>
+        </module-def>
+
+        <!-- export/import -->
+
+        <module-def name="org.keycloak.keycloak-export-import-zip">
+            <maven-resource group="org.keycloak" artifact="keycloak-export-import-zip"/>
+        </module-def>
+        <module-def name="de.idyl.winzipaes">
+            <maven-resource group="de.idyl" artifact="winzipaes"/>
+        </module-def>
+
+        <module-def name="org.liquibase">
+            <maven-resource group="org.liquibase" artifact="liquibase-core"/>
+        </module-def>
+
+
+
+
+
+
+        <!-- subsystems -->
+
+        <module-def name="org.keycloak.keycloak-server"></module-def>
 
         <module-def name="org.jboss.aesh">
             <maven-resource group="org.jboss.aesh" artifact="aesh"/>
@@ -57,10 +290,6 @@
 
         <module-def name="org.jboss.as.cli">
             <maven-resource group="org.wildfly.core" artifact="wildfly-cli"/>
-        </module-def>        
-
-        <module-def name="org.keycloak.keycloak-core">
-            <maven-resource group="org.keycloak" artifact="keycloak-core"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-adapter-core">
