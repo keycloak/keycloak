@@ -12,6 +12,7 @@ import java.util.Properties;
  */
 public class Version {
     public static String VERSION;
+    public static String RESOURCES_VERSION;
     public static String BUILD_TIME;
     public static final String UNKNOWN = "UNKNOWN";
     public static final Version SINGLETON;
@@ -26,6 +27,7 @@ public class Version {
             props.load(is);
             VERSION = props.getProperty("version");
             BUILD_TIME = props.getProperty("build-time");
+            RESOURCES_VERSION = VERSION.toLowerCase();
         } catch (IOException e) {
             VERSION=UNKNOWN;
             BUILD_TIME=UNKNOWN;
