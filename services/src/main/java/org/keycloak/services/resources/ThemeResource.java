@@ -20,7 +20,7 @@ import java.io.InputStream;
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Path("/theme")
+@Path("/resources")
 public class ThemeResource {
 
     private static final Logger logger = Logger.getLogger(ThemeResource.class);
@@ -37,7 +37,7 @@ public class ThemeResource {
      * @return
      */
     @GET
-    @Path("/{themeType}/{themeName}/{path:.*}")
+    @Path("/{version}/{themeType}/{themeName}/{path:.*}")
     public Response getResource(@PathParam("themeType") String themType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
         try {
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");

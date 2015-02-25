@@ -9,6 +9,8 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.Config;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
+import org.keycloak.freemarker.FreeMarkerException;
+import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.AdminRoles;
@@ -24,6 +26,7 @@ import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.util.MimeTypeUtil;
 
 import javax.ws.rs.GET;
@@ -33,9 +36,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -248,7 +253,7 @@ public class AdminConsole {
     @GET
     @NoCache
     public Response logout() {
-        URI redirect = AdminRoot.adminConsoleUrl(uriInfo).path("index.html").build(realm.getName());
+        URI redirect = AdminRoot.adminConsoleUrl(uriInfo).build(realm.getName());
 
         return Response.status(302).location(
                 OIDCLoginProtocolService.logoutUrl(uriInfo).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
@@ -266,72 +271,41 @@ public class AdminConsole {
      * @throws URISyntaxException
      */
     @GET
-    public Response getMainPage() throws URISyntaxException {
+    @NoCache
+    public Response getMainPage() throws URISyntaxException, IOException, FreeMarkerException {
         if (!uriInfo.getRequestUri().getPath().endsWith("/")) {
             return Response.status(302).location(uriInfo.getRequestUriBuilder().path("/").build()).build();
         } else {
-            return getResource("index.html");
-        }
-    }
+            String adminTheme = realm.getAdminTheme();
+            if (adminTheme == null) {
+                adminTheme = "keycloak";
+            }
 
-    /**
-     * Javascript used by admin console
-     *
-     * @return
-     */
-    @GET
-    @Path("js/keycloak.js")
-    @Produces("text/javascript")
-    public Response getKeycloakJs() {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("keycloak.js");
-        if (inputStream != null) {
-            CacheControl cacheControl = new CacheControl();
-            cacheControl.setNoTransform(false);
-            cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
+            Map<String, String> map = new HashMap<String, String>();
 
-            return Response.ok(inputStream).type("text/javascript").cacheControl(cacheControl).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-    }
+            URI baseUri = uriInfo.getBaseUri();
 
-    /**
-     * Theme resources for this realm's admin console. (images, html files, etc..)
-     *
-     * @param path
-     * @return
-     */
-    @GET
-    @Path("{path:.+}")
-    public Response getResource(@PathParam("path") String path) {
-        // todo
-        // I don't know why I need this.  On IE 11, if I don't have this, getKeycloakJs() isn't invoked
-        // I just can't figure out what the difference is between IE11 and FF for console/js/keycloak.js calls
-        if (path.equals("js/keycloak.js")) {
-            return getKeycloakJs();
-        }
+            String authUrl = baseUri.toString();
+            authUrl = authUrl.substring(0, authUrl.length() - 1);
 
-        try {
+            map.put("authUrl", authUrl);
+            map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + adminTheme);
+
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
             Theme theme = themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
-            InputStream resource = theme.getResourceAsStream(path);
-            if (resource != null) {
-                String contentType = MimeTypeUtil.getContentType(path);
 
-                CacheControl cacheControl = new CacheControl();
-                cacheControl.setNoTransform(false);
-                cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
-
-                Response.ResponseBuilder builder = Response.ok(resource).type(contentType).cacheControl(cacheControl);
-                BrowserSecurityHeaderSetup.headers(builder, realm);
-                return builder.build();
-            } else {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-        } catch (Exception e) {
-            logger.warn("Failed to get theme resource", e);
-            return Response.serverError().build();
+            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
+            String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
+            Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML).entity(result);
+            BrowserSecurityHeaderSetup.headers(builder, realm);
+            return builder.build();
         }
+    }
+
+    @GET
+    @Path("index.html")
+    public Response getIndexHtmlRedirect() {
+        return Response.status(302).location(uriInfo.getRequestUriBuilder().path("../").build()).build();
     }
 
 }
