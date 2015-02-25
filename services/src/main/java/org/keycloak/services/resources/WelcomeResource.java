@@ -5,9 +5,8 @@ import org.keycloak.Config;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.util.MimeTypeUtil;
 
-import javax.activation.FileTypeMap;
-import javax.activation.MimetypesFileTypeMap;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -27,8 +26,6 @@ import java.net.URISyntaxException;
 public class WelcomeResource {
 
     private static final Logger logger = Logger.getLogger(WelcomeResource.class);
-
-    private static FileTypeMap mimeTypes = MimetypesFileTypeMap.getDefaultFileTypeMap();
 
     @Context
     private UriInfo uriInfo;
@@ -70,7 +67,7 @@ public class WelcomeResource {
             Theme theme = themeProvider.getTheme(config.get("welcomeTheme"), Theme.Type.WELCOME);
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
-                String contentType = mimeTypes.getContentType(path);
+                String contentType = MimeTypeUtil.getContentType(path);
 
                 CacheControl cacheControl = new CacheControl();
                 cacheControl.setNoTransform(false);

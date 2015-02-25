@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+      version="3.0">
+
+	<module-name>auth</module-name>
+
+    <servlet>
+        <servlet-name>Keycloak REST Interface</servlet-name>
+        <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher</servlet-class>
+        <init-param>
+            <param-name>javax.ws.rs.Application</param-name>
+            <param-value>org.keycloak.services.resources.KeycloakApplication</param-value>
+        </init-param>
+        <init-param>
+            <param-name>resteasy.servlet.mapping.prefix</param-name>
+            <param-value>/</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+        <async-supported>true</async-supported>
+    </servlet>
+
+    <listener>
+        <listener-class>org.keycloak.services.listeners.KeycloakSessionDestroyListener</listener-class>
+    </listener>
+
+    <filter>
+        <filter-name>Keycloak Client Connection Filter</filter-name>
+        <filter-class>org.keycloak.services.filters.ClientConnectionFilter</filter-class>
+    </filter>
+
+    <filter>
+        <filter-name>Keycloak Session Management</filter-name>
+        <filter-class>org.keycloak.services.filters.KeycloakSessionServletFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>Keycloak Session Management</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>Keycloak Client Connection Filter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <servlet-mapping>
+        <servlet-name>Keycloak REST Interface</servlet-name>
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+</web-app>
