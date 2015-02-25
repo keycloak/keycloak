@@ -1,1 +1,1 @@
-TOTP was updated for your account on ${event.date?datetime} from ${event.ipAddress}. If this was not you, please contact an admin.
+${rb.eventUpdateTotpBody?replace("{0}",event.date?datetime)?replace("{1}",event.ipAddress)}
