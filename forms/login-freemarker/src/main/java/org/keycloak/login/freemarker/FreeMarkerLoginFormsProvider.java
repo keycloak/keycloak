@@ -171,7 +171,7 @@ import java.util.concurrent.TimeUnit;
         Properties messages;
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders);
         if(locale != null){
-            attributes.put("locale", locale.toLanguageTag());
+            attributes.put("locale", locale);
         }
         try {
             messages = theme.getMessages(locale);

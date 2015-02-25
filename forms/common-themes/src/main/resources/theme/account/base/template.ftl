@@ -45,7 +45,7 @@
                             <li>
                                 <select class="kc-locale-select">
                                     <#list realm.supportedLocales as l>
-                                        <option value="${l}" <#if locale==l>selected="selected"</#if>>${l}</option>
+                                        <option value="${l}" <#if locale.toLanguageTag()==l>selected="selected"</#if>>${l}</option>
                                     </#list>
                                 </select>
                             <li>

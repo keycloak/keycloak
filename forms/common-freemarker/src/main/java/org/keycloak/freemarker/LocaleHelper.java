@@ -25,7 +25,7 @@ public class LocaleHelper {
 
     public static Locale getLocale(RealmModel realm, UserModel user, UriInfo uriInfo, HttpHeaders httpHeaders) {
         if(!realm.isInternationalizationEnabled()){
-            return null;
+            return Locale.ENGLISH;
         }
 
         //1. Locale cookie
