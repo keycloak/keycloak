@@ -257,32 +257,6 @@ public abstract class AbstractIdentityProviderTest {
         this.updateProfilePage.assertCurrent();
     }
 
-    @Test
-    public void testDisabledRegistration() {
-        // Disable registration in realm
-        getRealm().setRegistrationAllowed(false);
-        brokerServerRule.stopSession(this.session, true);
-        this.session = brokerServerRule.startSession();
-
-        // Login with identity provider
-        this.driver.navigate().to("http://localhost:8081/test-app/");
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
-        this.loginPage.clickSocial(getProviderId());
-
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
-        this.loginPage.login("test-user", "password");
-        doAfterProviderAuthentication();
-
-        WebElement element = this.driver.findElement(By.className("kc-feedback-text"));
-        assertNotNull(element);
-        assertEquals("Registration of new users is not allowed. Please ask admin to register you and login to account management to link the account.", element.getText());
-
-        // Re-enable registration in realm
-        getRealm().setRegistrationAllowed(true);
-        brokerServerRule.stopSession(this.session, true);
-        this.session = brokerServerRule.startSession();
-    }
-
     @Test(expected = NoSuchElementException.class)
     public void testIdentityProviderNotAllowed() {
         this.driver.navigate().to("http://localhost:8081/test-app/");
