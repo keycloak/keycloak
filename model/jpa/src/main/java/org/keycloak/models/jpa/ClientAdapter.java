@@ -8,6 +8,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
+import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -364,6 +366,7 @@ public abstract class ClientAdapter implements ClientModel {
             mapping.setId(entity.getId());
             mapping.setName(entity.getName());
             mapping.setProtocol(entity.getProtocol());
+            mapping.setProtocolMapper(entity.getProtocolMapper());
             mapping.setAppliedByDefault(entity.isAppliedByDefault());
             mapping.setConsentRequired(entity.isConsentRequired());
             mapping.setConsentText(entity.getConsentText());
@@ -377,6 +380,18 @@ public abstract class ClientAdapter implements ClientModel {
         return mappings;
     }
 
+    protected ProtocolMapperEntity findProtocolMapperByName(String protocol, String name) {
+        TypedQuery<ProtocolMapperEntity> query = em.createNamedQuery("getProtocolMapperByNameProtocol", ProtocolMapperEntity.class);
+        query.setParameter("name", name);
+        query.setParameter("protocol", protocol);
+        query.setParameter("realm", entity.getRealm());
+        List<ProtocolMapperEntity> entities = query.getResultList();
+        if (entities.size() == 0) return null;
+        if (entities.size() > 1) throw new IllegalStateException("Should not be more than one protocol mapper with same name");
+        return query.getResultList().get(0);
+
+    }
+
     @Override
     public void addProtocolMappers(Set<String> mappings) {
         Collection<ProtocolMapperEntity> entities = entity.getProtocolMappers();
@@ -384,9 +399,9 @@ public abstract class ClientAdapter implements ClientModel {
         for (ProtocolMapperEntity rel : entities) {
             already.add(rel.getId());
         }
-        for (String providerId : mappings) {
-            if (!already.contains(providerId)) {
-                ProtocolMapperEntity mapping = em.find(ProtocolMapperEntity.class, providerId);
+        for (String id : mappings) {
+            if (!already.contains(id)) {
+                ProtocolMapperEntity mapping = em.find(ProtocolMapperEntity.class, id);
                 if (mapping != null) {
                     entities.add(mapping);
                 }
@@ -404,6 +419,29 @@ public abstract class ClientAdapter implements ClientModel {
         }
         for (ProtocolMapperEntity entity : remove) {
             entities.remove(entity);
+        }
+        em.flush();
+    }
+    @Override
+    public void setProtocolMappers(Set<String> mappings) {
+        Collection<ProtocolMapperEntity> entities = entity.getProtocolMappers();
+        Iterator<ProtocolMapperEntity> it = entities.iterator();
+        Set<String> already = new HashSet<String>();
+        while (it.hasNext()) {
+            ProtocolMapperEntity mapper = it.next();
+            if (mappings.contains(mapper.getId())) {
+                already.add(mapper.getId());
+                continue;
+            }
+            it.remove();
+        }
+        for (String id : mappings) {
+            if (!already.contains(id)) {
+                ProtocolMapperEntity mapping = em.find(ProtocolMapperEntity.class, id);
+                if (mapping != null) {
+                    entities.add(mapping);
+                }
+            }
         }
         em.flush();
     }

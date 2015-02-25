@@ -10,9 +10,6 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public interface RealmProvider extends Provider {
-    public interface RealmCreationEvent extends ProviderEvent {
-        RealmModel getCreatedRealm();
-    }
 
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
 

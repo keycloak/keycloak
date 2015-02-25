@@ -274,6 +274,19 @@ public class RealmAdminResource {
     }
 
     /**
+     * Protocol mappers
+     *
+     */
+    @Path("protocol-mappers")
+    @POST
+    public ProtocolMappersResource protocolMappers() {
+        ProtocolMappersResource mappers = new ProtocolMappersResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(mappers);
+        //resourceContext.initResource(mappers);
+        return mappers;
+    }
+
+    /**
      * Removes all user sessions.  Any application that has an admin url will also be told to invalidate any sessions
      * they have.
      *
@@ -281,7 +294,6 @@ public class RealmAdminResource {
     @Path("logout-all")
     @POST
     public GlobalRequestResult logoutAll() {
-        auth.requireManage();
         session.sessions().removeUserSessions(realm);
         return new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
     }

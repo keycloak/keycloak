@@ -28,8 +28,8 @@ public class OIDCClientSessionNoteMapper extends AbstractOIDCProtocolMapper impl
         property.setLabel(CLIENT_SESSION_NOTE);
         property.setHelpText("Name of the note to map in the UserSessionModel");
         configProperties.add(property);
-        property.setName(OIDCUserAttributeMapper.TOKEN_CLAIM_NAME);
-        property.setLabel(OIDCUserAttributeMapper.TOKEN_CLAIM_NAME);
+        property.setName(AttributeMapperHelper.TOKEN_CLAIM_NAME);
+        property.setLabel(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
         configProperties.add(property);
 
@@ -53,7 +53,7 @@ public class OIDCClientSessionNoteMapper extends AbstractOIDCProtocolMapper impl
                                       UserSessionModel userSession, ClientSessionModel clientSession) {
         String note = mappingModel.getConfig().get(CLIENT_SESSION_NOTE);
         String noteValue = clientSession.getNote(note);
-        OIDCUserAttributeMapper.mapClaim(token, mappingModel, noteValue);
+        AttributeMapperHelper.mapClaim(token, mappingModel, noteValue);
         return token;
     }
 

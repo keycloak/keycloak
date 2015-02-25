@@ -1,6 +1,11 @@
 package org.keycloak.representations.idm;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -61,12 +66,11 @@ public class RealmRepresentation {
     protected List<String> eventsListeners;
     private List<IdentityProviderRepresentation> identityProviders;
     private List<ClaimTypeRepresentation> claimTypes;
-    private List<ProtocolMapperRepresentation> protocolClaimMappings;
+    private List<ProtocolMapperRepresentation> protocolMappers;
     private Boolean identityFederationEnabled;
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
-
 
     public String getId() {
         return id;
@@ -493,12 +497,17 @@ public class RealmRepresentation {
         this.claimTypes = claimTypes;
     }
 
-    public List<ProtocolMapperRepresentation> getProtocolClaimMappings() {
-        return protocolClaimMappings;
+    public List<ProtocolMapperRepresentation> getProtocolMappers() {
+        return protocolMappers;
     }
 
-    public void setProtocolClaimMappings(List<ProtocolMapperRepresentation> protocolClaimMappings) {
-        this.protocolClaimMappings = protocolClaimMappings;
+    public void addProtocolMapper(ProtocolMapperRepresentation rep) {
+        if (protocolMappers == null) protocolMappers = new LinkedList<ProtocolMapperRepresentation>();
+        protocolMappers.add(rep);
+    }
+
+    public void setProtocolMappers(List<ProtocolMapperRepresentation> protocolMappers) {
+        this.protocolMappers = protocolMappers;
     }
 
     public Boolean isInternationalizationEnabled() {

@@ -23,6 +23,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClaimTypeRepresentation;
+import org.keycloak.representations.idm.ClientProtocolMappingRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -480,9 +481,18 @@ public class RepresentationToModel {
             applicationModel.setAllowedClaimsMask(ClaimMask.ALL);
         }
 
-        if (resourceRep.getProtocolClaimMappings() != null) {
-            applicationModel.addProtocolMappers(resourceRep.getProtocolClaimMappings());
+        if (resourceRep.getProtocolMappers() != null) {
+            Set<String> ids = new HashSet<String>();
+            for (ClientProtocolMappingRepresentation map : resourceRep.getProtocolMappers()) {
+                ProtocolMapperModel mapperModel = applicationModel.getRealm().getProtocolMapperByName(map.getProtocol(), map.getName());
+                if (mapperModel != null) {
+                    ids.add(mapperModel.getId());
+                }
+
+            }
+            applicationModel.setProtocolMappers(ids);
         }
+
 
         return applicationModel;
     }
@@ -657,8 +667,16 @@ public class RepresentationToModel {
             model.updateAllowedIdentityProviders(rep.getAllowedIdentityProviders());
         }
 
-        if (rep.getProtocolClaimMappings() != null) {
-            model.addProtocolMappers(rep.getProtocolClaimMappings());
+        if (rep.getProtocolMappers() != null) {
+            Set<String> ids = new HashSet<String>();
+            for (ClientProtocolMappingRepresentation map : rep.getProtocolMappers()) {
+                ProtocolMapperModel mapperModel = model.getRealm().getProtocolMapperByName(map.getProtocol(), map.getName());
+                if (mapperModel != null) {
+                    ids.add(mapperModel.getId());
+                }
+
+            }
+            model.setProtocolMappers(ids);
         }
 
     }
@@ -793,13 +811,17 @@ public class RepresentationToModel {
     }
 
     private static void importProtocolMappers(RealmRepresentation rep, RealmModel newRealm) {
-        if (rep.getProtocolClaimMappings() != null) {
+        if (rep.getProtocolMappers() != null) {
             // we make sure we don't recreate mappers that are automatically created by the protocol providers.
-            for (ProtocolMapperRepresentation representation : rep.getProtocolClaimMappings()) {
-                if (representation.getId() == null || newRealm.getProtocolMapperById(representation.getId()) == null) {
+            Set<ProtocolMapperModel> mappers = newRealm.getProtocolMappers();
+            for (ProtocolMapperRepresentation representation : rep.getProtocolMappers()) {
+                ProtocolMapperModel existing = newRealm.getProtocolMapperByName(representation.getProtocol(), representation.getName());
+                if (existing == null) {
                     newRealm.addProtocolMapper(toModel(representation));
                 } else {
-                    newRealm.updateProtocolMapper(toModel(representation));
+                    ProtocolMapperModel mapping = toModel(representation);
+                    mapping.setId(existing.getId());
+                    newRealm.updateProtocolMapper(mapping);
                 }
             }
         }
