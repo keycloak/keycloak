@@ -83,7 +83,7 @@ public class LocaleHelper {
             return Locale.forLanguageTag(realm.getDefaultLocale());
         }
 
-        return null;
+        return Locale.ENGLISH;
     }
 
     public static void updateLocaleCookie(Response.ResponseBuilder builder, Locale locale, RealmModel realm, UriInfo uriInfo, String path) {
