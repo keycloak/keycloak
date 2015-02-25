@@ -380,9 +380,10 @@ public abstract class ClientAdapter implements ClientModel {
         return mappings;
     }
 
-    protected ProtocolMapperEntity findProtocolMapperByName(String name) {
-        TypedQuery<ProtocolMapperEntity> query = em.createNamedQuery("getProtocolMapperByName", ProtocolMapperEntity.class);
+    protected ProtocolMapperEntity findProtocolMapperByName(String protocol, String name) {
+        TypedQuery<ProtocolMapperEntity> query = em.createNamedQuery("getProtocolMapperByNameProtocol", ProtocolMapperEntity.class);
         query.setParameter("name", name);
+        query.setParameter("protocol", protocol);
         query.setParameter("realm", entity.getRealm());
         List<ProtocolMapperEntity> entities = query.getResultList();
         if (entities.size() == 0) return null;
@@ -396,11 +397,11 @@ public abstract class ClientAdapter implements ClientModel {
         Collection<ProtocolMapperEntity> entities = entity.getProtocolMappers();
         Set<String> already = new HashSet<String>();
         for (ProtocolMapperEntity rel : entities) {
-            already.add(rel.getName());
+            already.add(rel.getId());
         }
-        for (String name : mappings) {
-            if (!already.contains(name)) {
-                ProtocolMapperEntity mapping = findProtocolMapperByName(name);
+        for (String id : mappings) {
+            if (!already.contains(id)) {
+                ProtocolMapperEntity mapping = em.find(ProtocolMapperEntity.class, id);
                 if (mapping != null) {
                     entities.add(mapping);
                 }
@@ -414,7 +415,7 @@ public abstract class ClientAdapter implements ClientModel {
         Collection<ProtocolMapperEntity> entities = entity.getProtocolMappers();
         List<ProtocolMapperEntity> remove = new LinkedList<ProtocolMapperEntity>();
         for (ProtocolMapperEntity rel : entities) {
-            if (mappings.contains(rel.getName())) remove.add(rel);
+            if (mappings.contains(rel.getId())) remove.add(rel);
         }
         for (ProtocolMapperEntity entity : remove) {
             entities.remove(entity);
@@ -428,15 +429,15 @@ public abstract class ClientAdapter implements ClientModel {
         Set<String> already = new HashSet<String>();
         while (it.hasNext()) {
             ProtocolMapperEntity mapper = it.next();
-            if (mappings.contains(mapper.getName())) {
-                already.add(mapper.getName());
+            if (mappings.contains(mapper.getId())) {
+                already.add(mapper.getId());
                 continue;
             }
             it.remove();
         }
-        for (String name : mappings) {
-            if (!already.contains(name)) {
-                ProtocolMapperEntity mapping = findProtocolMapperByName(name);
+        for (String id : mappings) {
+            if (!already.contains(id)) {
+                ProtocolMapperEntity mapping = em.find(ProtocolMapperEntity.class, id);
                 if (mapping != null) {
                     entities.add(mapping);
                 }

@@ -91,7 +91,7 @@ public class OIDCLoginProtocolFactory implements LoginProtocolFactory {
                 false);
 
         ProtocolMapperModel fullName = new ProtocolMapperModel();
-        if (realm.getProtocolMapperByName("full name") == null) {
+        if (realm.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "full name") == null) {
             fullName.setName("full name");
             fullName.setProtocolMapper(OIDCFullNameMapper.PROVIDER_ID);
             fullName.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -102,7 +102,7 @@ public class OIDCLoginProtocolFactory implements LoginProtocolFactory {
         }
 
         ProtocolMapperModel address = new ProtocolMapperModel();
-        if (realm.getProtocolMapperByName("address") == null) {
+        if (realm.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "address") == null) {
             address.setName("address");
             address.setProtocolMapper(OIDCAddressMapper.PROVIDER_ID);
             address.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -120,7 +120,7 @@ public class OIDCLoginProtocolFactory implements LoginProtocolFactory {
                                   String tokenClaimName, String claimType,
                                   boolean consentRequired, String consentText,
                                   boolean appliedByDefault) {
-        ProtocolMapperModel mapper = realm.getProtocolMapperByName(name);
+        ProtocolMapperModel mapper = realm.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, name);
         if (mapper != null) return;
         mapper = new ProtocolMapperModel();
         mapper.setName(name);

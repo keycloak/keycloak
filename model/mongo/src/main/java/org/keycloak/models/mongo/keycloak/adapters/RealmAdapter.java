@@ -619,7 +619,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public void addDefaultClientProtocolMappers(ClientModel client) {
         Set<String> adding = new HashSet<String>();
         for (ProtocolMapperEntity mapper : realm.getProtocolMappers()) {
-            if (mapper.isAppliedByDefault()) adding.add(mapper.getName());
+            if (mapper.isAppliedByDefault()) adding.add(mapper.getId());
         }
         client.setProtocolMappers(adding);
 
@@ -820,6 +820,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
+        if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
+            throw new RuntimeException("protocol mapper name must be unique per protocol");
+        }
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setProtocol(model.getProtocol());
@@ -855,9 +858,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return null;
 
     }
-    protected ProtocolMapperEntity getProtocolMapperyEntityByName(String name) {
+    protected ProtocolMapperEntity getProtocolMapperEntityByName(String protocol, String name) {
         for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
-            if (entity.getName().equals(name)) {
+            if (entity.getProtocol().equals(protocol) && entity.getName().equals(name)) {
                 return entity;
             }
         }
@@ -891,8 +894,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public ProtocolMapperModel getProtocolMapperByName(String name) {
-        ProtocolMapperEntity entity = getProtocolMapperyEntityById(name);
+    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
+        ProtocolMapperEntity entity = getProtocolMapperEntityByName(protocol, name);
         if (entity == null) return null;
         return entityToModel(entity);
     }

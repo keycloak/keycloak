@@ -119,7 +119,6 @@ public class ServerInfoAdminResource {
         }
     }
 
-
     private void setProtocols(ServerInfoRepresentation info) {
         info.protocols = new LinkedList<String>();
         for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {

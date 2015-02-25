@@ -632,7 +632,7 @@ public class RealmAdapter implements RealmModel {
         Set<String> adding = new HashSet<String>();
         for (ProtocolMapperEntity mapper : realm.getProtocolMappers()) {
             if (mapper.isAppliedByDefault()) {
-                adding.add(mapper.getName());
+                adding.add(mapper.getId());
             }
         }
         client.setProtocolMappers(adding);
@@ -1295,8 +1295,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
-        if (getProtocolMapperByName(model.getName()) != null) {
-            throw new RuntimeException("Duplicate protocol mapper with name: " + model.getName());
+        if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
+            throw new RuntimeException("protocol mapper name must be unique per protocol");
         }
         String id = KeycloakModelUtils.generateId();
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
@@ -1325,9 +1325,9 @@ public class RealmAdapter implements RealmModel {
 
     }
 
-    protected ProtocolMapperEntity getProtocolMapperEntityByName(String name) {
+    protected ProtocolMapperEntity getProtocolMapperEntityByName(String protocol, String name) {
         for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
-            if (entity.getName().equals(name)) {
+            if (entity.getProtocol().equals(protocol) && entity.getName().equals(name)) {
                 return entity;
             }
         }
@@ -1370,8 +1370,8 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ProtocolMapperModel getProtocolMapperByName(String name) {
-        ProtocolMapperEntity entity = getProtocolMapperEntityByName(name);
+    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
+        ProtocolMapperEntity entity = getProtocolMapperEntityByName(protocol, name);
         if (entity == null) return null;
         return entityToModel(entity);
     }

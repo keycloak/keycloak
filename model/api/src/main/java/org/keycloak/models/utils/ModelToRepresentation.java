@@ -19,6 +19,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClaimTypeRepresentation;
+import org.keycloak.representations.idm.ClientProtocolMappingRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -266,8 +267,12 @@ public class ModelToRepresentation {
         }
 
         if (!applicationModel.getProtocolMappers().isEmpty()) {
-            Set<String> mappings = new HashSet<String>();
-            for (ProtocolMapperModel model : applicationModel.getProtocolMappers()) mappings.add(model.getName());
+            List<ClientProtocolMappingRepresentation> mappings = new LinkedList<ClientProtocolMappingRepresentation>();
+            for (ProtocolMapperModel model : applicationModel.getProtocolMappers()) {
+                ClientProtocolMappingRepresentation map = new ClientProtocolMappingRepresentation();
+                map.setProtocol(model.getProtocol());
+                map.setName(model.getName());
+            }
             rep.setProtocolMappers(mappings);
         }
 
@@ -301,10 +306,15 @@ public class ModelToRepresentation {
         }
 
         if (!model.getProtocolMappers().isEmpty()) {
-            Set<String> mappings = new HashSet<String>();
-            for (ProtocolMapperModel mappingModel : model.getProtocolMappers()) mappings.add(mappingModel.getName());
-            rep.setProtocolClaimMappings(mappings);
+            List<ClientProtocolMappingRepresentation> mappings = new LinkedList<ClientProtocolMappingRepresentation>();
+            for (ProtocolMapperModel mapping : model.getProtocolMappers()) {
+                ClientProtocolMappingRepresentation map = new ClientProtocolMappingRepresentation();
+                map.setProtocol(mapping.getProtocol());
+                map.setName(mapping.getName());
+            }
+            rep.setProtocolMappers(mappings);
         }
+
         return rep;
     }
 

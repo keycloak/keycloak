@@ -303,22 +303,22 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     }
 
     @Override
-    public void addProtocolMappers(Set<String> mapperNames) {
-        getMongoEntityAsClient().getProtocolMappers().addAll(mapperNames);
+    public void addProtocolMappers(Set<String> mapperIds) {
+        getMongoEntityAsClient().getProtocolMappers().addAll(mapperIds);
         updateMongoEntity();
 
     }
 
     @Override
-    public void removeProtocolMappers(Set<String> mapperNames) {
-        getMongoEntityAsClient().getProtocolMappers().removeAll(mapperNames);
+    public void removeProtocolMappers(Set<String> mapperIds) {
+        getMongoEntityAsClient().getProtocolMappers().removeAll(mapperIds);
         updateMongoEntity();
     }
 
     @Override
-    public void setProtocolMappers(Set<String> mapperNames) {
+    public void setProtocolMappers(Set<String> mapperIds) {
         getMongoEntityAsClient().getProtocolMappers().clear();
-        getMongoEntityAsClient().getProtocolMappers().addAll(mapperNames);
+        getMongoEntityAsClient().getProtocolMappers().addAll(mapperIds);
         updateMongoEntity();
     }
 

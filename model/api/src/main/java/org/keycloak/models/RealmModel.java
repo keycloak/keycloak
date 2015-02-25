@@ -249,7 +249,7 @@ public interface RealmModel extends RoleContainerModel {
     void removeProtocolMapper(ProtocolMapperModel mapping);
     void updateProtocolMapper(ProtocolMapperModel mapping);
     public ProtocolMapperModel getProtocolMapperById(String id);
-    public ProtocolMapperModel getProtocolMapperByName(String name);
+    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name);
 
 
 }
