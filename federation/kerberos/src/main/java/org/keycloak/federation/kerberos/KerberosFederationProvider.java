@@ -69,12 +69,13 @@ public class KerberosFederationProvider implements UserFederationProvider {
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        if (username.contains("@")) {
-            username = username.split("@")[0];
-        }
-
         KerberosUsernamePasswordAuthenticator authenticator = factory.createKerberosUsernamePasswordAuthenticator(kerberosConfig);
         if (authenticator.isUserAvailable(username)) {
+            // Case when method was called with username including kerberos realm like john@REALM.ORG . Authenticator already checked that kerberos realm was correct
+            if (username.contains("@")) {
+                username = username.split("@")[0];
+            }
+
             return findOrCreateAuthenticatedUser(realm, username);
         } else {
             return null;
@@ -106,7 +107,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
         // KerberosUsernamePasswordAuthenticator.isUserAvailable is an overhead, so avoid it for now
 
         String kerberosPrincipal = local.getUsername() + "@" + kerberosConfig.getKerberosRealm();
-        return model.getId().equals(local.getFederationLink()) && kerberosPrincipal.equals(local.getAttribute(KERBEROS_PRINCIPAL));
+        return kerberosPrincipal.equals(local.getAttribute(KERBEROS_PRINCIPAL));
     }
 
     @Override
@@ -181,8 +182,11 @@ public class KerberosFederationProvider implements UserFederationProvider {
 
                 String username = spnegoAuthenticator.getAuthenticatedUsername();
                 UserModel user = findOrCreateAuthenticatedUser(realm, username);
-
-                return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
+                if (user == null) {
+                    return CredentialValidationOutput.failed();
+                } else {
+                    return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
+                }
             }  else {
                 Map<String, Object> state = new HashMap<String, Object>();
                 state.put(KerberosConstants.RESPONSE_TOKEN, spnegoAuthenticator.getResponseToken());
@@ -202,19 +206,24 @@ public class KerberosFederationProvider implements UserFederationProvider {
     /**
      * Called after successful authentication
      *
-     * @param realm
+     * @param realm realm
      * @param username username without realm prefix
-     * @return
+     * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
      */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
         UserModel user = session.userStorage().getUserByUsername(username, realm);
         if (user != null) {
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
-            if (isValid(user)) {
+
+            if (!model.getId().equals(user.getFederationLink())) {
+                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() + "]");
+                return null;
+            } else if (isValid(user)) {
                 return proxy(user);
             } else {
-                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() +
-                        "] or kerberos principal is not correct. Kerberos principal on user is: " + user.getAttribute(KERBEROS_PRINCIPAL));
+                logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getDisplayName() +
+                        "] but kerberos principal is not correct. Kerberos principal on user is: " + user.getAttribute(KERBEROS_PRINCIPAL));
+                logger.warn("Will re-create user");
                 session.userStorage().removeUser(realm, user);
             }
         }

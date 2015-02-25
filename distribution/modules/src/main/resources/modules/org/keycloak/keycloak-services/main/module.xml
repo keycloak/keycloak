@@ -35,6 +35,7 @@
         <module name="org.keycloak.keycloak-invalidation-cache-model" services="import"/>
         <module name="org.keycloak.keycloak-jboss-adapter-core" services="import"/>
         <module name="org.keycloak.keycloak-js-adapter" services="import"/>
+        <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
         <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
         <module name="org.keycloak.keycloak-login-api" services="import"/>
         <module name="org.keycloak.keycloak-login-freemarker" services="import"/>

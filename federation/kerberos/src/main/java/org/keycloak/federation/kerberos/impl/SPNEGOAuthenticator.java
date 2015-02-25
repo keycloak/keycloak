@@ -47,7 +47,7 @@ public class SPNEGOAuthenticator {
             Subject serverSubject = kerberosSubjectAuthenticator.authenticateServerSubject();
             authenticated = Subject.doAs(serverSubject, new AcceptSecContext());
         } catch (Exception e) {
-            log.warn("SPNEGO login failed: " + e.getMessage(), e);
+            log.warn("SPNEGO login failed", e);
         } finally {
             kerberosSubjectAuthenticator.logoutServerSubject();
         }

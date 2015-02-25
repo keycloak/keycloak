@@ -36,14 +36,13 @@ public class KerberosUsernamePasswordAuthenticator {
     /**
      * Returns true if user with given username exists in kerberos database
      *
-     * @param username username without Kerberos realm attached
+     * @param username username without Kerberos realm attached or with correct realm attached
      * @return true if user available
      */
     public boolean isUserAvailable(String username) {
-        String principal = getKerberosPrincipal(username);
-
-        logger.debug("Checking existence of principal: " + principal);
+        logger.debug("Checking existence of user: " + username);
         try {
+            String principal = getKerberosPrincipal(username);
             loginContext = new LoginContext("does-not-matter", null,
                     createJaasCallbackHandler(principal, "fake-password-which-nobody-has"),
                     createJaasConfiguration());
@@ -65,7 +64,7 @@ public class KerberosUsernamePasswordAuthenticator {
     /**
      * Returns true if user was successfully authenticated against Kerberos
      *
-     * @param username username without Kerberos realm attached
+     * @param username username without Kerberos realm attached or with correct realm attached
      * @param password kerberos password
      * @return  true if user was successfully authenticated
      */
@@ -113,7 +112,17 @@ public class KerberosUsernamePasswordAuthenticator {
 
 
 
-    protected String getKerberosPrincipal(String username) {
+    protected String getKerberosPrincipal(String username) throws LoginException {
+        if (username.contains("@")) {
+            String[] tokens = username.split("@");
+            username = tokens[0];
+            String kerberosRealm = tokens[1];
+            if (kerberosRealm.toUpperCase().equals(config.getKerberosRealm())) {
+                logger.warn("Invalid kerberos realm. Expected realm: " + config.getKerberosRealm() + ", username: " + username);
+                throw new LoginException("Invalid kerberos realm");
+            }
+        }
+
         return username + "@" + config.getKerberosRealm();
     }
 
