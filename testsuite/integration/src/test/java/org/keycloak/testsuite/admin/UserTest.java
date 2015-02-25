@@ -30,7 +30,7 @@ public class UserTest extends AbstractClientTest {
     }
 
     @Test
-    public void createDuplicatedUser() {
+    public void createDuplicatedUser1() {
         createUser();
 
         try {
@@ -42,7 +42,80 @@ public class UserTest extends AbstractClientTest {
             assertEquals(409, e.getResponse().getStatus());
         }
     }
+    
+    @Test
+    public void createDuplicatedUser2() {
+        createUser();
 
+        try {
+            UserRepresentation user = new UserRepresentation();
+            user.setUsername("user2");
+            user.setEmail("user1@localhost");
+            realm.users().create(user);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(409, e.getResponse().getStatus());
+        }
+    }
+    
+    @Test
+    public void createDuplicatedUser3() {
+        createUser();
+
+        try {
+            UserRepresentation user = new UserRepresentation();
+            user.setUsername("User1");
+            realm.users().create(user);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(409, e.getResponse().getStatus());
+        }
+    }
+    
+    @Test
+    public void createDuplicatedUser4() {
+        createUser();
+
+        try {
+            UserRepresentation user = new UserRepresentation();
+            user.setUsername("USER1");
+            realm.users().create(user);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(409, e.getResponse().getStatus());
+        }
+    }
+
+    @Test
+    public void createDuplicatedUser5() {
+        createUser();
+
+        try {
+            UserRepresentation user = new UserRepresentation();
+            user.setUsername("user2");
+            user.setEmail("User1@localhost");
+            realm.users().create(user);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(409, e.getResponse().getStatus());
+        }
+    }
+    
+    @Test
+    public void createDuplicatedUser6() {
+        createUser();
+
+        try {
+            UserRepresentation user = new UserRepresentation();
+            user.setUsername("user2");
+            user.setEmail("user1@LOCALHOST");
+            realm.users().create(user);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(409, e.getResponse().getStatus());
+        }
+    }
+    
     private void createUsers() {
         for (int i = 1; i < 10; i++) {
             UserRepresentation user = new UserRepresentation();

@@ -26,7 +26,7 @@ public class UserFederationManager implements UserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
-        UserModel user = session.userStorage().addUser(realm, id, username, addDefaultRoles);
+        UserModel user = session.userStorage().addUser(realm, id, username.toLowerCase(), addDefaultRoles);
         return registerWithFederation(realm, user);
     }
 
@@ -38,7 +38,7 @@ public class UserFederationManager implements UserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        UserModel user = session.userStorage().addUser(realm, username);
+        UserModel user = session.userStorage().addUser(realm, username.toLowerCase());
         return registerWithFederation(realm, user);
     }
 
@@ -144,7 +144,7 @@ public class UserFederationManager implements UserProvider {
 
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
-        UserModel user = session.userStorage().getUserByUsername(username, realm);
+        UserModel user = session.userStorage().getUserByUsername(username.toLowerCase(), realm);
         if (user != null) {
             user = validateAndProxyUser(realm, user);
             if (user != null) return user;
@@ -159,7 +159,7 @@ public class UserFederationManager implements UserProvider {
 
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
-        UserModel user = session.userStorage().getUserByEmail(email, realm);
+        UserModel user = session.userStorage().getUserByEmail(email.toLowerCase(), realm);
         if (user != null) {
             user = validateAndProxyUser(realm, user);
             if (user != null) return user;
@@ -251,11 +251,11 @@ public class UserFederationManager implements UserProvider {
             attributes.put(UserModel.FIRST_NAME, firstName);
             attributes.put(UserModel.LAST_NAME, lastName);
         } else if (search.indexOf('@') > -1) {
-            attributes.put(UserModel.USERNAME, search.trim());
-            attributes.put(UserModel.EMAIL, search.trim());
+            attributes.put(UserModel.USERNAME, search.trim().toLowerCase());
+            attributes.put(UserModel.EMAIL, search.trim().toLowerCase());
         } else {
             attributes.put(UserModel.LAST_NAME, search.trim());
-            attributes.put(UserModel.USERNAME, search.trim());
+            attributes.put(UserModel.USERNAME, search.trim().toLowerCase());
         }
         federationLoad(realm, attributes);
         return query(new PaginatedQuery() {

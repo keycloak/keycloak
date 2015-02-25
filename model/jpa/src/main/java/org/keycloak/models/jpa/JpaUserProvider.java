@@ -50,7 +50,7 @@ public class JpaUserProvider implements UserProvider {
 
         UserEntity entity = new UserEntity();
         entity.setId(id);
-        entity.setUsername(username);
+        entity.setUsername(username.toLowerCase());
         entity.setRealmId(realm.getId());
         em.persist(entity);
         em.flush();
@@ -73,7 +73,7 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return addUser(realm, KeycloakModelUtils.generateId(), username, true);
+        return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class JpaUserProvider implements UserProvider {
         entity.setRealmId(realm.getId());
         entity.setIdentityProvider(identity.getIdentityProvider());
         entity.setUserId(identity.getUserId());
-        entity.setUserName(identity.getUserName());
+        entity.setUserName(identity.getUserName().toLowerCase());
         entity.setToken(identity.getToken());
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         entity.setUser(userEntity);
@@ -190,7 +190,7 @@ public class JpaUserProvider implements UserProvider {
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
-        query.setParameter("username", username);
+        query.setParameter("username", username.toLowerCase());
         query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
         if (results.size() == 0) return null;
@@ -200,7 +200,7 @@ public class JpaUserProvider implements UserProvider {
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByEmail", UserEntity.class);
-        query.setParameter("email", email);
+        query.setParameter("email", email.toLowerCase());
         query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
         return results.isEmpty() ? null : new UserAdapter(realm, em, results.get(0));
