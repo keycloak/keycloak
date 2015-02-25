@@ -103,7 +103,7 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         KeycloakRule keycloakRule = getKeycloakRule();
         AssertEvents events = getAssertEvents();
 
-        // Change editMode to READ_ONLY
+        // Change editMode to WRITABLE
         updateProviderEditMode(UserFederationProvider.EditMode.WRITABLE);
 
         // Login with username/password from kerberos
