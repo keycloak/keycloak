@@ -24,9 +24,8 @@ import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.util.MimeTypeUtil;
 
-import javax.activation.FileTypeMap;
-import javax.activation.MimetypesFileTypeMap;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -260,8 +259,6 @@ public class AdminConsole {
         return realmManager.getKeycloakAdminstrationRealm();
     }
 
-    private static FileTypeMap mimeTypes = MimetypesFileTypeMap.getDefaultFileTypeMap();
-
     /**
      * Main page of this realm's admin console
      *
@@ -319,7 +316,7 @@ public class AdminConsole {
             Theme theme = themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
-                String contentType = mimeTypes.getContentType(path);
+                String contentType = MimeTypeUtil.getContentType(path);
 
                 CacheControl cacheControl = new CacheControl();
                 cacheControl.setNoTransform(false);

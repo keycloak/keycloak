@@ -25,6 +25,7 @@
         </plugins>
     </build>
     <modules>
+        <module>subsystem-war</module>
         <module>modules</module>
         <module>as7-adapter-zip</module>
         <module>tomcat6-adapter-zip</module>
