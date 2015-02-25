@@ -340,7 +340,7 @@ public class OIDCLoginProtocolService {
         TokenManager.attachClientSession(userSession, clientSession);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event)
-                .generateAccessToken(scope, client, user, userSession, clientSession)
+                .generateAccessToken(session, scope, client, user, userSession, clientSession)
                 .generateRefreshToken()
                 .generateIDToken()
                 .build();
@@ -668,7 +668,7 @@ public class OIDCLoginProtocolService {
             clientSession.setNote(AdapterConstants.APPLICATION_SESSION_HOST, adapterSessionHost);
         }
 
-        AccessToken token = tokenManager.createClientAccessToken(accessCode.getRequestedRoles(), realm, client, user, userSession, clientSession);
+        AccessToken token = tokenManager.createClientAccessToken(session, accessCode.getRequestedRoles(), realm, client, user, userSession, clientSession);
 
         try {
             tokenManager.verifyAccess(token, realm, client, user);

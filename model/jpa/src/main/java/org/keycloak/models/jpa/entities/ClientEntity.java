@@ -77,7 +77,7 @@ public abstract class ClientEntity {
     @JoinTable(name="CLIENT_ALLOWED_IDENTITY_PROVIDER", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="INTERNAL_ID")})
     Collection<IdentityProviderEntity> allowedIdentityProviders = new ArrayList<IdentityProviderEntity>();
 
-    @OneToMany(cascade ={CascadeType.REMOVE})
+    @OneToMany(fetch = FetchType.LAZY)
     @JoinTable(name="CLIENT_PROTOCOL_MAPPER", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="MAPPING_ID")})
     Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 

@@ -139,7 +139,7 @@ public class AdapterTestStrategy extends ExternalResource {
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", false);
-            AccessToken token = tm.createClientAccessToken(TokenManager.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession, null);
+            AccessToken token = tm.createClientAccessToken(session, TokenManager.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession, null);
             return tm.encodeToken(adminRealm, token);
         } finally {
             keycloakRule.stopSession(session, true);

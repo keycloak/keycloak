@@ -87,6 +87,11 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                 }
             }
         }
+        for ( Map<String, ProviderFactory> factories : factoriesMap.values()) {
+            for (ProviderFactory factory : factories.values()) {
+                factory.postInit(this);
+            }
+        }
     }
 
     public KeycloakSession create() {

@@ -30,7 +30,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private List<String> redirectUris = new ArrayList<String>();
     private List<String> scopeIds = new ArrayList<String>();
     private List<String> allowedIdentityProviders = new ArrayList<String>();
-    private Set<String> protocolClaimMappings = new HashSet<String>();
+    private Set<String> protocolMappers = new HashSet<String>();
 
     public String getName() {
         return name;
@@ -152,11 +152,11 @@ public class ClientEntity extends AbstractIdentifiableEntity {
         this.allowedIdentityProviders = allowedIdentityProviders;
     }
 
-    public Set<String> getProtocolClaimMappings() {
-        return protocolClaimMappings;
+    public Set<String> getProtocolMappers() {
+        return protocolMappers;
     }
 
-    public void setProtocolClaimMappings(Set<String> protocolClaimMappings) {
-        this.protocolClaimMappings = protocolClaimMappings;
+    public void setProtocolMappers(Set<String> protocolMappers) {
+        this.protocolMappers = protocolMappers;
     }
 }

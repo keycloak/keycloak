@@ -48,6 +48,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author pedroigor
@@ -130,9 +132,8 @@ public class UserInfoService {
             UserSessionModel userSession = session.sessions().getUserSession(realmModel, accessToken.getSessionState());
             ClientModel clientModel = realmModel.findClient(accessToken.getIssuedFor());
             UserModel userModel = userSession.getUser();
-            UserClaimSet userInfo = new UserClaimSet();
-
-            this.tokenManager.initClaims(userInfo, clientModel, userModel);
+            AccessToken userInfo = new AccessToken();
+            this.tokenManager.transformToken(session, userInfo, realmModel, clientModel, userModel, userSession, null);
 
             event
                 .detail(Details.USERNAME, userModel.getUsername())
@@ -141,7 +142,10 @@ public class UserInfoService {
                 .user(userModel)
                 .success();
 
-            return Cors.add(request, Response.ok(userInfo)).auth().allowedOrigins(accessToken).build();
+            Map<String, Object> claims = new HashMap<String, Object>();
+            claims.putAll(userInfo.getOtherClaims());
+            claims.put("sub", userModel.getId());
+            return Cors.add(request, Response.ok(claims)).auth().allowedOrigins(accessToken).build();
         } catch (Exception e) {
             throw new UnauthorizedException("Could not retrieve user info.", e);
         }

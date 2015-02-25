@@ -107,4 +107,5 @@ public interface ClientModel {
     Set<ProtocolMapperModel> getProtocolMappers();
     void addProtocolMappers(Set<String> mapperIds);
     void removeProtocolMappers(Set<String> mapperIds);
+    void setProtocolMappers(Set<String> mapperIds);
 }

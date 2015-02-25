@@ -9,9 +9,7 @@ import org.keycloak.representations.AccessToken;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Mappings UserModel property (the property name of a getter method) to an ID Token claim.  Token claim name can be a full qualified nested object name,
@@ -32,12 +30,14 @@ public class OIDCUserModelMapper extends AbstractOIDCProtocolMapper implements O
         property.setLabel(USER_MODEL_PROPERTY);
         property.setHelpText("Name of the property method in the UserModel interface.  For example, a value of 'email' would reference the UserModel.getEmail() method.");
         configProperties.add(property);
-        property.setName(OIDCUserAttributeMapper.TOKEN_CLAIM_NAME);
-        property.setLabel(OIDCUserAttributeMapper.TOKEN_CLAIM_NAME);
+        property.setName(AttributeMapperHelper.TOKEN_CLAIM_NAME);
+        property.setLabel(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
         configProperties.add(property);
 
     }
+
+    public static final String PROVIDER_ID = "oidc-usermodel-property-mapper";
 
 
     public List<ConfigProperty> getConfigProperties() {
@@ -45,7 +45,7 @@ public class OIDCUserModelMapper extends AbstractOIDCProtocolMapper implements O
     }
     @Override
     public String getId() {
-        return "oidc-usermodel-property-mapper";
+        return PROVIDER_ID;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class OIDCUserModelMapper extends AbstractOIDCProtocolMapper implements O
         UserModel user = userSession.getUser();
         String propertyName = mappingModel.getConfig().get(USER_MODEL_PROPERTY);
         String propertyValue = getUserModelValue(user,propertyName);
-        OIDCUserAttributeMapper.mapClaim(token, mappingModel, propertyValue);
+        AttributeMapperHelper.mapClaim(token, mappingModel, propertyValue);
 
         return token;
     }
@@ -67,6 +67,14 @@ public class OIDCUserModelMapper extends AbstractOIDCProtocolMapper implements O
     protected String getUserModelValue(UserModel user, String propertyName) {
 
         String methodName = "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
+        try {
+            Method method = UserModel.class.getMethod(methodName);
+            Object val = method.invoke(user);
+            if (val != null) return val.toString();
+        } catch (Exception ignore) {
+
+        }
+        methodName = "is" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
         try {
             Method method = UserModel.class.getMethod(methodName);
             Object val = method.invoke(user);

@@ -52,7 +52,7 @@ public class MongoRealmProvider implements RealmProvider {
         getMongoStore().insertEntity(newRealm, invocationContext);
 
         final RealmModel model = new RealmAdapter(session, newRealm, invocationContext);
-        session.getKeycloakSessionFactory().publish(new RealmCreationEvent() {
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmCreationEvent() {
             @Override
             public RealmModel getCreatedRealm() {
                 return model;

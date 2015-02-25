@@ -24,7 +24,7 @@ public class OAuthClientRepresentation {
     protected Boolean fullScopeAllowed;
     protected Boolean frontchannelLogout;
     protected List<String> allowedIdentityProviders;
-    protected Set<String> protocolClaimMappings;
+    protected List<ClientProtocolMappingRepresentation> protocolMappers;
 
 
     public String getId() {
@@ -147,11 +147,11 @@ public class OAuthClientRepresentation {
         this.allowedIdentityProviders = allowedIdentityProviders;
     }
 
-    public Set<String> getProtocolClaimMappings() {
-        return protocolClaimMappings;
+    public List<ClientProtocolMappingRepresentation> getProtocolMappers() {
+        return protocolMappers;
     }
 
-    public void setProtocolClaimMappings(Set<String> protocolClaimMappings) {
-        this.protocolClaimMappings = protocolClaimMappings;
+    public void setProtocolMappers(List<ClientProtocolMappingRepresentation> protocolMappers) {
+        this.protocolMappers = protocolMappers;
     }
 }

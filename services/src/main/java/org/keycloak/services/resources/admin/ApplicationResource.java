@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -85,6 +86,14 @@ public class ApplicationResource {
     @Path("claims")
     public ClaimResource getClaimResource() {
         return new ClaimResource(application, auth);
+    }
+
+    @Path("protocol-mappers")
+    public ClientProtocolMappersResource getProtocolMappers() {
+        ClientProtocolMappersResource mappers = new ClientProtocolMappersResource(realm, auth, application);
+        ResteasyProviderFactory.getInstance().injectProperties(mappers);
+        //resourceContext.initResource(mappers);
+        return mappers;
     }
 
     /**
