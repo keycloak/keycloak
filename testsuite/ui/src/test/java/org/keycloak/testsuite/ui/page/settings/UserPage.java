@@ -93,6 +93,7 @@ public class UserPage extends AbstractPage {
 	}
 
     public User findUser(String username) {
+		waitAjaxForElement(searchInput);
         searchInput.sendKeys(username);
         searchButton.click();
         List<User> users = getAllRows();

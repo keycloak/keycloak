@@ -24,7 +24,7 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
     public void addUserWithInvalidEmailTest() {
         String testUsername = "testUserInvEmail";
         String invalidEmail = "user.redhat.com";
-        User testUser = new User(testUsername, invalidEmail);
+        User testUser = new User(testUsername, "pass", invalidEmail);
         navigation.users();
         page.addUser(testUser);
         flashMessage.waitUntilPresent();
@@ -62,13 +62,14 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
         page.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+		navigation.users();
         assertNotNull(page.findUser(testUsername));
 
         User testUser2 = new User(testUsername);
-        navigation.users();
         page.addUser(testUser2);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
+		navigation.users();
         page.deleteUser(testUsername);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -80,6 +81,7 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
         navigation.users();
         page.addUser(TEST_USER1);
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+		navigation.users();
         page.deleteUser(TEST_USER1.getUserName());
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
