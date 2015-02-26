@@ -185,10 +185,21 @@
             "redirectUris": [
                 "/test-app/*"
             ],
-            "webOrigins": [],
-            "allowedIdentityProviders" : [
-                "model-oidc-idp"
-            ]
+            "webOrigins": []
+        },
+        {
+          "name": "test-app-with-allowed-providers",
+          "enabled": true,
+          "publicClient": true,
+          "adminUrl": "http://localhost:8081/auth",
+          "baseUrl": "http://localhost:8081/auth",
+          "redirectUris": [
+            "/test-app/*"
+          ],
+          "webOrigins": [],
+          "allowedIdentityProviders": [
+            "kc-oidc-idp"
+          ]
         }
     ],
     "oauthClients" : [

@@ -45,7 +45,6 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -112,25 +111,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertTrue(identityProviderModel.isEnabled());
         assertTrue(identityProviderModel.isUpdateProfileFirstLogin());
         assertFalse(identityProviderModel.isAuthenticateByDefault());
-    }
-
-    @Test
-    public void testRemoveIdentityProvider() throws Exception {
-        RealmModel realm = installTestRealm();
-        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
-
-        assertFalse(identityProviders.isEmpty());
-
-        IdentityProviderModel identityProviderModel = identityProviders.get(0);
-        String expectedId = identityProviderModel.getId();
-
-        realm.removeIdentityProviderById(expectedId);
-
-        commit();
-
-        realm = this.realmManager.getRealm(realm.getId());
-
-        assertNull(realm.getIdentityProviderById(expectedId));
     }
 
     private void assertIdentityProviderConfig(List<IdentityProviderModel> identityProviders) {
