@@ -323,7 +323,7 @@ public class IdentityBrokerService {
                     federatedUser.addRequiredAction(UPDATE_PROFILE);
                 }
             } catch (Exception e) {
-                return redirectToErrorPage(e.getMessage(), e);
+                return redirectToLoginPage(e, clientCode);
             }
         }
 
@@ -445,6 +445,20 @@ public class IdentityBrokerService {
 
         fireErrorEvent(message, throwable);
         return Flows.forwardToSecurityFailurePage(this.session, this.realmModel, this.uriInfo, message);
+    }
+
+    private Response redirectToLoginPage(Throwable t, ClientSessionCode clientCode) {
+        String message = t.getMessage();
+
+        if (message == null) {
+            message = "Unexpected error when authenticating with identity provider";
+        }
+
+        fireErrorEvent(message);
+        return Flows.forms(this.session, this.realmModel, clientCode.getClientSession().getClient(), this.uriInfo)
+                .setClientSessionCode(clientCode.getCode())
+                .setError(message)
+                .createLogin();
     }
 
     private Response badRequest(String message) {
