@@ -323,7 +323,7 @@ public class IdentityBrokerService {
                     federatedUser.addRequiredAction(UPDATE_PROFILE);
                 }
             } catch (Exception e) {
-                return redirectToLoginPage(e.getMessage(), clientCode);
+                return redirectToErrorPage(e.getMessage(), e);
             }
         }
 
@@ -439,6 +439,10 @@ public class IdentityBrokerService {
     }
 
     private Response redirectToErrorPage(String message, Throwable throwable) {
+        if (message == null) {
+            message = "Unexpected error when authenticating with identity provider";
+        }
+
         fireErrorEvent(message, throwable);
         return Flows.forwardToSecurityFailurePage(this.session, this.realmModel, this.uriInfo, message);
     }
@@ -446,14 +450,6 @@ public class IdentityBrokerService {
     private Response badRequest(String message) {
         fireErrorEvent(message);
         return Flows.errors().error(message, Status.BAD_REQUEST);
-    }
-
-    private Response redirectToLoginPage(String message, ClientSessionCode clientCode) {
-        fireErrorEvent(message);
-        return Flows.forms(this.session, this.realmModel, clientCode.getClientSession().getClient(), this.uriInfo)
-                .setClientSessionCode(clientCode.getCode())
-                .setError(message)
-                .createLogin();
     }
 
     private IdentityProvider getIdentityProvider(String providerId) {
@@ -513,7 +509,11 @@ public class IdentityBrokerService {
         FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(updatedIdentity.getIdentityProviderId(), updatedIdentity.getId(),
                 updatedIdentity.getUsername(), updatedIdentity.getToken());
         // Check if no user already exists with this username or email
-        UserModel existingUser = this.session.users().getUserByEmail(updatedIdentity.getEmail(), this.realmModel);
+        UserModel existingUser = null;
+
+        if (updatedIdentity.getEmail() != null) {
+            existingUser = this.session.users().getUserByEmail(updatedIdentity.getEmail(), this.realmModel);
+        }
 
         if (existingUser != null) {
             fireErrorEvent(Errors.FEDERATED_IDENTITY_EMAIL_EXISTS);
