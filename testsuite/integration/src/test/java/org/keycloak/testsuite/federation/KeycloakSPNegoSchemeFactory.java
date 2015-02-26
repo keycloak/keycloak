@@ -8,7 +8,10 @@ import org.apache.http.auth.AuthScheme;
 import org.apache.http.impl.auth.SPNegoScheme;
 import org.apache.http.impl.auth.SPNegoSchemeFactory;
 import org.apache.http.params.HttpParams;
+import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
@@ -83,7 +86,17 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
             @Override
             public ByteArrayHolder run() throws Exception {
-                byte[] outputToken = KeycloakSPNegoScheme.super.generateGSSToken(input, oid, authServer);
+                byte[] token = input;
+                if (token == null) {
+                    token = new byte[0];
+                }
+                GSSManager manager = getManager();
+                GSSName serverName = manager.createName("HTTP/" + authServer + "@" + kerberosConfig.getKerberosRealm(), null);
+                GSSContext gssContext = manager.createContext(
+                        serverName.canonicalize(oid), oid, null, GSSContext.DEFAULT_LIFETIME);
+                gssContext.requestMutualAuth(true);
+                gssContext.requestCredDeleg(true);
+                byte[] outputToken = gssContext.initSecContext(token, 0, token.length);
 
                 ByteArrayHolder result = new ByteArrayHolder();
                 result.bytes = outputToken;

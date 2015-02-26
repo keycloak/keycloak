@@ -24,6 +24,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -148,6 +149,37 @@ public abstract class AbstractIdentityProviderTest {
         } catch (NoSuchElementException nsee) {
 
         }
+    }
+
+    @Test
+    public void testDisabledForApplication() {
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        RealmModel realm = getRealm();
+        ApplicationModel applicationModel = realm.getApplicationByName("test-app");
+        List<String> allowedIdentityProviders = applicationModel.getAllowedIdentityProviders();
+
+        assertTrue(allowedIdentityProviders.contains(identityProviderModel.getId()));
+
+        allowedIdentityProviders.remove(identityProviderModel.getId());
+
+        this.driver.navigate().to("http://localhost:8081/test-app/");
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+
+        try {
+            this.driver.findElement(By.className(getProviderId()));
+            fail("Provider [" + getProviderId() + "] not disabled.");
+        } catch (NoSuchElementException nsee) {
+
+        }
+
+        allowedIdentityProviders.add(identityProviderModel.getId());
+
+        applicationModel.updateAllowedIdentityProviders(allowedIdentityProviders);
+
+        this.driver.navigate().to("http://localhost:8081/test-app/");
+
+        this.driver.findElement(By.className(getProviderId()));
     }
 
     @Test

@@ -228,6 +228,10 @@
             <maven-resource group="org.keycloak" artifact="keycloak-social-facebook"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-kerberos-federation">
+            <maven-resource group="org.keycloak" artifact="keycloak-kerberos-federation"/>
+        </module-def>
+
         <module-def name="org.keycloak.keycloak-ldap-federation">
             <maven-resource group="org.keycloak" artifact="keycloak-ldap-federation"/>
         </module-def>

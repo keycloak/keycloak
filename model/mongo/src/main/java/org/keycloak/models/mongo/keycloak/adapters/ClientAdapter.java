@@ -341,11 +341,6 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     @Override
     public boolean hasIdentityProvider(String providerId) {
         List<String> allowedIdentityProviders = getMongoEntityAsClient().getAllowedIdentityProviders();
-
-        if (allowedIdentityProviders.isEmpty()) {
-            return true;
-        }
-
         return allowedIdentityProviders.contains(providerId);
     }
 }

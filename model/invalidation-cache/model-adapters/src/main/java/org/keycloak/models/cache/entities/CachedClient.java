@@ -130,10 +130,6 @@ public class CachedClient {
     }
 
     public boolean hasIdentityProvider(String providerId) {
-        if (this.allowedIdentityProviders.isEmpty()) {
-            return true;
-        }
-
         return this.allowedIdentityProviders.contains(providerId);
     }
 
