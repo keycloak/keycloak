@@ -28,10 +28,10 @@
     },
     "applications": [
         {
-            "name": "http://localhost:8081/auth/",
+            "name": "http://localhost:8080/auth/",
             "enabled": true,
             "redirectUris": [
-              "http://localhost:8081/auth/realms/saml-broker-authentication-realm/broker/saml-identity-provider"
+              "http://localhost:8080/auth/realms/saml-broker-authentication-realm/broker/saml-identity-provider"
             ],
           "attributes": {
             "saml.assertion.signature": "true",

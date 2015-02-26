@@ -39,6 +39,9 @@
             "baseUrl": "/facebook-authentication",
             "redirectUris": [
               "/facebook-authentication/*"
+            ],
+            "webOrigins": [
+              "http://localhost:8080"
             ]
         }
     ],
