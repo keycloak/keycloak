@@ -52,6 +52,8 @@ public class SessionAndTokensTest extends AbstractKeyCloakTest<SessionAndTokensP
 	public void testLifespanOfRealmSession() {
 		navigation.timeoutSettings();
 		page.setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
+		logOut();
+		loginAsAdmin();
 		waitModel().withTimeout(TIMEOUT * 2, TIME_UNIT)
 				.pollingEvery(1, TIME_UNIT)
 				.until("Home page should be visible after session timeout")
@@ -59,6 +61,7 @@ public class SessionAndTokensTest extends AbstractKeyCloakTest<SessionAndTokensP
 				.is()
 				.present();
 		loginPage.loginAsAdmin();
+		navigation.sessions();
 		navigation.timeoutSettings();
 		page.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
 	}
