@@ -42,6 +42,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.HttpAuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
@@ -71,6 +72,7 @@ import javax.ws.rs.ext.Providers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -875,7 +877,7 @@ public class OIDCLoginProtocolService {
 
             if (identityProviderModel == null) {
                 return Flows.forms(session, realm, null, uriInfo, headers)
-                        .setError("Could not find an identity provider with the identifier [" + idpHint + "].")
+                        .setError(Messages.IDENTITY_PROVIDER_NOT_FOUND, idpHint)
                         .createErrorPage();
             }
             return redirectToIdentityProvider(idpHint, accessCode);
@@ -908,10 +910,10 @@ public class OIDCLoginProtocolService {
                     return redirectToIdentityProvider(identityProviders.get(0).getId(), accessCode);
                 }
 
-                return Flows.forms(session, realm, null, uriInfo, headers).setError("Realm [" + this.realm.getName() + "] supports multiple identity providers. Could not determine which identity provider should be used to authenticate with.").createErrorPage();
+                return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.IDENTITY_PROVIDER_NOT_UNIQUE, this.realm.getName()).createErrorPage();
             }
 
-            return Flows.forms(session, realm, null, uriInfo, headers).setError("Realm [" + this.realm.getName() + "] does not support any credential type.").createErrorPage();
+            return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.REALM_SUPPORTS_NO_CREDENTIALS,this.realm.getName()).createErrorPage();
         }
 
         LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo, headers)

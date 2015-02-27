@@ -89,4 +89,9 @@ public class Messages {
 
     public static final String ERROR = "error";
 
+    public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentials";
+
+    public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUnique";
+
+    public static final String NO_ACCESS = "noAccess";
 }

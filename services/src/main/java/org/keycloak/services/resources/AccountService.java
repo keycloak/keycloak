@@ -241,7 +241,7 @@ public class AccountService {
             try {
                 require(AccountRoles.MANAGE_ACCOUNT);
             } catch (ForbiddenException e) {
-                return Flows.forms(session, realm, null, uriInfo, headers).setError("No access").createErrorPage();
+                return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.NO_ACCESS).createErrorPage();
             }
 
             setReferrerOnPage();
