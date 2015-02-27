@@ -11,7 +11,7 @@
         <table class="table table-striped table-bordered">
             <thead>
             <tr>
-                <th class="kc-table-actions" colspan="3">
+                <th class="kc-table-actions" colspan="4">
                     <div class="search-comp clearfix">
                         <input type="text" placeholder="Search..." class="form-control search" data-ng-model="search.name"
                                onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
@@ -29,6 +29,7 @@
             </tr>
             <tr data-ng-hide="mappers.length == 0">
                 <th>Name</th>
+                <th>Category</th>
                 <th>Type</th>
                 <th>Remove</th>
             </tr>
@@ -36,7 +37,8 @@
             <tbody>
             <tr ng-repeat="mapper in mappers | filter:search">
                 <td><a href="#/realms/{{realm.realm}}/protocols/{{application.protocol}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
-                <td>{{mapperTypes[mapper.protocolMapper]}}</td>
+                <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
+                <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
                 <td><input type="checkbox" ng-model="mapper.isChecked"></td>
             </tr>
             <tr data-ng-show="mappers.length == 0">

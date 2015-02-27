@@ -47,7 +47,17 @@ public class OIDCUserSessionNoteMapper extends AbstractOIDCProtocolMapper implem
 
     @Override
     public String getDisplayType() {
-        return "UserSession Note Mapper";
+        return "UserSession Note";
+    }
+
+    @Override
+    public String getDisplayCategory() {
+        return TOKEN_MAPPER_CATEGORY;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Map a temporary note that is attached to the UserSession to a token claim.";
     }
 
     @Override

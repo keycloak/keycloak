@@ -143,6 +143,8 @@ public class ServerInfoAdminResource {
             ProtocolMapperTypeRepresentation rep = new ProtocolMapperTypeRepresentation();
             rep.setId(mapper.getId());
             rep.setName(mapper.getDisplayType());
+            rep.setHelpText(mapper.getHelpText());
+            rep.setCategory(mapper.getDisplayCategory());
             rep.setProperties(new LinkedList<ProtocolMapperTypeRepresentation.ConfigProperty>());
             for (ProtocolMapper.ConfigProperty prop : mapper.getConfigProperties()) {
                 ProtocolMapperTypeRepresentation.ConfigProperty propRep = new ProtocolMapperTypeRepresentation.ConfigProperty();
