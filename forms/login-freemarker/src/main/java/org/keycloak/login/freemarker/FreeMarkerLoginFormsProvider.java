@@ -30,6 +30,7 @@ import org.keycloak.services.resources.flows.Urls;
 import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
     private Map<String, String> httpResponseHeaders = new HashMap<String, String>();
     private String accessRequestMessage;
     private URI actionUri;
+    private Object[] parameters;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
@@ -182,7 +184,13 @@ import java.util.concurrent.TimeUnit;
         }
 
         if (message != null) {
-            attributes.put("message", new MessageBean(messages.containsKey(message) ? messages.getProperty(message) : message, messageType));
+            String formattedMessage;
+            if(messages.containsKey(message)){
+                formattedMessage = new MessageFormat(messages.getProperty(message),locale).format(parameters);
+            }else{
+                formattedMessage = message;
+            }
+            attributes.put("message", new MessageBean(formattedMessage, messageType));
         }
         if (page == LoginFormsPages.OAUTH_GRANT) {
             // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
@@ -271,21 +279,24 @@ import java.util.concurrent.TimeUnit;
         return createResponse(LoginFormsPages.CODE);
     }
 
-    public FreeMarkerLoginFormsProvider setError(String message) {
+    public FreeMarkerLoginFormsProvider setError(String message, Object ... parameters) {
         this.message = message;
         this.messageType = MessageType.ERROR;
+        this.parameters = parameters;
         return this;
     }
 
-    public FreeMarkerLoginFormsProvider setSuccess(String message) {
+    public FreeMarkerLoginFormsProvider setSuccess(String message, Object ... parameters) {
         this.message = message;
         this.messageType = MessageType.SUCCESS;
+        this.parameters = parameters;
         return this;
     }
 
-    public FreeMarkerLoginFormsProvider setWarning(String message) {
+    public FreeMarkerLoginFormsProvider setWarning(String message, Object ... parameters) {
         this.message = message;
         this.messageType = MessageType.WARNING;
+        this.parameters = parameters;
         return this;
     }
 

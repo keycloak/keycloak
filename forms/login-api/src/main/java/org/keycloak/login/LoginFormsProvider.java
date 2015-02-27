@@ -45,11 +45,11 @@ public interface LoginFormsProvider extends Provider {
     public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested);
     public LoginFormsProvider setAccessRequest(String message);
 
-    public LoginFormsProvider setError(String message);
+    public LoginFormsProvider setError(String message, Object ... parameters);
 
-    public LoginFormsProvider setSuccess(String message);
+    public LoginFormsProvider setSuccess(String message, Object ... parameters);
 
-    public LoginFormsProvider setWarning(String message);
+    public LoginFormsProvider setWarning(String message, Object ... parameters);
 
     public LoginFormsProvider setUser(UserModel user);
 
