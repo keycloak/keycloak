@@ -2,6 +2,7 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -9,6 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.entities.ClientEntity;
+import org.keycloak.models.entities.ClientIdentityProviderMappingEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 
@@ -323,29 +325,58 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     }
 
     @Override
-    public void updateAllowedIdentityProviders(List<String> identityProviders) {
-        List<String> providerIds = new ArrayList<String>();
-        for (String providerId : identityProviders) {
-            providerIds.add(providerId);
+    public void updateAllowedIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
+        List<ClientIdentityProviderMappingEntity> stored = getMongoEntityAsClient().getIdentityProviders();
+
+        for (ClientIdentityProviderMappingModel model : identityProviders) {
+            ClientIdentityProviderMappingEntity entity = new ClientIdentityProviderMappingEntity();
+
+            entity.setId(model.getIdentityProvider());
+            entity.setRetrieveToken(model.isRetrieveToken());
         }
 
-        getMongoEntityAsClient().setAllowedIdentityProviders(identityProviders);
+        getMongoEntityAsClient().setIdentityProviders(stored);
         updateMongoEntity();
     }
 
     @Override
-    public List<String> getAllowedIdentityProviders() {
-        return getMongoEntityAsClient().getAllowedIdentityProviders();
+    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
+        List<ClientIdentityProviderMappingModel> models = new ArrayList<ClientIdentityProviderMappingModel>();
+
+        for (ClientIdentityProviderMappingEntity entity : getMongoEntityAsClient().getIdentityProviders()) {
+            ClientIdentityProviderMappingModel model = new ClientIdentityProviderMappingModel();
+
+            model.setIdentityProvider(entity.getId());
+            model.setRetrieveToken(entity.isRetrieveToken());
+
+            models.add(model);
+        }
+
+        return models;
     }
 
     @Override
     public boolean hasIdentityProvider(String providerId) {
-        List<String> allowedIdentityProviders = getMongoEntityAsClient().getAllowedIdentityProviders();
+        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : getMongoEntityAsClient().getIdentityProviders()) {
+            String identityProvider = identityProviderMappingModel.getId();
 
-        if (allowedIdentityProviders.isEmpty()) {
-            return true;
+            if (identityProvider.equals(providerId)) {
+                return true;
+            }
         }
 
-        return allowedIdentityProviders.contains(providerId);
+        return false;
     }
+
+    @Override
+    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
+        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : getMongoEntityAsClient().getIdentityProviders()) {
+            if (identityProviderMappingModel.getId().equals(providerId)) {
+                return identityProviderMappingModel.isRetrieveToken();
+            }
+        }
+
+        return false;
+    }
+
 }

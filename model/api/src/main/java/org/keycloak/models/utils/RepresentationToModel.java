@@ -7,6 +7,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClaimTypeModel;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -23,6 +24,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClaimTypeRepresentation;
+import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
 import org.keycloak.representations.idm.ClientProtocolMappingRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -493,6 +495,7 @@ public class RepresentationToModel {
             applicationModel.setProtocolMappers(ids);
         }
 
+        applicationModel.updateAllowedIdentityProviders(toModel(resourceRep.getIdentityProviders(), realm));
 
         return applicationModel;
     }
@@ -545,9 +548,7 @@ public class RepresentationToModel {
             setClaims(resource, rep.getClaims());
         }
 
-        if (rep.getAllowedIdentityProviders() != null) {
-            resource.updateAllowedIdentityProviders(rep.getAllowedIdentityProviders());
-        }
+        updateClientIdentityProvides(rep.getIdentityProviders(), resource);
     }
 
     public static void setClaims(ClientModel model, ClaimRepresentation rep) {
@@ -621,6 +622,9 @@ public class RepresentationToModel {
 
     public static OAuthClientModel createOAuthClient(OAuthClientRepresentation rep, RealmModel realm) {
         OAuthClientModel model = createOAuthClient(rep.getId(), rep.getName(), realm);
+
+        model.updateAllowedIdentityProviders(toModel(rep.getIdentityProviders(), realm));
+
         updateOAuthClient(rep, model);
         return model;
     }
@@ -663,9 +667,7 @@ public class RepresentationToModel {
             }
         }
 
-        if (rep.getAllowedIdentityProviders() != null) {
-            model.updateAllowedIdentityProviders(rep.getAllowedIdentityProviders());
-        }
+        updateClientIdentityProvides(rep.getIdentityProviders(), model);
 
         if (rep.getProtocolMappers() != null) {
             Set<String> ids = new HashSet<String>();
@@ -863,5 +865,49 @@ public class RepresentationToModel {
         model.setProtocolMapper(rep.getProtocolMapper());
         model.setConfig(rep.getConfig());
         return model;
+    }
+
+    private static List<ClientIdentityProviderMappingModel> toModel(List<ClientIdentityProviderMappingRepresentation> repIdentityProviders, RealmModel realm) {
+        List<ClientIdentityProviderMappingModel> allowedIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
+
+        if (repIdentityProviders == null || repIdentityProviders.isEmpty()) {
+            allowedIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
+
+            for (IdentityProviderModel identityProvider : realm.getIdentityProviders()) {
+                ClientIdentityProviderMappingModel identityProviderMapping = new ClientIdentityProviderMappingModel();
+
+                identityProviderMapping.setIdentityProvider(identityProvider.getId());
+
+                allowedIdentityProviders.add(identityProviderMapping);
+            }
+        } else {
+            for (ClientIdentityProviderMappingRepresentation rep : repIdentityProviders) {
+                ClientIdentityProviderMappingModel identityProviderMapping = new ClientIdentityProviderMappingModel();
+
+                identityProviderMapping.setIdentityProvider(rep.getId());
+                identityProviderMapping.setRetrieveToken(rep.isRetrieveToken());
+
+                allowedIdentityProviders.add(identityProviderMapping);
+            }
+        }
+
+        return allowedIdentityProviders;
+    }
+
+    private static void updateClientIdentityProvides(List<ClientIdentityProviderMappingRepresentation> identityProviders, ClientModel resource) {
+        if (identityProviders != null) {
+            List<ClientIdentityProviderMappingModel> allowedIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
+
+            for (ClientIdentityProviderMappingRepresentation mappingRepresentation : identityProviders) {
+                ClientIdentityProviderMappingModel identityProviderMapping = new ClientIdentityProviderMappingModel();
+
+                identityProviderMapping.setIdentityProvider(mappingRepresentation.getId());
+                identityProviderMapping.setRetrieveToken(mappingRepresentation.isRetrieveToken());
+
+                allowedIdentityProviders.add(identityProviderMapping);
+            }
+
+            resource.updateAllowedIdentityProviders(allowedIdentityProviders);
+        }
     }
 }

@@ -409,11 +409,15 @@ public class LDAPFederationProvider implements UserFederationProvider {
         UserModel user = session.userStorage().getUserByUsername(username, realm);
         if (user != null) {
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
-            if (isValid(user)) {
+            if (!model.getId().equals(user.getFederationLink())) {
+                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() + "]");
+                return null;
+            } else if (isValid(user)) {
                 return proxy(user);
             } else {
-                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() +
-                        "] or LDAP_ID is not correct. Stale LDAP_ID on local user is: " + user.getAttribute(LDAP_ID));
+                logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getDisplayName() +
+                        "] but is not valid. Stale LDAP_ID on local user is: " + user.getAttribute(LDAP_ID));
+                logger.warn("Will re-create user");
                 session.userStorage().removeUser(realm, user);
             }
         }

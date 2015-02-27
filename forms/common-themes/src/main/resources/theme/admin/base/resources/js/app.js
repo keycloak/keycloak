@@ -171,7 +171,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmIdentityProviderCtrl'
         })
         .when('/realms/:realm/identity-provider-settings/provider/:provider_id/:id', {
-            templateUrl : function(params){ return 'partials/realm-identity-provider-' + params.provider_id + '.html'; },
+            templateUrl : function(params){ return resourceUrl + '/partials/realm-identity-provider-' + params.provider_id + '.html'; },
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();

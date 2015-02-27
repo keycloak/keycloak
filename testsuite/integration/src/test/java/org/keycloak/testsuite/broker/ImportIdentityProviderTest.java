@@ -25,6 +25,8 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.saml.SAMLIdentityProvider;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -45,7 +47,6 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -115,23 +116,29 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     }
 
     @Test
-    public void testRemoveIdentityProvider() throws Exception {
+    public void testApplicationIdentityProviders() throws Exception {
         RealmModel realm = installTestRealm();
-        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
 
-        assertFalse(identityProviders.isEmpty());
+        ClientModel client = realm.findClient("test-app-with-allowed-providers");
+        List<ClientIdentityProviderMappingModel> identityProviders = client.getIdentityProviders();
 
-        IdentityProviderModel identityProviderModel = identityProviders.get(0);
-        String expectedId = identityProviderModel.getId();
+        assertEquals(1, identityProviders.size());
 
-        realm.removeIdentityProviderById(expectedId);
+        ClientIdentityProviderMappingModel identityProviderMappingModel = identityProviders.get(0);
 
-        commit();
+        assertEquals("kc-oidc-idp", identityProviderMappingModel.getIdentityProvider());
+        assertEquals(false, identityProviderMappingModel.isRetrieveToken());
 
-        realm = this.realmManager.getRealm(realm.getId());
+        identityProviders.remove(identityProviderMappingModel);
 
-        assertNull(realm.getIdentityProviderById(expectedId));
+        client.updateAllowedIdentityProviders(identityProviders);
+
+        client = realm.findClientById(client.getId());
+        identityProviders = client.getIdentityProviders();
+
+        assertEquals(0, identityProviders.size());
     }
+
 
     private void assertIdentityProviderConfig(List<IdentityProviderModel> identityProviders) {
         assertFalse(identityProviders.isEmpty());

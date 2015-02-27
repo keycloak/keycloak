@@ -24,6 +24,9 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -148,6 +151,44 @@ public abstract class AbstractIdentityProviderTest {
         } catch (NoSuchElementException nsee) {
 
         }
+    }
+
+    @Test
+    public void testDisabledForApplication() {
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        RealmModel realm = getRealm();
+        ApplicationModel applicationModel = realm.getApplicationByName("test-app");
+        List<ClientIdentityProviderMappingModel> allowedIdentityProviders = applicationModel.getIdentityProviders();
+        ClientIdentityProviderMappingModel mapping = null;
+
+        for (ClientIdentityProviderMappingModel model : allowedIdentityProviders) {
+            if (model.getIdentityProvider().equals(identityProviderModel.getId())) {
+                mapping = model;
+            }
+        }
+
+        assertNotNull(mapping);
+
+        allowedIdentityProviders.remove(mapping);
+
+        this.driver.navigate().to("http://localhost:8081/test-app/");
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+
+        try {
+            this.driver.findElement(By.className(getProviderId()));
+            fail("Provider [" + getProviderId() + "] not disabled.");
+        } catch (NoSuchElementException nsee) {
+
+        }
+
+        allowedIdentityProviders.add(mapping);
+
+        applicationModel.updateAllowedIdentityProviders(allowedIdentityProviders);
+
+        this.driver.navigate().to("http://localhost:8081/test-app/");
+
+        this.driver.findElement(By.className(getProviderId()));
     }
 
     @Test
@@ -285,6 +326,18 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(identityModel.getToken());
 
+        ClientModel clientModel = realm.findClient("test-app");
+        ClientIdentityProviderMappingModel providerMappingModel = null;
+
+        for (ClientIdentityProviderMappingModel identityProviderMappingModel : clientModel.getIdentityProviders()) {
+            if (identityProviderMappingModel.getIdentityProvider().equals(getProviderId())) {
+                providerMappingModel = identityProviderMappingModel;
+                break;
+            }
+        }
+
+        providerMappingModel.setRetrieveToken(false);
+
         UserSessionStatus userSessionStatus = retrieveSessionStatus();
         String accessToken = userSessionStatus.getAccessTokenString();
         URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), realm.getName());
@@ -298,6 +351,14 @@ public abstract class AbstractIdentityProviderTest {
         Client client = ClientBuilder.newBuilder().register(authFilter).build();
         WebTarget tokenEndpoint = client.target(tokenEndpointUrl);
         Response response = tokenEndpoint.request().get();
+
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+
+        providerMappingModel.setRetrieveToken(true);
+
+        client = ClientBuilder.newBuilder().register(authFilter).build();
+        tokenEndpoint = client.target(tokenEndpointUrl);
+        response = tokenEndpoint.request().get();
 
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
         assertNotNull(response.readEntity(String.class));
@@ -342,6 +403,18 @@ public abstract class AbstractIdentityProviderTest {
         grantPage.accept();
 
         assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+
+        ClientModel clientModel = getRealm().findClient("third-party");
+        ClientIdentityProviderMappingModel providerMappingModel = null;
+
+        for (ClientIdentityProviderMappingModel identityProviderMappingModel : clientModel.getIdentityProviders()) {
+            if (identityProviderMappingModel.getIdentityProvider().equals(getProviderId())) {
+                providerMappingModel = identityProviderMappingModel;
+                break;
+            }
+        }
+
+        providerMappingModel.setRetrieveToken(true);
 
         AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
         URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), getRealm().getName());
