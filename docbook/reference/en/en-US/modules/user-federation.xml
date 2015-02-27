@@ -98,6 +98,14 @@
                         </listitem>
                     </varlistentry>
                     <varlistentry>
+                        <term>Allow Kerberos authentication</term>
+                        <listitem>
+                            <para>
+                                Enable Kerberos/SPNEGO authentication in realm with users data provisioned from LDAP. More info in <link linkend="kerberos">Kerberos section</link>.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
                         <term>Other options</term>
                         <listitem>
                             <para>
