@@ -84,7 +84,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, headers);
         if(locale != null){
-            attributes.put("locale", locale.toLanguageTag());
+            attributes.put("locale", locale);
         }
         Properties messages;
         try {

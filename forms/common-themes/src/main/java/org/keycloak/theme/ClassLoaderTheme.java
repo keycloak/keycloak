@@ -106,16 +106,12 @@ public class ClassLoaderTheme implements Theme {
 
     @Override
     public Properties getMessages(Locale locale) throws IOException {
+        if(locale == null){
+            return null;
+        }
         Properties m = new Properties();
 
-        String message = null;
-        if(locale != null){
-            message = this.messageRoot + "messages_" + locale.toString() + ".properties";
-        }else{
-            message = this.messageRoot + "messages.properties";
-        }
-
-        URL url = classLoader.getResource(message);
+        URL url = classLoader.getResource(this.messageRoot + "messages_" + locale.toString() + ".properties");
         if (url != null) {
             m.load(url.openStream());
         }

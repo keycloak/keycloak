@@ -83,16 +83,13 @@ public class FolderTheme implements Theme {
 
     @Override
     public Properties getMessages(Locale locale) throws IOException {
-        Properties m = new Properties();
-
-        String message = null;
-        if(locale != null){
-            message = "messages_" + locale.toString() + ".properties";
-        }else{
-            message = "messages.properties";
+        if(locale == null){
+            return null;
         }
 
-        File file = new File(themeDir, "messages" + File.separator + message);
+        Properties m = new Properties();
+
+        File file = new File(themeDir, "messages" + File.separator + "messages_" + locale.toString() + ".properties");
         if (file.isFile()) {
             m.load(new FileInputStream(file));
         }

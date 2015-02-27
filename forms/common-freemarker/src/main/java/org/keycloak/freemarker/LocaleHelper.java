@@ -25,7 +25,7 @@ public class LocaleHelper {
 
     public static Locale getLocale(RealmModel realm, UserModel user, UriInfo uriInfo, HttpHeaders httpHeaders) {
         if(!realm.isInternationalizationEnabled()){
-            return null;
+            return Locale.ENGLISH;
         }
 
         //1. Locale cookie
@@ -83,7 +83,7 @@ public class LocaleHelper {
             return Locale.forLanguageTag(realm.getDefaultLocale());
         }
 
-        return null;
+        return Locale.ENGLISH;
     }
 
     public static void updateLocaleCookie(Response.ResponseBuilder builder, Locale locale, RealmModel realm, UriInfo uriInfo, String path) {
