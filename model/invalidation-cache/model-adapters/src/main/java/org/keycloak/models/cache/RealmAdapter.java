@@ -888,7 +888,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
         if (updated != null) return updated.getProtocolMappers();
-        return cached.getClaimMappings();
+        return cached.getProtocolMappers();
      }
 
     @Override
@@ -913,7 +913,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        for (ProtocolMapperModel mapping : cached.getClaimMappings()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
             if (mapping.getId().equals(id)) return mapping;
         }
         return null;
@@ -921,7 +921,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        for (ProtocolMapperModel mapping : cached.getClaimMappings()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
             if (mapping.getProtocol().equals(protocol) && mapping.getName().equals(name)) return mapping;
         }
         return null;

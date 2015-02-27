@@ -1340,6 +1340,14 @@ public class RealmAdapter implements RealmModel {
         ProtocolMapperEntity toDelete = getProtocolMapperEntity(mapping.getId());
         if (toDelete != null) {
             realm.getProtocolMappers().remove(toDelete);
+            Set<String> removeId = new HashSet<String>();
+            removeId.add(mapping.getId());
+            for (ApplicationModel app : getApplications()) {
+                app.removeProtocolMappers(removeId);
+            }
+            for (OAuthClientModel app : getOAuthClients()) {
+                app.removeProtocolMappers(removeId);
+            }
             em.remove(toDelete);
         }
 

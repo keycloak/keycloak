@@ -13,6 +13,5 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
-    //List<ProtocolMapperModel> getDefaultProtocolMappers();
     Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager);
 }

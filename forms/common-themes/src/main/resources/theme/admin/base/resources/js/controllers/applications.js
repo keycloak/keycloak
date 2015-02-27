@@ -1,3 +1,9 @@
+Array.prototype.remove = function(from, to) {
+    var rest = this.slice((to || from) + 1 || this.length);
+    this.length = from < 0 ? this.length + from : from;
+    return this.push.apply(this, rest);
+};
+
 module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, application, roles) {
     $scope.realm = realm;
     $scope.roles = roles;
@@ -368,41 +374,6 @@ module.controller('ApplicationSessionsCtrl', function($scope, realm, sessionCoun
         })
     };
 });
-
-module.controller('ApplicationClaimsCtrl', function($scope, realm, application, claims,
-                                                        ApplicationClaims,
-                                                        $http, $location, Dialog, Notifications) {
-    $scope.realm = realm;
-    $scope.application = application;
-    $scope.claims = angular.copy(claims);
-
-    $scope.changed = false;
-
-    $scope.$watch('claims', function () {
-        if (!angular.equals($scope.claims, claims)) {
-            $scope.changed = true;
-        }
-    }, true);
-
-
-    $scope.save = function () {
-        ApplicationClaims.update({
-            realm: realm.realm,
-            application: application.id
-        }, $scope.claims, function () {
-            $scope.changed = false;
-            claims = angular.copy($scope.claims);
-
-            Notifications.success("Your claim changes have been saved.");
-        });
-    };
-
-    $scope.reset = function () {
-        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/claims");
-    };
-
-});
-
 
 module.controller('ApplicationRoleDetailCtrl', function($scope, realm, application, role, roles, applications,
                                                         Role, ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
@@ -1114,4 +1085,108 @@ module.controller('ApplicationClusteringNodeCtrl', function($scope, application,
         }
     }
 });
+
+module.controller('ApplicationProtocolMapperCtrl', function($scope, realm, application, serverInfo,
+                                                    ApplicationProtocolMappersByProtocol,
+                                                    $http, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.application = application;
+
+    var protocolMappers = serverInfo.protocolMapperTypes[application.protocol];
+    var mapperTypes = {};
+    for (var i = 0; i < protocolMappers.length; i++) {
+        mapperTypes[protocolMappers[i].id] = protocolMappers[i].name;
+    }
+    $scope.mapperTypes = mapperTypes;
+
+
+    var updateMappers = function() {
+        $scope.mappers = ApplicationProtocolMappersByProtocol.query({realm : realm.realm, application : application.id, protocol : application.protocol});
+
+        for (var i = 0; i < $scope.mappers.length; i++) {
+            $scope.mappers[i].isChecked = false;
+        }
+    };
+
+    updateMappers();
+
+    $scope.remove = function() {
+        var toDelete = [];
+        for (var i = 0; i < $scope.mappers.length; i++) {
+            if ($scope.mappers[i].isChecked) {
+               toDelete.push($scope.mappers[i].id);
+            }
+        }
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/protocol-mappers/models',
+            {data : toDelete, headers : {"content-type" : "application/json"}}).success(function() {
+                Notifications.success("Mappers removed");
+                updateMappers();
+            }).error(function() {
+                updateMappers();
+                Notifications.error("Error removing mappers");
+            });
+    };
+
+});
+
+module.controller('AddApplicationProtocolMapperCtrl', function($scope, realm, application, serverInfo,
+                                                            RealmProtocolMappersByProtocol,
+                                                            ApplicationProtocolMappersByProtocol,
+                                                            $http, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.application = application;
+
+    var protocolMapperTypes = serverInfo.protocolMapperTypes[application.protocol];
+    var mapperTypes = {};
+    for (var i = 0; i < protocolMapperTypes.length; i++) {
+        mapperTypes[protocolMapperTypes[i].id] = protocolMapperTypes[i].name;
+    }
+    $scope.mapperTypes = mapperTypes;
+
+
+    var updateMappers = function() {
+        var mappers =  RealmProtocolMappersByProtocol.query({realm : realm.realm, protocol : application.protocol}, function() {
+            var appMappers = ApplicationProtocolMappersByProtocol.query({realm : realm.realm, application : application.id, protocol : application.protocol}, function() {
+                for (var i = 0; i < appMappers.length; i++) {
+                    for (var j = 0; j < mappers.length; j++) {
+                        if (mappers[j].id == appMappers[i].id) {
+                            mappers.remove(j);
+                            break;
+                        }
+                    }
+                }
+                $scope.mappers = mappers;
+                for (var i = 0; i < $scope.mappers.length; i++) {
+                    $scope.mappers[i].isChecked = false;
+                }
+
+
+            })
+
+        })
+
+    };
+
+    updateMappers();
+
+    $scope.add = function() {
+        var toAdd = [];
+        for (var i = 0; i < $scope.mappers.length; i++) {
+            if ($scope.mappers[i].isChecked) {
+                toAdd.push($scope.mappers[i].id);
+            }
+        }
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/protocol-mappers/models',
+                   toAdd).success(function() {
+                Notifications.success("Mappers added");
+                $location.url('/realms/' + realm.realm + '/applications/' + application.id +  '/mappers');
+            }).error(function() {
+                Notifications.error("Error adding mappers");
+                $location.url('/realms/' + realm.realm + '/applications/' + application.id +  '/mappers');
+            });
+    };
+
+});
+
+
 
