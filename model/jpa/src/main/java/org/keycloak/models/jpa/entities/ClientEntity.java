@@ -73,9 +73,8 @@ public abstract class ClientEntity {
     @CollectionTable(name="CLIENT_ATTRIBUTES", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Map<String, String> attributes = new HashMap<String, String>();
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name="CLIENT_ALLOWED_IDENTITY_PROVIDER", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="INTERNAL_ID")})
-    Collection<IdentityProviderEntity> allowedIdentityProviders = new ArrayList<IdentityProviderEntity>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "client", cascade = CascadeType.REMOVE)
+    Collection<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinTable(name="CLIENT_PROTOCOL_MAPPER", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="MAPPING_ID")})
@@ -193,12 +192,12 @@ public abstract class ClientEntity {
         this.frontchannelLogout = frontchannelLogout;
     }
 
-    public Collection<IdentityProviderEntity> getAllowedIdentityProviders() {
-        return this.allowedIdentityProviders;
+    public Collection<ClientIdentityProviderMappingEntity> getIdentityProviders() {
+        return this.identityProviders;
     }
 
-    public void setAllowedIdentityProviders(Collection<IdentityProviderEntity> allowedIdentityProviders) {
-        this.allowedIdentityProviders = allowedIdentityProviders;
+    public void setIdentityProviders(Collection<ClientIdentityProviderMappingEntity> identityProviders) {
+        this.identityProviders = identityProviders;
     }
 
     public Collection<ProtocolMapperEntity> getProtocolMappers() {

@@ -197,8 +197,11 @@
             "/test-app/*"
           ],
           "webOrigins": [],
-          "allowedIdentityProviders": [
-            "kc-oidc-idp"
+          "identityProviders": [
+            {
+              "id": "kc-oidc-idp",
+              "retrieveToken": false
+            }
           ]
         }
     ],

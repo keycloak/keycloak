@@ -962,7 +962,7 @@ Authorization: Bearer {keycloak_access_token}]]></programlisting>
     </section>
 
     <section>
-        <title>Enabling/Disabling Identity Providers for Service Providers</title>
+        <title>Configuring Identity Providers for Applications</title>
         <para>
             By default, all identity providers enabled for a particular realm are also available to all its applications.
             However, you can also specify which identity providers should be available when
@@ -993,6 +993,10 @@ Authorization: Bearer {keycloak_access_token}]]></programlisting>
                 </para>
             </listitem>
         </orderedlist>
+        <para>
+            From this page you can also configure if an application is allowed to retrieve tokens from an specific identity provider. For that,
+            just click on the <emphasis>Can Retrieve Token</emphasis> button.
+        </para>
     </section>
 
     <section>
