@@ -54,7 +54,7 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
     public void init() throws Exception {
         super.init();
 
-        log.info("Creating KDC server");
+        log.info("Creating KDC server. kerberosRealm: " + kerberosRealm + ", kdcPort: " + kdcPort);
         createAndStartKdcServer();
     }
 

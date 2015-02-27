@@ -32,6 +32,7 @@
                 <!ENTITY Events SYSTEM "modules/events.xml">
                 <!ENTITY AdminApi SYSTEM "modules/admin-rest-api.xml">
                 <!ENTITY UserFederation SYSTEM "modules/user-federation.xml">
+                <!ENTITY Kerberos SYSTEM "modules/kerberos.xml">
                 <!ENTITY ExportImport SYSTEM "modules/export-import.xml">
                 <!ENTITY ServerCache SYSTEM "modules/cache.xml">
                 <!ENTITY SecurityVulnerabilities SYSTEM "modules/security-vulnerabilities.xml">
@@ -119,6 +120,7 @@ This one is short
     &AdminApi;
     &Events;
     &UserFederation;
+    &Kerberos;
     &ExportImport;
     &ServerCache;
     &SAML;
