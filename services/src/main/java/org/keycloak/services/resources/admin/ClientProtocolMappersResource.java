@@ -64,11 +64,11 @@ public class ClientProtocolMappersResource {
     @NoCache
     @Path("protocol/{protocol}")
     @Produces("application/json")
-    public Map<String, ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
+    public List<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
         auth.requireView();
-        Map<String, ProtocolMapperRepresentation> mappers = new HashMap<String, ProtocolMapperRepresentation>();
+        List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
-            mappers.put(mapper.getName(), ModelToRepresentation.toRepresentation(mapper));
+            mappers.add(ModelToRepresentation.toRepresentation(mapper));
         }
         return mappers;
     }
@@ -78,8 +78,8 @@ public class ClientProtocolMappersResource {
      *
      * @param mapperIds List of mapper ids
      */
-    @Path("models/add")
-    @PUT
+    @Path("models")
+    @POST
     @NoCache
     @Consumes("application/json")
     public void addMappers(Set<String> mapperIds) {
@@ -88,26 +88,12 @@ public class ClientProtocolMappersResource {
     }
 
     /**
-     * replace sets of client mappers.
-     *
-     * @param mapperIds  List of mapper ids
-     */
-    @Path("models/set")
-    @PUT
-    @NoCache
-    @Consumes("application/json")
-    public void setMappers(Set<String> mapperIds) {
-        auth.requireManage();
-        client.setProtocolMappers(mapperIds);
-    }
-
-    /**
      * remove client mappers.
      *
      * @param mapperIds  List of mapper ids
      */
-    @Path("models/remove")
-    @PUT
+    @Path("models")
+    @DELETE
     @NoCache
     @Consumes("application/json")
     public void removeMappers(Set<String> mapperIds) {
@@ -119,7 +105,7 @@ public class ClientProtocolMappersResource {
     @NoCache
     @Path("models")
     @Produces("application/json")
-    public List<ProtocolMapperRepresentation> getMappersPerProtocol() {
+    public List<ProtocolMapperRepresentation> getMappers() {
         auth.requireView();
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : realm.getProtocolMappers()) {

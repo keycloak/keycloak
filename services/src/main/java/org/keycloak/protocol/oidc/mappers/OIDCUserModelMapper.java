@@ -30,6 +30,7 @@ public class OIDCUserModelMapper extends AbstractOIDCProtocolMapper implements O
         property.setLabel(USER_MODEL_PROPERTY);
         property.setHelpText("Name of the property method in the UserModel interface.  For example, a value of 'email' would reference the UserModel.getEmail() method.");
         configProperties.add(property);
+        property = new ConfigProperty();
         property.setName(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setLabel(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");

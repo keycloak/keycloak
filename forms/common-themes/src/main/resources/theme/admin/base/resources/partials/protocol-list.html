@@ -1,0 +1,22 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <h2></h2>
+    <div id="content">
+        <h2><span>{{realm.realm}}</span> Client Protocols  <span tooltip-placement="right" tooltip="This section allows you to manage settings for the protocols clients and applications use to login and interact with the auth server.." class="fa fa-info-circle"></span></h2>
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr data-ng-hide="applications.length == 0">
+                <th>Protocol Name</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="protocol in protocols">
+                <td><a href="#/realms/{{realm.realm}}/protocols/{{protocol}}/mappers">{{protocol}}</a></td>
+            </tr>
+            <tr data-ng-show="applications.length == 0">
+                <td>No protocols available</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

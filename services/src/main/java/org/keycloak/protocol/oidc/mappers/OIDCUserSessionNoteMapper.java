@@ -28,6 +28,7 @@ public class OIDCUserSessionNoteMapper extends AbstractOIDCProtocolMapper implem
         property.setLabel("UserSession Note");
         property.setHelpText("Name of the note to map in the UserSessionModel");
         configProperties.add(property);
+        property = new ConfigProperty();
         property.setName(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setLabel(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
