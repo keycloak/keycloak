@@ -29,7 +29,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private List<String> webOrigins = new ArrayList<String>();
     private List<String> redirectUris = new ArrayList<String>();
     private List<String> scopeIds = new ArrayList<String>();
-    private List<String> allowedIdentityProviders = new ArrayList<String>();
+    private List<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
     private Set<String> protocolMappers = new HashSet<String>();
 
     public String getName() {
@@ -144,12 +144,12 @@ public class ClientEntity extends AbstractIdentifiableEntity {
         this.frontchannelLogout = frontchannelLogout;
     }
 
-    public List<String> getAllowedIdentityProviders() {
-        return this.allowedIdentityProviders;
+    public List<ClientIdentityProviderMappingEntity> getIdentityProviders() {
+        return this.identityProviders;
     }
 
-    public void setAllowedIdentityProviders(List<String> allowedIdentityProviders) {
-        this.allowedIdentityProviders = allowedIdentityProviders;
+    public void setIdentityProviders(List<ClientIdentityProviderMappingEntity> identityProviders) {
+        this.identityProviders = identityProviders;
     }
 
     public Set<String> getProtocolMappers() {

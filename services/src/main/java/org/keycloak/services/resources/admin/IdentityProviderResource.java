@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -17,6 +18,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -63,11 +65,15 @@ public class IdentityProviderResource {
 
     private void removeClientIdentityProviders(List<? extends ClientModel> clients, IdentityProviderModel identityProvider) {
         for (ClientModel clientModel : clients) {
-            List<String> allowedIdentityProviders = clientModel.getAllowedIdentityProviders();
+            List<ClientIdentityProviderMappingModel> identityProviders = clientModel.getIdentityProviders();
 
-            allowedIdentityProviders.remove(identityProvider.getId());
+            for (ClientIdentityProviderMappingModel providerMappingModel : new ArrayList<ClientIdentityProviderMappingModel>(identityProviders)) {
+                if (providerMappingModel.getIdentityProvider().equals(identityProvider.getId())) {
+                    identityProviders.remove(providerMappingModel);
+                }
+            }
 
-            clientModel.updateAllowedIdentityProviders(allowedIdentityProviders);
+            clientModel.updateAllowedIdentityProviders(identityProviders);
         }
     }
 

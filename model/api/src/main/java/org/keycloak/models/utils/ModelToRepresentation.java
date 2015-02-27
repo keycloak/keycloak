@@ -3,6 +3,7 @@ package org.keycloak.models.utils;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClaimTypeModel;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -19,6 +20,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClaimTypeRepresentation;
+import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
 import org.keycloak.representations.idm.ClientProtocolMappingRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -262,8 +264,8 @@ public class ModelToRepresentation {
             rep.setRegisteredNodes(new HashMap<String, Integer>(applicationModel.getRegisteredNodes()));
         }
 
-        if (!applicationModel.getAllowedIdentityProviders().isEmpty()) {
-            rep.setAllowedIdentityProviders(applicationModel.getAllowedIdentityProviders());
+        if (!applicationModel.getIdentityProviders().isEmpty()) {
+            rep.setIdentityProviders(toRepresentation(applicationModel.getIdentityProviders()));
         }
 
         if (!applicationModel.getProtocolMappers().isEmpty()) {
@@ -277,6 +279,21 @@ public class ModelToRepresentation {
         }
 
         return rep;
+    }
+
+    private static List<ClientIdentityProviderMappingRepresentation> toRepresentation(List<ClientIdentityProviderMappingModel> identityProviders) {
+        ArrayList<ClientIdentityProviderMappingRepresentation> representations = new ArrayList<ClientIdentityProviderMappingRepresentation>();
+
+        for (ClientIdentityProviderMappingModel model : identityProviders) {
+            ClientIdentityProviderMappingRepresentation representation = new ClientIdentityProviderMappingRepresentation();
+
+            representation.setId(model.getIdentityProvider());
+            representation.setRetrieveToken(model.isRetrieveToken());
+
+            representations.add(representation);
+        }
+
+        return representations;
     }
 
     public static OAuthClientRepresentation toRepresentation(OAuthClientModel model) {
@@ -301,8 +318,8 @@ public class ModelToRepresentation {
         }
         rep.setNotBefore(model.getNotBefore());
 
-        if (!model.getAllowedIdentityProviders().isEmpty()) {
-            rep.setAllowedIdentityProviders(model.getAllowedIdentityProviders());
+        if (!model.getIdentityProviders().isEmpty()) {
+            rep.setIdentityProviders(toRepresentation(model.getIdentityProviders()));
         }
 
         if (!model.getProtocolMappers().isEmpty()) {

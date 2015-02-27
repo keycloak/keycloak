@@ -186,6 +186,10 @@ public class IdentityBrokerService {
                     return corsResponse(badRequest("Client [" + audience + "] not authorized."), clientModel);
                 }
 
+                if (!clientModel.isAllowedRetrieveTokenFromIdentityProvider(providerId)) {
+                    return corsResponse(badRequest("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
+                }
+
                 if (OAuthClientModel.class.isInstance(clientModel) && !forceRetrieval) {
                     return corsResponse(Flows.forms(this.session, this.realmModel, clientModel, this.uriInfo)
                             .setClientSessionCode(authManager.extractAuthorizationHeaderToken(this.request.getHttpHeaders()))
