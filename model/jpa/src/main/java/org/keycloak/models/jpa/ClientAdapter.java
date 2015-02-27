@@ -1,14 +1,15 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.ClientIdentityProviderMappingEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
-import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 
@@ -303,47 +304,96 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void updateAllowedIdentityProviders(List<String> identityProviders) {
-        Collection<IdentityProviderEntity> entities = entity.getAllowedIdentityProviders();
+    public void updateAllowedIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
+        Collection<ClientIdentityProviderMappingEntity> entities = entity.getIdentityProviders();
         Set<String> already = new HashSet<String>();
-        List<IdentityProviderEntity> remove = new ArrayList<IdentityProviderEntity>();
-        for (IdentityProviderEntity rel : entities) {
-            if (!contains(rel.getId(), identityProviders.toArray(new String[identityProviders.size()]))) {
-                remove.add(rel);
+        List<ClientIdentityProviderMappingEntity> remove = new ArrayList<ClientIdentityProviderMappingEntity>();
+
+        for (ClientIdentityProviderMappingEntity entity : entities) {
+            IdentityProviderEntity identityProvider = entity.getIdentityProvider();
+            boolean toRemove = true;
+
+            for (ClientIdentityProviderMappingModel model : identityProviders) {
+                if (model.getIdentityProvider().equals(identityProvider.getId())) {
+                    toRemove = false;
+                    break;
+                }
+            }
+
+            if (toRemove) {
+                remove.add(entity);
             } else {
-                already.add(rel.getId());
+                already.add(entity.getIdentityProvider().getId());
             }
         }
-        for (IdentityProviderEntity entity : remove) {
+        for (ClientIdentityProviderMappingEntity entity : remove) {
             entities.remove(entity);
+            em.remove(entity);
         }
         em.flush();
-        for (String providerId : identityProviders) {
-            if (!already.contains(providerId)) {
-                TypedQuery<IdentityProviderEntity> query = em.createNamedQuery("findIdentityProviderById", IdentityProviderEntity.class).setParameter("id", providerId);
-                IdentityProviderEntity providerEntity = query.getSingleResult();
-                entities.add(providerEntity);
+        for (ClientIdentityProviderMappingModel model : identityProviders) {
+            ClientIdentityProviderMappingEntity mappingEntity = null;
+
+            if (!already.contains(model.getIdentityProvider())) {
+                mappingEntity = new ClientIdentityProviderMappingEntity();
+                entities.add(mappingEntity);
+            } else {
+                for (ClientIdentityProviderMappingEntity entity : entities) {
+                    if (entity.getIdentityProvider().getId().equals(model.getIdentityProvider())) {
+                        mappingEntity = entity;
+                        break;
+                    }
+                }
             }
+
+            TypedQuery<IdentityProviderEntity> query = em.createNamedQuery("findIdentityProviderById", IdentityProviderEntity.class).setParameter("id", model.getIdentityProvider());
+            IdentityProviderEntity identityProviderEntity = query.getSingleResult();
+
+            mappingEntity.setIdentityProvider(identityProviderEntity);
+            mappingEntity.setClient(this.entity);
+            mappingEntity.setRetrieveToken(model.isRetrieveToken());
+
+            em.persist(mappingEntity);
         }
         em.flush();
     }
 
     @Override
-    public List<String> getAllowedIdentityProviders() {
-        Collection<IdentityProviderEntity> entities = entity.getAllowedIdentityProviders();
-        List<String> providers = new ArrayList<String>();
+    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
+        List<ClientIdentityProviderMappingModel> models = new ArrayList<ClientIdentityProviderMappingModel>();
 
-        for (IdentityProviderEntity entity : entities) {
-            providers.add(entity.getId());
+        for (ClientIdentityProviderMappingEntity entity : this.entity.getIdentityProviders()) {
+            ClientIdentityProviderMappingModel model = new ClientIdentityProviderMappingModel();
+
+            model.setIdentityProvider(entity.getIdentityProvider().getId());
+            model.setRetrieveToken(entity.isRetrieveToken());
+
+            models.add(model);
         }
 
-        return providers;
+        return models;
     }
 
     @Override
     public boolean hasIdentityProvider(String providerId) {
-        List<String> allowedIdentityProviders = getAllowedIdentityProviders();
-        return allowedIdentityProviders.contains(providerId);
+        for (ClientIdentityProviderMappingModel model : getIdentityProviders()) {
+            if (model.getIdentityProvider().equals(providerId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
+        for (ClientIdentityProviderMappingModel model : getIdentityProviders()) {
+            if (model.getIdentityProvider().equals(providerId)) {
+                return model.isRetrieveToken();
+            }
+        }
+
+        return false;
     }
 
     public static boolean contains(String str, String[] array) {

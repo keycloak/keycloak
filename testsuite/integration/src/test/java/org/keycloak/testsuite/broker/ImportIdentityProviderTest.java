@@ -25,6 +25,8 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.saml.SAMLIdentityProvider;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -112,6 +114,31 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertTrue(identityProviderModel.isUpdateProfileFirstLogin());
         assertFalse(identityProviderModel.isAuthenticateByDefault());
     }
+
+    @Test
+    public void testApplicationIdentityProviders() throws Exception {
+        RealmModel realm = installTestRealm();
+
+        ClientModel client = realm.findClient("test-app-with-allowed-providers");
+        List<ClientIdentityProviderMappingModel> identityProviders = client.getIdentityProviders();
+
+        assertEquals(1, identityProviders.size());
+
+        ClientIdentityProviderMappingModel identityProviderMappingModel = identityProviders.get(0);
+
+        assertEquals("kc-oidc-idp", identityProviderMappingModel.getIdentityProvider());
+        assertEquals(false, identityProviderMappingModel.isRetrieveToken());
+
+        identityProviders.remove(identityProviderMappingModel);
+
+        client.updateAllowedIdentityProviders(identityProviders);
+
+        client = realm.findClientById(client.getId());
+        identityProviders = client.getIdentityProviders();
+
+        assertEquals(0, identityProviders.size());
+    }
+
 
     private void assertIdentityProviderConfig(List<IdentityProviderModel> identityProviders) {
         assertFalse(identityProviders.isEmpty());

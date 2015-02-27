@@ -186,6 +186,10 @@ public class IdentityBrokerService {
                     return corsResponse(badRequest("Client [" + audience + "] not authorized."), clientModel);
                 }
 
+                if (!clientModel.isAllowedRetrieveTokenFromIdentityProvider(providerId)) {
+                    return corsResponse(badRequest("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
+                }
+
                 if (OAuthClientModel.class.isInstance(clientModel) && !forceRetrieval) {
                     return corsResponse(Flows.forms(this.session, this.realmModel, clientModel, this.uriInfo)
                             .setClientSessionCode(authManager.extractAuthorizationHeaderToken(this.request.getHttpHeaders()))
@@ -323,7 +327,7 @@ public class IdentityBrokerService {
                     federatedUser.addRequiredAction(UPDATE_PROFILE);
                 }
             } catch (Exception e) {
-                return redirectToLoginPage(e.getMessage(), clientCode);
+                return redirectToLoginPage(e, clientCode);
             }
         }
 
@@ -439,21 +443,31 @@ public class IdentityBrokerService {
     }
 
     private Response redirectToErrorPage(String message, Throwable throwable) {
+        if (message == null) {
+            message = "Unexpected error when authenticating with identity provider";
+        }
+
         fireErrorEvent(message, throwable);
         return Flows.forwardToSecurityFailurePage(this.session, this.realmModel, this.uriInfo, message);
     }
 
-    private Response badRequest(String message) {
-        fireErrorEvent(message);
-        return Flows.errors().error(message, Status.BAD_REQUEST);
-    }
+    private Response redirectToLoginPage(Throwable t, ClientSessionCode clientCode) {
+        String message = t.getMessage();
 
-    private Response redirectToLoginPage(String message, ClientSessionCode clientCode) {
+        if (message == null) {
+            message = "Unexpected error when authenticating with identity provider";
+        }
+
         fireErrorEvent(message);
         return Flows.forms(this.session, this.realmModel, clientCode.getClientSession().getClient(), this.uriInfo)
                 .setClientSessionCode(clientCode.getCode())
                 .setError(message)
                 .createLogin();
+    }
+
+    private Response badRequest(String message) {
+        fireErrorEvent(message);
+        return Flows.errors().error(message, Status.BAD_REQUEST);
     }
 
     private IdentityProvider getIdentityProvider(String providerId) {
@@ -513,7 +527,11 @@ public class IdentityBrokerService {
         FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(updatedIdentity.getIdentityProviderId(), updatedIdentity.getId(),
                 updatedIdentity.getUsername(), updatedIdentity.getToken());
         // Check if no user already exists with this username or email
-        UserModel existingUser = this.session.users().getUserByEmail(updatedIdentity.getEmail(), this.realmModel);
+        UserModel existingUser = null;
+
+        if (updatedIdentity.getEmail() != null) {
+            existingUser = this.session.users().getUserByEmail(updatedIdentity.getEmail(), this.realmModel);
+        }
 
         if (existingUser != null) {
             fireErrorEvent(Errors.FEDERATED_IDENTITY_EMAIL_EXISTS);

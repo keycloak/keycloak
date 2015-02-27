@@ -1,5 +1,6 @@
 package org.keycloak.models.cache;
 
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -263,21 +264,27 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void updateAllowedIdentityProviders(List<String> identityProviders) {
+    public void updateAllowedIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
         getDelegateForUpdate();
         updatedClient.updateAllowedIdentityProviders(identityProviders);
     }
 
     @Override
-    public List<String> getAllowedIdentityProviders() {
-        if (updatedClient != null) return updatedClient.getAllowedIdentityProviders();
-        return cachedClient.getAllowedIdentityProviders();
+    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
+        if (updatedClient != null) return updatedClient.getIdentityProviders();
+        return cachedClient.getIdentityProviders();
     }
 
     @Override
     public boolean hasIdentityProvider(String providerId) {
         if (updatedClient != null) return updatedClient.hasIdentityProvider(providerId);
         return cachedClient.hasIdentityProvider(providerId);
+    }
+
+    @Override
+    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
+        if (updatedClient != null) return updatedClient.isAllowedRetrieveTokenFromIdentityProvider(providerId);
+        return cachedClient.isAllowedRetrieveTokenFromIdentityProvider(providerId);
     }
 
     @Override

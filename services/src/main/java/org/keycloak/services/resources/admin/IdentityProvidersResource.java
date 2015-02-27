@@ -7,6 +7,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -179,9 +180,12 @@ public class IdentityProvidersResource {
 
     private void updateClientIdentityProviders(List<? extends ClientModel> clients, IdentityProviderRepresentation identityProvider) {
         for (ClientModel clientModel : clients) {
-            List<String> allowedIdentityProviders = clientModel.getAllowedIdentityProviders();
+            List<ClientIdentityProviderMappingModel> allowedIdentityProviders = clientModel.getIdentityProviders();
+            ClientIdentityProviderMappingModel providerMappingModel = new ClientIdentityProviderMappingModel();
 
-            allowedIdentityProviders.add(identityProvider.getId());
+            providerMappingModel.setIdentityProvider(identityProvider.getId());
+
+            allowedIdentityProviders.add(providerMappingModel);
 
             clientModel.updateAllowedIdentityProviders(allowedIdentityProviders);
         }

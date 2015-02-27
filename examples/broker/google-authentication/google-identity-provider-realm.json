@@ -39,6 +39,9 @@
             "baseUrl": "/google-authentication",
             "redirectUris": [
               "/google-authentication/*"
+            ],
+            "webOrigins": [
+              "http://localhost:8080"
             ]
         }
     ],

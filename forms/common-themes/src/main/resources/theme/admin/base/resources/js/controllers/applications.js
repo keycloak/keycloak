@@ -49,75 +49,95 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
-module.controller('ApplicationIdentityProviderCtrl', function($scope, $location, realm, application, Application, $location, Notifications) {
+module.controller('ApplicationIdentityProviderCtrl', function($scope, $location, $route, realm, application, Application, $location, Notifications) {
     $scope.realm = realm;
     $scope.application = angular.copy(application);
+    var length = 0;
+
+    if ($scope.application.identityProviders) {
+        length = $scope.application.identityProviders.length;
+    } else {
+        $scope.application.identityProviders = new Array(realm.identityProviders.length);
+    }
+
+    for (j = length; j < realm.identityProviders.length; j++) {
+        $scope.application.identityProviders[j] = {};
+    }
 
     $scope.identityProviders = [];
-
-    if (!$scope.application.allowedIdentityProviders) {
-        $scope.application.allowedIdentityProviders = [];
-    }
 
     for (j = 0; j < realm.identityProviders.length; j++) {
         var identityProvider = realm.identityProviders[j];
         var match = false;
+        var applicationProvider;
 
-        for (i = 0; i < $scope.application.allowedIdentityProviders.length; i++) {
-            var appProvider = $scope.application.allowedIdentityProviders[i];
+        for (i = 0; i < $scope.application.identityProviders.length; i++) {
+            applicationProvider = $scope.application.identityProviders[i];
 
-            if (appProvider == identityProvider.id) {
-                $scope.identityProviders[i] = identityProvider;
-                match = true;
+            if (applicationProvider) {
+                if (applicationProvider.retrieveToken) {
+                    applicationProvider.retrieveToken = applicationProvider.retrieveToken.toString();
+                } else {
+                    applicationProvider.retrieveToken = false.toString();
+                }
+
+                if (applicationProvider.id == identityProvider.id) {
+                    $scope.identityProviders[i] = {};
+                    $scope.identityProviders[i].identityProvider = identityProvider;
+                    $scope.identityProviders[i].retrieveToken = applicationProvider.retrieveToken.toString();
+                    break;
+                }
+
+                applicationProvider = null;
             }
         }
 
-        if (!match) {
-            var length = $scope.identityProviders.length;
+        if (applicationProvider == null) {
+            var length = $scope.identityProviders.length + $scope.application.identityProviders.length;
 
-            length = length + $scope.application.allowedIdentityProviders.length;
-
-            $scope.identityProviders[length] = identityProvider;
+            $scope.identityProviders[length] = {};
+            $scope.identityProviders[length].identityProvider = identityProvider;
+            $scope.identityProviders[length].retrieveToken = false.toString();
         }
     }
 
     $scope.identityProviders = $scope.identityProviders.filter(function(n){ return n != undefined });
 
+    var oldCopy = angular.copy($scope.application);
+
     $scope.save = function() {
         var selectedProviders = [];
 
-        for (i = 0; i < $scope.application.allowedIdentityProviders.length; i++) {
-            var appProvider = $scope.application.allowedIdentityProviders[i];
+        for (i = 0; i < $scope.application.identityProviders.length; i++) {
+            var appProvider = $scope.application.identityProviders[i];
 
-            if (appProvider) {
+            if (appProvider.id != null && appProvider.id != false) {
                 selectedProviders[selectedProviders.length] = appProvider;
             }
         }
 
-        $scope.allowedIdentityProviders = $scope.application.allowedIdentityProviders;
-        $scope.application.allowedIdentityProviders = selectedProviders;
+        $scope.application.identityProviders = selectedProviders;
 
         Application.update({
             realm : realm.realm,
             application : application.id
         }, $scope.application, function() {
             $scope.changed = false;
-            $scope.application.allowedIdentityProviders = $scope.allowedIdentityProviders;
-            $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/identity-provider");
+            $route.reload();
             Notifications.success("Your changes have been saved to the application.");
         });
     };
 
     $scope.reset = function() {
-        $scope.application = angular.copy(application);
+        $scope.application = angular.copy(oldCopy);
         $scope.changed = false;
     };
 
-    $scope.$watch(function() {
-        return $location.path();
-    }, function() {
-        $scope.path = $location.path().substring(1).split("/");
-    });
+    $scope.$watch('application', function() {
+        if (!angular.equals($scope.application, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
 });
 
 module.controller('ApplicationSamlKeyCtrl', function($scope, $location, $http, $upload, realm, application,

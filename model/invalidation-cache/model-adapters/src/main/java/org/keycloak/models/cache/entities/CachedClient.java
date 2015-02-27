@@ -1,5 +1,6 @@
 package org.keycloak.models.cache.entities;
 
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -35,7 +36,7 @@ public class CachedClient {
     protected int notBefore;
     protected Set<String> scope = new HashSet<String>();
     protected Set<String> webOrigins = new HashSet<String>();
-    private List<String> allowedIdentityProviders = new ArrayList<String>();
+    private List<ClientIdentityProviderMappingModel> identityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
     private Set<ProtocolMapperModel> protocolClaimMappings = new HashSet<ProtocolMapperModel>();
 
     public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
@@ -57,7 +58,7 @@ public class CachedClient {
         for (RoleModel role : model.getScopeMappings())  {
             scope.add(role.getId());
         }
-        this.allowedIdentityProviders = model.getAllowedIdentityProviders();
+        this.identityProviders = model.getIdentityProviders();
         protocolClaimMappings.addAll(model.getProtocolMappers());
     }
 
@@ -125,15 +126,31 @@ public class CachedClient {
         return frontchannelLogout;
     }
 
-    public List<String> getAllowedIdentityProviders() {
-        return this.allowedIdentityProviders;
+    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
+        return this.identityProviders;
     }
 
     public boolean hasIdentityProvider(String providerId) {
-        return this.allowedIdentityProviders.contains(providerId);
+        for (ClientIdentityProviderMappingModel model : getIdentityProviders()) {
+            if (model.getIdentityProvider().equals(providerId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public Set<ProtocolMapperModel> getProtocolClaimMappings() {
         return protocolClaimMappings;
+    }
+
+    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
+        for (ClientIdentityProviderMappingModel model : getIdentityProviders()) {
+            if (model.getIdentityProvider().equals(providerId)) {
+                return model.isRetrieveToken();
+            }
+        }
+
+        return false;
     }
 }
