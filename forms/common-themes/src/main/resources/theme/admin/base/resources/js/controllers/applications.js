@@ -1091,11 +1091,14 @@ module.controller('ApplicationProtocolMapperCtrl', function($scope, realm, appli
                                                     $http, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.application = application;
+    if (application.protocol == null) {
+        application.protocol = 'openid-connect';
+    }
 
     var protocolMappers = serverInfo.protocolMapperTypes[application.protocol];
     var mapperTypes = {};
     for (var i = 0; i < protocolMappers.length; i++) {
-        mapperTypes[protocolMappers[i].id] = protocolMappers[i].name;
+        mapperTypes[protocolMappers[i].id] = protocolMappers[i];
     }
     $scope.mapperTypes = mapperTypes;
 
@@ -1135,11 +1138,14 @@ module.controller('AddApplicationProtocolMapperCtrl', function($scope, realm, ap
                                                             $http, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.application = application;
+    if (application.protocol == null) {
+        application.protocol = 'openid-connect';
+    }
 
-    var protocolMapperTypes = serverInfo.protocolMapperTypes[application.protocol];
+    var protocolMappers = serverInfo.protocolMapperTypes[application.protocol];
     var mapperTypes = {};
-    for (var i = 0; i < protocolMapperTypes.length; i++) {
-        mapperTypes[protocolMapperTypes[i].id] = protocolMapperTypes[i].name;
+    for (var i = 0; i < protocolMappers.length; i++) {
+        mapperTypes[protocolMappers[i].id] = protocolMappers[i];
     }
     $scope.mapperTypes = mapperTypes;
 

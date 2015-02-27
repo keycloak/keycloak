@@ -52,7 +52,17 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
 
     @Override
     public String getDisplayType() {
-        return "UserModel Attribute Mapper";
+        return "User Attribute";
+    }
+
+    @Override
+    public String getDisplayCategory() {
+        return TOKEN_MAPPER_CATEGORY;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Map a custom user attribute to a token claim.";
     }
 
     @Override

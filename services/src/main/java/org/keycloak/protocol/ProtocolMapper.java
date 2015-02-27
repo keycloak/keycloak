@@ -11,7 +11,9 @@ import java.util.List;
  */
 public interface ProtocolMapper extends Provider, ProviderFactory<ProtocolMapper> {
     String getProtocol();
+    String getDisplayCategory();
     String getDisplayType();
+    String getHelpText();
 
     public static class ConfigProperty {
         protected String name;

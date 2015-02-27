@@ -13,10 +13,8 @@ module.controller('ProtocolMapperListCtrl', function($scope, realm, serverInfo, 
     $scope.protocol = protocol;
     var protocolMappers = serverInfo.protocolMapperTypes[protocol];
     var mapperTypes = {};
-    if (protocolMappers) {
-        for (var i = 0; i < protocolMappers.length; i++) {
-            mapperTypes[protocolMappers[i].id] = protocolMappers[i].name;
-        }
+    for (var i = 0; i < protocolMappers.length; i++) {
+        mapperTypes[protocolMappers[i].id] = protocolMappers[i];
     }
     $scope.mapperTypes = mapperTypes;
 

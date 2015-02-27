@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class OIDCUserModelMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
     private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
-    public static final String USER_MODEL_PROPERTY = "UserModel Property";
+    public static final String USER_MODEL_PROPERTY = "User Property";
 
     static {
         ConfigProperty property;
@@ -51,7 +51,17 @@ public class OIDCUserModelMapper extends AbstractOIDCProtocolMapper implements O
 
     @Override
     public String getDisplayType() {
-        return "UserModel Property Mapper";
+        return "User Property";
+    }
+
+    @Override
+    public String getDisplayCategory() {
+        return TOKEN_MAPPER_CATEGORY;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Map a built in user property to a token claim.";
     }
 
     @Override

@@ -38,7 +38,17 @@ public class OIDCFullNameMapper extends AbstractOIDCProtocolMapper implements OI
 
     @Override
     public String getDisplayType() {
-        return "Full name Mapper";
+        return "User's full name";
+    }
+
+    @Override
+    public String getDisplayCategory() {
+        return TOKEN_MAPPER_CATEGORY;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Maps the user's first and last name to the OpenID Connect 'name' claim. Format is <first> + ' ' + <last>";
     }
 
     @Override

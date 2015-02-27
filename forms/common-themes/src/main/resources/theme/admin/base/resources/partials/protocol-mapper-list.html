@@ -22,13 +22,15 @@
             </tr>
             <tr data-ng-hide="mappers.length == 0">
                 <th>Name</th>
+                <th>Category</th>
                 <th>Type</th>
             </tr>
             </thead>
             <tbody>
             <tr ng-repeat="mapper in mappers | filter:search">
                 <td><a href="#/realms/{{realm.realm}}/protocols/{{protocol}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
-                <td>{{mapperTypes[mapper.protocolMapper]}}</td>
+                <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
+                <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
             </tr>
             <tr data-ng-show="mappers.length == 0">
                 <td>No mappers available</td>

@@ -39,7 +39,17 @@ public class OIDCAddressMapper extends AbstractOIDCProtocolMapper implements OID
 
     @Override
     public String getDisplayType() {
-        return "Address Mapper";
+        return "User Address";
+    }
+
+    @Override
+    public String getDisplayCategory() {
+        return TOKEN_MAPPER_CATEGORY;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Maps user address attributes (street, locality, region, postal_code, and country) to the OpenID Connect 'address' claim.";
     }
 
     @Override

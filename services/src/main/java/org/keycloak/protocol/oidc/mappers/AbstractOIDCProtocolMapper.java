@@ -12,6 +12,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
  */
 public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
 
+    public static final String TOKEN_MAPPER_CATEGORY = "Token mapper";
+
     @Override
     public String getProtocol() {
         return OIDCLoginProtocol.LOGIN_PROTOCOL;

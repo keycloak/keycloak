@@ -9,6 +9,8 @@ import java.util.List;
 public class ProtocolMapperTypeRepresentation {
     protected String id;
     protected String name;
+    protected String category;
+    protected String helpText;
 
     public static class ConfigProperty {
         protected String name;
@@ -56,6 +58,22 @@ public class ProtocolMapperTypeRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getHelpText() {
+        return helpText;
+    }
+
+    public void setHelpText(String helpText) {
+        this.helpText = helpText;
     }
 
     public List<ConfigProperty> getProperties() {
