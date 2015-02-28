@@ -9,11 +9,15 @@ import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.RealmsResource;
@@ -25,13 +29,16 @@ import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ParsingException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.identity.federation.core.saml.v2.constants.X500SAMLProfileConstants;
+import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler;
+import org.w3c.dom.Document;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -250,7 +257,6 @@ public class SamlProtocol implements LoginProtocol {
 
         SALM2LoginResponseBuilder builder = new SALM2LoginResponseBuilder();
         builder.requestID(requestID)
-               .relayState(relayState)
                .destination(redirectUri)
                .issuer(responseIssuer)
                .requestIssuer(clientSession.getClient().getClientId())
@@ -267,18 +273,32 @@ public class SamlProtocol implements LoginProtocol {
                 builder.roles(roleModel.getName());
             }
         }
+        if (!includeAuthnStatement(client)) {
+            builder.disableAuthnStatement(true);
+        }
+
+        Document samlDocument = null;
+        try {
+            ResponseType samlModel = builder.buildModel();
+            samlModel = transformLoginResponse(session, samlModel, client, userSession, clientSession);
+            samlDocument = builder.buildDocument(samlModel);
+        } catch (Exception e) {
+            logger.error("failed", e);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
+        }
+
+        SAML2BindingBuilder2 bindingBuilder = new SAML2BindingBuilder2();
+        bindingBuilder.relayState(relayState);
+
         if (requiresRealmSignature(client)) {
-            builder.signatureAlgorithm(getSignatureAlgorithm(client))
+            bindingBuilder.signatureAlgorithm(getSignatureAlgorithm(client))
                    .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                    .signDocument();
         }
         if (requiresAssertionSignature(client)) {
-            builder.signatureAlgorithm(getSignatureAlgorithm(client))
+            bindingBuilder.signatureAlgorithm(getSignatureAlgorithm(client))
                     .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                     .signAssertions();
-        }
-        if (!includeAuthnStatement(client)) {
-            builder.disableAuthnStatement(true);
         }
         if (requiresEncryption(client)) {
             PublicKey publicKey = null;
@@ -288,13 +308,13 @@ public class SamlProtocol implements LoginProtocol {
                 logger.error("failed", e);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response", headers);
             }
-            builder.encrypt(publicKey);
+            bindingBuilder.encrypt(publicKey);
         }
         try {
             if (isPostBinding(clientSession)) {
-                return builder.postBinding().response();
+                return bindingBuilder.postBinding(samlDocument).response(redirectUri);
             } else {
-                return builder.redirectBinding().response();
+                return bindingBuilder.redirectBinding(samlDocument).response(redirectUri);
             }
         } catch (Exception e) {
             logger.error("failed", e);
@@ -343,6 +363,24 @@ public class SamlProtocol implements LoginProtocol {
             builder.attribute(X500SAMLProfileConstants.USERID.getFriendlyName(), user.getUsername());
         }
     }
+
+    public ResponseType transformLoginResponse(KeycloakSession session, ResponseType response, ClientModel client,
+                                               UserSessionModel userSession, ClientSessionModel clientSession) {
+        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        for (ProtocolMapperModel mapping : mappings) {
+            if (!mapping.getProtocol().equals(SamlProtocol.LOGIN_PROTOCOL)) continue;
+
+            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            if (mapper == null || !(mapper instanceof SAMLLoginResponseMapper)) continue;
+            response = ((SAMLLoginResponseMapper)mapper).transformLoginResponse(response, mapping, session, userSession, clientSession);
+
+
+
+        }
+        return response;
+    }
+
 
 
 

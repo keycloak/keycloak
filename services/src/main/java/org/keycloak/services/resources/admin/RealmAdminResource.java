@@ -278,7 +278,6 @@ public class RealmAdminResource {
      *
      */
     @Path("protocol-mappers")
-    @POST
     public ProtocolMappersResource protocolMappers() {
         ProtocolMappersResource mappers = new ProtocolMappersResource(realm, auth);
         ResteasyProviderFactory.getInstance().injectProperties(mappers);

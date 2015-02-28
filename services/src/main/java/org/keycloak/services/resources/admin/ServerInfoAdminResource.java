@@ -11,9 +11,11 @@ import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.social.SocialIdentityProvider;
 
 import javax.ws.rs.GET;
@@ -53,6 +55,7 @@ public class ServerInfoAdminResource {
         setProtocols(info);
         setApplicationImporters(info);
         setProviders(info);
+        setProtocolMappers(info);
         return info;
     }
 
@@ -128,6 +131,32 @@ public class ServerInfoAdminResource {
         Collections.sort(info.protocols);
     }
 
+    private void setProtocolMappers(ServerInfoRepresentation info) {
+        info.protocolMapperTypes = new HashMap<String, List<ProtocolMapperTypeRepresentation>>();
+        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ProtocolMapper.class)) {
+            ProtocolMapper mapper = (ProtocolMapper)p;
+            List<ProtocolMapperTypeRepresentation> types = info.protocolMapperTypes.get(mapper.getProtocol());
+            if (types == null) {
+                types = new LinkedList<ProtocolMapperTypeRepresentation>();
+                info.protocolMapperTypes.put(mapper.getProtocol(), types);
+            }
+            ProtocolMapperTypeRepresentation rep = new ProtocolMapperTypeRepresentation();
+            rep.setId(mapper.getId());
+            rep.setName(mapper.getDisplayType());
+            rep.setHelpText(mapper.getHelpText());
+            rep.setCategory(mapper.getDisplayCategory());
+            rep.setProperties(new LinkedList<ProtocolMapperTypeRepresentation.ConfigProperty>());
+            for (ProtocolMapper.ConfigProperty prop : mapper.getConfigProperties()) {
+                ProtocolMapperTypeRepresentation.ConfigProperty propRep = new ProtocolMapperTypeRepresentation.ConfigProperty();
+                propRep.setName(prop.getName());
+                propRep.setLabel(prop.getLabel());
+                propRep.setHelpText(prop.getHelpText());
+                rep.getProperties().add(propRep);
+            }
+            types.add(rep);
+        }
+    }
+
     private void setApplicationImporters(ServerInfoRepresentation info) {
         info.applicationImporters = new LinkedList<Map<String, String>>();
         for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ApplicationImporter.class)) {
@@ -155,6 +184,7 @@ public class ServerInfoAdminResource {
         private Map<String, Set<String>> providers;
 
         private List<String> eventListeners;
+        private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
 
         public ServerInfoRepresentation() {
         }
@@ -193,6 +223,10 @@ public class ServerInfoAdminResource {
 
         public Map<String, Set<String>> getProviders() {
             return providers;
+        }
+
+        public Map<String, List<ProtocolMapperTypeRepresentation>> getProtocolMapperTypes() {
+            return protocolMapperTypes;
         }
     }
 

@@ -30,6 +30,7 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
         property.setLabel(USER_MODEL_ATTRIBUTE_NAME);
         property.setHelpText("Name of stored user attribute which is the name of an attribute within the UserModel.attribute map.");
         configProperties.add(property);
+        property = new ConfigProperty();
         property.setName(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setLabel(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
@@ -51,7 +52,17 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
 
     @Override
     public String getDisplayType() {
-        return "UserModel Attribute Mapper";
+        return "User Attribute";
+    }
+
+    @Override
+    public String getDisplayCategory() {
+        return TOKEN_MAPPER_CATEGORY;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Map a custom user attribute to a token claim.";
     }
 
     @Override

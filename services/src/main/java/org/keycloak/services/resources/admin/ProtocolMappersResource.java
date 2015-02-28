@@ -74,11 +74,11 @@ public class ProtocolMappersResource {
     @NoCache
     @Path("protocol/{protocol}")
     @Produces("application/json")
-    public Map<String, ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
+    public List<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
         auth.requireView();
-        Map<String, ProtocolMapperRepresentation> mappers = new HashMap<String, ProtocolMapperRepresentation>();
+        List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : realm.getProtocolMappers()) {
-            mappers.put(mapper.getName(), ModelToRepresentation.toRepresentation(mapper));
+            if (mapper.getProtocol().equals(protocol)) mappers.add(ModelToRepresentation.toRepresentation(mapper));
         }
         return mappers;
     }
@@ -95,7 +95,7 @@ public class ProtocolMappersResource {
     public Response createMapper(ProtocolMapperRepresentation rep) {
         auth.requireManage();
         ProtocolMapperModel model = RepresentationToModel.toModel(rep);
-        realm.addProtocolMapper(model);
+        model = realm.addProtocolMapper(model);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
 
@@ -103,7 +103,7 @@ public class ProtocolMappersResource {
     @NoCache
     @Path("models")
     @Produces("application/json")
-    public List<ProtocolMapperRepresentation> getMappersPerProtocol() {
+    public List<ProtocolMapperRepresentation> getMappers() {
         auth.requireView();
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : realm.getProtocolMappers()) {

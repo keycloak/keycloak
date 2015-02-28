@@ -25,6 +25,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
@@ -156,13 +157,11 @@ public class AccountTest {
         });
     }
 
-/*
     @Test
     @Ignore
     public void runit() throws Exception {
         Thread.sleep(10000000);
     }
-    */
 
     @Test
     public void returnToAppFromQueryParam() {

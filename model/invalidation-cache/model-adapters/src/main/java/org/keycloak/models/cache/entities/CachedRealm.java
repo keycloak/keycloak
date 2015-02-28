@@ -71,7 +71,7 @@ public class CachedRealm {
     private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
     private List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
     private Set<ClaimTypeModel> claimTypes = new HashSet<ClaimTypeModel>();
-    private Set<ProtocolMapperModel> claimMappings = new HashSet<ProtocolMapperModel>();
+    private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
@@ -140,6 +140,9 @@ public class CachedRealm {
 
         for (ClaimTypeModel claimType : model.getClaimTypes()) {
             this.claimTypes.add(new ClaimTypeModel(claimType));
+        }
+        for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
+            this.protocolMappers.add(mapper);
         }
 
         smtpConfig.putAll(model.getSmtpConfig());
@@ -360,8 +363,8 @@ public class CachedRealm {
         return claimTypes;
     }
 
-    public Set<ProtocolMapperModel> getClaimMappings() {
-        return claimMappings;
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        return protocolMappers;
     }
 
     public boolean isInternationalizationEnabled() {

@@ -1,22 +1,22 @@
-package org.keycloak.protocol.oidc.mappers;
+package org.keycloak.protocol.saml.mappers;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlProtocol;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
+public abstract class AbstractSAMLProtocolMapper implements ProtocolMapper {
 
-    public static final String TOKEN_MAPPER_CATEGORY = "Token mapper";
 
     @Override
     public String getProtocol() {
-        return OIDCLoginProtocol.LOGIN_PROTOCOL;
+        return SamlProtocol.LOGIN_PROTOCOL;
     }
 
     @Override

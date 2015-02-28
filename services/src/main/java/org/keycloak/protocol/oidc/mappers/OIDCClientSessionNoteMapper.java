@@ -28,6 +28,7 @@ public class OIDCClientSessionNoteMapper extends AbstractOIDCProtocolMapper impl
         property.setLabel(CLIENT_SESSION_NOTE);
         property.setHelpText("Name of the note to map in the UserSessionModel");
         configProperties.add(property);
+        property = new ConfigProperty();
         property.setName(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setLabel(AttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
@@ -45,7 +46,17 @@ public class OIDCClientSessionNoteMapper extends AbstractOIDCProtocolMapper impl
 
     @Override
     public String getDisplayType() {
-        return "ClientSession Note Mapper";
+        return "ClientSession Note";
+    }
+
+    @Override
+    public String getDisplayCategory() {
+        return TOKEN_MAPPER_CATEGORY;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Map a temporary note that is attached to the ClientSession to a token claim.";
     }
 
     @Override

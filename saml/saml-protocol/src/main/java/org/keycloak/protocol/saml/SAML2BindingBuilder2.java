@@ -38,8 +38,8 @@ import static org.picketlink.common.util.StringUtil.isNotNull;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
-    protected static final Logger logger = Logger.getLogger(SAML2BindingBuilder.class);
+public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
+    protected static final Logger logger = Logger.getLogger(SAML2BindingBuilder2.class);
 
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
@@ -47,8 +47,6 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     protected boolean signAssertions;
     protected SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.RSA_SHA1;
     protected String relayState;
-    protected String destination;
-    protected String issuer;
     protected int encryptionKeySize = 128;
     protected PublicKey encryptionPublicKey;
     protected String encryptionAlgorithm = "AES";
@@ -107,16 +105,6 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         return (T)this;
     }
 
-    public T destination(String destination) {
-        this.destination = destination;
-        return (T)this;
-    }
-
-    public T issuer(String issuer) {
-        this.issuer = issuer;
-        return (T)this;
-    }
-
     public T relayState(String relayState) {
         this.relayState = relayState;
         return (T)this;
@@ -126,6 +114,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         protected Document document;
 
         public PostBindingBuilder(Document document) throws ProcessingException {
+            if (encrypt) encryptDocument(document);
             this.document = document;
             if (signAssertions) {
                 signAssertion(document);
@@ -143,14 +132,8 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
             return document;
         }
 
-        public Response request() throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document, destination, true);
-        }
         public Response request(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
             return buildResponse(document, actionUrl, true);
-        }
-        public Response response() throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document, destination, false);
         }
         public Response response(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
             return buildResponse(document, actionUrl, false);
@@ -162,6 +145,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         protected Document document;
 
         public RedirectBindingBuilder(Document document) throws ProcessingException {
+            if (encrypt) encryptDocument(document);
             this.document = document;
             if (signAssertions) {
                 signAssertion(document);
@@ -180,18 +164,12 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
 
             return generateRedirectUri(samlParameterName, redirectUri, document);
         }
-        public Response response() throws ProcessingException, ConfigurationException, IOException {
-            return response(destination, false);
-        }
         public Response response(String redirectUri) throws ProcessingException, ConfigurationException, IOException {
             return response(redirectUri, false);
         }
 
         public Response request(String redirect) throws ProcessingException, ConfigurationException, IOException {
             return response(redirect, true);
-        }
-        public Response request() throws ProcessingException, ConfigurationException, IOException {
-            return response(destination, true);
         }
 
         private Response response(String redirectUri, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
@@ -306,10 +284,6 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     }
 
     protected String buildHtml(String samlResponse, String actionUrl, boolean asRequest) {
-        if (destination == null) {
-            throw SALM2LoginResponseBuilder.logger.nullValueError("Destination is null");
-        }
-
         StringBuilder builder = new StringBuilder();
 
         String key = GeneralConstants.SAML_RESPONSE_KEY;
@@ -376,6 +350,14 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
             builder.queryParam(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY, encodedSig);
         }
         return builder.build();
+    }
+
+    public RedirectBindingBuilder redirectBinding(Document document) throws ProcessingException  {
+        return new RedirectBindingBuilder(document);
+    }
+
+    public PostBindingBuilder postBinding(Document document) throws ProcessingException  {
+        return new PostBindingBuilder(document);
     }
 
 

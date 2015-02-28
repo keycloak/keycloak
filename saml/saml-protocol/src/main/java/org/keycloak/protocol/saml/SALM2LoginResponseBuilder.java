@@ -31,13 +31,14 @@ import static org.picketlink.common.util.StringUtil.isNotNull;
  * <p/>
  * Configuration Options:
  *
- * @author Anil.Saldhana@redhat.com
  * @author bburke@redhat.com
 */
-public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginResponseBuilder> {
+public class SALM2LoginResponseBuilder {
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     protected List<String> roles = new LinkedList<String>();
+    protected String destination;
+    protected String issuer;
     protected String nameId;
     protected String nameIdFormat;
     protected boolean multiValuedRoles;
@@ -50,6 +51,16 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
 
     public SALM2LoginResponseBuilder attributes(Map<String, Object> attributes) {
         this.attributes = attributes;
+        return this;
+    }
+
+    public SALM2LoginResponseBuilder destination(String destination) {
+        this.destination = destination;
+        return this;
+    }
+
+    public SALM2LoginResponseBuilder issuer(String issuer) {
+        this.issuer = issuer;
         return this;
     }
 
@@ -95,7 +106,7 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
         return this;
     }
 
-   public SALM2LoginResponseBuilder multiValuedRoles(boolean multiValuedRoles) {
+    public SALM2LoginResponseBuilder multiValuedRoles(boolean multiValuedRoles) {
         this.multiValuedRoles = multiValuedRoles;
         return this;
     }
@@ -105,21 +116,24 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
         return this;
     }
 
-    public RedirectBindingBuilder redirectBinding()  throws ConfigurationException, ProcessingException {
-        Document samlResponseDocument = buildDocument();
-        return new RedirectBindingBuilder(samlResponseDocument);
-
-    }
-
-    public PostBindingBuilder postBinding()  throws ConfigurationException, ProcessingException {
-        Document samlResponseDocument = buildDocument();
-        return new PostBindingBuilder(samlResponseDocument);
-
-    }
-
-    public Document buildDocument() throws ConfigurationException, ProcessingException {
+    public Document buildDocument(ResponseType responseType) throws ConfigurationException, ProcessingException {
         Document samlResponseDocument = null;
 
+        try {
+            SAML2Response docGen = new SAML2Response();
+            samlResponseDocument = docGen.convert(responseType);
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("SAML Response Document: " + DocumentUtil.asString(samlResponseDocument));
+            }
+        } catch (Exception e) {
+            throw logger.samlAssertionMarshallError(e);
+        }
+
+        return samlResponseDocument;
+    }
+
+    public ResponseType buildModel() throws ConfigurationException, ProcessingException {
         ResponseType responseType = null;
 
         SAML2Response saml2Response = new SAML2Response();
@@ -167,19 +181,7 @@ public class SALM2LoginResponseBuilder extends SAML2BindingBuilder<SALM2LoginRes
             AttributeStatementType attStatement = StatementUtil.createAttributeStatement(attributes);
             assertion.addStatement(attStatement);
         }
-
-        try {
-            samlResponseDocument = saml2Response.convert(responseType);
-
-            if (logger.isTraceEnabled()) {
-                logger.trace("SAML Response Document: " + DocumentUtil.asString(samlResponseDocument));
-            }
-        } catch (Exception e) {
-            throw logger.samlAssertionMarshallError(e);
-        }
-
-        if (encrypt) encryptDocument(samlResponseDocument);
-        return samlResponseDocument;
+        return responseType;
     }
 
 }
