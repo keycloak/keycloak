@@ -15,6 +15,7 @@ import org.keycloak.services.resources.flows.Urls;
 import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
+import java.text.MessageFormat;
 import java.util.*;
 
 /**
@@ -45,6 +46,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private UriInfo uriInfo;
 
     private String message;
+    private Object[] parameters;
     private MessageType messageType;
 
     public FreeMarkerAccountProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
@@ -107,7 +109,13 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         }
 
         if (message != null) {
-            attributes.put("message", new MessageBean(messages.containsKey(message) ? messages.getProperty(message) : message, messageType));
+            String formattedMessage;
+            if(messages.containsKey(message)){
+                formattedMessage = new MessageFormat(messages.getProperty(message),locale).format(parameters);
+            }else{
+                formattedMessage = message;
+            }
+            attributes.put("message", new MessageBean(formattedMessage, messageType));
         }
 
         if (referrer != null) {
@@ -160,22 +168,25 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     }
 
     @Override
-    public AccountProvider setError(String message) {
+    public AccountProvider setError(String message, Object ... parameters) {
         this.message = message;
+        this.parameters = parameters;
         this.messageType = MessageType.ERROR;
         return this;
     }
 
     @Override
-    public AccountProvider setSuccess(String message) {
+    public AccountProvider setSuccess(String message, Object ... parameters) {
         this.message = message;
+        this.parameters = parameters;
         this.messageType = MessageType.SUCCESS;
         return this;
     }
 
     @Override
-    public AccountProvider setWarning(String message) {
+    public AccountProvider setWarning(String message, Object ... parameters) {
         this.message = message;
+        this.parameters = parameters;
         this.messageType = MessageType.WARNING;
         return this;
     }

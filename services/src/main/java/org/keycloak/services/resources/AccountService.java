@@ -32,20 +32,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
-import org.keycloak.models.AccountRoles;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelReadOnlyException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -611,6 +598,10 @@ public class AccountService {
         } catch (ModelReadOnlyException mre) {
             setReferrerOnPage();
             return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
+        }catch (ModelException me) {
+            logger.error("Failed to update password", me);
+            setReferrerOnPage();
+            return account.setError(me.getMessage(), me.getParameters()).createResponse(AccountPages.PASSWORD);
         }catch (Exception ape) {
             logger.error("Failed to update password", ape);
             setReferrerOnPage();

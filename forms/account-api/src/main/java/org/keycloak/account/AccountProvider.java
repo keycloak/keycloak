@@ -24,11 +24,11 @@ public interface AccountProvider extends Provider {
 
     Response createResponse(AccountPages page);
 
-    AccountProvider setError(String message);
+    AccountProvider setError(String message, Object ... parameters);
 
-    AccountProvider setSuccess(String message);
+    AccountProvider setSuccess(String message, Object ... parameters);
 
-    AccountProvider setWarning(String message);
+    AccountProvider setWarning(String message, Object ... parameters);
 
     AccountProvider setUser(UserModel user);
 
