@@ -1,0 +1,6 @@
+org.keycloak.protocol.saml.mappers.UserAttributeBasicAttributeStatementMapper
+org.keycloak.protocol.saml.mappers.UserModelBasicAttributeStatementMapper
+org.keycloak.protocol.saml.mappers.UserAttributeUriReferenceAttributeStatementMapper
+org.keycloak.protocol.saml.mappers.UserModelUriReferenceAttributeStatementMapper
+
+

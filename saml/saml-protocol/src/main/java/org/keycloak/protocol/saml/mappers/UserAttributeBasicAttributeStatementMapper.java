@@ -1,4 +1,4 @@
-package org.keycloak.protocol.oidc.mappers;
+package org.keycloak.protocol.saml.mappers;
 
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -6,21 +6,18 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.representations.AccessToken;
+import org.picketlink.identity.federation.saml.v2.assertion.AttributeStatementType;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Mappings UserModel.attribute to an ID Token claim.  Token claim name can be a full qualified nested object name,
- * i.e. "address.country".  This will create a nested
- * json object within the toke claim.
+ * Mappings UserModel property (the property name of a getter method) to an AttributeStatement.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
-
+public class UserAttributeBasicAttributeStatementMapper extends AbstractSAMLProtocolMapper implements SAMLAttributeStatementMapper {
     private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
 
     static {
@@ -30,21 +27,16 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
         property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_NAME);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
         configProperties.add(property);
-        property = new ConfigProperty();
-        property.setName(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
-        property.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
-        property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
-        configProperties.add(property);
+        AttributeStatementHelper.addBasicProperties(configProperties);
 
     }
 
-    public static final String PROVIDER_ID = "oidc-usermodel-attribute-mapper";
+    public static final String PROVIDER_ID = "saml-user-attribute-basic-mapper";
 
 
     public List<ConfigProperty> getConfigProperties() {
         return configProperties;
     }
-
     @Override
     public String getId() {
         return PROVIDER_ID;
@@ -52,28 +44,26 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
 
     @Override
     public String getDisplayType() {
-        return "User Attribute";
+        return "User Attribute Basic";
     }
 
     @Override
     public String getDisplayCategory() {
-        return TOKEN_MAPPER_CATEGORY;
+        return AttributeStatementHelper.ATTRIBUTE_STATEMENT_CATEGORY;
     }
 
     @Override
     public String getHelpText() {
-        return "Map a custom user attribute to a token claim.";
+        return "Map a custom user attribute to a to a SAML Basic attribute type..";
     }
 
     @Override
-    public AccessToken transformToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                      UserSessionModel userSession, ClientSessionModel clientSession) {
+    public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
         UserModel user = userSession.getUser();
         String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_NAME);
         String attributeValue = user.getAttribute(attributeName);
-        if (attributeValue == null) return token;
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
-        return token;
+        AttributeStatementHelper.addBasicAttribute(attributeStatement, mappingModel, attributeValue);
+
     }
 
 }

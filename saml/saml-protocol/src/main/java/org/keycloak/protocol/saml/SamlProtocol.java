@@ -17,6 +17,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -29,6 +30,8 @@ import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ParsingException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.identity.federation.core.saml.v2.constants.X500SAMLProfileConstants;
+import org.picketlink.identity.federation.saml.v2.assertion.AssertionType;
+import org.picketlink.identity.federation.saml.v2.assertion.AttributeStatementType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler;
 import org.w3c.dom.Document;
@@ -273,6 +276,7 @@ public class SamlProtocol implements LoginProtocol {
         Document samlDocument = null;
         try {
             ResponseType samlModel = builder.buildModel();
+            transformAttributeStatement(session, samlModel, client, userSession, clientSession);
             samlModel = transformLoginResponse(session, samlModel, client, userSession, clientSession);
             samlDocument = builder.buildDocument(samlModel);
         } catch (Exception e) {
@@ -346,14 +350,14 @@ public class SamlProtocol implements LoginProtocol {
 
     public void initClaims(SALM2LoginResponseBuilder builder, ClientModel model, UserModel user) {
         if (ClaimMask.hasEmail(model.getAllowedClaimsMask())) {
-            builder.attribute(X500SAMLProfileConstants.EMAIL_ADDRESS.getFriendlyName(), user.getEmail());
+            //builder.attribute(X500SAMLProfileConstants.EMAIL_ADDRESS.getFriendlyName(), user.getEmail());
         }
         if (ClaimMask.hasName(model.getAllowedClaimsMask())) {
-            builder.attribute(X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(), user.getFirstName());
-            builder.attribute(X500SAMLProfileConstants.SURNAME.getFriendlyName(), user.getLastName());
+            //builder.attribute(X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(), user.getFirstName());
+            //builder.attribute(X500SAMLProfileConstants.SURNAME.getFriendlyName(), user.getLastName());
         }
         if (ClaimMask.hasUsername(model.getAllowedClaimsMask())) {
-            builder.attribute(X500SAMLProfileConstants.USERID.getFriendlyName(), user.getUsername());
+            //builder.attribute(X500SAMLProfileConstants.USERID.getFriendlyName(), user.getUsername());
         }
     }
 
@@ -372,6 +376,21 @@ public class SamlProtocol implements LoginProtocol {
 
         }
         return response;
+    }
+    public void transformAttributeStatement(KeycloakSession session, ResponseType response, ClientModel client,
+                                               UserSessionModel userSession, ClientSessionModel clientSession) {
+        AttributeStatementType attributeStatement = new AttributeStatementType();
+        AssertionType assertion = response.getAssertions().get(0).getAssertion();
+        assertion.addStatement(attributeStatement);
+        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        for (ProtocolMapperModel mapping : mappings) {
+            if (!mapping.getProtocol().equals(SamlProtocol.LOGIN_PROTOCOL)) continue;
+
+            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            if (mapper == null || !(mapper instanceof SAMLAttributeStatementMapper)) continue;
+            ((SAMLAttributeStatementMapper)mapper).transformAttributeStatement(attributeStatement, mapping, session, userSession, clientSession);
+        }
     }
 
 

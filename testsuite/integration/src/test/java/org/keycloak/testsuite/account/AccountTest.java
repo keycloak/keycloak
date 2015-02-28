@@ -157,8 +157,7 @@ public class AccountTest {
         });
     }
 
-    @Test
-    @Ignore
+    //@Test @Ignore
     public void runit() throws Exception {
         Thread.sleep(10000000);
     }
