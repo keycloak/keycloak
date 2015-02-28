@@ -31,8 +31,8 @@
 		                    {{current.realm.realm}}
 		                    <b class="caret"></b>
 		                </a>
-		                <ul class="dropdown-menu">
-		                    <li data-ng-repeat="realm in current.realms">
+		                <ul class="dropdown-menu" data-ng-show="current.realms.length > 1">
+		                    <li data-ng-repeat="realm in current.realms" data-ng-if="realm.realm != current.realm.realm">
 		                        <a href="" ng-click="changeRealm(realm.realm)">{{realm.realm}}</a>
 		                    </li>
 		                </ul>
