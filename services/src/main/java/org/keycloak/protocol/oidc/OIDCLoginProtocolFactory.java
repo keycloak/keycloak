@@ -8,7 +8,8 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.oidc.mappers.AttributeMapperHelper;
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCAddressMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCFullNameMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCUserModelMapper;
@@ -65,27 +66,27 @@ public class OIDCLoginProtocolFactory implements LoginProtocolFactory {
         int counter = 0;
         // the ids must never change!!!!  So if you add more default mappers, then add to end with higher counter.
         addClaimMapper(realm, "username", OIDCUserModelMapper.PROVIDER_ID,
-                OIDCUserModelMapper.USER_MODEL_PROPERTY, "username",
+                ProtocolMapperUtils.USER_MODEL_PROPERTY, "username",
                 "preferred_username", "String",
                 true, "username",
                 true);
         addClaimMapper(realm, "email", OIDCUserModelMapper.PROVIDER_ID,
-                OIDCUserModelMapper.USER_MODEL_PROPERTY, "email",
+                ProtocolMapperUtils.USER_MODEL_PROPERTY, "email",
                 "email", "String",
                 true, "email",
                 true);
         addClaimMapper(realm, "given name", OIDCUserModelMapper.PROVIDER_ID,
-                OIDCUserModelMapper.USER_MODEL_PROPERTY, "firstName",
+                ProtocolMapperUtils.USER_MODEL_PROPERTY, "firstName",
                 "given_name", "String",
                 true, "given name",
                 true);
         addClaimMapper(realm, "family name", OIDCUserModelMapper.PROVIDER_ID,
-                OIDCUserModelMapper.USER_MODEL_PROPERTY, "lastName",
+                ProtocolMapperUtils.USER_MODEL_PROPERTY, "lastName",
                 "family_name", "String",
                 true, "family name",
                 true);
         addClaimMapper(realm, "email verified", OIDCUserModelMapper.PROVIDER_ID,
-                OIDCUserModelMapper.USER_MODEL_PROPERTY, "emailVerified",
+                ProtocolMapperUtils.USER_MODEL_PROPERTY, "emailVerified",
                 "email_verified", "boolean",
                 false, null,
                 false);
@@ -131,8 +132,8 @@ public class OIDCLoginProtocolFactory implements LoginProtocolFactory {
         mapper.setAppliedByDefault(appliedByDefault);
         Map<String, String> config = new HashMap<String, String>();
         config.put(propertyName, propertyNameValue);
-        config.put(AttributeMapperHelper.TOKEN_CLAIM_NAME, tokenClaimName);
-        config.put(AttributeMapperHelper.JSON_TYPE, claimType);
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, tokenClaimName);
+        config.put(OIDCAttributeMapperHelper.JSON_TYPE, claimType);
         mapper.setConfig(config);
         realm.addProtocolMapper(mapper);
     }
