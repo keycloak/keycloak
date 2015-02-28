@@ -46,13 +46,7 @@ public class SALM2LoginResponseBuilder {
     protected String requestID;
     protected String authMethod;
     protected String requestIssuer;
-    protected Map<String, Object> attributes = new HashMap<String, Object>();
 
-
-    public SALM2LoginResponseBuilder attributes(Map<String, Object> attributes) {
-        this.attributes = attributes;
-        return this;
-    }
 
     public SALM2LoginResponseBuilder destination(String destination) {
         this.destination = destination;
@@ -61,15 +55,6 @@ public class SALM2LoginResponseBuilder {
 
     public SALM2LoginResponseBuilder issuer(String issuer) {
         this.issuer = issuer;
-        return this;
-    }
-
-    public SALM2LoginResponseBuilder attribute(String name, Object value) {
-        if (value == null) {
-            attributes.remove(name);
-        } else {
-            this.attributes.put(name, value);
-        }
         return this;
     }
 
@@ -176,11 +161,6 @@ public class SALM2LoginResponseBuilder {
             assertion.addStatement(attrStatement);
         }
 
-        // Add in the attributes information
-        if (attributes != null && attributes.size() > 0) {
-            AttributeStatementType attStatement = StatementUtil.createAttributeStatement(attributes);
-            assertion.addStatement(attStatement);
-        }
         return responseType;
     }
 
