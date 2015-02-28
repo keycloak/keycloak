@@ -72,7 +72,6 @@ import javax.ws.rs.ext.Providers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -787,37 +786,37 @@ public class OIDCLoginProtocolService {
             event.client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
             if (!checkSsl()) {
                 event.error(Errors.SSL_REQUIRED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required", headers);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.HTTPS_REQUIRED);
             }
             if (!realm.isEnabled()) {
                 event.error(Errors.REALM_DISABLED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled", headers);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REALM_NOT_ENABLED);
             }
 
             clientSession = null;
             ClientModel client = realm.findClient(clientId);
             if (client == null) {
                 event.error(Errors.CLIENT_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.", headers);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_LOGIN_REQUESTER);
             }
 
             if (!client.isEnabled()) {
                 event.error(Errors.CLIENT_DISABLED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.", headers);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             }
             if ((client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
                 event.error(Errors.NOT_ALLOWED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Bearer-only applications are not allowed to initiate browser login", headers);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.BEARER_ONLY);
             }
             if (client.isDirectGrantsOnly()) {
                 event.error(Errors.NOT_ALLOWED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login", headers);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.DIRECT_GRANTS_ONLY);
             }
             String redirectUriParam = redirect;
             redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
             if (redirect == null) {
                 event.error(Errors.INVALID_REDIRECT_URI);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.", headers);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REDIRECT_URI);
             }
             clientSession = session.sessions().createClientSession(realm, client);
             clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -962,7 +961,7 @@ public class OIDCLoginProtocolService {
         event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Registration not allowed", headers);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REGISTRATION_NOT_ALLOWED );
         }
 
         FrontPageInitializer pageInitializer = new FrontPageInitializer();
@@ -1006,7 +1005,7 @@ public class OIDCLoginProtocolService {
         if (redirectUri != null) {
             String validatedRedirect = verifyRealmRedirectUri(uriInfo, redirectUri, realm);
             if (validatedRedirect == null) {
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect uri.", headers);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REDIRECT_URI);
             }
             return Response.status(302).location(UriBuilder.fromUri(validatedRedirect).build()).build();
         } else {

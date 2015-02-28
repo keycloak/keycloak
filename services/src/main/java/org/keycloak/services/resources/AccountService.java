@@ -611,7 +611,7 @@ public class AccountService {
         } catch (ModelReadOnlyException mre) {
             setReferrerOnPage();
             return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
-        } catch (Exception ape) {
+        }catch (Exception ape) {
             logger.error("Failed to update password", ape);
             setReferrerOnPage();
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);

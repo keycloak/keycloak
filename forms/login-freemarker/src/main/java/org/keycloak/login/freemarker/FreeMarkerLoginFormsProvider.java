@@ -119,7 +119,7 @@ import java.util.concurrent.TimeUnit;
                     session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
                 } catch (EmailException e) {
                     logger.error("Failed to send verification email", e);
-                    return setError("emailSendError").createErrorPage();
+                    return setError(Messages.EMAIL_SENT_ERROR).createErrorPage();
                 }
 
                 actionMessage = Messages.ACTION_WARN_EMAIL;

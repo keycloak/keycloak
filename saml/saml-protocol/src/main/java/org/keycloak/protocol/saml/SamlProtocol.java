@@ -20,6 +20,7 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.admin.ClientAttributeCertificateResource;
 import org.keycloak.services.resources.flows.Flows;
@@ -143,7 +144,7 @@ public class SamlProtocol implements LoginProtocol {
               return builder.redirectBinding().response();
           }
         } catch (Exception e) {
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response", headers);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.FAILED_TO_PROCESS_RESPONSE );
         }
     }
 
@@ -284,7 +285,7 @@ public class SamlProtocol implements LoginProtocol {
             samlDocument = builder.buildDocument(samlModel);
         } catch (Exception e) {
             logger.error("failed", e);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.FAILED_TO_PROCESS_RESPONSE);
         }
 
         SAML2BindingBuilder2 bindingBuilder = new SAML2BindingBuilder2();
@@ -306,7 +307,7 @@ public class SamlProtocol implements LoginProtocol {
                 publicKey = SamlProtocolUtils.getEncryptionValidationKey(client);
             } catch (Exception e) {
                 logger.error("failed", e);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response", headers);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.FAILED_TO_PROCESS_RESPONSE);
             }
             bindingBuilder.encrypt(publicKey);
         }
@@ -318,7 +319,7 @@ public class SamlProtocol implements LoginProtocol {
             }
         } catch (Exception e) {
             logger.error("failed", e);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Failed to process response", headers);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.FAILED_TO_PROCESS_RESPONSE );
         }
     }
 

@@ -46,8 +46,8 @@ public class Flows {
         return new ErrorFlows();
     }
 
-    public static Response forwardToSecurityFailurePage(KeycloakSession session, RealmModel realm, UriInfo uriInfo, String message, HttpHeaders headers) {
-        return Flows.forms(session, realm, null, uriInfo, headers).setError(message).createErrorPage();
+    public static Response forwardToSecurityFailurePage(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String message, Object ... parameters) {
+        return Flows.forms(session, realm, null, uriInfo, headers).setError(message,parameters).createErrorPage();
     }
 
 

@@ -112,7 +112,7 @@ public class HttpAuthenticationManager {
         Response response;
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
-            response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, Messages.ACCOUNT_DISABLED, headers);
+            response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.ACCOUNT_DISABLED);
         } else {
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), authMethod, false);
             TokenManager.attachClientSession(userSession, clientSession);

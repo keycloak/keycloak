@@ -27,6 +27,7 @@ package org.keycloak.services.messages;
 public class Messages {
 
     public static final String ACCOUNT_DISABLED = "accountDisabled";
+
     public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabled";
 
     public static final String INVALID_PASSWORD = "invalidPassword";
@@ -87,6 +88,10 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemoved";
 
+    public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedError";
+
+    public static final String IDENTITY_PROVIDER_NO_TOKEN = "identityProviderNoToken";
+
     public static final String ERROR = "error";
 
     public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentials";
@@ -94,4 +99,65 @@ public class Messages {
     public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUnique";
 
     public static final String NO_ACCESS = "noAccess";
+
+    public static final String EMAIL_SENT = "emailSent";
+
+    public static final String EMAIL_SENT_ERROR = "emailSendError";
+
+    public static final String FAILED_TO_PROCESS_RESPONSE = "failedToProcessResponse";
+
+    public static final String HTTPS_REQUIRED = "httpsRequired";
+
+    public static final String REALM_NOT_ENABLED = "realmNotEnabled";
+
+    public static final String INVALID_REQUEST = "invalidRequest";
+
+    public static final String INVALID_REQUESTER = "invalidRequester";
+
+    public static final String UNKNOWN_LOGIN_REQUESTER = "unknownLoginRequester";
+
+    public static final String LOGIN_REQUESTER_NOT_ENABLED = "loginRequesterNotEnabled";
+
+    public static final String BEARER_ONLY = "bearerOnly";
+
+    public static final String DIRECT_GRANTS_ONLY = "directGrantsOnly";
+
+    public static final String INVALID_REDIRECT_URI = "invalidRedirectUri";
+
+    public static final String UNSUPPORTED_NAME_ID_FORMAT = "unsupportedNameIdFormat";
+
+    public static final String REGISTRATION_NOT_ALLOWED = "registrationNotAllowed";
+
+    public static final String PERMISSION_NOT_APPROVED = "permissionNotApproved";
+
+    public static final String NO_RELAY_STATE_IN_RESPONSE = "noRelayStateInResponse";
+
+    public static final String IDENTITY_PROVIDER_ALREADY_LINKED = "identityProviderAlreadyLinked";
+
+    public static final String USER_DISABLED = "userDisabled";
+    
+    public static final String INSUFFICIENT_PERMISSION = "insufficientPermission";
+
+
+    public static final String COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST = "couldNotProceedWithAuthenticationRequest";
+
+    public static final String COULD_NOT_OBTAIN_TOKEN = "couldNotObtainToken";
+
+    public static final String UNEXPECTED_ERROR_RETRIEVING_TOKEN = "unexpectedErrorRetrievingToken";
+
+    public static final String IDENTITY_PROVIDER_AUTHENTICATION_FAILED = "identityProviderAuthenticationFailed";
+
+    public static final String UNEXPECTED_ERROR_HANDLING_RESPONSE = "unexpectedErrorHandlingResponse";
+
+    public static final String COULD_NOT_SEND_AUTHENTICATION_REQUEST = "couldNotSendAuthenticationRequest";
+
+    public static final String UNEXPECTED_ERROR_HANDLING_REQUEST = "unexpectedErrorHandlingRequest";
+
+    public static final String INVALID_ACCESS_CODE = "invalidAccessCode";
+
+    public static final String SESSION_NOT_ACTIVE = "sessionNotActive";
+
+    public static final String UNKNOWN_CODE = "unknownCode";
+
+    public static final String INVALID_CODE = "invalidCode";
 }

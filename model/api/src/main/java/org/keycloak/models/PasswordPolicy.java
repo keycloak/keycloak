@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,9 +75,9 @@ public class PasswordPolicy {
         return -1;
     }
 
-    public String validate(String password) {
+    public Error validate(String password) {
         for (Policy p : policies) {
-            String error = p.validate(password);
+            Error error = p.validate(password);
             if (error != null) {
                 return error;
             }
@@ -85,7 +86,25 @@ public class PasswordPolicy {
     }
 
     private static interface Policy {
-        public String validate(String password);
+        public Error validate(String password);
+    }
+
+    public static class Error{
+        private String message;
+        private Object[] parameters;
+
+        private Error(String message, Object ... parameters){
+            this.message = message;
+            this.parameters = parameters;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public Object[] getParameters() {
+            return parameters;
+        }
     }
 
     private static class HashIterations implements Policy {
@@ -97,7 +116,7 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public Error validate(String password) {
             return null;
         }
     }
@@ -111,8 +130,8 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
-            return password.length() < min ? "Invalid password: minimum length " + min : null;
+        public Error validate(String password) {
+            return password.length() < min ? new Error("invalidPasswordMinLength", min) : null;
         }
     }
 
@@ -125,14 +144,14 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public Error validate(String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isDigit(c)) {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + min + " numerical digits" : null;
+            return count < min ? new Error("invalidPasswordMinDigits", min) : null;
         }
     }
 
@@ -145,14 +164,14 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public Error validate(String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isLowerCase(c)) {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + min + " lower case characters": null;
+            return count < min ? new Error("invalidPasswordMinLowerCaseChars", min): null;
         }
     }
 
@@ -165,14 +184,14 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public Error validate(String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isUpperCase(c)) {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + min + " upper case characters" : null;
+            return count < min ? new Error("invalidPasswordMinUpperCaseChars", min) : null;
         }
     }
 
@@ -185,14 +204,14 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public Error validate(String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (!Character.isLetterOrDigit(c)) {
                     count++;
                 }
             }
-            return count < min ? "Invalid password: must contain at least " + min + " special characters" : null;
+            return count < min ? new Error("invalidPasswordMinSpecialChars", min) : null;
         }
     }
 
