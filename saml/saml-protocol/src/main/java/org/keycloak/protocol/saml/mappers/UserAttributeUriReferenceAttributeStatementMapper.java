@@ -3,6 +3,7 @@ package org.keycloak.protocol.saml.mappers;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -23,8 +24,8 @@ public class UserAttributeUriReferenceAttributeStatementMapper extends AbstractS
     static {
         ConfigProperty property;
         property = new ConfigProperty();
-        property.setName(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_NAME);
-        property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_NAME);
+        property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
+        property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
         configProperties.add(property);
         AttributeStatementHelper.addUriReferenceProperties(configProperties);
@@ -60,9 +61,19 @@ public class UserAttributeUriReferenceAttributeStatementMapper extends AbstractS
     @Override
     public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
         UserModel user = userSession.getUser();
-        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_NAME);
+        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
         String attributeValue = user.getAttribute(attributeName);
         AttributeStatementHelper.addUriReferenceAttribute(attributeStatement, mappingModel, attributeValue);
+
+    }
+    public static void addAttributeMapper(RealmModel realm, String name,
+                                          String userAttribute,
+                                          String samlAttributeName,
+                                          String friendlyName,
+                                          boolean consentRequired, String consentText,
+                                          boolean appliedByDefault) {
+        String mapperId = PROVIDER_ID;
+        AttributeStatementHelper.addAttributeMapper(realm, name, userAttribute, samlAttributeName, friendlyName, consentRequired, consentText, appliedByDefault, mapperId);
 
     }
 
