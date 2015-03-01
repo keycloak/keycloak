@@ -439,8 +439,10 @@ public class LoginActionsService {
         Object[] parameters = new Object[0];
         if (errorMessage == null) {
             PasswordPolicy.Error error = Validation.validatePassword(formData, realm.getPasswordPolicy());
-            errorMessage = error.getMessage();
-            parameters = error.getParameters();
+            if(error != null){
+                errorMessage = error.getMessage();
+                parameters = error.getParameters();
+            }
         }
 
         if (errorMessage != null) {

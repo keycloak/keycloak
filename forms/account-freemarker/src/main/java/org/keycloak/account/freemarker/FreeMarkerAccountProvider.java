@@ -111,7 +111,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         if (message != null) {
             String formattedMessage;
             if(messages.containsKey(message)){
-                formattedMessage = new MessageFormat(messages.getProperty(message),locale).format(parameters);
+                formattedMessage = new MessageFormat(messages.getProperty(message).replace("'","''"),locale).format(parameters);
             }else{
                 formattedMessage = message;
             }
