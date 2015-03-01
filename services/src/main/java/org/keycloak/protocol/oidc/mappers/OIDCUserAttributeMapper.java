@@ -3,6 +3,7 @@ package org.keycloak.protocol.oidc.mappers;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -26,8 +27,8 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
     static {
         ConfigProperty property;
         property = new ConfigProperty();
-        property.setName(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_NAME);
-        property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_NAME);
+        property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
+        property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
         configProperties.add(property);
         property = new ConfigProperty();
@@ -69,11 +70,23 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
     public AccessToken transformToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                       UserSessionModel userSession, ClientSessionModel clientSession) {
         UserModel user = userSession.getUser();
-        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_NAME);
+        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
         String attributeValue = user.getAttribute(attributeName);
         if (attributeValue == null) return token;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
         return token;
     }
+
+    public static void addClaimMapper(RealmModel realm, String name,
+                                      String userAttribute,
+                                      String tokenClaimName, String claimType,
+                                      boolean consentRequired, String consentText,
+                                      boolean appliedByDefault) {
+        OIDCAttributeMapperHelper.addClaimMapper(realm, name, userAttribute,
+                tokenClaimName, claimType,
+                consentRequired, consentText,
+                appliedByDefault, PROVIDER_ID);
+    }
+
 
 }

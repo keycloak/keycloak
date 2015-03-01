@@ -1,6 +1,9 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 
 import java.util.HashMap;
@@ -55,5 +58,28 @@ public class OIDCAttributeMapperHelper {
                 }
             }
         }
+    }
+
+    public static void addClaimMapper(RealmModel realm, String name,
+                                  String userAttribute,
+                                  String tokenClaimName, String claimType,
+                                  boolean consentRequired, String consentText,
+                                  boolean appliedByDefault,
+                                  String mapperId) {
+        ProtocolMapperModel mapper = realm.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, name);
+        if (mapper != null) return;
+        mapper = new ProtocolMapperModel();
+        mapper.setName(name);
+        mapper.setProtocolMapper(mapperId);
+        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        mapper.setConsentRequired(consentRequired);
+        mapper.setConsentText(consentText);
+        mapper.setAppliedByDefault(appliedByDefault);
+        Map<String, String> config = new HashMap<String, String>();
+        config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
+        config.put(TOKEN_CLAIM_NAME, tokenClaimName);
+        config.put(JSON_TYPE, claimType);
+        mapper.setConfig(config);
+        realm.addProtocolMapper(mapper);
     }
 }

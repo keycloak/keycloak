@@ -9,9 +9,10 @@ import java.lang.reflect.Method;
  * @version $Revision: 1 $
  */
 public class ProtocolMapperUtils {
-    public static final String USER_MODEL_PROPERTY = "User Property";
+    public static final String USER_ATTRIBUTE = "user.attribute";
+    public static final String USER_MODEL_PROPERTY_LABEL = "User Property";
     public static final String USER_MODEL_PROPERTY_HELP_TEXT = "Name of the property method in the UserModel interface.  For example, a value of 'email' would reference the UserModel.getEmail() method.";
-    public static final String USER_MODEL_ATTRIBUTE_NAME = "User Attribute";
+    public static final String USER_MODEL_ATTRIBUTE_LABEL = "User Attribute";
     public static final String USER_MODEL_ATTRIBUTE_HELP_TEXT = "Name of stored user attribute which is the name of an attribute within the UserModel.attribute map.";
 
     public static String getUserModelValue(UserModel user, String propertyName) {
