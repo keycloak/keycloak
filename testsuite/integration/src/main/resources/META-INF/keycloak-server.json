@@ -8,11 +8,15 @@
     },
 
     "realm": {
-        "provider": "${keycloak.realm.provider:jpa}"
+        "provider": "${keycloak.realm.provider:file}",
+        "file" : {
+            "directory" : ".",
+            "fileName" : "kcdata.json"
+        }
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:jpa}"
+        "provider": "${keycloak.user.provider:file}"
     },
 
     "userSessions": {
@@ -20,11 +24,11 @@
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:mem}"
+        "provider": "${keycloak.realm.cache.provider:none}"
     },
 
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:mem}",
+        "provider": "${keycloak.user.cache.provider:none}",
         "mem": {
             "maxSize": 20000
         }
