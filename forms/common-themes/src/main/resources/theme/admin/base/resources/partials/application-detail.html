@@ -41,7 +41,8 @@
                             </select>
                         </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="'Confidential' applications require a secret to initiate login protocol.  'Public' clients do not require a secret.  'Bearer-only' applications are web services that never initiate a login." class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="'OpenID connect' allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server.
+                    'SAML' enables web-based authentication and authorization scenarios including cross-domain single sign-on (SSO) and uses security tokens containing assertions to pass information." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-show="protocol == 'openid-connect'">
                     <label class="col-sm-2 control-label" for="accessType">Access Type</label>
