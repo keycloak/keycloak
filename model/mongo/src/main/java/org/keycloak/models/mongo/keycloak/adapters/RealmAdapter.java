@@ -910,7 +910,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         mapping.setConsentRequired(entity.isConsentRequired());
         mapping.setConsentText(entity.getConsentText());
         Map<String, String> config = new HashMap<String, String>();
-        if (entity.getConfig() != null) config.putAll(config);
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
         mapping.setConfig(config);
         return mapping;
     }
