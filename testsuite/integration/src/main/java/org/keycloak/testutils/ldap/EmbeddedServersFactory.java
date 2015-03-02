@@ -16,6 +16,7 @@ public class EmbeddedServersFactory {
 
     private static final String DEFAULT_KERBEROS_REALM = "KEYCLOAK.ORG";
     private static final int DEFAULT_KDC_PORT = 6088;
+    private static final String DEFAULT_KDC_ENCRYPTION_TYPES = "aes128-cts-hmac-sha1-96, des-cbc-md5, des3-cbc-sha1-kd";
 
     private String baseDN;
     private String bindHost;
@@ -23,6 +24,7 @@ public class EmbeddedServersFactory {
     private String ldifFile;
     private String kerberosRealm;
     private int kdcPort;
+    private String kdcEncryptionTypes;
 
 
     public static EmbeddedServersFactory readConfiguration() {
@@ -40,6 +42,7 @@ public class EmbeddedServersFactory {
 
         this.kerberosRealm = System.getProperty("kerberos.realm");
         String kdcPort = System.getProperty("kerberos.port");
+        this.kdcEncryptionTypes = System.getProperty("kerberos.encTypes");
 
         if (baseDN == null || baseDN.isEmpty()) {
             baseDN = DEFAULT_BASE_DN;
@@ -56,6 +59,9 @@ public class EmbeddedServersFactory {
             kerberosRealm = DEFAULT_KERBEROS_REALM;
         }
         this.kdcPort = (kdcPort == null || kdcPort.isEmpty()) ? DEFAULT_KDC_PORT : Integer.parseInt(kdcPort);
+        if (kdcEncryptionTypes == null || kdcEncryptionTypes.isEmpty()) {
+            kdcEncryptionTypes = DEFAULT_KDC_ENCRYPTION_TYPES;
+        }
     }
 
 
@@ -77,6 +83,6 @@ public class EmbeddedServersFactory {
             ldifFile = DEFAULT_KERBEROS_LDIF_FILE;
         }
 
-        return new KerberosEmbeddedServer(baseDN, bindHost, bindPort, ldifFile, kerberosRealm, kdcPort);
+        return new KerberosEmbeddedServer(baseDN, bindHost, bindPort, ldifFile, kerberosRealm, kdcPort, kdcEncryptionTypes);
     }
 }

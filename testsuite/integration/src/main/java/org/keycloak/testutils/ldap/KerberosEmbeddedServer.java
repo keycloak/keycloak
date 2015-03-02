@@ -2,6 +2,8 @@ package org.keycloak.testutils.ldap;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 
@@ -20,6 +22,8 @@ import org.apache.directory.server.ldap.handlers.sasl.ntlm.NtlmMechanismHandler;
 import org.apache.directory.server.ldap.handlers.sasl.plain.PlainMechanismHandler;
 import org.apache.directory.server.protocol.shared.transport.UdpTransport;
 import org.apache.directory.shared.kerberos.KerberosTime;
+import org.apache.directory.shared.kerberos.KerberosUtils;
+import org.apache.directory.shared.kerberos.codec.types.EncryptionType;
 import org.jboss.logging.Logger;
 
 /**
@@ -31,6 +35,7 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
 
     private final String kerberosRealm;
     private final int kdcPort;
+    private final String kdcEncryptionTypes;
 
     private KdcServer kdcServer;
 
@@ -43,8 +48,9 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
     }
 
 
-    protected KerberosEmbeddedServer(String baseDN, String bindHost, int bindPort, String ldifFile, String kerberosRealm, int kdcPort) {
+    protected KerberosEmbeddedServer(String baseDN, String bindHost, int bindPort, String ldifFile, String kerberosRealm, int kdcPort, String kdcEncryptionTypes) {
         super(baseDN, bindHost, bindPort, ldifFile);
+        this.kdcEncryptionTypes = kdcEncryptionTypes;
         this.kerberosRealm = kerberosRealm;
         this.kdcPort = kdcPort;
     }
@@ -54,7 +60,7 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
     public void init() throws Exception {
         super.init();
 
-        log.info("Creating KDC server. kerberosRealm: " + kerberosRealm + ", kdcPort: " + kdcPort);
+        log.info("Creating KDC server. kerberosRealm: " + kerberosRealm + ", kdcPort: " + kdcPort + ", kdcEncryptionTypes: " + kdcEncryptionTypes);
         createAndStartKdcServer();
     }
 
@@ -93,6 +99,8 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
         kdcConfig.setMaximumTicketLifetime(60000 * 1440);
         kdcConfig.setMaximumRenewableLifetime(60000 * 10080);
         kdcConfig.setPaEncTimestampRequired(false);
+        Set<EncryptionType> encryptionTypes = convertEncryptionTypes();
+        kdcConfig.setEncryptionTypes(encryptionTypes);
 
         kdcServer = new NoReplayKdcServer(kdcConfig);
         kdcServer.setSearchBaseDn(this.baseDN);
@@ -119,6 +127,24 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
     protected void stopKerberosServer() {
         log.info("Stopping Kerberos server.");
         kdcServer.stop();
+    }
+
+
+    private Set<EncryptionType> convertEncryptionTypes() {
+        Set<EncryptionType> encryptionTypes = new HashSet<EncryptionType>();
+        String[] configEncTypes = kdcEncryptionTypes.split(",");
+
+        for ( String enc : configEncTypes ) {
+            enc = enc.trim();
+            for ( EncryptionType type : EncryptionType.getEncryptionTypes() ) {
+                if ( type.getName().equalsIgnoreCase( enc ) ) {
+                    encryptionTypes.add( type );
+                }
+            }
+        }
+
+        encryptionTypes = KerberosUtils.orderEtypesByStrength(encryptionTypes);
+        return encryptionTypes;
     }
 
 
@@ -151,12 +177,10 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
             @Override
             public void save(KerberosPrincipal serverPrincipal, KerberosPrincipal clientPrincipal, KerberosTime clientTime,
                              int clientMicroSeconds) {
-                return;
             }
 
             @Override
             public void clear() {
-                return;
             }
 
         }
