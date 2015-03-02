@@ -29,14 +29,12 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     protected final T clientEntity;
     private final RealmModel realm;
     protected  KeycloakSession session;
-    private final RealmProvider model;
 
     public ClientAdapter(KeycloakSession session, RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.clientEntity = clientEntity;
         this.realm = realm;
         this.session = session;
-        this.model = session.realms();
     }
 
     @Override
@@ -326,13 +324,14 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     @Override
     public void updateAllowedIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
-        List<ClientIdentityProviderMappingEntity> stored = getMongoEntityAsClient().getIdentityProviders();
+        List<ClientIdentityProviderMappingEntity> stored = new ArrayList<ClientIdentityProviderMappingEntity>();
 
         for (ClientIdentityProviderMappingModel model : identityProviders) {
             ClientIdentityProviderMappingEntity entity = new ClientIdentityProviderMappingEntity();
 
             entity.setId(model.getIdentityProvider());
             entity.setRetrieveToken(model.isRetrieveToken());
+            stored.add(entity);
         }
 
         getMongoEntityAsClient().setIdentityProviders(stored);

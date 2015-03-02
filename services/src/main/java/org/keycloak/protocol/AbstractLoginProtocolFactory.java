@@ -1,5 +1,6 @@
 package org.keycloak.protocol;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -14,6 +15,9 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public abstract class AbstractLoginProtocolFactory implements LoginProtocolFactory {
+
+    private static final Logger logger = Logger.getLogger(AbstractLoginProtocolFactory.class);
+
     @Override
     public void init(Config.Scope config) {
     }
@@ -27,6 +31,7 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
             for (RealmModel realm : realms) addDefaults(realm);
             session.getTransaction().commit();
         } catch (Exception e) {
+            logger.error("Can't add default mappers to realm", e);
             session.getTransaction().rollback();
         } finally {
             session.close();
