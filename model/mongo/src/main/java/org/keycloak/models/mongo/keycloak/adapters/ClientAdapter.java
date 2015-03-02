@@ -327,15 +327,14 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     @Override
     public void updateAllowedIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
         List<ClientIdentityProviderMappingEntity> stored = getMongoEntityAsClient().getIdentityProviders();
-
+        stored.clear();
         for (ClientIdentityProviderMappingModel model : identityProviders) {
             ClientIdentityProviderMappingEntity entity = new ClientIdentityProviderMappingEntity();
 
             entity.setId(model.getIdentityProvider());
             entity.setRetrieveToken(model.isRetrieveToken());
+            stored.add(entity);
         }
-
-        getMongoEntityAsClient().setIdentityProviders(stored);
         updateMongoEntity();
     }
 

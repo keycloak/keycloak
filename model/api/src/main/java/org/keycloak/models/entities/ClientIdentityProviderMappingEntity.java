@@ -23,7 +23,7 @@ package org.keycloak.models.entities;
 public class ClientIdentityProviderMappingEntity {
 
     private String id;
-    private Boolean retrieveToken;
+    private boolean retrieveToken;
 
     public String getId() {
         return this.id;
@@ -33,7 +33,7 @@ public class ClientIdentityProviderMappingEntity {
         this.id = id;
     }
 
-    public Boolean isRetrieveToken() {
+    public boolean isRetrieveToken() {
         return this.retrieveToken;
     }
 
