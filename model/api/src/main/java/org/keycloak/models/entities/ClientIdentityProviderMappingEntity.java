@@ -37,7 +37,7 @@ public class ClientIdentityProviderMappingEntity {
         return this.retrieveToken;
     }
 
-    public void setRetrieveToken(Boolean retrieveToken) {
+    public void setRetrieveToken(boolean retrieveToken) {
         this.retrieveToken = retrieveToken;
     }
 
