@@ -48,7 +48,7 @@
                     <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
                         <select class="kc-locale-select">
                             <#list realm.supportedLocales as l>
-                                <option value="${l}" <#if locale.toLanguageTag()==l>selected="selected"</#if>>${l}</option>
+                                <option value="${l}" <#if locale.toLanguageTag()==l>selected="selected"</#if>>${rb["locale_" + l]}</option>
                             </#list>
                         </select>
                     </div>
