@@ -2,15 +2,15 @@
 <@layout.registrationLayout displayInfo=social.displayInfo; section>
     <#if section = "title">
         <#if client.application>
-             ${rb.loginTitle} ${realm.name}
+            ${rb.loginTitle?replace("{0}",(realm.name!''))}
         <#elseif client.oauthClient>
-             ${realm.name} ${rb.loginOauthTitle}
+            ${rb.loginOauthTitle?replace("{0}",(realm.name!''))}
         </#if>
     <#elseif section = "header">
         <#if client.application>
-             ${rb.loginTitle} <strong>${(realm.name)!''}</strong>
+            ${rb.loginTitle?replace("{0}", (realm.name!''))}
         <#elseif client.oauthClient>
-             Temporary access for <strong>${(realm.name)!''}</strong> requested by <strong>${(client.clientId)!''}</strong>.
+            ${rb.loginOauthTitleHtml?replace("{0}", (realm.name!''))?replace("{0}", (client.clientId!''))}
         </#if>
     <#elseif section = "form">
         <#if realm.password>
@@ -41,24 +41,24 @@
                             <div class="checkbox">
                                 <label>
                                     <#if login.rememberMe??>
-                                        <input id="rememberMe" name="rememberMe" type="checkbox" tabindex="3" checked> Remember Me
+                                        <input id="rememberMe" name="rememberMe" type="checkbox" tabindex="3" checked> ${rb.rememberMe}
                                     <#else>
-                                        <input id="rememberMe" name="rememberMe" type="checkbox" tabindex="3"> Remember Me
+                                        <input id="rememberMe" name="rememberMe" type="checkbox" tabindex="3"> ${rb.rememberMe}
                                     </#if>
                                 </label>
                             </div>
                         </#if>
                         <div class="${properties.kcFormOptionsWrapperClass!}">
                             <#if realm.resetPasswordAllowed>
-                                <span>${rb.loginForgot} <a href="${url.loginPasswordResetUrl}">${rb.password}</a>?</span>
+                                <span><a href="${url.loginPasswordResetUrl}">${rb.doForgotPassword}</a></span>
                             </#if>
                         </div>
                     </div>
 
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                         <div class="${properties.kcFormButtonsWrapperClass!}">
-                            <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="${rb.logIn}"/>
-                            <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.cancel}"/>
+                            <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="${rb.doLogIn}"/>
+                            <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.doCancel}"/>
                         </div>
                      </div>
                 </div>
@@ -75,7 +75,7 @@
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed>
             <div id="kc-registration">
-                <span>${rb.noAccount} <a href="${url.registrationUrl}">${rb.register}</a></span>
+                <span>${rb.noAccount} <a href="${url.registrationUrl}">${rb.doRegister}</a></span>
             </div>
         </#if>
 

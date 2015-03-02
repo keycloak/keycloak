@@ -26,45 +26,49 @@ package org.keycloak.services.messages;
  */
 public class Messages {
 
-    public static final String ACCOUNT_DISABLED = "accountDisabled";
+    public static final String INVALID_USER = "invalidUserMessage";
 
-    public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabled";
+    public static final String INVALID_EMAIL = "invalidEmailMessage";
 
-    public static final String INVALID_PASSWORD = "invalidPassword";
+    public static final String ACCOUNT_DISABLED = "accountDisabledMessage";
 
-    public static final String INVALID_PASSWORD_EXISTING = "invalidPasswordExisting";
+    public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabledMessage";
 
-    public static final String INVALID_PASSWORD_CONFIRM = "invalidPasswordConfirm";
+    public static final String EXPIRED_CODE = "expiredCodeMessage";
 
-    public static final String INVALID_EMAIL = "invalidEmail";
+    public static final String MISSING_FIRST_NAME = "missingFirstNameMessage";
 
-    public static final String INVALID_USER = "invalidUser";
+    public static final String MISSING_LAST_NAME = "missingLastNameMessage";
 
-    public static final String EXPIRED_CODE = "expiredCode";
+    public static final String MISSING_EMAIL = "missingEmailMessage";
+
+    public static final String MISSING_USERNAME = "missingUsernameMessage";
+
+    public static final String MISSING_PASSWORD = "missingPasswordMessage";
+
+    public static final String MISSING_TOTP = "missingTotpMessage";
+
+    public static final String NOTMATCH_PASSWORD = "notMatchPasswordMessage";
+
+    public static final String INVALID_PASSWORD_EXISTING = "invalidPasswordExistingMessage";
+
+    public static final String INVALID_PASSWORD_CONFIRM = "invalidPasswordConfirmMessage";
+
+    public static final String INVALID_TOTP = "invalidTotpMessage";
+
+    public static final String USERNAME_EXISTS = "usernameExistsMessage";
+
+    public static final String EMAIL_EXISTS = "emailExistsMessage";
+
+    public static final String FEDERATED_IDENTITY_EMAIL_EXISTS = "federatedIdentityEmailExistsMessage";
+
+    public static final String FEDERATED_IDENTITY_USERNAME_EXISTS = "federatedIdentityUsernameExistsMessage";
+
+
 
     public static final String READ_ONLY_USER = "readOnlyUser";
 
     public static final String READ_ONLY_PASSWORD = "readOnlyPassword";
-
-    public static final String MISSING_EMAIL = "missingEmail";
-
-    public static final String MISSING_FIRST_NAME = "missingFirstName";
-
-    public static final String MISSING_LAST_NAME = "missingLastName";
-
-    public static final String MISSING_PASSWORD = "missingPassword";
-
-    public static final String NOTMATCH_PASSWORD = "notMatchPassword";
-
-    public static final String MISSING_USERNAME = "missingUsername";
-
-    public static final String MISSING_TOTP = "missingTotp";
-
-    public static final String INVALID_TOTP = "invalidTotp";
-
-    public static final String USERNAME_EXISTS = "usernameExists";
-
-    public static final String EMAIL_EXISTS = "emailExists";
 
     public static final String ACTION_WARN_TOTP = "actionTotpWarning";
 
@@ -138,7 +142,6 @@ public class Messages {
     
     public static final String INSUFFICIENT_PERMISSION = "insufficientPermission";
 
-
     public static final String COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST = "couldNotProceedWithAuthenticationRequest";
 
     public static final String COULD_NOT_OBTAIN_TOKEN = "couldNotObtainToken";
@@ -160,4 +163,6 @@ public class Messages {
     public static final String UNKNOWN_CODE = "unknownCode";
 
     public static final String INVALID_CODE = "invalidCode";
+
+
 }

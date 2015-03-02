@@ -534,14 +534,14 @@ public class IdentityBrokerService {
 
         if (existingUser != null) {
             fireErrorEvent(Errors.FEDERATED_IDENTITY_EMAIL_EXISTS);
-            throw new IdentityBrokerException("federatedIdentityEmailExists");
+            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_EMAIL_EXISTS);
         }
 
         existingUser = this.session.users().getUserByUsername(updatedIdentity.getUsername(), this.realmModel);
 
         if (existingUser != null) {
             fireErrorEvent(Errors.FEDERATED_IDENTITY_USERNAME_EXISTS);
-            throw new IdentityBrokerException("federatedIdentityUsernameExists");
+            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_USERNAME_EXISTS);
         }
 
         if (isDebugEnabled()) {
