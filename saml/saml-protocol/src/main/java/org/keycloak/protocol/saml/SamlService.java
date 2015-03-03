@@ -20,6 +20,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.HttpAuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.StreamUtil;
@@ -258,8 +259,18 @@ public class SamlService {
             Response response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
             if (response != null) return response;
 
+            // SPNEGO/Kerberos authentication TODO: This should be somehow pluggable instead of hardcoded this way (Authentication interceptors?)
+            HttpAuthenticationManager httpAuthManager = new HttpAuthenticationManager(session, clientSession, realm, uriInfo, request, clientConnection, event);
+            HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate();
+            if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
+
             LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
                     .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode());
+
+            // Attach state from SPNEGO authentication
+            if (httpAuthOutput.getChallenge() != null) {
+                httpAuthOutput.getChallenge().sendChallenge(forms);
+            }
 
             String rememberMeUsername = AuthenticationManager.getRememberMeUsername(realm, headers);
 
