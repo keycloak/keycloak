@@ -6,10 +6,15 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAddressMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCFullNameMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCUserModelMapper;
 import org.keycloak.services.managers.AuthenticationManager;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -64,6 +69,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             fullName.setConsentRequired(true);
             fullName.setConsentText("full name");
             fullName.setAppliedByDefault(true);
+            Map<String, String> config = new HashMap<String, String>();
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+            fullName.setConfig(config);
             realm.addProtocolMapper(fullName);
         }
 
@@ -75,6 +84,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             address.setConsentRequired(true);
             address.setConsentText("address");
             address.setAppliedByDefault(false);
+            Map<String, String> config = new HashMap<String, String>();
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+            address.setConfig(config);
             realm.addProtocolMapper(address);
         }
 

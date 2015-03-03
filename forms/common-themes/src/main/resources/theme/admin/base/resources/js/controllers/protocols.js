@@ -33,6 +33,8 @@ module.controller('ProtocolMapperCtrl', function($scope, realm, serverInfo, prot
     $scope.mapper = angular.copy(mapper);
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
+    $scope.boolval = true;
+    $scope.boolvalId = 'boolval';
 
     console.log('protocol: ' + protocol);
     var protocolMappers = serverInfo.protocolMapperTypes[protocol];
