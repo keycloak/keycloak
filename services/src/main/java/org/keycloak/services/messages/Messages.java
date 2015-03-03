@@ -114,62 +114,65 @@ public class Messages {
 
 
 
-    public static final String PERMISSION_NOT_APPROVED = "permissionNotApproved";
+    public static final String PERMISSION_NOT_APPROVED = "permissionNotApprovedMessage";
 
-    public static final String NO_RELAY_STATE_IN_RESPONSE = "noRelayStateInResponse";
+    public static final String NO_RELAY_STATE_IN_RESPONSE = "noRelayStateInResponseMessage";
 
-    public static final String IDENTITY_PROVIDER_ALREADY_LINKED = "identityProviderAlreadyLinked";
+    public static final String IDENTITY_PROVIDER_ALREADY_LINKED = "identityProviderAlreadyLinkedMessage";
 
-    public static final String INSUFFICIENT_PERMISSION = "insufficientPermission";
+    public static final String INSUFFICIENT_PERMISSION = "insufficientPermissionMessage";
 
-    public static final String COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST = "couldNotProceedWithAuthenticationRequest";
+    public static final String COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST = "couldNotProceedWithAuthenticationRequestMessage";
 
-    public static final String COULD_NOT_OBTAIN_TOKEN = "couldNotObtainToken";
+    public static final String COULD_NOT_OBTAIN_TOKEN = "couldNotObtainTokenMessage";
 
-    public static final String UNEXPECTED_ERROR_RETRIEVING_TOKEN = "unexpectedErrorRetrievingToken";
+    public static final String UNEXPECTED_ERROR_RETRIEVING_TOKEN = "unexpectedErrorRetrievingTokenMessage";
 
-    public static final String IDENTITY_PROVIDER_AUTHENTICATION_FAILED = "identityProviderAuthenticationFailed";
+    public static final String IDENTITY_PROVIDER_AUTHENTICATION_FAILED = "identityProviderAuthenticationFailedMessage";
 
-    public static final String UNEXPECTED_ERROR_HANDLING_RESPONSE = "unexpectedErrorHandlingResponse";
+    public static final String UNEXPECTED_ERROR_HANDLING_RESPONSE = "unexpectedErrorHandlingResponseMessage";
 
-    public static final String COULD_NOT_SEND_AUTHENTICATION_REQUEST = "couldNotSendAuthenticationRequest";
+    public static final String COULD_NOT_SEND_AUTHENTICATION_REQUEST = "couldNotSendAuthenticationRequestMessage";
 
-    public static final String UNEXPECTED_ERROR_HANDLING_REQUEST = "unexpectedErrorHandlingRequest";
+    public static final String UNEXPECTED_ERROR_HANDLING_REQUEST = "unexpectedErrorHandlingRequestMessage";
 
-    public static final String INVALID_ACCESS_CODE = "invalidAccessCode";
+    public static final String INVALID_ACCESS_CODE = "invalidAccessCodeMessage";
 
-    public static final String SESSION_NOT_ACTIVE = "sessionNotActive";
+    public static final String SESSION_NOT_ACTIVE = "sessionNotActiveMessage";
 
-    public static final String UNKNOWN_CODE = "unknownCode";
+    public static final String UNKNOWN_CODE = "unknownCodeMessage";
 
-    public static final String INVALID_CODE = "invalidCode";
+    public static final String INVALID_CODE = "invalidCodeMessage";
 
-    public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedError";
+    public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
 
-    public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFound";
+    public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFoundMessage";
 
+    public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUniqueMessage";
 
-    public static final String READ_ONLY_USER = "readOnlyUser";
+    public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentialsMessage";
 
-    public static final String READ_ONLY_PASSWORD = "readOnlyPassword";
+    public static final String READ_ONLY_USER = "readOnlyUserMessage";
 
-    public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProvider";
+    public static final String READ_ONLY_PASSWORD = "readOnlyPasswordMessage";
 
-    public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityAction";
+    public static final String SUCCESS_TOTP_REMOVED = "successTotpRemovedMessage";
 
-    public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActive";
+    public static final String SUCCESS_TOTP = "successTotpMessage";
 
-    public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProvider";
+    public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProviderMessage";
 
-    public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectError";
+    public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityActionMessage";
 
-    public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemoved";
+    public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActiveMessage";
 
-    public static final String IDENTITY_PROVIDER_NO_TOKEN = "identityProviderNoToken";
+    public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProviderMessage";
+
+    public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectErrorMessage";
+
+    public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemovedMessage";
+
 
     public static final String ERROR = "error";
 
-    public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentials";
-
-    public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUnique";
 }

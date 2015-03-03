@@ -450,7 +450,7 @@ public class AccountService {
         event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         setReferrerOnPage();
-        return account.setSuccess("successTotpRemoved").createResponse(AccountPages.TOTP);
+        return account.setSuccess(Messages.SUCCESS_TOTP_REMOVED).createResponse(AccountPages.TOTP);
     }
 
 
@@ -529,7 +529,7 @@ public class AccountService {
         event.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         setReferrerOnPage();
-        return account.setSuccess("successTotp").createResponse(AccountPages.TOTP);
+        return account.setSuccess(Messages.SUCCESS_TOTP).createResponse(AccountPages.TOTP);
     }
 
     /**
