@@ -127,6 +127,15 @@
         </para>
         <para>
             In the admin console, per realm, you can set up a password policy to enforce that users pick hard to guess passwords.
+            The password policies that can be configured are Hash Iterations, length, digits, lowercase, uppercase and special characters.
+            Increasing number of Hash Iterations (n) does not worsen anything (and certainly not the cipher) and it greatly increases the 
+            resistance to dictionary attacks. However the drawback to increasing n is that it has some cost (CPU usage, energy, delay) for 
+            the legitimate parties. Increasing n also slightly increases the odds that a random password gives the same result as the right 
+            password due to hash collisions, and is thus a false but accepted password; however that remains very unlikely, in the order of 
+            n*[1/(2^256)] for practical values of n, and can be entirely ignored in practice. Keycloak also uses PBKDF2 internally to 
+            cryptographically derive passwords to refine and improve the ratio of cost between attacker and legitimate parties.
+            Good practice is to pay attention to the time complexity of hash_password and hash; then increase n as much as tolerable in 
+            the situation(s) at hand and and revise parameters such as n every few years to account for time complexity trade off.
         </para>
         <para>
             Finally, the best way to mitigate against brute force attacks is to require user to set up a one-time-password (OTP).
