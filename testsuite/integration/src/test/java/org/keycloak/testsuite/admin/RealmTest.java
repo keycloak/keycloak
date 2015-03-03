@@ -63,6 +63,7 @@ public class RealmTest extends AbstractClientTest {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setSsoSessionIdleTimeout(123);
         rep.setSsoSessionMaxLifespan(12);
+        rep.setAccessCodeLifespanLogin(1234);
 
         realm.update(rep);
 
@@ -70,6 +71,7 @@ public class RealmTest extends AbstractClientTest {
 
         assertEquals(123, rep.getSsoSessionIdleTimeout().intValue());
         assertEquals(12, rep.getSsoSessionMaxLifespan().intValue());
+        assertEquals(1234, rep.getAccessCodeLifespanLogin().intValue());
     }
 
     @Test

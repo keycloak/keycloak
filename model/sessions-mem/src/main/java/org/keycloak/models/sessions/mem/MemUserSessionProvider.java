@@ -14,6 +14,7 @@ import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureKey;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.util.Time;
 
 import java.util.Collections;
@@ -191,10 +192,11 @@ public class MemUserSessionProvider implements UserSessionProvider {
                 }
             }
         }
+        int expired = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
         Iterator<ClientSessionEntity> citr = clientSessions.values().iterator();
         while (citr.hasNext()) {
             ClientSessionEntity c = citr.next();
-            if (c.getSession() == null && c.getRealmId().equals(realm.getId()) && c.getTimestamp() < Time.currentTime() - realm.getSsoSessionIdleTimeout()) {
+            if (c.getSession() == null && c.getRealmId().equals(realm.getId()) && c.getTimestamp() < expired) {
                 citr.remove();
             }
         }

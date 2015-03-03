@@ -295,8 +295,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
 
-
-
     @Override
     public int getAccessCodeLifespan() {
         return realm.getAccessCodeLifespan();
@@ -317,6 +315,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         realm.setAccessCodeLifespanUserAction(accessCodeLifespanUserAction);
         updateRealm();
+    }
+
+    @Override
+    public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
+        realm.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
+        updateRealm();
+    }
+
+    @Override
+    public int getAccessCodeLifespanLogin() {
+        return realm.getAccessCodeLifespanLogin();
     }
 
     @Override

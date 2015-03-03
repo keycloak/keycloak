@@ -93,6 +93,25 @@
                     <span tooltip-placement="right" tooltip="Max time an application or oauth client has to finish the access token protocol.  This should normally be 1 minute." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group input-select">
+                    <label class="col-sm-2 control-label" for="accessCodeLifespanLogin" class="two-lines">Login lifespan</label>
+                    <div class="col-sm-5">
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanLogin" id="accessCodeLifespanLogin" name="accessCodeLifespanLogin">
+                            </div>
+                            <div class="col-sm-4 select-kc">
+                                <select name="accessCodeLifespanLoginUnit" data-ng-model="realm.accessCodeLifespanLoginUnit">
+                                    <option data-ng-selected="!realm.accessCodeLifespanLoginUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Max time a user has to complete a login.  This is recommended to be relatively long.  30 minutes or more." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group input-select">
                     <label class="col-sm-2 control-label" for="accessCodeLifespanUserAction" class="two-lines">Login user action lifespan</label>
                     <div class="col-sm-5">
                         <div class="row">
@@ -109,7 +128,7 @@
                             </div>
                         </div>
                     </div>
-                    <span tooltip-placement="right" tooltip="Max time a user has to complete a login and perform actions like update password or configure totp.  This is recommended to be relatively long.  5 minutes or more." class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Max time a user has to complete login related actions like update password or configure totp.  This is recommended to be relatively long.  5 minutes or more." class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
             <div class="pull-right form-actions" data-ng-show="access.manageRealm">

@@ -53,6 +53,7 @@ public class CachedRealm {
     private int accessTokenLifespan;
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
+    private int accessCodeLifespanLogin;
     private int notBefore;
     private PasswordPolicy passwordPolicy;
 
@@ -111,6 +112,7 @@ public class CachedRealm {
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessCodeLifespan = model.getAccessCodeLifespan();
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
+        accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
         notBefore = model.getNotBefore();
         passwordPolicy = model.getPasswordPolicy();
 
@@ -265,6 +267,9 @@ public class CachedRealm {
 
     public int getAccessCodeLifespanUserAction() {
         return accessCodeLifespanUserAction;
+    }
+    public int getAccessCodeLifespanLogin() {
+        return accessCodeLifespanLogin;
     }
 
     public String getPublicKeyPem() {

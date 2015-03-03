@@ -90,5 +90,9 @@
         <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_IDENTITY_PROVIDER_MAPPING" constraintName="FK_56ELWNIBJI49AVXSRTUF6XJ23" referencedColumnNames="ID" referencedTableName="CLIENT"/>
         <addUniqueConstraint columnNames="PROVIDER_NONIMAL_ID" constraintName="UK_2DAELWNIBJI49AVXSRTUF6XJ33" tableName="IDENTITY_PROVIDER"/>
         <addUniqueConstraint columnNames="IDENTITY_PROVIDER_ID,CLIENT_ID" constraintName="UK_7CAELWNIBJI49AVXSRTUF6XJ12" tableName="CLIENT_IDENTITY_PROVIDER_MAPPING"/>
+
+        <addColumn tableName="REALM">
+            <column name="LOGIN_LIFESPAN" type="INT"/>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

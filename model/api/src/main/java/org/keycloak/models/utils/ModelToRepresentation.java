@@ -114,6 +114,7 @@ public class ModelToRepresentation {
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
+        rep.setAccessCodeLifespanLogin(realm.getAccessCodeLifespanLogin());
         rep.setSmtpServer(realm.getSmtpConfig());
         rep.setBrowserSecurityHeaders(realm.getBrowserSecurityHeaders());
         rep.setAccountTheme(realm.getAccountTheme());

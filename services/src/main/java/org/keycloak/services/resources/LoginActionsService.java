@@ -272,7 +272,10 @@ public class LoginActionsService {
             event.error(Errors.INVALID_CODE);
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown code, please login again through your application.");
         }
+
         ClientSessionModel clientSession = clientCode.getClientSession();
+        event.detail(Details.CODE_ID, clientSession.getId());
+
         if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientSession.getUserSession() != null) {
             clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
             event.client(clientSession.getClient()).error(Errors.EXPIRED_CODE);

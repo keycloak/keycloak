@@ -68,6 +68,8 @@ public class RealmEntity {
     protected int accessCodeLifespan;
     @Column(name="USER_ACTION_LIFESPAN")
     protected int accessCodeLifespanUserAction;
+    @Column(name="LOGIN_LIFESPAN")
+    protected int accessCodeLifespanLogin;
     @Column(name="NOT_BEFORE")
     protected int notBefore;
 
@@ -243,6 +245,13 @@ public class RealmEntity {
 
     public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
+    }
+    public int getAccessCodeLifespanLogin() {
+        return accessCodeLifespanLogin;
+    }
+
+    public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
+        this.accessCodeLifespanLogin = accessCodeLifespanLogin;
     }
 
     public String getPublicKeyPem() {

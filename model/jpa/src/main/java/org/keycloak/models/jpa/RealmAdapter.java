@@ -363,6 +363,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getAccessCodeLifespanLogin() {
+        return realm.getAccessCodeLifespanLogin();
+    }
+
+    @Override
+    public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
+        realm.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
+        em.flush();
+    }
+
+    @Override
     public String getPublicKeyPem() {
         return realm.getPublicKeyPem();
     }

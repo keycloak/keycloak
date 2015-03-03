@@ -78,6 +78,10 @@ public class RepresentationToModel {
             newRealm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         else newRealm.setAccessCodeLifespanUserAction(300);
 
+        if (rep.getAccessCodeLifespanLogin() != null)
+            newRealm.setAccessCodeLifespanLogin(rep.getAccessCodeLifespanLogin());
+        else newRealm.setAccessCodeLifespanLogin(1800);
+
         if (rep.getSslRequired() != null) newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.isPasswordCredentialGrantAllowed() != null) newRealm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
@@ -258,8 +262,8 @@ public class RepresentationToModel {
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
-        if (rep.getAccessCodeLifespanUserAction() != null)
-            realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
+        if (rep.getAccessCodeLifespanUserAction() != null) realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
+        if (rep.getAccessCodeLifespanLogin() != null) realm.setAccessCodeLifespanLogin(rep.getAccessCodeLifespanLogin());
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         if (rep.getSsoSessionIdleTimeout() != null) realm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
