@@ -5,6 +5,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +17,12 @@ import java.util.Map;
 public class OIDCAttributeMapperHelper {
     public static final String TOKEN_CLAIM_NAME = "Token Claim Name";
     public static final String JSON_TYPE = "Claim JSON Type";
+    public static final String INCLUDE_IN_ACCESS_TOKEN = "access.token.claim";
+    public static final String INCLUDE_IN_ACCESS_TOKEN_LABEL = "Add to access token";
+    public static final String INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT = "Should the claim be added to the access token?";
+    public static final String INCLUDE_IN_ID_TOKEN = "id.token.claim";
+    public static final String INCLUDE_IN_ID_TOKEN_LABEL = "Add to ID token";
+    public static final String INCLUDE_IN_ID_TOKEN_HELP_TEXT = "Should the claim be added to the ID token?";
 
     public static Object mapAttributeValue(ProtocolMapperModel mappingModel, Object attributeValue) {
         if (attributeValue == null) return null;
@@ -40,7 +47,7 @@ public class OIDCAttributeMapperHelper {
         return attributeValue;
     }
 
-    public static void mapClaim(AccessToken token, ProtocolMapperModel mappingModel, Object attributeValue) {
+    public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {
         if (attributeValue == null) return;
         attributeValue = mapAttributeValue(mappingModel, attributeValue);
         String protocolClaim = mappingModel.getConfig().get(TOKEN_CLAIM_NAME);
@@ -65,6 +72,7 @@ public class OIDCAttributeMapperHelper {
                                   String tokenClaimName, String claimType,
                                   boolean consentRequired, String consentText,
                                   boolean appliedByDefault,
+                                  boolean accessToken, boolean idToken,
                                   String mapperId) {
         ProtocolMapperModel mapper = realm.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, name);
         if (mapper != null) return;
@@ -79,7 +87,17 @@ public class OIDCAttributeMapperHelper {
         config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
         config.put(TOKEN_CLAIM_NAME, tokenClaimName);
         config.put(JSON_TYPE, claimType);
+        if (accessToken) config.put(INCLUDE_IN_ACCESS_TOKEN, "true");
+        if (idToken) config.put(INCLUDE_IN_ID_TOKEN, "true");
         mapper.setConfig(config);
         realm.addProtocolMapper(mapper);
+    }
+
+    public static boolean includeInIDToken(ProtocolMapperModel mappingModel) {
+        return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_ID_TOKEN));
+    }
+
+    public static boolean includeInAccessToken(ProtocolMapperModel mappingModel) {
+        return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_ACCESS_TOKEN));
     }
 }

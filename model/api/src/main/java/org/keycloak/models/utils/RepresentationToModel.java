@@ -457,12 +457,6 @@ public class RepresentationToModel {
             applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
         }
 
-        if (resourceRep.getClaims() != null) {
-            setClaims(applicationModel, resourceRep.getClaims());
-        } else {
-            applicationModel.setAllowedClaimsMask(ClaimMask.ALL);
-        }
-
         if (resourceRep.getProtocolMappers() != null) {
             Set<String> ids = new HashSet<String>();
             for (ClientProtocolMappingRepresentation map : resourceRep.getProtocolMappers()) {
@@ -522,10 +516,6 @@ public class RepresentationToModel {
             for (Map.Entry<String, Integer> entry : rep.getRegisteredNodes().entrySet()) {
                 resource.registerNode(entry.getKey(), entry.getValue());
             }
-        }
-
-        if (rep.getClaims() != null) {
-            setClaims(resource, rep.getClaims());
         }
 
         updateClientIdentityProvides(rep.getIdentityProviders(), resource);
@@ -631,10 +621,6 @@ public class RepresentationToModel {
         List<String> webOrigins = rep.getWebOrigins();
         if (webOrigins != null) {
             model.setWebOrigins(new HashSet<String>(webOrigins));
-        }
-
-        if (rep.getClaims() != null) {
-            setClaims(model, rep.getClaims());
         }
 
         if (rep.getNotBefore() != null) {

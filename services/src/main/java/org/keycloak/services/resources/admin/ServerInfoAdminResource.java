@@ -150,6 +150,8 @@ public class ServerInfoAdminResource {
                 ProtocolMapperTypeRepresentation.ConfigProperty propRep = new ProtocolMapperTypeRepresentation.ConfigProperty();
                 propRep.setName(prop.getName());
                 propRep.setLabel(prop.getLabel());
+                propRep.setType(prop.getType());
+                propRep.setDefaultValue(prop.getDefaultValue());
                 propRep.setHelpText(prop.getHelpText());
                 rep.getProperties().add(propRep);
             }
