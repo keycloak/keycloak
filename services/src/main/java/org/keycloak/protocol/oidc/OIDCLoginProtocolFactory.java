@@ -29,27 +29,32 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                 "username",
                 "preferred_username", "String",
                 true, "username",
-                true);
+                true,
+                true, true);
         OIDCUserModelMapper.addClaimMapper(realm, "email",
                 "email",
                 "email", "String",
                 true, "email",
-                true);
+                true,
+                true, true);
         OIDCUserModelMapper.addClaimMapper(realm, "given name",
                 "firstName",
                 "given_name", "String",
                 true, "given name",
-                true);
+                true,
+                true, true);
         OIDCUserModelMapper.addClaimMapper(realm, "family name",
                 "lastName",
                 "family_name", "String",
                 true, "family name",
-                true);
+                true,
+                true, true);
         OIDCUserModelMapper.addClaimMapper(realm, "email verified",
                 "emailVerified",
                 "email_verified", "boolean",
                 false, null,
-                false);
+                false,
+                true, true);
 
         ProtocolMapperModel fullName = new ProtocolMapperModel();
         if (realm.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "full name") == null) {

@@ -214,10 +214,6 @@ public class AdminAPITest {
 
             Assert.assertEquals(set, storedSet);
         }
-
-        if (appRep.getClaims() != null) {
-            Assert.assertEquals(appRep.getClaims(), storedApp.getClaims());
-        }
     }
 
     protected void checkRealmRep(RealmRepresentation rep, RealmRepresentation storedRealm) {

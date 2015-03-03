@@ -16,6 +16,8 @@ public class ProtocolMapperTypeRepresentation {
         protected String name;
         protected String label;
         protected String helpText;
+        protected String type;
+        protected String defaultValue;
 
         public String getName() {
             return name;
@@ -31,6 +33,22 @@ public class ProtocolMapperTypeRepresentation {
 
         public void setLabel(String label) {
             this.label = label;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getDefaultValue() {
+            return defaultValue;
+        }
+
+        public void setDefaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
         }
 
         public String getHelpText() {
