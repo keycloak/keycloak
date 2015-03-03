@@ -46,11 +46,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.ApplicationEntity;
+import org.keycloak.models.entities.ClaimTypeEntity;
 import org.keycloak.models.entities.ClientEntity;
+import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.OAuthClientEntity;
+import org.keycloak.models.entities.ProtocolMapperEntity;
 import org.keycloak.models.entities.RealmEntity;
 import org.keycloak.models.entities.RoleEntity;
 import org.keycloak.models.file.InMemoryModel;
@@ -841,15 +846,31 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public IdentityProviderModel getIdentityProviderById(String identityProviderId) {
+        for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
+            if (identityProviderModel.getId().equals(identityProviderId)) {
+                return identityProviderModel;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
         if (identityProvider.getId() == null) throw new NullPointerException("identityProvider.getId() == null");
-
-        allIdProviders.put(identityProvider.getId(), identityProvider);
+        if (identityProvider.getInternalId() == null) identityProvider.setInternalId(KeycloakModelUtils.generateId());
+        allIdProviders.put(identityProvider.getInternalId(), identityProvider);
     }
 
     @Override
     public void removeIdentityProviderById(String providerId) {
-        allIdProviders.remove(providerId);
+        for (IdentityProviderModel provider : getIdentityProviders()) {
+            if (provider.getId().equals(providerId)) {
+                allIdProviders.remove(provider.getInternalId());
+                break;
+            }
+        }
     }
 
     @Override
@@ -857,7 +878,7 @@ public class RealmAdapter implements RealmModel {
         removeIdentityProviderById(identityProvider.getId());
         addIdentityProvider(identityProvider);
     }
-    //------------------------------------------------------------------------------
+
     @Override
     public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         UserFederationProviderEntity entity = new UserFederationProviderEntity();
@@ -1012,7 +1033,172 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean isIdentityFederationEnabled() {
         //TODO: not sure if we will support identity federation storage for file
-        return false;
+        return true;
+    }
+
+    @Override
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        Set<ProtocolMapperModel> result = new HashSet<ProtocolMapperModel>();
+        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
+            ProtocolMapperModel mapping = new ProtocolMapperModel();
+            mapping.setId(entity.getId());
+            mapping.setName(entity.getName());
+            mapping.setProtocol(entity.getProtocol());
+            mapping.setAppliedByDefault(entity.isAppliedByDefault());
+            mapping.setConsentRequired(entity.isConsentRequired());
+            mapping.setConsentText(entity.getConsentText());
+            Map<String, String> config = new HashMap<String, String>();
+            if (entity.getConfig() != null) {
+                config.putAll(entity.getConfig());
+            }
+            mapping.setConfig(config);
+        }
+        return result;
+    }
+
+    @Override
+    public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
+        if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
+            throw new RuntimeException("protocol mapper name must be unique per protocol");
+        }
+        ProtocolMapperEntity entity = new ProtocolMapperEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setProtocol(model.getProtocol());
+        entity.setName(model.getName());
+        entity.setAppliedByDefault(model.isAppliedByDefault());
+        entity.setProtocolMapper(model.getProtocolMapper());
+        entity.setConfig(model.getConfig());
+        entity.setConsentRequired(model.isConsentRequired());
+        entity.setConsentText(model.getConsentText());
+        realm.getProtocolMappers().add(entity);
+        return entityToModel(entity);
+    }
+
+    @Override
+    public void removeProtocolMapper(ProtocolMapperModel mapping) {
+        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
+            if (entity.getId().equals(mapping.getId())) {
+                realm.getProtocolMappers().remove(entity);
+                break;
+            }
+        }
+
+    }
+
+    protected ProtocolMapperEntity getProtocolMapperyEntityById(String id) {
+        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
+            if (entity.getId().equals(id)) {
+                return entity;
+            }
+        }
+        return null;
+
+    }
+
+    protected ProtocolMapperEntity getProtocolMapperEntityByName(String protocol, String name) {
+        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
+            if (entity.getProtocol().equals(protocol) && entity.getName().equals(name)) {
+                return entity;
+            }
+        }
+        return null;
+
+    }
+
+    @Override
+    public void updateProtocolMapper(ProtocolMapperModel mapping) {
+        ProtocolMapperEntity entity = getProtocolMapperyEntityById(mapping.getId());
+        entity.setAppliedByDefault(mapping.isAppliedByDefault());
+        entity.setProtocolMapper(mapping.getProtocolMapper());
+        entity.setConsentRequired(mapping.isConsentRequired());
+        entity.setConsentText(mapping.getConsentText());
+        if (entity.getConfig() != null) {
+            entity.getConfig().clear();
+            entity.getConfig().putAll(mapping.getConfig());
+        } else {
+            entity.setConfig(mapping.getConfig());
+        }
+    }
+
+    @Override
+    public ProtocolMapperModel getProtocolMapperById(String id) {
+        ProtocolMapperEntity entity = getProtocolMapperyEntityById(id);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    @Override
+    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
+        ProtocolMapperEntity entity = getProtocolMapperEntityByName(protocol, name);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    protected ProtocolMapperModel entityToModel(ProtocolMapperEntity entity) {
+        ProtocolMapperModel mapping = new ProtocolMapperModel();
+        mapping.setId(entity.getId());
+        mapping.setName(entity.getName());
+        mapping.setProtocol(entity.getProtocol());
+        mapping.setAppliedByDefault(entity.isAppliedByDefault());
+        mapping.setProtocolMapper(entity.getProtocolMapper());
+        mapping.setConsentRequired(entity.isConsentRequired());
+        mapping.setConsentText(entity.getConsentText());
+        Map<String, String> config = new HashMap<String, String>();
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
+        mapping.setConfig(config);
+        return mapping;
+    }
+
+    @Override
+    public Set<ClaimTypeModel> getClaimTypes() {
+        Set<ClaimTypeModel> result = new HashSet<ClaimTypeModel>();
+        for (ClaimTypeEntity entity : realm.getClaimTypes()) {
+            result.add(new ClaimTypeModel(entity.getId(), entity.getName(), entity.isBuiltIn(), entity.getType()));
+        }
+       return result;
+    }
+
+    @Override
+    public ClaimTypeModel addClaimType(ClaimTypeModel model) {
+        String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
+        ClaimTypeModel claim = new ClaimTypeModel(id, model.getName(), model.isBuiltIn(), model.getType());
+        ClaimTypeEntity entity = new ClaimTypeEntity();
+        entity.setId(claim.getId());
+        entity.setType(model.getType());
+        entity.setBuiltIn(model.isBuiltIn());
+        entity.setName(model.getName());
+        realm.getClaimTypes().add(entity);
+        return claim;
+    }
+
+    @Override
+    public void removeClaimType(ClaimTypeModel claimType) {
+        for (ClaimTypeEntity entity : realm.getClaimTypes()) {
+            if (entity.getId().equals(claimType.getId())) {
+                realm.getClaimTypes().remove(entity);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public ClaimTypeModel getClaimType(String name) {
+        for (ClaimTypeModel claimType : getClaimTypes()) {
+            if (claimType.getName().equals(name)) return claimType;
+        }
+        return null;
+    }
+
+    @Override
+    public void updateClaimType(ClaimTypeModel claimType) {
+        for (ClaimTypeEntity entity : realm.getClaimTypes()) {
+            if (entity.getId().equals(claimType.getId())) {
+                entity.setName(claimType.getName());
+                entity.setBuiltIn(claimType.isBuiltIn());
+                entity.setType(claimType.getType());
+                break;
+            }
+        }
     }
 
     @Override
