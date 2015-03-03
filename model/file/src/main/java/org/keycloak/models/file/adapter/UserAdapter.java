@@ -55,8 +55,8 @@ public class UserAdapter implements UserModel, Comparable {
     public UserAdapter(RealmModel realm, UserEntity userEntity, InMemoryModel inMemoryModel) {
         this.user = userEntity;
         this.realm = realm;
-        if (userEntity.getSocialLinks() == null) {
-            userEntity.setSocialLinks(new ArrayList<FederatedIdentityEntity>());
+        if (userEntity.getFederatedIdentities() == null) {
+            userEntity.setFederatedIdentities(new ArrayList<FederatedIdentityEntity>());
         }
         this.inMemoryModel = inMemoryModel;
     }

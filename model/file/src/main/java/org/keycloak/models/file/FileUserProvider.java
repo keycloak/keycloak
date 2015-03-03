@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.entities.FederatedIdentityEntity;
 import org.keycloak.models.entities.UserEntity;
@@ -68,7 +69,7 @@ public class FileUserProvider implements UserProvider {
     public UserModel getUserByUsername(String username, RealmModel realm) {
         for (UserModel user : inMemoryModel.getUsers(realm.getId())) {
             if (user.getUsername() == null) continue;
-            if (user.getUsername().equals(username)) return user;
+            if (user.getUsername().equals(username.toLowerCase())) return user;
         }
 
         return null;
@@ -78,7 +79,7 @@ public class FileUserProvider implements UserProvider {
     public UserModel getUserByEmail(String email, RealmModel realm) {
         for (UserModel user : inMemoryModel.getUsers(realm.getId())) {
             if (user.getEmail() == null) continue;
-            if (user.getEmail().equals(email)) return user;
+            if (user.getEmail().equals(email.toLowerCase())) return user;
         }
 
         return null;
@@ -220,7 +221,7 @@ public class FileUserProvider implements UserProvider {
     public Set<FederatedIdentityModel> getFederatedIdentities(UserModel userModel, RealmModel realm) {
         UserModel user = getUserById(userModel.getId(), realm);
         UserEntity userEntity = ((UserAdapter) user).getUserEntity();
-        List<FederatedIdentityEntity> linkEntities = userEntity.getSocialLinks();
+        List<FederatedIdentityEntity> linkEntities = userEntity.getFederatedIdentities();
 
         if (linkEntities == null) {
             return Collections.EMPTY_SET;
@@ -238,7 +239,7 @@ public class FileUserProvider implements UserProvider {
     private FederatedIdentityEntity findSocialLink(UserModel userModel, String socialProvider, RealmModel realm) {
         UserModel user = getUserById(userModel.getId(), realm);
         UserEntity userEntity = ((UserAdapter) user).getUserEntity();
-        List<FederatedIdentityEntity> linkEntities = userEntity.getSocialLinks();
+        List<FederatedIdentityEntity> linkEntities = userEntity.getFederatedIdentities();
         if (linkEntities == null) {
             return null;
         }
@@ -260,10 +261,10 @@ public class FileUserProvider implements UserProvider {
 
     @Override
     public UserAdapter addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
-        if (inMemoryModel.hasUserWithUsername(realm.getId(), username))
+        if (inMemoryModel.hasUserWithUsername(realm.getId(), username.toLowerCase()))
             throw new ModelDuplicateException("User with username " + username + " already exists in realm.");
 
-        UserAdapter userModel = addUserEntity(realm, id, username);
+        UserAdapter userModel = addUserEntity(realm, id, username.toLowerCase());
 
         if (addDefaultRoles) {
             for (String r : realm.getDefaultRoles()) {
@@ -312,14 +313,14 @@ public class FileUserProvider implements UserProvider {
         FederatedIdentityEntity federatedIdentityEntity = new FederatedIdentityEntity();
         federatedIdentityEntity.setIdentityProvider(socialLink.getIdentityProvider());
         federatedIdentityEntity.setUserId(socialLink.getUserId());
-        federatedIdentityEntity.setUserName(socialLink.getUserName());
+        federatedIdentityEntity.setUserName(socialLink.getUserName().toLowerCase());
 
         //check if it already exitsts - do I need to do this?
-        for (FederatedIdentityEntity fedIdent : userEntity.getSocialLinks()) {
+        for (FederatedIdentityEntity fedIdent : userEntity.getFederatedIdentities()) {
             if (fedIdent.equals(federatedIdentityEntity)) return;
         }
 
-        userEntity.getSocialLinks().add(federatedIdentityEntity);
+        userEntity.getFederatedIdentities().add(federatedIdentityEntity);
     }
 
     @Override
@@ -331,12 +332,12 @@ public class FileUserProvider implements UserProvider {
             return false;
         }
 
-        userEntity.getSocialLinks().remove(federatedIdentityEntity);
+        userEntity.getFederatedIdentities().remove(federatedIdentityEntity);
         return true;
     }
 
     private FederatedIdentityEntity findSocialLink(UserEntity userEntity, String socialProvider) {
-        List<FederatedIdentityEntity> linkEntities = userEntity.getSocialLinks();
+        List<FederatedIdentityEntity> linkEntities = userEntity.getFederatedIdentities();
         if (linkEntities == null) {
             return null;
         }
@@ -351,7 +352,7 @@ public class FileUserProvider implements UserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return this.addUser(realm, KeycloakModelUtils.generateId(), username, true);
+        return this.addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true);
     }
 
     @Override
@@ -387,4 +388,15 @@ public class FileUserProvider implements UserProvider {
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
         return CredentialValidation.validCredentials(realm, user, input);
     }
+
+    @Override
+    public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

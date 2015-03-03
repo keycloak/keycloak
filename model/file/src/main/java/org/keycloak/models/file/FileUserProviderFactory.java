@@ -18,12 +18,13 @@ package org.keycloak.models.file;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserProviderFactory;
 
 /**
  * UserProviderFactory for JSON persistence.
- * 
+ *
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
 public class FileUserProviderFactory implements UserProviderFactory {
@@ -44,6 +45,10 @@ public class FileUserProviderFactory implements UserProviderFactory {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
     }
 
 }

@@ -24,15 +24,22 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.entities.ClientEntity;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.entities.ClientIdentityProviderMappingEntity;
+import org.keycloak.models.entities.ProtocolMapperEntity;
 
 /**
  * ClientModel for JSON persistence.
- * 
+ *
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
 public abstract class ClientAdapter implements ClientModel {
@@ -275,4 +282,86 @@ public abstract class ClientAdapter implements ClientModel {
         copy.putAll(clientEntity.getAttributes());
         return copy;
     }
+
+    @Override
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        Set<ProtocolMapperModel> result = new HashSet<ProtocolMapperModel>();
+        for (String id : clientEntity.getProtocolMappers()) {
+            ProtocolMapperModel model = getRealm().getProtocolMapperById(id);
+            if (model != null) result.add(model);
+        }
+        return result;
+    }
+
+    @Override
+    public void addProtocolMappers(Set<String> mapperIds) {
+        clientEntity.getProtocolMappers().addAll(mapperIds);
+    }
+
+    @Override
+    public void removeProtocolMappers(Set<String> mapperIds) {
+        clientEntity.getProtocolMappers().removeAll(mapperIds);
+    }
+
+    @Override
+    public void setProtocolMappers(Set<String> mapperIds) {
+        clientEntity.getProtocolMappers().clear();
+        clientEntity.getProtocolMappers().addAll(mapperIds);
+    }
+
+    @Override
+    public void updateAllowedIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
+        List<ClientIdentityProviderMappingEntity> stored = new ArrayList<ClientIdentityProviderMappingEntity>();
+
+        for (ClientIdentityProviderMappingModel model : identityProviders) {
+            ClientIdentityProviderMappingEntity entity = new ClientIdentityProviderMappingEntity();
+
+            entity.setId(model.getIdentityProvider());
+            entity.setRetrieveToken(model.isRetrieveToken());
+            stored.add(entity);
+        }
+
+        clientEntity.setIdentityProviders(stored);
+    }
+
+    @Override
+    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
+        List<ClientIdentityProviderMappingModel> models = new ArrayList<ClientIdentityProviderMappingModel>();
+
+        for (ClientIdentityProviderMappingEntity entity : clientEntity.getIdentityProviders()) {
+            ClientIdentityProviderMappingModel model = new ClientIdentityProviderMappingModel();
+
+            model.setIdentityProvider(entity.getId());
+            model.setRetrieveToken(entity.isRetrieveToken());
+
+            models.add(model);
+        }
+
+        return models;
+    }
+
+    @Override
+    public boolean hasIdentityProvider(String providerId) {
+        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : clientEntity.getIdentityProviders()) {
+            String identityProvider = identityProviderMappingModel.getId();
+
+            if (identityProvider.equals(providerId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
+        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : clientEntity.getIdentityProviders()) {
+            if (identityProviderMappingModel.getId().equals(providerId)) {
+                return identityProviderMappingModel.isRetrieveToken();
+            }
+        }
+
+        return false;
+    }
+
 }
