@@ -363,7 +363,7 @@ public class IdentityBrokerService {
 
         if (!authenticatedUser.isEnabled()) {
             fireErrorEvent(Errors.USER_DISABLED);
-            return redirectToErrorPage(Messages.USER_DISABLED);
+            return redirectToErrorPage(Messages.ACCOUNT_DISABLED);
         }
 
         if (!authenticatedUser.hasRole(this.realmModel.getApplicationByName(ACCOUNT_MANAGEMENT_APP).getRole(MANAGE_ACCOUNT))) {

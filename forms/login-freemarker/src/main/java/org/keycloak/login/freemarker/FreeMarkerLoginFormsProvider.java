@@ -97,15 +97,15 @@ import java.util.concurrent.TimeUnit;
 
         switch (action) {
             case CONFIGURE_TOTP:
-                actionMessage = Messages.ACTION_WARN_TOTP;
+                actionMessage = Messages.CONFIGURE_TOTP;
                 page = LoginFormsPages.LOGIN_CONFIG_TOTP;
                 break;
             case UPDATE_PROFILE:
-                actionMessage = Messages.ACTION_WARN_PROFILE;
+                actionMessage = Messages.UPDATE_PROFILE;
                 page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
             case UPDATE_PASSWORD:
-                actionMessage = Messages.ACTION_WARN_PASSWD;
+                actionMessage = Messages.UPDATE_PASSWORD;
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
@@ -122,7 +122,7 @@ import java.util.concurrent.TimeUnit;
                     return setError(Messages.EMAIL_SENT_ERROR).createErrorPage();
                 }
 
-                actionMessage = Messages.ACTION_WARN_EMAIL;
+                actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
             default:

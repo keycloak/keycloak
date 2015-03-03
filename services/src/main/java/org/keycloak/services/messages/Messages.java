@@ -64,73 +64,55 @@ public class Messages {
 
     public static final String FEDERATED_IDENTITY_USERNAME_EXISTS = "federatedIdentityUsernameExistsMessage";
 
+    public static final String CONFIGURE_TOTP = "configureTotpMessage";
+
+    public static final String UPDATE_PROFILE = "updateProfileMessage";
+
+    public static final String UPDATE_PASSWORD = "updatePasswordMessage";
+
+    public static final String VERIFY_EMAIL = "verifyEmailMessage";
+
+    public static final String EMAIL_SENT = "emailSentMessage";
+
+    public static final String EMAIL_SENT_ERROR = "emailSendErrorMessage";
+
+    public static final String ACCOUNT_UPDATED = "accountUpdatedMessage";
+
+    public static final String ACCOUNT_PASSWORD_UPDATED = "accountPasswordUpdatedMessage";
+
+    public static final String NO_ACCESS = "noAccessMessage";
+
+    public static final String FAILED_TO_PROCESS_RESPONSE = "failedToProcessResponseMessage";
+
+    public static final String HTTPS_REQUIRED = "httpsRequiredMessage";
+
+    public static final String REALM_NOT_ENABLED = "realmNotEnabledMessage";
+
+    public static final String INVALID_REQUEST = "invalidRequestMessage";
+
+    public static final String INVALID_REQUESTER = "invalidRequesterMessage";
+
+    public static final String UNKNOWN_LOGIN_REQUESTER = "unknownLoginRequesterMessage";
+
+    public static final String LOGIN_REQUESTER_NOT_ENABLED = "loginRequesterNotEnabledMessage";
+
+    public static final String BEARER_ONLY = "bearerOnlyMessage";
+
+    public static final String DIRECT_GRANTS_ONLY = "directGrantsOnlyMessage";
+
+    public static final String INVALID_REDIRECT_URI = "invalidRedirectUriMessage";
+
+    public static final String UNSUPPORTED_NAME_ID_FORMAT = "unsupportedNameIdFormatMessage";
+
+    public static final String REGISTRATION_NOT_ALLOWED = "registrationNotAllowedMessage";
 
 
-    public static final String READ_ONLY_USER = "readOnlyUser";
 
-    public static final String READ_ONLY_PASSWORD = "readOnlyPassword";
 
-    public static final String ACTION_WARN_TOTP = "actionTotpWarning";
 
-    public static final String ACTION_WARN_PROFILE = "actionProfileWarning";
 
-    public static final String ACTION_WARN_PASSWD = "actionPasswordWarning";
 
-    public static final String ACTION_WARN_EMAIL = "actionEmailWarning";
 
-    public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProvider";
-
-    public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityAction";
-
-    public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFound";
-
-    public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActive";
-
-    public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProvider";
-
-    public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectError";
-
-    public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemoved";
-
-    public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedError";
-
-    public static final String IDENTITY_PROVIDER_NO_TOKEN = "identityProviderNoToken";
-
-    public static final String ERROR = "error";
-
-    public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentials";
-
-    public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUnique";
-
-    public static final String NO_ACCESS = "noAccess";
-
-    public static final String EMAIL_SENT = "emailSent";
-
-    public static final String EMAIL_SENT_ERROR = "emailSendError";
-
-    public static final String FAILED_TO_PROCESS_RESPONSE = "failedToProcessResponse";
-
-    public static final String HTTPS_REQUIRED = "httpsRequired";
-
-    public static final String REALM_NOT_ENABLED = "realmNotEnabled";
-
-    public static final String INVALID_REQUEST = "invalidRequest";
-
-    public static final String INVALID_REQUESTER = "invalidRequester";
-
-    public static final String UNKNOWN_LOGIN_REQUESTER = "unknownLoginRequester";
-
-    public static final String LOGIN_REQUESTER_NOT_ENABLED = "loginRequesterNotEnabled";
-
-    public static final String BEARER_ONLY = "bearerOnly";
-
-    public static final String DIRECT_GRANTS_ONLY = "directGrantsOnly";
-
-    public static final String INVALID_REDIRECT_URI = "invalidRedirectUri";
-
-    public static final String UNSUPPORTED_NAME_ID_FORMAT = "unsupportedNameIdFormat";
-
-    public static final String REGISTRATION_NOT_ALLOWED = "registrationNotAllowed";
 
     public static final String PERMISSION_NOT_APPROVED = "permissionNotApproved";
 
@@ -138,8 +120,6 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_ALREADY_LINKED = "identityProviderAlreadyLinked";
 
-    public static final String USER_DISABLED = "userDisabled";
-    
     public static final String INSUFFICIENT_PERMISSION = "insufficientPermission";
 
     public static final String COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST = "couldNotProceedWithAuthenticationRequest";
@@ -164,5 +144,32 @@ public class Messages {
 
     public static final String INVALID_CODE = "invalidCode";
 
+    public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedError";
 
+    public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFound";
+
+
+    public static final String READ_ONLY_USER = "readOnlyUser";
+
+    public static final String READ_ONLY_PASSWORD = "readOnlyPassword";
+
+    public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProvider";
+
+    public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityAction";
+
+    public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActive";
+
+    public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProvider";
+
+    public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectError";
+
+    public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemoved";
+
+    public static final String IDENTITY_PROVIDER_NO_TOKEN = "identityProviderNoToken";
+
+    public static final String ERROR = "error";
+
+    public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentials";
+
+    public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUnique";
 }

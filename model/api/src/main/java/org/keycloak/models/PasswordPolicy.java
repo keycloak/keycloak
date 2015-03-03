@@ -10,6 +10,12 @@ import java.util.List;
  */
 public class PasswordPolicy {
 
+    public static final String INVALID_PASSWORD_MIN_LENGTH_MESSAGE = "invalidPasswordMinLengthMessage";
+    public static final String INVALID_PASSWORD_MIN_DIGITS_MESSAGE = "invalidPasswordMinDigitsMessage";
+    public static final String INVALID_PASSWORD_MIN_LOWER_CASE_CHARS_MESSAGE = "invalidPasswordMinLowerCaseCharsMessage";
+    public static final String INVALID_PASSWORD_MIN_UPPER_CASE_CHARS_MESSAGE = "invalidPasswordMinUpperCaseCharsMessage";
+    public static final String INVALID_PASSWORD_MIN_SPECIAL_CHARS_MESSAGE = "invalidPasswordMinSpecialCharsMessage";
+
     private List<Policy> policies;
     private String policyString;
 
@@ -131,7 +137,7 @@ public class PasswordPolicy {
 
         @Override
         public Error validate(String password) {
-            return password.length() < min ? new Error("invalidPasswordMinLength", min) : null;
+            return password.length() < min ? new Error(INVALID_PASSWORD_MIN_LENGTH_MESSAGE, min) : null;
         }
     }
 
@@ -151,7 +157,7 @@ public class PasswordPolicy {
                     count++;
                 }
             }
-            return count < min ? new Error("invalidPasswordMinDigits", min) : null;
+            return count < min ? new Error(INVALID_PASSWORD_MIN_DIGITS_MESSAGE, min) : null;
         }
     }
 
@@ -171,7 +177,7 @@ public class PasswordPolicy {
                     count++;
                 }
             }
-            return count < min ? new Error("invalidPasswordMinLowerCaseChars", min): null;
+            return count < min ? new Error(INVALID_PASSWORD_MIN_LOWER_CASE_CHARS_MESSAGE, min): null;
         }
     }
 
@@ -191,7 +197,7 @@ public class PasswordPolicy {
                     count++;
                 }
             }
-            return count < min ? new Error("invalidPasswordMinUpperCaseChars", min) : null;
+            return count < min ? new Error(INVALID_PASSWORD_MIN_UPPER_CASE_CHARS_MESSAGE, min) : null;
         }
     }
 
@@ -211,7 +217,7 @@ public class PasswordPolicy {
                     count++;
                 }
             }
-            return count < min ? new Error("invalidPasswordMinSpecialChars", min) : null;
+            return count < min ? new Error(INVALID_PASSWORD_MIN_SPECIAL_CHARS_MESSAGE, min) : null;
         }
     }
 

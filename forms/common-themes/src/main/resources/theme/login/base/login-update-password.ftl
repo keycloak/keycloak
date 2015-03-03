@@ -1,9 +1,9 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayInfo=true; section>
     <#if section = "title">
-        ${rb.emailUpdateHeader}
+        ${rb.updatePasswordTitle}
     <#elseif section = "header">
-        ${rb.emailUpdateHeader}
+        ${rb.updatePasswordTitle}
     <#elseif section = "form">
         <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginUpdatePasswordUrl}" method="post">
             <div class="${properties.kcFormGroupClass!}">
