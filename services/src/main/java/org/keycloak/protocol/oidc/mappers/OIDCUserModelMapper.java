@@ -112,16 +112,15 @@ public class OIDCUserModelMapper extends AbstractOIDCProtocolMapper implements O
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, propertyValue);
     }
 
-    public static void addClaimMapper(RealmModel realm, String name,
+    public static ProtocolMapperModel createClaimMapper(String name,
                                       String userAttribute,
                                       String tokenClaimName, String claimType,
                                       boolean consentRequired, String consentText,
-                                      boolean appliedByDefault,
                                       boolean accessToken, boolean idToken) {
-        OIDCAttributeMapperHelper.addClaimMapper(realm, name, userAttribute,
+        return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
                 consentRequired, consentText,
-                appliedByDefault, accessToken, idToken,
+                accessToken, idToken,
                 PROVIDER_ID);
     }
 

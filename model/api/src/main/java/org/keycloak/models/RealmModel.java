@@ -20,7 +20,6 @@ public interface RealmModel extends RoleContainerModel {
         RealmModel getCreatedRealm();
     }
     interface ClientCreationEvent extends ProviderEvent {
-        RealmModel getCreatedRealm();
         ClientModel getCreatedClient();
     }
     interface ApplicationCreationEvent extends ClientCreationEvent {
@@ -237,19 +236,4 @@ public interface RealmModel extends RoleContainerModel {
     ClientModel findClientById(String id);
 
     boolean isIdentityFederationEnabled();
-
-    Set<ClaimTypeModel> getClaimTypes();
-    ClaimTypeModel addClaimType(ClaimTypeModel model);
-    void removeClaimType(ClaimTypeModel claimType);
-    ClaimTypeModel getClaimType(String name);
-    void updateClaimType(ClaimTypeModel claimType);
-
-    Set<ProtocolMapperModel> getProtocolMappers();
-    ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model);
-    void removeProtocolMapper(ProtocolMapperModel mapping);
-    void updateProtocolMapper(ProtocolMapperModel mapping);
-    public ProtocolMapperModel getProtocolMapperById(String id);
-    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name);
-
-
 }

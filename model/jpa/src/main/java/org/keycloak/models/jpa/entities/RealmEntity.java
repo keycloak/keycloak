@@ -93,12 +93,6 @@ public class RealmEntity {
     Collection<RealmAttributeEntity> attributes = new ArrayList<RealmAttributeEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<ClaimTypeEntity> claimTypes = new ArrayList<ClaimTypeEntity>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
@@ -439,20 +433,5 @@ public class RealmEntity {
         getIdentityProviders().add(entity);
     }
 
-    public Collection<ClaimTypeEntity> getClaimTypes() {
-        return claimTypes;
-    }
-
-    public void setClaimTypes(Collection<ClaimTypeEntity> claimTypes) {
-        this.claimTypes = claimTypes;
-    }
-
-    public Collection<ProtocolMapperEntity> getProtocolMappers() {
-        return protocolMappers;
-    }
-
-    public void setProtocolMappers(Collection<ProtocolMapperEntity> protocolMappers) {
-        this.protocolMappers = protocolMappers;
-    }
 }
 

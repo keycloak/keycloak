@@ -64,7 +64,6 @@ public class RealmRepresentation {
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
     private List<IdentityProviderRepresentation> identityProviders;
-    private List<ClaimTypeRepresentation> claimTypes;
     private List<ProtocolMapperRepresentation> protocolMappers;
     private Boolean identityFederationEnabled;
 
@@ -482,15 +481,6 @@ public class RealmRepresentation {
 
     public boolean isIdentityFederationEnabled() {
         return !getIdentityProviders().isEmpty();
-    }
-
-    public List<ClaimTypeRepresentation> getClaimTypes() {
-        if (claimTypes == null) claimTypes = new ArrayList<ClaimTypeRepresentation>();
-        return claimTypes;
-    }
-
-    public void setClaimTypes(List<ClaimTypeRepresentation> claimTypes) {
-        this.claimTypes = claimTypes;
     }
 
     public List<ProtocolMapperRepresentation> getProtocolMappers() {

@@ -22,7 +22,7 @@ public class OAuthClientRepresentation {
     protected Boolean directGrantsOnly;
     protected Boolean fullScopeAllowed;
     protected Boolean frontchannelLogout;
-    protected List<ClientProtocolMappingRepresentation> protocolMappers;
+    protected List<ProtocolMapperRepresentation> protocolMappers;
     private List<ClientIdentityProviderMappingRepresentation> identityProviders;
 
 
@@ -146,11 +146,11 @@ public class OAuthClientRepresentation {
         this.identityProviders = identityProviders;
     }
 
-    public List<ClientProtocolMappingRepresentation> getProtocolMappers() {
+    public List<ProtocolMapperRepresentation> getProtocolMappers() {
         return protocolMappers;
     }
 
-    public void setProtocolMappers(List<ClientProtocolMappingRepresentation> protocolMappers) {
+    public void setProtocolMappers(List<ProtocolMapperRepresentation> protocolMappers) {
         this.protocolMappers = protocolMappers;
     }
 }

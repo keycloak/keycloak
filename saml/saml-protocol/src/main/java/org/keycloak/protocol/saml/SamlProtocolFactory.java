@@ -2,6 +2,7 @@ package org.keycloak.protocol.saml;
 
 import org.keycloak.Config;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
@@ -19,7 +20,9 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.picketlink.identity.federation.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.picketlink.identity.federation.core.sts.PicketLinkCoreSTS;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,22 +53,37 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
     @Override
-    protected void addDefaults(RealmModel realm) {
-       UserModelUriReferenceAttributeStatementMapper.addAttributeMapper(realm, "X500 email",
+    public List<ProtocolMapperModel> getBuiltinMappers() {
+        return builtins;
+    }
+
+    static List<ProtocolMapperModel> builtins = new ArrayList<>();
+    static List<ProtocolMapperModel> defaultBuiltins = new ArrayList<>();
+
+    static {
+        ProtocolMapperModel model;
+        model = UserModelUriReferenceAttributeStatementMapper.createAttributeMapper("X500 email",
                 "email",
                 X500SAMLProfileConstants.EMAIL.get(), X500SAMLProfileConstants.EMAIL.getFriendlyName(),
-                true, "email",
-                false);
-        UserModelUriReferenceAttributeStatementMapper.addAttributeMapper(realm, "X500 givenName",
+                true, "email");
+        builtins.add(model);
+        model = UserModelUriReferenceAttributeStatementMapper.createAttributeMapper("X500 givenName",
                 "firstName",
                 X500SAMLProfileConstants.GIVEN_NAME.get(), X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(),
-                true, "given name",
-                false);
-        UserModelUriReferenceAttributeStatementMapper.addAttributeMapper(realm, "X500 surname",
+                true, "given name");
+        builtins.add(model);
+        model = UserModelUriReferenceAttributeStatementMapper.createAttributeMapper("X500 surname",
                 "lastName",
                 X500SAMLProfileConstants.SURNAME.get(), X500SAMLProfileConstants.SURNAME.getFriendlyName(),
-                true, "family name",
-                false);
+                true, "family name");
+        builtins.add(model);
+
+    }
+
+
+    @Override
+    protected void addDefaults(ClientModel client) {
+        for (ProtocolMapperModel model : defaultBuiltins) client.addProtocolMapper(model);
 
     }
 

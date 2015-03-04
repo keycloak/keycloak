@@ -19,9 +19,6 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 @Entity
-@NamedQueries({
-        @NamedQuery(name="getProtocolMapperByNameProtocol", query="select mapper from ProtocolMapperEntity mapper where mapper.protocol = :protocol and mapper.name = :name and mapper.realm = :realm")
-})
 @Table(name="PROTOCOL_MAPPER")
 public class ProtocolMapperEntity {
 
@@ -36,8 +33,6 @@ public class ProtocolMapperEntity {
     protected String protocol;
     @Column(name = "PROTOCOL_MAPPER_NAME")
     protected String protocolMapper;
-    @Column(name = "APPLIED_BY_DEFAULT")
-    protected boolean appliedByDefault;
     @Column(name="CONSENT_REQUIRED")
     protected boolean consentRequired;
     @Column(name="CONSENT_TEXT")
@@ -50,8 +45,8 @@ public class ProtocolMapperEntity {
     private Map<String, String> config;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REALM_ID")
-    protected RealmEntity realm;
+    @JoinColumn(name = "CLIENT_ID")
+    private ClientEntity client;
 
     public String getId() {
         return id;
@@ -85,14 +80,6 @@ public class ProtocolMapperEntity {
         this.protocolMapper = protocolMapper;
     }
 
-    public boolean isAppliedByDefault() {
-        return appliedByDefault;
-    }
-
-    public void setAppliedByDefault(boolean appliedByDefault) {
-        this.appliedByDefault = appliedByDefault;
-    }
-
     public Map<String, String> getConfig() {
         return config;
     }
@@ -101,12 +88,12 @@ public class ProtocolMapperEntity {
         this.config = config;
     }
 
-    public RealmEntity getRealm() {
-        return realm;
+    public ClientEntity getClient() {
+        return client;
     }
 
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
+    public void setClient(ClientEntity client) {
+        this.client = client;
     }
 
     public boolean isConsentRequired() {

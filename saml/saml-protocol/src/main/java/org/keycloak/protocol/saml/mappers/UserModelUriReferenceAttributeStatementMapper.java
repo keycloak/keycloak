@@ -3,7 +3,6 @@ package org.keycloak.protocol.saml.mappers;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -67,14 +66,13 @@ public class UserModelUriReferenceAttributeStatementMapper extends AbstractSAMLP
 
     }
 
-    public static void addAttributeMapper(RealmModel realm, String name,
+    public static ProtocolMapperModel createAttributeMapper(String name,
                                           String userAttribute,
                                           String samlAttributeName,
                                           String friendlyName,
-                                          boolean consentRequired, String consentText,
-                                          boolean appliedByDefault) {
+                                          boolean consentRequired, String consentText) {
         String mapperId = PROVIDER_ID;
-        AttributeStatementHelper.addAttributeMapper(realm, name, userAttribute, samlAttributeName, friendlyName, consentRequired, consentText, appliedByDefault, mapperId);
+        return AttributeStatementHelper.createAttributeMapper(name, userAttribute, samlAttributeName, friendlyName, consentRequired, consentText, mapperId);
 
     }
 }

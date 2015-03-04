@@ -76,8 +76,7 @@ public abstract class ClientEntity {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "client", cascade = CascadeType.REMOVE)
     Collection<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name="CLIENT_PROTOCOL_MAPPER", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="MAPPING_ID")})
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
     Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 
     public RealmEntity getRealm() {

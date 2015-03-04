@@ -2,6 +2,7 @@ package org.keycloak.protocol;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -24,25 +25,12 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        KeycloakSession session = factory.create();
-        session.getTransaction().begin();
-        try {
-            List<RealmModel> realms = session.realms().getRealms();
-            for (RealmModel realm : realms) addDefaults(realm);
-            session.getTransaction().commit();
-        } catch (Exception e) {
-            logger.error("Can't add default mappers to realm", e);
-            session.getTransaction().rollback();
-        } finally {
-            session.close();
-        }
-
         factory.register(new ProviderEventListener() {
             @Override
             public void onEvent(ProviderEvent event) {
-                if (event instanceof RealmModel.RealmCreationEvent) {
-                    RealmModel realm = ((RealmModel.RealmCreationEvent)event).getCreatedRealm();
-                    addDefaults(realm);
+                if (event instanceof RealmModel.ClientCreationEvent) {
+                    ClientModel client = ((RealmModel.ClientCreationEvent)event).getCreatedClient();
+                    addDefaults(client);
                 }
             }
         });
@@ -50,7 +38,7 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
 
     }
 
-    protected abstract void addDefaults(RealmModel realm);
+    protected abstract void addDefaults(ClientModel realm);
 
     @Override
     public void close() {

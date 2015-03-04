@@ -6,7 +6,6 @@ import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
-import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -23,9 +22,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
-import org.keycloak.representations.idm.ClaimTypeRepresentation;
 import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
-import org.keycloak.representations.idm.ClientProtocolMappingRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -120,8 +117,6 @@ public class RepresentationToModel {
         if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
         importIdentityProviders(rep, newRealm);
-        importClaimTypes(rep, newRealm);
-        importProtocolMappers(rep, newRealm);
 
         if (rep.getApplications() != null) {
             Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
@@ -458,15 +453,13 @@ public class RepresentationToModel {
         }
 
         if (resourceRep.getProtocolMappers() != null) {
-            Set<String> ids = new HashSet<String>();
-            for (ClientProtocolMappingRepresentation map : resourceRep.getProtocolMappers()) {
-                ProtocolMapperModel mapperModel = applicationModel.getRealm().getProtocolMapperByName(map.getProtocol(), map.getName());
-                if (mapperModel != null) {
-                    ids.add(mapperModel.getId());
-                }
+            // first, remove all default/built in mappers
+            Set<ProtocolMapperModel> mappers = applicationModel.getProtocolMappers();
+            for (ProtocolMapperModel mapper : mappers) applicationModel.removeProtocolMapper(mapper);
 
+            for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
+                applicationModel.addProtocolMapper(toModel(mapper));
             }
-            applicationModel.setProtocolMappers(ids);
         }
 
         applicationModel.updateAllowedIdentityProviders(toModel(resourceRep.getIdentityProviders(), realm));
@@ -636,15 +629,13 @@ public class RepresentationToModel {
         updateClientIdentityProvides(rep.getIdentityProviders(), model);
 
         if (rep.getProtocolMappers() != null) {
-            Set<String> ids = new HashSet<String>();
-            for (ClientProtocolMappingRepresentation map : rep.getProtocolMappers()) {
-                ProtocolMapperModel mapperModel = model.getRealm().getProtocolMapperByName(map.getProtocol(), map.getName());
-                if (mapperModel != null) {
-                    ids.add(mapperModel.getId());
-                }
+            // first, remove all default/built in mappers
+            Set<ProtocolMapperModel> mappers = model.getProtocolMappers();
+            for (ProtocolMapperModel mapper : mappers) model.removeProtocolMapper(mapper);
 
+            for (ProtocolMapperRepresentation mapper : rep.getProtocolMappers()) {
+                model.addProtocolMapper(toModel(mapper));
             }
-            model.setProtocolMappers(ids);
         }
 
     }
@@ -770,31 +761,6 @@ public class RepresentationToModel {
             }
         }
     }
-    private static void importClaimTypes(RealmRepresentation rep, RealmModel newRealm) {
-        if (rep.getClaimTypes() != null) {
-            for (ClaimTypeRepresentation representation : rep.getClaimTypes()) {
-                newRealm.addClaimType(toModel(representation));
-            }
-        }
-    }
-
-    private static void importProtocolMappers(RealmRepresentation rep, RealmModel newRealm) {
-        if (rep.getProtocolMappers() != null) {
-            // we make sure we don't recreate mappers that are automatically created by the protocol providers.
-            Set<ProtocolMapperModel> mappers = newRealm.getProtocolMappers();
-            for (ProtocolMapperRepresentation representation : rep.getProtocolMappers()) {
-                ProtocolMapperModel existing = newRealm.getProtocolMapperByName(representation.getProtocol(), representation.getName());
-                if (existing == null) {
-                    newRealm.addProtocolMapper(toModel(representation));
-                } else {
-                    ProtocolMapperModel mapping = toModel(representation);
-                    mapping.setId(existing.getId());
-                    newRealm.updateProtocolMapper(mapping);
-                }
-            }
-        }
-    }
-
     public static IdentityProviderModel toModel(IdentityProviderRepresentation representation) {
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
@@ -811,20 +777,10 @@ public class RepresentationToModel {
         return identityProviderModel;
     }
 
-    public static ClaimTypeModel toModel(ClaimTypeRepresentation rep) {
-        ClaimTypeModel model = new ClaimTypeModel();
-        model.setId(rep.getId());
-        model.setType(ClaimTypeModel.ValueType.valueOf(rep.getType()));
-        model.setBuiltIn(rep.isBuiltIn());
-        model.setName(rep.getName());
-        return model;
-    }
-
     public static ProtocolMapperModel toModel(ProtocolMapperRepresentation rep) {
         ProtocolMapperModel model = new ProtocolMapperModel();
         model.setId(rep.getId());
         model.setName(rep.getName());
-        model.setAppliedByDefault(rep.isAppliedByDefault());
         model.setConsentRequired(rep.isConsentRequired());
         model.setConsentText(rep.getConsentText());
         model.setProtocol(rep.getProtocol());

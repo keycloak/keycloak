@@ -70,8 +70,6 @@ public class CachedRealm {
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
     private List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
-    private Set<ClaimTypeModel> claimTypes = new HashSet<ClaimTypeModel>();
-    private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
@@ -133,13 +131,6 @@ public class CachedRealm {
 
         for (IdentityProviderModel identityProviderModel : model.getIdentityProviders()) {
             this.identityProviders.add(new IdentityProviderModel(identityProviderModel));
-        }
-
-        for (ClaimTypeModel claimType : model.getClaimTypes()) {
-            this.claimTypes.add(new ClaimTypeModel(claimType));
-        }
-        for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
-            this.protocolMappers.add(mapper);
         }
 
         smtpConfig.putAll(model.getSmtpConfig());
@@ -350,13 +341,5 @@ public class CachedRealm {
 
     public List<IdentityProviderModel> getIdentityProviders() {
         return identityProviders;
-    }
-
-    public Set<ClaimTypeModel> getClaimTypes() {
-        return claimTypes;
-    }
-
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return protocolMappers;
     }
 }

@@ -29,7 +29,7 @@ public class ApplicationRepresentation {
     protected Integer nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
     protected List<ClientIdentityProviderMappingRepresentation> identityProviders;
-    protected List<ClientProtocolMappingRepresentation> protocolMappers;
+    protected List<ProtocolMapperRepresentation> protocolMappers;
 
     public String getId() {
         return id;
@@ -199,11 +199,11 @@ public class ApplicationRepresentation {
         this.identityProviders = identityProviders;
     }
 
-    public List<ClientProtocolMappingRepresentation> getProtocolMappers() {
+    public List<ProtocolMapperRepresentation> getProtocolMappers() {
         return protocolMappers;
     }
 
-    public void setProtocolMappers(List<ClientProtocolMappingRepresentation> protocolMappers) {
+    public void setProtocolMappers(List<ProtocolMapperRepresentation> protocolMappers) {
         this.protocolMappers = protocolMappers;
     }
 }
