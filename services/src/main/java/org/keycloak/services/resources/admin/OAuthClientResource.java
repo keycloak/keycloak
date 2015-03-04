@@ -80,8 +80,8 @@ public class OAuthClientResource  {
      * @return
      */
     @Path("protocol-mappers")
-    public ClientProtocolMappersResource getProtocolMappers() {
-        ClientProtocolMappersResource mappers = new ClientProtocolMappersResource(realm, auth, oauthClient);
+    public ProtocolMappersResource getProtocolMappers() {
+        ProtocolMappersResource mappers = new ProtocolMappersResource(oauthClient, auth);
         ResteasyProviderFactory.getInstance().injectProperties(mappers);
         //resourceContext.initResource(mappers);
         return mappers;

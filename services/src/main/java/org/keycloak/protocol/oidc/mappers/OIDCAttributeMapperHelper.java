@@ -67,22 +67,18 @@ public class OIDCAttributeMapperHelper {
         }
     }
 
-    public static void addClaimMapper(RealmModel realm, String name,
+    public static ProtocolMapperModel createClaimMapper(String name,
                                   String userAttribute,
                                   String tokenClaimName, String claimType,
                                   boolean consentRequired, String consentText,
-                                  boolean appliedByDefault,
                                   boolean accessToken, boolean idToken,
                                   String mapperId) {
-        ProtocolMapperModel mapper = realm.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, name);
-        if (mapper != null) return;
-        mapper = new ProtocolMapperModel();
+        ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         mapper.setConsentRequired(consentRequired);
         mapper.setConsentText(consentText);
-        mapper.setAppliedByDefault(appliedByDefault);
         Map<String, String> config = new HashMap<String, String>();
         config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
         config.put(TOKEN_CLAIM_NAME, tokenClaimName);
@@ -90,7 +86,7 @@ public class OIDCAttributeMapperHelper {
         if (accessToken) config.put(INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(INCLUDE_IN_ID_TOKEN, "true");
         mapper.setConfig(config);
-        realm.addProtocolMapper(mapper);
+        return mapper;
     }
 
     public static boolean includeInIDToken(ProtocolMapperModel mappingModel) {

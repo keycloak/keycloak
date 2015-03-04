@@ -13,5 +13,11 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
+    /**
+     * List of built in protocol mappers that can be used to apply to clients.
+     *
+     * @return
+     */
+    List<ProtocolMapperModel> getBuiltinMappers();
     Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager);
 }

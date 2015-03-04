@@ -30,7 +30,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private List<String> redirectUris = new ArrayList<String>();
     private List<String> scopeIds = new ArrayList<String>();
     private List<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
-    private Set<String> protocolMappers = new HashSet<String>();
+    private List<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 
     public String getName() {
         return name;
@@ -152,11 +152,11 @@ public class ClientEntity extends AbstractIdentifiableEntity {
         this.identityProviders = identityProviders;
     }
 
-    public Set<String> getProtocolMappers() {
+    public List<ProtocolMapperEntity> getProtocolMappers() {
         return protocolMappers;
     }
 
-    public void setProtocolMappers(Set<String> protocolMappers) {
+    public void setProtocolMappers(List<ProtocolMapperEntity> protocolMappers) {
         this.protocolMappers = protocolMappers;
     }
 }

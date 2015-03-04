@@ -1,20 +1,22 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
-    <ul class="nav nav-tabs nav-tabs-pf">
-        <li><a href="#/realms/{{realm.realm}}/protocols/{{protocol}}/mappers">Mappers</a></li>
-    </ul>
+    <kc-navigation-application></kc-navigation-application>
     <div id="content">
-        <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}/protocols/{{protocol}}/mappers">Protocol Mappers</a></li>
-            <li><a href="#/realms/{{realm.realm}}/protocols/{{protocol}}/mappers/{{mapper.id}}">{{mapper.name}}</a></li>
-            <li class="active">Protocol Mapper</li>
-        </ol>
         <ol class="breadcrumb" data-ng-show="create">
-            <li><a href="#/realms/{{realm.realm}}/protocols/{{protocol}}/mappers">Protocol Mappers</a></li>
-            <li class="active">Add Protocol Mapper</li>
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/mappers">Protocol Mappers</a></li>
+            <li class="active">Create Protocol Mapper</li>
         </ol>
-        <h2 class="pull-left" data-ng-hide="create">Protocol Mapper Settings</h2>
-        <h2 class="pull-left" data-ng-show="create">Add Protocol Mapper</h2>
+
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/mappers">Protocol Mappers</a></li>
+            <li class="active">{{mapper.name}}</li>
+        </ol>
+        <h2 class="pull-left" data-ng-hide="create">{{mapper.name}} Protocol Mapper</h2>
+        <h2 class="pull-left" data-ng-show="create">Create Protocol Mapper</h2>
         <p class="subtitle"><span class="required">*</span> Required fields</p>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
 

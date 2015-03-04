@@ -1,7 +1,9 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -12,6 +14,7 @@ import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -412,7 +415,6 @@ public abstract class ClientAdapter implements ClientModel {
             mapping.setName(entity.getName());
             mapping.setProtocol(entity.getProtocol());
             mapping.setProtocolMapper(entity.getProtocolMapper());
-            mapping.setAppliedByDefault(entity.isAppliedByDefault());
             mapping.setConsentRequired(entity.isConsentRequired());
             mapping.setConsentText(entity.getConsentText());
             Map<String, String> config = new HashMap<String, String>();
@@ -425,71 +427,98 @@ public abstract class ClientAdapter implements ClientModel {
         return mappings;
     }
 
-    protected ProtocolMapperEntity findProtocolMapperByName(String protocol, String name) {
-        TypedQuery<ProtocolMapperEntity> query = em.createNamedQuery("getProtocolMapperByNameProtocol", ProtocolMapperEntity.class);
-        query.setParameter("name", name);
-        query.setParameter("protocol", protocol);
-        query.setParameter("realm", entity.getRealm());
-        List<ProtocolMapperEntity> entities = query.getResultList();
-        if (entities.size() == 0) return null;
-        if (entities.size() > 1) throw new IllegalStateException("Should not be more than one protocol mapper with same name");
-        return query.getResultList().get(0);
+    @Override
+    public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
+        if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
+            throw new RuntimeException("protocol mapper name must be unique per protocol");
+        }
+        String id = KeycloakModelUtils.generateId();
+        ProtocolMapperEntity entity = new ProtocolMapperEntity();
+        entity.setId(id);
+        entity.setName(model.getName());
+        entity.setProtocol(model.getProtocol());
+        entity.setProtocolMapper(model.getProtocolMapper());
+        entity.setClient(this.entity);
+        entity.setConfig(model.getConfig());
+        entity.setConsentRequired(model.isConsentRequired());
+        entity.setConsentText(model.getConsentText());
+
+        em.persist(entity);
+        this.entity.getProtocolMappers().add(entity);
+        return entityToModel(entity);
+    }
+
+    protected ProtocolMapperEntity getProtocolMapperEntity(String id) {
+        for (ProtocolMapperEntity entity : this.entity.getProtocolMappers()) {
+            if (entity.getId().equals(id)) {
+                return entity;
+            }
+        }
+        return null;
+
+    }
+
+    protected ProtocolMapperEntity getProtocolMapperEntityByName(String protocol, String name) {
+        for (ProtocolMapperEntity entity : this.entity.getProtocolMappers()) {
+            if (entity.getProtocol().equals(protocol) && entity.getName().equals(name)) {
+                return entity;
+            }
+        }
+        return null;
 
     }
 
     @Override
-    public void addProtocolMappers(Set<String> mappings) {
-        Collection<ProtocolMapperEntity> entities = entity.getProtocolMappers();
-        Set<String> already = new HashSet<String>();
-        for (ProtocolMapperEntity rel : entities) {
-            already.add(rel.getId());
+    public void removeProtocolMapper(ProtocolMapperModel mapping) {
+        ProtocolMapperEntity toDelete = getProtocolMapperEntity(mapping.getId());
+        if (toDelete != null) {
+            this.entity.getProtocolMappers().remove(toDelete);
+            em.remove(toDelete);
         }
-        for (String id : mappings) {
-            if (!already.contains(id)) {
-                ProtocolMapperEntity mapping = em.find(ProtocolMapperEntity.class, id);
-                if (mapping != null) {
-                    entities.add(mapping);
-                }
-            }
-        }
-        em.flush();
+
     }
 
     @Override
-    public void removeProtocolMappers(Set<String> mappings) {
-        Collection<ProtocolMapperEntity> entities = entity.getProtocolMappers();
-        List<ProtocolMapperEntity> remove = new LinkedList<ProtocolMapperEntity>();
-        for (ProtocolMapperEntity rel : entities) {
-            if (mappings.contains(rel.getId())) remove.add(rel);
-        }
-        for (ProtocolMapperEntity entity : remove) {
-            entities.remove(entity);
+    public void updateProtocolMapper(ProtocolMapperModel mapping) {
+        ProtocolMapperEntity entity = getProtocolMapperEntity(mapping.getId());
+        entity.setProtocolMapper(mapping.getProtocolMapper());
+        entity.setConsentRequired(mapping.isConsentRequired());
+        entity.setConsentText(mapping.getConsentText());
+        if (entity.getConfig() == null) {
+            entity.setConfig(mapping.getConfig());
+        } else {
+            entity.getConfig().clear();
+            entity.getConfig().putAll(mapping.getConfig());
         }
         em.flush();
+
     }
+
     @Override
-    public void setProtocolMappers(Set<String> mappings) {
-        Collection<ProtocolMapperEntity> entities = entity.getProtocolMappers();
-        Iterator<ProtocolMapperEntity> it = entities.iterator();
-        Set<String> already = new HashSet<String>();
-        while (it.hasNext()) {
-            ProtocolMapperEntity mapper = it.next();
-            if (mappings.contains(mapper.getId())) {
-                already.add(mapper.getId());
-                continue;
-            }
-            it.remove();
-        }
-        for (String id : mappings) {
-            if (!already.contains(id)) {
-                ProtocolMapperEntity mapping = em.find(ProtocolMapperEntity.class, id);
-                if (mapping != null) {
-                    entities.add(mapping);
-                }
-            }
-        }
-        em.flush();
+    public ProtocolMapperModel getProtocolMapperById(String id) {
+        ProtocolMapperEntity entity = getProtocolMapperEntity(id);
+        if (entity == null) return null;
+        return entityToModel(entity);
     }
 
+    @Override
+    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
+        ProtocolMapperEntity entity = getProtocolMapperEntityByName(protocol, name);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
 
+    protected ProtocolMapperModel entityToModel(ProtocolMapperEntity entity) {
+        ProtocolMapperModel mapping = new ProtocolMapperModel();
+        mapping.setId(entity.getId());
+        mapping.setName(entity.getName());
+        mapping.setProtocol(entity.getProtocol());
+        mapping.setProtocolMapper(entity.getProtocolMapper());
+        mapping.setConsentRequired(entity.isConsentRequired());
+        mapping.setConsentText(entity.getConsentText());
+        Map<String, String> config = new HashMap<String, String>();
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
+        mapping.setConfig(config);
+        return mapping;
+    }
 }

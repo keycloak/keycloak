@@ -2,7 +2,6 @@ package org.keycloak.models.utils;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
-import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -19,9 +18,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
-import org.keycloak.representations.idm.ClaimTypeRepresentation;
 import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
-import org.keycloak.representations.idm.ClientProtocolMappingRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -156,14 +153,6 @@ public class ModelToRepresentation {
             rep.addIdentityProvider(toRepresentation(provider));
         }
 
-        for (ClaimTypeModel claimType : realm.getClaimTypes()) {
-            rep.getClaimTypes().add(toRepresentation(claimType));
-        }
-
-        for (ProtocolMapperModel mapping : realm.getProtocolMappers()) {
-            rep.addProtocolMapper(toRepresentation(mapping));
-        }
-
         return rep;
     }
 
@@ -269,11 +258,9 @@ public class ModelToRepresentation {
         }
 
         if (!applicationModel.getProtocolMappers().isEmpty()) {
-            List<ClientProtocolMappingRepresentation> mappings = new LinkedList<ClientProtocolMappingRepresentation>();
+            List<ProtocolMapperRepresentation> mappings = new LinkedList<ProtocolMapperRepresentation>();
             for (ProtocolMapperModel model : applicationModel.getProtocolMappers()) {
-                ClientProtocolMappingRepresentation map = new ClientProtocolMappingRepresentation();
-                map.setProtocol(model.getProtocol());
-                map.setName(model.getName());
+                mappings.add(toRepresentation(model));
             }
             rep.setProtocolMappers(mappings);
         }
@@ -323,13 +310,11 @@ public class ModelToRepresentation {
         }
 
         if (!model.getProtocolMappers().isEmpty()) {
-            List<ClientProtocolMappingRepresentation> mappings = new LinkedList<ClientProtocolMappingRepresentation>();
-            for (ProtocolMapperModel mapping : model.getProtocolMappers()) {
-                ClientProtocolMappingRepresentation map = new ClientProtocolMappingRepresentation();
-                map.setProtocol(mapping.getProtocol());
-                map.setName(mapping.getName());
-            }
-            rep.setProtocolMappers(mappings);
+                List<ProtocolMapperRepresentation> mappings = new LinkedList<ProtocolMapperRepresentation>();
+                for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
+                    mappings.add(toRepresentation(mapper));
+                }
+                rep.setProtocolMappers(mappings);
         }
 
         return rep;
@@ -373,18 +358,9 @@ public class ModelToRepresentation {
         rep.setConfig(config);
         rep.setName(model.getName());
         rep.setProtocolMapper(model.getProtocolMapper());
-        rep.setAppliedByDefault(model.isAppliedByDefault());
         rep.setConsentText(model.getConsentText());
         rep.setConsentRequired(model.isConsentRequired());
         return rep;
     }
 
-    public static ClaimTypeRepresentation toRepresentation(ClaimTypeModel claimType) {
-        ClaimTypeRepresentation rep = new ClaimTypeRepresentation();
-        rep.setId(claimType.getId());
-        rep.setName(claimType.getName());
-        rep.setBuiltIn(claimType.isBuiltIn());
-        rep.setType(claimType.getType().name().toLowerCase());
-        return rep;
-    }
 }

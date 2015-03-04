@@ -74,16 +74,13 @@ public class AttributeStatementHelper {
         configProperties.add(property);
     }
 
-    public static void addAttributeMapper(RealmModel realm, String name, String userAttribute, String samlAttributeName, String friendlyName, boolean consentRequired, String consentText, boolean appliedByDefault, String mapperId) {
-        ProtocolMapperModel mapper = realm.getProtocolMapperByName(SamlProtocol.LOGIN_PROTOCOL, name);
-        if (mapper != null) return;
-        mapper = new ProtocolMapperModel();
+    public static ProtocolMapperModel createAttributeMapper(String name, String userAttribute, String samlAttributeName, String friendlyName, boolean consentRequired, String consentText, String mapperId) {
+        ProtocolMapperModel mapper = mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         mapper.setConsentRequired(consentRequired);
         mapper.setConsentText(consentText);
-        mapper.setAppliedByDefault(appliedByDefault);
         Map<String, String> config = new HashMap<String, String>();
         config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
         config.put(SAML_ATTRIBUTE_NAME, samlAttributeName);
@@ -91,6 +88,6 @@ public class AttributeStatementHelper {
             config.put(FRIENDLY_NAME, friendlyName);
         }
         mapper.setConfig(config);
-        realm.addProtocolMapper(mapper);
+        return mapper;
     }
 }

@@ -67,14 +67,13 @@ public class UserAttributeBasicAttributeStatementMapper extends AbstractSAMLProt
 
     }
 
-    public static void addAttributeMapper(RealmModel realm, String name,
+    public static ProtocolMapperModel createAttributeMapper(String name,
                                          String userAttribute,
                                          String samlAttributeName,
                                          String friendlyName,
-                                         boolean consentRequired, String consentText,
-                                         boolean appliedByDefault) {
+                                         boolean consentRequired, String consentText) {
         String mapperId = PROVIDER_ID;
-        AttributeStatementHelper.addAttributeMapper(realm, name, userAttribute, samlAttributeName, friendlyName, consentRequired, consentText, appliedByDefault, mapperId);
+        return AttributeStatementHelper.createAttributeMapper(name, userAttribute, samlAttributeName, friendlyName, consentRequired, consentText, mapperId);
 
     }
 

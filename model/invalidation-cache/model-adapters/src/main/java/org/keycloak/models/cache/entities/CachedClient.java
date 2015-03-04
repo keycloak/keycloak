@@ -37,7 +37,7 @@ public class CachedClient {
     protected Set<String> scope = new HashSet<String>();
     protected Set<String> webOrigins = new HashSet<String>();
     private List<ClientIdentityProviderMappingModel> identityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
-    private Set<ProtocolMapperModel> protocolClaimMappings = new HashSet<ProtocolMapperModel>();
+    private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
 
     public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
@@ -59,7 +59,9 @@ public class CachedClient {
             scope.add(role.getId());
         }
         this.identityProviders = model.getIdentityProviders();
-        protocolClaimMappings.addAll(model.getProtocolMappers());
+        for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
+            this.protocolMappers.add(mapper);
+        }
     }
 
     public String getId() {
@@ -140,8 +142,8 @@ public class CachedClient {
         return false;
     }
 
-    public Set<ProtocolMapperModel> getProtocolClaimMappings() {
-        return protocolClaimMappings;
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        return protocolMappers;
     }
 
     public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {

@@ -290,26 +290,42 @@ public abstract class ClientAdapter implements ClientModel {
     @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
         if (updatedClient != null) return updatedClient.getProtocolMappers();
-        return cachedClient.getProtocolClaimMappings();    }
+        return cachedClient.getProtocolMappers();
+    }
 
     @Override
-    public void addProtocolMappers(Set<String> mapperNames) {
+    public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
         getDelegateForUpdate();
-        updatedClient.addProtocolMappers(mapperNames);
+        return updatedClient.addProtocolMapper(model);
+    }
+
+    @Override
+    public void removeProtocolMapper(ProtocolMapperModel mapping) {
+        getDelegateForUpdate();
+        updatedClient.removeProtocolMapper(mapping);
 
     }
 
     @Override
-    public void removeProtocolMappers(Set<String> mapperNames) {
+    public void updateProtocolMapper(ProtocolMapperModel mapping) {
         getDelegateForUpdate();
-        updatedClient.removeProtocolMappers(mapperNames);
+        updatedClient.updateProtocolMapper(mapping);
 
     }
 
     @Override
-    public void setProtocolMappers(Set<String> mapperNames) {
-        getDelegateForUpdate();
-        updatedClient.setProtocolMappers(mapperNames);
+    public ProtocolMapperModel getProtocolMapperById(String id) {
+        for (ProtocolMapperModel mapping : cachedClient.getProtocolMappers()) {
+            if (mapping.getId().equals(id)) return mapping;
+        }
+        return null;
+    }
 
+    @Override
+    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
+        for (ProtocolMapperModel mapping : cachedClient.getProtocolMappers()) {
+            if (mapping.getProtocol().equals(protocol) && mapping.getName().equals(name)) return mapping;
+        }
+        return null;
     }
 }

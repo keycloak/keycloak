@@ -79,19 +79,11 @@ module.factory('RealmApplicationSessionStatsLoader', function(Loader, RealmAppli
     });
 });
 
-module.factory('RealmProtocolMappersByProtocolLoader', function(Loader, RealmProtocolMappersByProtocol, $route, $q) {
-    return Loader.query(RealmProtocolMappersByProtocol, function() {
+module.factory('ApplicationProtocolMapperLoader', function(Loader, ApplicationProtocolMapper, $route, $q) {
+    return Loader.get(ApplicationProtocolMapper, function() {
         return {
             realm : $route.current.params.realm,
-            protocol: $route.current.params.protocol
-        }
-    });
-});
-
-module.factory('RealmProtocolMapperLoader', function(Loader, RealmProtocolMapper, $route, $q) {
-    return Loader.get(RealmProtocolMapper, function() {
-        return {
-            realm : $route.current.params.realm,
+            application : $route.current.params.application,
             id: $route.current.params.id
         }
     });

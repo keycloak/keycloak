@@ -104,7 +104,9 @@ public interface ClientModel {
     boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId);
 
     Set<ProtocolMapperModel> getProtocolMappers();
-    void addProtocolMappers(Set<String> mapperIds);
-    void removeProtocolMappers(Set<String> mapperIds);
-    void setProtocolMappers(Set<String> mapperIds);
+    ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model);
+    void removeProtocolMapper(ProtocolMapperModel mapping);
+    void updateProtocolMapper(ProtocolMapperModel mapping);
+    public ProtocolMapperModel getProtocolMapperById(String id);
+    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name);
 }

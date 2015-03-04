@@ -440,7 +440,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return ServerInfoLoader();
                 }
             },
-            controller : 'ApplicationProtocolMapperCtrl'
+            controller : 'ApplicationProtocolMapperListCtrl'
         })
         .when('/realms/:realm/applications/:application/add-mappers', {
             templateUrl : resourceUrl + '/partials/application-mappers-add.html',
@@ -455,7 +455,41 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return ServerInfoLoader();
                 }
             },
-            controller : 'AddApplicationProtocolMapperCtrl'
+            controller : 'AddBuiltinProtocolMapperCtrl'
+        })
+        .when('/realms/:realm/applications/:application/mappers/:id', {
+            templateUrl : resourceUrl + '/partials/protocol-mapper-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                mapper : function(ApplicationProtocolMapperLoader) {
+                    return ApplicationProtocolMapperLoader();
+                }
+
+            },
+            controller : 'ApplicationProtocolMapperCtrl'
+        })
+        .when('/create/application/:realm/:application/mappers', {
+            templateUrl : resourceUrl + '/partials/protocol-mapper-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                }
+            },
+            controller : 'ApplicationProtocolMapperCreateCtrl'
         })
         .when('/realms/:realm/applications/:application/sessions', {
             templateUrl : resourceUrl + '/partials/application-sessions.html',
@@ -974,59 +1008,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ProtocolListCtrl'
         })
-        .when('/realms/:realm/protocols/:protocol/mappers', {
-            templateUrl : resourceUrl + '/partials/protocol-mapper-list.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                },
-                serverInfo : function(ServerInfoLoader) {
-                    return ServerInfoLoader();
-                },
-                protocol : function($route) {
-                    return $route.current.params.protocol;
-                },
-                mappers : function(RealmProtocolMappersByProtocolLoader) {
-                    return RealmProtocolMappersByProtocolLoader();
-                }
 
-            },
-            controller : 'ProtocolMapperListCtrl'
-        })
-        .when('/realms/:realm/protocols/:protocol/mappers/:id', {
-            templateUrl : resourceUrl + '/partials/protocol-mapper-detail.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                },
-                serverInfo : function(ServerInfoLoader) {
-                    return ServerInfoLoader();
-                },
-                protocol : function($route) {
-                    return $route.current.params.protocol;
-                },
-                mapper : function(RealmProtocolMapperLoader) {
-                    return RealmProtocolMapperLoader();
-                }
-
-            },
-            controller : 'ProtocolMapperCtrl'
-        })
-        .when('/create/protocols/:protocol/realms/:realm/mappers', {
-            templateUrl : resourceUrl + '/partials/protocol-mapper-detail.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                },
-                serverInfo : function(ServerInfoLoader) {
-                    return ServerInfoLoader();
-                },
-                protocol : function($route) {
-                    return $route.current.params.protocol;
-                }
-            },
-            controller : 'ProtocolMapperCreateCtrl'
-        })
 
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html'

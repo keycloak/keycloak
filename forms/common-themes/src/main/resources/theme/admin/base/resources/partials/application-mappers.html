@@ -21,9 +21,8 @@
                         </button>
                     </div>
                     <div class="pull-right">
-                        <a class="btn btn-primary" href="#/create/protocols/{{application.protocol}}/realms/{{realm.realm}}/mappers">Create</a>
+                        <a class="btn btn-primary" href="#/create/application/{{realm.realm}}/{{application.id}}/mappers">Create</a>
                         <a class="btn btn-primary" href="#/realms/{{realm.realm}}/applications/{{application.id}}/add-mappers">Add Builtin</a>
-                        <button class="btn btn-primary" data-ng-click="remove()">Remove Selected</button>
                     </div>
                 </th>
             </tr>
@@ -31,15 +30,13 @@
                 <th>Name</th>
                 <th>Category</th>
                 <th>Type</th>
-                <th>Remove</th>
             </tr>
             </thead>
             <tbody>
             <tr ng-repeat="mapper in mappers | filter:search">
-                <td><a href="#/realms/{{realm.realm}}/protocols/{{application.protocol}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
+                <td><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
                 <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
                 <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
-                <td><input type="checkbox" ng-model="mapper.isChecked"></td>
             </tr>
             <tr data-ng-show="mappers.length == 0">
                 <td>No mappers available</td>
