@@ -15,7 +15,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.KerberosConstants;
+import org.keycloak.constants.KerberosConstants;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
@@ -344,9 +344,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
                 spnegoAuthenticator.authenticate();
 
+                Map<String, String> state = new HashMap<String, String>();
                 if (spnegoAuthenticator.isAuthenticated()) {
-                    Map<String, Object> state = new HashMap<String, Object>();
-                    state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, spnegoAuthenticator.getDelegationCredential());
 
                     // TODO: This assumes that LDAP "uid" is equal to kerberos principal name. Like uid "hnelson" and kerberos principal "hnelson@KEYCLOAK.ORG".
                     // Check if it's correct or if LDAP attribute for mapping kerberos principal should be available (For ApacheDS it seems to be attribute "krb5PrincipalName" but on MSAD it's likely different)
@@ -356,11 +355,15 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     if (user == null) {
                         logger.warn("Kerberos/SPNEGO authentication succeeded with username [" + username + "], but couldn't find or create user with federation provider [" + model.getDisplayName() + "]");
                         return CredentialValidationOutput.failed();
-                    }
+                    } else {
+                        String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
+                        if (delegationCredential != null) {
+                            state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, delegationCredential);
+                        }
 
-                    return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
+                        return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
+                    }
                 }  else {
-                    Map<String, Object> state = new HashMap<String, Object>();
                     state.put(KerberosConstants.RESPONSE_TOKEN, spnegoAuthenticator.getResponseToken());
                     return new CredentialValidationOutput(null, CredentialValidationOutput.Status.CONTINUE, state);
                 }

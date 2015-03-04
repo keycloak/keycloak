@@ -16,37 +16,41 @@ import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.federation.kerberos.KerberosConfig;
-import org.keycloak.models.KerberosConstants;
+import org.keycloak.constants.KerberosConstants;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.mappers.OIDCUserSessionNoteMapper;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.adapter.AdapterTest;
+import org.keycloak.testsuite.adapter.AdapterTestStrategy;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class AbstractKerberosTest {
+
+    protected String KERBEROS_APP_URL = "http://localhost:8081/kerberos-portal";
 
     protected KeycloakSPNegoSchemeFactory spnegoSchemeFactory;
     protected ResteasyClient client;
@@ -62,9 +66,6 @@ public abstract class AbstractKerberosTest {
 
     @WebResource
     protected AccountPasswordPage changePasswordPage;
-
-    @WebResource
-    protected AppPage appPage;
 
     protected abstract CommonKerberosConfig getKerberosConfig();
     protected abstract KeycloakRule getKeycloakRule();
@@ -88,7 +89,11 @@ public abstract class AbstractKerberosTest {
     @Test
     public void spnegoNotAvailableTest() throws Exception {
         initHttpClient(false);
-        Response response = client.target(oauth.getLoginFormUrl()).request().get();
+
+        driver.navigate().to(KERBEROS_APP_URL);
+        String kcLoginPageLocation = driver.getCurrentUrl();
+
+        Response response = client.target(kcLoginPageLocation).request().get();
         Assert.assertEquals(401, response.getStatus());
         Assert.assertEquals(KerberosConstants.NEGOTIATE, response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE));
         String responseText = response.readEntity(String.class);
@@ -105,17 +110,21 @@ public abstract class AbstractKerberosTest {
         Assert.assertEquals(302, spnegoResponse.getStatus());
 
         events.expectLogin()
+                .client("kerberos-app")
                 .user(keycloakRule.getUser("test", "hnelson").getId())
+                .detail(Details.REDIRECT_URI, KERBEROS_APP_URL)
                 .detail(Details.AUTH_METHOD, "spnego")
                 .detail(Details.USERNAME, "hnelson")
                 .assertEvent();
 
         String location = spnegoResponse.getLocation().toString();
         driver.navigate().to(location);
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Kerberos Test") && pageSource.contains("Kerberos servlet secured content"));
 
         spnegoResponse.close();
+        events.clear();
     }
 
 
@@ -157,18 +166,72 @@ public abstract class AbstractKerberosTest {
         Response spnegoResponse = spnegoLogin("jduke", "theduke");
         Assert.assertEquals(302, spnegoResponse.getStatus());
         events.expectLogin()
+                .client("kerberos-app")
                 .user(keycloakRule.getUser("test", "jduke").getId())
+                .detail(Details.REDIRECT_URI, KERBEROS_APP_URL)
                 .detail(Details.AUTH_METHOD, "spnego")
                 .detail(Details.USERNAME, "jduke")
                 .assertEvent();
         spnegoResponse.close();
     }
 
+    @Test
+    public void credentialDelegationTest() throws Exception {
+        // Add kerberos delegation credential mapper
+        getKeycloakRule().update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                ProtocolMapperModel protocolMapper = OIDCUserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
+                        KerberosConstants.GSS_DELEGATION_CREDENTIAL,
+                        KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
+                        true, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
+                        true, false);
+
+                ApplicationModel kerberosApp = appRealm.getApplicationByName("kerberos-app");
+                kerberosApp.addProtocolMapper(protocolMapper);
+            }
+
+        });
+
+        // SPNEGO login
+        spnegoLoginTestImpl();
+
+        // Assert servlet authenticated to LDAP with delegated credential
+        driver.navigate().to(KERBEROS_APP_URL + KerberosCredDelegServlet.CRED_DELEG_TEST_PATH);
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("LDAP Data: Horatio Nelson"));
+
+        // Remove kerberos delegation credential mapper
+        getKeycloakRule().update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                ApplicationModel kerberosApp = appRealm.getApplicationByName("kerberos-app");
+                ProtocolMapperModel toRemove = kerberosApp.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME);
+                kerberosApp.removeProtocolMapper(toRemove);
+            }
+
+        });
+
+        // Clear driver and login again. I can't invoke LDAP now as GSS Credential is not in accessToken
+        driver.manage().deleteAllCookies();
+        spnegoLoginTestImpl();
+        driver.navigate().to(KERBEROS_APP_URL + KerberosCredDelegServlet.CRED_DELEG_TEST_PATH);
+        pageSource = driver.getPageSource();
+        Assert.assertFalse(pageSource.contains("LDAP Data: Horatio Nelson"));
+        Assert.assertTrue(pageSource.contains("LDAP Data: ERROR"));
+    }
+
 
 
     protected Response spnegoLogin(String username, String password) {
+        driver.navigate().to(KERBEROS_APP_URL);
+        String kcLoginPageLocation = driver.getCurrentUrl();
+
+        // Request for SPNEGO login sent with Resteasy client
         spnegoSchemeFactory.setCredentials(username, password);
-        return client.target(oauth.getLoginFormUrl()).request().get();
+        return client.target(kcLoginPageLocation).request().get();
     }
 
 

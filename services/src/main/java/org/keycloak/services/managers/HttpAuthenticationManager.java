@@ -1,5 +1,7 @@
 package org.keycloak.services.managers;
 
+import java.util.Map;
+
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -19,7 +21,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.KerberosConstants;
+import org.keycloak.constants.KerberosConstants;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
@@ -94,7 +96,7 @@ public class HttpAuthenticationManager {
             CredentialValidationOutput output = session.users().validCredentials(realm, spnegoCredential);
 
             if (output.getAuthStatus() == CredentialValidationOutput.Status.AUTHENTICATED) {
-                return sendResponse(output.getAuthenticatedUser(), "spnego");
+                return sendResponse(output.getAuthenticatedUser(), output.getState(), "spnego");
             }  else {
                 String spnegoResponseToken = (String) output.getState().get(KerberosConstants.RESPONSE_TOKEN);
                 return challengeNegotiation(spnegoResponseToken);
@@ -104,7 +106,7 @@ public class HttpAuthenticationManager {
 
 
     // Send response after successful authentication
-    private HttpAuthOutput sendResponse(UserModel user, String authMethod) {
+    private HttpAuthOutput sendResponse(UserModel user, Map<String, String> authState, String authMethod) {
         if (logger.isTraceEnabled()) {
             logger.trace("User " + user.getUsername() + " authenticated with " + authMethod);
         }
@@ -115,6 +117,12 @@ public class HttpAuthenticationManager {
             response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, Messages.ACCOUNT_DISABLED);
         } else {
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), authMethod, false);
+
+            // Propagate state (like kerberos delegation credentials etc) as attributes of userSession
+            for (Map.Entry<String, String> entry : authState.entrySet()) {
+                userSession.setNote(entry.getKey(), entry.getValue());
+            }
+
             TokenManager.attachClientSession(userSession, clientSession);
             event.user(user)
                     .session(userSession)

@@ -121,6 +121,7 @@ public class LDAPEmbeddedServer {
         LdapServer ldapServer = new LdapServer();
 
         ldapServer.setServiceName("DefaultLdapServer");
+        ldapServer.setSearchBaseDn(this.baseDN);
 
         // Read the transports
         Transport ldap = new TcpTransport(this.bindHost, this.bindPort, 3, 50);

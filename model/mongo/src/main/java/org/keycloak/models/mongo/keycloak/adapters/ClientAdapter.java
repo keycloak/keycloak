@@ -302,6 +302,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
             mapping.setId(entity.getId());
             mapping.setName(entity.getName());
             mapping.setProtocol(entity.getProtocol());
+            mapping.setProtocolMapper(entity.getProtocolMapper());
             mapping.setConsentRequired(entity.isConsentRequired());
             mapping.setConsentText(entity.getConsentText());
             Map<String, String> config = new HashMap<String, String>();
@@ -309,6 +310,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
                 config.putAll(entity.getConfig());
             }
             mapping.setConfig(config);
+            result.add(mapping);
         }
         return result;
     }

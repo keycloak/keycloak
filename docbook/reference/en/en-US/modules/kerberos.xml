@@ -204,6 +204,40 @@ ktadd -k /tmp/http.keytab HTTP/www.mydomain.org@MYDOMAIN.ORG
             </para>
         </section>
     </section>
+
+    <section>
+        <title>Credential delegation</title>
+        <para>
+            One scenario supported by Kerberos 5 is credential delegation. In this case when user receives forwardable TGT and authenticates to the web server,
+            then web server might be able to reuse the ticket and forward it to another service secured by Kerberos (for example LDAP server or IMAP server).
+        </para>
+        <para>
+            The scenario is supported by Keycloak, but there is tricky thing that SPNEGO authentication is done by Keycloak server but
+            GSS credential will need to be used by your application. So you need to enable built-in <literal>gss delegation credential</literal> protocol mapper
+            in admin console for your application. This will cause that Keycloak will deserialize GSS credential and transmit it to the application
+            in access token. Application will need to deserialize it and use it for further GSS calls against other services.
+        </para>
+        <para>
+            GSSContext will need to
+            be created with this credential passed to the method <literal>GSSManager.createContext</literal> for example like this:
+            <programlisting><![CDATA[
+GSSContext context = gssManager.createContext(serviceName, krb5Oid,
+    deserializedGssCredFromKeycloakAccessToken, GSSContext.DEFAULT_LIFETIME);
+]]></programlisting>
+        </para>
+        <para>
+            Note that you also need to configure <literal>forwardable</literal> kerberos tickets in <literal>krb5.conf</literal> file
+            and add support for delegated credentials to your browser. See the kerberos example from Keycloak example set for details.
+        </para>
+        <warning>
+            <para>
+                Credential delegation has some security implications. So enable the protocol claim and support in browser just if you really need it.
+                It's highly recommended to use it together with HTTPS. See for example
+                <ulink url="http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html#idp18752">this article</ulink>
+                for details.
+            </para>
+        </warning>
+    </section>
     <section>
         <title>Troubleshooting</title>
         <para>
