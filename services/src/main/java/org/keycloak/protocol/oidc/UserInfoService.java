@@ -31,7 +31,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.UserClaimSet;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.resources.Cors;
@@ -133,7 +132,7 @@ public class UserInfoService {
             ClientModel clientModel = realmModel.findClient(accessToken.getIssuedFor());
             UserModel userModel = userSession.getUser();
             AccessToken userInfo = new AccessToken();
-            this.tokenManager.transformToken(session, userInfo, realmModel, clientModel, userModel, userSession, null);
+            this.tokenManager.transformAccessToken(session, userInfo, realmModel, clientModel, userModel, userSession, null);
 
             event
                 .detail(Details.USERNAME, userModel.getUsername())
