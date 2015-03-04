@@ -22,6 +22,7 @@ import org.keycloak.models.sessions.infinispan.mapreduce.LargestResultReducer;
 import org.keycloak.models.sessions.infinispan.mapreduce.SessionMapper;
 import org.keycloak.models.sessions.infinispan.mapreduce.UserSessionMapper;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.util.Time;
 
 import java.util.Collection;
@@ -201,6 +202,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     public void removeExpiredUserSessions(RealmModel realm) {
         int expired = Time.currentTime() - realm.getSsoSessionMaxLifespan();
         int expiredRefresh = Time.currentTime() - realm.getSsoSessionIdleTimeout();
+        int expiredDettachedClientSession = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
 
         Map<String, String> map = new MapReduceTask(sessionCache)
                 .mappedWith(UserSessionMapper.create(realm.getId()).expired(expired, expiredRefresh).emitKey())
@@ -212,7 +214,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
 
         map = new MapReduceTask(sessionCache)
-                .mappedWith(ClientSessionMapper.create(realm.getId()).expiredRefresh(expiredRefresh).requireNullUserSession(true).emitKey())
+                .mappedWith(ClientSessionMapper.create(realm.getId()).expiredRefresh(expiredDettachedClientSession).requireNullUserSession(true).emitKey())
                 .reducedWith(new FirstResultReducer())
                 .execute();
 

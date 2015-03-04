@@ -301,6 +301,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getAccessCodeLifespanLogin() {
+        if (updated != null) return updated.getAccessCodeLifespanLogin();
+        return cached.getAccessCodeLifespanLogin();
+    }
+
+    @Override
+    public void setAccessCodeLifespanLogin(int seconds) {
+        getDelegateForUpdate();
+        updated.setAccessCodeLifespanLogin(seconds);
+    }
+
+    @Override
     public String getPublicKeyPem() {
         if (updated != null) return updated.getPublicKeyPem();
         return cached.getPublicKeyPem();

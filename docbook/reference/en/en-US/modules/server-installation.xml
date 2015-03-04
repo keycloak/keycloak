@@ -36,8 +36,6 @@ keycloak-appliance-dist-all-&project.version;/
         bin/
             standalone.sh
             standalone.bat
-            standalone/deployments/
-                auth-server.war/
             standalone/configuration/
                 keycloak-server.json
                 themes/

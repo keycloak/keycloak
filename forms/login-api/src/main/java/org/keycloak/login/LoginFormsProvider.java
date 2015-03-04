@@ -31,6 +31,8 @@ public interface LoginFormsProvider extends Provider {
 
     public Response createRegistration();
 
+    public Response createInfoPage();
+
     public Response createErrorPage();
 
     public Response createOAuthGrant();

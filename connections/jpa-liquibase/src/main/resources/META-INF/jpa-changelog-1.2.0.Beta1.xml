@@ -14,8 +14,8 @@
             <column name="PROTOCOL_MAPPER_NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="APPLIED_BY_DEFAULT" type="BOOLEAN(1)"/>
-            <column name="CONSENT_REQUIRED" type="BOOLEAN(1)"/>
+            <column name="APPLIED_BY_DEFAULT" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false"/>
             <column name="CONSENT_TEXT" type="VARCHAR(255)"/>
             <column name="CLIENT_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
@@ -46,13 +46,13 @@
             <column name="INTERNAL_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="ENABLED" type="BOOLEAN(1)"/>
+            <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="false"/>
             <column name="PROVIDER_NONIMAL_ID" type="VARCHAR(255)"/>
             <column name="PROVIDER_NAME" type="VARCHAR(255)"/>
             <column name="PROVIDER_ID" type="VARCHAR(255)"/>
-            <column name="UPDATE_PROFILE_FIRST_LOGIN" type="BOOLEAN(1)"/>
-            <column name="STORE_TOKEN" type="BOOLEAN(1)"/>
-            <column name="AUTHENTICATE_BY_DEFAULT" type="BOOLEAN(1)"/>
+            <column name="UPDATE_PROFILE_FIRST_LOGIN" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="STORE_TOKEN" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="AUTHENTICATE_BY_DEFAULT" type="BOOLEAN" defaultValueBoolean="false"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
         </createTable>
         <createTable tableName="IDENTITY_PROVIDER_CONFIG">
@@ -71,7 +71,7 @@
             <column name="IDENTITY_PROVIDER_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="RETRIEVE_TOKEN" type="BOOLEAN(1)"/>
+            <column name="RETRIEVE_TOKEN" type="BOOLEAN" defaultValueBoolean="false"/>
         </createTable>
         <addColumn tableName="CLIENT">
             <column name="FRONTCHANNEL_LOGOUT" type="BOOLEAN" defaultValueBoolean="false"/>
@@ -90,5 +90,9 @@
         <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_IDENTITY_PROVIDER_MAPPING" constraintName="FK_56ELWNIBJI49AVXSRTUF6XJ23" referencedColumnNames="ID" referencedTableName="CLIENT"/>
         <addUniqueConstraint columnNames="PROVIDER_NONIMAL_ID" constraintName="UK_2DAELWNIBJI49AVXSRTUF6XJ33" tableName="IDENTITY_PROVIDER"/>
         <addUniqueConstraint columnNames="IDENTITY_PROVIDER_ID,CLIENT_ID" constraintName="UK_7CAELWNIBJI49AVXSRTUF6XJ12" tableName="CLIENT_IDENTITY_PROVIDER_MAPPING"/>
+
+        <addColumn tableName="REALM">
+            <column name="LOGIN_LIFESPAN" type="INT"/>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

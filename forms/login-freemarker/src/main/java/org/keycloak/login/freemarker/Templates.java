@@ -25,6 +25,8 @@ public class Templates {
                 return "login-update-password.ftl";
             case REGISTER:
                 return "register.ftl";
+            case INFO:
+                return "info.ftl";
             case ERROR:
                 return "error.ftl";
             case LOGIN_UPDATE_PROFILE:

@@ -34,6 +34,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private int accessTokenLifespan;
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
+    private int accessCodeLifespanLogin;
     private int notBefore;
 
     private String publicKeyPem;
@@ -229,6 +230,13 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
+    }
+    public int getAccessCodeLifespanLogin() {
+        return accessCodeLifespanLogin;
+    }
+
+    public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
+        this.accessCodeLifespanLogin = accessCodeLifespanLogin;
     }
 
     public int getNotBefore() {

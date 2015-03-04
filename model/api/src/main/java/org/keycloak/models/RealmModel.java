@@ -99,6 +99,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setAccessCodeLifespanUserAction(int seconds);
 
+    int getAccessCodeLifespanLogin();
+
+    void setAccessCodeLifespanLogin(int seconds);
+
     String getPublicKeyPem();
 
     void setPublicKeyPem(String publicKeyPem);

@@ -17,6 +17,7 @@ import org.keycloak.models.sessions.mongo.entities.MongoClientSessionEntity;
 import org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity;
 import org.keycloak.models.sessions.mongo.entities.MongoUsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.util.Time;
 
 import java.util.LinkedList;
@@ -190,7 +191,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         query = new QueryBuilder()
                 .and("sessionId").is(null)
                 .and("realmId").is(realm.getId())
-                .and("timestamp").lessThan(currentTime - realm.getSsoSessionIdleTimeout())
+                .and("timestamp").lessThan(currentTime - RealmInfoUtil.getDettachedClientSessionLifespan(realm))
                 .get();
 
         mongoStore.removeEntities(MongoClientSessionEntity.class, query, invocationContext);

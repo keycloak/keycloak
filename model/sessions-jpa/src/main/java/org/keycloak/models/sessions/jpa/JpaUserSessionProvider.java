@@ -12,6 +12,7 @@ import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
@@ -190,18 +191,19 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     public void removeExpiredUserSessions(RealmModel realm) {
         int maxTime = Time.currentTime() - realm.getSsoSessionMaxLifespan();
         int idleTime = Time.currentTime() - realm.getSsoSessionIdleTimeout();
+        int dettachedClientSessionExpired = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
 
         em.createNamedQuery("removeDetachedClientSessionRoleByExpired")
                 .setParameter("realmId", realm.getId())
-                .setParameter("maxTime", idleTime)
+                .setParameter("maxTime", dettachedClientSessionExpired)
                 .executeUpdate();
         em.createNamedQuery("removeDetachedClientSessionNoteByExpired")
                 .setParameter("realmId", realm.getId())
-                .setParameter("maxTime", idleTime)
+                .setParameter("maxTime", dettachedClientSessionExpired)
                 .executeUpdate();
         em.createNamedQuery("removeDetachedClientSessionByExpired")
                 .setParameter("realmId", realm.getId())
-                .setParameter("maxTime", idleTime)
+                .setParameter("maxTime", dettachedClientSessionExpired)
                 .executeUpdate();
         em.createNamedQuery("removeClientSessionRoleByExpired")
                 .setParameter("realmId", realm.getId())

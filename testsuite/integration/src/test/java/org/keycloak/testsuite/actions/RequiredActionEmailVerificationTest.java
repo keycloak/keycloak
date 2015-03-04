@@ -37,6 +37,7 @@ import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
@@ -50,6 +51,9 @@ import org.openqa.selenium.WebDriver;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -85,6 +89,9 @@ public class RequiredActionEmailVerificationTest {
 
     @WebResource
     protected RegisterPage registerPage;
+
+    @WebResource
+    protected InfoPage infoPage;
 
     @Before
     public void before() {
@@ -199,5 +206,42 @@ public class RequiredActionEmailVerificationTest {
 
         events.expectLogin().session(sessionId).assertEvent();
     }
+
+    @Test
+    public void verifyEmailNewBrowserSession() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(verifyEmailPage.isCurrent());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String body = (String) message.getContent();
+        String verificationUrl = MailUtil.getLink(body);
+
+        AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
+        Event sendEvent = emailEvent.assertEvent();
+        String sessionId = sendEvent.getSessionId();
+
+        String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
+
+        Assert.assertEquals(mailCodeId, verificationUrl.split("key=")[1].split("\\.")[1]);
+
+        driver.manage().deleteAllCookies();
+
+        driver.navigate().to(verificationUrl.trim());
+
+        events.expectRequiredAction(EventType.VERIFY_EMAIL).session(sessionId).detail("email", "test-user@localhost").detail(Details.CODE_ID, mailCodeId).assertEvent();
+
+        assertTrue(infoPage.isCurrent());
+        assertEquals("Email verified", infoPage.getInfo());
+
+        loginPage.open();
+
+        assertTrue(loginPage.isCurrent());
+    }
+
 
 }
