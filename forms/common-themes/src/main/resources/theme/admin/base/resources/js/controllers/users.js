@@ -179,12 +179,15 @@ module.controller('UserListCtrl', function($scope, realm, User) {
 
 module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, $location, Dialog, Notifications) {
     $scope.realm = realm;
-    $scope.user = angular.copy(user);
     $scope.create = !user.username;
 
     if ($scope.create) {
-        $scope.user.enabled = true;
+        $scope.user = { enabled: true, attributes: {} }
     } else {
+        if (!user.attributes) {
+            user.attributes = {}
+        }
+        $scope.user = angular.copy(user);
         if(user.federationLink) {
             console.log("federationLink is not null");
             UserFederationInstances.get({realm : realm.realm, instance: user.federationLink}, function(link) {

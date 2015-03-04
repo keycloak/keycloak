@@ -157,6 +157,11 @@ public class AccountTest {
         });
     }
 
+    //@Test @Ignore
+    public void runit() throws Exception {
+        Thread.sleep(10000000);
+    }
+
     @Test
     public void returnToAppFromQueryParam() {
         driver.navigate().to(AccountUpdateProfilePage.PATH + "?referrer=test-app");
@@ -219,7 +224,7 @@ public class AccountTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().session((String) null).error("invalid_user_credentials").assertEvent();
+        events.expectLogin().session((String) null).error("invalid_user_credentials").removeDetail(Details.CODE_ID).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");
