@@ -507,6 +507,8 @@ public class LoginActionsService {
             }
         }
 
+        AttributeFormDataProcessor.process(formData, realm, user);
+
         event.user(user).success();
         event.reset();
 

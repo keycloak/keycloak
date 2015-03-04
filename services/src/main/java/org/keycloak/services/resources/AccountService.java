@@ -432,6 +432,8 @@ public class AccountService {
 
             user.setEmail(formData.getFirst("email"));
 
+            AttributeFormDataProcessor.process(formData, realm, user);
+
             event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).success();
 
             if (emailChanged) {
