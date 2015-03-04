@@ -292,7 +292,7 @@ public class AccountTest {
 
         profilePage.updateProfile("New first", "", "new@email.com");
 
-        Assert.assertEquals("Please specify last name", profilePage.getError());
+        Assert.assertEquals("Please specify last name.", profilePage.getError());
         Assert.assertEquals("New first", profilePage.getFirstName());
         Assert.assertEquals("", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
@@ -301,7 +301,7 @@ public class AccountTest {
 
         profilePage.updateProfile("New first", "New last", "");
 
-        Assert.assertEquals("Please specify email", profilePage.getError());
+        Assert.assertEquals("Please specify email.", profilePage.getError());
         Assert.assertEquals("New first", profilePage.getFirstName());
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("", profilePage.getEmail());

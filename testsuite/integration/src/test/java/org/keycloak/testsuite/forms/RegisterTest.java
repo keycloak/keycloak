@@ -175,7 +175,7 @@ public class RegisterTest {
 
         registerPage.register("firstName", "lastName", "registerUserInvalidEmailemail", "registerUserInvalidEmail", "password", "password");
         registerPage.assertCurrent();
-        Assert.assertEquals("Invalid email address", registerPage.getError());
+        Assert.assertEquals("Invalid email address.", registerPage.getError());
         events.expectRegister("registerUserInvalidEmail", "registerUserInvalidEmailemail").error("invalid_registration").assertEvent();
     }
 
