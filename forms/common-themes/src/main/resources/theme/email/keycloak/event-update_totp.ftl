@@ -1,1 +1,1 @@
-${rb.eventUpdateTotpBody?replace("{0}",event.date?datetime)?replace("{1}",event.ipAddress)}
+${formatter.format(rb.eventUpdateTotpBody,event.date, event.ipAddress)}

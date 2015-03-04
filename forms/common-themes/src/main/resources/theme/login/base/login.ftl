@@ -2,15 +2,15 @@
 <@layout.registrationLayout displayInfo=social.displayInfo; section>
     <#if section = "title">
         <#if client.application>
-            ${rb.loginTitle?replace("{0}",(realm.name!''))}
+            ${formatter.format(rb.loginTitle,(realm.name!''))}
         <#elseif client.oauthClient>
-            ${rb.loginOauthTitle?replace("{0}",(realm.name!''))}
+            ${formatter.format(rb.loginOauthTitle,(realm.name!''))}
         </#if>
     <#elseif section = "header">
         <#if client.application>
-            ${rb.loginTitle?replace("{0}", (realm.name!''))}
+            ${formatter.format(rb.loginTitleHtml,(realm.name!''))}
         <#elseif client.oauthClient>
-            ${rb.loginOauthTitleHtml?replace("{0}", (realm.name!''))?replace("{0}", (client.clientId!''))}
+            ${formatter.format(rb.loginOauthTitleHtml,(realm.name!''), (client.clientId!''))}
         </#if>
     <#elseif section = "form">
         <#if realm.password>

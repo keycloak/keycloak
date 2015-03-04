@@ -10,6 +10,7 @@ import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.freemarker.beans.TextFormatterBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -84,6 +85,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
             attributes.put("locale", locale);
             Properties rb = theme.getMessages(locale);
             attributes.put("rb", rb);
+            attributes.put("formatter", new TextFormatterBean(locale));
             String subject =  rb.getProperty(subjectKey);
             String body = freeMarker.processTemplate(attributes, template, theme);
 

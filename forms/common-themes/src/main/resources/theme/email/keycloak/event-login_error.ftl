@@ -1,1 +1,1 @@
-${rb.eventLoginErrorBody?replace("{0}",event.date?datetime)?replace("{1}",event.ipAddress)}
+${formatter.format(rb.eventLoginErrorBody,event.date,event.ipAddress)}

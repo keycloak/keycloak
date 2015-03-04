@@ -1,9 +1,9 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout; section>
     <#if section = "title">
-        ${rb.loginTitle?replace("{0}",realm.name)}
+        ${formatter.format(rb.loginTitle,realm.name)}
     <#elseif section = "header">
-        ${rb.loginTitle?replace("{0}", "<strong>" + realm.name + "<s/trong>")}
+        ${formatter.format(rb.loginTitleHtml,realm.name)}
     <#elseif section = "form">
         <form id="kc-totp-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <input id="username" name="username" value="${login.username!''}" type="hidden" />

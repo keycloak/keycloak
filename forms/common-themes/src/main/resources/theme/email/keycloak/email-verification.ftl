@@ -1,1 +1,1 @@
-${rb.emailVerificationBody?replace("{0}",link)?replace("{1}",linkExpiration)}
+${formatter.format(rb.emailVerificationBody,link, linkExpiration)}

@@ -1,1 +1,1 @@
-${rb.passwordResetBody?replace("{0}",link)?replace("{1}",linkExpiration)}
+${formatter.format(rb.passwordResetBody,link, linkExpiration)}

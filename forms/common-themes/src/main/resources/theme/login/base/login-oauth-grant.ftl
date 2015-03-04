@@ -4,7 +4,7 @@
     <#if section = "title">
         ${rb.oauthGrantTitle}
     <#elseif section = "header">
-        ${rb.oauthGrantTitleHtml?replace("{0}", (realm.name!''))?replace("{0}", (client.clientId!''))}
+        ${formatter.format(rb.oauthGrantTitleHtml,(realm.name!''), (client.clientId!''))}
     <#elseif section = "form">
         <div id="kc-oauth" class="content-area">
             <h3>${rb.oauthGrantRequest}</h3>

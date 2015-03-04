@@ -1,1 +1,1 @@
-${rb.eventUpdatePasswordBody?replace("{0}",event.date?datetime)?replace("{1}",event.ipAddress)}
+${formatter.format(rb.eventUpdatePasswordBody,event.date, event.ipAddress)}

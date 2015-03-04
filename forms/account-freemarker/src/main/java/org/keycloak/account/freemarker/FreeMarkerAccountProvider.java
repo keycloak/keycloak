@@ -6,6 +6,7 @@ import org.keycloak.account.AccountProvider;
 import org.keycloak.account.freemarker.model.*;
 import org.keycloak.events.Event;
 import org.keycloak.freemarker.*;
+import org.keycloak.freemarker.beans.TextFormatterBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -87,6 +88,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, headers);
         if(locale != null){
             attributes.put("locale", locale);
+            attributes.put("formatter", new TextFormatterBean(locale));
         }
         Properties messages;
         try {

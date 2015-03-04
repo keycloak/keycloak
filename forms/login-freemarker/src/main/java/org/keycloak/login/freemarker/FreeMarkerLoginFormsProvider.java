@@ -6,6 +6,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.freemarker.*;
+import org.keycloak.freemarker.beans.TextFormatterBean;
 import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.freemarker.model.ClientBean;
@@ -174,6 +175,7 @@ import java.util.concurrent.TimeUnit;
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders);
         if(locale != null){
             attributes.put("locale", locale);
+            attributes.put("formatter", new TextFormatterBean(locale));
         }
         try {
             messages = theme.getMessages(locale);
