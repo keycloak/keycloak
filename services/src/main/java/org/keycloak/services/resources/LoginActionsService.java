@@ -159,7 +159,7 @@ public class LoginActionsService {
         public boolean check(String code) {
             if (!checkSsl()) {
                 event.error(Errors.SSL_REQUIRED);
-                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.HTTPS_REQUIRED );
+                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.HTTPS_REQUIRED);
                 return false;
             }
             if (!realm.isEnabled()) {
@@ -170,7 +170,7 @@ public class LoginActionsService {
             clientCode = ClientSessionCode.parse(code, session, realm);
             if (clientCode == null) {
                 event.error(Errors.INVALID_CODE);
-                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_CODE );
+                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_CODE);
                 return false;
             }
             return true;
@@ -219,7 +219,7 @@ public class LoginActionsService {
         event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REGISTRATION_NOT_ALLOWED );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
         Checks checks = new Checks();
@@ -253,7 +253,7 @@ public class LoginActionsService {
         event.event(EventType.LOGIN);
         if (!checkSsl()) {
             event.error(Errors.SSL_REQUIRED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.HTTPS_REQUIRED );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.HTTPS_REQUIRED);
         }
 
         if (!realm.isEnabled()) {
@@ -263,7 +263,7 @@ public class LoginActionsService {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
         if (clientCode == null) {
             event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_CODE );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_CODE);
         }
         ClientSessionModel clientSession = clientCode.getClientSession();
         if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientSession.getUserSession() != null) {
@@ -293,11 +293,11 @@ public class LoginActionsService {
         ClientModel client = clientSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_LOGIN_REQUESTER );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_LOGIN_REQUESTER);
         }
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED);
         }
 
         if (formData.containsKey("cancel")) {
@@ -391,16 +391,16 @@ public class LoginActionsService {
         }
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REGISTRATION_NOT_ALLOWED );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REGISTRATION_NOT_ALLOWED);
         }
         ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
         if (clientCode == null) {
             event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_CODE );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_CODE);
         }
         if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
             event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_CODE );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_CODE);
         }
 
         String username = formData.getFirst("username");
@@ -420,12 +420,12 @@ public class LoginActionsService {
         ClientModel client = clientSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_LOGIN_REQUESTER );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_LOGIN_REQUESTER);
         }
 
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED);
         }
 
 
@@ -539,7 +539,7 @@ public class LoginActionsService {
         ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
         if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT)) {
             event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_ACCESS_CODE );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_ACCESS_CODE);
         }
         ClientSessionModel clientSession = accessCode.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
@@ -563,7 +563,7 @@ public class LoginActionsService {
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
             AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection, headers);
             event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE);
         }
         event.session(userSession);
 
@@ -810,7 +810,7 @@ public class LoginActionsService {
         ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
         if (accessCode == null) {
             event.error(Errors.INVALID_CODE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_CODE );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_CODE);
         }
         ClientSessionModel clientSession = accessCode.getClientSession();
 
@@ -818,10 +818,10 @@ public class LoginActionsService {
 
         ClientModel client = clientSession.getClient();
         if (client == null) {
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_LOGIN_REQUESTER );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_LOGIN_REQUESTER);
         }
         if (!client.isEnabled()) {
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED );
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED);
         }
 
         event.client(client.getClientId())

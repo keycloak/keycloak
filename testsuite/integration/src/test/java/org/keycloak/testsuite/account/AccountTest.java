@@ -283,7 +283,7 @@ public class AccountTest {
         // All fields are required, so there should be an error when something is missing.
         profilePage.updateProfile("", "New last", "new@email.com");
 
-        Assert.assertEquals("Please specify first name", profilePage.getError());
+        Assert.assertEquals("Please specify first name.", profilePage.getError());
         Assert.assertEquals("", profilePage.getFirstName());
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());

@@ -162,7 +162,7 @@ public class LoginTest {
 
             loginPage.assertCurrent();
 
-            Assert.assertEquals("Account is disabled, contact admin", loginPage.getError());
+            Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
 
             events.expectLogin().user(userId).session((String) null).error("user_disabled").detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).assertEvent();
         } finally {
@@ -286,7 +286,7 @@ public class LoginTest {
             loginPage.login("login@test.com", "password");
 
             loginPage.assertCurrent();
-            Assert.assertEquals("Login timeout. Please login again", loginPage.getError());
+            Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
 
             events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails().assertEvent();
 
