@@ -406,7 +406,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludes>
-                                <exclude>**/AdminAPITest.java</exclude>
                                 <exclude>**/ExportImportTest.java</exclude>
                                 <exclude>**/SyncProvidersTest.java</exclude>
                             </excludes>

@@ -254,6 +254,11 @@
             <maven-resource group="org.keycloak" artifact="keycloak-saml-protocol"/>
         </module-def>
 
+        <!-- file -->
+        <module-def name="org.keycloak.keycloak-model-file">
+            <maven-resource group="org.keycloak" artifact="keycloak-model-file"/>
+        </module-def>
+
         <!-- mongo -->
 
         <module-def name="org.keycloak.keycloak-connections-mongo">

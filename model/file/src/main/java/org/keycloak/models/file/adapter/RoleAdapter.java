@@ -73,6 +73,7 @@ public class RoleAdapter implements RoleModel {
     @Override
     public void setName(String name) {
         RealmAdapter realmAdapter = (RealmAdapter)realm;
+        if (role.getName().equals(name)) return;
         if (realmAdapter.hasRoleWithName(name)) throw new ModelDuplicateException("Role name " + name + " already exists.");
         role.setName(name);
     }
