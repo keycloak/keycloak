@@ -188,6 +188,8 @@ module.factory('ServerInfo', function($resource) {
     return $resource(authUrl + '/admin/serverinfo');
 });
 
+
+
 module.factory('ApplicationProtocolMapper', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/applications-by-id/:application/protocol-mappers/models/:id', {
         realm : '@realm',
@@ -199,6 +201,28 @@ module.factory('ApplicationProtocolMapper', function($resource) {
         }
     });
 });
+
+module.factory('OAuthClientProtocolMapper', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/protocol-mappers/models/:id', {
+        realm : '@realm',
+        oauth: '@oauth',
+        id : "@id"
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('OAuthClientProtocolMappersByProtocol', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients-by-id/:oauth/protocol-mappers/protocol/:protocol', {
+        realm : '@realm',
+        oauth : "@oauth",
+        protocol : "@protocol"
+    });
+});
+
+
 
 
 module.factory('User', function($resource) {
