@@ -7,7 +7,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAddressMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCFullNameMapper;
@@ -88,16 +87,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         builtins.add(fullName);
         defaultBuiltins.add(fullName);
 
-        ProtocolMapperModel address = new ProtocolMapperModel();
-        address.setName("address");
-        address.setProtocolMapper(OIDCAddressMapper.PROVIDER_ID);
-        address.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        address.setConsentRequired(true);
-        address.setConsentText("address");
-        config = new HashMap<String, String>();
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        address.setConfig(config);
+        ProtocolMapperModel address = OIDCAddressMapper.createAddressMapper();
         builtins.add(address);
     }
 

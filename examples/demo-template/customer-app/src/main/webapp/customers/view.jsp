@@ -3,7 +3,6 @@
 <%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.example.CustomerDatabaseClient" %>
 <%@ page import="org.keycloak.representations.IDToken" %>
-<%@ page import="org.keycloak.representations.UserClaimSet" %>
 <%@ page import="org.keycloak.util.KeycloakUriBuilder" %>
 <%@ page session="false" %>
 <html>
@@ -17,18 +16,17 @@
     String acctUri = KeycloakUriBuilder.fromUri("/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
             .queryParam("referrer", "customer-portal").build("demo").toString();
     IDToken idToken = CustomerDatabaseClient.getIDToken(request);
-    UserClaimSet claims = idToken.getUserClaimSet();
 %>
 <p>Goto: <a href="/product-portal">products</a> | <a href="<%=logoutUri%>">logout</a> | <a
         href="<%=acctUri%>">manage acct</a></p>
 Servlet User Principal <b><%=request.getUserPrincipal().getName()%>
 </b> made this request.
 <p><b>Caller IDToken values</b> (<i>You can specify what is returned in IDToken in the customer-portal claims page in the admin console</i>:</p>
-<p>Username: <%=claims.getPreferredUsername()%></p>
-<p>Email: <%=claims.getEmail()%></p>
-<p>Full Name: <%=claims.getName()%></p>
-<p>First: <%=claims.getGivenName()%></p>
-<p>Last: <%=claims.getFamilyName()%></p>
+<p>Username: <%=idToken.getPreferredUsername()%></p>
+<p>Email: <%=idToken.getEmail()%></p>
+<p>Full Name: <%=idToken.getName()%></p>
+<p>First: <%=idToken.getGivenName()%></p>
+<p>Last: <%=idToken.getFamilyName()%></p>
 <h2>Customer Listing</h2>
 <%
     java.util.List<String> list = null;

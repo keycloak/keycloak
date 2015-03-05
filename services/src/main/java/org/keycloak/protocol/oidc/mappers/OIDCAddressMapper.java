@@ -5,12 +5,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AddressClaimSet;
 import org.keycloak.representations.IDToken;
-import org.keycloak.representations.UserClaimSet;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Set the 'name' claim to be first + last name.
@@ -41,6 +44,35 @@ public class OIDCAddressMapper extends AbstractOIDCProtocolMapper implements OID
     }
 
     public static final String PROVIDER_ID = "oidc-address-mapper";
+
+    public static ProtocolMapperModel createAddressMapper() {
+        Map<String, String> config;
+        ProtocolMapperModel address = new ProtocolMapperModel();
+        address.setName("address");
+        address.setProtocolMapper(PROVIDER_ID);
+        address.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        address.setConsentRequired(true);
+        address.setConsentText("address");
+        config = new HashMap<String, String>();
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        address.setConfig(config);
+        return address;
+    }
+    public static ProtocolMapperModel createAddressMapper(boolean idToken, boolean accessToken) {
+        Map<String, String> config;
+        ProtocolMapperModel address = new ProtocolMapperModel();
+        address.setName("address");
+        address.setProtocolMapper(PROVIDER_ID);
+        address.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        address.setConsentRequired(true);
+        address.setConsentText("address");
+        config = new HashMap<String, String>();
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.toString(idToken));
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, Boolean.toString(accessToken));
+        address.setConfig(config);
+        return address;
+    }
 
 
     public List<ConfigProperty> getConfigProperties() {
@@ -84,7 +116,7 @@ public class OIDCAddressMapper extends AbstractOIDCProtocolMapper implements OID
 
     protected void setClaim(IDToken token, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
-        UserClaimSet.AddressClaimSet addressSet = new UserClaimSet.AddressClaimSet();
+        AddressClaimSet addressSet = new AddressClaimSet();
         addressSet.setStreetAddress(user.getAttribute("street"));
         addressSet.setLocality(user.getAttribute("locality"));
         addressSet.setRegion(user.getAttribute("region"));
