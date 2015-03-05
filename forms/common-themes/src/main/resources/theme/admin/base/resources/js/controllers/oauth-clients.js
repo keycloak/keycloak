@@ -415,3 +415,197 @@ module.controller('OAuthClientIdentityProviderCtrl', function($scope, $route, re
     }, true);
 });
 
+module.controller('OAuthClientProtocolMapperListCtrl', function($scope, realm, oauth, serverInfo,
+                                                                OAuthClientProtocolMappersByProtocol,
+                                                                $http, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.oauth = oauth;
+    if (oauth.protocol == null) {
+        oauth.protocol = 'openid-connect';
+    }
+
+    var protocolMappers = serverInfo.protocolMapperTypes[oauth.protocol];
+    var mapperTypes = {};
+    for (var i = 0; i < protocolMappers.length; i++) {
+        mapperTypes[protocolMappers[i].id] = protocolMappers[i];
+    }
+    $scope.mapperTypes = mapperTypes;
+
+
+    var updateMappers = function() {
+        $scope.mappers = OAuthClientProtocolMappersByProtocol.query({realm : realm.realm, oauth : oauth.id, protocol : oauth.protocol});
+    };
+
+    updateMappers();
+});
+
+module.controller('OAuthClientAddBuiltinProtocolMapperCtrl', function($scope, realm, oauth, serverInfo,
+                                                           OAuthClientProtocolMappersByProtocol,
+                                                           $http, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.oauth = oauth;
+    if (oauth.protocol == null) {
+        oauth.protocol = 'openid-connect';
+    }
+
+    var protocolMappers = serverInfo.protocolMapperTypes[oauth.protocol];
+    var mapperTypes = {};
+    for (var i = 0; i < protocolMappers.length; i++) {
+        mapperTypes[protocolMappers[i].id] = protocolMappers[i];
+    }
+    $scope.mapperTypes = mapperTypes;
+
+
+
+
+    var updateMappers = function() {
+        var appMappers = OAuthClientProtocolMappersByProtocol.query({realm : realm.realm, oauth : oauth.id, protocol : oauth.protocol}, function() {
+            var builtinMappers = serverInfo.builtinProtocolMappers[oauth.protocol];
+            for (var i = 0; i < appMappers.length; i++) {
+                for (var j = 0; j < builtinMappers.length; j++) {
+                    if (builtinMappers[j].name == appMappers[i].name
+                        && builtinMappers[j].protocolMapper == appMappers[i].protocolMapper) {
+                        console.log('removing: ' + builtinMappers[j].name);
+                        builtinMappers.splice(j, 1);
+                        break;
+                    }
+                }
+            }
+            for (var j = 0; j < builtinMappers.length; j++) {
+                console.log('builtin left: ' + builtinMappers[j].name);
+            }
+            $scope.mappers = builtinMappers;
+            for (var i = 0; i < $scope.mappers.length; i++) {
+                $scope.mappers[i].isChecked = false;
+            }
+
+
+        });
+    };
+
+    updateMappers();
+
+    $scope.add = function() {
+        var toAdd = [];
+        for (var i = 0; i < $scope.mappers.length; i++) {
+            if ($scope.mappers[i].isChecked) {
+                delete $scope.mappers[i].isChecked;
+                toAdd.push($scope.mappers[i]);
+            }
+        }
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients-by-id/' + oauth.id + '/protocol-mappers/add-models',
+            toAdd).success(function() {
+                Notifications.success("Mappers added");
+                $location.url('/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/mappers');
+            }).error(function() {
+                Notifications.error("Error adding mappers");
+                $location.url('/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/mappers');
+            });
+    };
+
+});
+
+module.controller('OAuthClientProtocolMapperCtrl', function($scope, realm, serverInfo, oauth, mapper, OAuthClientProtocolMapper, Notifications, Dialog, $location) {
+    if (oauth.protocol == null) {
+        oauth.protocol = 'openid-connect';
+    }
+    $scope.realm = realm;
+    $scope.oauth = oauth;
+    $scope.create = false;
+    var protocol = oauth.protocol;
+    $scope.protocol = oauth.protocol;
+    $scope.mapper = angular.copy(mapper);
+    var oldCopy = angular.copy($scope.realm);
+    $scope.changed = false;
+
+    var protocolMappers = serverInfo.protocolMapperTypes[protocol];
+    for (var i = 0; i < protocolMappers.length; i++) {
+        if (protocolMappers[i].id == mapper.protocolMapper) {
+            $scope.mapperType = protocolMappers[i];
+        }
+    }
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.$watch('mapper', function() {
+        if (!angular.equals($scope.mapper, mapper)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        OAuthClientProtocolMapper.update({
+            realm : realm.realm,
+            oauth: oauth.id,
+            id : mapper.id
+        }, $scope.mapper, function() {
+            $scope.changed = false;
+            mapper = angular.copy($scope.mapper);
+            $location.url("/realms/" + realm.realm + '/oauth-clients/' + oauth.id + "/mappers/" + mapper.id);
+            Notifications.success("Your changes have been saved.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.mapper = angular.copy(mapper);
+        $scope.changed = false;
+    };
+
+    $scope.cancel = function() {
+        //$location.url("/realms");
+        window.history.back();
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
+            OAuthClientProtocolMapper.remove({ realm: realm.realm, oauth: oauth.id, id : $scope.mapper.id }, function() {
+                Notifications.success("The mapper has been deleted.");
+                $location.url("/realms/" + realm.realm + '/oauth-clients/' + oauth.id + "/mappers");
+            });
+        });
+    };
+
+});
+
+module.controller('OAuthClientProtocolMapperCreateCtrl', function($scope, realm, serverInfo, oauth, OAuthClientProtocolMapper, Notifications, Dialog, $location) {
+    if (oauth.protocol == null) {
+        oauth.protocol = 'openid-connect';
+    }
+    $scope.realm = realm;
+    $scope.oauth = oauth;
+    $scope.create = true;
+    var protocol = oauth.protocol;
+    $scope.protocol = protocol;
+    $scope.mapper = { protocol :  oauth.protocol, config: {}};
+    $scope.mapperTypes = serverInfo.protocolMapperTypes[protocol];
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.save = function() {
+        $scope.mapper.protocolMapper = $scope.mapperType.id;
+        OAuthClientProtocolMapper.save({
+            realm : realm.realm, oauth: oauth.id
+        }, $scope.mapper, function(data, headers) {
+            var l = headers().location;
+            var id = l.substring(l.lastIndexOf("/") + 1);
+            $location.url("/realms/" + realm.realm + '/oauth-clients/' + oauth.id + "/mappers/" + id);
+            Notifications.success("Mapper has been created.");
+        });
+    };
+
+    $scope.cancel = function() {
+        //$location.url("/realms");
+        window.history.back();
+    };
+
+
+});
+
+

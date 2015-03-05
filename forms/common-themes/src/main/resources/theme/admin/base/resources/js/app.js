@@ -491,6 +491,72 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationProtocolMapperCreateCtrl'
         })
+
+        .when('/realms/:realm/oauth-clients/:oauth/mappers', {
+                templateUrl : resourceUrl + '/partials/oauth-client-mappers.html',
+                resolve : {
+                    realm : function(RealmLoader) {
+                        return RealmLoader();
+                    },
+                    oauth : function(OAuthClientLoader) {
+                        return OAuthClientLoader();
+                    },
+                    serverInfo : function(ServerInfoLoader) {
+                        return ServerInfoLoader();
+                    }
+                },
+                controller : 'OAuthClientProtocolMapperListCtrl'
+            })
+            .when('/realms/:realm/oauth-clients/:oauth/add-mappers', {
+                templateUrl : resourceUrl + '/partials/oauth-client-mappers-add.html',
+                resolve : {
+                    realm : function(RealmLoader) {
+                        return RealmLoader();
+                    },
+                    oauth : function(OAuthClientLoader) {
+                        return OAuthClientLoader();
+                    },
+                    serverInfo : function(ServerInfoLoader) {
+                        return ServerInfoLoader();
+                    }
+                },
+                controller : 'OAuthClientAddBuiltinProtocolMapperCtrl'
+            })
+            .when('/realms/:realm/oauth-clients/:oauth/mappers/:id', {
+                templateUrl : resourceUrl + '/partials/oauth-client-protocol-mapper-detail.html',
+                resolve : {
+                    realm : function(RealmLoader) {
+                        return RealmLoader();
+                    },
+                    oauth : function(OAuthClientLoader) {
+                        return OAuthClientLoader();
+                    },
+                    serverInfo : function(ServerInfoLoader) {
+                        return ServerInfoLoader();
+                    },
+                    mapper : function(OAuthClientProtocolMapperLoader) {
+                        return OAuthClientProtocolMapperLoader();
+                    }
+
+                },
+                controller : 'OAuthClientProtocolMapperCtrl'
+            })
+            .when('/create/oauth-client/:realm/:oauth/mappers', {
+                templateUrl : resourceUrl + '/partials/oauth-client-protocol-mapper-detail.html',
+                resolve : {
+                    realm : function(RealmLoader) {
+                        return RealmLoader();
+                    },
+                    serverInfo : function(ServerInfoLoader) {
+                        return ServerInfoLoader();
+                    },
+                    oauth : function(OAuthClientLoader) {
+                        return OAuthClientLoader();
+                    }
+                },
+                controller : 'OAuthClientProtocolMapperCreateCtrl'
+            })
+
         .when('/realms/:realm/applications/:application/sessions', {
             templateUrl : resourceUrl + '/partials/application-sessions.html',
             resolve : {
@@ -1411,7 +1477,7 @@ module.directive('kcNavigationApplication', function () {
         scope: true,
         restrict: 'E',
         replace: true,
-        templateUrl: resourceUrl + '/templates/kc-navigation-application.html',
+        templateUrl: resourceUrl + '/templates/kc-navigation-application.html'
     }
 });
 
@@ -1420,7 +1486,7 @@ module.directive('kcNavigationOauthClient', function () {
         scope: true,
         restrict: 'E',
         replace: true,
-        templateUrl: resourceUrl + '/templates/kc-navigation-oauth-client.html',
+        templateUrl: resourceUrl + '/templates/kc-navigation-oauth-client.html'
     }
 });
 

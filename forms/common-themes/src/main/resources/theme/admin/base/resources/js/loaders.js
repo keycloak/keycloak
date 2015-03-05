@@ -89,6 +89,16 @@ module.factory('ApplicationProtocolMapperLoader', function(Loader, ApplicationPr
     });
 });
 
+module.factory('OAuthClientProtocolMapperLoader', function(Loader, OAuthClientProtocolMapper, $route, $q) {
+    return Loader.get(OAuthClientProtocolMapper, function() {
+        return {
+            realm : $route.current.params.realm,
+            oauth : $route.current.params.oauth,
+            id: $route.current.params.id
+        }
+    });
+});
+
 
 module.factory('UserLoader', function(Loader, User, $route, $q) {
     return Loader.get(User, function() {

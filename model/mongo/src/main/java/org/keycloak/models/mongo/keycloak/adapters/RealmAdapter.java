@@ -635,7 +635,18 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         appData.setEnabled(true);
         getMongoStore().insertEntity(appData, invocationContext);
 
-        ApplicationModel model = new ApplicationAdapter(session, this, appData, invocationContext);
+        final ApplicationModel model = new ApplicationAdapter(session, this, appData, invocationContext);
+        session.getKeycloakSessionFactory().publish(new ApplicationCreationEvent() {
+            @Override
+            public ApplicationModel getCreatedApplication() {
+                return model;
+            }
+
+            @Override
+            public ClientModel getCreatedClient() {
+                return model;
+            }
+        });
         return model;
     }
 
@@ -657,7 +668,18 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         oauthClient.setName(name);
         getMongoStore().insertEntity(oauthClient, invocationContext);
 
-        OAuthClientAdapter model = new OAuthClientAdapter(session, this, oauthClient, invocationContext);
+        final OAuthClientAdapter model = new OAuthClientAdapter(session, this, oauthClient, invocationContext);
+        session.getKeycloakSessionFactory().publish(new OAuthClientCreationEvent() {
+            @Override
+            public OAuthClientModel getCreatedOAuthClient() {
+                return model;
+            }
+
+            @Override
+            public ClientModel getCreatedClient() {
+                return model;
+            }
+        });
         return model;
     }
 
