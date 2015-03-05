@@ -397,8 +397,10 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Event> getEvents(@QueryParam("client") String client, @QueryParam("type") String type, @QueryParam("user") String user,
-                                 @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+    public List<Event> getEvents(@QueryParam("client") String client, @QueryParam("type") String type,
+            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults) {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -413,6 +415,15 @@ public class RealmAdminResource {
         if (user != null) {
             query.user(user);
         }
+        
+        if (dateFrom != null && dateTo != null) {
+            query.dateRange(dateFrom, dateTo);
+        } else if(dateFrom != null) {
+            query.fromDate(dateFrom);
+        } else if(dateTo != null) {
+            query.toDate(dateTo);
+        }
+
         if (ipAddress != null) {
             query.ipAddress(ipAddress);
         }

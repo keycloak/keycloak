@@ -17,6 +17,10 @@ public class Event {
     private String clientId;
 
     private String userId;
+    
+    private long fromDate;
+    
+    private long toDate;
 
     private String sessionId;
 
@@ -56,6 +60,22 @@ public class Event {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public long getFromDate() {
+        return fromDate;
+    }
+
+    public void setFromDate(long fromDate) {
+        this.fromDate = fromDate;
+    }
+
+    public long getToDate() {
+        return toDate;
+    }
+
+    public void setToDate(long toDate) {
+        this.toDate = toDate;
     }
 
     public String getUserId() {
@@ -105,6 +125,8 @@ public class Event {
         clone.realmId = realmId;
         clone.clientId = clientId;
         clone.userId = userId;
+        clone.fromDate = fromDate;
+        clone.toDate = toDate;
         clone.sessionId = sessionId;
         clone.ipAddress = ipAddress;
         clone.error = error;
