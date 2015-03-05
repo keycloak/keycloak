@@ -44,4 +44,5 @@ catalog.xml
 # Maven #
 #########
 target
+deployments
 

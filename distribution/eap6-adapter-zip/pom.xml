@@ -75,4 +75,73 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>openshift-eap6-activated-by-variable</id>
+            <activation>
+                <property>
+                    <name>env.OPENSHIFT_JBOSSEAP_VERSION</name>
+                    <value>6</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>clean-openshift-modules</id>
+                                <phase>clean</phase>
+                                <configuration>
+                                    <tasks>
+                                        <delete dir="${project.basedir}/../../.openshift/config/modules/com" />
+                                        <delete dir="${project.basedir}/../../.openshift/config/modules/de" />
+                                        <delete dir="${project.basedir}/../../.openshift/config/modules/net" />
+                                        <delete dir="${project.basedir}/../../.openshift/config/modules/org" />
+                                        <delete dir="${project.basedir}/../../.openshift/config/modules/sun" />
+                                        <delete file="${project.basedir}/../../.openshift/config/standalone.xml" />
+                                    </tasks>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>copy-modules-to-openshift</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy todir="${project.basedir}/../../.openshift/config/modules">
+                                            <fileset dir="${project.build.directory}/unpacked">
+                                                <include name="**/*"/>
+                                            </fileset>
+                                        </copy>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-standalone-xml</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="${project.basedir}/../../.openshift/config/standalone-eap.xml"
+                                              tofile="${project.basedir}/../../.openshift/config/standalone.xml">
+                                        </copy>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
