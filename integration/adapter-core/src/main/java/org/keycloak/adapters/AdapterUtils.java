@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.UserClaimSet;
 import org.keycloak.util.UriUtils;
 
 import java.util.Collections;
@@ -78,22 +77,21 @@ public class AdapterUtils {
         String attr = "sub";
         if (deployment.getPrincipalAttribute() != null) attr = deployment.getPrincipalAttribute();
         String name = null;
-        UserClaimSet claimSet = token.getUserClaimSet();
 
         if ("sub".equals(attr)) {
             name = token.getSubject();
         } else if ("email".equals(attr)) {
-            name = claimSet.getEmail();
+            name = token.getEmail();
         } else if ("preferred_username".equals(attr)) {
-            name = claimSet.getPreferredUsername();
+            name = token.getPreferredUsername();
         } else if ("name".equals(attr)) {
-            name = claimSet.getName();
+            name = token.getName();
         } else if ("given_name".equals(attr)) {
-            name = claimSet.getGivenName();
+            name = token.getGivenName();
         } else if ("family_name".equals(attr)) {
-            name = claimSet.getFamilyName();
+            name = token.getFamilyName();
         } else if ("nickname".equals(attr)) {
-            name = claimSet.getNickName();
+            name = token.getNickName();
         }
         if (name == null) name = token.getSubject();
         return name;

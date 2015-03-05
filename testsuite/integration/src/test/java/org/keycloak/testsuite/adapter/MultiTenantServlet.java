@@ -38,7 +38,7 @@ public class MultiTenantServlet extends HttpServlet {
         KeycloakSecurityContext context = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
 
         pw.print("Username: ");
-        pw.println(context.getIdToken().getUserClaimSet().getPreferredUsername());
+        pw.println(context.getIdToken().getPreferredUsername());
 
         pw.print("<br/>Realm: ");
         pw.println(context.getRealm());
