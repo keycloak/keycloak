@@ -66,6 +66,10 @@
             <maven-resource group="org.keycloak" artifact="keycloak-services"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-wildfly-extensions">
+            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-extensions"/>
+        </module-def>
+
         <module-def name="com.google.zxing.core">
             <maven-resource group="com.google.zxing" artifact="core"/>
         </module-def>
