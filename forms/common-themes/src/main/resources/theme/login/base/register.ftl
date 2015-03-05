@@ -65,7 +65,7 @@
                     <label for="user.attributes.street" class="${properties.kcLabelClass!}">${rb.street}</label>
                 </div>
 
-                <div class="col-sm-10 col-md-10">
+                <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.street" name="user.attributes.street"/>
                 </div>
             </div>
@@ -74,7 +74,7 @@
                     <label for="user.attributes.locality" class="${properties.kcLabelClass!}">${rb.locality}</label>
                 </div>
 
-                <div class="col-sm-10 col-md-10">
+                <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.locality" name="user.attributes.locality"/>
                 </div>
             </div>
@@ -83,7 +83,7 @@
                     <label for="user.attributes.region" class="${properties.kcLabelClass!}">${rb.region}</label>
                 </div>
 
-                <div class="col-sm-10 col-md-10">
+                <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.region" name="user.attributes.region"/>
                 </div>
             </div>
@@ -92,7 +92,7 @@
                     <label for="user.attributes.postal_code" class="${properties.kcLabelClass!}">${rb.postal_code}</label>
                 </div>
 
-                <div class="col-sm-10 col-md-10">
+                <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.postal_code" name="user.attributes.postal_code"/>
                 </div>
             </div>
@@ -101,7 +101,7 @@
                     <label for="user.attributes.country" class="${properties.kcLabelClass!}">${rb.country}</label>
                 </div>
 
-                <div class="col-sm-10 col-md-10">
+                <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.country" name="user.attributes.country"/>
                 </div>
             </div>

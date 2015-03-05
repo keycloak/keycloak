@@ -99,8 +99,6 @@ public class IDToken extends JsonWebToken {
         this.sessionState = sessionState;
     }
 
-
-
     public String getName() {
         return this.name;
     }
