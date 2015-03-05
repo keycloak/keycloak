@@ -77,6 +77,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
     private boolean appNameExists(String name) {
         for (ApplicationModel app : realm.getApplications()) {
+            if (app == this) continue;
             if (app.getName().equals(name)) return true;
         }
 

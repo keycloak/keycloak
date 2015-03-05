@@ -17,6 +17,7 @@ import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author pedroigor
@@ -36,7 +37,9 @@ public class IdentityProviderHintTest {
 
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            server.importRealm(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-kc-oidc.json"));
+            //server.importRealm(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-kc-oidc.json"));
+            RealmRepresentation realmWithOIDC = KeycloakServer.loadJson(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-kc-oidc.json"), RealmRepresentation.class);
+            manager.importRealm(realmWithOIDC);
         }
     };
 

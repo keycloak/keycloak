@@ -53,11 +53,13 @@ public class FileUserProvider implements UserProvider {
 
     public FileUserProvider(KeycloakSession session, InMemoryModel inMemoryModel) {
         this.session = session;
+        session.enlistForClose(this);
         this.inMemoryModel = inMemoryModel;
     }
 
     @Override
     public void close() {
+        inMemoryModel.sessionClosed(session);
     }
 
     @Override
@@ -219,8 +221,7 @@ public class FileUserProvider implements UserProvider {
 
     @Override
     public Set<FederatedIdentityModel> getFederatedIdentities(UserModel userModel, RealmModel realm) {
-        UserModel user = getUserById(userModel.getId(), realm);
-        UserEntity userEntity = ((UserAdapter) user).getUserEntity();
+        UserEntity userEntity = ((UserAdapter) userModel).getUserEntity();
         List<FederatedIdentityEntity> linkEntities = userEntity.getFederatedIdentities();
 
         if (linkEntities == null) {
@@ -391,12 +392,31 @@ public class FileUserProvider implements UserProvider {
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        federatedUser = getUserById(federatedUser.getId(), realm);
+        UserEntity userEntity = ((UserAdapter) federatedUser).getUserEntity();
+        FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, federatedIdentityModel.getIdentityProvider());
+
+        federatedIdentityEntity.setToken(federatedIdentityModel.getToken());
+    }
+
+    private FederatedIdentityEntity findFederatedIdentityLink(UserEntity userEntity, String identityProvider) {
+        List<FederatedIdentityEntity> linkEntities = userEntity.getFederatedIdentities();
+        if (linkEntities == null) {
+            return null;
+        }
+
+        for (FederatedIdentityEntity federatedIdentityEntity : linkEntities) {
+            if (federatedIdentityEntity.getIdentityProvider().equals(identityProvider)) {
+                return federatedIdentityEntity;
+            }
+        }
+        return null;
     }
 
     @Override
     public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return null; // not supported yet
     }
 
 }

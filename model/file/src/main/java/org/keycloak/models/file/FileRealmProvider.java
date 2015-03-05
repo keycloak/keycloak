@@ -32,7 +32,7 @@ import org.keycloak.models.entities.RealmEntity;
 
 /**
  * Realm Provider for JSON persistence.
- * 
+ *
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
 public class FileRealmProvider implements RealmProvider {
@@ -42,6 +42,7 @@ public class FileRealmProvider implements RealmProvider {
 
     public FileRealmProvider(KeycloakSession session, InMemoryModel inMemoryModel) {
         this.session = session;
+        session.enlistForClose(this);
         this.inMemoryModel = inMemoryModel;
     }
 
@@ -86,6 +87,7 @@ public class FileRealmProvider implements RealmProvider {
 
     @Override
     public void close() {
+        inMemoryModel.sessionClosed(session);
     }
 
     @Override

@@ -1033,7 +1033,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean isIdentityFederationEnabled() {
         //TODO: not sure if we will support identity federation storage for file
-        return true;
+        return getIdentityProviders() != null && !getIdentityProviders().isEmpty();
     }
 
     @Override

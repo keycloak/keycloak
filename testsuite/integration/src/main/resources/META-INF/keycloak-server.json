@@ -8,7 +8,7 @@
     },
 
     "realm": {
-        "provider": "${keycloak.realm.provider:file}",
+        "provider": "${keycloak.realm.provider:jpa}",
         "file" : {
             "directory" : ".",
             "fileName" : "kcdata.json"
@@ -16,7 +16,7 @@
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:file}"
+        "provider": "${keycloak.user.provider:jpa}"
     },
 
     "userSessions": {
