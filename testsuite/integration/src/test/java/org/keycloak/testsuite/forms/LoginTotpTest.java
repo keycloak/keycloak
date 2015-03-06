@@ -43,6 +43,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import java.net.MalformedURLException;
@@ -113,7 +114,7 @@ public class LoginTotpTest {
         loginPage.assertCurrent();
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).session((String) null).assertEvent();
+        events.expectLogin().error("invalid_user_credentials").session((String) null).assertEvent();
     }
 
     @Test
@@ -139,45 +140,29 @@ public class LoginTotpTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).session((String) null).assertEvent();
+        events.expectLogin().error("invalid_user_credentials").session((String) null).assertEvent();
     }
 
     @Test
     public void loginWithTotpExpiredPasswordToken() throws Exception {
         try {
-
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
 
-            keycloakRule.configure(new KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    lifespan = appRealm.getAccessCodeLifespanUserAction();
-                    appRealm.setAccessCodeLifespanUserAction(1);
-                }
-            });
-
             loginTotpPage.assertCurrent();
 
-            Thread.sleep(2000);
+            Time.setOffset(350);
 
             loginTotpPage.login(totp.generate("totpSecret"));
 
             loginPage.assertCurrent();
-            Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
+            Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-            AssertEvents.ExpectedEvent expectedEvent = events.expectLogin().error("expired_code")
-                    .user((String)null)
-                    .clearDetails()
+            AssertEvents.ExpectedEvent expectedEvent = events.expectLogin().error("invalid_user_credentials")
                     .session((String) null);
             expectedEvent.assertEvent();
         } finally {
-            keycloakRule.configure(new KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setAccessCodeLifespanUserAction(lifespan);
-                }
-            });
+            Time.setOffset(0);
         }
     }
 
