@@ -221,7 +221,7 @@ public class FileUserProvider implements UserProvider {
 
     @Override
     public Set<FederatedIdentityModel> getFederatedIdentities(UserModel userModel, RealmModel realm) {
-        UserEntity userEntity = ((UserAdapter) userModel).getUserEntity();
+        UserEntity userEntity = ((UserAdapter)getUserById(userModel.getId(), realm)).getUserEntity();
         List<FederatedIdentityEntity> linkEntities = userEntity.getFederatedIdentities();
 
         if (linkEntities == null) {
@@ -239,7 +239,7 @@ public class FileUserProvider implements UserProvider {
 
     private FederatedIdentityEntity findSocialLink(UserModel userModel, String socialProvider, RealmModel realm) {
         UserModel user = getUserById(userModel.getId(), realm);
-        UserEntity userEntity = ((UserAdapter) user).getUserEntity();
+        UserEntity userEntity = ((UserAdapter)getUserById(userModel.getId(), realm)).getUserEntity();
         List<FederatedIdentityEntity> linkEntities = userEntity.getFederatedIdentities();
         if (linkEntities == null) {
             return null;
