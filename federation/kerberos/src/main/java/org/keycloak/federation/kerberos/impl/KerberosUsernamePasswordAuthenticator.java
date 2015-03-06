@@ -105,7 +105,7 @@ public class KerberosUsernamePasswordAuthenticator {
             try {
                 loginContext.logout();
             } catch (LoginException le) {
-                logger.error("Failed to logout kerberos server subject: " + config.getServerPrincipal(), le);
+                logger.error("Failed to logout kerberos subject", le);
             }
         }
     }
