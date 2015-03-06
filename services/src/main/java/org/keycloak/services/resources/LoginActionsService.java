@@ -165,7 +165,7 @@ public class LoginActionsService {
                 return false;
             } else if (!(clientCode.isValid(requiredAction) || clientCode.isValid(alternativeRequiredAction))) {
                 event.error(Errors.INVALID_CODE);
-                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
+                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_CODE);
                 return false;
             } else {
                 return true;
@@ -756,7 +756,7 @@ public class LoginActionsService {
         if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD)) {
             String actionCookieValue = getActionCookie();
             if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
-                return Flows.forms(session, realm, clientSession.getClient(), uriInfo).setSuccess("passwordUpdated").createInfoPage();
+                return Flows.forms(session, realm, clientSession.getClient(), uriInfo, headers).setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED).createInfoPage();
             }
         }
 
@@ -788,7 +788,7 @@ public class LoginActionsService {
 
             String actionCookieValue = getActionCookie();
             if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
-                return Flows.forms(session, realm, clientSession.getClient(), uriInfo).setSuccess("emailVerified").createInfoPage();
+                return Flows.forms(session, realm, clientSession.getClient(), uriInfo, headers).setSuccess(Messages.EMAIL_VERIFIED).createInfoPage();
             }
 
             event = event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN);

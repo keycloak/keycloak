@@ -172,7 +172,5 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemovedMessage";
 
-
-    public static final String ERROR = "error";
-
+    public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
 }

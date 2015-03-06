@@ -262,7 +262,7 @@ public class SamlService {
 
             // SPNEGO/Kerberos authentication TODO: This should be somehow pluggable instead of hardcoded this way (Authentication interceptors?)
             HttpAuthenticationManager httpAuthManager = new HttpAuthenticationManager(session, clientSession, realm, uriInfo, request, clientConnection, event);
-            HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate();
+            HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate(headers);
             if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
 
             LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo, headers)
