@@ -56,21 +56,6 @@ public class MongoEventQuery implements EventQuery {
         query.put("userId", userId);
         return this;
     }
-    
-
-    @Override
-    public EventQuery dateRange(String fromDate, String toDate) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long from = null, to = null;
-        try {
-            from = df.parse(fromDate).getTime();
-            to = df.parse(toDate).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        query.put("time", BasicDBObjectBuilder.start("$gte", from).add("$lte", to).get());
-        return this;
-    }
 
     @Override
     public EventQuery fromDate(String fromDate) {

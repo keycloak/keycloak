@@ -77,26 +77,6 @@ public class MemEventQuery implements EventQuery {
     }
     
     @Override
-    public EventQuery dateRange(String fromDate, String toDate) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long from = null, to = null;
-        try {
-            from = df.parse(fromDate).getTime();
-            to = df.parse(toDate).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        
-        Iterator<Event> itr = this.events.iterator();
-        while (itr.hasNext()) {
-            if (!(itr.next().getFromDate() >= from && itr.next().getToDate() <= to)) {
-                itr.remove();
-            }
-        }
-        return this;
-    }
-    
-    @Override
     public EventQuery fromDate(String fromDate) {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         Long from = null;
@@ -108,7 +88,7 @@ public class MemEventQuery implements EventQuery {
         
         Iterator<Event> itr = this.events.iterator();
         while (itr.hasNext()) {
-            if (!(itr.next().getFromDate() >= from)) {
+            if (!(itr.next().getTime() >= from)) {
                 itr.remove();
             }
         }
@@ -127,7 +107,7 @@ public class MemEventQuery implements EventQuery {
         
         Iterator<Event> itr = this.events.iterator();
         while (itr.hasNext()) {
-            if (!(itr.next().getToDate() <= to)) {
+            if (!(itr.next().getTime() <= to)) {
                 itr.remove();
             }
         }

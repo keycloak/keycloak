@@ -11,6 +11,9 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,8 +73,76 @@ public class EventStoreProviderTest {
 
         Assert.assertEquals(newest, eventStore.createQuery().maxResults(1).getResultList().get(0).getTime());
         Assert.assertEquals(oldest, eventStore.createQuery().firstResult(5).maxResults(1).getResultList().get(0).getTime());
+        
+        eventStore.clear("realmId");
+        eventStore.clear("realmId2");
+        
+        Assert.assertEquals(0, eventStore.createQuery().getResultList().size());
+        
+        String d1 = new String("2015-03-04");
+        String d2 = new String("2015-03-05");
+        String d3 = new String("2015-03-06");
+        String d4 = new String("2015-03-07");
+        
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        Date date1 = null, date2 = null, date3 = null, date4 = null;
+        
+        try {
+            date1 = formatter.parse(d1);
+            date2 = formatter.parse(d2);
+            date3 = formatter.parse(d3);
+            date4 = formatter.parse(d4);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        
+        eventStore.onEvent(create(date1, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        eventStore.onEvent(create(date1, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        eventStore.onEvent(create(date2, EventType.REGISTER, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        eventStore.onEvent(create(date2, EventType.REGISTER, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        eventStore.onEvent(create(date3, EventType.CODE_TO_TOKEN, "realmId", "clientId", "userId2", "127.0.0.1", "error"));
+        eventStore.onEvent(create(date3, EventType.LOGOUT, "realmId", "clientId", "userId2", "127.0.0.1", "error"));
+        eventStore.onEvent(create(date4, EventType.UPDATE_PROFILE, "realmId2", "clientId2", "userId2", "127.0.0.1", "error"));
+        eventStore.onEvent(create(date4, EventType.UPDATE_EMAIL, "realmId2", "clientId2", "userId2", "127.0.0.1", "error"));
+        
+        resetSession();
+        
+        Assert.assertEquals(6, eventStore.createQuery().client("clientId").getResultList().size());
+        Assert.assertEquals(2, eventStore.createQuery().client("clientId2").getResultList().size());
+        
+        Assert.assertEquals(6, eventStore.createQuery().realm("realmId").getResultList().size());
+        Assert.assertEquals(2, eventStore.createQuery().realm("realmId2").getResultList().size());
+        
+        Assert.assertEquals(4, eventStore.createQuery().user("userId").getResultList().size());
+        Assert.assertEquals(4, eventStore.createQuery().user("userId2").getResultList().size());
+        
+        Assert.assertEquals(2, eventStore.createQuery().type(EventType.LOGIN).getResultList().size());
+        Assert.assertEquals(2, eventStore.createQuery().type(EventType.REGISTER).getResultList().size());
+        Assert.assertEquals(4, eventStore.createQuery().type(EventType.LOGIN, EventType.REGISTER).getResultList().size());
+        Assert.assertEquals(1, eventStore.createQuery().type(EventType.CODE_TO_TOKEN).getResultList().size());
+        Assert.assertEquals(1, eventStore.createQuery().type(EventType.LOGOUT).getResultList().size());
+        Assert.assertEquals(1, eventStore.createQuery().type(EventType.UPDATE_PROFILE).getResultList().size());
+        Assert.assertEquals(1, eventStore.createQuery().type(EventType.UPDATE_EMAIL).getResultList().size());
+        
+        Assert.assertEquals(8, eventStore.createQuery().fromDate("2015-03-04").getResultList().size());
+        Assert.assertEquals(8, eventStore.createQuery().toDate("2015-03-07").getResultList().size());
+        
+        Assert.assertEquals(4, eventStore.createQuery().fromDate("2015-03-06").getResultList().size());
+        Assert.assertEquals(4, eventStore.createQuery().toDate("2015-03-05").getResultList().size());
+        
+        Assert.assertEquals(0, eventStore.createQuery().fromDate("2015-03-08").getResultList().size());
+        Assert.assertEquals(0, eventStore.createQuery().toDate("2015-03-03").getResultList().size());
+        
+        Assert.assertEquals(8, eventStore.createQuery().fromDate("2015-03-04").toDate("2015-03-07").getResultList().size());
+        Assert.assertEquals(6, eventStore.createQuery().fromDate("2015-03-05").toDate("2015-03-07").getResultList().size());
+        Assert.assertEquals(4, eventStore.createQuery().fromDate("2015-03-04").toDate("2015-03-05").getResultList().size());
+        Assert.assertEquals(4, eventStore.createQuery().fromDate("2015-03-06").toDate("2015-03-07").getResultList().size());
+        
+        Assert.assertEquals(0, eventStore.createQuery().fromDate("2015-03-01").toDate("2015-03-03").getResultList().size());
+        Assert.assertEquals(0, eventStore.createQuery().fromDate("2015-03-08").toDate("2015-03-10").getResultList().size());
+        
     }
-
+    
     @Test
     public void clear() {
         eventStore.onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
@@ -104,6 +175,10 @@ public class EventStoreProviderTest {
 
     private Event create(EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
         return create(System.currentTimeMillis(), event, realmId, clientId, userId, ipAddress, error);
+    }
+    
+    private Event create(Date date, EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
+        return create(date.getTime(), event, realmId, clientId, userId, ipAddress, error);
     }
 
     private Event create(long time, EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
