@@ -1162,7 +1162,7 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
     
     $scope.query = {
         id : realm.realm,
-        max : 10,
+        max : 5,
         first : 0
     }
 
@@ -1178,7 +1178,7 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
     
     $scope.reset = function() {
     	$scope.query.first = 0;
-    	$scope.query.max = 10;
+    	$scope.query.max = 5;
     	$scope.query.type = '';
     	$scope.query.client = '';
     	$scope.query.user = '';

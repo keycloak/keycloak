@@ -66,21 +66,6 @@ public class JpaEventQuery implements EventQuery {
         predicates.add(cb.equal(root.get("userId"), userId));
         return this;
     }
-    
-    @Override
-    public EventQuery dateRange(String fromDate, String toDate) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long from = null, to = null;
-        try {
-            from = df.parse(fromDate).getTime();
-            to = df.parse(toDate).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        predicates.add(cb.greaterThanOrEqualTo(root.<Long>get("time"), from));
-        predicates.add(cb.lessThanOrEqualTo(root.<Long>get("time"), to));
-        return this;
-    }
 
     @Override
     public EventQuery fromDate(String fromDate) {

@@ -15,8 +15,6 @@ public interface EventQuery {
 
     public EventQuery user(String userId);
 
-    public EventQuery dateRange(String fromDate, String toDate);
-
     public EventQuery fromDate(String fromDate);
 
     public EventQuery toDate(String toDate);
