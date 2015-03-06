@@ -30,7 +30,7 @@ public class CamelClient {
             try {
                 HttpResponse response = client.execute(get);
                 if (response.getStatusLine().getStatusCode() != 200) {
-                    return "There was a failure processing request.  You either didn't configure Keycloak properly or you don't have enought permission? Status code is "
+                    return "There was a failure processing request.  You either didn't configure Keycloak properly or you don't have admin permission? Status code is "
                             + response.getStatusLine().getStatusCode();
                 }
                 HttpEntity entity = response.getEntity();

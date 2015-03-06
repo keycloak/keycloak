@@ -49,18 +49,15 @@
         <property name="handler" ref="securityHandler" />
     </bean>
 
-    <bean id="helloBean" class="org.keycloak.example.CamelHelloBean" />
+    <bean id="helloProcessor" class="org.keycloak.example.CamelHelloProcessor" />
 
     <camelContext id="blueprintContext"
                   trace="false"
                   xmlns="http://camel.apache.org/schema/blueprint">
         <route id="httpBridge">
             <from uri="jetty:http://0.0.0.0:8383/admin-camel-endpoint?handlers=sessionHandler&amp;matchOnUriPrefix=true" />
-            <setBody>
-                <method ref="helloBean" method="hello"/>
-            </setBody>
+            <process ref="helloProcessor" />
             <log message="The message from camel endpoint contains ${body}"/>
-            <to uri="mock:result"/>
         </route>
     </camelContext>
 
