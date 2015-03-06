@@ -33,6 +33,7 @@ public class OIDCRoleMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         property.setHelpText("Role name you want changed.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
         property.setType(ConfigProperty.STRING_TYPE);
         configProperties.add(property);
+        property = new ConfigProperty();
         property.setName(NEW_ROLE_NAME);
         property.setLabel("New Role Name");
         property.setHelpText("The new role name.  The new name format corresponds to where in the access token the role will be mapped to.  So, a new name of 'myapp.newname' will map the role to that position in the access token.  A new name of 'newname' will map the role to the realm roles in the token.");
