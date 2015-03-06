@@ -12,16 +12,16 @@ public class CredentialValidationOutput {
 
     private final UserModel authenticatedUser; // authenticated user.
     private final Status authStatus;           // status whether user is authenticated or more steps needed
-    private final Map<String, Object> state;   // Additional state related to authentication. It can contain data to be sent back to client or data about used credentials.
+    private final Map<String, String> state;   // Additional state related to authentication. It can contain data to be sent back to client or data about used credentials.
 
-    public CredentialValidationOutput(UserModel authenticatedUser, Status authStatus, Map<String, Object> state) {
+    public CredentialValidationOutput(UserModel authenticatedUser, Status authStatus, Map<String, String> state) {
         this.authenticatedUser = authenticatedUser;
         this.authStatus = authStatus;
         this.state = state;
     }
 
     public static CredentialValidationOutput failed() {
-        return new CredentialValidationOutput(null, CredentialValidationOutput.Status.FAILED, new HashMap<String, Object>());
+        return new CredentialValidationOutput(null, CredentialValidationOutput.Status.FAILED, new HashMap<String, String>());
     }
 
     public UserModel getAuthenticatedUser() {
@@ -32,7 +32,7 @@ public class CredentialValidationOutput {
         return authStatus;
     }
 
-    public Map<String, Object> getState() {
+    public Map<String, String> getState() {
         return state;
     }
 

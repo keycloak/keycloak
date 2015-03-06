@@ -1,43 +1,29 @@
 package org.keycloak.testsuite.federation;
 
+import java.net.URL;
 import java.util.Map;
 
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
-import org.junit.runners.MethodSorters;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.federation.kerberos.KerberosConfig;
-import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
-import org.keycloak.models.KerberosConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.KerberosRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 /**
  * Test of LDAPFederationProvider (Kerberos backed by LDAP)
@@ -46,21 +32,30 @@ import org.openqa.selenium.WebDriver;
  */
 public class KerberosLdapTest extends AbstractKerberosTest {
 
-    public static final String CONFIG_LOCATION = "kerberos/kerberos-ldap-connection.properties";
+    private static final String PROVIDER_CONFIG_LOCATION = "kerberos/kerberos-ldap-connection.properties";
 
     private static UserFederationProviderModel ldapModel = null;
 
-    private static KerberosRule kerberosRule = new KerberosRule(CONFIG_LOCATION);
+    private static KerberosRule kerberosRule = new KerberosRule(PROVIDER_CONFIG_LOCATION);
 
     private static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            URL url = getClass().getResource("/kerberos-test/kerberos-app-keycloak.json");
+            keycloakRule.deployApplication("kerberos-portal", "/kerberos-portal", KerberosCredDelegServlet.class, url.getPath(), "user");
+
             Map<String,String> ldapConfig = kerberosRule.getConfig();
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "kerberos-ldap", -1, -1, 0);
-            appRealm.addRequiredCredential(UserCredentialModel.KERBEROS);
         }
-    });
+    }) {
+
+        @Override
+        protected void importRealm() {
+            server.importRealm(getClass().getResourceAsStream("/kerberos-test/kerberosrealm.json"));
+        }
+
+    };
 
     @ClassRule
     public static TestRule chain = RuleChain
@@ -129,12 +124,15 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         Response spnegoResponse = spnegoLogin("jduke", "newPass");
         Assert.assertEquals(302, spnegoResponse.getStatus());
         events.expectLogin()
+                .client("kerberos-app")
                 .user(keycloakRule.getUser("test", "jduke").getId())
+                .detail(Details.REDIRECT_URI, KERBEROS_APP_URL)
                 .detail(Details.AUTH_METHOD, "spnego")
                 .detail(Details.USERNAME, "jduke")
                 .assertEvent();
 
         // Change password back
+        changePasswordPage.open();
         loginPage.login("jduke", "newPass");
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword("newPass", "theduke", "theduke");

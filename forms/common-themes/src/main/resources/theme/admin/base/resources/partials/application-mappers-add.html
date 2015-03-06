@@ -35,7 +35,7 @@
             </thead>
             <tbody>
             <tr ng-repeat="mapper in mappers | filter:search">
-                <td><a href="#/realms/{{realm.realm}}/protocols/{{application.protocol}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
+                <td>{{mapper.name}}</td>
                 <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
                 <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
                 <td><input type="checkbox" ng-model="mapper.isChecked"></td>

@@ -21,7 +21,6 @@ public class ModuleProviderLoaderFactory implements ProviderLoaderFactory {
     @Override
     public ProviderLoader create(ClassLoader baseClassLoader, String resource) {
         try {
-            System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx");
             Module module = Module.getContextModuleLoader().loadModule(ModuleIdentifier.fromString(resource));
             ModuleClassLoader classLoader = module.getClassLoader();
             return new DefaultProviderLoader(classLoader);

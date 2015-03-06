@@ -33,5 +33,6 @@
         <module>multi-tenant</module>
         <module>basic-auth</module>
         <module>fuse</module>
+        <module>kerberos</module>
     </modules>
 </project>

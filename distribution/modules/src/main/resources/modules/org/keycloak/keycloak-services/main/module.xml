@@ -47,6 +47,7 @@
         <module name="org.keycloak.keycloak-model-sessions-mem" services="import"/>
         <module name="org.keycloak.keycloak-model-sessions-mongo" services="import"/>
         <module name="org.keycloak.keycloak-picketlink-api" services="import"/>
+        <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
 
         <module name="org.keycloak.keycloak-picketlink-ldap" services="import"/>
         <module name="org.keycloak.keycloak-saml-protocol" services="import"/>

@@ -1,0 +1,47 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <kc-navigation-oauth-client></kc-navigation-oauth-client>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}">{{oauth.name}}</a></li>
+            <li class="active">Protocol Mappers</li>
+        </ol>
+        <h2><span>{{realm.realm}} </span> {{oauth.name}} {{oauth.protocol}} Protocol Mappers  <span tooltip-placement="right" tooltip="Protocol mappers perform transformation on tokens and documents.  They an do things like map user data into protocol claims, or just transform any requests going between the application and auth server." class="fa fa-info-circle"></span></h2>
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="4">
+                    <div class="search-comp clearfix">
+                        <input type="text" placeholder="Search..." class="form-control search" data-ng-model="search.name"
+                               onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
+                        <button type="submit" class="kc-icon-search" tooltip-placement="right"
+                                tooltip="Search by mapper name.">
+                            Icon: search
+                        </button>
+                    </div>
+                    <div class="pull-right">
+                        <a class="btn btn-primary" href="#/create/oauth-client/{{realm.realm}}/{{oauth.id}}/mappers">Create</a>
+                        <a class="btn btn-primary" href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/add-mappers">Add Builtin</a>
+                    </div>
+                </th>
+            </tr>
+            <tr data-ng-hide="mappers.length == 0">
+                <th>Name</th>
+                <th>Category</th>
+                <th>Type</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="mapper in mappers | filter:search">
+                <td><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
+                <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
+                <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
+            </tr>
+            <tr data-ng-show="mappers.length == 0">
+                <td>No mappers available</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

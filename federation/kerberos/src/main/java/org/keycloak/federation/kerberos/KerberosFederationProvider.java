@@ -20,7 +20,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.KerberosConstants;
+import org.keycloak.constants.KerberosConstants;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -176,19 +176,21 @@ public class KerberosFederationProvider implements UserFederationProvider {
 
             spnegoAuthenticator.authenticate();
 
+            Map<String, String> state = new HashMap<String, String>();
             if (spnegoAuthenticator.isAuthenticated()) {
-                Map<String, Object> state = new HashMap<String, Object>();
-                state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, spnegoAuthenticator.getDelegationCredential());
-
                 String username = spnegoAuthenticator.getAuthenticatedUsername();
                 UserModel user = findOrCreateAuthenticatedUser(realm, username);
                 if (user == null) {
                     return CredentialValidationOutput.failed();
                 } else {
+                    String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
+                    if (delegationCredential != null) {
+                        state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, delegationCredential);
+                    }
+
                     return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
                 }
             }  else {
-                Map<String, Object> state = new HashMap<String, Object>();
                 state.put(KerberosConstants.RESPONSE_TOKEN, spnegoAuthenticator.getResponseToken());
                 return new CredentialValidationOutput(null, CredentialValidationOutput.Status.CONTINUE, state);
             }

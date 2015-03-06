@@ -87,33 +87,69 @@ public class MyEventListenerProvider implements EventListenerProvider {
     <section>
         <title>Registering provider implementations</title>
         <para>
-            Keycloak loads provider implementations from the file-system. By default all JARs inside
-            <literal>standalone/configuration/providers</literal> are loaded. This is simple, but requires all providers
-            to share the same library. All provides also inherit all classes from the Keycloak class-loader. In the future
-            we'll add support to load providers from modules, which allows better control of class isolation.
+            Keycloak can load provider implementations from JBoss Modules or directly from the file-system. Using Modules
+            is recommended as you can control exactly what classes are available to your provider. Any providers loaded
+            from the file-system uses a classloader with the Keycloak classloader as its parent.
         </para>
-        <para>
-            To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the
-            provider configuration file to <literal>standalone/configuration/providers</literal>.
-        </para>
-        <para>
-            You can also define multiple provider class-path if you want to create isolated class-loaders. To do this
-            edit keycloak-server.json and add more classpath entries to the providers array. For example:
+
+        <section>
+            <title>Register a provider using Modules</title>
+            <para>
+                To register a provider using Modules first create a module. To do this you have to create a folder inside
+                KEYCLOAK_HOME/modules and add your jar and a <literal>module.xml</literal>. For example to add the event listener
+                sysout example provider create the folder <literal>KEYCLOAK_HOME/modules/org/keycloak/examples/event-sysout/main</literal>.
+                Copy <literal>event-listener-sysout-example.jar</literal> to this folder and create <literal>module.xml</literal>
+                with the following content:
+<programlisting><![CDATA[{
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.examples.event-sysout">
+    <resources>
+        <resource-root path="event-listener-sysout-example.jar"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-events-api"/>
+    </dependencies>
+</module>
+}]]></programlisting>
+                Next you need to register this module with Keycloak. This is done by editing keycloak-server.json and adding
+                it to the providers:
+<programlisting><![CDATA[{
+"providers": [
+    ...
+    "module:org.keycloak.examples.event-sysout"
+]
+}]]></programlisting>
+            </para>
+        </section>
+
+
+        <section>
+            <title>Register a provider using file-system</title>
+            <para>
+                To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the
+                provider configuration file to <literal>standalone/configuration/providers</literal>.
+            </para>
+            <para>
+                You can also define multiple provider class-path if you want to create isolated class-loaders. To do this
+                edit keycloak-server.json and add more classpath entries to the providers array. For example:
 <programlisting><![CDATA[{
     "providers": [
         "classpath:provider1.jar;lib-v1.jar",
         "classpath:provider2.jar;lib-v2.jar"
     ]
 }]]></programlisting>
-            The above example will create two separate class-loaders for providers. The classpath entries follow the
-            same syntax as Java classpath, with ';' separating multiple-entries. Wildcard is also supported allowing
-            loading all jars (files with .jar or .JAR extension) in a folder, for example:
+                The above example will create two separate class-loaders for providers. The classpath entries follow the
+                same syntax as Java classpath, with ';' separating multiple-entries. Wildcard is also supported allowing
+                loading all jars (files with .jar or .JAR extension) in a folder, for example:
 <programlisting><![CDATA[{
     "providers": [
         "classpath:/home/user/providers/*"
     ]
 }]]></programlisting>
-        </para>
+            </para>
+        </section>
     </section>
 
     <section>
