@@ -382,6 +382,87 @@ keycloak-war-dist-all-&project.version;/
                 for details about those options and their default values.
             </para>
         </section>
+        
+        <section>
+            <title>JSON File based model</title>
+            <para>
+                Keycloak provides a JSON file based model implementation, which means that your identity data will be saved
+                in a flat JSON text file instead of traditional RDBMS.  The performance of this implementaion is likely to
+                be slower because it reads and writes the entire file with each call to the Keycloak REST API.  But it is 
+                very useful in development to see exactly what is being saved.  <emphasis>It is not recommended for 
+                production.</emphasis>
+            </para>
+            <para>
+                Note that this only applies to realm and user data.  There is currently no file implementation for
+                event persistence.  So you will need to use JPA or Mongo for that.
+            </para>
+            <para>    
+                To configure Keycloak to use file persistence open <literal>standalone/configuration/keycloak-server.json</literal>
+                in your favourite editor.  Change the realm and user providers and disable caching.  Change:
+
+<programlisting><![CDATA[
+"realm": {
+    "provider": "jpa"
+},
+
+"user": {
+    "provider": "jpa"
+},
+    
+"userSessions": {
+    "provider" : "mem"
+},
+    
+"realmCache": {
+    "provider": "mem"
+},
+
+"userCache": {
+    "provider": "mem",
+    "mem": {
+        "maxSize": 20000
+    }
+},
+]]></programlisting>
+
+                to:
+
+                <programlisting><![CDATA[
+"realm": {
+    "provider": "file"
+},
+
+"user": {
+    "provider": "file"
+},
+                    
+"userSessions": {
+    "provider" : "mem"
+},
+                    
+"realmCache": {
+    "provider": "none"
+},
+
+"userCache": {
+    "provider": "none",
+},
+]]></programlisting>
+
+You can also change the location of the data file by specifying parameters on the realm:<programlisting><![CDATA[
+    "realm": {
+        "provider": "file",
+        "file" : {
+            "directory" : "/mydirectory",
+            "fileName" : "myfilename.json"
+        }
+    },
+]]></programlisting>
+
+                All configuration options are optional. Default value for directory is ${jboss.server.data.dir}. Default file name
+                is <literal>keycloak-model.json</literal>.
+            </para>
+        </section>
 
         <section>
                 <title>EAP6.x Logging</title>
