@@ -1,4 +1,4 @@
-package org.keycloak.models;
+package org.keycloak.constants;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -24,6 +24,12 @@ public class KerberosConstants {
 
 
     /**
+     * OID of Kerberos v5 name. See http://www.oid-info.com/get/1.2.840.113554.1.2.2.1
+     */
+    public static final String KRB5_NAME_OID = "1.2.840.113554.1.2.2.1";
+
+
+    /**
      * Configuration federation provider model attributes.
      */
     public static final String ALLOW_KERBEROS_AUTHENTICATION = "allowKerberosAuthentication";
@@ -43,8 +49,13 @@ public class KerberosConstants {
 
 
     /**
-     * Internal attribute used in "state" map . Contains credential from SPNEGO/Kerberos successful authentication
+     * Internal attribute used in "userSession.note" map and in accessToken claims . Contains credential from SPNEGO/Kerberos successful authentication
      */
-    public static final String GSS_DELEGATION_CREDENTIAL = "GssDelegationCredential";
+    public static final String GSS_DELEGATION_CREDENTIAL = "gss_delegation_credential";
+
+    /**
+     * Display name for the above in admin console and consent screens
+     */
+    public static final String GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME = "gss delegation credential";
 
 }

@@ -1,7 +1,6 @@
 package org.keycloak.federation.kerberos.impl;
 
 import java.io.IOException;
-import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 import javax.security.auth.Subject;
@@ -13,6 +12,7 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.util.KerberosSerializationUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -20,8 +20,6 @@ import org.keycloak.federation.kerberos.CommonKerberosConfig;
 public class SPNEGOAuthenticator {
 
     private static final Logger log = Logger.getLogger(SPNEGOAuthenticator.class);
-
-    private static final GSSManager GSS_MANAGER = GSSManager.getInstance();
 
     private final KerberosServerSubjectAuthenticator kerberosSubjectAuthenticator;
     private final String spnegoToken;
@@ -61,8 +59,24 @@ public class SPNEGOAuthenticator {
         return responseToken;
     }
 
-    public GSSCredential getDelegationCredential() {
-        return delegationCredential;
+    public String getSerializedDelegationCredential() {
+        if (delegationCredential == null) {
+            if (log.isTraceEnabled()) {
+                log.trace("No delegation credential available.");
+            }
+
+            return null;
+        }
+
+        try {
+            if (log.isTraceEnabled()) {
+                log.trace("Serializing credential " + delegationCredential);
+            }
+            return KerberosSerializationUtils.serializeCredential(delegationCredential);
+        } catch (KerberosSerializationUtils.KerberosSerializationException kse) {
+            log.warn("Couldn't serialize credential: " + delegationCredential, kse);
+            return null;
+        }
     }
 
     /**
@@ -114,7 +128,8 @@ public class SPNEGOAuthenticator {
 
 
     protected GSSContext establishContext() throws GSSException, IOException {
-        GSSContext gssContext = GSS_MANAGER.createContext((GSSCredential) null);
+        GSSManager manager = GSSManager.getInstance();
+        GSSContext gssContext = manager.createContext((GSSCredential) null);
 
         byte[] inputToken = Base64.decode(spnegoToken);
         byte[] respToken = gssContext.acceptSecContext(inputToken, 0, inputToken.length);

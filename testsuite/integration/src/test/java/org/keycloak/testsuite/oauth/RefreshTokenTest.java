@@ -137,7 +137,7 @@ public class RefreshTokenTest {
 
         Assert.assertEquals("bearer", tokenResponse.getTokenType());
 
-        Assert.assertThat(token.getExpiration() - Time.currentTime(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        Assert.assertThat(token.getExpiration() - Time.currentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
         int actual = refreshToken.getExpiration() - Time.currentTime();
         Assert.assertThat(actual, allOf(greaterThanOrEqualTo(1799), lessThanOrEqualTo(1800)));
 
@@ -313,7 +313,7 @@ public class RefreshTokenTest {
         session.close();
 
         // lastSEssionRefresh should be updated because access code lifespan is higher than sso idle timeout
-        Assert.assertThat(next, allOf(greaterThan(last), lessThan(last + 6)));
+        Assert.assertThat(next, allOf(greaterThan(last), lessThan(last + 50)));
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("test");

@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oidc;
 
+import org.keycloak.constants.KerberosConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -11,6 +12,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAddressMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCFullNameMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCUserModelMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCUserSessionNoteMapper;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import java.util.ArrayList;
@@ -89,6 +91,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         ProtocolMapperModel address = OIDCAddressMapper.createAddressMapper();
         builtins.add(address);
+
+        model = OIDCUserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
+                KerberosConstants.GSS_DELEGATION_CREDENTIAL,
+                KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
+                true, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
+                true, false);
+        builtins.add(model);
     }
 
     @Override

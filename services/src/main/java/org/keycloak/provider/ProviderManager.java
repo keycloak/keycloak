@@ -20,7 +20,7 @@ public class ProviderManager {
 
     public ProviderManager(ClassLoader baseClassLoader, String... resources) {
         List<ProviderLoaderFactory> factories = new LinkedList<ProviderLoaderFactory>();
-        for (ProviderLoaderFactory f : ServiceLoader.load(ProviderLoaderFactory.class)) {
+        for (ProviderLoaderFactory f : ServiceLoader.load(ProviderLoaderFactory.class, getClass().getClassLoader())) {
             factories.add(f);
         }
 
