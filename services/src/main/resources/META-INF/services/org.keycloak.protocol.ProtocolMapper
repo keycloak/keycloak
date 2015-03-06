@@ -2,5 +2,8 @@ org.keycloak.protocol.oidc.mappers.OIDCUserAttributeMapper
 org.keycloak.protocol.oidc.mappers.OIDCFullNameMapper
 org.keycloak.protocol.oidc.mappers.OIDCUserModelMapper
 org.keycloak.protocol.oidc.mappers.OIDCAddressMapper
+org.keycloak.protocol.oidc.mappers.OIDCAddClaimMapper
+org.keycloak.protocol.oidc.mappers.OIDCAddRoleMapper
+org.keycloak.protocol.oidc.mappers.OIDCRoleMapper
 
 
