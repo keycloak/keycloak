@@ -20,7 +20,7 @@
     String logoutUri = KeycloakUriBuilder.fromUri("/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
             .queryParam("redirect_uri", "/kerberos-portal").build("kerberos-demo").toString();
 %>
-        <b>List of users from LDAP</b> | <a href="<%=logoutUri%>">Logout</a><br />
+        <b>Details about user from LDAP</b> | <a href="<%=logoutUri%>">Logout</a><br />
         <hr />
 <%
     try {
@@ -30,7 +30,7 @@
         out.println("<p>sn: <b>" + ldapUser.getSn() + "</b></p>");
     } catch (Exception e) {
         e.printStackTrace();
-        out.println("<b>There was a failure invoking LDAP. Check server.log for more details</b>");
+        out.println("<b>There was a failure in retrieve GSS credential or invoking LDAP. Check server.log for more details</b>");
     }
 %>
     </body>

@@ -24,9 +24,9 @@ import org.keycloak.util.KerberosSerializationUtils;
  *
  * We can use GSSCredential to further GSS API calls . Note that if you will use GSS API directly, you can
  * attach GSSCredential when creating GSSContext like this:
- * GSSContext context = gssManager.createContext(serviceName, krb5Oid, deserializedGssCredFromKeycloakAccessToken, GSSContext.DEFAULT_LIFETIME);
+ * GSSContext context = gssManager.createContext(serviceName, KerberosSerializationUtils.KRB5_OID, deserializedGssCredential, GSSContext.DEFAULT_LIFETIME);
  *
- * In this example we will authenticate with GSSCredential against LDAP server, which calls GSS API under the hood
+ * In this example we authenticate against LDAP server, which calls GSS API under the hood when credential is attached to env under Sasl.CREDENTIALS key
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -38,10 +38,10 @@ public class GSSCredentialsClient {
         String username = accessToken.getPreferredUsername();
 
         // Retrieve kerberos credential from accessToken and deserialize it
-        String serializedGssCredential = (String) keycloakPrincipal.getKeycloakSecurityContext().getToken().getOtherClaims().get(KerberosConstants.GSS_DELEGATION_CREDENTIAL);
-        GSSCredential gssCredential = KerberosSerializationUtils.deserializeCredential(serializedGssCredential);
+        String serializedGssCredential = (String) accessToken.getOtherClaims().get(KerberosConstants.GSS_DELEGATION_CREDENTIAL);
+        GSSCredential deserializedGssCredential = KerberosSerializationUtils.deserializeCredential(serializedGssCredential);
 
-        // First try to invoke without gssCredential. It should fail
+        // First try to invoke without gssCredential. It should fail. This is here just for illustration purposes
         try {
             invokeLdap(null, username);
             throw new RuntimeException("Not expected to authenticate to LDAP without credential");
@@ -49,7 +49,7 @@ public class GSSCredentialsClient {
             System.out.println("GSSCredentialsClient: Expected exception: " + nse.getMessage());
         }
 
-        return invokeLdap(gssCredential, username);
+        return invokeLdap(deserializedGssCredential, username);
     }
 
     private static LDAPUser invokeLdap(GSSCredential gssCredential, String username) throws NamingException {
