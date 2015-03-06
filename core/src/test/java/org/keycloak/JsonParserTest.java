@@ -26,6 +26,7 @@ public class JsonParserTest {
         IDToken test = new IDToken();
         test.getOtherClaims().put("phone_number", "978-666-0000");
         test.getOtherClaims().put("email_verified", "true");
+        test.getOtherClaims().put("yo", "true");
         Map<String, String> nested = new HashMap<String, String>();
         nested.put("foo", "bar");
         test.getOtherClaims().put("nested", nested);
@@ -33,11 +34,15 @@ public class JsonParserTest {
         System.out.println(json);
 
         test = JsonSerialization.readValue(json, IDToken.class);
-        System.out.println("email_verified property: " + test.getUserClaimSet().getEmailVerified());
-        System.out.println("property: " + test.getUserClaimSet().getPhoneNumber());
+        System.out.println("email_verified property: " + test.getEmailVerified());
+        System.out.println("property: " + test.getPhoneNumber());
         System.out.println("map: " + test.getOtherClaims().get("phone_number"));
-        Assert.assertNotNull(test.getUserClaimSet().getPhoneNumber());
+        Assert.assertNotNull(test.getPhoneNumber());
+        Assert.assertNotNull(test.getOtherClaims().get("yo"));
         Assert.assertNull(test.getOtherClaims().get("phone_number"));
+        nested = (Map<String, String>)test.getOtherClaims().get("nested");
+        Assert.assertNotNull(nested);
+        Assert.assertNotNull(nested.get("foo"));
     }
 
     @Test

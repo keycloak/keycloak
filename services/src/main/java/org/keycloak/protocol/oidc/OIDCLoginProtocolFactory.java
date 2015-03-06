@@ -1,15 +1,22 @@
 package org.keycloak.protocol.oidc;
 
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.mappers.OIDCAddressMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCFullNameMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCUserModelMapper;
 import org.keycloak.services.managers.AuthenticationManager;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -22,58 +29,71 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
     @Override
-    protected void addDefaults(RealmModel realm) {
-        int counter = 0;
-        // the ids must never change!!!!  So if you add more default mappers, then add to end with higher counter.
-        OIDCUserModelMapper.addClaimMapper(realm, "username",
+    public List<ProtocolMapperModel> getBuiltinMappers() {
+        return builtins;
+    }
+
+    static List<ProtocolMapperModel> builtins = new ArrayList<>();
+    static List<ProtocolMapperModel> defaultBuiltins = new ArrayList<>();
+
+    static {
+
+        ProtocolMapperModel model;
+        model = OIDCUserModelMapper.createClaimMapper("username",
                 "username",
                 "preferred_username", "String",
                 true, "username",
-                true);
-        OIDCUserModelMapper.addClaimMapper(realm, "email",
+                true, true);
+        builtins.add(model);
+        defaultBuiltins.add(model);
+        model = OIDCUserModelMapper.createClaimMapper("email",
                 "email",
                 "email", "String",
                 true, "email",
-                true);
-        OIDCUserModelMapper.addClaimMapper(realm, "given name",
+                true, true);
+        builtins.add(model);
+        defaultBuiltins.add(model);
+        model = OIDCUserModelMapper.createClaimMapper("given name",
                 "firstName",
                 "given_name", "String",
                 true, "given name",
-                true);
-        OIDCUserModelMapper.addClaimMapper(realm, "family name",
+                true, true);
+        builtins.add(model);
+        defaultBuiltins.add(model);
+        model = OIDCUserModelMapper.createClaimMapper("family name",
                 "lastName",
                 "family_name", "String",
                 true, "family name",
-                true);
-        OIDCUserModelMapper.addClaimMapper(realm, "email verified",
+                true, true);
+        builtins.add(model);
+        defaultBuiltins.add(model);
+        model = OIDCUserModelMapper.createClaimMapper("email verified",
                 "emailVerified",
                 "email_verified", "boolean",
                 false, null,
-                false);
+                true, true);
+        builtins.add(model);
 
         ProtocolMapperModel fullName = new ProtocolMapperModel();
-        if (realm.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "full name") == null) {
-            fullName.setName("full name");
-            fullName.setProtocolMapper(OIDCFullNameMapper.PROVIDER_ID);
-            fullName.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            fullName.setConsentRequired(true);
-            fullName.setConsentText("full name");
-            fullName.setAppliedByDefault(true);
-            realm.addProtocolMapper(fullName);
-        }
+        fullName.setName("full name");
+        fullName.setProtocolMapper(OIDCFullNameMapper.PROVIDER_ID);
+        fullName.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        fullName.setConsentRequired(true);
+        fullName.setConsentText("full name");
+        Map<String, String> config = new HashMap<String, String>();
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        fullName.setConfig(config);
+        builtins.add(fullName);
+        defaultBuiltins.add(fullName);
 
-        ProtocolMapperModel address = new ProtocolMapperModel();
-        if (realm.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "address") == null) {
-            address.setName("address");
-            address.setProtocolMapper(OIDCAddressMapper.PROVIDER_ID);
-            address.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            address.setConsentRequired(true);
-            address.setConsentText("address");
-            address.setAppliedByDefault(false);
-            realm.addProtocolMapper(address);
-        }
+        ProtocolMapperModel address = OIDCAddressMapper.createAddressMapper();
+        builtins.add(address);
+    }
 
-
+    @Override
+    protected void addDefaults(ClientModel client) {
+        for (ProtocolMapperModel model : defaultBuiltins) client.addProtocolMapper(model);
     }
 
     @Override

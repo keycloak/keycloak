@@ -91,7 +91,19 @@ public class ClientSessionCode {
             return false;
         }
 
-        int lifespan = action.equals(ClientSessionModel.Action.CODE_TO_TOKEN) ? realm.getAccessCodeLifespan() : realm.getAccessCodeLifespanUserAction();
+        int lifespan;
+        switch (action) {
+            case CODE_TO_TOKEN:
+                lifespan = realm.getAccessCodeLifespan();
+                break;
+            case AUTHENTICATE:
+                lifespan = realm.getAccessCodeLifespanLogin() > 0 ? realm.getAccessCodeLifespanLogin() : realm.getAccessCodeLifespanUserAction();
+                break;
+            default:
+                lifespan = realm.getAccessCodeLifespanUserAction();
+                break;
+        }
+
         return timestamp + lifespan > Time.currentTime();
     }
 

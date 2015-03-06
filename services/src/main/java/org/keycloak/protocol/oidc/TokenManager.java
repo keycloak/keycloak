@@ -9,7 +9,6 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -23,9 +22,9 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.UserClaimSet;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -61,7 +60,7 @@ public class TokenManager {
         }
     }
 
-    public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {
+    public AccessTokenResponse refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(realm, encodedRefreshToken);
 
         event.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
@@ -108,11 +107,15 @@ public class TokenManager {
         AccessToken accessToken = initToken(realm, client, user, userSession, clientSession);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
-        accessToken = transformToken(session, accessToken, realm, client, user, userSession, clientSession);
+        accessToken = transformAccessToken(session, accessToken, realm, client, user, userSession, clientSession);
 
         userSession.setLastSessionRefresh(currentTime);
 
-        return accessToken;
+        AccessTokenResponse res = responseBuilder(realm, client, event, session, userSession, clientSession)
+                .accessToken(accessToken)
+                .generateIDToken()
+                .generateRefreshToken().build();
+        return res;
     }
 
     public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
@@ -141,7 +144,7 @@ public class TokenManager {
         for (RoleModel role : requestedRoles) {
             addComposites(token, role);
         }
-        token = transformToken(session, token, realm, client, user, userSession, clientSession);
+        token = transformAccessToken(session, token, realm, client, user, userSession, clientSession);
         return token;
     }
 
@@ -236,8 +239,8 @@ public class TokenManager {
         }
     }
 
-    public AccessToken transformToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
-                                         UserSessionModel userSession, ClientSessionModel clientSession) {
+    public AccessToken transformAccessToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
+                                            UserSessionModel userSession, ClientSessionModel clientSession) {
         Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
@@ -245,12 +248,27 @@ public class TokenManager {
 
             ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
             if (mapper == null || !(mapper instanceof OIDCAccessTokenMapper)) continue;
-            token = ((OIDCAccessTokenMapper)mapper).transformToken(token, mapping, session, userSession, clientSession);
+            token = ((OIDCAccessTokenMapper)mapper).transformAccessToken(token, mapping, session, userSession, clientSession);
 
 
 
         }
         return token;
+    }
+    public void transformIDToken(KeycloakSession session, IDToken token, RealmModel realm, ClientModel client, UserModel user,
+                                      UserSessionModel userSession, ClientSessionModel clientSession) {
+        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        for (ProtocolMapperModel mapping : mappings) {
+            if (!mapping.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) continue;
+
+            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            if (mapper == null || !(mapper instanceof OIDCIDTokenMapper)) continue;
+            token = ((OIDCIDTokenMapper)mapper).transformIDToken(token, mapping, session, userSession, clientSession);
+
+
+
+        }
     }
 
 
@@ -311,22 +329,29 @@ public class TokenManager {
         return encodedToken;
     }
 
-    public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client, EventBuilder event) {
-        return new AccessTokenResponseBuilder(realm, client, event);
+    public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
+        return new AccessTokenResponseBuilder(realm, client, event, session, userSession, clientSession);
     }
 
     public class AccessTokenResponseBuilder {
         RealmModel realm;
         ClientModel client;
+        EventBuilder event;
+        KeycloakSession session;
+        UserSessionModel userSession;
+        ClientSessionModel clientSession;
+
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
-        EventBuilder event;
 
-        public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event) {
+        public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
             this.realm = realm;
             this.client = client;
             this.event = event;
+            this.session = session;
+            this.userSession = userSession;
+            this.clientSession = clientSession;
         }
 
         public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {
@@ -369,25 +394,7 @@ public class TokenManager {
             if (realm.getAccessTokenLifespan() > 0) {
                 idToken.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
             }
-            idToken.getUserClaimSet().setPreferredUsername(accessToken.getUserClaimSet().getPreferredUsername());
-            idToken.getUserClaimSet().setGivenName(accessToken.getUserClaimSet().getGivenName());
-            idToken.getUserClaimSet().setMiddleName(accessToken.getUserClaimSet().getMiddleName());
-            idToken.getUserClaimSet().setFamilyName(accessToken.getUserClaimSet().getFamilyName());
-            idToken.getUserClaimSet().setName(accessToken.getUserClaimSet().getName());
-            idToken.getUserClaimSet().setNickName(accessToken.getUserClaimSet().getNickName());
-            idToken.getUserClaimSet().setGender(accessToken.getUserClaimSet().getGender());
-            idToken.getUserClaimSet().setPicture(accessToken.getUserClaimSet().getPicture());
-            idToken.getUserClaimSet().setProfile(accessToken.getUserClaimSet().getProfile());
-            idToken.getUserClaimSet().setWebsite(accessToken.getUserClaimSet().getWebsite());
-            idToken.getUserClaimSet().setBirthdate(accessToken.getUserClaimSet().getBirthdate());
-            idToken.getUserClaimSet().setEmail(accessToken.getUserClaimSet().getEmail());
-            idToken.getUserClaimSet().setEmailVerified(accessToken.getUserClaimSet().getEmailVerified());
-            idToken.getUserClaimSet().setLocale(accessToken.getUserClaimSet().getLocale());
-            idToken.getUserClaimSet().setAddress(accessToken.getUserClaimSet().getAddress());
-            idToken.getUserClaimSet().setPhoneNumber(accessToken.getUserClaimSet().getPhoneNumber());
-            idToken.getUserClaimSet().setPhoneNumberVerified(accessToken.getUserClaimSet().getPhoneNumberVerified());
-            idToken.getUserClaimSet().setZoneinfo(accessToken.getUserClaimSet().getZoneinfo());
-            idToken.setOtherClaims(accessToken.getOtherClaims());
+            transformIDToken(session, idToken, realm, client, userSession.getUser(), userSession, clientSession);
             return this;
         }
 

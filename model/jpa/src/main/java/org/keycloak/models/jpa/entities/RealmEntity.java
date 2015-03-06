@@ -68,6 +68,8 @@ public class RealmEntity {
     protected int accessCodeLifespan;
     @Column(name="USER_ACTION_LIFESPAN")
     protected int accessCodeLifespanUserAction;
+    @Column(name="LOGIN_LIFESPAN")
+    protected int accessCodeLifespanLogin;
     @Column(name="NOT_BEFORE")
     protected int notBefore;
 
@@ -91,12 +93,6 @@ public class RealmEntity {
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RealmAttributeEntity> attributes = new ArrayList<RealmAttributeEntity>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<ClaimTypeEntity> claimTypes = new ArrayList<ClaimTypeEntity>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
@@ -261,6 +257,13 @@ public class RealmEntity {
 
     public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
+    }
+    public int getAccessCodeLifespanLogin() {
+        return accessCodeLifespanLogin;
+    }
+
+    public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
+        this.accessCodeLifespanLogin = accessCodeLifespanLogin;
     }
 
     public String getPublicKeyPem() {
@@ -449,22 +452,6 @@ public class RealmEntity {
     public void addIdentityProvider(IdentityProviderEntity entity) {
         entity.setRealm(this);
         getIdentityProviders().add(entity);
-    }
-
-    public Collection<ClaimTypeEntity> getClaimTypes() {
-        return claimTypes;
-    }
-
-    public void setClaimTypes(Collection<ClaimTypeEntity> claimTypes) {
-        this.claimTypes = claimTypes;
-    }
-
-    public Collection<ProtocolMapperEntity> getProtocolMappers() {
-        return protocolMappers;
-    }
-
-    public void setProtocolMappers(Collection<ProtocolMapperEntity> protocolMappers) {
-        this.protocolMappers = protocolMappers;
     }
 
     public boolean isInternationalizationEnabled() {

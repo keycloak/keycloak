@@ -20,6 +20,7 @@ public class RealmRepresentation {
     protected Integer ssoSessionMaxLifespan;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
+    protected Integer accessCodeLifespanLogin;
     protected Boolean enabled;
     protected String sslRequired;
     protected Boolean passwordCredentialGrantAllowed;
@@ -65,7 +66,6 @@ public class RealmRepresentation {
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
     private List<IdentityProviderRepresentation> identityProviders;
-    private List<ClaimTypeRepresentation> claimTypes;
     private List<ProtocolMapperRepresentation> protocolMappers;
     private Boolean identityFederationEnabled;
     protected Boolean internationalizationEnabled;
@@ -202,6 +202,14 @@ public class RealmRepresentation {
 
     public void setAccessCodeLifespanUserAction(Integer accessCodeLifespanUserAction) {
         this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
+    }
+
+    public Integer getAccessCodeLifespanLogin() {
+        return accessCodeLifespanLogin;
+    }
+
+    public void setAccessCodeLifespanLogin(Integer accessCodeLifespanLogin) {
+        this.accessCodeLifespanLogin = accessCodeLifespanLogin;
     }
 
     public List<String> getDefaultRoles() {
@@ -486,15 +494,6 @@ public class RealmRepresentation {
 
     public boolean isIdentityFederationEnabled() {
         return !getIdentityProviders().isEmpty();
-    }
-
-    public List<ClaimTypeRepresentation> getClaimTypes() {
-        if (claimTypes == null) claimTypes = new ArrayList<ClaimTypeRepresentation>();
-        return claimTypes;
-    }
-
-    public void setClaimTypes(List<ClaimTypeRepresentation> claimTypes) {
-        this.claimTypes = claimTypes;
     }
 
     public List<ProtocolMapperRepresentation> getProtocolMappers() {

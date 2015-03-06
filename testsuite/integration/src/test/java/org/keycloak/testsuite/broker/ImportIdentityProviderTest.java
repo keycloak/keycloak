@@ -61,6 +61,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertIdentityProviderConfig(realm.getIdentityProviders());
 
         assertTrue(realm.isIdentityFederationEnabled());
+        this.realmManager.removeRealm(realm);
     }
 
     @Test
@@ -113,6 +114,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertTrue(identityProviderModel.isEnabled());
         assertTrue(identityProviderModel.isUpdateProfileFirstLogin());
         assertFalse(identityProviderModel.isAuthenticateByDefault());
+        this.realmManager.removeRealm(realm);
     }
 
     @Test
@@ -137,6 +139,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         identityProviders = client.getIdentityProviders();
 
         assertEquals(0, identityProviders.size());
+        this.realmManager.removeRealm(realm);
     }
 
 

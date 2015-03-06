@@ -12,7 +12,6 @@ public class ProtocolMapperRepresentation {
     protected String name;
     protected String protocol;
     protected String protocolMapper;
-    protected boolean appliedByDefault;
     protected boolean consentRequired;
     protected String consentText;
     protected Map<String, String> config = new HashMap<String, String>();
@@ -40,14 +39,6 @@ public class ProtocolMapperRepresentation {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
-    }
-
-    public boolean isAppliedByDefault() {
-        return appliedByDefault;
-    }
-
-    public void setAppliedByDefault(boolean appliedByDefault) {
-        this.appliedByDefault = appliedByDefault;
     }
 
     public String getProtocolMapper() {

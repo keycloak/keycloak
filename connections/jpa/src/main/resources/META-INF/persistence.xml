@@ -19,7 +19,6 @@
         <class>org.keycloak.models.jpa.entities.ScopeMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.IdentityProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientIdentityProviderMappingEntity</class>
-        <class>org.keycloak.models.jpa.entities.ClaimTypeEntity</class>
         <class>org.keycloak.models.jpa.entities.ProtocolMapperEntity</class>
 
         <!-- JpaUserSessionProvider -->

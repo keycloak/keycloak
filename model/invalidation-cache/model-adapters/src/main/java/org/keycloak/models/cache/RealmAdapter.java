@@ -301,6 +301,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getAccessCodeLifespanLogin() {
+        if (updated != null) return updated.getAccessCodeLifespanLogin();
+        return cached.getAccessCodeLifespanLogin();
+    }
+
+    @Override
+    public void setAccessCodeLifespanLogin(int seconds) {
+        getDelegateForUpdate();
+        updated.setAccessCodeLifespanLogin(seconds);
+    }
+
+    @Override
     public String getPublicKeyPem() {
         if (updated != null) return updated.getPublicKeyPem();
         return cached.getPublicKeyPem();
@@ -850,82 +862,6 @@ public class RealmAdapter implements RealmModel {
         return cached.isIdentityFederationEnabled();
     }
 
-    @Override
-    public Set<ClaimTypeModel> getClaimTypes() {
-        if (updated != null) return updated.getClaimTypes();
-        return cached.getClaimTypes();
-    }
-
-    @Override
-    public ClaimTypeModel addClaimType(ClaimTypeModel claimType) {
-        getDelegateForUpdate();
-        return updated.addClaimType(claimType);
-    }
-
-    @Override
-    public void removeClaimType(ClaimTypeModel claimType) {
-        getDelegateForUpdate();
-        updated.removeClaimType(claimType);
-
-    }
-
-    @Override
-    public ClaimTypeModel getClaimType(String name) {
-        for (ClaimTypeModel claimType : getClaimTypes())  {
-            if (claimType.getName().equals(name)) return claimType;
-        }
-        return null;
-    }
-
-    @Override
-    public void updateClaimType(ClaimTypeModel claimType) {
-        getDelegateForUpdate();
-        updated.updateClaimType(claimType);
-
-    }
-
-
-    @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        if (updated != null) return updated.getProtocolMappers();
-        return cached.getProtocolMappers();
-     }
-
-    @Override
-    public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
-        getDelegateForUpdate();
-        return updated.addProtocolMapper(model);
-    }
-
-    @Override
-    public void removeProtocolMapper(ProtocolMapperModel mapping) {
-        getDelegateForUpdate();
-        updated.removeProtocolMapper(mapping);
-
-    }
-
-    @Override
-    public void updateProtocolMapper(ProtocolMapperModel mapping) {
-        getDelegateForUpdate();
-        updated.updateProtocolMapper(mapping);
-
-    }
-
-    @Override
-    public ProtocolMapperModel getProtocolMapperById(String id) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
-            if (mapping.getId().equals(id)) return mapping;
-        }
-        return null;
-    }
-
-    @Override
-    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
-            if (mapping.getProtocol().equals(protocol) && mapping.getName().equals(name)) return mapping;
-        }
-        return null;
-    }
 
     @Override
     public boolean equals(Object o) {

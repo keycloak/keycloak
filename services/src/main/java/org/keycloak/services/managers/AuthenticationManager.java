@@ -26,6 +26,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.util.CookieHelper;
@@ -371,6 +372,7 @@ public class AuthenticationManager {
             LoginFormsProvider loginFormsProvider = Flows.forms(session, realm, client, uriInfo, request.getHttpHeaders()).setClientSessionCode(accessCode.getCode()).setUser(user);
             if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL)) {
                 event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
+                LoginActionsService.createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
             }
 
             return loginFormsProvider

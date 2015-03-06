@@ -1,6 +1,5 @@
 package org.keycloak.services.resources.admin;
 
-import org.jboss.resteasy.annotations.cache.Cache;
 import org.keycloak.Version;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -10,11 +9,15 @@ import org.keycloak.exportimport.ApplicationImporterFactory;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.social.SocialIdentityProvider;
 
@@ -55,7 +58,8 @@ public class ServerInfoAdminResource {
         setProtocols(info);
         setApplicationImporters(info);
         setProviders(info);
-        setProtocolMappers(info);
+        setProtocolMapperTypes(info);
+        setBuiltinProtocolMappers(info);
         return info;
     }
 
@@ -131,7 +135,7 @@ public class ServerInfoAdminResource {
         Collections.sort(info.protocols);
     }
 
-    private void setProtocolMappers(ServerInfoRepresentation info) {
+    private void setProtocolMapperTypes(ServerInfoRepresentation info) {
         info.protocolMapperTypes = new HashMap<String, List<ProtocolMapperTypeRepresentation>>();
         for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ProtocolMapper.class)) {
             ProtocolMapper mapper = (ProtocolMapper)p;
@@ -150,10 +154,24 @@ public class ServerInfoAdminResource {
                 ProtocolMapperTypeRepresentation.ConfigProperty propRep = new ProtocolMapperTypeRepresentation.ConfigProperty();
                 propRep.setName(prop.getName());
                 propRep.setLabel(prop.getLabel());
+                propRep.setType(prop.getType());
+                propRep.setDefaultValue(prop.getDefaultValue());
                 propRep.setHelpText(prop.getHelpText());
                 rep.getProperties().add(propRep);
             }
             types.add(rep);
+        }
+    }
+
+    private void setBuiltinProtocolMappers(ServerInfoRepresentation info) {
+        info.builtinProtocolMappers = new HashMap<>();
+        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
+            LoginProtocolFactory factory = (LoginProtocolFactory)p;
+            List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
+            for (ProtocolMapperModel mapper : factory.getBuiltinMappers()) {
+                mappers.add(ModelToRepresentation.toRepresentation(mapper));
+            }
+            info.builtinProtocolMappers.put(p.getId(), mappers);
         }
     }
 
@@ -185,6 +203,7 @@ public class ServerInfoAdminResource {
 
         private List<String> eventListeners;
         private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
+        private Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers;
 
         public ServerInfoRepresentation() {
         }
@@ -227,6 +246,14 @@ public class ServerInfoAdminResource {
 
         public Map<String, List<ProtocolMapperTypeRepresentation>> getProtocolMapperTypes() {
             return protocolMapperTypes;
+        }
+
+        public Map<String, List<ProtocolMapperRepresentation>> getBuiltinProtocolMappers() {
+            return builtinProtocolMappers;
+        }
+
+        public void setBuiltinProtocolMappers(Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers) {
+            this.builtinProtocolMappers = builtinProtocolMappers;
         }
     }
 

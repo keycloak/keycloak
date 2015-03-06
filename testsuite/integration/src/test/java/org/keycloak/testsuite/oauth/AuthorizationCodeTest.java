@@ -140,7 +140,7 @@ public class AuthorizationCodeTest {
         assertEquals("access_denied", error);
 
         events.expectLogin().error("rejected_by_user").user((String) null).session((String) null)
-                .removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID)
+                .removeDetail(Details.USERNAME)
                 .detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/protocol/openid-connect/oauth/oob")
                 .assertEvent().getDetails().get(Details.CODE_ID);
 

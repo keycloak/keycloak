@@ -5,21 +5,17 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.entities.ClaimTypeEntity;
 import org.keycloak.models.entities.IdentityProviderEntity;
-import org.keycloak.models.entities.ProtocolMapperEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
@@ -299,8 +295,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
 
-
-
     @Override
     public int getAccessCodeLifespan() {
         return realm.getAccessCodeLifespan();
@@ -321,6 +315,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         realm.setAccessCodeLifespanUserAction(accessCodeLifespanUserAction);
         updateRealm();
+    }
+
+    @Override
+    public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
+        realm.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
+        updateRealm();
+    }
+
+    @Override
+    public int getAccessCodeLifespanLogin() {
+        return realm.getAccessCodeLifespanLogin();
     }
 
     @Override
@@ -616,14 +621,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return result;
     }
 
-    public void addDefaultClientProtocolMappers(ClientModel client) {
-        Set<String> adding = new HashSet<String>();
-        for (ProtocolMapperEntity mapper : realm.getProtocolMappers()) {
-            if (mapper.isAppliedByDefault()) adding.add(mapper.getId());
-        }
-        client.setProtocolMappers(adding);
-
-    }
     @Override
     public ApplicationModel addApplication(String name) {
         return this.addApplication(null, name);
@@ -639,7 +636,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         getMongoStore().insertEntity(appData, invocationContext);
 
         ApplicationModel model = new ApplicationAdapter(session, this, appData, invocationContext);
-        addDefaultClientProtocolMappers(model);
         return model;
     }
 
@@ -662,7 +658,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         getMongoStore().insertEntity(oauthClient, invocationContext);
 
         OAuthClientAdapter model = new OAuthClientAdapter(session, this, oauthClient, invocationContext);
-        addDefaultClientProtocolMappers(model);
         return model;
     }
 
@@ -796,178 +791,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public void setSmtpConfig(Map<String, String> smtpConfig) {
         realm.setSmtpConfig(smtpConfig);
         updateRealm();
-    }
-
-    @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        Set<ProtocolMapperModel> result = new HashSet<ProtocolMapperModel>();
-        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
-            ProtocolMapperModel mapping = new ProtocolMapperModel();
-            mapping.setId(entity.getId());
-            mapping.setName(entity.getName());
-            mapping.setProtocol(entity.getProtocol());
-            mapping.setAppliedByDefault(entity.isAppliedByDefault());
-            mapping.setConsentRequired(entity.isConsentRequired());
-            mapping.setConsentText(entity.getConsentText());
-            Map<String, String> config = new HashMap<String, String>();
-            if (entity.getConfig() != null) {
-                config.putAll(entity.getConfig());
-            }
-            mapping.setConfig(config);
-        }
-        return result;
-    }
-
-    @Override
-    public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
-        if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
-            throw new RuntimeException("protocol mapper name must be unique per protocol");
-        }
-        ProtocolMapperEntity entity = new ProtocolMapperEntity();
-        entity.setId(KeycloakModelUtils.generateId());
-        entity.setProtocol(model.getProtocol());
-        entity.setName(model.getName());
-        entity.setAppliedByDefault(model.isAppliedByDefault());
-        entity.setProtocolMapper(model.getProtocolMapper());
-        entity.setConfig(model.getConfig());
-        entity.setConsentRequired(model.isConsentRequired());
-        entity.setConsentText(model.getConsentText());
-        realm.getProtocolMappers().add(entity);
-        updateRealm();
-        return entityToModel(entity);
-    }
-
-    @Override
-    public void removeProtocolMapper(ProtocolMapperModel mapping) {
-        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
-            if (entity.getId().equals(mapping.getId())) {
-                realm.getProtocolMappers().remove(entity);
-                updateRealm();
-                break;
-            }
-        }
-
-    }
-
-    protected ProtocolMapperEntity getProtocolMapperyEntityById(String id) {
-        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
-            if (entity.getId().equals(id)) {
-                return entity;
-            }
-        }
-        return null;
-
-    }
-    protected ProtocolMapperEntity getProtocolMapperEntityByName(String protocol, String name) {
-        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
-            if (entity.getProtocol().equals(protocol) && entity.getName().equals(name)) {
-                return entity;
-            }
-        }
-        return null;
-
-    }
-
-
-    @Override
-    public void updateProtocolMapper(ProtocolMapperModel mapping) {
-        ProtocolMapperEntity entity = getProtocolMapperyEntityById(mapping.getId());
-        entity.setAppliedByDefault(mapping.isAppliedByDefault());
-        entity.setProtocolMapper(mapping.getProtocolMapper());
-        entity.setConsentRequired(mapping.isConsentRequired());
-        entity.setConsentText(mapping.getConsentText());
-        if (entity.getConfig() != null) {
-            entity.getConfig().clear();
-            entity.getConfig().putAll(mapping.getConfig());
-        } else {
-            entity.setConfig(mapping.getConfig());
-        }
-        updateRealm();
-
-    }
-
-    @Override
-    public ProtocolMapperModel getProtocolMapperById(String id) {
-        ProtocolMapperEntity entity = getProtocolMapperyEntityById(id);
-        if (entity == null) return null;
-        return entityToModel(entity);
-    }
-
-    @Override
-    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        ProtocolMapperEntity entity = getProtocolMapperEntityByName(protocol, name);
-        if (entity == null) return null;
-        return entityToModel(entity);
-    }
-
-    protected ProtocolMapperModel entityToModel(ProtocolMapperEntity entity) {
-        ProtocolMapperModel mapping = new ProtocolMapperModel();
-        mapping.setId(entity.getId());
-        mapping.setName(entity.getName());
-        mapping.setProtocol(entity.getProtocol());
-        mapping.setAppliedByDefault(entity.isAppliedByDefault());
-        mapping.setProtocolMapper(entity.getProtocolMapper());
-        mapping.setConsentRequired(entity.isConsentRequired());
-        mapping.setConsentText(entity.getConsentText());
-        Map<String, String> config = new HashMap<String, String>();
-        if (entity.getConfig() != null) config.putAll(entity.getConfig());
-        mapping.setConfig(config);
-        return mapping;
-    }
-
-    @Override
-    public Set<ClaimTypeModel> getClaimTypes() {
-        Set<ClaimTypeModel> result = new HashSet<ClaimTypeModel>();
-        for (ClaimTypeEntity entity : realm.getClaimTypes()) {
-            result.add(new ClaimTypeModel(entity.getId(), entity.getName(), entity.isBuiltIn(), entity.getType()));
-        }
-       return result;
-    }
-
-    @Override
-    public ClaimTypeModel addClaimType(ClaimTypeModel model) {
-        String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
-        ClaimTypeModel claim = new ClaimTypeModel(id, model.getName(), model.isBuiltIn(), model.getType());
-        ClaimTypeEntity entity = new ClaimTypeEntity();
-        entity.setId(claim.getId());
-        entity.setType(model.getType());
-        entity.setBuiltIn(model.isBuiltIn());
-        entity.setName(model.getName());
-        realm.getClaimTypes().add(entity);
-        updateRealm();
-        return claim;
-    }
-
-    @Override
-    public void removeClaimType(ClaimTypeModel claimType) {
-        for (ClaimTypeEntity entity : realm.getClaimTypes()) {
-            if (entity.getId().equals(claimType.getId())) {
-                realm.getClaimTypes().remove(entity);
-                updateRealm();
-                break;
-            }
-        }
-    }
-
-    @Override
-    public ClaimTypeModel getClaimType(String name) {
-        for (ClaimTypeModel claimType : getClaimTypes()) {
-            if (claimType.getName().equals(name)) return claimType;
-        }
-        return null;
-    }
-
-    @Override
-    public void updateClaimType(ClaimTypeModel claimType) {
-        for (ClaimTypeEntity entity : realm.getClaimTypes()) {
-            if (entity.getId().equals(claimType.getId())) {
-                entity.setName(claimType.getName());
-                entity.setBuiltIn(claimType.isBuiltIn());
-                entity.setType(claimType.getType());
-                updateRealm();
-                break;
-            }
-        }
     }
 
 

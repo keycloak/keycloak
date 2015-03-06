@@ -26,4 +26,12 @@ public class ClientBean {
     public String getClientId() {
         return client.getClientId();
     }
+
+    public String getBaseUrl() {
+        if (client instanceof ApplicationModel) {
+            return ((ApplicationModel) client).getBaseUrl();
+        }
+        return null;
+    }
+
 }

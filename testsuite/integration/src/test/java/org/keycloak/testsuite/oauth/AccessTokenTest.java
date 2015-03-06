@@ -26,18 +26,24 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.VerificationException;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.mappers.OIDCAddressMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCUserAttributeMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -58,6 +64,7 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 
@@ -568,6 +575,84 @@ public class AccessTokenTest {
         client.close();
         events.clear();
 
+    }
+
+    @Test
+    public void testTokenMapping() throws Exception {
+        Client client = ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        URI grantUri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("test");
+        WebTarget grantTarget = client.target(grantUri);
+        {
+            KeycloakSession session = keycloakRule.startSession();
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
+            user.setAttribute("street", "5 Yawkey Way");
+            user.setAttribute("locality", "Boston");
+            user.setAttribute("region", "MA");
+            user.setAttribute("postal_code", "02115");
+            user.setAttribute("country", "USA");
+            user.setAttribute("phone", "617-777-6666");
+            ApplicationModel app = realm.getApplicationByName("test-app");
+            ProtocolMapperModel mapper = OIDCAddressMapper.createAddressMapper(true, true);
+            app.addProtocolMapper(mapper);
+            app.addProtocolMapper(OIDCUserAttributeMapper.createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true));
+            session.getTransaction().commit();
+            session.close();
+        }
+
+        {
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(200, response.getStatus());
+            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            IDToken idToken = getIdToken(tokenResponse);
+            Assert.assertNotNull(idToken.getAddress());
+            Assert.assertEquals(idToken.getAddress().getStreetAddress(), "5 Yawkey Way");
+            Assert.assertEquals(idToken.getAddress().getLocality(), "Boston");
+            Assert.assertEquals(idToken.getAddress().getRegion(), "MA");
+            Assert.assertEquals(idToken.getAddress().getPostalCode(), "02115");
+            Assert.assertEquals(idToken.getAddress().getCountry(), "USA");
+            Assert.assertNotNull(idToken.getOtherClaims().get("home_phone"));
+            //Assert.assertEquals("617-777-6666", idToken.getOtherClaims().get("home_phone"));
+
+            AccessToken accessToken = getAccessToken(tokenResponse);
+            Assert.assertNotNull(accessToken.getAddress());
+            Assert.assertEquals(accessToken.getAddress().getStreetAddress(), "5 Yawkey Way");
+            Assert.assertEquals(accessToken.getAddress().getLocality(), "Boston");
+            Assert.assertEquals(accessToken.getAddress().getRegion(), "MA");
+            Assert.assertEquals(accessToken.getAddress().getPostalCode(), "02115");
+            Assert.assertEquals(accessToken.getAddress().getCountry(), "USA");
+            Assert.assertNotNull(accessToken.getOtherClaims().get("home_phone"));
+            Assert.assertEquals("617-777-6666", accessToken.getOtherClaims().get("home_phone"));
+
+
+            response.close();
+        }
+        client.close();
+        events.clear();
+
+    }
+
+    private IDToken getIdToken(org.keycloak.representations.AccessTokenResponse tokenResponse) throws VerificationException {
+        JWSInput input = new JWSInput(tokenResponse.getIdToken());
+        IDToken idToken = null;
+        try {
+            idToken = input.readJsonContent(IDToken.class);
+        } catch (IOException e) {
+            throw new VerificationException();
+        }
+        return idToken;
+    }
+
+    private AccessToken getAccessToken(org.keycloak.representations.AccessTokenResponse tokenResponse) throws VerificationException {
+        JWSInput input = new JWSInput(tokenResponse.getIdToken());
+        AccessToken idToken = null;
+        try {
+            idToken = input.readJsonContent(AccessToken.class);
+        } catch (IOException e) {
+            throw new VerificationException();
+        }
+        return idToken;
     }
 
     protected Response executeGrantAccessTokenRequest(WebTarget grantTarget) {

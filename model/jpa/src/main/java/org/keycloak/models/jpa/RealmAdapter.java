@@ -2,22 +2,18 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
-import org.keycloak.models.jpa.entities.ClaimTypeEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
-import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
@@ -367,6 +363,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getAccessCodeLifespanLogin() {
+        return realm.getAccessCodeLifespanLogin();
+    }
+
+    @Override
+    public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
+        realm.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
+        em.flush();
+    }
+
+    @Override
     public String getPublicKeyPem() {
         return realm.getPublicKeyPem();
     }
@@ -628,17 +635,6 @@ public class RealmAdapter implements RealmModel {
         return this.addApplication(KeycloakModelUtils.generateId(), name);
     }
 
-    public void addDefaultClientProtocolMappers(ClientModel client) {
-        Set<String> adding = new HashSet<String>();
-        for (ProtocolMapperEntity mapper : realm.getProtocolMappers()) {
-            if (mapper.isAppliedByDefault()) {
-                adding.add(mapper.getId());
-            }
-        }
-        client.setProtocolMappers(adding);
-
-    }
-
     @Override
     public ApplicationModel addApplication(String id, String name) {
         ApplicationEntity applicationData = new ApplicationEntity();
@@ -649,9 +645,19 @@ public class RealmAdapter implements RealmModel {
         realm.getApplications().add(applicationData);
         em.persist(applicationData);
         em.flush();
-        ApplicationModel resource = new ApplicationAdapter(this, em, session, applicationData);
-        addDefaultClientProtocolMappers(resource);
+        final ApplicationModel resource = new ApplicationAdapter(this, em, session, applicationData);
         em.flush();
+        session.getKeycloakSessionFactory().publish(new ApplicationCreationEvent() {
+            @Override
+            public ApplicationModel getCreatedApplication() {
+                return resource;
+            }
+
+            @Override
+            public ClientModel getCreatedClient() {
+                return resource;
+            }
+        });
         return resource;
     }
 
@@ -714,9 +720,19 @@ public class RealmAdapter implements RealmModel {
         data.setRealm(realm);
         em.persist(data);
         em.flush();
-        OAuthClientModel model = new OAuthClientAdapter(this, data, em);
-        addDefaultClientProtocolMappers(model);
+        final OAuthClientModel model = new OAuthClientAdapter(this, data, em);
         em.flush();
+        session.getKeycloakSessionFactory().publish(new OAuthClientCreationEvent() {
+            @Override
+            public OAuthClientModel getCreatedOAuthClient() {
+                return model;
+            }
+
+            @Override
+            public ClientModel getCreatedClient() {
+                return model;
+            }
+        });
         return model;
     }
 
@@ -1209,194 +1225,6 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean isIdentityFederationEnabled() {
         return !this.realm.getIdentityProviders().isEmpty();
-    }
-
-    @Override
-    public Set<ClaimTypeModel> getClaimTypes() {
-        Set<ClaimTypeModel> claimTypes = new HashSet<ClaimTypeModel>();
-        for (ClaimTypeEntity claimTypeEntity : realm.getClaimTypes()) {
-            claimTypes.add(new ClaimTypeModel(claimTypeEntity.getId(), claimTypeEntity.getName(), claimTypeEntity.isBuiltIn(), ClaimTypeModel.ValueType.valueOf(claimTypeEntity.getType())));
-        }
-        return claimTypes;
-    }
-
-    @Override
-    public ClaimTypeModel addClaimType(ClaimTypeModel model) {
-        String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
-        ClaimTypeEntity claimEntity = new ClaimTypeEntity();
-        claimEntity.setId(id);
-        claimEntity.setType(model.getType().name());
-        claimEntity.setBuiltIn(model.isBuiltIn());
-        claimEntity.setRealm(realm);
-        em.persist(claimEntity);
-        realm.getClaimTypes().add(claimEntity);
-        return new ClaimTypeModel(claimEntity.getId(), model.getName(), model.isBuiltIn(), model.getType());
-    }
-
-    protected ClaimTypeEntity getClaimTypeEntity(ClaimTypeModel claim) {
-        for (ClaimTypeEntity claimTypeEntity : realm.getClaimTypes()) {
-            if (claimTypeEntity.getId().equals(claim.getId())) {
-               return claimTypeEntity;
-            }
-        }
-        return null;
-
-    }
-
-    @Override
-    public void removeClaimType(ClaimTypeModel claimType) {
-        ClaimTypeEntity toDelete = getClaimTypeEntity(claimType);
-        if (toDelete != null) {
-            realm.getClaimTypes().remove(toDelete);
-            em.remove(toDelete);
-        }
-    }
-
-    @Override
-    public ClaimTypeModel getClaimType(String name) {
-        for (ClaimTypeModel model : getClaimTypes()) {
-            if (model.getName().equals(name)) {
-                return model;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public void updateClaimType(ClaimTypeModel claimType) {
-        ClaimTypeEntity updated = getClaimTypeEntity(claimType);
-        updated.setName(claimType.getName());
-        updated.setBuiltIn(claimType.isBuiltIn());
-        updated.setType(claimType.getType().name());
-        em.flush();
-    }
-
-    @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        Set<ProtocolMapperModel> mappings = new HashSet<ProtocolMapperModel>();
-        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
-            ProtocolMapperModel mapping = new ProtocolMapperModel();
-            mapping.setId(entity.getId());
-            mapping.setName(entity.getName());
-            mapping.setProtocol(entity.getProtocol());
-            mapping.setAppliedByDefault(entity.isAppliedByDefault());
-            mapping.setProtocolMapper(entity.getProtocolMapper());
-            mapping.setConsentRequired(entity.isConsentRequired());
-            mapping.setConsentText(entity.getConsentText());
-            Map<String, String> config = new HashMap<String, String>();
-            if (entity.getConfig() != null) {
-                config.putAll(entity.getConfig());
-            }
-            mapping.setConfig(config);
-            mappings.add(mapping);
-        }
-        return mappings;
-    }
-
-    @Override
-    public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
-        if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
-            throw new RuntimeException("protocol mapper name must be unique per protocol");
-        }
-        String id = KeycloakModelUtils.generateId();
-        ProtocolMapperEntity entity = new ProtocolMapperEntity();
-        entity.setId(id);
-        entity.setName(model.getName());
-        entity.setProtocol(model.getProtocol());
-        entity.setProtocolMapper(model.getProtocolMapper());
-        entity.setAppliedByDefault(model.isAppliedByDefault());
-        entity.setRealm(realm);
-        entity.setConfig(model.getConfig());
-        entity.setConsentRequired(model.isConsentRequired());
-        entity.setConsentText(model.getConsentText());
-
-        em.persist(entity);
-        realm.getProtocolMappers().add(entity);
-        return entityToModel(entity);
-    }
-
-    protected ProtocolMapperEntity getProtocolMapperEntity(String id) {
-        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
-            if (entity.getId().equals(id)) {
-                return entity;
-            }
-        }
-        return null;
-
-    }
-
-    protected ProtocolMapperEntity getProtocolMapperEntityByName(String protocol, String name) {
-        for (ProtocolMapperEntity entity : realm.getProtocolMappers()) {
-            if (entity.getProtocol().equals(protocol) && entity.getName().equals(name)) {
-                return entity;
-            }
-        }
-        return null;
-
-    }
-
-    @Override
-    public void removeProtocolMapper(ProtocolMapperModel mapping) {
-        ProtocolMapperEntity toDelete = getProtocolMapperEntity(mapping.getId());
-        if (toDelete != null) {
-            realm.getProtocolMappers().remove(toDelete);
-            Set<String> removeId = new HashSet<String>();
-            removeId.add(mapping.getId());
-            for (ApplicationModel app : getApplications()) {
-                app.removeProtocolMappers(removeId);
-            }
-            for (OAuthClientModel app : getOAuthClients()) {
-                app.removeProtocolMappers(removeId);
-            }
-            em.remove(toDelete);
-        }
-
-    }
-
-    @Override
-    public void updateProtocolMapper(ProtocolMapperModel mapping) {
-        ProtocolMapperEntity entity = getProtocolMapperEntity(mapping.getId());
-        entity.setProtocolMapper(mapping.getProtocolMapper());
-        entity.setAppliedByDefault(mapping.isAppliedByDefault());
-        entity.setConsentRequired(mapping.isConsentRequired());
-        entity.setConsentText(mapping.getConsentText());
-        if (entity.getConfig() == null) {
-            entity.setConfig(mapping.getConfig());
-        } else {
-            entity.getConfig().clear();
-            entity.getConfig().putAll(mapping.getConfig());
-        }
-        em.flush();
-
-    }
-
-    @Override
-    public ProtocolMapperModel getProtocolMapperById(String id) {
-        ProtocolMapperEntity entity = getProtocolMapperEntity(id);
-        if (entity == null) return null;
-        return entityToModel(entity);
-    }
-
-    @Override
-    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        ProtocolMapperEntity entity = getProtocolMapperEntityByName(protocol, name);
-        if (entity == null) return null;
-        return entityToModel(entity);
-    }
-
-    protected ProtocolMapperModel entityToModel(ProtocolMapperEntity entity) {
-        ProtocolMapperModel mapping = new ProtocolMapperModel();
-        mapping.setId(entity.getId());
-        mapping.setName(entity.getName());
-        mapping.setProtocol(entity.getProtocol());
-        mapping.setProtocolMapper(entity.getProtocolMapper());
-        mapping.setAppliedByDefault(entity.isAppliedByDefault());
-        mapping.setConsentRequired(entity.isConsentRequired());
-        mapping.setConsentText(entity.getConsentText());
-        Map<String, String> config = new HashMap<String, String>();
-        if (entity.getConfig() != null) config.putAll(entity.getConfig());
-        mapping.setConfig(config);
-        return mapping;
     }
 
     @Override

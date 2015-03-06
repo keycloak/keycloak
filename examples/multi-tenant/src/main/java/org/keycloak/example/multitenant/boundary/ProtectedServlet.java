@@ -55,7 +55,7 @@ public class ProtectedServlet extends HttpServlet {
         writer.write(principal.getKeycloakSecurityContext().getIdToken().getIssuer());
 
         writer.write("<br/>User: ");
-        writer.write(principal.getKeycloakSecurityContext().getIdToken().getUserClaimSet().getPreferredUsername());
+        writer.write(principal.getKeycloakSecurityContext().getIdToken().getPreferredUsername());
 
         writer.write(String.format("<br/><a href=\"/multitenant/%s/logout\">Logout</a>", realm));
     }

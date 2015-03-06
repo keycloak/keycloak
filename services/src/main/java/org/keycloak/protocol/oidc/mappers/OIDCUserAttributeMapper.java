@@ -8,6 +8,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
+public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
 
     private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
 
@@ -30,11 +31,34 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
+        property.setType(ConfigProperty.STRING_TYPE);
         configProperties.add(property);
         property = new ConfigProperty();
         property.setName(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
+        property.setType(ConfigProperty.STRING_TYPE);
         property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
+        configProperties.add(property);
+        property = new ConfigProperty();
+        property.setName(OIDCAttributeMapperHelper.JSON_TYPE);
+        property.setLabel(OIDCAttributeMapperHelper.JSON_TYPE);
+        property.setType(ConfigProperty.STRING_TYPE);
+        property.setDefaultValue(ConfigProperty.STRING_TYPE);
+        property.setHelpText("JSON type that should be used to populate the json claim in the token.  long, int, boolean, and String are valid values.");
+        configProperties.add(property);
+        property = new ConfigProperty();
+        property.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
+        property.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_LABEL);
+        property.setType(ConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue("true");
+        property.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_HELP_TEXT);
+        configProperties.add(property);
+        property = new ConfigProperty();
+        property.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
+        property.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_LABEL);
+        property.setType(ConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue("true");
+        property.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
         configProperties.add(property);
 
     }
@@ -67,25 +91,39 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
     }
 
     @Override
-    public AccessToken transformToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                      UserSessionModel userSession, ClientSessionModel clientSession) {
-        UserModel user = userSession.getUser();
-        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
-        String attributeValue = user.getAttribute(attributeName);
-        if (attributeValue == null) return token;
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
+    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                            UserSessionModel userSession, ClientSessionModel clientSession) {
+        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) return token;
+
+        setClaim(token, mappingModel, userSession);
         return token;
     }
 
-    public static void addClaimMapper(RealmModel realm, String name,
+    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+        UserModel user = userSession.getUser();
+        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
+        String attributeValue = user.getAttribute(attributeName);
+        if (attributeValue == null) return;
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
+    }
+
+    @Override
+    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
+        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) return token;
+        setClaim(token, mappingModel, userSession);
+        return token;
+    }
+
+    public static ProtocolMapperModel createClaimMapper(String name,
                                       String userAttribute,
                                       String tokenClaimName, String claimType,
                                       boolean consentRequired, String consentText,
-                                      boolean appliedByDefault) {
-        OIDCAttributeMapperHelper.addClaimMapper(realm, name, userAttribute,
+                                      boolean accessToken, boolean idToken) {
+        return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
                 consentRequired, consentText,
-                appliedByDefault, PROVIDER_ID);
+                accessToken, idToken,
+                PROVIDER_ID);
     }
 
 

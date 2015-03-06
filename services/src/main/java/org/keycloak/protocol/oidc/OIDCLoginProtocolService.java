@@ -340,7 +340,7 @@ public class OIDCLoginProtocolService {
 
         TokenManager.attachClientSession(userSession, clientSession);
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event)
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
                 .generateAccessToken(session, scope, client, user, userSession, clientSession)
                 .generateRefreshToken()
                 .generateIDToken()
@@ -507,9 +507,9 @@ public class OIDCLoginProtocolService {
             event.error(Errors.INVALID_TOKEN);
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
-        AccessToken accessToken;
+        AccessTokenResponse res;
         try {
-            accessToken = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
+            res = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
         } catch (OAuthErrorException e) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, e.getError());
@@ -518,10 +518,6 @@ public class OIDCLoginProtocolService {
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event)
-                .accessToken(accessToken)
-                .generateIDToken()
-                .generateRefreshToken().build();
 
         event.success();
 
@@ -681,7 +677,7 @@ public class OIDCLoginProtocolService {
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event)
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
                 .accessToken(token)
                 .generateIDToken()
                 .generateRefreshToken().build();

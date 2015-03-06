@@ -4,7 +4,6 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import org.keycloak.adapters.undertow.KeycloakUndertowAccount;
-import org.keycloak.representations.UserClaimSet;
 import org.keycloak.representations.IDToken;
 
 /**
@@ -65,16 +64,14 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
                 exchange.getRequestHeaders().put(KEYCLOAK_SUBJECT, idToken.getSubject());
             }
 
-            UserClaimSet claimSet = idToken.getUserClaimSet();
-
-            if (claimSet.getPreferredUsername() != null) {
-                exchange.getRequestHeaders().put(KEYCLOAK_USERNAME, claimSet.getPreferredUsername());
+            if (idToken.getPreferredUsername() != null) {
+                exchange.getRequestHeaders().put(KEYCLOAK_USERNAME, idToken.getPreferredUsername());
             }
-            if (claimSet.getEmail() != null) {
-                exchange.getRequestHeaders().put(KEYCLOAK_EMAIL, claimSet.getEmail());
+            if (idToken.getEmail() != null) {
+                exchange.getRequestHeaders().put(KEYCLOAK_EMAIL, idToken.getEmail());
             }
-            if (claimSet.getName() != null) {
-                exchange.getRequestHeaders().put(KEYCLOAK_NAME, claimSet.getName());
+            if (idToken.getName() != null) {
+                exchange.getRequestHeaders().put(KEYCLOAK_NAME, idToken.getName());
             }
             if (sendAccessToken) {
                 exchange.getRequestHeaders().put(KEYCLOAK_ACCESS_TOKEN, account.getKeycloakSecurityContext().getTokenString());

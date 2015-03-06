@@ -31,8 +31,8 @@
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
-            "baseUrl": "http://localhost:8080/sales-post",
-            "adminUrl": "http://localhost:8080/sales-post",
+            "baseUrl": "http://localhost:8080/sales-post/",
+            "adminUrl": "http://localhost:8080/sales-post/",
             "redirectUris": [
                 "http://localhost:8080/sales-post/*"
             ],
@@ -45,8 +45,8 @@
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
-            "baseUrl": "http://localhost:8080/sales-post-sig",
-            "adminUrl": "http://localhost:8080/sales-post-sig",
+            "baseUrl": "http://localhost:8080/sales-post-sig/",
+            "adminUrl": "http://localhost:8080/sales-post-sig/",
             "redirectUris": [
                 "http://localhost:8080/sales-post-sig/*"
             ],
@@ -64,8 +64,8 @@
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
-            "baseUrl": "http://localhost:8080/sales-post-enc",
-            "adminUrl": "http://localhost:8080/sales-post-enc",
+            "baseUrl": "http://localhost:8080/sales-post-enc/",
+            "adminUrl": "http://localhost:8080/sales-post-enc/",
             "redirectUris": [
                 "http://localhost:8080/sales-post-enc/*"
             ],
@@ -86,8 +86,8 @@
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
-            "baseUrl": "http://localhost:8080/employee",
-            "adminUrl": "http://localhost:8080/employee",
+            "baseUrl": "http://localhost:8080/employee/",
+            "adminUrl": "http://localhost:8080/employee/",
             "redirectUris": [
                 "http://localhost:8080/employee/*"
             ],
@@ -100,8 +100,8 @@
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
-            "baseUrl": "http://localhost:8080/employee-sig",
-            "adminUrl": "http://localhost:8080/employee-sig",
+            "baseUrl": "http://localhost:8080/employee-sig/",
+            "adminUrl": "http://localhost:8080/employee-sig/",
             "redirectUris": [
                 "http://localhost:8080/employee-sig/*"
             ],

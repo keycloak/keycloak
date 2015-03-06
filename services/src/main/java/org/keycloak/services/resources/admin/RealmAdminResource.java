@@ -12,6 +12,7 @@ import org.keycloak.exportimport.ApplicationImporter;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserSessionModel;
@@ -19,8 +20,12 @@ import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
@@ -271,18 +276,6 @@ public class RealmAdminResource {
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
         return new ResourceAdminManager().pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
-    }
-
-    /**
-     * Protocol mappers
-     *
-     */
-    @Path("protocol-mappers")
-    public ProtocolMappersResource protocolMappers() {
-        ProtocolMappersResource mappers = new ProtocolMappersResource(realm, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(mappers);
-        //resourceContext.initResource(mappers);
-        return mappers;
     }
 
     /**

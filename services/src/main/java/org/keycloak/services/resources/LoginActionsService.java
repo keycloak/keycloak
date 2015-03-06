@@ -46,6 +46,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.Consumes;
@@ -54,6 +55,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -71,6 +73,8 @@ import java.util.concurrent.TimeUnit;
 public class LoginActionsService {
 
     protected static final Logger logger = Logger.getLogger(LoginActionsService.class);
+
+    public static final String ACTION_COOKIE = "KEYCLOAK_ACTION";
 
     private RealmModel realm;
 
@@ -150,6 +154,18 @@ public class LoginActionsService {
             } else if (!clientCode.isValid(requiredAction)) {
                 event.error(Errors.INVALID_CODE);
                 response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_CODE);
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        boolean check(String code, ClientSessionModel.Action requiredAction, ClientSessionModel.Action alternativeRequiredAction) {
+            if (!check(code)) {
+                return false;
+            } else if (!(clientCode.isValid(requiredAction) || clientCode.isValid(alternativeRequiredAction))) {
+                event.error(Errors.INVALID_CODE);
+                response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid code, please login again through your application.");
                 return false;
             } else {
                 return true;
@@ -265,7 +281,10 @@ public class LoginActionsService {
             event.error(Errors.INVALID_CODE);
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_CODE);
         }
+
         ClientSessionModel clientSession = clientCode.getClientSession();
+        event.detail(Details.CODE_ID, clientSession.getId());
+
         if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientSession.getUserSession() != null) {
             clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
             event.client(clientSession.getClient()).error(Errors.EXPIRED_CODE);
@@ -511,6 +530,8 @@ public class LoginActionsService {
             }
         }
 
+        AttributeFormDataProcessor.process(formData, realm, user);
+
         event.user(user).success();
         event.reset();
 
@@ -692,7 +713,7 @@ public class LoginActionsService {
                                    final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_PASSWORD);
         Checks checks = new Checks();
-        if (!checks.check(code, ClientSessionModel.Action.UPDATE_PASSWORD)) {
+        if (!checks.check(code, ClientSessionModel.Action.UPDATE_PASSWORD, ClientSessionModel.Action.RECOVER_PASSWORD)) {
             return checks.response;
         }
         ClientSessionCode accessCode = checks.clientCode;
@@ -730,7 +751,17 @@ public class LoginActionsService {
 
         user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
 
-        event.clone().event(EventType.UPDATE_PASSWORD).success();
+        event.event(EventType.UPDATE_PASSWORD).success();
+
+        if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD)) {
+            String actionCookieValue = getActionCookie();
+            if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
+                return Flows.forms(session, realm, clientSession.getClient(), uriInfo).setSuccess("passwordUpdated").createInfoPage();
+            }
+        }
+
+        event = event.clone().event(EventType.LOGIN);
+
         return redirectOauth(user, accessCode, clientSession, userSession);
     }
 
@@ -753,7 +784,14 @@ public class LoginActionsService {
 
             user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
 
-            event.clone().event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
+            event.event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
+
+            String actionCookieValue = getActionCookie();
+            if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
+                return Flows.forms(session, realm, clientSession.getClient(), uriInfo).setSuccess("emailVerified").createInfoPage();
+            }
+
+            event = event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN);
 
             return redirectOauth(user, accessCode, clientSession, userSession);
         } else {
@@ -765,6 +803,8 @@ public class LoginActionsService {
             ClientSessionModel clientSession = accessCode.getClientSession();
             UserSessionModel userSession = clientSession.getUserSession();
             initEvent(clientSession);
+
+            createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
 
             return Flows.forms(session, realm, null, uriInfo, headers)
                     .setClientSessionCode(accessCode.getCode())
@@ -783,7 +823,6 @@ public class LoginActionsService {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
-            accessCode.setRequiredAction(RequiredAction.UPDATE_PASSWORD);
             return Flows.forms(session, realm, null, uriInfo, headers)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);
@@ -868,9 +907,21 @@ public class LoginActionsService {
                         .setClientSessionCode(accessCode.getCode())
                         .createErrorPage();
             }
+
+            createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
         }
 
         return Flows.forms(session, realm, client,  uriInfo, headers).setSuccess(Messages.EMAIL_SENT).setClientSessionCode(accessCode.getCode()).createPasswordReset();
+    }
+
+    private String getActionCookie() {
+        Cookie cookie = headers.getCookies().get(ACTION_COOKIE);
+        AuthenticationManager.expireCookie(realm, ACTION_COOKIE, AuthenticationManager.getRealmCookiePath(realm, uriInfo), realm.getSslRequired().isRequired(clientConnection), clientConnection);
+        return cookie != null ? cookie.getValue() : null;
+    }
+
+    public static void createActionCookie(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, String sessionId) {
+        CookieHelper.addCookie(ACTION_COOKIE, sessionId, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, realm.getSslRequired().isRequired(clientConnection), true);
     }
 
     private Response redirectOauth(UserModel user, ClientSessionCode accessCode, ClientSessionModel clientSession, UserSessionModel userSession) {

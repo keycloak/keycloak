@@ -3,6 +3,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KerberosConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -47,7 +48,7 @@ import java.util.Map;
 public class ProtocolMappersResource {
     protected static final Logger logger = Logger.getLogger(ProtocolMappersResource.class);
 
-    protected RealmModel realm;
+    protected ClientModel client;
 
     protected  RealmAuth auth;
 
@@ -57,9 +58,9 @@ public class ProtocolMappersResource {
     @Context
     protected KeycloakSession session;
 
-    public ProtocolMappersResource(RealmModel realm, RealmAuth auth) {
+    public ProtocolMappersResource(ClientModel client, RealmAuth auth) {
         this.auth = auth;
-        this.realm = realm;
+        this.client = client;
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -77,14 +78,14 @@ public class ProtocolMappersResource {
     public List<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
         auth.requireView();
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
-        for (ProtocolMapperModel mapper : realm.getProtocolMappers()) {
+        for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
             if (mapper.getProtocol().equals(protocol)) mappers.add(ModelToRepresentation.toRepresentation(mapper));
         }
         return mappers;
     }
 
     /**
-     * createa mapper
+     * creates mapper
      *
      * @param rep
      */
@@ -95,8 +96,23 @@ public class ProtocolMappersResource {
     public Response createMapper(ProtocolMapperRepresentation rep) {
         auth.requireManage();
         ProtocolMapperModel model = RepresentationToModel.toModel(rep);
-        model = realm.addProtocolMapper(model);
+        model = client.addProtocolMapper(model);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
+    }
+    /**
+     * creates multiple mapper
+     *
+     */
+    @Path("add-models")
+    @POST
+    @NoCache
+    @Consumes("application/json")
+    public void createMapper(List<ProtocolMapperRepresentation> reps) {
+        auth.requireManage();
+        for (ProtocolMapperRepresentation rep : reps) {
+            ProtocolMapperModel model = RepresentationToModel.toModel(rep);
+            model = client.addProtocolMapper(model);
+        }
     }
 
     @GET
@@ -106,7 +122,7 @@ public class ProtocolMappersResource {
     public List<ProtocolMapperRepresentation> getMappers() {
         auth.requireView();
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
-        for (ProtocolMapperModel mapper : realm.getProtocolMappers()) {
+        for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
             mappers.add(ModelToRepresentation.toRepresentation(mapper));
         }
         return mappers;
@@ -118,7 +134,7 @@ public class ProtocolMappersResource {
     @Produces("application/json")
     public ProtocolMapperRepresentation getMapperById(@PathParam("id") String id) {
         auth.requireView();
-        ProtocolMapperModel model = realm.getProtocolMapperById(id);
+        ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         return ModelToRepresentation.toRepresentation(model);
     }
@@ -129,10 +145,10 @@ public class ProtocolMappersResource {
     @Consumes("application/json")
     public void update(@PathParam("id") String id, ProtocolMapperRepresentation rep) {
         auth.requireManage();
-        ProtocolMapperModel model = realm.getProtocolMapperById(id);
+        ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
-        realm.updateProtocolMapper(model);
+        client.updateProtocolMapper(model);
     }
 
     @DELETE
@@ -140,9 +156,9 @@ public class ProtocolMappersResource {
     @Path("models/{id}")
     public void delete(@PathParam("id") String id) {
         auth.requireManage();
-        ProtocolMapperModel model = realm.getProtocolMapperById(id);
+        ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
-        realm.removeProtocolMapper(model);
+        client.removeProtocolMapper(model);
     }
 
 

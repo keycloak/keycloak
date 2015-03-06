@@ -26,6 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.flows.Urls;
 
 import javax.ws.rs.core.*;
@@ -42,7 +43,8 @@ import java.util.concurrent.TimeUnit;
 
     private static final Logger logger = Logger.getLogger(FreeMarkerLoginFormsProvider.class);
 
-    private String message;
+    public static enum MessageType {SUCCESS, WARNING, ERROR}
+
     private String accessCode;
     private Response.Status status;
     private List<RoleModel> realmRolesRequested;
@@ -53,8 +55,7 @@ import java.util.concurrent.TimeUnit;
     private URI actionUri;
     private Object[] parameters;
 
-    public static enum MessageType {SUCCESS, WARNING, ERROR}
-
+    private String message;
     private MessageType messageType = MessageType.ERROR;
 
     private MultivaluedMap<String, String> formData;
@@ -263,6 +264,10 @@ import java.util.concurrent.TimeUnit;
 
     public Response createRegistration() {
         return createResponse(LoginFormsPages.REGISTER);
+    }
+
+    public Response createInfoPage() {
+        return createResponse(LoginFormsPages.INFO);
     }
 
     public Response createErrorPage() {

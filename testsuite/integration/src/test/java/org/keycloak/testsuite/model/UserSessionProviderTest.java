@@ -294,6 +294,61 @@ public class UserSessionProviderTest {
     }
 
     @Test
+    public void testExpireDetachedClientSessions() {
+        try {
+            realm.setAccessCodeLifespan(10);
+            realm.setAccessCodeLifespanUserAction(10);
+            realm.setAccessCodeLifespanLogin(30);
+
+            // Login lifespan is largest
+            String clientSessionId = session.sessions().createClientSession(realm, realm.findClient("test-app")).getId();
+
+            Time.setOffset(25);
+            session.sessions().removeExpiredUserSessions(realm);
+            assertNotNull(session.sessions().getClientSession(clientSessionId));
+
+            Time.setOffset(35);
+            session.sessions().removeExpiredUserSessions(realm);
+            assertNull(session.sessions().getClientSession(clientSessionId));
+
+            // User action is largest
+            realm.setAccessCodeLifespanUserAction(40);
+
+            Time.setOffset(0);
+            clientSessionId = session.sessions().createClientSession(realm, realm.findClient("test-app")).getId();
+
+            Time.setOffset(35);
+            session.sessions().removeExpiredUserSessions(realm);
+            assertNotNull(session.sessions().getClientSession(clientSessionId));
+
+            Time.setOffset(45);
+            session.sessions().removeExpiredUserSessions(realm);
+            assertNull(session.sessions().getClientSession(clientSessionId));
+
+            // Access code is largest
+            realm.setAccessCodeLifespan(50);
+
+            Time.setOffset(0);
+            clientSessionId = session.sessions().createClientSession(realm, realm.findClient("test-app")).getId();
+
+            Time.setOffset(45);
+            session.sessions().removeExpiredUserSessions(realm);
+            assertNotNull(session.sessions().getClientSession(clientSessionId));
+
+            Time.setOffset(55);
+            session.sessions().removeExpiredUserSessions(realm);
+            assertNull(session.sessions().getClientSession(clientSessionId));
+        } finally {
+            Time.setOffset(0);
+
+            realm.setAccessCodeLifespan(60);
+            realm.setAccessCodeLifespanUserAction(300);
+            realm.setAccessCodeLifespanLogin(1800);
+
+        }
+    }
+
+    @Test
     public void testGetByClient() {
         UserSessionModel[] sessions = createSessions();
 

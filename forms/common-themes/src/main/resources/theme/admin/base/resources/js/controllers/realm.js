@@ -838,6 +838,12 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.accessCodeLifespan = TimeUnit.convert($scope.realm.accessCodeLifespan, from, to);
     });
 
+    $scope.realm.accessCodeLifespanLoginUnit = TimeUnit.autoUnit(realm.accessCodeLifespanLogin);
+    $scope.realm.accessCodeLifespanLogin = TimeUnit.toUnit(realm.accessCodeLifespanLogin, $scope.realm.accessCodeLifespanLoginUnit);
+    $scope.$watch('realm.accessCodeLifespanLoginUnit', function(to, from) {
+        $scope.realm.accessCodeLifespanLogin = TimeUnit.convert($scope.realm.accessCodeLifespanLogin, from, to);
+    });
+
     $scope.realm.accessCodeLifespanUserActionUnit = TimeUnit.autoUnit(realm.accessCodeLifespanUserAction);
     $scope.realm.accessCodeLifespanUserAction = TimeUnit.toUnit(realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit);
     $scope.$watch('realm.accessCodeLifespanUserActionUnit', function(to, from) {
@@ -860,12 +866,14 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         delete realmCopy["accessCodeLifespanUnit"];
         delete realmCopy["ssoSessionIdleTimeoutUnit"];
         delete realmCopy["accessCodeLifespanUserActionUnit"];
+        delete realmCopy["accessCodeLifespanLoginUnit"];
 
         realmCopy.accessTokenLifespan = TimeUnit.toSeconds($scope.realm.accessTokenLifespan, $scope.realm.accessTokenLifespanUnit)
         realmCopy.ssoSessionIdleTimeout = TimeUnit.toSeconds($scope.realm.ssoSessionIdleTimeout, $scope.realm.ssoSessionIdleTimeoutUnit)
         realmCopy.ssoSessionMaxLifespan = TimeUnit.toSeconds($scope.realm.ssoSessionMaxLifespan, $scope.realm.ssoSessionMaxLifespanUnit)
         realmCopy.accessCodeLifespan = TimeUnit.toSeconds($scope.realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit)
         realmCopy.accessCodeLifespanUserAction = TimeUnit.toSeconds($scope.realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit)
+        realmCopy.accessCodeLifespanLogin = TimeUnit.toSeconds($scope.realm.accessCodeLifespanLogin, $scope.realm.accessCodeLifespanLoginUnit)
 
         Realm.update(realmCopy, function () {
             $route.reload();
