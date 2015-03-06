@@ -407,7 +407,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/ExportImportTest.java</exclude>
-                                <exclude>**/SyncProvidersTest.java</exclude>
+                                <exclude>**/broker/***</exclude>
                             </excludes>
                         </configuration>
                     </plugin>

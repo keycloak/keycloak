@@ -84,7 +84,7 @@ public class InMemoryModel implements KeycloakTransaction {
                 allModels.put(session, model);
                 session.getTransaction().enlist(model);
                 model.readModelFile();
-                logger.info("Added session " + session.hashCode() + " total sessions=" + allModels.size());
+                //logger.info("Added session " + session.hashCode() + " total sessions=" + allModels.size());
             }
 
             return model;
@@ -106,7 +106,7 @@ public class InMemoryModel implements KeycloakTransaction {
         } catch (IOException ioe) {
             logger.error("Unable to read model file " + kcdata.getAbsolutePath(), ioe);
         } finally {
-            logger.info("Read model file for session=" + session.hashCode());
+            //logger.info("Read model file for session=" + session.hashCode());
             try {
                 if (fis != null) fis.close();
             } catch (IOException e) {
@@ -124,7 +124,7 @@ public class InMemoryModel implements KeycloakTransaction {
         } catch (IOException e) {
             logger.error("Unable to write model file " + keycloakModelFile.getAbsolutePath(), e);
         } finally {
-            logger.info("Wrote model file for session=" + session.hashCode());
+            //logger.info("Wrote model file for session=" + session.hashCode());
             try {
                 if (outStream != null) outStream.close();
             } catch (IOException e) {
@@ -202,8 +202,8 @@ public class InMemoryModel implements KeycloakTransaction {
     void sessionClosed(KeycloakSession session) {
         synchronized (allModels) {
             allModels.remove(session);
-            logger.info("Removed session " + session.hashCode());
-            logger.info("sessionClosed: Session count=" + allModels.size());
+            //logger.info("Removed session " + session.hashCode());
+            //logger.info("sessionClosed: Session count=" + allModels.size());
         }
     }
 
@@ -213,11 +213,11 @@ public class InMemoryModel implements KeycloakTransaction {
 
     // commitCount is used for debugging.  This allows you to easily run a test
     // to a particular point and then examine the JSON file.
-    private static int commitCount = 0;
+    //private static int commitCount = 0;
 
     @Override
     public void commit() {
-        commitCount++;
+        //commitCount++;
         synchronized (allModels) {
             // in case commit was somehow called twice on the same session
             if (!allModels.containsKey(session)) return;
@@ -226,9 +226,9 @@ public class InMemoryModel implements KeycloakTransaction {
                 writeModelFile();
             } finally {
                 allModels.remove(session);
-                logger.info("Removed session " + session.hashCode());
-                logger.info("*** commitCount=" + commitCount);
-                logger.info("commit(): Session count=" + allModels.size());
+                //logger.info("Removed session " + session.hashCode());
+                //logger.info("*** commitCount=" + commitCount);
+                //logger.info("commit(): Session count=" + allModels.size());
             }
 
     //     if (commitCount == 16) {Thread.dumpStack();System.exit(0);}
@@ -239,7 +239,7 @@ public class InMemoryModel implements KeycloakTransaction {
     public void rollback() {
         synchronized (allModels) {
             allModels.remove(session);
-            System.out.println("rollback(): Session count=" + allModels.size());
+            //logger.info("rollback(): Session count=" + allModels.size());
         }
     }
 
