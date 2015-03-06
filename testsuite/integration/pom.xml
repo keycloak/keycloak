@@ -393,10 +393,10 @@
             <id>file</id>
 
             <properties>
-                <keycloak.realm.provider>file</keycloak.realm.provider>
+                <!--<keycloak.realm.provider>file</keycloak.realm.provider>
                 <keycloak.user.provider>file</keycloak.user.provider>
                 <keycloak.realm.cache.provider>none</keycloak.realm.cache.provider>
-                <keycloak.user.cache.provider>none</keycloak.user.cache.provider>
+                <keycloak.user.cache.provider>none</keycloak.user.cache.provider>-->
             </properties>
             
             <build>
