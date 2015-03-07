@@ -106,14 +106,6 @@ public class Messages {
 
     public static final String REGISTRATION_NOT_ALLOWED = "registrationNotAllowedMessage";
 
-
-
-
-
-
-
-
-
     public static final String PERMISSION_NOT_APPROVED = "permissionNotApprovedMessage";
 
     public static final String NO_RELAY_STATE_IN_RESPONSE = "noRelayStateInResponseMessage";
