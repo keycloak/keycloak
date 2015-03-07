@@ -128,7 +128,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
     }
 
 
-    private DeploymentInfo createDeploymentInfo(String name, String contextPath, Class<? extends Servlet> servletClass) {
+    public DeploymentInfo createDeploymentInfo(String name, String contextPath, Class<? extends Servlet> servletClass) {
         DeploymentInfo deploymentInfo = new DeploymentInfo();
         deploymentInfo.setClassLoader(getClass().getClassLoader());
         deploymentInfo.setDeploymentName(name);

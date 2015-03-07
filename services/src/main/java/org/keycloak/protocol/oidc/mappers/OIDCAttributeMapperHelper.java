@@ -15,7 +15,8 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class OIDCAttributeMapperHelper {
-    public static final String TOKEN_CLAIM_NAME = "Token Claim Name";
+    public static final String TOKEN_CLAIM_NAME = "claim.name";
+    public static final String TOKEN_CLAIM_NAME_LABEL = "Token Claim Name";
     public static final String JSON_TYPE = "Claim JSON Type";
     public static final String INCLUDE_IN_ACCESS_TOKEN = "access.token.claim";
     public static final String INCLUDE_IN_ACCESS_TOKEN_LABEL = "Add to access token";

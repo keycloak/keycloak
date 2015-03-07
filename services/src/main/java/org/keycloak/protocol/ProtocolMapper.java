@@ -18,12 +18,13 @@ public interface ProtocolMapper extends Provider, ProviderFactory<ProtocolMapper
     public static class ConfigProperty {
         public static final String BOOLEAN_TYPE="boolean";
         public static final String STRING_TYPE="String";
+        public static final String LIST_TYPE="List";
 
         protected String name;
         protected String label;
         protected String helpText;
         protected String type;
-        protected String defaultValue;
+        protected Object defaultValue;
 
         public String getName() {
             return name;
@@ -49,11 +50,11 @@ public interface ProtocolMapper extends Provider, ProviderFactory<ProtocolMapper
             this.type = type;
         }
 
-        public String getDefaultValue() {
+        public Object getDefaultValue() {
             return defaultValue;
         }
 
-        public void setDefaultValue(String defaultValue) {
+        public void setDefaultValue(Object defaultValue) {
             this.defaultValue = defaultValue;
         }
 

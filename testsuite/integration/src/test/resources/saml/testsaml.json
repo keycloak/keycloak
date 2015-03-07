@@ -24,7 +24,10 @@
                 { "type" : "password",
                   "value" : "password" }
             ],
-            "realmRoles": ["manager"]
+            "attributes" : {
+                "phone": "617"
+            },
+            "realmRoles": ["manager", "user"]
         }
     ],
     "applications": [
@@ -218,6 +221,45 @@
             }
         },
         {
+            "name": "http://localhost:8081/employee/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8081/employee",
+            "redirectUris": [
+                "http://localhost:8081/employee/*"
+            ],
+            "adminUrl": "http://localhost:8081/employee/",
+            "attributes": {
+                "saml.authnstatement": "true"
+            },
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "friendly.name": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "URI Reference"
+                    }
+                },
+                {
+                    "name": "phone",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "phone",
+                        "attribute.name": "phone",
+                        "attribute.nameformat": "Basic"
+                    }
+                }
+            ]
+        },
+        {
             "name": "http://localhost:8081/employee-sig-front/",
             "enabled": true,
             "protocol": "saml",
@@ -246,6 +288,10 @@
             {
                 "name": "manager",
                 "description": "Have Manager privileges"
+            },
+            {
+                "name": "user",
+                "description": "Have User privileges"
             }
         ]
     }
