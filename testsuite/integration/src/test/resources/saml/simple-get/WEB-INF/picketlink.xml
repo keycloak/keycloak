@@ -12,8 +12,6 @@
 			class="org.picketlink.identity.federation.web.handlers.saml2.SAML2AuthenticationHandler">
 
             <Option Key="NAMEID_FORMAT" Value="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"/>
-			<Option Key="ASSERTION_SESSION_ATTRIBUTE_NAME" Value="org.picketlink.sp.assertion"/>
-			
 		</Handler>
 		<Handler
 			class="org.picketlink.identity.federation.web.handlers.saml2.RolesGenerationHandler" />

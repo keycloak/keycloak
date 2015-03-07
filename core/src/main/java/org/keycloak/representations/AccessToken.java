@@ -125,9 +125,11 @@ public class AccessToken extends IDToken {
     }
 
     public Access addAccess(String service) {
-        Access token = new Access();
-        resourceAccess.put(service, token);
-        return token;
+        Access access = resourceAccess.get(service);
+        if (access != null) return access;
+        access = new Access();
+        resourceAccess.put(service, access);
+        return access;
     }
 
     public AccessToken clientSession(String session) {

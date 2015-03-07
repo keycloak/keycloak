@@ -21,7 +21,19 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+import org.picketlink.common.constants.JBossSAMLURIConstants;
+import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
+import org.picketlink.identity.federation.core.saml.v2.constants.X500SAMLProfileConstants;
+import org.picketlink.identity.federation.saml.v2.assertion.AssertionType;
+import org.picketlink.identity.federation.saml.v2.assertion.AttributeStatementType;
+import org.picketlink.identity.federation.saml.v2.assertion.AttributeType;
+import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
+import org.picketlink.identity.federation.web.util.PostBindingUtil;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ClientRequestContext;
@@ -32,6 +44,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -54,11 +67,15 @@ public class SamlBindingTest {
             initializeSamlSecuredWar("/saml/signed-post-persistent", "/sales-post-sig-persistent",  "post-sig-persistent.war", classLoader);
             initializeSamlSecuredWar("/saml/signed-metadata", "/sales-metadata",  "post-metadata.war", classLoader);
             initializeSamlSecuredWar("/saml/signed-get", "/employee-sig",  "employee-sig.war", classLoader);
+            //initializeSamlSecuredWar("/saml/simple-get", "/employee",  "employee.war", classLoader);
             initializeSamlSecuredWar("/saml/signed-front-get", "/employee-sig-front",  "employee-sig-front.war", classLoader);
             initializeSamlSecuredWar("/saml/bad-client-signed-post", "/bad-client-sales-post-sig",  "bad-client-post-sig.war", classLoader);
             initializeSamlSecuredWar("/saml/bad-realm-signed-post", "/bad-realm-sales-post-sig",  "bad-realm-post-sig.war", classLoader);
             initializeSamlSecuredWar("/saml/encrypted-post", "/sales-post-enc",  "post-enc.war", classLoader);
             uploadSP();
+            server.getServer().deploy(createDeploymentInfo("employee.war", "/employee", SamlSPFacade.class));
+
+
 
         }
 
@@ -67,6 +84,30 @@ public class SamlBindingTest {
             return "/saml/testsaml.json";
         }
     };
+
+    public static class SamlSPFacade extends HttpServlet {
+        public static String samlResponse;
+
+        @Override
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+            handler(req, resp);
+        }
+
+        @Override
+        protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+            handler(req, resp);
+        }
+
+        private void handler(HttpServletRequest req, HttpServletResponse resp) {
+            System.out.println("********* HERE ******");
+            if (req.getParameterMap().isEmpty()) {
+                resp.setStatus(302);
+                resp.setHeader("Location", "http://localhost:8081/auth/realms/demo/protocol/saml?SAMLRequest=jVJbT8IwFP4rS99HuwluNIwEIUYSLwugD76Y2h2kSdfOng7l31uGRn0ATfrQ9HznfJfTEYpaN3zS%2Bo1ZwGsL6KP3WhvkXaEgrTPcClTIjagBuZd8Obm55mmP8cZZb6XV5NByGiwQwXllDYkmX9epNdjW4JbgtkrC%2FeK6IBvvG06ptlLojUXPc5YnFOpG2x0AJdEsaFRG7PuPoUWwQx0IXSOtoLb0SynduyLRpXUSOs8FWQuNQKL5rCDz2VO%2FymEgIY2zlJ3H%2FSx9jkU%2BzOK0ys8yNmSSsUEAYxnsqC18tyO2MDfohfEFSVkyiNlZzM5XacrDSbJePug%2Fkqj8FHKhTKXMy%2BnIng8g5FerVRmXd8sViR7AYec8AMh4tPfDO3L3Y2%2F%2F3cT4j7BH9Mf8A1nDb8PA%2Bay0WsldNNHavk1D1D5k4V0LXbi18MclJL2ke1FVvO6gvDXYgFRrBRWh4wPp7z85%2FgA%3D");
+                return;
+            }
+            samlResponse = req.getParameter("SAMLResponse");
+        }
+    }
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -151,6 +192,52 @@ public class SamlBindingTest {
         checkLoggedOut("http://localhost:8081/sales-post-sig-email/");
 
     }
+
+
+    @Test
+    public void testAttributes() throws Exception {
+        // this test has a hardcoded SAMLRequest and we hack a SP face servlet to get the SAMLResponse so we can look
+        // at the assertions sent.  This is because Picketlink, AFAICT, does not give you any way to get access to
+        // the assertion.
+        SamlSPFacade.samlResponse = null;
+        driver.navigate().to("http://localhost:8081/employee/");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        System.out.println(driver.getCurrentUrl());
+        loginPage.login("bburke", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee/");
+        Assert.assertNotNull(SamlSPFacade.samlResponse);
+        SAML2Response saml2Response = new SAML2Response();
+        byte[] samlResponse = PostBindingUtil.base64Decode(SamlSPFacade.samlResponse);
+        ResponseType rt = saml2Response.getResponseType(new ByteArrayInputStream(samlResponse));
+        Assert.assertTrue(rt.getAssertions().size() == 1);
+        AssertionType assertion = rt.getAssertions().get(0).getAssertion();
+
+        // test attributes
+
+        boolean email = false;
+        boolean phone = false;
+        for (AttributeStatementType statement : assertion.getAttributeStatements()) {
+            for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
+                AttributeType attr = choice.getAttribute();
+                if (X500SAMLProfileConstants.EMAIL.getFriendlyName().equals(attr.getFriendlyName())) {
+                    Assert.assertEquals(X500SAMLProfileConstants.EMAIL.get(), attr.getName());
+                    Assert.assertEquals(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get(), attr.getNameFormat());
+                    Assert.assertEquals(attr.getAttributeValue().get(0), "bburke@redhat.com");
+                    email = true;
+                } else if (attr.getName().equals("phone")) {
+                    Assert.assertEquals(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.get(), attr.getNameFormat());
+                    Assert.assertEquals(attr.getAttributeValue().get(0), "617");
+                    phone = true;
+                }
+            }
+
+        }
+
+        Assert.assertTrue(email);
+        Assert.assertTrue(phone);
+
+    }
+
     @Test
     public void testRedirectSignedLoginLogout() {
         driver.navigate().to("http://localhost:8081/employee-sig/");
