@@ -94,11 +94,20 @@ public class LocaleHelper {
         builder.cookie(new NewCookie(LocaleHelper.LOCALE_COOKIE, locale.toLanguageTag(), path, null, null, 31536000, secure));
     }
 
-    private static Locale findLocale(String localeString, Set<String> supportedLocales) {
-        List<Locale> locales = new ArrayList<Locale>();
-        for(String l : supportedLocales) {
-            locales.add(Locale.forLanguageTag(l));
+    public static Locale findLocale(String localeString, Set<String> supportedLocales) {
+        Locale result = null;
+        Locale search = Locale.forLanguageTag(localeString);
+        for(String languageTag : supportedLocales) {
+            Locale locale = Locale.forLanguageTag(languageTag);
+            if(locale.getLanguage().equals(search.getLanguage())){
+                if(locale.getCountry().equals("") && result == null){
+                    result = locale;
+                }
+                if(locale.getCountry().equals(search.getCountry())){
+                    return locale;
+                }
+            }
         }
-        return Locale.lookup(Locale.LanguageRange.parse(localeString),locales);
+        return result;
     }
 }
