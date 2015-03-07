@@ -1227,4 +1227,36 @@ public class RealmAdapter implements RealmModel {
         return !this.realm.getIdentityProviders().isEmpty();
     }
 
+    @Override
+    public boolean isInternationalizationEnabled() {
+        return realm.isInternationalizationEnabled();
+    }
+
+    @Override
+    public void setInternationalizationEnabled(boolean enabled) {
+        realm.setInternationalizationEnabled(enabled);
+        em.flush();
+    }
+
+    @Override
+    public Set<String> getSupportedLocales() {
+        return realm.getSupportedLocales();
+    }
+
+    @Override
+    public void setSupportedLocales(Set<String> locales) {
+        realm.setSupportedLocales(locales);
+        em.flush();
+    }
+
+    @Override
+    public String getDefaultLocale() {
+        return realm.getDefaultLocale();
+    }
+
+    @Override
+    public void setDefaultLocale(String locale) {
+        realm.setDefaultLocale(locale);
+        em.flush();
+    }
 }

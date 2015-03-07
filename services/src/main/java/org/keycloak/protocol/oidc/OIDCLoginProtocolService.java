@@ -42,6 +42,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.HttpAuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
@@ -508,7 +509,7 @@ public class OIDCLoginProtocolService {
         }
         AccessTokenResponse res;
         try {
-            res = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event);
+            res = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
         } catch (OAuthErrorException e) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, e.getError());
@@ -644,7 +645,7 @@ public class OIDCLoginProtocolService {
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection);
+            AuthenticationManager.logout(session, realm, userSession, uriInfo, clientConnection, headers);
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Session not active");
@@ -781,37 +782,37 @@ public class OIDCLoginProtocolService {
             event.client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
             if (!checkSsl()) {
                 event.error(Errors.SSL_REQUIRED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.HTTPS_REQUIRED);
             }
             if (!realm.isEnabled()) {
                 event.error(Errors.REALM_DISABLED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Realm not enabled");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REALM_NOT_ENABLED);
             }
 
             clientSession = null;
             ClientModel client = realm.findClient(clientId);
             if (client == null) {
                 event.error(Errors.CLIENT_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unknown login requester.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNKNOWN_LOGIN_REQUESTER);
             }
 
             if (!client.isEnabled()) {
                 event.error(Errors.CLIENT_DISABLED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             }
             if ((client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
                 event.error(Errors.NOT_ALLOWED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Bearer-only applications are not allowed to initiate browser login");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.BEARER_ONLY);
             }
             if (client.isDirectGrantsOnly()) {
                 event.error(Errors.NOT_ALLOWED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "direct-grants-only clients are not allowed to initiate browser login");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.DIRECT_GRANTS_ONLY);
             }
             String redirectUriParam = redirect;
             redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
             if (redirect == null) {
                 event.error(Errors.INVALID_REDIRECT_URI);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect_uri.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REDIRECT_URI);
             }
             clientSession = session.sessions().createClientSession(realm, client);
             clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -870,8 +871,8 @@ public class OIDCLoginProtocolService {
             IdentityProviderModel identityProviderModel = realm.getIdentityProviderById(idpHint);
 
             if (identityProviderModel == null) {
-                return Flows.forms(session, realm, null, uriInfo)
-                        .setError("Could not find an identity provider with the identifier [" + idpHint + "].")
+                return Flows.forms(session, realm, null, uriInfo, headers)
+                        .setError(Messages.IDENTITY_PROVIDER_NOT_FOUND, idpHint)
                         .createErrorPage();
             }
             return redirectToIdentityProvider(idpHint, accessCode);
@@ -882,11 +883,11 @@ public class OIDCLoginProtocolService {
 
         // SPNEGO/Kerberos authentication TODO: This should be somehow pluggable instead of hardcoded this way (Authentication interceptors?)
         HttpAuthenticationManager httpAuthManager = new HttpAuthenticationManager(session, clientSession, realm, uriInfo, request, clientConnection, event);
-        HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate();
+        HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate(headers);
         if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
 
         if (prompt != null && prompt.equals("none")) {
-            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo);
+            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers);
             return oauth.cancelLogin(clientSession);
         }
 
@@ -904,13 +905,13 @@ public class OIDCLoginProtocolService {
                     return redirectToIdentityProvider(identityProviders.get(0).getId(), accessCode);
                 }
 
-                return Flows.forms(session, realm, null, uriInfo).setError("Realm [" + this.realm.getName() + "] supports multiple identity providers. Could not determine which identity provider should be used to authenticate with.").createErrorPage();
+                return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.IDENTITY_PROVIDER_NOT_UNIQUE, this.realm.getName()).createErrorPage();
             }
 
-            return Flows.forms(session, realm, null, uriInfo).setError("Realm [" + this.realm.getName() + "] does not support any credential type.").createErrorPage();
+            return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.REALM_SUPPORTS_NO_CREDENTIALS,this.realm.getName()).createErrorPage();
         }
 
-        LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo)
+        LoginFormsProvider forms = Flows.forms(session, realm, clientSession.getClient(), uriInfo, headers)
                 .setClientSessionCode(accessCode);
 
         // Attach state from SPNEGO authentication
@@ -956,7 +957,7 @@ public class OIDCLoginProtocolService {
         event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Registration not allowed");
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REGISTRATION_NOT_ALLOWED );
         }
 
         FrontPageInitializer pageInitializer = new FrontPageInitializer();
@@ -972,7 +973,7 @@ public class OIDCLoginProtocolService {
 
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return Flows.forms(session, realm, clientSession.getClient(), uriInfo)
+        return Flows.forms(session, realm, clientSession.getClient(), uriInfo, headers)
                 .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode())
                 .createRegistration();
     }
@@ -1000,7 +1001,7 @@ public class OIDCLoginProtocolService {
         if (redirectUri != null) {
             String validatedRedirect = verifyRealmRedirectUri(uriInfo, redirectUri, realm);
             if (validatedRedirect == null) {
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect uri.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REDIRECT_URI);
             }
             return Response.status(302).location(UriBuilder.fromUri(validatedRedirect).build()).build();
         } else {
@@ -1061,14 +1062,14 @@ public class OIDCLoginProtocolService {
     }
 
     private void logout(UserSessionModel userSession) {
-        authManager.logout(session, realm, userSession, uriInfo, clientConnection);
+        authManager.logout(session, realm, userSession, uriInfo, clientConnection, headers);
         event.user(userSession.getUser()).session(userSession).success();
     }
 
     @Path("oauth/oob")
     @GET
     public Response installedAppUrnCallback(final @QueryParam("code") String code, final @QueryParam("error") String error, final @QueryParam("error_description") String errorDescription) {
-        LoginFormsProvider forms = Flows.forms(session, realm, null, uriInfo);
+        LoginFormsProvider forms = Flows.forms(session, realm, null, uriInfo, headers);
         if (code != null) {
             return forms.setClientSessionCode(code).createCode();
         } else {

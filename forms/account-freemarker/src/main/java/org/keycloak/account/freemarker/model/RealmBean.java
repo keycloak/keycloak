@@ -19,36 +19,31 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.services.resources.flows;
+package org.keycloak.account.freemarker.model;
 
-import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import java.util.Set;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
  */
-public class Flows {
+public class RealmBean {
 
-    private Flows() {
+    private RealmModel realm;
+
+    public RealmBean(RealmModel realmModel) {
+        realm = realmModel;
     }
 
-    public static LoginFormsProvider forms(KeycloakSession session, RealmModel realm, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
-        return session.getProvider(LoginFormsProvider.class).setRealm(realm).setUriInfo(uriInfo).setClient(client).setHttpHeaders(headers);
+    public boolean isInternationalizationEnabled() {
+        return realm.isInternationalizationEnabled();
     }
 
-    public static ErrorFlows errors() {
-        return new ErrorFlows();
+    public Set<String> getSupportedLocales(){
+        return realm.getSupportedLocales();
     }
-
-    public static Response forwardToSecurityFailurePage(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String message, Object ... parameters) {
-        return Flows.forms(session, realm, null, uriInfo, headers).setError(message,parameters).createErrorPage();
-    }
-
 
 }

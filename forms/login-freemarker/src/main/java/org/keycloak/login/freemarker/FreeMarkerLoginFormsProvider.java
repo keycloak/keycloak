@@ -5,11 +5,8 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
-import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
-import org.keycloak.freemarker.FreeMarkerException;
-import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.freemarker.*;
+import org.keycloak.freemarker.beans.TextFormatterBean;
 import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.freemarker.model.ClientBean;
@@ -32,23 +29,17 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.flows.Urls;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.text.MessageFormat;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
+    public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private static final Logger logger = Logger.getLogger(FreeMarkerLoginFormsProvider.class);
 
@@ -62,6 +53,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     private Map<String, String> httpResponseHeaders = new HashMap<String, String>();
     private String accessRequestMessage;
     private URI actionUri;
+    private Object[] parameters;
 
     private String message;
     private MessageType messageType = MessageType.ERROR;
@@ -78,6 +70,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private UriInfo uriInfo;
 
+    private HttpHeaders httpHeaders;
+
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
@@ -93,21 +87,27 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return this;
     }
 
+    @Override
+    public LoginFormsProvider setHttpHeaders(HttpHeaders httpHeaders) {
+        this.httpHeaders = httpHeaders;
+        return this;
+    }
+
     public Response createResponse(UserModel.RequiredAction action) {
         String actionMessage;
         LoginFormsPages page;
 
         switch (action) {
             case CONFIGURE_TOTP:
-                actionMessage = Messages.ACTION_WARN_TOTP;
+                actionMessage = Messages.CONFIGURE_TOTP;
                 page = LoginFormsPages.LOGIN_CONFIG_TOTP;
                 break;
             case UPDATE_PROFILE:
-                actionMessage = Messages.ACTION_WARN_PROFILE;
+                actionMessage = Messages.UPDATE_PROFILE;
                 page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
             case UPDATE_PASSWORD:
-                actionMessage = Messages.ACTION_WARN_PASSWD;
+                actionMessage = Messages.UPDATE_PASSWORD;
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
@@ -121,10 +121,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                     session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
                 } catch (EmailException e) {
                     logger.error("Failed to send verification email", e);
-                    return setError("emailSendError").createErrorPage();
+                    return setError(Messages.EMAIL_SENT_ERROR).createErrorPage();
                 }
 
-                actionMessage = Messages.ACTION_WARN_EMAIL;
+                actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
             default:
@@ -173,8 +173,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         Properties messages;
+        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders);
+        if(locale != null){
+            attributes.put("locale", locale);
+            attributes.put("formatter", new TextFormatterBean(locale));
+        }
         try {
-            messages = theme.getMessages();
+            messages = theme.getMessages(locale);
             attributes.put("rb", messages);
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
@@ -182,7 +187,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         if (message != null) {
-            attributes.put("message", new MessageBean(messages.containsKey(message) ? messages.getProperty(message) : message, messageType));
+            String formattedMessage;
+            if(messages.containsKey(message)){
+                formattedMessage = new MessageFormat(messages.getProperty(message).replace("'","''"),locale).format(parameters);
+            }else{
+                formattedMessage = message;
+            }
+            attributes.put("message", new MessageBean(formattedMessage, messageType));
         }
         if (page == LoginFormsPages.OAUTH_GRANT) {
             // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
@@ -231,6 +242,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri, realm.getName()));
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -274,21 +286,24 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return createResponse(LoginFormsPages.CODE);
     }
 
-    public FreeMarkerLoginFormsProvider setError(String message) {
+    public FreeMarkerLoginFormsProvider setError(String message, Object ... parameters) {
         this.message = message;
         this.messageType = MessageType.ERROR;
+        this.parameters = parameters;
         return this;
     }
 
-    public FreeMarkerLoginFormsProvider setSuccess(String message) {
+    public FreeMarkerLoginFormsProvider setSuccess(String message, Object ... parameters) {
         this.message = message;
         this.messageType = MessageType.SUCCESS;
+        this.parameters = parameters;
         return this;
     }
 
-    public FreeMarkerLoginFormsProvider setWarning(String message) {
+    public FreeMarkerLoginFormsProvider setWarning(String message, Object ... parameters) {
         this.message = message;
         this.messageType = MessageType.WARNING;
+        this.parameters = parameters;
         return this;
     }
 

@@ -214,7 +214,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(element);
 
-        assertEquals("Email already exists", element.getText());
+        assertEquals("Email already exists.", element.getText());
 
         this.updateProfilePage.assertCurrent();
         this.updateProfilePage.update("Test", "User", "test-user@redhat.com");
