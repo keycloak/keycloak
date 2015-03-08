@@ -256,6 +256,17 @@
                         "attribute.name": "phone",
                         "attribute.nameformat": "Basic"
                     }
+                },
+                {
+                    "name": "role-list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "attribute.name": "Role",
+                        "attribute.nameformat": "Basic",
+                        "single": "false"
+                    }
                 }
             ]
         },

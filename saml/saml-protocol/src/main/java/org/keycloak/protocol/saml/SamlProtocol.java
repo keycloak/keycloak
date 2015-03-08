@@ -19,6 +19,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
+import org.keycloak.protocol.saml.mappers.SAMLRoleListMapper;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
@@ -30,7 +31,6 @@ import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ParsingException;
 import org.picketlink.common.exceptions.ProcessingException;
-import org.picketlink.identity.federation.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.picketlink.identity.federation.saml.v2.assertion.AssertionType;
 import org.picketlink.identity.federation.saml.v2.assertion.AttributeStatementType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
@@ -42,6 +42,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -266,26 +268,38 @@ public class SamlProtocol implements LoginProtocol {
                .requestIssuer(clientSession.getClient().getClientId())
                .nameIdentifier(nameIdFormat, nameId)
                .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
-        initClaims(builder, clientSession.getClient(), userSession.getUser());
-        if (clientSession.getRoles() != null) {
-            if (multivaluedRoles(client)) {
-                builder.multiValuedRoles(true);
-            }
-            for (String roleId : clientSession.getRoles()) {
-                // todo need a role mapping
-                RoleModel roleModel = clientSession.getRealm().getRoleById(roleId);
-                builder.roles(roleModel.getName());
-            }
-        }
         if (!includeAuthnStatement(client)) {
             builder.disableAuthnStatement(true);
         }
 
+        List<ProtocolMapperProcessor<SAMLAttributeStatementMapper>> attributeStatementMappers = new LinkedList<>();
+        List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> loginResponseMappers = new LinkedList<>();
+        ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper = null;
+
+        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
+        for (ProtocolMapperModel mapping : mappings) {
+            if (!mapping.getProtocol().equals(SamlProtocol.LOGIN_PROTOCOL)) continue;
+
+            ProtocolMapper mapper = (ProtocolMapper)session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            if (mapper == null) continue;
+            if (mapper instanceof SAMLAttributeStatementMapper) {
+                attributeStatementMappers.add(new ProtocolMapperProcessor<SAMLAttributeStatementMapper>((SAMLAttributeStatementMapper)mapper, mapping));
+            }
+            if (mapper instanceof SAMLLoginResponseMapper) {
+                loginResponseMappers.add(new ProtocolMapperProcessor<SAMLLoginResponseMapper>((SAMLLoginResponseMapper)mapper, mapping));
+            }
+            if (mapper instanceof SAMLRoleListMapper) {
+                roleListMapper = new ProtocolMapperProcessor<SAMLRoleListMapper>((SAMLRoleListMapper)mapper, mapping);
+            }
+        }
+
+
         Document samlDocument = null;
         try {
             ResponseType samlModel = builder.buildModel();
-            transformAttributeStatement(session, samlModel, client, userSession, clientSession);
-            samlModel = transformLoginResponse(session, samlModel, client, userSession, clientSession);
+            transformAttributeStatement(attributeStatementMappers, samlModel, session, userSession, clientSession);
+            populateRoles(roleListMapper, samlModel, session, userSession, clientSession);
+            samlModel = transformLoginResponse(loginResponseMappers, samlModel, session, userSession, clientSession);
             samlDocument = builder.buildDocument(samlModel);
         } catch (Exception e) {
             logger.error("failed", e);
@@ -356,52 +370,48 @@ public class SamlProtocol implements LoginProtocol {
         return "true".equals(client.getAttribute(SAML_ENCRYPT));
     }
 
-    public void initClaims(SALM2LoginResponseBuilder builder, ClientModel model, UserModel user) {
-        if (ClaimMask.hasEmail(model.getAllowedClaimsMask())) {
-            //builder.attribute(X500SAMLProfileConstants.EMAIL_ADDRESS.getFriendlyName(), user.getEmail());
-        }
-        if (ClaimMask.hasName(model.getAllowedClaimsMask())) {
-            //builder.attribute(X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(), user.getFirstName());
-            //builder.attribute(X500SAMLProfileConstants.SURNAME.getFriendlyName(), user.getLastName());
-        }
-        if (ClaimMask.hasUsername(model.getAllowedClaimsMask())) {
-            //builder.attribute(X500SAMLProfileConstants.USERID.getFriendlyName(), user.getUsername());
+    public static class ProtocolMapperProcessor<T> {
+        final public T mapper;
+        final public ProtocolMapperModel model;
+
+        public ProtocolMapperProcessor(T mapper, ProtocolMapperModel model) {
+            this.mapper = mapper;
+            this.model = model;
         }
     }
 
-    public ResponseType transformLoginResponse(KeycloakSession session, ResponseType response, ClientModel client,
-                                               UserSessionModel userSession, ClientSessionModel clientSession) {
-        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
-        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        for (ProtocolMapperModel mapping : mappings) {
-            if (!mapping.getProtocol().equals(SamlProtocol.LOGIN_PROTOCOL)) continue;
+    public void transformAttributeStatement(List<ProtocolMapperProcessor<SAMLAttributeStatementMapper>> attributeStatementMappers,
+                                            ResponseType response,
+                                            KeycloakSession session,
+                                            UserSessionModel userSession, ClientSessionModel clientSession) {
+        AssertionType assertion = response.getAssertions().get(0).getAssertion();
+        AttributeStatementType attributeStatement = new AttributeStatementType();
+        assertion.addStatement(attributeStatement);
+        for (ProtocolMapperProcessor<SAMLAttributeStatementMapper> processor : attributeStatementMappers) {
+            processor.mapper.transformAttributeStatement(attributeStatement, processor.model, session, userSession, clientSession);
+        }
+    }
 
-            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
-            if (mapper == null || !(mapper instanceof SAMLLoginResponseMapper)) continue;
-            response = ((SAMLLoginResponseMapper)mapper).transformLoginResponse(response, mapping, session, userSession, clientSession);
-
-
-
+    public ResponseType transformLoginResponse(List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> mappers,
+                                            ResponseType response,
+                                            KeycloakSession session,
+                                            UserSessionModel userSession, ClientSessionModel clientSession) {
+        for (ProtocolMapperProcessor<SAMLLoginResponseMapper> processor : mappers) {
+            response = processor.mapper.transformLoginResponse(response, processor.model, session, userSession, clientSession);
         }
         return response;
     }
-    public void transformAttributeStatement(KeycloakSession session, ResponseType response, ClientModel client,
-                                               UserSessionModel userSession, ClientSessionModel clientSession) {
-        AttributeStatementType attributeStatement = new AttributeStatementType();
+
+    public void populateRoles(ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper,
+                              ResponseType response,
+                              KeycloakSession session,
+                              UserSessionModel userSession, ClientSessionModel clientSession) {
+        if (roleListMapper == null) return;
         AssertionType assertion = response.getAssertions().get(0).getAssertion();
+        AttributeStatementType attributeStatement = new AttributeStatementType();
         assertion.addStatement(attributeStatement);
-        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
-        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        for (ProtocolMapperModel mapping : mappings) {
-            if (!mapping.getProtocol().equals(SamlProtocol.LOGIN_PROTOCOL)) continue;
-
-            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
-            if (mapper == null || !(mapper instanceof SAMLAttributeStatementMapper)) continue;
-            ((SAMLAttributeStatementMapper)mapper).transformAttributeStatement(attributeStatement, mapping, session, userSession, clientSession);
-        }
+        roleListMapper.mapper.mapRoles(attributeStatement, roleListMapper.model, session, userSession, clientSession);
     }
-
-
 
 
     @Override
