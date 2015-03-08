@@ -1,8 +1,11 @@
 package org.keycloak.protocol;
 
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

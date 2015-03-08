@@ -1,3 +1,5 @@
+org.keycloak.protocol.saml.mappers.SAMLBasicRoleListMapper
+org.keycloak.protocol.saml.mappers.SAMLBasicRoleNameMapper
 org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper
 org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper
 
