@@ -19,10 +19,8 @@ import org.picketlink.identity.federation.saml.v2.assertion.AuthnStatementType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static org.picketlink.common.util.StringUtil.isNotNull;
 
@@ -36,7 +34,6 @@ import static org.picketlink.common.util.StringUtil.isNotNull;
 public class SALM2LoginResponseBuilder {
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    protected List<String> roles = new LinkedList<String>();
     protected String destination;
     protected String issuer;
     protected String nameId;
@@ -65,18 +62,6 @@ public class SALM2LoginResponseBuilder {
 
     public SALM2LoginResponseBuilder requestIssuer(String requestIssuer) {
         this.requestIssuer =requestIssuer;
-        return this;
-    }
-
-    public SALM2LoginResponseBuilder roles(List<String> roles) {
-        this.roles = roles;
-        return this;
-    }
-
-    public SALM2LoginResponseBuilder roles(String... roles) {
-        for (String role : roles) {
-            this.roles.add(role);
-        }
         return this;
     }
 
@@ -155,12 +140,6 @@ public class SALM2LoginResponseBuilder {
 
             assertion.addStatement(authnStatement);
         }
-
-        if (roles != null && !roles.isEmpty()) {
-            AttributeStatementType attrStatement = StatementUtil.createAttributeStatementForRoles(roles, multiValuedRoles);
-            assertion.addStatement(attrStatement);
-        }
-
         return responseType;
     }
 

@@ -1,7 +1,6 @@
 package org.keycloak.protocol.saml.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -31,6 +30,12 @@ public class AttributeStatementHelper {
 
     public static void addAttribute(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel,
                                     String attributeValue) {
+        AttributeType attribute = createAttributeType(mappingModel);
+        attribute.addAttributeValue(attributeValue);
+        attributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attribute));
+    }
+
+    public static AttributeType createAttributeType(ProtocolMapperModel mappingModel) {
         String attributeName = mappingModel.getConfig().get(SAML_ATTRIBUTE_NAME);
         AttributeType attribute = new AttributeType(attributeName);
         String attributeType = mappingModel.getConfig().get(SAML_ATTRIBUTE_NAMEFORMAT);
@@ -40,8 +45,7 @@ public class AttributeStatementHelper {
         attribute.setNameFormat(attributeNameFormat);
         String friendlyName = mappingModel.getConfig().get(FRIENDLY_NAME);
         if (friendlyName != null && !friendlyName.trim().equals("")) attribute.setFriendlyName(friendlyName);
-        attribute.addAttributeValue(attributeValue);
-        attributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attribute));
+        return attribute;
     }
 
     public static void setConfigProperties(List<ProtocolMapper.ConfigProperty> configProperties) {

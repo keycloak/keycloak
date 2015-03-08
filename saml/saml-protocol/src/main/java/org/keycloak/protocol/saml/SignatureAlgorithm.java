@@ -1,6 +1,5 @@
 package org.keycloak.protocol.saml;
 
-import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 
 /**
