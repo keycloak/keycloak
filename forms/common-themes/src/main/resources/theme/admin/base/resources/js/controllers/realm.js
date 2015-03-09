@@ -1154,7 +1154,12 @@ module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmE
 module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
     $scope.realm = realm;
     $scope.page = 0;
-
+    
+    $scope.eventTypes = [{tag:'LOGIN'}, {tag:'REGISTER'}, {tag:'LOGOUT'}, {tag:'CODE_TO_TOKEN'}, {tag:'REFRESH_TOKEN'}, 
+                         {tag:'LOGIN_ERROR'}, {tag:'REGISTER_ERROR'}, {tag:'LOGOUT_ERROR'}, {tag:'CODE_TO_TOKEN_ERROR'}, {tag:'REFRESH_TOKEN_ERROR'},
+                         {tag:'VALIDATE_ACCESS_TOKEN'}, {tag:'VALIDATE_ACCESS_TOKEN_ERROR'}, {tag:'SOCIAL_LINK'}, {tag:'SOCIAL_LINK_ERROR'}, {tag:'REMOVE_FEDERATED_IDENTITY'},
+                         {tag:'REMOVE_SOCIAL_LINK_ERROR'}, {tag:'UPDATE_EMAIL'}, {tag:'UPDATE_PROFILE'}, {tag:'UPDATE_PASSWORD'}, {tag:'UPDATE_TOTP'}];
+    
     $scope.query = {
         id : realm.realm,
         max : 5,
@@ -1162,6 +1167,7 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
     }
 
     $scope.update = function() {
+    	$scope.query.first = 0;
         for (var i in $scope.query) {
             if ($scope.query[i] === '') {
                 delete $scope.query[i];
@@ -1169,13 +1175,31 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
         }
         $scope.events = RealmEvents.query($scope.query);
     }
-
+    
+    $scope.reset = function() {
+    	$scope.query.first = 0;
+    	$scope.query.max = 5;
+    	$scope.query.type = '';
+    	$scope.query.client = '';
+    	$scope.query.user = '';
+    	$scope.query.dateFrom = '';
+    	$scope.query.dateTo = '';
+    	
+    	$scope.update();
+    }
+    
+    $scope.queryUpdate = function() {
+        for (var i in $scope.query) {
+            if ($scope.query[i] === '') {
+                delete $scope.query[i];
+           }
+        }
+        $scope.events = RealmEvents.query($scope.query);
+    }
+    
     $scope.firstPage = function() {
         $scope.query.first = 0;
-        if ($scope.query.first < 0) {
-            $scope.query.first = 0;
-        }
-        $scope.update();
+        $scope.queryUpdate();
     }
 
     $scope.previousPage = function() {
@@ -1183,12 +1207,12 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
         if ($scope.query.first < 0) {
             $scope.query.first = 0;
         }
-        $scope.update();
+        $scope.queryUpdate();
     }
 
     $scope.nextPage = function() {
         $scope.query.first += parseInt($scope.query.max);
-        $scope.update();
+        $scope.queryUpdate();
     }
 
     $scope.update();

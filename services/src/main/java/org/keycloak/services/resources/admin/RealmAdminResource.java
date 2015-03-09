@@ -1,39 +1,9 @@
 package org.keycloak.services.resources.admin;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.events.Event;
-import org.keycloak.events.EventQuery;
-import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventType;
-import org.keycloak.exportimport.ApplicationImporter;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.CacheUserProvider;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.adapters.action.GlobalRequestResult;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.LDAPConnectionTestManager;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.managers.UsersSyncManager;
-import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.timer.TimerProvider;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -48,10 +18,36 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.EventType;
+import org.keycloak.exportimport.ApplicationImporter;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.CacheUserProvider;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.representations.adapters.action.GlobalRequestResult;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.LDAPConnectionTestManager;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.managers.UsersSyncManager;
+import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.timer.TimerProvider;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -397,8 +393,10 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Event> getEvents(@QueryParam("client") String client, @QueryParam("type") String type, @QueryParam("user") String user,
-                                 @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+    public List<Event> getEvents(@QueryParam("client") String client, @QueryParam("type") String type,
+            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults) {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -413,6 +411,14 @@ public class RealmAdminResource {
         if (user != null) {
             query.user(user);
         }
+        
+        if(dateFrom != null) {
+            query.fromDate(dateFrom);
+        }
+        if(dateTo != null) {
+            query.toDate(dateTo);
+        }
+
         if (ipAddress != null) {
             query.ipAddress(ipAddress);
         }
