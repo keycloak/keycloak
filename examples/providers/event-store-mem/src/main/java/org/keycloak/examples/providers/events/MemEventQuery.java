@@ -4,6 +4,8 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventType;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -73,7 +75,45 @@ public class MemEventQuery implements EventQuery {
         }
         return this;
     }
-
+    
+    @Override
+    public EventQuery fromDate(String fromDate) {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        Long from = null;
+        try {
+            from = df.parse(fromDate).getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        
+        Iterator<Event> itr = this.events.iterator();
+        while (itr.hasNext()) {
+            if (!(itr.next().getTime() >= from)) {
+                itr.remove();
+            }
+        }
+        return this;
+    }
+    
+    @Override
+    public EventQuery toDate(String toDate) {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        Long to = null;
+        try {
+            to = df.parse(toDate).getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        
+        Iterator<Event> itr = this.events.iterator();
+        while (itr.hasNext()) {
+            if (!(itr.next().getTime() <= to)) {
+                itr.remove();
+            }
+        }
+        return this;
+    }
+    
     @Override
     public EventQuery ipAddress(String ipAddress) {
         Iterator<Event> itr = this.events.iterator();

@@ -15,6 +15,10 @@ public interface EventQuery {
 
     public EventQuery user(String userId);
 
+    public EventQuery fromDate(String fromDate);
+
+    public EventQuery toDate(String toDate);
+
     public EventQuery ipAddress(String ipAddress);
 
     public EventQuery firstResult(int result);

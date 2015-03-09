@@ -10,6 +10,9 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,6 +67,32 @@ public class JpaEventQuery implements EventQuery {
         return this;
     }
 
+    @Override
+    public EventQuery fromDate(String fromDate) {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        Long from = null;
+        try {
+            from = df.parse(fromDate).getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        predicates.add(cb.greaterThanOrEqualTo(root.<Long>get("time"), from));
+        return this;
+    }
+
+    @Override
+    public EventQuery toDate(String toDate) {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        Long to = null;
+        try {
+            to = df.parse(toDate).getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        predicates.add(cb.lessThanOrEqualTo(root.<Long>get("time"), to));
+        return this;
+    }
+    
     @Override
     public EventQuery ipAddress(String ipAddress) {
         predicates.add(cb.equal(root.get("ipAddress"), ipAddress));
