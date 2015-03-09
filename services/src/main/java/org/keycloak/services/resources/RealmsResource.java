@@ -17,6 +17,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -79,10 +80,8 @@ public class RealmsResource {
     }
 
     @Path("{realm}/login-status-iframe.html")
-    @GET
-    @Produces(MediaType.TEXT_HTML)
     @Deprecated
-    public Response getLoginStatusIframe(final @PathParam("realm") String name,
+    public Object getLoginStatusIframe(final @PathParam("realm") String name,
                                        @QueryParam("client_id") String client_id,
                                        @QueryParam("origin") String origin) {
         // backward compatibility
@@ -95,7 +94,7 @@ public class RealmsResource {
         OIDCLoginProtocolService endpoint = (OIDCLoginProtocolService)factory.createProtocolEndpoint(realm, event, authManager);
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.getLoginStatusIframe(client_id, origin);
+        return endpoint.getLoginStatusIframe();
 
     }
 
@@ -196,5 +195,15 @@ public class RealmsResource {
         return brokerService;
     }
 
+    @GET
+    @Path("{realm}/.well-known/{provider}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getWellKnown(final @PathParam("realm") String realmName,
+                              final @PathParam("provider") String providerName) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = locateRealm(realmName, realmManager);
+        WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
+        return Response.ok(wellKnown.getConfig(realm, uriInfo)).build();
+    }
 
 }

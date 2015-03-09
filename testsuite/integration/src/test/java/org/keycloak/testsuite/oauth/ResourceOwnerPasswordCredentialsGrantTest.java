@@ -195,7 +195,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "invalid");
 
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
 
         assertEquals("invalid_grant", response.getError());
 
@@ -216,7 +216,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "invalid", "invalid");
 
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
 
         assertEquals("invalid_grant", response.getError());
 

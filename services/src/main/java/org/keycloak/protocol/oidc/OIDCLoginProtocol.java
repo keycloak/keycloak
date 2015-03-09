@@ -46,11 +46,15 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String LOGIN_PROTOCOL = "openid-connect";
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
+    public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
+    public static final String GRANT_TYPE_PARAM = "grant_type";
     public static final String REDIRECT_URI_PARAM = "redirect_uri";
     public static final String CLIENT_ID_PARAM = "client_id";
     public static final String PROMPT_PARAM = "prompt";
     public static final String LOGIN_HINT_PARAM = "login_hint";
+    public static final String K_IDP_HINT = "k_idp_hint";
+
     private static final Logger log = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;

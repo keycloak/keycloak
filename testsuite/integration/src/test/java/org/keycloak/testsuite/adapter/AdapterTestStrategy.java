@@ -429,7 +429,7 @@ public class AdapterTestStrategy extends ExternalResource {
         Response response = target.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));
-        Assert.assertEquals(400, response.getStatus());
+        Assert.assertEquals(401, response.getStatus());
         response.close();
         client.close();
 

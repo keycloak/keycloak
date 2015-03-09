@@ -15,13 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oidc;
+package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.RSATokenVerifier;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -30,8 +32,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.resources.Cors;
 
@@ -53,7 +58,7 @@ import java.util.Map;
 /**
  * @author pedroigor
  */
-public class UserInfoService {
+public class UserInfoEndpoint {
 
     @Context
     private HttpRequest request;
@@ -69,23 +74,11 @@ public class UserInfoService {
 
     private final TokenManager tokenManager;
     private final AppAuthManager appAuthManager;
-    private final OIDCLoginProtocolService openIdConnectService;
-    private final RealmModel realmModel;
+    private final RealmModel realm;
 
-    public UserInfoService(OIDCLoginProtocolService openIDConnectService) {
-        this.realmModel = openIDConnectService.getRealm();
-
-        if (this.realmModel == null) {
-            throw new RuntimeException("Null realm.");
-        }
-
-        this.tokenManager = openIDConnectService.getTokenManager();
-
-        if (this.tokenManager == null) {
-            throw new RuntimeException("Null token manager.");
-        }
-
-        this.openIdConnectService = openIDConnectService;
+    public UserInfoEndpoint(TokenManager tokenManager, RealmModel realm) {
+        this.realm = realm;
+        this.tokenManager = tokenManager;
         this.appAuthManager = new AppAuthManager();
     }
 
@@ -114,40 +107,35 @@ public class UserInfoService {
         return issueUserInfo(accessToken);
     }
 
-    private Response issueUserInfo(String token) {
+    private Response issueUserInfo(String tokenString) {
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder()
+                .event(EventType.USER_INFO_REQUEST)
+                .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
+
+        AccessToken token = null;
         try {
-            EventBuilder event = new EventsManager(this.realmModel, this.session, this.clientConnection).createEventBuilder()
-                    .event(EventType.USER_INFO_REQUEST)
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
-
-            Response validationResponse = this.openIdConnectService.validateAccessToken(token);
-
-            if (!AccessToken.class.isInstance(validationResponse.getEntity())) {
-                event.error(EventType.USER_INFO_REQUEST.name());
-                return Response.fromResponse(validationResponse).status(Status.FORBIDDEN).build();
-            }
-
-            AccessToken accessToken = (AccessToken) validationResponse.getEntity();
-            UserSessionModel userSession = session.sessions().getUserSession(realmModel, accessToken.getSessionState());
-            ClientModel clientModel = realmModel.findClient(accessToken.getIssuedFor());
-            UserModel userModel = userSession.getUser();
-            AccessToken userInfo = new AccessToken();
-            this.tokenManager.transformAccessToken(session, userInfo, realmModel, clientModel, userModel, userSession, null);
-
-            event
-                .detail(Details.USERNAME, userModel.getUsername())
-                .client(clientModel)
-                .session(userSession)
-                .user(userModel)
-                .success();
-
-            Map<String, Object> claims = new HashMap<String, Object>();
-            claims.putAll(userInfo.getOtherClaims());
-            claims.put("sub", userModel.getId());
-            return Cors.add(request, Response.ok(claims)).auth().allowedOrigins(accessToken).build();
+            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
         } catch (Exception e) {
-            throw new UnauthorizedException("Could not retrieve user info.", e);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Token invalid", Status.FORBIDDEN);
         }
+
+        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
+        ClientModel clientModel = realm.findClient(token.getIssuedFor());
+        UserModel userModel = userSession.getUser();
+        AccessToken userInfo = new AccessToken();
+        tokenManager.transformAccessToken(session, userInfo, realm, clientModel, userModel, userSession, null);
+
+        event
+            .detail(Details.USERNAME, userModel.getUsername())
+            .client(clientModel)
+            .session(userSession)
+            .user(userModel)
+            .success();
+
+        Map<String, Object> claims = new HashMap<String, Object>();
+        claims.putAll(userInfo.getOtherClaims());
+        claims.put("sub", userModel.getId());
+        return Cors.add(request, Response.ok(claims)).auth().allowedOrigins(token).build();
     }
 
 }

@@ -56,6 +56,12 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>3.9</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <resources>

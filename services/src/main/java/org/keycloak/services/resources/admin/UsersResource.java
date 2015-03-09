@@ -26,6 +26,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -721,7 +722,7 @@ public class UsersResource {
 
         String redirect;
         if(redirectUri != null){
-            redirect = OIDCLoginProtocolService.verifyRedirectUri(uriInfo, redirectUri, realm, client);
+            redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
             if(redirect == null){
                 return Flows.errors().error("Invalid redirect uri.", Response.Status.BAD_REQUEST);
             }
