@@ -217,12 +217,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-extensions</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
 </project>
