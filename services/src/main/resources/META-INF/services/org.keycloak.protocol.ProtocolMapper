@@ -1,10 +1,10 @@
-org.keycloak.protocol.oidc.mappers.OIDCUserAttributeMapper
-org.keycloak.protocol.oidc.mappers.OIDCFullNameMapper
-org.keycloak.protocol.oidc.mappers.OIDCUserModelMapper
-org.keycloak.protocol.oidc.mappers.OIDCAddressMapper
-org.keycloak.protocol.oidc.mappers.OIDCAddClaimMapper
-org.keycloak.protocol.oidc.mappers.OIDCAddRoleMapper
-org.keycloak.protocol.oidc.mappers.OIDCRoleMapper
-org.keycloak.protocol.oidc.mappers.OIDCUserSessionNoteMapper
+org.keycloak.protocol.oidc.mappers.UserAttributeMapper
+org.keycloak.protocol.oidc.mappers.FullNameMapper
+org.keycloak.protocol.oidc.mappers.UserPropertyMapper
+org.keycloak.protocol.oidc.mappers.AddressMapper
+org.keycloak.protocol.oidc.mappers.HardcodedClaim
+org.keycloak.protocol.oidc.mappers.HardcodedRole
+org.keycloak.protocol.oidc.mappers.RoleNameMapper
+org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper
 
 

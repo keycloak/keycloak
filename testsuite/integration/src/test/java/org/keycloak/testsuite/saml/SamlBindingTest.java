@@ -3,7 +3,6 @@ package org.keycloak.testsuite.saml;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Assert;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
@@ -18,8 +17,8 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
 import org.keycloak.protocol.saml.mappers.HardcodedRole;
-import org.keycloak.protocol.saml.mappers.SAMLBasicRoleListMapper;
-import org.keycloak.protocol.saml.mappers.SAMLBasicRoleNameMapper;
+import org.keycloak.protocol.saml.mappers.RoleListMapper;
+import org.keycloak.protocol.saml.mappers.RoleNameMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminRoot;
@@ -263,15 +262,15 @@ public class SamlBindingTest {
                     if (mapper.getName().equals("role-list")) {
                         app.removeProtocolMapper(mapper);
                         mapper.setId(null);
-                        mapper.getConfig().put(SAMLBasicRoleListMapper.SINGLE_ROLE_ATTRIBUTE, "true");
+                        mapper.getConfig().put(RoleListMapper.SINGLE_ROLE_ATTRIBUTE, "true");
                         mapper.getConfig().put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "memberOf");
                         app.addProtocolMapper(mapper);
                     }
                 }
                 app.addProtocolMapper(HardcodedAttributeMapper.create("hardcoded-attribute", "hardcoded-attribute", "Basic", null, "hard", false, null));
                 app.addProtocolMapper(HardcodedRole.create("hardcoded-role", "hardcoded-role"));
-                app.addProtocolMapper(SAMLBasicRoleNameMapper.create("renamed-role","manager", "el-jefe"));
-                app.addProtocolMapper(SAMLBasicRoleNameMapper.create("renamed-employee-role","http://localhost:8081/employee/.employee", "pee-on"));
+                app.addProtocolMapper(RoleNameMapper.create("renamed-role", "manager", "el-jefe"));
+                app.addProtocolMapper(RoleNameMapper.create("renamed-employee-role", "http://localhost:8081/employee/.employee", "pee-on"));
             }
         }, "demo");
 
@@ -324,9 +323,6 @@ public class SamlBindingTest {
             Assert.assertTrue(userRole);
             Assert.assertTrue(managerRole);
         }
-
-
-
     }
 
     @Test

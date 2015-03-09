@@ -3,48 +3,50 @@ package org.keycloak.protocol.oidc.mappers;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Mappings UserModel.attribute to an ID Token claim.  Token claim name can be a full qualified nested object name,
- * i.e. "address.country".  This will create a nested
- * json object within the toke claim.
+ *
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
+public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
 
     private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+
+    public static final String CLAIM_VALUE = "claim.value";
 
     static {
         ConfigProperty property;
         property = new ConfigProperty();
-        property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
-        property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
-        property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
-        property.setType(ConfigProperty.STRING_TYPE);
-        configProperties.add(property);
-        property = new ConfigProperty();
         property.setName(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_LABEL);
         property.setType(ConfigProperty.STRING_TYPE);
-        property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
+        property.setHelpText("Claim name you want to hard code into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
+        configProperties.add(property);
+        property = new ConfigProperty();
+        property.setName(CLAIM_VALUE);
+        property.setLabel("Claim value");
+        property.setType(ConfigProperty.STRING_TYPE);
+        property.setHelpText("Value of the claim you want to hard code.  'true' and 'false can be used for boolean values.");
         configProperties.add(property);
         property = new ConfigProperty();
         property.setName(OIDCAttributeMapperHelper.JSON_TYPE);
         property.setLabel(OIDCAttributeMapperHelper.JSON_TYPE);
         property.setType(ConfigProperty.STRING_TYPE);
         property.setDefaultValue(ConfigProperty.STRING_TYPE);
-        property.setHelpText("JSON type that should be used to populate the json claim in the token.  long, int, boolean, and String are valid values.");
+        property.setHelpText("JSON type that should be used for the value of the claim.  long, int, boolean, and String are valid values.");
         configProperties.add(property);
         property = new ConfigProperty();
         property.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
@@ -63,7 +65,7 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
 
     }
 
-    public static final String PROVIDER_ID = "oidc-usermodel-attribute-mapper";
+    public static final String PROVIDER_ID = "oidc-hardcoded-claim-mapper";
 
 
     public List<ConfigProperty> getConfigProperties() {
@@ -77,7 +79,7 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
 
     @Override
     public String getDisplayType() {
-        return "User Attribute";
+        return "Hardcoded claim";
     }
 
     @Override
@@ -87,7 +89,7 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
 
     @Override
     public String getHelpText() {
-        return "Map a custom user attribute to a token claim.";
+        return "Hardcode a claim into the token.";
     }
 
     @Override
@@ -100,9 +102,7 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
     }
 
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
-        UserModel user = userSession.getUser();
-        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
-        String attributeValue = user.getAttribute(attributeName);
+        String attributeValue = mappingModel.getConfig().get(CLAIM_VALUE);
         if (attributeValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
     }
@@ -114,16 +114,25 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
         return token;
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                      String userAttribute,
-                                      String tokenClaimName, String claimType,
+    public static ProtocolMapperModel create(String name,
+                                      String hardcodedName,
+                                      String hardcodedValue, String claimType,
                                       boolean consentRequired, String consentText,
                                       boolean accessToken, boolean idToken) {
-        return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
-                tokenClaimName, claimType,
-                consentRequired, consentText,
-                accessToken, idToken,
-                PROVIDER_ID);
+        ProtocolMapperModel mapper = new ProtocolMapperModel();
+        mapper.setName(name);
+        mapper.setProtocolMapper(PROVIDER_ID);
+        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        mapper.setConsentRequired(consentRequired);
+        mapper.setConsentText(consentText);
+        Map<String, String> config = new HashMap<String, String>();
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, hardcodedName);
+        config.put(CLAIM_VALUE, hardcodedValue);
+        config.put(OIDCAttributeMapperHelper.JSON_TYPE, claimType);
+        if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        mapper.setConfig(config);
+        return mapper;
     }
 
 

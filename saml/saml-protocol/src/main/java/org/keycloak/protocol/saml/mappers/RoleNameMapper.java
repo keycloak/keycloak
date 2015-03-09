@@ -18,7 +18,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAMLBasicRoleNameMapper extends AbstractOIDCProtocolMapper implements SAMLRoleNameMapper {
+public class RoleNameMapper extends AbstractOIDCProtocolMapper implements SAMLRoleNameMapper {
 
     private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
 

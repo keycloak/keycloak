@@ -22,7 +22,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAMLBasicRoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRoleListMapper {
+public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRoleListMapper {
     public static final String PROVIDER_ID = "saml-role-list-mapper";
     public static final String SINGLE_ROLE_ATTRIBUTE = "single";
 

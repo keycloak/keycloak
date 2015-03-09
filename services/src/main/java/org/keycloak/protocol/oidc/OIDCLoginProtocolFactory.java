@@ -8,11 +8,11 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.mappers.OIDCAddressMapper;
+import org.keycloak.protocol.oidc.mappers.AddressMapper;
+import org.keycloak.protocol.oidc.mappers.FullNameMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
-import org.keycloak.protocol.oidc.mappers.OIDCFullNameMapper;
-import org.keycloak.protocol.oidc.mappers.OIDCUserModelMapper;
-import org.keycloak.protocol.oidc.mappers.OIDCUserSessionNoteMapper;
+import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
+import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import java.util.ArrayList;
@@ -41,35 +41,35 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     static {
 
         ProtocolMapperModel model;
-        model = OIDCUserModelMapper.createClaimMapper("username",
+        model = UserPropertyMapper.createClaimMapper("username",
                 "username",
                 "preferred_username", "String",
                 true, "username",
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
-        model = OIDCUserModelMapper.createClaimMapper("email",
+        model = UserPropertyMapper.createClaimMapper("email",
                 "email",
                 "email", "String",
                 true, "email",
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
-        model = OIDCUserModelMapper.createClaimMapper("given name",
+        model = UserPropertyMapper.createClaimMapper("given name",
                 "firstName",
                 "given_name", "String",
                 true, "given name",
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
-        model = OIDCUserModelMapper.createClaimMapper("family name",
+        model = UserPropertyMapper.createClaimMapper("family name",
                 "lastName",
                 "family_name", "String",
                 true, "family name",
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
-        model = OIDCUserModelMapper.createClaimMapper("email verified",
+        model = UserPropertyMapper.createClaimMapper("email verified",
                 "emailVerified",
                 "email_verified", "boolean",
                 false, null,
@@ -78,7 +78,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         ProtocolMapperModel fullName = new ProtocolMapperModel();
         fullName.setName("full name");
-        fullName.setProtocolMapper(OIDCFullNameMapper.PROVIDER_ID);
+        fullName.setProtocolMapper(FullNameMapper.PROVIDER_ID);
         fullName.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         fullName.setConsentRequired(true);
         fullName.setConsentText("full name");
@@ -89,10 +89,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         builtins.add(fullName);
         defaultBuiltins.add(fullName);
 
-        ProtocolMapperModel address = OIDCAddressMapper.createAddressMapper();
+        ProtocolMapperModel address = AddressMapper.createAddressMapper();
         builtins.add(address);
 
-        model = OIDCUserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
+        model = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
                 true, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,

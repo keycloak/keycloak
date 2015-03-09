@@ -20,6 +20,8 @@
             "username" : "test-user@localhost",
             "enabled": true,
             "email" : "test-user@localhost",
+            "firstName": "Tom",
+            "lastName": "Brady",
             "credentials" : [
                 { "type" : "password",
                   "value" : "password" }
