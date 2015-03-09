@@ -412,11 +412,10 @@ public class RealmAdminResource {
             query.user(user);
         }
         
-        if (dateFrom != null && dateTo != null) {
-            query.fromDate(dateFrom).toDate(dateTo);
-        } else if(dateFrom != null) {
+        if(dateFrom != null) {
             query.fromDate(dateFrom);
-        } else if(dateTo != null) {
+        }
+        if(dateTo != null) {
             query.toDate(dateTo);
         }
 
