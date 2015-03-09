@@ -76,7 +76,7 @@ public class OIDCAddClaimMapper extends AbstractOIDCProtocolMapper implements OI
 
     @Override
     public String getDisplayType() {
-        return "Hard coded claim";
+        return "Hardcoded claim";
     }
 
     @Override

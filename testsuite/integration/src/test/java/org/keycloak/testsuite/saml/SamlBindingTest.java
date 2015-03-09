@@ -16,7 +16,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
+import org.keycloak.protocol.saml.mappers.HardcodedRole;
 import org.keycloak.protocol.saml.mappers.SAMLBasicRoleListMapper;
+import org.keycloak.protocol.saml.mappers.SAMLBasicRoleNameMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminRoot;
@@ -265,6 +268,9 @@ public class SamlBindingTest {
                         app.addProtocolMapper(mapper);
                     }
                 }
+                app.addProtocolMapper(HardcodedAttributeMapper.create("hardcoded-attribute", "hardcoded-attribute", "Basic", null, "hard", false, null));
+                app.addProtocolMapper(HardcodedRole.create("hardcoded-role", "hardcoded-role"));
+                app.addProtocolMapper(SAMLBasicRoleNameMapper.create("renamed-role","manager", "el-jefe"));
             }
         }, "demo");
 
@@ -287,6 +293,8 @@ public class SamlBindingTest {
             boolean userRole = false;
             boolean managerRole = false;
             boolean single = false;
+            boolean hardcodedRole = false;
+            boolean hardcodedAttribute = false;
             for (AttributeStatementType statement : assertion.getAttributeStatements()) {
                 for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
                     AttributeType attr = choice.getAttribute();
@@ -294,14 +302,21 @@ public class SamlBindingTest {
                         if (single) Assert.fail("too many role attributes");
                         single = true;
                         for (Object value : attr.getAttributeValue()) {
-                            if (value.equals("manager")) managerRole = true;
+                            if (value.equals("el-jefe")) managerRole = true;
                             if (value.equals("user")) userRole = true;
+                            if (value.equals("hardcoded-role")) hardcodedRole = true;
                         }
+                    } else if (attr.getName().equals("hardcoded-attribute")) {
+                        hardcodedAttribute = true;
+                        Assert.assertEquals(attr.getAttributeValue().get(0), "hard");
                     }
                 }
 
             }
 
+            Assert.assertTrue(single);
+            Assert.assertTrue(hardcodedAttribute);
+            Assert.assertTrue(hardcodedRole);
             Assert.assertTrue(userRole);
             Assert.assertTrue(managerRole);
         }

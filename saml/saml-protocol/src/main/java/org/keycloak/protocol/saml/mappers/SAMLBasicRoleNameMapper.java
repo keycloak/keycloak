@@ -5,9 +5,12 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
+import org.keycloak.protocol.saml.SamlProtocol;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Map an assigned role to a different position and name in the token
@@ -88,4 +91,21 @@ public class SAMLBasicRoleNameMapper extends AbstractOIDCProtocolMapper implemen
         if (roleModel.getName().equals(role)) return newName;
         return null;
    }
+
+    public static ProtocolMapperModel create(String name,
+                                             String role,
+                                             String newName) {
+        String mapperId = PROVIDER_ID;
+        ProtocolMapperModel mapper = new ProtocolMapperModel();
+        mapper.setName(name);
+        mapper.setProtocolMapper(mapperId);
+        mapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        Map<String, String> config = new HashMap<String, String>();
+        config.put(ROLE_CONFIG, role);
+        config.put(NEW_ROLE_NAME, newName);
+        mapper.setConfig(config);
+        return mapper;
+
+    }
+
 }
