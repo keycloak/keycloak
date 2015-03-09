@@ -271,6 +271,7 @@ public class SamlBindingTest {
                 app.addProtocolMapper(HardcodedAttributeMapper.create("hardcoded-attribute", "hardcoded-attribute", "Basic", null, "hard", false, null));
                 app.addProtocolMapper(HardcodedRole.create("hardcoded-role", "hardcoded-role"));
                 app.addProtocolMapper(SAMLBasicRoleNameMapper.create("renamed-role","manager", "el-jefe"));
+                app.addProtocolMapper(SAMLBasicRoleNameMapper.create("renamed-employee-role","http://localhost:8081/employee/.employee", "pee-on"));
             }
         }, "demo");
 
@@ -295,6 +296,7 @@ public class SamlBindingTest {
             boolean single = false;
             boolean hardcodedRole = false;
             boolean hardcodedAttribute = false;
+            boolean peeOn = false;
             for (AttributeStatementType statement : assertion.getAttributeStatements()) {
                 for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
                     AttributeType attr = choice.getAttribute();
@@ -305,6 +307,7 @@ public class SamlBindingTest {
                             if (value.equals("el-jefe")) managerRole = true;
                             if (value.equals("user")) userRole = true;
                             if (value.equals("hardcoded-role")) hardcodedRole = true;
+                            if (value.equals("pee-on")) peeOn = true;
                         }
                     } else if (attr.getName().equals("hardcoded-attribute")) {
                         hardcodedAttribute = true;
@@ -317,6 +320,7 @@ public class SamlBindingTest {
             Assert.assertTrue(single);
             Assert.assertTrue(hardcodedAttribute);
             Assert.assertTrue(hardcodedRole);
+            Assert.assertTrue(peeOn);
             Assert.assertTrue(userRole);
             Assert.assertTrue(managerRole);
         }

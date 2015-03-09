@@ -27,7 +27,10 @@
             "attributes" : {
                 "phone": "617"
             },
-            "realmRoles": ["manager", "user"]
+            "realmRoles": ["manager", "user"],
+            "applicationRoles": {
+                "http://localhost:8081/employee/": [ "employee" ]
+            }
         }
     ],
     "applications": [
@@ -304,6 +307,14 @@
                 "name": "user",
                 "description": "Have User privileges"
             }
-        ]
+        ],
+        "application" : {
+            "http://localhost:8081/employee/" : [
+                {
+                    "name": "employee",
+                    "description": "Have Employee privileges"
+                }
+            ]
+        }
     }
 }
