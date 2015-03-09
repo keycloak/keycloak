@@ -3,6 +3,7 @@ package org.keycloak.freemarker;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Properties;
 
 /**
@@ -28,7 +29,7 @@ public interface Theme {
 
     public InputStream getResourceAsStream(String path) throws IOException;
 
-    public Properties getMessages() throws IOException;
+    public Properties getMessages(Locale locale) throws IOException;
 
     public Properties getProperties() throws IOException;
 

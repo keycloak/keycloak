@@ -26,67 +26,143 @@ package org.keycloak.services.messages;
  */
 public class Messages {
 
-    public static final String ACCOUNT_DISABLED = "accountDisabled";
-    public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabled";
+    public static final String INVALID_USER = "invalidUserMessage";
 
-    public static final String INVALID_PASSWORD = "invalidPassword";
+    public static final String INVALID_EMAIL = "invalidEmailMessage";
 
-    public static final String INVALID_PASSWORD_EXISTING = "invalidPasswordExisting";
+    public static final String ACCOUNT_DISABLED = "accountDisabledMessage";
 
-    public static final String INVALID_PASSWORD_CONFIRM = "invalidPasswordConfirm";
+    public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabledMessage";
 
-    public static final String INVALID_EMAIL = "invalidEmail";
+    public static final String EXPIRED_CODE = "expiredCodeMessage";
 
-    public static final String INVALID_USER = "invalidUser";
+    public static final String MISSING_FIRST_NAME = "missingFirstNameMessage";
 
-    public static final String EXPIRED_CODE = "expiredCode";
+    public static final String MISSING_LAST_NAME = "missingLastNameMessage";
 
-    public static final String READ_ONLY_USER = "readOnlyUser";
+    public static final String MISSING_EMAIL = "missingEmailMessage";
 
-    public static final String READ_ONLY_PASSWORD = "readOnlyPassword";
+    public static final String MISSING_USERNAME = "missingUsernameMessage";
 
-    public static final String MISSING_EMAIL = "missingEmail";
+    public static final String MISSING_PASSWORD = "missingPasswordMessage";
 
-    public static final String MISSING_FIRST_NAME = "missingFirstName";
+    public static final String MISSING_TOTP = "missingTotpMessage";
 
-    public static final String MISSING_LAST_NAME = "missingLastName";
+    public static final String NOTMATCH_PASSWORD = "notMatchPasswordMessage";
 
-    public static final String MISSING_PASSWORD = "missingPassword";
+    public static final String INVALID_PASSWORD_EXISTING = "invalidPasswordExistingMessage";
 
-    public static final String NOTMATCH_PASSWORD = "notMatchPassword";
+    public static final String INVALID_PASSWORD_CONFIRM = "invalidPasswordConfirmMessage";
 
-    public static final String MISSING_USERNAME = "missingUsername";
+    public static final String INVALID_TOTP = "invalidTotpMessage";
 
-    public static final String MISSING_TOTP = "missingTotp";
+    public static final String USERNAME_EXISTS = "usernameExistsMessage";
 
-    public static final String INVALID_TOTP = "invalidTotp";
+    public static final String EMAIL_EXISTS = "emailExistsMessage";
 
-    public static final String USERNAME_EXISTS = "usernameExists";
+    public static final String FEDERATED_IDENTITY_EMAIL_EXISTS = "federatedIdentityEmailExistsMessage";
 
-    public static final String EMAIL_EXISTS = "emailExists";
+    public static final String FEDERATED_IDENTITY_USERNAME_EXISTS = "federatedIdentityUsernameExistsMessage";
 
-    public static final String ACTION_WARN_TOTP = "actionTotpWarning";
+    public static final String CONFIGURE_TOTP = "configureTotpMessage";
 
-    public static final String ACTION_WARN_PROFILE = "actionProfileWarning";
+    public static final String UPDATE_PROFILE = "updateProfileMessage";
 
-    public static final String ACTION_WARN_PASSWD = "actionPasswordWarning";
+    public static final String UPDATE_PASSWORD = "updatePasswordMessage";
 
-    public static final String ACTION_WARN_EMAIL = "actionEmailWarning";
+    public static final String VERIFY_EMAIL = "verifyEmailMessage";
 
-    public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProvider";
+    public static final String EMAIL_SENT = "emailSentMessage";
 
-    public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityAction";
+    public static final String EMAIL_SENT_ERROR = "emailSendErrorMessage";
 
-    public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFound";
+    public static final String ACCOUNT_UPDATED = "accountUpdatedMessage";
 
-    public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActive";
+    public static final String ACCOUNT_PASSWORD_UPDATED = "accountPasswordUpdatedMessage";
 
-    public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProvider";
+    public static final String NO_ACCESS = "noAccessMessage";
 
-    public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectError";
+    public static final String FAILED_TO_PROCESS_RESPONSE = "failedToProcessResponseMessage";
 
-    public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemoved";
+    public static final String HTTPS_REQUIRED = "httpsRequiredMessage";
 
-    public static final String ERROR = "error";
+    public static final String REALM_NOT_ENABLED = "realmNotEnabledMessage";
 
+    public static final String INVALID_REQUEST = "invalidRequestMessage";
+
+    public static final String INVALID_REQUESTER = "invalidRequesterMessage";
+
+    public static final String UNKNOWN_LOGIN_REQUESTER = "unknownLoginRequesterMessage";
+
+    public static final String LOGIN_REQUESTER_NOT_ENABLED = "loginRequesterNotEnabledMessage";
+
+    public static final String BEARER_ONLY = "bearerOnlyMessage";
+
+    public static final String DIRECT_GRANTS_ONLY = "directGrantsOnlyMessage";
+
+    public static final String INVALID_REDIRECT_URI = "invalidRedirectUriMessage";
+
+    public static final String UNSUPPORTED_NAME_ID_FORMAT = "unsupportedNameIdFormatMessage";
+
+    public static final String REGISTRATION_NOT_ALLOWED = "registrationNotAllowedMessage";
+
+    public static final String PERMISSION_NOT_APPROVED = "permissionNotApprovedMessage";
+
+    public static final String NO_RELAY_STATE_IN_RESPONSE = "noRelayStateInResponseMessage";
+
+    public static final String IDENTITY_PROVIDER_ALREADY_LINKED = "identityProviderAlreadyLinkedMessage";
+
+    public static final String INSUFFICIENT_PERMISSION = "insufficientPermissionMessage";
+
+    public static final String COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST = "couldNotProceedWithAuthenticationRequestMessage";
+
+    public static final String COULD_NOT_OBTAIN_TOKEN = "couldNotObtainTokenMessage";
+
+    public static final String UNEXPECTED_ERROR_RETRIEVING_TOKEN = "unexpectedErrorRetrievingTokenMessage";
+
+    public static final String IDENTITY_PROVIDER_AUTHENTICATION_FAILED = "identityProviderAuthenticationFailedMessage";
+
+    public static final String UNEXPECTED_ERROR_HANDLING_RESPONSE = "unexpectedErrorHandlingResponseMessage";
+
+    public static final String COULD_NOT_SEND_AUTHENTICATION_REQUEST = "couldNotSendAuthenticationRequestMessage";
+
+    public static final String UNEXPECTED_ERROR_HANDLING_REQUEST = "unexpectedErrorHandlingRequestMessage";
+
+    public static final String INVALID_ACCESS_CODE = "invalidAccessCodeMessage";
+
+    public static final String SESSION_NOT_ACTIVE = "sessionNotActiveMessage";
+
+    public static final String UNKNOWN_CODE = "unknownCodeMessage";
+
+    public static final String INVALID_CODE = "invalidCodeMessage";
+
+    public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
+
+    public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFoundMessage";
+
+    public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUniqueMessage";
+
+    public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentialsMessage";
+
+    public static final String READ_ONLY_USER = "readOnlyUserMessage";
+
+    public static final String READ_ONLY_PASSWORD = "readOnlyPasswordMessage";
+
+    public static final String SUCCESS_TOTP_REMOVED = "successTotpRemovedMessage";
+
+    public static final String SUCCESS_TOTP = "successTotpMessage";
+
+    public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProviderMessage";
+
+    public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityActionMessage";
+
+    public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActiveMessage";
+
+    public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProviderMessage";
+
+    public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectErrorMessage";
+
+    public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemovedMessage";
+
+    public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
 }

@@ -3,38 +3,21 @@ package org.keycloak.account.freemarker;
 import org.jboss.logging.Logger;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
-import org.keycloak.account.freemarker.model.AccountBean;
-import org.keycloak.account.freemarker.model.AccountFederatedIdentityBean;
-import org.keycloak.account.freemarker.model.FeaturesBean;
-import org.keycloak.account.freemarker.model.LogBean;
-import org.keycloak.account.freemarker.model.MessageBean;
-import org.keycloak.account.freemarker.model.PasswordBean;
-import org.keycloak.account.freemarker.model.ReferrerBean;
-import org.keycloak.account.freemarker.model.SessionsBean;
-import org.keycloak.account.freemarker.model.TotpBean;
-import org.keycloak.account.freemarker.model.UrlBean;
+import org.keycloak.account.freemarker.model.*;
 import org.keycloak.events.Event;
-import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
-import org.keycloak.freemarker.FreeMarkerException;
-import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.freemarker.*;
+import org.keycloak.freemarker.beans.TextFormatterBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.services.resources.flows.Urls;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.text.MessageFormat;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -57,12 +40,14 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private boolean passwordSet;
     private KeycloakSession session;
     private FreeMarkerUtil freeMarker;
+    private HttpHeaders headers;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
     private UriInfo uriInfo;
 
     private String message;
+    private Object[] parameters;
     private MessageType messageType;
 
     public FreeMarkerAccountProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
@@ -72,6 +57,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     public AccountProvider setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
+        return this;
+    }
+
+    @Override
+    public AccountProvider setHttpHeaders(HttpHeaders httpHeaders) {
+        this.headers = httpHeaders;
         return this;
     }
 
@@ -94,9 +85,14 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             logger.warn("Failed to load properties", e);
         }
 
+        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, headers);
+        if(locale != null){
+            attributes.put("locale", locale);
+            attributes.put("formatter", new TextFormatterBean(locale));
+        }
         Properties messages;
         try {
-            messages = theme.getMessages();
+            messages = theme.getMessages(locale);
             attributes.put("rb", messages);
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
@@ -115,11 +111,21 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         }
 
         if (message != null) {
-            attributes.put("message", new MessageBean(messages.containsKey(message) ? messages.getProperty(message) : message, messageType));
+            String formattedMessage;
+            if(messages.containsKey(message)){
+                formattedMessage = new MessageFormat(messages.getProperty(message).replace("'","''"),locale).format(parameters);
+            }else{
+                formattedMessage = message;
+            }
+            attributes.put("message", new MessageBean(formattedMessage, messageType));
         }
 
         if (referrer != null) {
             attributes.put("referrer", new ReferrerBean(referrer));
+        }
+
+        if(realm != null){
+            attributes.put("realm", new RealmBean(realm));
         }
 
         attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
@@ -150,6 +156,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri,realm.getName()));
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -163,22 +170,25 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     }
 
     @Override
-    public AccountProvider setError(String message) {
+    public AccountProvider setError(String message, Object ... parameters) {
         this.message = message;
+        this.parameters = parameters;
         this.messageType = MessageType.ERROR;
         return this;
     }
 
     @Override
-    public AccountProvider setSuccess(String message) {
+    public AccountProvider setSuccess(String message, Object ... parameters) {
         this.message = message;
+        this.parameters = parameters;
         this.messageType = MessageType.SUCCESS;
         return this;
     }
 
     @Override
-    public AccountProvider setWarning(String message) {
+    public AccountProvider setWarning(String message, Object ... parameters) {
         this.message = message;
+        this.parameters = parameters;
         this.messageType = MessageType.WARNING;
         return this;
     }

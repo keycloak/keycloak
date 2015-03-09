@@ -1,9 +1,9 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayInfo=true; section>
     <#if section = "title">
-        ${rb.emailForgotHeader}
+        ${rb.emailForgotTitle}
     <#elseif section = "header">
-        ${rb.emailForgotHeader}
+        ${rb.emailForgotTitle}
     <#elseif section = "form">
         <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginPasswordResetUrl}" method="post">
             <div class="${properties.kcFormGroupClass!}">
@@ -23,7 +23,7 @@
                 </div>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="btn btn-primary btn-lg" type="submit" value="${rb.submit}"/>
+                    <input class="btn btn-primary btn-lg" type="submit" value="${rb.doSubmit}"/>
                 </div>
             </div>
         </form>

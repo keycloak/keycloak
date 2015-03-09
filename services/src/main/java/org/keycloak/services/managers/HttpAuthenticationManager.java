@@ -58,7 +58,7 @@ public class HttpAuthenticationManager {
     }
 
 
-    public HttpAuthOutput spnegoAuthenticate() {
+    public HttpAuthOutput spnegoAuthenticate(HttpHeaders headers) {
         boolean kerberosSupported = false;
         for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
             if (c.getType().equals(CredentialRepresentation.KERBEROS)) {
@@ -96,7 +96,7 @@ public class HttpAuthenticationManager {
             CredentialValidationOutput output = session.users().validCredentials(realm, spnegoCredential);
 
             if (output.getAuthStatus() == CredentialValidationOutput.Status.AUTHENTICATED) {
-                return sendResponse(output.getAuthenticatedUser(), output.getState(), "spnego");
+                return sendResponse(output.getAuthenticatedUser(), output.getState(), "spnego", headers);
             }  else {
                 String spnegoResponseToken = (String) output.getState().get(KerberosConstants.RESPONSE_TOKEN);
                 return challengeNegotiation(spnegoResponseToken);
@@ -106,7 +106,7 @@ public class HttpAuthenticationManager {
 
 
     // Send response after successful authentication
-    private HttpAuthOutput sendResponse(UserModel user, Map<String, String> authState, String authMethod) {
+    private HttpAuthOutput sendResponse(UserModel user, Map<String, String> authState, String authMethod, HttpHeaders headers) {
         if (logger.isTraceEnabled()) {
             logger.trace("User " + user.getUsername() + " authenticated with " + authMethod);
         }
@@ -114,7 +114,7 @@ public class HttpAuthenticationManager {
         Response response;
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
-            response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, Messages.ACCOUNT_DISABLED);
+            response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.ACCOUNT_DISABLED);
         } else {
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), authMethod, false);
 

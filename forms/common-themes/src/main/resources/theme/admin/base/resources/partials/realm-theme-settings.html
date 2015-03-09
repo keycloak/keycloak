@@ -59,6 +59,33 @@
                         </div>
                         <span tooltip-placement="right" tooltip="Select theme for emails that are sent by the server." class="fa fa-info-circle"></span>
                     </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="internationalizationEnabled">Internationalization Enabled</label>
+                        <div class="col-sm-4">
+                            <input ng-model="realm.internationalizationEnabled" name="internationalizationEnabled" id="internationalizationEnabled" onoffswitch />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="supportedLocales" class="control-label two-lines">Supported Locales</label>
+
+                        <div class="col-sm-4">
+                            <input id="supportedLocales" type="text" ui-select2="supportedLocalesOptions" ng-model="realm.supportedLocales" placeholder="Type a locale and enter" ng-required="realm.internationalizationEnabled" ng-disabled="!realm.internationalizationEnabled">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="defaultLocale">Default Locale</label>
+                        <div class="col-sm-4">
+                            <div class="select-kc">
+                                <select id="defaultLocale"
+                                        ng-model="realm.defaultLocale"
+                                        ng-options="o as o for o in realm.supportedLocales"
+                                        ng-required="realm.internationalizationEnabled"
+                                        ng-disabled="!realm.internationalizationEnabled">
+                                    <option value="" disabled selected>Select one...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </fieldset>
                 <div class="pull-right form-actions" data-ng-show="access.manageRealm">
                     <button kc-reset data-ng-show="changed">Clear changes</button>

@@ -1,9 +1,9 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout; section>
     <#if section = "title">
-        ${rb.loginTitle} ${realm.name}
+        ${formatter.format(rb.loginTitle,realm.name)}
     <#elseif section = "header">
-        ${rb.loginTitle} <strong>${realm.name}</strong>
+        ${formatter.format(rb.loginTitleHtml,realm.name)}
     <#elseif section = "form">
         <form id="kc-totp-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <input id="username" name="username" value="${login.username!''}" type="hidden" />
@@ -27,8 +27,8 @@
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="${rb.logIn}"/>
-                        <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.cancel}"/>
+                        <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="${rb.doLogIn}"/>
+                        <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.doCancel}"/>
                     </div>
                 </div>
             </div>

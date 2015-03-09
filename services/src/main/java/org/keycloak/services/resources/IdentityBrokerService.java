@@ -46,6 +46,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.EventsManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.SocialIdentityProvider;
@@ -57,13 +58,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +93,10 @@ public class IdentityBrokerService {
 
     @Context
     private HttpRequest request;
+
+    @Context
+    private HttpHeaders headers;
+
     private EventBuilder event;
 
     public IdentityBrokerService(RealmModel realmModel) {
@@ -135,12 +135,12 @@ public class IdentityBrokerService {
                 return response;
             }
         } catch (IdentityBrokerException e) {
-            return redirectToErrorPage("Could not send authentication request to identity provider [" + providerId + "].", e);
+            return redirectToErrorPage(Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, e, providerId);
         } catch (Exception e) {
-            return redirectToErrorPage("Unexpected error when handling authentication request to identity provider [" + providerId + "].", e);
+            return redirectToErrorPage(Messages.UNEXPECTED_ERROR_HANDLING_REQUEST, e, providerId);
         }
 
-        return redirectToErrorPage("Could not proceed with authentication request to identity provider.");
+        return redirectToErrorPage(Messages.COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST);
     }
 
     @GET
@@ -191,11 +191,10 @@ public class IdentityBrokerService {
                 }
 
                 if (OAuthClientModel.class.isInstance(clientModel) && !forceRetrieval) {
-                    return corsResponse(Flows.forms(this.session, this.realmModel, clientModel, this.uriInfo)
+                    return corsResponse(Flows.forms(this.session, this.realmModel, clientModel, this.uriInfo, headers)
                             .setClientSessionCode(authManager.extractAuthorizationHeaderToken(this.request.getHttpHeaders()))
                             .setAccessRequest("Your information from " + providerId + " identity provider.")
                             .setClient(clientModel)
-                            .setUriInfo(this.uriInfo)
                             .setActionUri(this.uriInfo.getRequestUri())
                             .createOAuthGrant(), clientModel);
                 }
@@ -220,9 +219,9 @@ public class IdentityBrokerService {
 
             return badRequest("Invalid token.");
         } catch (IdentityBrokerException e) {
-            return redirectToErrorPage("Could not obtain token fron identity provider [" + providerId + "].", e);
+            return redirectToErrorPage(Messages.COULD_NOT_OBTAIN_TOKEN, e, providerId);
         }  catch (Exception e) {
-            return redirectToErrorPage("Unexpected error when retrieving token from identity provider [" + providerId + "].", e);
+            return redirectToErrorPage(Messages.UNEXPECTED_ERROR_RETRIEVING_TOKEN, e, providerId);
         }
     }
 
@@ -232,7 +231,7 @@ public class IdentityBrokerService {
     public Response consentTokenRetrieval(@PathParam("provider_id") String providerId,
                                           MultivaluedMap<String, String> formData) {
         if (formData.containsKey("cancel")) {
-            return redirectToErrorPage("Permission not approved.");
+            return redirectToErrorPage(Messages.PERMISSION_NOT_APPROVED);
         }
 
         return getToken(providerId, true);
@@ -251,7 +250,7 @@ public class IdentityBrokerService {
             String relayState = identityProvider.getRelayState(createAuthenticationRequest(providerId, null));
 
             if (relayState == null) {
-                return redirectToErrorPage("No relay state in response from identity identity [" + providerId + ".");
+                return redirectToErrorPage(Messages.NO_RELAY_STATE_IN_RESPONSE, providerId);
             }
 
             if (isDebugEnabled()) {
@@ -287,10 +286,10 @@ public class IdentityBrokerService {
             return performLocalAuthentication(identity, clientSessionCode);
         } catch (IdentityBrokerException e) {
             rollback();
-            return redirectToErrorPage("Authentication failed. Could not authenticate with identity provider [" + providerId + "].", e);
+            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_AUTHENTICATION_FAILED, e, providerId);
         } catch (Exception e) {
             rollback();
-            return redirectToErrorPage("Unexpected error when handling response from identity provider [" + providerId + "].", e);
+            return redirectToErrorPage(Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE, e, providerId);
         } finally {
             if (this.session.getTransaction().isActive()) {
                 this.session.getTransaction().commit();
@@ -353,7 +352,7 @@ public class IdentityBrokerService {
         this.event.event(EventType.IDENTITY_PROVIDER_ACCCOUNT_LINKING);
 
         if (federatedUser != null) {
-            return redirectToErrorPage("The identity returned by the identity provider [" + providerId + "] is already linked to other user.");
+            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_ALREADY_LINKED, providerId);
         }
 
         UserModel authenticatedUser = clientSession.getUserSession().getUser();
@@ -364,12 +363,12 @@ public class IdentityBrokerService {
 
         if (!authenticatedUser.isEnabled()) {
             fireErrorEvent(Errors.USER_DISABLED);
-            return redirectToErrorPage("User is disabled.");
+            return redirectToErrorPage(Messages.ACCOUNT_DISABLED);
         }
 
         if (!authenticatedUser.hasRole(this.realmModel.getApplicationByName(ACCOUNT_MANAGEMENT_APP).getRole(MANAGE_ACCOUNT))) {
             fireErrorEvent(Errors.NOT_ALLOWED);
-            return redirectToErrorPage("Insufficient permissions to link identities.");
+            return redirectToErrorPage(Messages.INSUFFICIENT_PERMISSION);
         }
 
         this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, federatedIdentityModel);
@@ -438,28 +437,28 @@ public class IdentityBrokerService {
         return Urls.identityProviderAuthnResponse(this.uriInfo.getBaseUri(), providerId, this.realmModel.getName()).toString();
     }
 
-    private Response redirectToErrorPage(String message) {
-        return redirectToErrorPage(message, null);
+    private Response redirectToErrorPage(String message, Object ... parameters) {
+        return redirectToErrorPage(message, null, parameters);
     }
 
-    private Response redirectToErrorPage(String message, Throwable throwable) {
+    private Response redirectToErrorPage(String message, Throwable throwable, Object ... parameters) {
         if (message == null) {
-            message = "Unexpected error when authenticating with identity provider";
+            message = Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR;
         }
 
         fireErrorEvent(message, throwable);
-        return Flows.forwardToSecurityFailurePage(this.session, this.realmModel, this.uriInfo, message);
+        return Flows.forwardToSecurityFailurePage(this.session, this.realmModel, this.uriInfo, headers, message, parameters);
     }
 
     private Response redirectToLoginPage(Throwable t, ClientSessionCode clientCode) {
         String message = t.getMessage();
 
         if (message == null) {
-            message = "Unexpected error when authenticating with identity provider";
+            message = Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR;
         }
 
         fireErrorEvent(message);
-        return Flows.forms(this.session, this.realmModel, clientCode.getClientSession().getClient(), this.uriInfo)
+        return Flows.forms(this.session, this.realmModel, clientCode.getClientSession().getClient(), this.uriInfo, headers)
                 .setClientSessionCode(clientCode.getCode())
                 .setError(message)
                 .createLogin();
@@ -535,14 +534,14 @@ public class IdentityBrokerService {
 
         if (existingUser != null) {
             fireErrorEvent(Errors.FEDERATED_IDENTITY_EMAIL_EXISTS);
-            throw new IdentityBrokerException("federatedIdentityEmailExists");
+            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_EMAIL_EXISTS);
         }
 
         existingUser = this.session.users().getUserByUsername(updatedIdentity.getUsername(), this.realmModel);
 
         if (existingUser != null) {
             fireErrorEvent(Errors.FEDERATED_IDENTITY_USERNAME_EXISTS);
-            throw new IdentityBrokerException("federatedIdentityUsernameExists");
+            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_USERNAME_EXISTS);
         }
 
         if (isDebugEnabled()) {

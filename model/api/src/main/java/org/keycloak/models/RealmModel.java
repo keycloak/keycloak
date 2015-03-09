@@ -240,4 +240,12 @@ public interface RealmModel extends RoleContainerModel {
     ClientModel findClientById(String id);
 
     boolean isIdentityFederationEnabled();
+
+    //i18n
+    boolean isInternationalizationEnabled();
+    void setInternationalizationEnabled(boolean enabled);
+    Set<String> getSupportedLocales();
+    void setSupportedLocales(Set<String> locales);
+    String getDefaultLocale();
+    void setDefaultLocale(String locale);
 }

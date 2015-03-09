@@ -32,20 +32,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
-import org.keycloak.models.AccountRoles;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelReadOnlyException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -159,7 +146,7 @@ public class AccountService {
     public void init() {
         eventStore = session.getProvider(EventStoreProvider.class);
 
-        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
+        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo).setHttpHeaders(headers);
 
         AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {
@@ -241,7 +228,7 @@ public class AccountService {
             try {
                 require(AccountRoles.MANAGE_ACCOUNT);
             } catch (ForbiddenException e) {
-                return Flows.forms(session, realm, null, uriInfo).setError("No access").createErrorPage();
+                return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.NO_ACCESS).createErrorPage();
             }
 
             setReferrerOnPage();
@@ -441,7 +428,7 @@ public class AccountService {
                 event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
             }
             setReferrerOnPage();
-            return account.setSuccess("accountUpdated").createResponse(AccountPages.ACCOUNT);
+            return account.setSuccess(Messages.ACCOUNT_UPDATED).createResponse(AccountPages.ACCOUNT);
         } catch (ModelReadOnlyException roe) {
             setReferrerOnPage();
             return account.setError(Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
@@ -465,7 +452,7 @@ public class AccountService {
         event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         setReferrerOnPage();
-        return account.setSuccess("successTotpRemoved").createResponse(AccountPages.TOTP);
+        return account.setSuccess(Messages.SUCCESS_TOTP_REMOVED).createResponse(AccountPages.TOTP);
     }
 
 
@@ -544,7 +531,7 @@ public class AccountService {
         event.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         setReferrerOnPage();
-        return account.setSuccess("successTotp").createResponse(AccountPages.TOTP);
+        return account.setSuccess(Messages.SUCCESS_TOTP).createResponse(AccountPages.TOTP);
     }
 
     /**
@@ -613,7 +600,11 @@ public class AccountService {
         } catch (ModelReadOnlyException mre) {
             setReferrerOnPage();
             return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
-        } catch (Exception ape) {
+        }catch (ModelException me) {
+            logger.error("Failed to update password", me);
+            setReferrerOnPage();
+            return account.setError(me.getMessage(), me.getParameters()).createResponse(AccountPages.PASSWORD);
+        }catch (Exception ape) {
             logger.error("Failed to update password", ape);
             setReferrerOnPage();
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
@@ -630,7 +621,7 @@ public class AccountService {
         event.event(EventType.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
 
         setReferrerOnPage();
-        return account.setPasswordSet(true).setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
+        return account.setPasswordSet(true).setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED).createResponse(AccountPages.PASSWORD);
     }
 
     @Path("federated-identity-update")

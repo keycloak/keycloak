@@ -7,14 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -228,11 +221,11 @@ public class ExtendingThemeManager implements ThemeProvider {
         }
 
         @Override
-        public Properties getMessages() throws IOException {
+        public Properties getMessages(Locale locale) throws IOException {
             Properties messages = new Properties();
             ListIterator<Theme> itr = themes.listIterator(themes.size());
             while (itr.hasPrevious()) {
-                Properties m = itr.previous().getMessages();
+                Properties m = itr.previous().getMessages(locale);
                 if (m != null) {
                     messages.putAll(m);
                 }

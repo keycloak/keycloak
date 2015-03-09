@@ -241,6 +241,16 @@ public class RepresentationToModel {
                 UserModel user = createUser(session, newRealm, userRep, appMap);
             }
         }
+
+        if(rep.isInternationalizationEnabled() != null){
+            newRealm.setInternationalizationEnabled(rep.isInternationalizationEnabled());
+        }
+        if(rep.getSupportedLocales() != null){
+            newRealm.setSupportedLocales(new HashSet<String>(rep.getSupportedLocales()));
+        }
+        if(rep.getDefaultLocale() != null){
+            newRealm.setDefaultLocale(rep.getDefaultLocale());
+        }
     }
 
     public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
@@ -300,6 +310,16 @@ public class RepresentationToModel {
 
         if ("GENERATE".equals(rep.getPublicKey())) {
             KeycloakModelUtils.generateRealmKeys(realm);
+        }
+
+        if(rep.isInternationalizationEnabled() != null){
+            realm.setInternationalizationEnabled(rep.isInternationalizationEnabled());
+        }
+        if(rep.getSupportedLocales() != null){
+            realm.setSupportedLocales(new HashSet<String>(rep.getSupportedLocales()));
+        }
+        if(rep.getDefaultLocale() != null){
+            realm.setDefaultLocale(rep.getDefaultLocale());
         }
     }
 
