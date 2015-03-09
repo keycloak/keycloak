@@ -1028,13 +1028,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void setMasterAdminApp(ApplicationModel app) {
-        if (app == null) throw new NullPointerException("app == null");
-        String appId = app.getId();
-        if (appId == null) {
-            throw new IllegalStateException("Master Admin app not initialized.");
+        if (app == null) {
+            realm.setAdminAppId(null);
+            this.masterAdminApp = null;
+        } else {
+            String appId = app.getId();
+            if (appId == null) {
+                throw new IllegalStateException("Master Admin app not initialized.");
+            }
+            realm.setAdminAppId(appId);
+            this.masterAdminApp = app;
         }
-        realm.setAdminAppId(appId);
-        this.masterAdminApp = app;
     }
 
     @Override

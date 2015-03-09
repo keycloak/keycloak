@@ -727,7 +727,6 @@ public class RepresentationToModel {
             hashedCred.setHashIterations(cred.getHashIterations());
             try {
                 if (cred.getSalt() != null) hashedCred.setSalt(Base64.decode(cred.getSalt()));
-//                hashedCred.setSalt(Base64.decode(cred.getSalt()));
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }

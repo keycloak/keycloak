@@ -20,6 +20,9 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -44,10 +47,16 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setAccessCodeLifespanUserAction(600);
         realmModel.setEnabled(true);
         realmModel.setName("JUGGLER");
- //       realmModel.setPrivateKeyPem("0234234");
- //       realmModel.setPublicKeyPem("0234234");
+
+        KeyPair keyPair = generateKeypair();
+
+        realmModel.setPrivateKey(keyPair.getPrivate());
+        realmModel.setPublicKey(keyPair.getPublic());
         realmModel.setAccessTokenLifespan(1000);
         realmModel.addDefaultRole("foo");
+
+        session.getTransaction().commit();
+        resetSession();
 
         realmModel = realmManager.getRealm(realmModel.getId());
         assertNotNull(realmModel);
@@ -56,8 +65,8 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(realmModel.getAccessTokenLifespan(), 1000);
         Assert.assertEquals(realmModel.isEnabled(), true);
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
-     //   Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");
-     //   Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
+        Assert.assertArrayEquals(realmModel.getPrivateKey().getEncoded(), keyPair.getPrivate().getEncoded());
+        Assert.assertArrayEquals(realmModel.getPublicKey().getEncoded(), keyPair.getPublic().getEncoded());
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
         Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
     }
@@ -69,8 +78,9 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setAccessCodeLifespanUserAction(600);
         realmModel.setEnabled(true);
         realmModel.setName("JUGGLER");
-    //    realmModel.setPrivateKeyPem("0234234");
-    //    realmModel.setPublicKeyPem("0234234");
+        KeyPair keyPair = generateKeypair();
+        realmModel.setPrivateKey(keyPair.getPrivate());
+        realmModel.setPublicKey(keyPair.getPublic());
         realmModel.setAccessTokenLifespan(1000);
         realmModel.addDefaultRole("foo");
 
@@ -81,8 +91,8 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(realmModel.getAccessTokenLifespan(), 1000);
         Assert.assertEquals(realmModel.isEnabled(), true);
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
-    //    Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");
-    //    Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
+        Assert.assertArrayEquals(realmModel.getPrivateKey().getEncoded(), keyPair.getPrivate().getEncoded());
+        Assert.assertArrayEquals(realmModel.getPublicKey().getEncoded(), keyPair.getPublic().getEncoded());
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
         Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
 
@@ -90,7 +100,7 @@ public class AdapterTest extends AbstractModelTest {
 
         commit();
         List<RealmModel> realms = model.getRealms();
-    //    Assert.assertEquals(realms.size(), 2);
+        Assert.assertEquals(realms.size(), 2);
     }
 
 
@@ -736,6 +746,10 @@ public class AdapterTest extends AbstractModelTest {
         }
 
         resetSession();
+    }
+
+    private KeyPair generateKeypair() throws NoSuchAlgorithmException {
+        return KeyPairGenerator.getInstance("RSA").generateKeyPair();
     }
 
 }

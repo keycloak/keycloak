@@ -19,7 +19,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
-import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author pedroigor
@@ -36,9 +35,7 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
 
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            //server.importRealm(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-saml.json"));
-            RealmRepresentation realmWithSAML = KeycloakServer.loadJson(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-saml.json"), RealmRepresentation.class);
-            manager.importRealm(realmWithSAML);
+            server.importRealm(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-saml.json"));
         }
     };
 

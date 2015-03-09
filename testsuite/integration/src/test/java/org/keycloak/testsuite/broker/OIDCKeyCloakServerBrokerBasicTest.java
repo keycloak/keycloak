@@ -15,7 +15,6 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author pedroigor
@@ -32,9 +31,7 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
 
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            //server.importRealm(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-kc-oidc.json"));
-            RealmRepresentation realmWithOIDC = KeycloakServer.loadJson(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-kc-oidc.json"), RealmRepresentation.class);
-            manager.importRealm(realmWithOIDC);
+            server.importRealm(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-kc-oidc.json"));
         }
     };
 

@@ -8,6 +8,7 @@ import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.api.WebResourceCollection;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.junit.rules.ExternalResource;
+import org.junit.rules.TemporaryFolder;
 import org.keycloak.Config;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.models.KeycloakSession;
@@ -37,9 +38,15 @@ import java.util.Map;
  */
 public abstract class AbstractKeycloakRule extends ExternalResource {
 
+    protected TemporaryFolder temporaryFolder;
+
     protected KeycloakServer server;
 
     protected void before() throws Throwable {
+        temporaryFolder = new TemporaryFolder();
+        temporaryFolder.create();
+        System.setProperty("keycloak.tmp.dir", temporaryFolder.newFolder().getAbsolutePath());
+
         server = new KeycloakServer();
 
         configureServer(server);
@@ -210,6 +217,9 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         removeTestRealms();
         stopServer();
         Time.setOffset(0);
+
+        temporaryFolder.delete();
+        System.getProperties().remove("keycloak.tmp.dir");
     }
 
     protected void removeTestRealms() {
