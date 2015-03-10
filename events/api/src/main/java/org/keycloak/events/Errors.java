@@ -41,6 +41,7 @@ public interface Errors {
     String NOT_ALLOWED = "not_allowed";
 
     String FEDERATED_IDENTITY_EMAIL_EXISTS = "federated_identity_email_exists";
+    String FEDERATED_IDENTITY_REGISTRATION_EMAIL_MISSING = "federated_identity_registration_email_missing";
     String FEDERATED_IDENTITY_USERNAME_EXISTS = "federated_identity_username_exists";
     String SSL_REQUIRED = "ssl_required";
 

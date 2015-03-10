@@ -538,7 +538,17 @@ public class IdentityBrokerService {
             throw new IdentityBrokerException("federatedIdentityEmailExists");
         }
 
-        existingUser = this.session.users().getUserByUsername(updatedIdentity.getUsername(), this.realmModel);
+        String username = updatedIdentity.getUsername();
+        if (this.realmModel.isRegistrationEmailAsUsername()) {
+          username = updatedIdentity.getEmail();
+          if (username == null) {
+            fireErrorEvent(Errors.FEDERATED_IDENTITY_REGISTRATION_EMAIL_MISSING);
+            throw new IdentityBrokerException("federatedIdentityRegistrationEmailMissing");
+				    // TODO KEYCLOAK-1053 (ask user to enter email address) should be implemented instead of plain exception as better solution for this case
+          }
+        }
+
+        existingUser = this.session.users().getUserByUsername(username, this.realmModel);
 
         if (existingUser != null) {
             fireErrorEvent(Errors.FEDERATED_IDENTITY_USERNAME_EXISTS);
@@ -549,7 +559,7 @@ public class IdentityBrokerService {
             LOGGER.debugf("Creating account from identity [%s].", federatedIdentityModel);
         }
 
-        UserModel federatedUser = this.session.users().addUser(this.realmModel, updatedIdentity.getUsername());
+        UserModel federatedUser = this.session.users().addUser(this.realmModel, username);
 
         if (isDebugEnabled()) {
             LOGGER.debugf("Account [%s] created.", federatedUser);
