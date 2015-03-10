@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-model-file">
+    <resources>
+        <resource-root path="keycloak-model-file-1.2.0.Beta1-SNAPSHOT.jar"/>
+        <!-- Insert resources here -->
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-export-import-api"/>
+        <module name="org.keycloak.keycloak-export-import-single-file"/>
+        <module name="org.codehaus.jackson.jackson-mapper-asl"/>
+        <module name="org.jboss.logging"/>
+        <module name="javax.api"/>
+    </dependencies>
+
+</module>

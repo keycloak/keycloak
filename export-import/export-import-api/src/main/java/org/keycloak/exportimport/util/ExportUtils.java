@@ -316,7 +316,7 @@ public class ExportUtils {
         credRep.setType(userCred.getType());
         credRep.setDevice(userCred.getDevice());
         credRep.setHashedSaltedValue(userCred.getValue());
-        credRep.setSalt(Base64.encodeBytes(userCred.getSalt()));
+        if (userCred.getSalt() != null) credRep.setSalt(Base64.encodeBytes(userCred.getSalt()));
         credRep.setHashIterations(userCred.getHashIterations());
         return credRep;
     }

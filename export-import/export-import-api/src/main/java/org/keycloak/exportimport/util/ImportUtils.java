@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.exportimport.ExportImportConfig;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -67,7 +68,10 @@ public class ImportUtils {
 
         refreshMasterAdminApps(model, realm);
 
-        logger.infof("Realm '%s' imported", realmName);
+        if (System.getProperty(ExportImportConfig.ACTION) != null) {
+            logger.infof("Realm '%s' imported", realmName);
+        }
+        
         return realm;
     }
 

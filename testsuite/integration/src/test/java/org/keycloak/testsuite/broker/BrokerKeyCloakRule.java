@@ -24,6 +24,8 @@ import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
 import java.net.URL;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testutils.KeycloakServer;
 
 /**
  * @author pedroigor
@@ -32,7 +34,9 @@ public class BrokerKeyCloakRule extends AbstractKeycloakRule {
 
     @Override
     protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-        server.importRealm(getClass().getResourceAsStream("/broker-test/test-realm-with-broker.json"));
+        //server.importRealm(getClass().getResourceAsStream("/broker-test/test-realm-with-broker.json"));
+        RealmRepresentation realmWithBroker = KeycloakServer.loadJson(getClass().getResourceAsStream("/broker-test/test-realm-with-broker.json"), RealmRepresentation.class);
+        manager.importRealm(realmWithBroker);
         URL url = getClass().getResource("/broker-test/test-app-keycloak.json");
         deployApplication("test-app", "/test-app", UserSessionStatusServlet.class, url.getPath(), "manager");
         deployApplication("test-app-allowed-providers", "/test-app-allowed-providers", UserSessionStatusServlet.class, url.getPath(), "manager");

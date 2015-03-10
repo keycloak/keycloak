@@ -672,6 +672,7 @@ public class RepresentationToModel {
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
+        user.setTotp(userRep.isTotp());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
                 user.setAttribute(entry.getKey(), entry.getValue());
@@ -725,7 +726,8 @@ public class RepresentationToModel {
             hashedCred.setDevice(cred.getDevice());
             hashedCred.setHashIterations(cred.getHashIterations());
             try {
-                hashedCred.setSalt(Base64.decode(cred.getSalt()));
+                if (cred.getSalt() != null) hashedCred.setSalt(Base64.decode(cred.getSalt()));
+//                hashedCred.setSalt(Base64.decode(cred.getSalt()));
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }

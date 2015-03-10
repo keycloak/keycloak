@@ -390,6 +390,32 @@
         </profile>
 
         <profile>
+            <id>file</id>
+
+            <properties>
+                <!--<keycloak.realm.provider>file</keycloak.realm.provider>
+                <keycloak.user.provider>file</keycloak.user.provider>
+                <keycloak.realm.cache.provider>none</keycloak.realm.cache.provider>
+                <keycloak.user.cache.provider>none</keycloak.user.cache.provider>-->
+            </properties>
+            
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/ExportImportTest.java</exclude>
+                                <exclude>**/broker/***</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <profile>
             <id>mongo</id>
 
             <properties>

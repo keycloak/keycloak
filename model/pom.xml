@@ -29,6 +29,7 @@
         <module>invalidation-cache</module>
         <module>jpa</module>
         <module>mongo</module>
+        <module>file</module>
         <module>sessions-jpa</module>
         <module>sessions-mem</module>
         <module>sessions-mongo</module>

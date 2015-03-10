@@ -8,7 +8,11 @@
     },
 
     "realm": {
-        "provider": "${keycloak.realm.provider:jpa}"
+        "provider": "${keycloak.realm.provider:jpa}",
+        "file" : {
+            "directory" : ".",
+            "fileName" : "kcdata.json"
+        }
     },
 
     "user": {
