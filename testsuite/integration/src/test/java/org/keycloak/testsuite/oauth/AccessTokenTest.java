@@ -653,6 +653,29 @@ public class AccessTokenTest {
             response.close();
         }
         client.close();
+
+        // undo mappers
+        {
+            KeycloakSession session = keycloakRule.startSession();
+            RealmModel realm = session.realms().getRealmByName("test");
+            ApplicationModel app = realm.getApplicationByName("test-app");
+            for (ProtocolMapperModel model : app.getProtocolMappers()) {
+                if (model.getName().equals("address")
+                        || model.getName().equals("hard")
+                        || model.getName().equals("hard-nested")
+                        || model.getName().equals("custom phone")
+                        || model.getName().equals("nested phone")
+                        || model.getName().equals("hard-realm")
+                        || model.getName().equals("hard-app")
+                        )   {
+                    app.removeProtocolMapper(model);
+                }
+            }
+            session.getTransaction().commit();
+            session.close();
+        }
+
+
         events.clear();
 
     }
