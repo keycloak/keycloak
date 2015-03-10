@@ -12,7 +12,14 @@
                         <div class="col-sm-4">
                             <input ng-model="realm.registrationAllowed" name="registrationAllowed" id="registrationAllowed" onoffswitch />
                         </div>
-                        <span tooltip-placement="right" tooltip="Enable/disable the registration page.  A link for registration will show on login page too." class="fa fa-info-circle"></span>
+                        <span tooltip-placement="right" tooltip="Enable/disable the registration page. A link for registration will show on login page too." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group" ng-show="registrationAllowed">
+                        <label for="registrationEmailAsUsername" class="col-sm-2 control-label">Email as username</label>
+                        <div class="col-sm-4">
+                            <input ng-model="realm.registrationEmailAsUsername" name="registrationEmailAsUsername" id="registrationEmailAsUsername" onoffswitch />
+                        </div>
+                        <span tooltip-placement="right" tooltip="If enabled then username field is hidden from registration form and email is used as username for new user." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
                         <label for="resetPasswordAllowed" class="col-sm-2 control-label">Forget password</label>

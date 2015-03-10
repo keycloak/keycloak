@@ -93,6 +93,7 @@
 
         <addColumn tableName="REALM">
             <column name="LOGIN_LIFESPAN" type="INT"/>
+            <column name="REGISTRATION_EMAIL_AS_USERNAME" type="BOOLEAN" defaultValueBoolean="false"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>
