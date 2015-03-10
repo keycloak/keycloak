@@ -59,12 +59,22 @@ public class TokenManager {
         }
     }
 
-    public AccessTokenResponse refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel client, String encodedRefreshToken, EventBuilder event) throws OAuthErrorException {
-        RefreshToken refreshToken = verifyRefreshToken(realm, encodedRefreshToken);
+    public static class TokenValidation {
+        public final UserModel user;
+        public final UserSessionModel userSession;
+        public final ClientSessionModel clientSession;
+        public final AccessToken newToken;
 
-        event.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
+        public TokenValidation(UserModel user, UserSessionModel userSession, ClientSessionModel clientSession, AccessToken newToken) {
+            this.user = user;
+            this.userSession = userSession;
+            this.clientSession = clientSession;
+            this.newToken = newToken;
+        }
+    }
 
-        UserModel user = session.users().getUserById(refreshToken.getSubject(), realm);
+    public TokenValidation validateToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, AccessToken oldToken) throws OAuthErrorException {
+        UserModel user = session.users().getUserById(oldToken.getSubject(), realm);
         if (user == null) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown user");
         }
@@ -73,24 +83,14 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled");
         }
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, refreshToken.getSessionState());
-        int currentTime = Time.currentTime();
+        UserSessionModel userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
             AuthenticationManager.logout(session, realm, userSession, uriInfo, connection);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
-
-        if (!client.getClientId().equals(refreshToken.getIssuedFor())) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
-        }
-
-        if (refreshToken.getIssuedAt() < client.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
-        }
-
         ClientSessionModel clientSession = null;
         for (ClientSessionModel clientSessionModel : userSession.getClientSessions()) {
-            if (clientSessionModel.getId().equals(refreshToken.getClientSession())) {
+            if (clientSessionModel.getId().equals(oldToken.getClientSession())) {
                 clientSession = clientSessionModel;
                 break;
             }
@@ -98,20 +98,48 @@ public class TokenManager {
 
         if (clientSession == null) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Client session not active", "Client session not active");
-
         }
 
-        verifyAccess(refreshToken, realm, client, user);
+        ClientModel client = clientSession.getClient();
 
-        AccessToken accessToken = initToken(realm, client, user, userSession, clientSession);
-        accessToken.setRealmAccess(refreshToken.getRealmAccess());
-        accessToken.setResourceAccess(refreshToken.getResourceAccess());
-        accessToken = transformAccessToken(session, accessToken, realm, client, user, userSession, clientSession);
+        if (!client.getClientId().equals(oldToken.getIssuedFor())) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
+        }
 
-        userSession.setLastSessionRefresh(currentTime);
+        if (oldToken.getIssuedAt() < client.getNotBefore()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+        }
+        if (oldToken.getIssuedAt() < realm.getNotBefore()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+        }
 
-        AccessTokenResponse res = responseBuilder(realm, client, event, session, userSession, clientSession)
-                .accessToken(accessToken)
+
+        // recreate token.
+        Set<RoleModel> requestedRoles = TokenManager.getAccess(null, clientSession.getClient(), user);
+        AccessToken newToken = createClientAccessToken(session, requestedRoles, realm, client, user, userSession, clientSession);
+        verifyAccess(oldToken, newToken);
+
+        return new TokenValidation(user, userSession, clientSession, newToken);
+
+
+    }
+
+    public AccessTokenResponse refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient, String encodedRefreshToken, EventBuilder event) throws OAuthErrorException {
+        RefreshToken refreshToken = verifyRefreshToken(realm, encodedRefreshToken);
+
+        event.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
+
+        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken);
+        // validate authorizedClient is same as validated client
+        if (!validation.clientSession.getClient().getId().equals(authorizedClient.getId())) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
+        }
+
+        int currentTime = Time.currentTime();
+        validation.userSession.setLastSessionRefresh(currentTime);
+
+        AccessTokenResponse res = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
+                .accessToken(validation.newToken)
                 .generateIDToken()
                 .generateRefreshToken().build();
         return res;
@@ -198,40 +226,26 @@ public class TokenManager {
         return requestedRoles;
     }
 
-    public void verifyAccess(AccessToken token, RealmModel realm, ClientModel client, UserModel user) throws OAuthErrorException {
-        ApplicationModel clientApp = (client instanceof ApplicationModel) ? (ApplicationModel)client : null;
-
-
+    public void verifyAccess(AccessToken token, AccessToken newToken) throws OAuthErrorException {
         if (token.getRealmAccess() != null) {
+            if (newToken.getRealmAccess() == null) throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for realm roles");
+
             for (String roleName : token.getRealmAccess().getRoles()) {
-                RoleModel role = realm.getRole(roleName);
-                if (role == null) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid realm role " + roleName);
-                }
-                if (!user.hasRole(role)) {
+                if (!newToken.getRealmAccess().getRoles().contains(roleName)) {
                     throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for realm role: " + roleName);
-                }
-                if (!client.hasScope(role)) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has realm scope: " + roleName);
                 }
             }
         }
         if (token.getResourceAccess() != null) {
             for (Map.Entry<String, AccessToken.Access> entry : token.getResourceAccess().entrySet()) {
-                ApplicationModel app = realm.getApplicationByName(entry.getKey());
-                if (app == null) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Application no longer exists", "Application no longer exists: " + entry.getKey());
+                AccessToken.Access appAccess = newToken.getResourceAccess(entry.getKey());
+                if (appAccess == null && !entry.getValue().getRoles().isEmpty()) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User or application no longer has role permissions for application key: " + entry.getKey());
+
                 }
                 for (String roleName : entry.getValue().getRoles()) {
-                    RoleModel role = app.getRole(roleName);
-                    if (role == null) {
-                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown application role: " + roleName);
-                    }
-                    if (!user.hasRole(role)) {
+                    if (!appAccess.getRoles().contains(roleName)) {
                         throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for application role " + roleName);
-                    }
-                    if (clientApp != null && !clientApp.equals(app) && !client.hasScope(role)) {
-                        throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has application scope" + roleName);
                     }
                 }
             }

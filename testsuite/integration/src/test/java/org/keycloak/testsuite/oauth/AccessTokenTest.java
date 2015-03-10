@@ -40,8 +40,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.mappers.OIDCAddressMapper;
-import org.keycloak.protocol.oidc.mappers.OIDCUserAttributeMapper;
+import org.keycloak.protocol.oidc.mappers.AddressMapper;
+import org.keycloak.protocol.oidc.mappers.FullNameMapper;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.HardcodedRole;
+import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
+import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.managers.RealmManager;
@@ -67,6 +71,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
@@ -594,9 +599,14 @@ public class AccessTokenTest {
             user.setAttribute("country", "USA");
             user.setAttribute("phone", "617-777-6666");
             ApplicationModel app = realm.getApplicationByName("test-app");
-            ProtocolMapperModel mapper = OIDCAddressMapper.createAddressMapper(true, true);
+            ProtocolMapperModel mapper = AddressMapper.createAddressMapper(true, true);
             app.addProtocolMapper(mapper);
-            app.addProtocolMapper(OIDCUserAttributeMapper.createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true));
+            app.addProtocolMapper(HardcodedClaim.create("hard", "hard", "coded", "String", false, null, true, true));
+            app.addProtocolMapper(HardcodedClaim.create("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true));
+            app.addProtocolMapper(UserAttributeMapper.createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true));
+            app.addProtocolMapper(UserAttributeMapper.createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true));
+            app.addProtocolMapper(HardcodedRole.create("hard-realm", "hardcoded"));
+            app.addProtocolMapper(HardcodedRole.create("hard-app", "app.hardcoded"));
             session.getTransaction().commit();
             session.close();
         }
@@ -607,15 +617,22 @@ public class AccessTokenTest {
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
             IDToken idToken = getIdToken(tokenResponse);
             Assert.assertNotNull(idToken.getAddress());
+            Assert.assertEquals(idToken.getName(), "Tom Brady");
             Assert.assertEquals(idToken.getAddress().getStreetAddress(), "5 Yawkey Way");
             Assert.assertEquals(idToken.getAddress().getLocality(), "Boston");
             Assert.assertEquals(idToken.getAddress().getRegion(), "MA");
             Assert.assertEquals(idToken.getAddress().getPostalCode(), "02115");
             Assert.assertEquals(idToken.getAddress().getCountry(), "USA");
             Assert.assertNotNull(idToken.getOtherClaims().get("home_phone"));
-            //Assert.assertEquals("617-777-6666", idToken.getOtherClaims().get("home_phone"));
+            Assert.assertEquals("617-777-6666", idToken.getOtherClaims().get("home_phone"));
+            Assert.assertEquals("coded", idToken.getOtherClaims().get("hard"));
+            Map nested = (Map)idToken.getOtherClaims().get("nested");
+            Assert.assertEquals("coded-nested", nested.get("hard"));
+            nested = (Map)idToken.getOtherClaims().get("home");
+            Assert.assertEquals("617-777-6666", nested.get("phone"));
 
             AccessToken accessToken = getAccessToken(tokenResponse);
+            Assert.assertEquals(accessToken.getName(), "Tom Brady");
             Assert.assertNotNull(accessToken.getAddress());
             Assert.assertEquals(accessToken.getAddress().getStreetAddress(), "5 Yawkey Way");
             Assert.assertEquals(accessToken.getAddress().getLocality(), "Boston");
@@ -624,11 +641,41 @@ public class AccessTokenTest {
             Assert.assertEquals(accessToken.getAddress().getCountry(), "USA");
             Assert.assertNotNull(accessToken.getOtherClaims().get("home_phone"));
             Assert.assertEquals("617-777-6666", accessToken.getOtherClaims().get("home_phone"));
+            Assert.assertEquals("coded", accessToken.getOtherClaims().get("hard"));
+            nested = (Map)accessToken.getOtherClaims().get("nested");
+            Assert.assertEquals("coded-nested", nested.get("hard"));
+            nested = (Map)accessToken.getOtherClaims().get("home");
+            Assert.assertEquals("617-777-6666", nested.get("phone"));
+            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains("hardcoded"));
+            Assert.assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
 
 
             response.close();
         }
         client.close();
+
+        // undo mappers
+        {
+            KeycloakSession session = keycloakRule.startSession();
+            RealmModel realm = session.realms().getRealmByName("test");
+            ApplicationModel app = realm.getApplicationByName("test-app");
+            for (ProtocolMapperModel model : app.getProtocolMappers()) {
+                if (model.getName().equals("address")
+                        || model.getName().equals("hard")
+                        || model.getName().equals("hard-nested")
+                        || model.getName().equals("custom phone")
+                        || model.getName().equals("nested phone")
+                        || model.getName().equals("hard-realm")
+                        || model.getName().equals("hard-app")
+                        )   {
+                    app.removeProtocolMapper(model);
+                }
+            }
+            session.getTransaction().commit();
+            session.close();
+        }
+
+
         events.clear();
 
     }
@@ -645,7 +692,7 @@ public class AccessTokenTest {
     }
 
     private AccessToken getAccessToken(org.keycloak.representations.AccessTokenResponse tokenResponse) throws VerificationException {
-        JWSInput input = new JWSInput(tokenResponse.getIdToken());
+        JWSInput input = new JWSInput(tokenResponse.getToken());
         AccessToken idToken = null;
         try {
             idToken = input.readJsonContent(AccessToken.class);

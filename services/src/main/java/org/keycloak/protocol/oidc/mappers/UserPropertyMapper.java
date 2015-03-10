@@ -14,24 +14,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Mappings UserModel.attribute to an ID Token claim.  Token claim name can be a full qualified nested object name,
+ * Mappings UserModel property (the property name of a getter method) to an ID Token claim.  Token claim name can be a full qualified nested object name,
  * i.e. "address.country".  This will create a nested
  * json object within the toke claim.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
-
+public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
     private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
 
     static {
         ConfigProperty property;
         property = new ConfigProperty();
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
-        property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
-        property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
+        property.setLabel(ProtocolMapperUtils.USER_MODEL_PROPERTY_LABEL);
         property.setType(ConfigProperty.STRING_TYPE);
+        property.setHelpText(ProtocolMapperUtils.USER_MODEL_PROPERTY_HELP_TEXT);
         configProperties.add(property);
         property = new ConfigProperty();
         property.setName(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
@@ -60,10 +59,9 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
         property.setDefaultValue("true");
         property.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
         configProperties.add(property);
-
     }
 
-    public static final String PROVIDER_ID = "oidc-usermodel-attribute-mapper";
+    public static final String PROVIDER_ID = "oidc-usermodel-property-mapper";
 
 
     public List<ConfigProperty> getConfigProperties() {
@@ -77,7 +75,7 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
 
     @Override
     public String getDisplayType() {
-        return "User Attribute";
+        return "User Property";
     }
 
     @Override
@@ -87,31 +85,31 @@ public class OIDCUserAttributeMapper extends AbstractOIDCProtocolMapper implemen
 
     @Override
     public String getHelpText() {
-        return "Map a custom user attribute to a token claim.";
+        return "Map a built in user property to a token claim.";
     }
 
     @Override
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionModel clientSession) {
         if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) return token;
-
         setClaim(token, mappingModel, userSession);
-        return token;
-    }
 
-    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
-        UserModel user = userSession.getUser();
-        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
-        String attributeValue = user.getAttribute(attributeName);
-        if (attributeValue == null) return;
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
+        return token;
     }
 
     @Override
     public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
         if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) return token;
         setClaim(token, mappingModel, userSession);
+
         return token;
+    }
+
+    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+        UserModel user = userSession.getUser();
+        String propertyName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
+        String propertyValue = ProtocolMapperUtils.getUserModelValue(user, propertyName);
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, propertyValue);
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,

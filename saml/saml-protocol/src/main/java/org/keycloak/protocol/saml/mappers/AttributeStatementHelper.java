@@ -73,14 +73,14 @@ public class AttributeStatementHelper {
 
     }
     public static ProtocolMapperModel createAttributeMapper(String name, String userAttribute, String samlAttributeName, String nameFormat,  String friendlyName, boolean consentRequired, String consentText, String mapperId) {
-        ProtocolMapperModel mapper = mapper = new ProtocolMapperModel();
+        ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         mapper.setConsentRequired(consentRequired);
         mapper.setConsentText(consentText);
         Map<String, String> config = new HashMap<String, String>();
-        config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
+        if (userAttribute != null) config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
         config.put(SAML_ATTRIBUTE_NAME, samlAttributeName);
         if (friendlyName != null) {
             config.put(FRIENDLY_NAME, friendlyName);

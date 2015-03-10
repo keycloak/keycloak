@@ -30,6 +30,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
@@ -372,85 +373,22 @@ public class OIDCLoginProtocolService {
             Map<String, String> err = new HashMap<String, String>();
             err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
             err.put(OAuth2Constants.ERROR_DESCRIPTION, "Token invalid");
+            logger.error("Invalid token. Token verification failed.");
             event.error(Errors.INVALID_TOKEN);
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
                     .build();
         }
         event.user(token.getSubject()).session(token.getSessionState()).detail(Details.VALIDATE_ACCESS_TOKEN, token.getId());
 
-        if (token.isExpired()
-                || token.getIssuedAt() < realm.getNotBefore()
-                ) {
-            Map<String, String> err = new HashMap<String, String>();
-            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
-            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Token expired");
-            event.error(Errors.INVALID_TOKEN);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
-                    .build();
-        }
-
-
-        UserModel user = session.users().getUserById(token.getSubject(), realm);
-        if (user == null) {
-            Map<String, String> err = new HashMap<String, String>();
-            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
-            err.put(OAuth2Constants.ERROR_DESCRIPTION, "User does not exist");
-            event.error(Errors.USER_NOT_FOUND);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
-                    .build();
-        }
-
-        if (!user.isEnabled()) {
-            Map<String, String> err = new HashMap<String, String>();
-            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
-            err.put(OAuth2Constants.ERROR_DESCRIPTION, "User disabled");
-            event.error(Errors.USER_DISABLED);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
-                    .build();
-        }
-
-        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
-        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            Map<String, String> err = new HashMap<String, String>();
-            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
-            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Expired session");
-            event.error(Errors.USER_SESSION_NOT_FOUND);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
-                    .build();
-        }
-
-        ClientModel client = realm.findClient(token.getIssuedFor());
-        if (client == null) {
-            Map<String, String> err = new HashMap<String, String>();
-            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_CLIENT);
-            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Issued for client no longer exists");
-            event.error(Errors.CLIENT_NOT_FOUND);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
-                    .build();
-
-        }
-
-        if (token.getIssuedAt() < client.getNotBefore()) {
-            Map<String, String> err = new HashMap<String, String>();
-            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_CLIENT);
-            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Issued for client no longer exists");
-            event.error(Errors.INVALID_TOKEN);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
-                    .build();
-        }
-
         try {
-            tokenManager.verifyAccess(token, realm, client, user);
+            tokenManager.validateToken(session, uriInfo, clientConnection, realm, token);
         } catch (OAuthErrorException e) {
-            Map<String, String> err = new HashMap<String, String>();
-            err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_SCOPE);
-            err.put(OAuth2Constants.ERROR_DESCRIPTION, "Role mappings have changed");
+            Map<String, String> error = new HashMap<String, String>();
+            error.put(OAuth2Constants.ERROR, e.getError());
+            if (e.getDescription() != null) error.put(OAuth2Constants.ERROR_DESCRIPTION, e.getDescription());
             event.error(Errors.INVALID_TOKEN);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
-                    .build();
-
+            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
-
         event.success();
 
         return Response.ok(token, MediaType.APPLICATION_JSON_TYPE).build();
@@ -665,16 +603,6 @@ public class OIDCLoginProtocolService {
         }
 
         AccessToken token = tokenManager.createClientAccessToken(session, accessCode.getRequestedRoles(), realm, client, user, userSession, clientSession);
-
-        try {
-            tokenManager.verifyAccess(token, realm, client, user);
-        } catch (OAuthErrorException e) {
-            Map<String, String> error = new HashMap<String, String>();
-            error.put(OAuth2Constants.ERROR, e.getError());
-            if (e.getDescription() != null) error.put(OAuth2Constants.ERROR_DESCRIPTION, e.getDescription());
-            event.error(Errors.INVALID_CODE);
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
-        }
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
                 .accessToken(token)

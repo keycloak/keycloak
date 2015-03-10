@@ -6,11 +6,14 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -18,7 +21,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OIDCAddClaimMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
+public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
 
     private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
 
@@ -62,7 +65,7 @@ public class OIDCAddClaimMapper extends AbstractOIDCProtocolMapper implements OI
 
     }
 
-    public static final String PROVIDER_ID = "oidc-add-claim-mapper";
+    public static final String PROVIDER_ID = "oidc-hardcoded-claim-mapper";
 
 
     public List<ConfigProperty> getConfigProperties() {
@@ -76,7 +79,7 @@ public class OIDCAddClaimMapper extends AbstractOIDCProtocolMapper implements OI
 
     @Override
     public String getDisplayType() {
-        return "Hard coded claim";
+        return "Hardcoded claim";
     }
 
     @Override
@@ -111,16 +114,25 @@ public class OIDCAddClaimMapper extends AbstractOIDCProtocolMapper implements OI
         return token;
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                      String userAttribute,
-                                      String tokenClaimName, String claimType,
+    public static ProtocolMapperModel create(String name,
+                                      String hardcodedName,
+                                      String hardcodedValue, String claimType,
                                       boolean consentRequired, String consentText,
                                       boolean accessToken, boolean idToken) {
-        return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
-                tokenClaimName, claimType,
-                consentRequired, consentText,
-                accessToken, idToken,
-                PROVIDER_ID);
+        ProtocolMapperModel mapper = new ProtocolMapperModel();
+        mapper.setName(name);
+        mapper.setProtocolMapper(PROVIDER_ID);
+        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        mapper.setConsentRequired(consentRequired);
+        mapper.setConsentText(consentText);
+        Map<String, String> config = new HashMap<String, String>();
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, hardcodedName);
+        config.put(CLAIM_VALUE, hardcodedValue);
+        config.put(OIDCAttributeMapperHelper.JSON_TYPE, claimType);
+        if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        mapper.setConfig(config);
+        return mapper;
     }
 
 

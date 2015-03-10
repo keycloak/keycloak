@@ -276,8 +276,8 @@ public class AccountTest {
 
         events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
 
-        Assert.assertEquals("", profilePage.getFirstName());
-        Assert.assertEquals("", profilePage.getLastName());
+        Assert.assertEquals("Tom", profilePage.getFirstName());
+        Assert.assertEquals("Brady", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
 
         // All fields are required, so there should be an error when something is missing.
@@ -310,8 +310,8 @@ public class AccountTest {
 
         profilePage.clickCancel();
 
-        Assert.assertEquals("", profilePage.getFirstName());
-        Assert.assertEquals("", profilePage.getLastName());
+        Assert.assertEquals("Tom", profilePage.getFirstName());
+        Assert.assertEquals("Brady", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
 
         events.assertEmpty();
