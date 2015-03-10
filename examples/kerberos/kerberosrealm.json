@@ -33,7 +33,7 @@
 			        "config" : {
 				        "Claim JSON Type" : "String",
 				        "user.attribute" : "username",
-				        "Token Claim Name" : "preferred_username",
+				        "claim.name" : "preferred_username",
 				        "id.token.claim" : "true",
 				        "access.token.claim" : "true"
 			        }
@@ -46,7 +46,7 @@
 			        "consentRequired" : true,
 			        "config" : {
 				        "user.session.note" : "gss_delegation_credential",
-				        "Token Claim Name" : "gss_delegation_credential",
+				        "claim.name" : "gss_delegation_credential",
                         "id.token.claim" : "false",
                         "access.token.claim" : "true"
 			        }

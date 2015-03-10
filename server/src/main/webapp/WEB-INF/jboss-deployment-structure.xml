@@ -6,6 +6,7 @@
             <module name="org.codehaus.jackson.jackson-core-asl"/>
             <module name="org.codehaus.jackson.jackson-mapper-asl"/>
             <module name="org.infinispan"/>
+            <module name="sun.jdk.jgss"/>
         </dependencies>
         <exclusions>
             <module name="org.jboss.resteasy.resteasy-jackson2-provider"/>
