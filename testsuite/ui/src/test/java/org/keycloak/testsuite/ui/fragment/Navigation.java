@@ -55,8 +55,8 @@ public class Navigation {
 	@FindByJQuery("a:contains('Attributes')")
     private WebElement attributes;
 	
-    //@FindByJQuery("div[id='content'] h2:visible")
-    @FindBy(css = "#content > div:nth-child(1) > h2:nth-child(1)")
+    @FindByJQuery("div[id='content'] h2:visible")
+    //@FindBy(css = "#content > div:nth-child(1) > h2:nth-child(1)")
     private WebElement currentHeader;
 
     public void settings() {
