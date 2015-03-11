@@ -197,7 +197,7 @@ public class IdentityBrokerService {
                             .setClient(clientModel)
                             .setUriInfo(this.uriInfo)
                             .setActionUri(this.uriInfo.getRequestUri())
-                            .createOAuthGrant(), clientModel);
+                            .createOAuthGrant(null), clientModel);
                 }
 
                 IdentityProvider identityProvider = getIdentityProvider(providerId);

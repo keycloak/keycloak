@@ -40,6 +40,8 @@
                 <!ENTITY ApplicationClustering SYSTEM "modules/application-clustering.xml">
                 <!ENTITY MultiTenancy SYSTEM "modules/multi-tenancy.xml">
                 <!ENTITY Proxy SYSTEM "modules/proxy.xml">
+                <!ENTITY CustomAttributes SYSTEM "modules/custom-attributes.xml">
+                <!ENTITY ProtocolMappers SYSTEM "modules/protocol-mappers.xml">
                 ]>
 
 <book>
@@ -128,6 +130,8 @@ This one is short
     &Clustering;
     &ApplicationClustering;
     &Proxy;
+    &CustomAttributes;
+    &ProtocolMappers;
     &Migration;
 
 </book>

@@ -1,6 +1,7 @@
 package org.keycloak.login;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -35,7 +36,7 @@ public interface LoginFormsProvider extends Provider {
 
     public Response createErrorPage();
 
-    public Response createOAuthGrant();
+    public Response createOAuthGrant(ClientSessionModel clientSessionModel);
 
     public Response createCode();
 

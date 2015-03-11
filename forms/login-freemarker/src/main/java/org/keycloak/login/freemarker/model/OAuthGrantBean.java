@@ -21,8 +21,9 @@
  */
 package org.keycloak.login.freemarker.model;
 
-import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -41,7 +42,7 @@ public class OAuthGrantBean {
     private ClientModel client;
     private List<String> claimsRequested;
 
-    public OAuthGrantBean(String code, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested, String accessRequestMessage) {
+    public OAuthGrantBean(String code, ClientSessionModel clientSession, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested, String accessRequestMessage) {
         this.code = code;
         this.client = client;
         this.realmRolesRequested = realmRolesRequested;
@@ -50,36 +51,12 @@ public class OAuthGrantBean {
 
         // todo support locale
         List<String> claims = new LinkedList<String>();
-        long mask = client.getAllowedClaimsMask();
-        if (ClaimMask.hasEmail(mask)) {
-            claims.add("email");
-        }
-        if (ClaimMask.hasUsername(mask)) {
-            claims.add("username");
-        }
-        if (ClaimMask.hasName(mask)) {
-            claims.add("name");
-        }
-        if (ClaimMask.hasGender(mask)) {
-            claims.add("gender");
-        }
-        if (ClaimMask.hasAddress(mask)) {
-            claims.add("address");
-        }
-        if (ClaimMask.hasPhone(mask)) {
-            claims.add("phone");
-        }
-        if (ClaimMask.hasPicture(mask)) {
-            claims.add("picture");
-        }
-        if (ClaimMask.hasProfile(mask)) {
-            claims.add("profile page");
-        }
-        if (ClaimMask.hasLocale(mask)) {
-            claims.add("locale");
-        }
-        if (ClaimMask.hasWebsite(mask)) {
-            claims.add("website");
+        if (clientSession != null) {
+            for (ProtocolMapperModel model : client.getProtocolMappers()) {
+                if (model.isConsentRequired() && model.getProtocol().equals(clientSession.getAuthMethod()) && model.getConsentText() != null) {
+                    claims.add(model.getConsentText());
+                }
+            }
         }
         if (claims.size() > 0) this.claimsRequested = claims;
     }

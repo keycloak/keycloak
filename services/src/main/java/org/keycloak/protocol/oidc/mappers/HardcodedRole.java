@@ -49,7 +49,7 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
 
     @Override
     public String getDisplayType() {
-        return "Add Role";
+        return "Hardcoded Role";
     }
 
     @Override
@@ -59,7 +59,7 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
 
     @Override
     public String getHelpText() {
-        return "Hardcode any role specify into the token.";
+        return "Hardcode a role into the access token.";
     }
 
     @Override

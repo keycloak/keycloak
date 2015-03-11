@@ -95,6 +95,14 @@
                 and even within the same deployed application.
             </listitem>
             <listitem>
+                Identity brokering/chaining.  You can make the Keycloak server a child IDP to another SAML 2.0 or OpenID Connect IDP.
+            </listitem>
+            <listitem>
+                Token claim, assertion, and attribute mappings.  You can map user attributes, roles, and role names however you want
+                into a OIDC ID Token, Access Token, SAML attribute statements, etc.  This feature allows you to basically
+                tailor however you want auth responses to look.
+            </listitem>
+            <listitem>
                 Supports JBoss AS7, EAP 6.x, Wildfly, Tomcat 7, Tomcat 8, Jetty 9.1.x, Jetty 9.2.x, Jetty 8.1.x, and Pure JavaScript applications.  Plans to support Node.js, RAILS, GRAILS, and other non-Java deployments
             </listitem>
         </itemizedlist>

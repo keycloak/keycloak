@@ -58,7 +58,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
 
     @Override
     public String getDisplayType() {
-        return "Role Mapper";
+        return "Role Name Mapper";
     }
 
     @Override

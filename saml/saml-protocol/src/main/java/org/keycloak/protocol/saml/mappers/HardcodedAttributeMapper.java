@@ -24,11 +24,6 @@ public class HardcodedAttributeMapper extends AbstractSAMLProtocolMapper impleme
 
     static {
         ConfigProperty property;
-        property = new ConfigProperty();
-        property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
-        property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
-        property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
-        configProperties.add(property);
         AttributeStatementHelper.setConfigProperties(configProperties);
         property = new ConfigProperty();
         property.setName(ATTRIBUTE_VALUE);
