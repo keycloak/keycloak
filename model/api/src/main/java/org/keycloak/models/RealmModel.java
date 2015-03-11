@@ -16,264 +16,240 @@ import org.keycloak.provider.ProviderEvent;
  * @version $Revision: 1 $
  */
 public interface RealmModel extends RoleContainerModel {
-	interface RealmCreationEvent extends ProviderEvent {
-		RealmModel getCreatedRealm();
-	}
+    interface RealmCreationEvent extends ProviderEvent {
+        RealmModel getCreatedRealm();
+    }
+    interface ClientCreationEvent extends ProviderEvent {
+        ClientModel getCreatedClient();
+    }
+    interface ApplicationCreationEvent extends ClientCreationEvent {
+        ApplicationModel getCreatedApplication();
+    }
+    interface OAuthClientCreationEvent extends ClientCreationEvent {
+        OAuthClientModel getCreatedOAuthClient();
+    }
 
-	interface ClientCreationEvent extends ProviderEvent {
-		ClientModel getCreatedClient();
-	}
+    String getId();
 
-	interface ApplicationCreationEvent extends ClientCreationEvent {
-		ApplicationModel getCreatedApplication();
-	}
+    String getName();
 
-	interface OAuthClientCreationEvent extends ClientCreationEvent {
-		OAuthClientModel getCreatedOAuthClient();
-	}
+    void setName(String name);
 
-	String getId();
+    boolean isEnabled();
 
-	String getName();
+    void setEnabled(boolean enabled);
 
-	void setName(String name);
+    SslRequired getSslRequired();
 
-	boolean isEnabled();
+    void setSslRequired(SslRequired sslRequired);
 
-	void setEnabled(boolean enabled);
+    boolean isRegistrationAllowed();
 
-	SslRequired getSslRequired();
+    void setRegistrationAllowed(boolean registrationAllowed);
 
-	void setSslRequired(SslRequired sslRequired);
+    public boolean isRegistrationEmailAsUsername();
 
-	boolean isRegistrationAllowed();
+    public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername);
 
-	void setRegistrationAllowed(boolean registrationAllowed);
+    boolean isPasswordCredentialGrantAllowed();
 
-	public boolean isRegistrationEmailAsUsername();
+    void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed);
 
-	public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername);
+    boolean isRememberMe();
 
-	boolean isPasswordCredentialGrantAllowed();
+    void setRememberMe(boolean rememberMe);
 
-	void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed);
+    //--- brute force settings
+    boolean isBruteForceProtected();
+    void setBruteForceProtected(boolean value);
+    int getMaxFailureWaitSeconds();
+    void setMaxFailureWaitSeconds(int val);
+    int getWaitIncrementSeconds();
+    void setWaitIncrementSeconds(int val);
+    int getMinimumQuickLoginWaitSeconds();
+    void setMinimumQuickLoginWaitSeconds(int val);
+    long getQuickLoginCheckMilliSeconds();
+    void setQuickLoginCheckMilliSeconds(long val);
+    int getMaxDeltaTimeSeconds();
+    void setMaxDeltaTimeSeconds(int val);
+    int getFailureFactor();
+    void setFailureFactor(int failureFactor);
+    //--- end brute force settings
 
-	boolean isRememberMe();
 
-	void setRememberMe(boolean rememberMe);
+    boolean isVerifyEmail();
 
-	// --- brute force settings
-	boolean isBruteForceProtected();
+    void setVerifyEmail(boolean verifyEmail);
 
-	void setBruteForceProtected(boolean value);
+    boolean isResetPasswordAllowed();
 
-	int getMaxFailureWaitSeconds();
+    void setResetPasswordAllowed(boolean resetPasswordAllowed);
 
-	void setMaxFailureWaitSeconds(int val);
+    int getSsoSessionIdleTimeout();
+    void setSsoSessionIdleTimeout(int seconds);
 
-	int getWaitIncrementSeconds();
+    int getSsoSessionMaxLifespan();
+    void setSsoSessionMaxLifespan(int seconds);
 
-	void setWaitIncrementSeconds(int val);
+    int getAccessTokenLifespan();
 
-	int getMinimumQuickLoginWaitSeconds();
+    void setAccessTokenLifespan(int seconds);
 
-	void setMinimumQuickLoginWaitSeconds(int val);
+    int getAccessCodeLifespan();
 
-	long getQuickLoginCheckMilliSeconds();
+    void setAccessCodeLifespan(int seconds);
 
-	void setQuickLoginCheckMilliSeconds(long val);
+    int getAccessCodeLifespanUserAction();
 
-	int getMaxDeltaTimeSeconds();
+    void setAccessCodeLifespanUserAction(int seconds);
 
-	void setMaxDeltaTimeSeconds(int val);
+    int getAccessCodeLifespanLogin();
 
-	int getFailureFactor();
+    void setAccessCodeLifespanLogin(int seconds);
 
-	void setFailureFactor(int failureFactor);
+    String getPublicKeyPem();
 
-	// --- end brute force settings
+    void setPublicKeyPem(String publicKeyPem);
 
-	boolean isVerifyEmail();
+    String getPrivateKeyPem();
 
-	void setVerifyEmail(boolean verifyEmail);
+    void setPrivateKeyPem(String privateKeyPem);
 
-	boolean isResetPasswordAllowed();
+    PublicKey getPublicKey();
 
-	void setResetPasswordAllowed(boolean resetPasswordAllowed);
+    void setPublicKey(PublicKey publicKey);
 
-	int getSsoSessionIdleTimeout();
+    String getCodeSecret();
 
-	void setSsoSessionIdleTimeout(int seconds);
+    Key getCodeSecretKey();
 
-	int getSsoSessionMaxLifespan();
+    void setCodeSecret(String codeSecret);
 
-	void setSsoSessionMaxLifespan(int seconds);
+    X509Certificate getCertificate();
+    void setCertificate(X509Certificate certificate);
+    String getCertificatePem();
+    void setCertificatePem(String certificate);
 
-	int getAccessTokenLifespan();
+    PrivateKey getPrivateKey();
 
-	void setAccessTokenLifespan(int seconds);
+    void setPrivateKey(PrivateKey privateKey);
 
-	int getAccessCodeLifespan();
+    List<RequiredCredentialModel> getRequiredCredentials();
 
-	void setAccessCodeLifespan(int seconds);
+    void addRequiredCredential(String cred);
 
-	int getAccessCodeLifespanUserAction();
+    PasswordPolicy getPasswordPolicy();
 
-	void setAccessCodeLifespanUserAction(int seconds);
+    void setPasswordPolicy(PasswordPolicy policy);
 
-	int getAccessCodeLifespanLogin();
+    RoleModel getRoleById(String id);
 
-	void setAccessCodeLifespanLogin(int seconds);
+    List<String> getDefaultRoles();
 
-	String getPublicKeyPem();
+    void addDefaultRole(String name);
 
-	void setPublicKeyPem(String publicKeyPem);
+    void updateDefaultRoles(String[] defaultRoles);
 
-	String getPrivateKeyPem();
+    ClientModel findClient(String clientId);
 
-	void setPrivateKeyPem(String privateKeyPem);
+    Map<String, ApplicationModel> getApplicationNameMap();
 
-	PublicKey getPublicKey();
+    List<ApplicationModel> getApplications();
 
-	void setPublicKey(PublicKey publicKey);
+    ApplicationModel addApplication(String name);
 
-	String getCodeSecret();
+    ApplicationModel addApplication(String id, String name);
 
-	Key getCodeSecretKey();
+    boolean removeApplication(String id);
 
-	void setCodeSecret(String codeSecret);
+    ApplicationModel getApplicationById(String id);
+    ApplicationModel getApplicationByName(String name);
 
-	X509Certificate getCertificate();
+    void updateRequiredCredentials(Set<String> creds);
 
-	void setCertificate(X509Certificate certificate);
+    OAuthClientModel addOAuthClient(String name);
 
-	String getCertificatePem();
+    OAuthClientModel addOAuthClient(String id, String name);
 
-	void setCertificatePem(String certificate);
+    OAuthClientModel getOAuthClient(String name);
+    OAuthClientModel getOAuthClientById(String id);
+    boolean removeOAuthClient(String id);
 
-	PrivateKey getPrivateKey();
+    List<OAuthClientModel> getOAuthClients();
 
-	void setPrivateKey(PrivateKey privateKey);
+    Map<String, String> getBrowserSecurityHeaders();
 
-	List<RequiredCredentialModel> getRequiredCredentials();
+    void setBrowserSecurityHeaders(Map<String, String> headers);
 
-	void addRequiredCredential(String cred);
+    Map<String, String> getSmtpConfig();
 
-	PasswordPolicy getPasswordPolicy();
+    void setSmtpConfig(Map<String, String> smtpConfig);
 
-	void setPasswordPolicy(PasswordPolicy policy);
+    List<IdentityProviderModel> getIdentityProviders();
 
-	RoleModel getRoleById(String id);
+    IdentityProviderModel getIdentityProviderById(String identityProviderId);
 
-	List<String> getDefaultRoles();
+    void addIdentityProvider(IdentityProviderModel identityProvider);
 
-	void addDefaultRole(String name);
+    void removeIdentityProviderById(String providerId);
 
-	void updateDefaultRoles(String[] defaultRoles);
+    void updateIdentityProvider(IdentityProviderModel identityProvider);
 
-	ClientModel findClient(String clientId);
+    List<UserFederationProviderModel> getUserFederationProviders();
 
-	Map<String, ApplicationModel> getApplicationNameMap();
+    UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority,
+            String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync);
 
-	List<ApplicationModel> getApplications();
+    void updateUserFederationProvider(UserFederationProviderModel provider);
 
-	ApplicationModel addApplication(String name);
+    void removeUserFederationProvider(UserFederationProviderModel provider);
 
-	ApplicationModel addApplication(String id, String name);
+    void setUserFederationProviders(List<UserFederationProviderModel> providers);
 
-	boolean removeApplication(String id);
+    String getLoginTheme();
 
-	ApplicationModel getApplicationById(String id);
+    void setLoginTheme(String name);
 
-	ApplicationModel getApplicationByName(String name);
+    String getAccountTheme();
 
-	void updateRequiredCredentials(Set<String> creds);
+    void setAccountTheme(String name);
 
-	OAuthClientModel addOAuthClient(String name);
+    String getAdminTheme();
 
-	OAuthClientModel addOAuthClient(String id, String name);
+    void setAdminTheme(String name);
 
-	OAuthClientModel getOAuthClient(String name);
+    String getEmailTheme();
 
-	OAuthClientModel getOAuthClientById(String id);
+    void setEmailTheme(String name);
 
-	boolean removeOAuthClient(String id);
+    /**
+     * Time in seconds since epoc
+     * 
+     * @return
+     */
+    int getNotBefore();
 
-	List<OAuthClientModel> getOAuthClients();
+    void setNotBefore(int notBefore);
 
-	Map<String, String> getBrowserSecurityHeaders();
+    boolean removeRoleById(String id);
 
-	void setBrowserSecurityHeaders(Map<String, String> headers);
+    boolean isEventsEnabled();
 
-	Map<String, String> getSmtpConfig();
+    void setEventsEnabled(boolean enabled);
 
-	void setSmtpConfig(Map<String, String> smtpConfig);
+    long getEventsExpiration();
 
-	List<IdentityProviderModel> getIdentityProviders();
+    void setEventsExpiration(long expiration);
 
-	IdentityProviderModel getIdentityProviderById(String identityProviderId);
+    Set<String> getEventsListeners();
 
-	void addIdentityProvider(IdentityProviderModel identityProvider);
+    void setEventsListeners(Set<String> listeners);
 
-	void removeIdentityProviderById(String providerId);
+    ApplicationModel getMasterAdminApp();
 
-	void updateIdentityProvider(IdentityProviderModel identityProvider);
+    void setMasterAdminApp(ApplicationModel app);
 
-	List<UserFederationProviderModel> getUserFederationProviders();
+    ClientModel findClientById(String id);
 
-	UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority,
-			String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync);
-
-	void updateUserFederationProvider(UserFederationProviderModel provider);
-
-	void removeUserFederationProvider(UserFederationProviderModel provider);
-
-	void setUserFederationProviders(List<UserFederationProviderModel> providers);
-
-	String getLoginTheme();
-
-	void setLoginTheme(String name);
-
-	String getAccountTheme();
-
-	void setAccountTheme(String name);
-
-	String getAdminTheme();
-
-	void setAdminTheme(String name);
-
-	String getEmailTheme();
-
-	void setEmailTheme(String name);
-
-	/**
-	 * Time in seconds since epoc
-	 * 
-	 * @return
-	 */
-	int getNotBefore();
-
-	void setNotBefore(int notBefore);
-
-	boolean removeRoleById(String id);
-
-	boolean isEventsEnabled();
-
-	void setEventsEnabled(boolean enabled);
-
-	long getEventsExpiration();
-
-	void setEventsExpiration(long expiration);
-
-	Set<String> getEventsListeners();
-
-	void setEventsListeners(Set<String> listeners);
-
-	ApplicationModel getMasterAdminApp();
-
-	void setMasterAdminApp(ApplicationModel app);
-
-	ClientModel findClientById(String id);
-
-	boolean isIdentityFederationEnabled();
+    boolean isIdentityFederationEnabled();
 }
