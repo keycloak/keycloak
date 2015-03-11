@@ -607,6 +607,7 @@ public class AccessTokenTest {
             app.addProtocolMapper(UserAttributeMapper.createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true));
             app.addProtocolMapper(HardcodedRole.create("hard-realm", "hardcoded"));
             app.addProtocolMapper(HardcodedRole.create("hard-app", "app.hardcoded"));
+            app.addProtocolMapper(RoleNameMapper.create("rename-app-role", "test-app.customer-user", "realm-user"));
             session.getTransaction().commit();
             session.close();
         }
@@ -647,6 +648,8 @@ public class AccessTokenTest {
             nested = (Map)accessToken.getOtherClaims().get("home");
             Assert.assertEquals("617-777-6666", nested.get("phone"));
             Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains("hardcoded"));
+            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
+            Assert.assertFalse(accessToken.getResourceAccess("test-app").getRoles().contains("customer-user"));
             Assert.assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
 
 
@@ -665,6 +668,7 @@ public class AccessTokenTest {
                         || model.getName().equals("hard-nested")
                         || model.getName().equals("custom phone")
                         || model.getName().equals("nested phone")
+                        || model.getName().equals("rename-app-role")
                         || model.getName().equals("hard-realm")
                         || model.getName().equals("hard-app")
                         )   {
