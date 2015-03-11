@@ -85,6 +85,8 @@ public class RepresentationToModel {
         if (rep.getSslRequired() != null) newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.isPasswordCredentialGrantAllowed() != null) newRealm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        if (rep.isRegistrationEmailAsUsername() != null)
+            newRealm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
         if (rep.isRememberMe() != null) newRealm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
