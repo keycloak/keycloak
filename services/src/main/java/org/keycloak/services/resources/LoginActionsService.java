@@ -21,25 +21,6 @@
  */
 package org.keycloak.services.resources;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.Providers;
-
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
@@ -74,6 +55,24 @@ import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.validation.Validation;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.ext.Providers;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -151,6 +150,7 @@ public class LoginActionsService {
         }
     }
 
+
     private class Checks {
         ClientSessionCode clientCode;
         Response response;
@@ -202,8 +202,8 @@ public class LoginActionsService {
 
     /**
      * protocol independent login page entry point
-     * 
-     * 
+     *
+     *
      * @param code
      * @return
      */
@@ -232,7 +232,7 @@ public class LoginActionsService {
 
     /**
      * protocol independent registration page entry point
-     * 
+     *
      * @param code
      * @return
      */
@@ -253,6 +253,7 @@ public class LoginActionsService {
         ClientSessionCode clientSessionCode = checks.clientCode;
         ClientSessionModel clientSession = clientSessionCode.getClientSession();
 
+
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
         return Flows.forms(session, realm, clientSession.getClient(), uriInfo)
@@ -261,8 +262,8 @@ public class LoginActionsService {
     }
 
     /**
-     * URL called after login page. YOU SHOULD NEVER INVOKE THIS DIRECTLY!
-     * 
+     * URL called after login page.  YOU SHOULD NEVER INVOKE THIS DIRECTLY!
+     *
      * @param code
      * @param formData
      * @return
@@ -271,7 +272,7 @@ public class LoginActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processLogin(@QueryParam("code") String code,
-            final MultivaluedMap<String, String> formData) {
+                                 final MultivaluedMap<String, String> formData) {
         event.event(EventType.LOGIN);
         if (!checkSsl()) {
             event.error(Errors.SSL_REQUIRED);
@@ -313,6 +314,7 @@ public class LoginActionsService {
         if (remember) {
             event.detail(Details.REMEMBER_ME, "true");
         }
+
 
         ClientModel client = clientSession.getClient();
         if (client == null) {
@@ -392,7 +394,7 @@ public class LoginActionsService {
 
     /**
      * Registration
-     * 
+     *
      * @param code
      * @param formData
      * @return
@@ -401,7 +403,7 @@ public class LoginActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processRegister(@QueryParam("code") String code,
-            final MultivaluedMap<String, String> formData) {
+                                    final MultivaluedMap<String, String> formData) {
         event.event(EventType.REGISTER);
         if (!checkSsl()) {
             event.error(Errors.SSL_REQUIRED);
@@ -454,6 +456,7 @@ public class LoginActionsService {
             event.error(Errors.CLIENT_DISABLED);
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Login requester not enabled.");
         }
+
 
         List<String> requiredCredentialTypes = new LinkedList<String>();
         for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
@@ -536,8 +539,8 @@ public class LoginActionsService {
     }
 
     /**
-     * OAuth grant page. You should not invoked this directly!
-     * 
+     * OAuth grant page.  You should not invoked this directly!
+     *
      * @param formData
      * @return
      */
@@ -546,6 +549,7 @@ public class LoginActionsService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processConsent(final MultivaluedMap<String, String> formData) {
         event.event(EventType.LOGIN).detail(Details.RESPONSE_TYPE, "code");
+
 
         if (!checkSsl()) {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
@@ -597,11 +601,14 @@ public class LoginActionsService {
         return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection);
     }
 
+
+
+
     @Path("profile")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response updateProfile(@QueryParam("code") String code,
-            final MultivaluedMap<String, String> formData) {
+                                  final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_PROFILE);
         Checks checks = new Checks();
         if (!checks.check(code, ClientSessionModel.Action.UPDATE_PROFILE)) {
@@ -657,7 +664,7 @@ public class LoginActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response updateTotp(@QueryParam("code") String code,
-            final MultivaluedMap<String, String> formData) {
+                               final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_TOTP);
         Checks checks = new Checks();
         if (!checks.check(code, ClientSessionModel.Action.CONFIGURE_TOTP)) {
@@ -701,7 +708,8 @@ public class LoginActionsService {
     @Path("password")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response updatePassword(@QueryParam("code") String code, final MultivaluedMap<String, String> formData) {
+    public Response updatePassword(@QueryParam("code") String code,
+                                   final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_PASSWORD);
         Checks checks = new Checks();
         if (!checks.check(code, ClientSessionModel.Action.UPDATE_PASSWORD, ClientSessionModel.Action.RECOVER_PASSWORD)) {
@@ -751,6 +759,7 @@ public class LoginActionsService {
 
         return redirectOauth(user, accessCode, clientSession, userSession);
     }
+
 
     @Path("email-verification")
     @GET
@@ -822,7 +831,8 @@ public class LoginActionsService {
     @Path("password-reset")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response sendPasswordReset(@QueryParam("code") String code, final MultivaluedMap<String, String> formData) {
+    public Response sendPasswordReset(@QueryParam("code") String code,
+                                      final MultivaluedMap<String, String> formData) {
         event.event(EventType.SEND_RESET_PASSWORD);
         if (!checkSsl()) {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "HTTPS required");
@@ -863,11 +873,12 @@ public class LoginActionsService {
 
         if (user == null) {
             event.error(Errors.USER_NOT_FOUND);
-        } else if (!user.isEnabled()) {
+        } else if(!user.isEnabled()) {
             event.user(user).error(Errors.USER_DISABLED);
-        } else if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
+        }
+        else if(user.getEmail() == null || user.getEmail().trim().length() == 0) {
             event.user(user).error(Errors.INVALID_EMAIL);
-        } else {
+        } else{
             event.user(user);
 
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false);
@@ -897,26 +908,21 @@ public class LoginActionsService {
             createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
         }
 
-        return Flows.forms(session, realm, client, uriInfo).setSuccess("emailSent").setClientSessionCode(accessCode.getCode()).createPasswordReset();
+        return Flows.forms(session, realm, client,  uriInfo).setSuccess("emailSent").setClientSessionCode(accessCode.getCode()).createPasswordReset();
     }
 
     private String getActionCookie() {
         Cookie cookie = headers.getCookies().get(ACTION_COOKIE);
-        AuthenticationManager.expireCookie(realm, ACTION_COOKIE, AuthenticationManager.getRealmCookiePath(realm, uriInfo),
-                realm.getSslRequired().isRequired(clientConnection), clientConnection);
+        AuthenticationManager.expireCookie(realm, ACTION_COOKIE, AuthenticationManager.getRealmCookiePath(realm, uriInfo), realm.getSslRequired().isRequired(clientConnection), clientConnection);
         return cookie != null ? cookie.getValue() : null;
     }
 
-    public static void createActionCookie(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection,
-            String sessionId) {
-        CookieHelper.addCookie(ACTION_COOKIE, sessionId, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null,
-                null, -1, realm.getSslRequired().isRequired(clientConnection), true);
+    public static void createActionCookie(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, String sessionId) {
+        CookieHelper.addCookie(ACTION_COOKIE, sessionId, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, realm.getSslRequired().isRequired(clientConnection), true);
     }
 
-    private Response redirectOauth(UserModel user, ClientSessionCode accessCode, ClientSessionModel clientSession,
-            UserSessionModel userSession) {
-        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection,
-                request, uriInfo, event);
+    private Response redirectOauth(UserModel user, ClientSessionCode accessCode, ClientSessionModel clientSession, UserSessionModel userSession) {
+        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
     private void initEvent(ClientSessionModel clientSession) {

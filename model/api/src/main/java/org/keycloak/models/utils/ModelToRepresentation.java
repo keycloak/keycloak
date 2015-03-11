@@ -1,13 +1,5 @@
 package org.keycloak.models.utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
@@ -39,6 +31,14 @@ import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -57,7 +57,7 @@ public class ModelToRepresentation {
         rep.setFederationLink(user.getFederationLink());
 
         List<String> reqActions = new ArrayList<String>();
-        for (UserModel.RequiredAction ra : user.getRequiredActions()) {
+        for (UserModel.RequiredAction ra : user.getRequiredActions()){
             reqActions.add(ra.name());
         }
 
@@ -205,8 +205,8 @@ public class ModelToRepresentation {
     public static UserSessionRepresentation toRepresentation(UserSessionModel session) {
         UserSessionRepresentation rep = new UserSessionRepresentation();
         rep.setId(session.getId());
-        rep.setStart(((long) session.getStarted()) * 1000L);
-        rep.setLastAccess(((long) session.getLastSessionRefresh()) * 1000L);
+        rep.setStart(((long)session.getStarted()) * 1000L);
+        rep.setLastAccess(((long)session.getLastSessionRefresh())* 1000L);
         rep.setUser(session.getUser().getUsername());
         rep.setIpAddress(session.getIpAddress());
         for (ClientSessionModel clientSession : session.getClientSessions()) {
@@ -270,8 +270,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    private static List<ClientIdentityProviderMappingRepresentation> toRepresentation(
-            List<ClientIdentityProviderMappingModel> identityProviders) {
+    private static List<ClientIdentityProviderMappingRepresentation> toRepresentation(List<ClientIdentityProviderMappingModel> identityProviders) {
         ArrayList<ClientIdentityProviderMappingRepresentation> representations = new ArrayList<ClientIdentityProviderMappingRepresentation>();
 
         for (ClientIdentityProviderMappingModel model : identityProviders) {
@@ -313,11 +312,11 @@ public class ModelToRepresentation {
         }
 
         if (!model.getProtocolMappers().isEmpty()) {
-            List<ProtocolMapperRepresentation> mappings = new LinkedList<ProtocolMapperRepresentation>();
-            for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
-                mappings.add(toRepresentation(mapper));
-            }
-            rep.setProtocolMappers(mappings);
+                List<ProtocolMapperRepresentation> mappings = new LinkedList<ProtocolMapperRepresentation>();
+                for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
+                    mappings.add(toRepresentation(mapper));
+                }
+                rep.setProtocolMappers(mappings);
         }
 
         return rep;

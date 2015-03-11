@@ -16,6 +16,21 @@
  */
 package org.keycloak.models.file.adapter;
 
+import org.keycloak.enums.SslRequired;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.entities.RequiredCredentialEntity;
+import org.keycloak.models.entities.UserFederationProviderEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
+
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -31,33 +46,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.keycloak.enums.SslRequired;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.OAuthClientModel;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.ApplicationEntity;
 import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.entities.OAuthClientEntity;
 import org.keycloak.models.entities.RealmEntity;
-import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.RoleEntity;
-import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.file.InMemoryModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * RealmModel for JSON persistence.
- * 
+ *
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
 public class RealmAdapter implements RealmModel {
@@ -106,11 +106,9 @@ public class RealmAdapter implements RealmModel {
             return;
         }
 
-        if (getName().equals(name))
-            return; // allow setting name to same value
+        if (getName().equals(name)) return; // allow setting name to same value
 
-        if (inMemoryModel.getRealmByName(name) != null)
-            throw new ModelDuplicateException("Realm " + name + " already exists.");
+        if (inMemoryModel.getRealmByName(name) != null) throw new ModelDuplicateException("Realm " + name + " already exists.");
         realm.setName(name);
     }
 
@@ -224,6 +222,7 @@ public class RealmAdapter implements RealmModel {
         realm.setMinimumQuickLoginWaitSeconds(val);
     }
 
+
     @Override
     public int getMaxDeltaTimeSeconds() {
         return realm.getMaxDeltaTimeSeconds();
@@ -243,6 +242,7 @@ public class RealmAdapter implements RealmModel {
     public void setFailureFactor(int failureFactor) {
         realm.setFailureFactor(failureFactor);
     }
+
 
     @Override
     public boolean isVerifyEmail() {
@@ -287,6 +287,7 @@ public class RealmAdapter implements RealmModel {
     public void setNotBefore(int notBefore) {
         realm.setNotBefore(notBefore);
     }
+
 
     @Override
     public int getSsoSessionIdleTimeout() {
@@ -351,8 +352,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public X509Certificate getCertificate() {
-        if (certificate != null)
-            return certificate;
+        if (certificate != null) return certificate;
         certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
         return certificate;
     }
@@ -375,6 +375,7 @@ public class RealmAdapter implements RealmModel {
 
     }
 
+
     @Override
     public String getPrivateKeyPem() {
         return realm.getPrivateKeyPem();
@@ -388,8 +389,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PublicKey getPublicKey() {
-        if (publicKey != null)
-            return publicKey;
+        if (publicKey != null) return publicKey;
         publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
         return publicKey;
     }
@@ -403,8 +403,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PrivateKey getPrivateKey() {
-        if (privateKey != null)
-            return privateKey;
+        if (privateKey != null) return privateKey;
         privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
         return privateKey;
     }
@@ -477,8 +476,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public RoleAdapter getRole(String name) {
         for (RoleAdapter role : allRoles.values()) {
-            if (role.getName().equals(name))
-                return role;
+            if (role.getName().equals(name)) return role;
         }
         return null;
     }
@@ -490,12 +488,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel addRole(String id, String name) {
-        if (id == null)
-            throw new NullPointerException("id == null");
-        if (name == null)
-            throw new NullPointerException("name == null");
-        if (hasRoleWithName(name))
-            throw new ModelDuplicateException("Realm already contains role with name " + name + ".");
+        if (id == null) throw new NullPointerException("id == null");
+        if (name == null) throw new NullPointerException("name == null");
+        if (hasRoleWithName(name)) throw new ModelDuplicateException("Realm already contains role with name " + name + ".");
 
         RoleEntity roleEntity = new RoleEntity();
         roleEntity.setId(id);
@@ -514,12 +509,10 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean removeRoleById(String id) {
-        if (id == null)
-            throw new NullPointerException("id == null");
+        if (id == null) throw new NullPointerException("id == null");
 
         // try realm roles first
-        if (allRoles.remove(id) != null)
-            return true;
+        if (allRoles.remove(id) != null) return true;
 
         for (ApplicationModel app : getApplications()) {
             for (RoleModel appRole : app.getRoles()) {
@@ -535,19 +528,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<RoleModel> getRoles() {
-        return new HashSet<RoleModel>(allRoles.values());
+        return new HashSet(allRoles.values());
     }
 
     @Override
     public RoleModel getRoleById(String id) {
         RoleModel found = allRoles.get(id);
-        if (found != null)
-            return found;
+        if (found != null) return found;
 
         for (ApplicationModel app : getApplications()) {
             for (RoleModel appRole : app.getRoles()) {
-                if (appRole.getId().equals(id))
-                    return appRole;
+                if (appRole.getId().equals(id)) return appRole;
             }
         }
 
@@ -567,8 +558,7 @@ public class RealmAdapter implements RealmModel {
         }
 
         List<String> roleNames = getDefaultRoles();
-        if (roleNames.contains(name))
-            throw new IllegalArgumentException("Realm " + realm.getName() + " already contains default role named " + name);
+        if (roleNames.contains(name)) throw new IllegalArgumentException("Realm " + realm.getName() + " already contains default role named " + name);
 
         roleNames.add(name);
         realm.setDefaultRoles(roleNames);
@@ -576,8 +566,7 @@ public class RealmAdapter implements RealmModel {
 
     boolean hasRoleWithName(String name) {
         for (RoleModel role : allRoles.values()) {
-            if (role.getName().equals(name))
-                return true;
+            if (role.getName().equals(name)) return true;
         }
 
         return false;
@@ -601,18 +590,18 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ClientModel findClient(String clientId) {
         ClientModel model = getApplicationByName(clientId);
-        if (model != null)
-            return model;
+        if (model != null) return model;
         return getOAuthClient(clientId);
     }
 
     @Override
     public ClientModel findClientById(String id) {
         ClientModel clientModel = getApplicationById(id);
-        if (clientModel != null)
-            return clientModel;
+        if (clientModel != null) return clientModel;
         return getOAuthClientById(id);
     }
+
+
 
     @Override
     public ApplicationModel getApplicationById(String id) {
@@ -622,8 +611,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ApplicationModel getApplicationByName(String name) {
         for (ApplicationModel app : getApplications()) {
-            if (app.getName().equals(name))
-                return app;
+            if (app.getName().equals(name)) return app;
         }
 
         return null;
@@ -650,10 +638,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel addApplication(String id, String name) {
-        if (name == null)
-            throw new NullPointerException("name == null");
-        if (id == null)
-            throw new NullPointerException("id == null");
+        if (name == null) throw new NullPointerException("name == null");
+        if (id == null) throw new NullPointerException("id == null");
 
         if (getApplicationNameMap().containsKey(name)) {
             throw new ModelDuplicateException("Application named '" + name + "' already exists.");
@@ -692,12 +678,11 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean removeApplication(String id) {
         ApplicationModel appToBeRemoved = this.getApplicationById(id);
-        if (appToBeRemoved == null)
-            return false;
+        if (appToBeRemoved == null) return false;
 
         // remove any composite role assignments for this app
         for (RoleModel role : this.getRoles()) {
-            RoleAdapter roleAdapter = (RoleAdapter) role;
+            RoleAdapter roleAdapter = (RoleAdapter)role;
             roleAdapter.removeApplicationComposites(id);
         }
 
@@ -715,12 +700,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public OAuthClientModel addOAuthClient(String id, String name) {
-        if (id == null)
-            throw new NullPointerException("id == null");
-        if (name == null)
-            throw new NullPointerException("name == null");
-        if (hasOAuthClientWithName(name))
-            throw new ModelDuplicateException("OAuth Client with name " + name + " already exists.");
+        if (id == null) throw new NullPointerException("id == null");
+        if (name == null) throw new NullPointerException("name == null");
+        if (hasOAuthClientWithName(name)) throw new ModelDuplicateException("OAuth Client with name " + name + " already exists.");
         OAuthClientEntity oauthClient = new OAuthClientEntity();
         oauthClient.setId(id);
         oauthClient.setRealmId(getId());
@@ -734,8 +716,7 @@ public class RealmAdapter implements RealmModel {
 
     boolean hasOAuthClientWithName(String name) {
         for (OAuthClientAdapter oaClient : allOAuthClients.values()) {
-            if (oaClient.getName().equals(name))
-                return true;
+            if (oaClient.getName().equals(name)) return true;
         }
 
         return false;
@@ -743,8 +724,7 @@ public class RealmAdapter implements RealmModel {
 
     boolean hasOAuthClientWithClientId(String id) {
         for (OAuthClientAdapter oaClient : allOAuthClients.values()) {
-            if (oaClient.getClientId().equals(id))
-                return true;
+            if (oaClient.getClientId().equals(id)) return true;
         }
 
         return false;
@@ -752,10 +732,8 @@ public class RealmAdapter implements RealmModel {
 
     boolean hasUserWithEmail(String email) {
         for (UserModel user : inMemoryModel.getUsers(getId())) {
-            if (user.getEmail() == null)
-                continue;
-            if (user.getEmail().equals(email))
-                return true;
+            if (user.getEmail() == null) continue;
+            if (user.getEmail().equals(email)) return true;
         }
 
         return false;
@@ -769,8 +747,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public OAuthClientModel getOAuthClient(String name) {
         for (OAuthClientAdapter oAuthClient : allOAuthClients.values()) {
-            if (oAuthClient.getName().equals(name))
-                return oAuthClient;
+            if (oAuthClient.getName().equals(name)) return oAuthClient;
         }
 
         return null;
@@ -779,8 +756,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
         for (OAuthClientAdapter oAuthClient : allOAuthClients.values()) {
-            if (oAuthClient.getId().equals(id))
-                return oAuthClient;
+            if (oAuthClient.getId().equals(id)) return oAuthClient;
         }
 
         return null;
@@ -788,7 +764,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<OAuthClientModel> getOAuthClients() {
-        return new ArrayList<OAuthClientModel>(allOAuthClients.values());
+        return new ArrayList(allOAuthClients.values());
     }
 
     @Override
@@ -797,8 +773,7 @@ public class RealmAdapter implements RealmModel {
         addRequiredCredential(credentialModel, realm.getRequiredCredentials());
     }
 
-    protected void addRequiredCredential(RequiredCredentialModel credentialModel,
-            List<RequiredCredentialEntity> persistentCollection) {
+    protected void addRequiredCredential(RequiredCredentialModel credentialModel, List<RequiredCredentialEntity> persistentCollection) {
         RequiredCredentialEntity credEntity = new RequiredCredentialEntity();
         credEntity.setType(credentialModel.getType());
         credEntity.setFormLabel(credentialModel.getFormLabel());
@@ -839,8 +814,7 @@ public class RealmAdapter implements RealmModel {
         return convertRequiredCredentialEntities(realm.getRequiredCredentials());
     }
 
-    protected List<RequiredCredentialModel> convertRequiredCredentialEntities(
-            Collection<RequiredCredentialEntity> credEntities) {
+    protected List<RequiredCredentialModel> convertRequiredCredentialEntities(Collection<RequiredCredentialEntity> credEntities) {
 
         List<RequiredCredentialModel> result = new ArrayList<RequiredCredentialModel>();
         for (RequiredCredentialEntity entity : credEntities) {
@@ -885,7 +859,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<IdentityProviderModel> getIdentityProviders() {
-        return new ArrayList<IdentityProviderModel>(allIdProviders.values());
+        return new ArrayList(allIdProviders.values());
     }
 
     @Override
@@ -901,10 +875,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
-        if (identityProvider.getId() == null)
-            throw new NullPointerException("identityProvider.getId() == null");
-        if (identityProvider.getInternalId() == null)
-            identityProvider.setInternalId(KeycloakModelUtils.generateId());
+        if (identityProvider.getId() == null) throw new NullPointerException("identityProvider.getId() == null");
+        if (identityProvider.getInternalId() == null) identityProvider.setInternalId(KeycloakModelUtils.generateId());
         allIdProviders.put(identityProvider.getInternalId(), identityProvider);
     }
 
@@ -925,8 +897,7 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config,
-            int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         UserFederationProviderEntity entity = new UserFederationProviderEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setPriority(priority);
@@ -941,8 +912,7 @@ public class RealmAdapter implements RealmModel {
         entity.setLastSync(lastSync);
         realm.getUserFederationProviders().add(entity);
 
-        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod,
-                changedSyncPeriod, lastSync);
+        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
     }
 
     @Override
@@ -951,11 +921,8 @@ public class RealmAdapter implements RealmModel {
         while (it.hasNext()) {
             UserFederationProviderEntity entity = it.next();
             if (entity.getId().equals(provider.getId())) {
-                session.users().preRemove(
-                        this,
-                        new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity
-                                .getPriority(), entity.getDisplayName(), entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(),
-                                entity.getLastSync()));
+                session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                        entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
                 it.remove();
             }
         }
@@ -999,9 +966,8 @@ public class RealmAdapter implements RealmModel {
         });
         List<UserFederationProviderModel> result = new LinkedList<UserFederationProviderModel>();
         for (UserFederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity
-                    .getPriority(), entity.getDisplayName(), entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity
-                    .getLastSync()));
+            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
         }
 
         return result;
@@ -1012,10 +978,8 @@ public class RealmAdapter implements RealmModel {
         List<UserFederationProviderEntity> entities = new LinkedList<UserFederationProviderEntity>();
         for (UserFederationProviderModel model : providers) {
             UserFederationProviderEntity entity = new UserFederationProviderEntity();
-            if (model.getId() != null)
-                entity.setId(model.getId());
-            else
-                entity.setId(KeycloakModelUtils.generateId());
+            if (model.getId() != null) entity.setId(model.getId());
+            else entity.setId(KeycloakModelUtils.generateId());
             entity.setProviderName(model.getProviderName());
             entity.setConfig(model.getConfig());
             entity.setPriority(model.getPriority());
@@ -1089,7 +1053,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isIdentityFederationEnabled() {
-        // TODO: not sure if we will support identity federation storage for file
+        //TODO: not sure if we will support identity federation storage for file
         return getIdentityProviders() != null && !getIdentityProviders().isEmpty();
     }
 
@@ -1105,10 +1069,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || !(o instanceof RealmModel))
-            return false;
+        if (this == o) return true;
+        if (o == null || !(o instanceof RealmModel)) return false;
 
         RealmModel that = (RealmModel) o;
         return that.getId().equals(getId());

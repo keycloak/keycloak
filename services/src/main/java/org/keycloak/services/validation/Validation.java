@@ -1,14 +1,13 @@
 package org.keycloak.services.validation;
 
-import java.util.List;
-import java.util.regex.Pattern;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public class Validation {
 
@@ -80,5 +79,6 @@ public class Validation {
     public static boolean isEmailValid(String email) {
         return EMAIL_PATTERN.matcher(email).matches();
     }
+
 
 }

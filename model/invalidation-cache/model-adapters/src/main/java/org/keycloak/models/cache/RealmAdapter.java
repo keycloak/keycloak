@@ -1,5 +1,21 @@
 package org.keycloak.models.cache;
 
+import org.keycloak.Config;
+import org.keycloak.enums.SslRequired;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimTypeModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.cache.entities.CachedRealm;
+import org.keycloak.models.utils.KeycloakModelUtils;
+
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -10,20 +26,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.keycloak.Config;
-import org.keycloak.enums.SslRequired;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OAuthClientModel;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,22 +50,19 @@ public class RealmAdapter implements RealmModel {
         if (updated == null) {
             cacheSession.registerRealmInvalidation(getId());
             updated = cacheSession.getDelegate().getRealm(getId());
-            if (updated == null)
-                throw new IllegalStateException("Not found in database");
+            if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
 
     @Override
     public String getId() {
-        if (updated != null)
-            return updated.getId();
+        if (updated != null) return updated.getId();
         return cached.getId();
     }
 
     @Override
     public String getName() {
-        if (updated != null)
-            return updated.getName();
+        if (updated != null) return updated.getName();
         return cached.getName();
     }
 
@@ -75,8 +74,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isEnabled() {
-        if (updated != null)
-            return updated.isEnabled();
+        if (updated != null) return updated.isEnabled();
         return cached.isEnabled();
     }
 
@@ -88,8 +86,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public SslRequired getSslRequired() {
-        if (updated != null)
-            return updated.getSslRequired();
+        if (updated != null) return updated.getSslRequired();
         return cached.getSslRequired();
     }
 
@@ -101,8 +98,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isRegistrationAllowed() {
-        if (updated != null)
-            return updated.isRegistrationAllowed();
+        if (updated != null) return updated.isRegistrationAllowed();
         return cached.isRegistrationAllowed();
     }
 
@@ -114,8 +110,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isRegistrationEmailAsUsername() {
-        if (updated != null)
-            return updated.isRegistrationEmailAsUsername();
+        if (updated != null) return updated.isRegistrationEmailAsUsername();
         return cached.isRegistrationEmailAsUsername();
     }
 
@@ -124,11 +119,10 @@ public class RealmAdapter implements RealmModel {
         getDelegateForUpdate();
         updated.setRegistrationEmailAsUsername(registrationEmailAsUsername);
     }
-
+    
     @Override
     public boolean isPasswordCredentialGrantAllowed() {
-        if (updated != null)
-            return updated.isPasswordCredentialGrantAllowed();
+        if (updated != null) return updated.isPasswordCredentialGrantAllowed();
         return cached.isPasswordCredentialGrantAllowed();
     }
 
@@ -140,8 +134,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isRememberMe() {
-        if (updated != null)
-            return updated.isRememberMe();
+        if (updated != null) return updated.isRememberMe();
         return cached.isRememberMe();
     }
 
@@ -153,8 +146,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isBruteForceProtected() {
-        if (updated != null)
-            return updated.isBruteForceProtected();
+        if (updated != null) return updated.isBruteForceProtected();
         return cached.isBruteForceProtected();
     }
 
@@ -166,8 +158,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getMaxFailureWaitSeconds() {
-        if (updated != null)
-            return updated.getMaxFailureWaitSeconds();
+        if (updated != null) return updated.getMaxFailureWaitSeconds();
         return cached.getMaxFailureWaitSeconds();
     }
 
@@ -179,8 +170,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getWaitIncrementSeconds() {
-        if (updated != null)
-            return updated.getWaitIncrementSeconds();
+        if (updated != null) return updated.getWaitIncrementSeconds();
         return cached.getWaitIncrementSeconds();
     }
 
@@ -192,8 +182,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getMinimumQuickLoginWaitSeconds() {
-        if (updated != null)
-            return updated.getMinimumQuickLoginWaitSeconds();
+        if (updated != null) return updated.getMinimumQuickLoginWaitSeconds();
         return cached.getMinimumQuickLoginWaitSeconds();
     }
 
@@ -205,8 +194,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public long getQuickLoginCheckMilliSeconds() {
-        if (updated != null)
-            return updated.getQuickLoginCheckMilliSeconds();
+        if (updated != null) return updated.getQuickLoginCheckMilliSeconds();
         return cached.getQuickLoginCheckMilliSeconds();
     }
 
@@ -218,8 +206,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getMaxDeltaTimeSeconds() {
-        if (updated != null)
-            return updated.getMaxDeltaTimeSeconds();
+        if (updated != null) return updated.getMaxDeltaTimeSeconds();
         return cached.getMaxDeltaTimeSeconds();
     }
 
@@ -231,8 +218,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getFailureFactor() {
-        if (updated != null)
-            return updated.getFailureFactor();
+        if (updated != null) return updated.getFailureFactor();
         return cached.getFailureFactor();
     }
 
@@ -244,8 +230,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isVerifyEmail() {
-        if (updated != null)
-            return updated.isVerifyEmail();
+        if (updated != null) return updated.isVerifyEmail();
         return cached.isVerifyEmail();
     }
 
@@ -257,8 +242,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isResetPasswordAllowed() {
-        if (updated != null)
-            return updated.isResetPasswordAllowed();
+        if (updated != null) return updated.isResetPasswordAllowed();
         return cached.isResetPasswordAllowed();
     }
 
@@ -270,8 +254,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getSsoSessionIdleTimeout() {
-        if (updated != null)
-            return updated.getSsoSessionIdleTimeout();
+        if (updated != null) return updated.getSsoSessionIdleTimeout();
         return cached.getSsoSessionIdleTimeout();
     }
 
@@ -283,8 +266,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getSsoSessionMaxLifespan() {
-        if (updated != null)
-            return updated.getSsoSessionMaxLifespan();
+        if (updated != null) return updated.getSsoSessionMaxLifespan();
         return cached.getSsoSessionMaxLifespan();
     }
 
@@ -296,8 +278,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getAccessTokenLifespan() {
-        if (updated != null)
-            return updated.getAccessTokenLifespan();
+        if (updated != null) return updated.getAccessTokenLifespan();
         return cached.getAccessTokenLifespan();
     }
 
@@ -309,8 +290,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getAccessCodeLifespan() {
-        if (updated != null)
-            return updated.getAccessCodeLifespan();
+        if (updated != null) return updated.getAccessCodeLifespan();
         return cached.getAccessCodeLifespan();
     }
 
@@ -322,8 +302,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getAccessCodeLifespanUserAction() {
-        if (updated != null)
-            return updated.getAccessCodeLifespanUserAction();
+        if (updated != null) return updated.getAccessCodeLifespanUserAction();
         return cached.getAccessCodeLifespanUserAction();
     }
 
@@ -335,8 +314,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getAccessCodeLifespanLogin() {
-        if (updated != null)
-            return updated.getAccessCodeLifespanLogin();
+        if (updated != null) return updated.getAccessCodeLifespanLogin();
         return cached.getAccessCodeLifespanLogin();
     }
 
@@ -348,8 +326,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public String getPublicKeyPem() {
-        if (updated != null)
-            return updated.getPublicKeyPem();
+        if (updated != null) return updated.getPublicKeyPem();
         return cached.getPublicKeyPem();
     }
 
@@ -361,8 +338,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public String getPrivateKeyPem() {
-        if (updated != null)
-            return updated.getPrivateKeyPem();
+        if (updated != null) return updated.getPrivateKeyPem();
         return cached.getPrivateKeyPem();
     }
 
@@ -374,8 +350,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PublicKey getPublicKey() {
-        if (publicKey != null)
-            return publicKey;
+        if (publicKey != null) return publicKey;
         publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
         return publicKey;
     }
@@ -389,8 +364,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public X509Certificate getCertificate() {
-        if (certificate != null)
-            return certificate;
+        if (certificate != null) return certificate;
         certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
         return certificate;
     }
@@ -404,8 +378,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public String getCertificatePem() {
-        if (updated != null)
-            return updated.getCertificatePem();
+        if (updated != null) return updated.getCertificatePem();
         return cached.getCertificatePem();
     }
 
@@ -418,8 +391,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PrivateKey getPrivateKey() {
-        if (privateKey != null)
-            return privateKey;
+        if (privateKey != null) return privateKey;
         privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
         return privateKey;
     }
@@ -454,10 +426,8 @@ public class RealmAdapter implements RealmModel {
     public List<RequiredCredentialModel> getRequiredCredentials() {
 
         List<RequiredCredentialModel> copy = new LinkedList<RequiredCredentialModel>();
-        if (updated != null)
-            copy.addAll(updated.getRequiredCredentials());
-        else
-            copy.addAll(cached.getRequiredCredentials());
+        if (updated != null) copy.addAll(updated.getRequiredCredentials());
+        else copy.addAll(cached.getRequiredCredentials());
         return copy;
     }
 
@@ -469,8 +439,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PasswordPolicy getPasswordPolicy() {
-        if (updated != null)
-            return updated.getPasswordPolicy();
+        if (updated != null) return updated.getPasswordPolicy();
         return cached.getPasswordPolicy();
     }
 
@@ -482,15 +451,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRoleById(String id) {
-        if (updated != null)
-            return updated.getRoleById(id);
+        if (updated != null) return updated.getRoleById(id);
         return cacheSession.getRoleById(id, this);
-    }
+     }
 
     @Override
     public List<String> getDefaultRoles() {
-        if (updated != null)
-            return updated.getDefaultRoles();
+        if (updated != null) return updated.getDefaultRoles();
         return cached.getDefaultRoles();
     }
 
@@ -508,8 +475,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ClientModel findClient(String clientId) {
-        if (updated != null)
-            return updated.findClient(clientId);
+        if (updated != null) return updated.findClient(clientId);
         String appId = cached.getApplications().get(clientId);
         if (appId != null) {
             return cacheSession.getApplicationById(appId, this);
@@ -523,8 +489,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Map<String, ApplicationModel> getApplicationNameMap() {
-        if (updated != null)
-            return updated.getApplicationNameMap();
+        if (updated != null) return updated.getApplicationNameMap();
         Map<String, ApplicationModel> map = new HashMap<String, ApplicationModel>();
         for (String id : cached.getApplications().values()) {
             ApplicationModel model = cacheSession.getApplicationById(id, this);
@@ -538,8 +503,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ApplicationModel> getApplications() {
-        if (updated != null)
-            return updated.getApplications();
+        if (updated != null) return updated.getApplications();
         List<ApplicationModel> apps = new LinkedList<ApplicationModel>();
         for (String id : cached.getApplications().values()) {
             ApplicationModel model = cacheSession.getApplicationById(id, this);
@@ -563,7 +527,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ApplicationModel addApplication(String id, String name) {
         getDelegateForUpdate();
-        ApplicationModel app = updated.addApplication(id, name);
+        ApplicationModel app =  updated.addApplication(id, name);
         cacheSession.registerApplicationInvalidation(app.getId());
         return app;
     }
@@ -577,18 +541,15 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        if (updated != null)
-            return updated.getApplicationById(id);
+        if (updated != null) return updated.getApplicationById(id);
         return cacheSession.getApplicationById(id, this);
     }
 
     @Override
     public ApplicationModel getApplicationByName(String name) {
-        if (updated != null)
-            return updated.getApplicationByName(name);
+        if (updated != null) return updated.getApplicationByName(name);
         String id = cached.getApplications().get(name);
-        if (id == null)
-            return null;
+        if (id == null) return null;
         return getApplicationById(id);
     }
 
@@ -609,25 +570,22 @@ public class RealmAdapter implements RealmModel {
     @Override
     public OAuthClientModel addOAuthClient(String id, String name) {
         getDelegateForUpdate();
-        OAuthClientModel client = updated.addOAuthClient(id, name);
+        OAuthClientModel client =  updated.addOAuthClient(id, name);
         cacheSession.registerOAuthClientInvalidation(client.getId());
         return client;
     }
 
     @Override
     public OAuthClientModel getOAuthClient(String name) {
-        if (updated != null)
-            return updated.getOAuthClient(name);
+        if (updated != null) return updated.getOAuthClient(name);
         String id = cached.getClients().get(name);
-        if (id == null)
-            return null;
+        if (id == null) return null;
         return getOAuthClientById(id);
     }
 
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
-        if (updated != null)
-            return updated.getOAuthClientById(id);
+        if (updated != null) return updated.getOAuthClientById(id);
         return cacheSession.getOAuthClientById(id, this);
     }
 
@@ -640,8 +598,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<OAuthClientModel> getOAuthClients() {
-        if (updated != null)
-            return updated.getOAuthClients();
+        if (updated != null) return updated.getOAuthClients();
         List<OAuthClientModel> clients = new LinkedList<OAuthClientModel>();
         for (String id : cached.getClients().values()) {
             OAuthClientModel model = cacheSession.getOAuthClientById(id, this);
@@ -655,8 +612,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Map<String, String> getBrowserSecurityHeaders() {
-        if (updated != null)
-            return updated.getBrowserSecurityHeaders();
+        if (updated != null) return updated.getBrowserSecurityHeaders();
         return cached.getBrowserSecurityHeaders();
     }
 
@@ -669,8 +625,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Map<String, String> getSmtpConfig() {
-        if (updated != null)
-            return updated.getSmtpConfig();
+        if (updated != null) return updated.getSmtpConfig();
         return cached.getSmtpConfig();
     }
 
@@ -680,10 +635,10 @@ public class RealmAdapter implements RealmModel {
         updated.setSmtpConfig(smtpConfig);
     }
 
+
     @Override
     public List<IdentityProviderModel> getIdentityProviders() {
-        if (updated != null)
-            return updated.getIdentityProviders();
+        if (updated != null) return updated.getIdentityProviders();
         return cached.getIdentityProviders();
     }
 
@@ -718,8 +673,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<UserFederationProviderModel> getUserFederationProviders() {
-        if (updated != null)
-            return updated.getUserFederationProviders();
+        if (updated != null) return updated.getUserFederationProviders();
         return cached.getUserFederationProviders();
     }
 
@@ -730,11 +684,9 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config,
-            int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         getDelegateForUpdate();
-        return updated.addUserFederationProvider(providerName, config, priority, displayName, fullSyncPeriod,
-                changedSyncPeriod, lastSync);
+        return updated.addUserFederationProvider(providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
     }
 
     @Override
@@ -753,8 +705,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public String getLoginTheme() {
-        if (updated != null)
-            return updated.getLoginTheme();
+        if (updated != null) return updated.getLoginTheme();
         return cached.getLoginTheme();
     }
 
@@ -766,8 +717,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public String getAccountTheme() {
-        if (updated != null)
-            return updated.getAccountTheme();
+        if (updated != null) return updated.getAccountTheme();
         return cached.getAccountTheme();
     }
 
@@ -779,8 +729,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public String getAdminTheme() {
-        if (updated != null)
-            return updated.getAdminTheme();
+        if (updated != null) return updated.getAdminTheme();
         return cached.getAdminTheme();
     }
 
@@ -792,8 +741,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public String getEmailTheme() {
-        if (updated != null)
-            return updated.getEmailTheme();
+        if (updated != null) return updated.getEmailTheme();
         return cached.getEmailTheme();
     }
 
@@ -805,8 +753,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public int getNotBefore() {
-        if (updated != null)
-            return updated.getNotBefore();
+        if (updated != null) return updated.getNotBefore();
         return cached.getNotBefore();
     }
 
@@ -825,8 +772,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isEventsEnabled() {
-        if (updated != null)
-            return updated.isEventsEnabled();
+        if (updated != null) return updated.isEventsEnabled();
         return cached.isEventsEnabled();
     }
 
@@ -838,8 +784,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public long getEventsExpiration() {
-        if (updated != null)
-            return updated.getEventsExpiration();
+        if (updated != null) return updated.getEventsExpiration();
         return cached.getEventsExpiration();
     }
 
@@ -851,8 +796,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<String> getEventsListeners() {
-        if (updated != null)
-            return updated.getEventsListeners();
+        if (updated != null) return updated.getEventsListeners();
         return cached.getEventsListeners();
     }
 
@@ -875,11 +819,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        if (updated != null)
-            return updated.getRole(name);
+        if (updated != null) return updated.getRole(name);
         String id = cached.getRealmRoles().get(name);
-        if (id == null)
-            return null;
+        if (id == null) return null;
         return cacheSession.getRoleById(id, this);
     }
 
@@ -894,7 +836,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public RoleModel addRole(String id, String name) {
         getDelegateForUpdate();
-        RoleModel role = updated.addRole(id, name);
+        RoleModel role =  updated.addRole(id, name);
         cacheSession.registerRoleInvalidation(role.getId());
         return role;
     }
@@ -908,14 +850,12 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<RoleModel> getRoles() {
-        if (updated != null)
-            return updated.getRoles();
+        if (updated != null) return updated.getRoles();
 
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String id : cached.getRealmRoles().values()) {
             RoleModel roleById = cacheSession.getRoleById(id, this);
-            if (roleById == null)
-                continue;
+            if (roleById == null) continue;
             roles.add(roleById);
         }
         return roles;
@@ -924,24 +864,21 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ClientModel findClientById(String id) {
         ClientModel model = getApplicationById(id);
-        if (model != null)
-            return model;
+        if (model != null) return model;
         return getOAuthClientById(id);
     }
 
     @Override
     public boolean isIdentityFederationEnabled() {
-        if (updated != null)
-            return updated.isIdentityFederationEnabled();
+        if (updated != null) return updated.isIdentityFederationEnabled();
         return cached.isIdentityFederationEnabled();
     }
 
+
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || !(o instanceof RealmModel))
-            return false;
+        if (this == o) return true;
+        if (o == null || !(o instanceof RealmModel)) return false;
 
         RealmModel that = (RealmModel) o;
         return that.getId().equals(getId());

@@ -32,7 +32,7 @@ public class RealmRepresentation {
     protected Boolean userCacheEnabled;
     protected Boolean realmCacheEnabled;
 
-    // --- brute force settings
+    //--- brute force settings
     protected Boolean bruteForceProtected;
     protected Integer maxFailureWaitSeconds;
     protected Integer minimumQuickLoginWaitSeconds;
@@ -40,7 +40,7 @@ public class RealmRepresentation {
     protected Long quickLoginCheckMilliSeconds;
     protected Integer maxDeltaTimeSeconds;
     protected Integer failureFactor;
-    // --- end brute force settings
+    //--- end brute force settings
 
     protected String privateKey;
     protected String publicKey;
@@ -95,8 +95,7 @@ public class RealmRepresentation {
 
     public ApplicationRepresentation resource(String name) {
         ApplicationRepresentation resource = new ApplicationRepresentation();
-        if (applications == null)
-            applications = new ArrayList<ApplicationRepresentation>();
+        if (applications == null) applications = new ArrayList<ApplicationRepresentation>();
         applications.add(resource);
         resource.setName(name);
         return resource;
@@ -109,8 +108,7 @@ public class RealmRepresentation {
     public UserRepresentation user(String username) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
-        if (users == null)
-            users = new ArrayList<UserRepresentation>();
+        if (users == null) users = new ArrayList<UserRepresentation>();
         users.add(user);
         return user;
     }
@@ -166,8 +164,7 @@ public class RealmRepresentation {
     public ScopeMappingRepresentation scopeMapping(String username) {
         ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
         mapping.setClient(username);
-        if (scopeMappings == null)
-            scopeMappings = new ArrayList<ScopeMappingRepresentation>();
+        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
         scopeMappings.add(mapping);
         return mapping;
     }
@@ -272,7 +269,7 @@ public class RealmRepresentation {
         return registrationEmailAsUsername;
     }
 
-    public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername) {
+    public void setRegistrationEmailAsUsername(Boolean registrationEmailAsUsername) {
         this.registrationEmailAsUsername = registrationEmailAsUsername;
     }
 
@@ -509,8 +506,7 @@ public class RealmRepresentation {
     }
 
     public void addProtocolMapper(ProtocolMapperRepresentation rep) {
-        if (protocolMappers == null)
-            protocolMappers = new LinkedList<ProtocolMapperRepresentation>();
+        if (protocolMappers == null) protocolMappers = new LinkedList<ProtocolMapperRepresentation>();
         protocolMappers.add(rep);
     }
 

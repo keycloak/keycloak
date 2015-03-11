@@ -1,24 +1,5 @@
 package org.keycloak.models.jpa;
 
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -39,6 +20,24 @@ import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -219,7 +218,6 @@ public class RealmAdapter implements RealmModel {
         }
         return result;
     }
-
     @Override
     public boolean isBruteForceProtected() {
         return getAttribute("bruteForceProtected", false);
@@ -399,8 +397,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public X509Certificate getCertificate() {
-        if (certificate != null)
-            return certificate;
+        if (certificate != null) return certificate;
         certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
         return certificate;
     }
@@ -437,8 +434,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PublicKey getPublicKey() {
-        if (publicKey != null)
-            return publicKey;
+        if (publicKey != null) return publicKey;
         publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
         return publicKey;
     }
@@ -452,8 +448,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PrivateKey getPrivateKey() {
-        if (privateKey != null)
-            return privateKey;
+        if (privateKey != null) return privateKey;
         privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
         return privateKey;
     }
@@ -513,8 +508,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void updateRequiredCredentials(Set<String> creds) {
         Collection<RequiredCredentialEntity> relationships = realm.getRequiredCredentials();
-        if (relationships == null)
-            relationships = new ArrayList<RequiredCredentialEntity>();
+        if (relationships == null) relationships = new ArrayList<RequiredCredentialEntity>();
 
         Set<String> already = new HashSet<String>();
         List<RequiredCredentialEntity> remove = new ArrayList<RequiredCredentialEntity>();
@@ -537,12 +531,12 @@ public class RealmAdapter implements RealmModel {
         em.flush();
     }
 
+
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
         List<RequiredCredentialModel> requiredCredentialModels = new ArrayList<RequiredCredentialModel>();
         Collection<RequiredCredentialEntity> entities = realm.getRequiredCredentials();
-        if (entities == null)
-            return requiredCredentialModels;
+        if (entities == null) return requiredCredentialModels;
         for (RequiredCredentialEntity entity : entities) {
             RequiredCredentialModel model = new RequiredCredentialModel();
             model.setFormLabel(entity.getFormLabel());
@@ -551,15 +545,15 @@ public class RealmAdapter implements RealmModel {
             model.setInput(entity.isInput());
             requiredCredentialModels.add(model);
         }
-        return requiredCredentialModels; // To change body of implemented methods use File | Settings | File Templates.
+        return requiredCredentialModels;  //To change body of implemented methods use File | Settings | File Templates.
     }
+
 
     @Override
     public List<String> getDefaultRoles() {
         Collection<RoleEntity> entities = realm.getDefaultRoles();
         List<String> roles = new ArrayList<String>();
-        if (entities == null)
-            return roles;
+        if (entities == null) return roles;
         for (RoleEntity entity : entities) {
             roles.add(entity.getName());
         }
@@ -585,8 +579,7 @@ public class RealmAdapter implements RealmModel {
 
     public static boolean contains(String str, String[] array) {
         for (String s : array) {
-            if (str.equals(s))
-                return true;
+            if (str.equals(s)) return true;
         }
         return false;
     }
@@ -618,16 +611,14 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ClientModel findClient(String clientId) {
         ClientModel model = getApplicationByName(clientId);
-        if (model != null)
-            return model;
+        if (model != null) return model;
         return getOAuthClient(clientId);
     }
 
     @Override
     public ClientModel findClientById(String id) {
         ClientModel model = getApplicationById(id);
-        if (model != null)
-            return model;
+        if (model != null) return model;
         return getOAuthClientById(id);
     }
 
@@ -637,14 +628,13 @@ public class RealmAdapter implements RealmModel {
         for (ApplicationModel app : getApplications()) {
             map.put(app.getName(), app);
         }
-        return map; // To change body of implemented methods use File | Settings | File Templates.
+        return map;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public List<ApplicationModel> getApplications() {
         List<ApplicationModel> list = new ArrayList<ApplicationModel>();
-        if (realm.getApplications() == null)
-            return list;
+        if (realm.getApplications() == null) return list;
         for (ApplicationEntity entity : realm.getApplications()) {
             list.add(new ApplicationAdapter(this, em, session, entity));
         }
@@ -684,11 +674,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean removeApplication(String id) {
-        if (id == null)
-            return false;
+        if (id == null) return false;
         ApplicationModel application = getApplicationById(id);
-        if (application == null)
-            return false;
+        if (application == null) return false;
 
         for (RoleModel role : application.getRoles()) {
             application.removeRole(role);
@@ -762,13 +750,13 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean removeOAuthClient(String id) {
         OAuthClientModel oauth = getOAuthClientById(id);
-        if (oauth == null)
-            return false;
+        if (oauth == null) return false;
         OAuthClientEntity client = em.getReference(OAuthClientEntity.class, oauth.getId());
         em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", client).executeUpdate();
         em.remove(client);
         return true;
     }
+
 
     @Override
     public OAuthClientModel getOAuthClient(String name) {
@@ -776,8 +764,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("name", name);
         query.setParameter("realm", realm);
         List<OAuthClientEntity> entities = query.getResultList();
-        if (entities.size() == 0)
-            return null;
+        if (entities.size() == 0) return null;
         return new OAuthClientAdapter(this, entities.get(0), em);
     }
 
@@ -786,14 +773,14 @@ public class RealmAdapter implements RealmModel {
         return session.realms().getOAuthClientById(id, this);
     }
 
+
     @Override
     public List<OAuthClientModel> getOAuthClients() {
         TypedQuery<OAuthClientEntity> query = em.createNamedQuery("findOAuthClientByRealm", OAuthClientEntity.class);
         query.setParameter("realm", realm);
         List<OAuthClientEntity> entities = query.getResultList();
         List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
-        for (OAuthClientEntity entity : entities)
-            list.add(new OAuthClientAdapter(this, entity, em));
+        for (OAuthClientEntity entity : entities) list.add(new OAuthClientAdapter(this, entity, em));
         return list;
     }
 
@@ -847,17 +834,15 @@ public class RealmAdapter implements RealmModel {
         });
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
         for (UserFederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity
-                    .getPriority(), entity.getDisplayName(), entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity
-                    .getLastSync()));
+            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
         }
 
         return result;
     }
 
     @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config,
-            int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         String id = KeycloakModelUtils.generateId();
         UserFederationProviderEntity entity = new UserFederationProviderEntity();
         entity.setId(id);
@@ -875,8 +860,7 @@ public class RealmAdapter implements RealmModel {
         em.persist(entity);
         realm.getUserFederationProviders().add(entity);
         em.flush();
-        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod,
-                changedSyncPeriod, lastSync);
+        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
     }
 
     @Override
@@ -892,7 +876,6 @@ public class RealmAdapter implements RealmModel {
             }
         }
     }
-
     @Override
     public void updateUserFederationProvider(UserFederationProviderModel model) {
         Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
@@ -940,13 +923,9 @@ public class RealmAdapter implements RealmModel {
                 }
 
             }
-            if (found)
-                continue;
-            session.users().preRemove(
-                    this,
-                    new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity
-                            .getPriority(), entity.getDisplayName(), entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(),
-                            entity.getLastSync()));
+            if (found) continue;
+            session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
             it.remove();
             em.remove(entity);
         }
@@ -960,16 +939,13 @@ public class RealmAdapter implements RealmModel {
                     break;
                 }
             }
-            if (!found)
-                add.add(model);
+            if (!found) add.add(model);
         }
 
         for (UserFederationProviderModel model : add) {
             UserFederationProviderEntity entity = new UserFederationProviderEntity();
-            if (model.getId() != null)
-                entity.setId(model.getId());
-            else
-                entity.setId(KeycloakModelUtils.generateId());
+            if (model.getId() != null) entity.setId(model.getId());
+            else entity.setId(KeycloakModelUtils.generateId());
             entity.setConfig(model.getConfig());
             entity.setPriority(model.getPriority());
             entity.setProviderName(model.getProviderName());
@@ -994,8 +970,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("name", name);
         query.setParameter("realm", realm);
         List<RoleEntity> roles = query.getResultList();
-        if (roles.size() == 0)
-            return null;
+        if (roles.size() == 0) return null;
         return new RoleAdapter(this, em, roles.get(0));
     }
 
@@ -1022,15 +997,13 @@ public class RealmAdapter implements RealmModel {
         if (role == null) {
             return false;
         }
-        if (!role.getContainer().equals(this))
-            return false;
+        if (!role.getContainer().equals(this)) return false;
         session.users().preRemove(this, role);
         RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
         realm.getRoles().remove(role);
         realm.getDefaultRoles().remove(role);
 
-        em.createNativeQuery("delete from COMPOSITE_ROLE where CHILD_ROLE = :role").setParameter("role", roleEntity)
-                .executeUpdate();
+        em.createNativeQuery("delete from COMPOSITE_ROLE where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
         em.remove(roleEntity);
@@ -1042,8 +1015,7 @@ public class RealmAdapter implements RealmModel {
     public Set<RoleModel> getRoles() {
         Set<RoleModel> list = new HashSet<RoleModel>();
         Collection<RoleEntity> roles = realm.getRoles();
-        if (roles == null)
-            return list;
+        if (roles == null) return list;
         for (RoleEntity entity : roles) {
             list.add(new RoleAdapter(this, em, entity));
         }
@@ -1058,8 +1030,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean removeRoleById(String id) {
         RoleModel role = getRoleById(id);
-        if (role == null)
-            return false;
+        if (role == null) return false;
         return role.getContainer().removeRole(role);
     }
 
@@ -1080,10 +1051,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || !(o instanceof RealmModel))
-            return false;
+        if (this == o) return true;
+        if (o == null || !(o instanceof RealmModel)) return false;
 
         RealmModel that = (RealmModel) o;
         return that.getId().equals(getId());
@@ -1178,7 +1147,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void setMasterAdminApp(ApplicationModel app) {
-        ApplicationEntity appEntity = app != null ? em.getReference(ApplicationEntity.class, app.getId()) : null;
+        ApplicationEntity appEntity = app!=null ? em.getReference(ApplicationEntity.class, app.getId()) : null;
         realm.setMasterAdminApp(appEntity);
         em.flush();
     }
@@ -1187,7 +1156,7 @@ public class RealmAdapter implements RealmModel {
     public List<IdentityProviderModel> getIdentityProviders() {
         List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
-        for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
+        for (IdentityProviderEntity entity: realm.getIdentityProviders()) {
             IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
             identityProviderModel.setProviderId(entity.getProviderId());

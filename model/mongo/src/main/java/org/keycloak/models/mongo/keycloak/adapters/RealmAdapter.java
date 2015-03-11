@@ -1,21 +1,7 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
@@ -38,8 +24,21 @@ import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
+import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -57,8 +56,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     private volatile transient PasswordPolicy passwordPolicy;
     private volatile transient KeycloakSession session;
 
-    public RealmAdapter(KeycloakSession session, MongoRealmEntity realmEntity,
-            MongoStoreInvocationContext invocationContext) {
+    public RealmAdapter(KeycloakSession session, MongoRealmEntity realmEntity, MongoStoreInvocationContext invocationContext) {
         super(invocationContext);
         this.realm = realmEntity;
         this.session = session;
@@ -200,6 +198,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
 
+
     @Override
     public int getMaxDeltaTimeSeconds() {
         return realm.getMaxDeltaTimeSeconds();
@@ -221,6 +220,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.setFailureFactor(failureFactor);
         updateRealm();
     }
+
 
     @Override
     public boolean isVerifyEmail() {
@@ -269,6 +269,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.setNotBefore(notBefore);
         updateRealm();
     }
+
 
     @Override
     public int getSsoSessionIdleTimeout() {
@@ -350,8 +351,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public X509Certificate getCertificate() {
-        if (certificate != null)
-            return certificate;
+        if (certificate != null) return certificate;
         certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
         return certificate;
     }
@@ -375,6 +375,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     }
 
+
     @Override
     public String getPrivateKeyPem() {
         return realm.getPrivateKeyPem();
@@ -389,8 +390,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public PublicKey getPublicKey() {
-        if (publicKey != null)
-            return publicKey;
+        if (publicKey != null) return publicKey;
         publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
         return publicKey;
     }
@@ -404,8 +404,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public PrivateKey getPrivateKey() {
-        if (privateKey != null)
-            return privateKey;
+        if (privateKey != null) return privateKey;
         privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
         return privateKey;
     }
@@ -482,7 +481,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public RoleAdapter getRole(String name) {
-        DBObject query = new QueryBuilder().and("name").is(name).and("realmId").is(getId()).get();
+        DBObject query = new QueryBuilder()
+                .and("name").is(name)
+                .and("realmId").is(getId())
+                .get();
         MongoRoleEntity role = getMongoStore().loadSingleEntity(MongoRoleEntity.class, query, invocationContext);
         if (role == null) {
             return null;
@@ -516,21 +518,21 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public boolean removeRoleById(String id) {
         RoleModel role = getRoleById(id);
-        if (role == null)
-            return false;
+        if (role == null) return false;
         session.users().preRemove(this, role);
         return getMongoStore().removeEntity(MongoRoleEntity.class, id, invocationContext);
     }
 
     @Override
     public Set<RoleModel> getRoles() {
-        DBObject query = new QueryBuilder().and("realmId").is(getId()).get();
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .get();
         List<MongoRoleEntity> roles = getMongoStore().loadEntities(MongoRoleEntity.class, query, invocationContext);
 
         Set<RoleModel> result = new HashSet<RoleModel>();
 
-        if (roles == null)
-            return result;
+        if (roles == null) return result;
         for (MongoRoleEntity role : roles) {
             result.add(new RoleAdapter(session, this, role, this, invocationContext));
         }
@@ -577,18 +579,18 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public ClientModel findClient(String clientId) {
         ClientModel model = getApplicationByName(clientId);
-        if (model != null)
-            return model;
+        if (model != null) return model;
         return getOAuthClient(clientId);
     }
 
     @Override
     public ClientModel findClientById(String id) {
         ClientModel model = getApplicationById(id);
-        if (model != null)
-            return model;
+        if (model != null) return model;
         return getOAuthClientById(id);
     }
+
+
 
     @Override
     public ApplicationModel getApplicationById(String id) {
@@ -597,9 +599,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ApplicationModel getApplicationByName(String name) {
-        DBObject query = new QueryBuilder().and("realmId").is(getId()).and("name").is(name).get();
-        MongoApplicationEntity appEntity = getMongoStore().loadSingleEntity(MongoApplicationEntity.class, query,
-                invocationContext);
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .and("name").is(name)
+                .get();
+        MongoApplicationEntity appEntity = getMongoStore().loadSingleEntity(MongoApplicationEntity.class, query, invocationContext);
         return appEntity == null ? null : new ApplicationAdapter(session, this, appEntity, invocationContext);
     }
 
@@ -614,9 +618,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<ApplicationModel> getApplications() {
-        DBObject query = new QueryBuilder().and("realmId").is(getId()).get();
-        List<MongoApplicationEntity> appDatas = getMongoStore().loadEntities(MongoApplicationEntity.class, query,
-                invocationContext);
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .get();
+        List<MongoApplicationEntity> appDatas = getMongoStore().loadEntities(MongoApplicationEntity.class, query, invocationContext);
 
         List<ApplicationModel> result = new ArrayList<ApplicationModel>();
         for (MongoApplicationEntity appData : appDatas) {
@@ -694,9 +699,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public OAuthClientModel getOAuthClient(String name) {
-        DBObject query = new QueryBuilder().and("realmId").is(getId()).and("name").is(name).get();
-        MongoOAuthClientEntity oauthClient = getMongoStore().loadSingleEntity(MongoOAuthClientEntity.class, query,
-                invocationContext);
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .and("name").is(name)
+                .get();
+        MongoOAuthClientEntity oauthClient = getMongoStore().loadSingleEntity(MongoOAuthClientEntity.class, query, invocationContext);
         return oauthClient == null ? null : new OAuthClientAdapter(session, this, oauthClient, invocationContext);
     }
 
@@ -707,9 +714,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<OAuthClientModel> getOAuthClients() {
-        DBObject query = new QueryBuilder().and("realmId").is(getId()).get();
-        List<MongoOAuthClientEntity> results = getMongoStore().loadEntities(MongoOAuthClientEntity.class, query,
-                invocationContext);
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .get();
+        List<MongoOAuthClientEntity> results = getMongoStore().loadEntities(MongoOAuthClientEntity.class, query, invocationContext);
         List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
         for (MongoOAuthClientEntity data : results) {
             list.add(new OAuthClientAdapter(session, this, data, invocationContext));
@@ -723,8 +731,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         addRequiredCredential(credentialModel, realm.getRequiredCredentials());
     }
 
-    protected void addRequiredCredential(RequiredCredentialModel credentialModel,
-            List<RequiredCredentialEntity> persistentCollection) {
+    protected void addRequiredCredential(RequiredCredentialModel credentialModel, List<RequiredCredentialEntity> persistentCollection) {
         RequiredCredentialEntity credEntity = new RequiredCredentialEntity();
         credEntity.setType(credentialModel.getType());
         credEntity.setFormLabel(credentialModel.getFormLabel());
@@ -768,8 +775,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return convertRequiredCredentialEntities(realm.getRequiredCredentials());
     }
 
-    protected List<RequiredCredentialModel> convertRequiredCredentialEntities(
-            Collection<RequiredCredentialEntity> credEntities) {
+    protected List<RequiredCredentialModel> convertRequiredCredentialEntities(Collection<RequiredCredentialEntity> credEntities) {
 
         List<RequiredCredentialModel> result = new ArrayList<RequiredCredentialModel>();
         for (RequiredCredentialEntity entity : credEntities) {
@@ -818,11 +824,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
 
+
     @Override
     public List<IdentityProviderModel> getIdentityProviders() {
         List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
-        for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
+        for (IdentityProviderEntity entity: realm.getIdentityProviders()) {
             IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
             identityProviderModel.setProviderId(entity.getProviderId());
@@ -900,8 +907,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config,
-            int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
+    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         UserFederationProviderEntity entity = new UserFederationProviderEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setPriority(priority);
@@ -917,8 +923,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.getUserFederationProviders().add(entity);
         updateRealm();
 
-        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod,
-                changedSyncPeriod, lastSync);
+        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
     }
 
     @Override
@@ -927,11 +932,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         while (it.hasNext()) {
             UserFederationProviderEntity entity = it.next();
             if (entity.getId().equals(provider.getId())) {
-                session.users().preRemove(
-                        this,
-                        new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity
-                                .getPriority(), entity.getDisplayName(), entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(),
-                                entity.getLastSync()));
+                session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                        entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
                 it.remove();
             }
         }
@@ -977,9 +979,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         });
         List<UserFederationProviderModel> result = new LinkedList<UserFederationProviderModel>();
         for (UserFederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity
-                    .getPriority(), entity.getDisplayName(), entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity
-                    .getLastSync()));
+            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
         }
 
         return result;
@@ -990,10 +991,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         List<UserFederationProviderEntity> entities = new LinkedList<UserFederationProviderEntity>();
         for (UserFederationProviderModel model : providers) {
             UserFederationProviderEntity entity = new UserFederationProviderEntity();
-            if (model.getId() != null)
-                entity.setId(model.getId());
-            else
-                entity.setId(KeycloakModelUtils.generateId());
+            if (model.getId() != null) entity.setId(model.getId());
+            else entity.setId(KeycloakModelUtils.generateId());
             entity.setProviderName(model.getProviderName());
             entity.setConfig(model.getConfig());
             entity.setPriority(model.getPriority());
@@ -1051,8 +1050,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ApplicationModel getMasterAdminApp() {
-        MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, realm.getAdminAppId(),
-                invocationContext);
+        MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, realm.getAdminAppId(), invocationContext);
         return appData != null ? new ApplicationAdapter(session, this, appData, invocationContext) : null;
     }
 
@@ -1075,10 +1073,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || !(o instanceof RealmModel))
-            return false;
+        if (this == o) return true;
+        if (o == null || !(o instanceof RealmModel)) return false;
 
         RealmModel that = (RealmModel) o;
         return that.getId().equals(getId());
@@ -1088,5 +1084,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public int hashCode() {
         return getId().hashCode();
     }
+
 
 }

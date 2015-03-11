@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.model;
 
-import java.util.HashMap;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.enums.SslRequired;
@@ -10,6 +8,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+
+import java.util.HashMap;
 
 public class ModelTest extends AbstractModelTest {
 
@@ -28,16 +28,16 @@ public class ModelTest extends AbstractModelTest {
         KeycloakModelUtils.generateRealmKeys(realm);
         realm.addDefaultRole("default-role");
 
-        HashMap<String, String> smtp = new HashMap<String, String>();
+        HashMap<String, String> smtp = new HashMap<String,String>();
         smtp.put("from", "auto@keycloak");
         smtp.put("hostname", "localhost");
         realm.setSmtpConfig(smtp);
 
-        HashMap<String, String> social = new HashMap<String, String>();
+        HashMap<String, String> social = new HashMap<String,String>();
         social.put("google.key", "1234");
         social.put("google.secret", "5678");
-        // FIXME: KEYCLOAK-883
-        // realm.setSocialConfig(social);
+        //FIXME: KEYCLOAK-883
+//        realm.setSocialConfig(social);
 
         RealmModel persisted = realmManager.getRealm(realm.getId());
         assertEquals(realm, persisted);
@@ -62,8 +62,8 @@ public class ModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
 
         Assert.assertEquals(expected.getSmtpConfig(), actual.getSmtpConfig());
-        // FIXME: KEYCLOAK-883
-        // Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());
+        //FIXME: KEYCLOAK-883
+//        Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());
     }
 
     private RealmModel importExport(RealmModel src, String copyName) {

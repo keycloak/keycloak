@@ -1,5 +1,19 @@
 package org.keycloak.models.cache.entities;
 
+import org.keycloak.enums.SslRequired;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimTypeModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.cache.RealmCache;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,18 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.keycloak.enums.SslRequired;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OAuthClientModel;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.cache.RealmCache;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -31,13 +33,13 @@ public class CachedRealm {
     private boolean enabled;
     private SslRequired sslRequired;
     private boolean registrationAllowed;
-    protected boolean registrationEmailAsUsername;
+    private boolean registrationEmailAsUsername;
     private boolean rememberMe;
     private boolean verifyEmail;
     private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
     private boolean identityFederationEnabled;
-    // --- brute force settings
+    //--- brute force settings
     private boolean bruteForceProtected;
     private int maxFailureWaitSeconds;
     private int minimumQuickLoginWaitSeconds;
@@ -45,7 +47,7 @@ public class CachedRealm {
     private long quickLoginCheckMilliSeconds;
     private int maxDeltaTimeSeconds;
     private int failureFactor;
-    // --- end brute force settings
+    //--- end brute force settings
 
     private int ssoSessionIdleTimeout;
     private int ssoSessionMaxLifespan;
@@ -97,7 +99,7 @@ public class CachedRealm {
         passwordCredentialGrantAllowed = model.isPasswordCredentialGrantAllowed();
         resetPasswordAllowed = model.isResetPasswordAllowed();
         identityFederationEnabled = model.isIdentityFederationEnabled();
-        // --- brute force settings
+        //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
         minimumQuickLoginWaitSeconds = model.getMinimumQuickLoginWaitSeconds();
@@ -105,7 +107,7 @@ public class CachedRealm {
         quickLoginCheckMilliSeconds = model.getQuickLoginCheckMilliSeconds();
         maxDeltaTimeSeconds = model.getMaxDeltaTimeSeconds();
         failureFactor = model.getFailureFactor();
-        // --- end brute force settings
+        //--- end brute force settings
 
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
@@ -163,6 +165,7 @@ public class CachedRealm {
         }
 
     }
+
 
     public String getId() {
         return id;
@@ -271,7 +274,6 @@ public class CachedRealm {
     public int getAccessCodeLifespanUserAction() {
         return accessCodeLifespanUserAction;
     }
-
     public int getAccessCodeLifespanLogin() {
         return accessCodeLifespanLogin;
     }

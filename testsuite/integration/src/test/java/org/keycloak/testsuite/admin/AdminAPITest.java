@@ -21,21 +21,6 @@
  */
 package org.keycloak.testsuite.admin;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -56,9 +41,23 @@ import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testutils.KeycloakServer;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Tests Undertow Adapter
- * 
+ *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
 public class AdminAPITest {
@@ -102,6 +101,7 @@ public class AdminAPITest {
         String realmName = rep.getRealm();
         WebTarget realmTarget = adminRealms.path(realmName);
 
+
         // create with just name, enabled, and id, just like admin console
         RealmRepresentation newRep = new RealmRepresentation();
         newRep.setRealm(rep.getRealm());
@@ -125,8 +125,7 @@ public class AdminAPITest {
             WebTarget applicationsTarget = realmTarget.path("applications");
             for (ApplicationRepresentation appRep : rep.getApplications()) {
                 ApplicationRepresentation newApp = new ApplicationRepresentation();
-                if (appRep.getId() != null)
-                    newApp.setId(appRep.getId());
+                if (appRep.getId() != null) newApp.setId(appRep.getId());
                 newApp.setName(appRep.getName());
                 if (appRep.getSecret() != null) {
                     newApp.setSecret(appRep.getSecret());
@@ -136,14 +135,14 @@ public class AdminAPITest {
                 appCreateResponse.close();
                 WebTarget appTarget = applicationsTarget.path(appRep.getName());
                 CredentialRepresentation cred = appTarget.path("client-secret").request().get(CredentialRepresentation.class);
-                if (appRep.getSecret() != null)
-                    Assert.assertEquals(appRep.getSecret(), cred.getValue());
+                if (appRep.getSecret() != null) Assert.assertEquals(appRep.getSecret(), cred.getValue());
                 CredentialRepresentation newCred = appTarget.path("client-secret").request().post(null, CredentialRepresentation.class);
                 Assert.assertNotEquals(newCred.getValue(), cred.getValue());
 
                 Response appUpdateResponse = appTarget.request().put(Entity.json(appRep));
                 Assert.assertEquals(204, appUpdateResponse.getStatus());
                 appUpdateResponse.close();
+
 
                 ApplicationRepresentation storedApp = appTarget.request().get(ApplicationRepresentation.class);
 
@@ -163,22 +162,14 @@ public class AdminAPITest {
     }
 
     protected void checkAppUpdate(ApplicationRepresentation appRep, ApplicationRepresentation storedApp) {
-        if (appRep.getName() != null)
-            Assert.assertEquals(appRep.getName(), storedApp.getName());
-        if (appRep.isEnabled() != null)
-            Assert.assertEquals(appRep.isEnabled(), storedApp.isEnabled());
-        if (appRep.isBearerOnly() != null)
-            Assert.assertEquals(appRep.isBearerOnly(), storedApp.isBearerOnly());
-        if (appRep.isPublicClient() != null)
-            Assert.assertEquals(appRep.isPublicClient(), storedApp.isPublicClient());
-        if (appRep.isFullScopeAllowed() != null)
-            Assert.assertEquals(appRep.isFullScopeAllowed(), storedApp.isFullScopeAllowed());
-        if (appRep.getAdminUrl() != null)
-            Assert.assertEquals(appRep.getAdminUrl(), storedApp.getAdminUrl());
-        if (appRep.getBaseUrl() != null)
-            Assert.assertEquals(appRep.getBaseUrl(), storedApp.getBaseUrl());
-        if (appRep.isSurrogateAuthRequired() != null)
-            Assert.assertEquals(appRep.isSurrogateAuthRequired(), storedApp.isSurrogateAuthRequired());
+        if (appRep.getName() != null) Assert.assertEquals(appRep.getName(), storedApp.getName());
+        if (appRep.isEnabled() != null) Assert.assertEquals(appRep.isEnabled(), storedApp.isEnabled());
+        if (appRep.isBearerOnly() != null) Assert.assertEquals(appRep.isBearerOnly(), storedApp.isBearerOnly());
+        if (appRep.isPublicClient() != null) Assert.assertEquals(appRep.isPublicClient(), storedApp.isPublicClient());
+        if (appRep.isFullScopeAllowed() != null) Assert.assertEquals(appRep.isFullScopeAllowed(), storedApp.isFullScopeAllowed());
+        if (appRep.getAdminUrl() != null) Assert.assertEquals(appRep.getAdminUrl(), storedApp.getAdminUrl());
+        if (appRep.getBaseUrl() != null) Assert.assertEquals(appRep.getBaseUrl(), storedApp.getBaseUrl());
+        if (appRep.isSurrogateAuthRequired() != null) Assert.assertEquals(appRep.isSurrogateAuthRequired(), storedApp.isSurrogateAuthRequired());
 
         if (appRep.getNotBefore() != null) {
             Assert.assertEquals(appRep.getNotBefore(), storedApp.getNotBefore());
@@ -232,65 +223,40 @@ public class AdminAPITest {
         if (rep.getRealm() != null) {
             Assert.assertEquals(rep.getRealm(), storedRealm.getRealm());
         }
-        if (rep.isEnabled() != null)
-            Assert.assertEquals(rep.isEnabled(), storedRealm.isEnabled());
-        if (rep.isBruteForceProtected() != null)
-            Assert.assertEquals(rep.isBruteForceProtected(), storedRealm.isBruteForceProtected());
-        if (rep.getMaxFailureWaitSeconds() != null)
-            Assert.assertEquals(rep.getMaxFailureWaitSeconds(), storedRealm.getMaxFailureWaitSeconds());
-        if (rep.getMinimumQuickLoginWaitSeconds() != null)
-            Assert.assertEquals(rep.getMinimumQuickLoginWaitSeconds(), storedRealm.getMinimumQuickLoginWaitSeconds());
-        if (rep.getWaitIncrementSeconds() != null)
-            Assert.assertEquals(rep.getWaitIncrementSeconds(), storedRealm.getWaitIncrementSeconds());
-        if (rep.getQuickLoginCheckMilliSeconds() != null)
-            Assert.assertEquals(rep.getQuickLoginCheckMilliSeconds(), storedRealm.getQuickLoginCheckMilliSeconds());
-        if (rep.getMaxDeltaTimeSeconds() != null)
-            Assert.assertEquals(rep.getMaxDeltaTimeSeconds(), storedRealm.getMaxDeltaTimeSeconds());
-        if (rep.getFailureFactor() != null)
-            Assert.assertEquals(rep.getFailureFactor(), storedRealm.getFailureFactor());
-        if (rep.isPasswordCredentialGrantAllowed() != null)
-            Assert.assertEquals(rep.isPasswordCredentialGrantAllowed(), storedRealm.isPasswordCredentialGrantAllowed());
-        if (rep.isRegistrationAllowed() != null)
-            Assert.assertEquals(rep.isRegistrationAllowed(), storedRealm.isRegistrationAllowed());
-        if (rep.isRegistrationEmailAsUsername() != null)
-            Assert.assertEquals(rep.isRegistrationEmailAsUsername(), storedRealm.isRegistrationEmailAsUsername());
-        if (rep.isRememberMe() != null)
-            Assert.assertEquals(rep.isRememberMe(), storedRealm.isRememberMe());
-        if (rep.isVerifyEmail() != null)
-            Assert.assertEquals(rep.isVerifyEmail(), storedRealm.isVerifyEmail());
-        if (rep.isResetPasswordAllowed() != null)
-            Assert.assertEquals(rep.isResetPasswordAllowed(), storedRealm.isResetPasswordAllowed());
-        if (rep.getSslRequired() != null)
-            Assert.assertEquals(rep.getSslRequired(), storedRealm.getSslRequired());
-        if (rep.getAccessCodeLifespan() != null)
-            Assert.assertEquals(rep.getAccessCodeLifespan(), storedRealm.getAccessCodeLifespan());
+        if (rep.isEnabled() != null) Assert.assertEquals(rep.isEnabled(), storedRealm.isEnabled());
+        if (rep.isBruteForceProtected() != null) Assert.assertEquals(rep.isBruteForceProtected(), storedRealm.isBruteForceProtected());
+        if (rep.getMaxFailureWaitSeconds() != null) Assert.assertEquals(rep.getMaxFailureWaitSeconds(), storedRealm.getMaxFailureWaitSeconds());
+        if (rep.getMinimumQuickLoginWaitSeconds() != null) Assert.assertEquals(rep.getMinimumQuickLoginWaitSeconds(), storedRealm.getMinimumQuickLoginWaitSeconds());
+        if (rep.getWaitIncrementSeconds() != null) Assert.assertEquals(rep.getWaitIncrementSeconds(), storedRealm.getWaitIncrementSeconds());
+        if (rep.getQuickLoginCheckMilliSeconds() != null) Assert.assertEquals(rep.getQuickLoginCheckMilliSeconds(), storedRealm.getQuickLoginCheckMilliSeconds());
+        if (rep.getMaxDeltaTimeSeconds() != null) Assert.assertEquals(rep.getMaxDeltaTimeSeconds(), storedRealm.getMaxDeltaTimeSeconds());
+        if (rep.getFailureFactor() != null) Assert.assertEquals(rep.getFailureFactor(), storedRealm.getFailureFactor());
+        if (rep.isPasswordCredentialGrantAllowed() != null) Assert.assertEquals(rep.isPasswordCredentialGrantAllowed(), storedRealm.isPasswordCredentialGrantAllowed());
+        if (rep.isRegistrationAllowed() != null) Assert.assertEquals(rep.isRegistrationAllowed(), storedRealm.isRegistrationAllowed());
+        if (rep.isRegistrationEmailAsUsername() != null) Assert.assertEquals(rep.isRegistrationEmailAsUsername(), storedRealm.isRegistrationEmailAsUsername());
+        if (rep.isRememberMe() != null) Assert.assertEquals(rep.isRememberMe(), storedRealm.isRememberMe());
+        if (rep.isVerifyEmail() != null) Assert.assertEquals(rep.isVerifyEmail(), storedRealm.isVerifyEmail());
+        if (rep.isResetPasswordAllowed() != null) Assert.assertEquals(rep.isResetPasswordAllowed(), storedRealm.isResetPasswordAllowed());
+        if (rep.getSslRequired() != null) Assert.assertEquals(rep.getSslRequired(), storedRealm.getSslRequired());
+        if (rep.getAccessCodeLifespan() != null) Assert.assertEquals(rep.getAccessCodeLifespan(), storedRealm.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
             Assert.assertEquals(rep.getAccessCodeLifespanUserAction(), storedRealm.getAccessCodeLifespanUserAction());
-        if (rep.getNotBefore() != null)
-            Assert.assertEquals(rep.getNotBefore(), storedRealm.getNotBefore());
-        if (rep.getAccessTokenLifespan() != null)
-            Assert.assertEquals(rep.getAccessTokenLifespan(), storedRealm.getAccessTokenLifespan());
-        if (rep.getSsoSessionIdleTimeout() != null)
-            Assert.assertEquals(rep.getSsoSessionIdleTimeout(), storedRealm.getSsoSessionIdleTimeout());
-        if (rep.getSsoSessionMaxLifespan() != null)
-            Assert.assertEquals(rep.getSsoSessionMaxLifespan(), storedRealm.getSsoSessionMaxLifespan());
+        if (rep.getNotBefore() != null) Assert.assertEquals(rep.getNotBefore(), storedRealm.getNotBefore());
+        if (rep.getAccessTokenLifespan() != null) Assert.assertEquals(rep.getAccessTokenLifespan(), storedRealm.getAccessTokenLifespan());
+        if (rep.getSsoSessionIdleTimeout() != null) Assert.assertEquals(rep.getSsoSessionIdleTimeout(), storedRealm.getSsoSessionIdleTimeout());
+        if (rep.getSsoSessionMaxLifespan() != null) Assert.assertEquals(rep.getSsoSessionMaxLifespan(), storedRealm.getSsoSessionMaxLifespan());
         if (rep.getRequiredCredentials() != null) {
             Assert.assertNotNull(storedRealm.getRequiredCredentials());
             for (String cred : rep.getRequiredCredentials()) {
                 Assert.assertTrue(storedRealm.getRequiredCredentials().contains(cred));
             }
         }
-        if (rep.getLoginTheme() != null)
-            Assert.assertEquals(rep.getLoginTheme(), storedRealm.getLoginTheme());
-        if (rep.getAccountTheme() != null)
-            Assert.assertEquals(rep.getAccountTheme(), storedRealm.getAccountTheme());
-        if (rep.getAdminTheme() != null)
-            Assert.assertEquals(rep.getAdminTheme(), storedRealm.getAdminTheme());
-        if (rep.getEmailTheme() != null)
-            Assert.assertEquals(rep.getEmailTheme(), storedRealm.getEmailTheme());
+        if (rep.getLoginTheme() != null) Assert.assertEquals(rep.getLoginTheme(), storedRealm.getLoginTheme());
+        if (rep.getAccountTheme() != null) Assert.assertEquals(rep.getAccountTheme(), storedRealm.getAccountTheme());
+        if (rep.getAdminTheme() != null) Assert.assertEquals(rep.getAdminTheme(), storedRealm.getAdminTheme());
+        if (rep.getEmailTheme() != null) Assert.assertEquals(rep.getEmailTheme(), storedRealm.getEmailTheme());
 
-        if (rep.getPasswordPolicy() != null)
-            Assert.assertEquals(rep.getPasswordPolicy(), storedRealm.getPasswordPolicy());
+        if (rep.getPasswordPolicy() != null) Assert.assertEquals(rep.getPasswordPolicy(), storedRealm.getPasswordPolicy());
 
         if (rep.getDefaultRoles() != null) {
             Assert.assertNotNull(storedRealm.getDefaultRoles());
