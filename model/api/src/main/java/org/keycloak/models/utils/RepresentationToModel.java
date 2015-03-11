@@ -1,16 +1,6 @@
 package org.keycloak.models.utils;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import net.iharder.Base64;
-
 import org.jboss.logging.Logger;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
@@ -44,81 +34,60 @@ import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 public class RepresentationToModel {
 
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
         newRealm.setName(rep.getRealm());
-        if (rep.isEnabled() != null)
-            newRealm.setEnabled(rep.isEnabled());
-        if (rep.isBruteForceProtected() != null)
-            newRealm.setBruteForceProtected(rep.isBruteForceProtected());
-        if (rep.getMaxFailureWaitSeconds() != null)
-            newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
-        if (rep.getMinimumQuickLoginWaitSeconds() != null)
-            newRealm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
-        if (rep.getWaitIncrementSeconds() != null)
-            newRealm.setWaitIncrementSeconds(rep.getWaitIncrementSeconds());
-        if (rep.getQuickLoginCheckMilliSeconds() != null)
-            newRealm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
-        if (rep.getMaxDeltaTimeSeconds() != null)
-            newRealm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
-        if (rep.getFailureFactor() != null)
-            newRealm.setFailureFactor(rep.getFailureFactor());
-        if (rep.isEventsEnabled() != null)
-            newRealm.setEventsEnabled(rep.isEventsEnabled());
-        if (rep.getEventsExpiration() != null)
-            newRealm.setEventsExpiration(rep.getEventsExpiration());
-        if (rep.getEventsListeners() != null)
-            newRealm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
+        if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
+        if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
+        if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
+        if (rep.getMinimumQuickLoginWaitSeconds() != null) newRealm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
+        if (rep.getWaitIncrementSeconds() != null) newRealm.setWaitIncrementSeconds(rep.getWaitIncrementSeconds());
+        if (rep.getQuickLoginCheckMilliSeconds() != null) newRealm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
+        if (rep.getMaxDeltaTimeSeconds() != null) newRealm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
+        if (rep.getFailureFactor() != null) newRealm.setFailureFactor(rep.getFailureFactor());
+        if (rep.isEventsEnabled() != null) newRealm.setEventsEnabled(rep.isEventsEnabled());
+        if (rep.getEventsExpiration() != null) newRealm.setEventsExpiration(rep.getEventsExpiration());
+        if (rep.getEventsListeners() != null) newRealm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
 
-        if (rep.getNotBefore() != null)
-            newRealm.setNotBefore(rep.getNotBefore());
+        if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 
-        if (rep.getAccessTokenLifespan() != null)
-            newRealm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
-        else
-            newRealm.setAccessTokenLifespan(300);
+        if (rep.getAccessTokenLifespan() != null) newRealm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
+        else newRealm.setAccessTokenLifespan(300);
 
-        if (rep.getSsoSessionIdleTimeout() != null)
-            newRealm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
-        else
-            newRealm.setSsoSessionIdleTimeout(1800);
-        if (rep.getSsoSessionMaxLifespan() != null)
-            newRealm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
-        else
-            newRealm.setSsoSessionMaxLifespan(36000);
+        if (rep.getSsoSessionIdleTimeout() != null) newRealm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
+        else newRealm.setSsoSessionIdleTimeout(1800);
+        if (rep.getSsoSessionMaxLifespan() != null) newRealm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
+        else newRealm.setSsoSessionMaxLifespan(36000);
 
-        if (rep.getAccessCodeLifespan() != null)
-            newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
-        else
-            newRealm.setAccessCodeLifespan(60);
+        if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
+        else newRealm.setAccessCodeLifespan(60);
 
         if (rep.getAccessCodeLifespanUserAction() != null)
             newRealm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
-        else
-            newRealm.setAccessCodeLifespanUserAction(300);
+        else newRealm.setAccessCodeLifespanUserAction(300);
 
         if (rep.getAccessCodeLifespanLogin() != null)
             newRealm.setAccessCodeLifespanLogin(rep.getAccessCodeLifespanLogin());
-        else
-            newRealm.setAccessCodeLifespanLogin(1800);
+        else newRealm.setAccessCodeLifespanLogin(1800);
 
-        if (rep.getSslRequired() != null)
-            newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
-        if (rep.isPasswordCredentialGrantAllowed() != null)
-            newRealm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
-        if (rep.isRegistrationAllowed() != null)
-            newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
-        if (rep.isRegistrationEmailAsUsername() != null)
-            newRealm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
-        if (rep.isRememberMe() != null)
-            newRealm.setRememberMe(rep.isRememberMe());
-        if (rep.isVerifyEmail() != null)
-            newRealm.setVerifyEmail(rep.isVerifyEmail());
-        if (rep.isResetPasswordAllowed() != null)
-            newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
+        if (rep.getSslRequired() != null) newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
+        if (rep.isPasswordCredentialGrantAllowed() != null) newRealm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
+        if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        if (rep.isRememberMe() != null) newRealm.setRememberMe(rep.isRememberMe());
+        if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
+        if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             KeycloakModelUtils.generateRealmKeys(newRealm);
         } else {
@@ -136,14 +105,10 @@ public class RepresentationToModel {
             newRealm.setCodeSecret(rep.getCodeSecret());
         }
 
-        if (rep.getLoginTheme() != null)
-            newRealm.setLoginTheme(rep.getLoginTheme());
-        if (rep.getAccountTheme() != null)
-            newRealm.setAccountTheme(rep.getAccountTheme());
-        if (rep.getAdminTheme() != null)
-            newRealm.setAdminTheme(rep.getAdminTheme());
-        if (rep.getEmailTheme() != null)
-            newRealm.setEmailTheme(rep.getEmailTheme());
+        if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
+        if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
+        if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
+        if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
 
         if (rep.getRequiredCredentials() != null) {
             for (String requiredCred : rep.getRequiredCredentials()) {
@@ -153,8 +118,7 @@ public class RepresentationToModel {
             addRequiredCredential(newRealm, CredentialRepresentation.PASSWORD);
         }
 
-        if (rep.getPasswordPolicy() != null)
-            newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
         importIdentityProviders(rep, newRealm);
 
@@ -176,8 +140,7 @@ public class RepresentationToModel {
                     }
                     for (RoleRepresentation roleRep : entry.getValue()) {
                         // Application role may already exists (for example if it is defaultRole)
-                        RoleModel role = roleRep.getId() != null ? app.addRole(roleRep.getId(), roleRep.getName()) : app
-                                .addRole(roleRep.getName());
+                        RoleModel role = roleRep.getId()!=null ? app.addRole(roleRep.getId(), roleRep.getName()) : app.addRole(roleRep.getName());
                         role.setDescription(roleRep.getDescription());
                     }
                 }
@@ -222,6 +185,7 @@ public class RepresentationToModel {
         if (rep.getOauthClients() != null) {
             createOAuthClients(rep, newRealm);
         }
+
 
         // Now that all possible roles and applications are created, create scope mappings
 
@@ -283,70 +247,40 @@ public class RepresentationToModel {
         if (rep.getRealm() != null) {
             realm.setName(rep.getRealm());
         }
-        if (rep.isEnabled() != null)
-            realm.setEnabled(rep.isEnabled());
-        if (rep.isBruteForceProtected() != null)
-            realm.setBruteForceProtected(rep.isBruteForceProtected());
-        if (rep.getMaxFailureWaitSeconds() != null)
-            realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
-        if (rep.getMinimumQuickLoginWaitSeconds() != null)
-            realm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
-        if (rep.getWaitIncrementSeconds() != null)
-            realm.setWaitIncrementSeconds(rep.getWaitIncrementSeconds());
-        if (rep.getQuickLoginCheckMilliSeconds() != null)
-            realm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
-        if (rep.getMaxDeltaTimeSeconds() != null)
-            realm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
-        if (rep.getFailureFactor() != null)
-            realm.setFailureFactor(rep.getFailureFactor());
-        if (rep.isPasswordCredentialGrantAllowed() != null)
-            realm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
-        if (rep.isRegistrationAllowed() != null)
-            realm.setRegistrationAllowed(rep.isRegistrationAllowed());
-        if (rep.isRegistrationEmailAsUsername() != null)
-            realm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
-        if (rep.isRememberMe() != null)
-            realm.setRememberMe(rep.isRememberMe());
-        if (rep.isVerifyEmail() != null)
-            realm.setVerifyEmail(rep.isVerifyEmail());
-        if (rep.isResetPasswordAllowed() != null)
-            realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
-        if (rep.getSslRequired() != null)
-            realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
-        if (rep.getAccessCodeLifespan() != null)
-            realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
-        if (rep.getAccessCodeLifespanUserAction() != null)
-            realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
-        if (rep.getAccessCodeLifespanLogin() != null)
-            realm.setAccessCodeLifespanLogin(rep.getAccessCodeLifespanLogin());
-        if (rep.getNotBefore() != null)
-            realm.setNotBefore(rep.getNotBefore());
-        if (rep.getAccessTokenLifespan() != null)
-            realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
-        if (rep.getSsoSessionIdleTimeout() != null)
-            realm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
-        if (rep.getSsoSessionMaxLifespan() != null)
-            realm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
+        if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
+        if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
+        if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
+        if (rep.getMinimumQuickLoginWaitSeconds() != null) realm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
+        if (rep.getWaitIncrementSeconds() != null) realm.setWaitIncrementSeconds(rep.getWaitIncrementSeconds());
+        if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
+        if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
+        if (rep.getFailureFactor() != null) realm.setFailureFactor(rep.getFailureFactor());
+        if (rep.isPasswordCredentialGrantAllowed() != null) realm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
+        if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        if (rep.isRegistrationEmailAsUsername() != null) realm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
+        if (rep.isRememberMe() != null) realm.setRememberMe(rep.isRememberMe());
+        if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
+        if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
+        if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
+        if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
+        if (rep.getAccessCodeLifespanUserAction() != null) realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
+        if (rep.getAccessCodeLifespanLogin() != null) realm.setAccessCodeLifespanLogin(rep.getAccessCodeLifespanLogin());
+        if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
+        if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
+        if (rep.getSsoSessionIdleTimeout() != null) realm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
+        if (rep.getSsoSessionMaxLifespan() != null) realm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
-        if (rep.getLoginTheme() != null)
-            realm.setLoginTheme(rep.getLoginTheme());
-        if (rep.getAccountTheme() != null)
-            realm.setAccountTheme(rep.getAccountTheme());
-        if (rep.getAdminTheme() != null)
-            realm.setAdminTheme(rep.getAdminTheme());
-        if (rep.getEmailTheme() != null)
-            realm.setEmailTheme(rep.getEmailTheme());
-        if (rep.isEventsEnabled() != null)
-            realm.setEventsEnabled(rep.isEventsEnabled());
-        if (rep.getEventsExpiration() != null)
-            realm.setEventsExpiration(rep.getEventsExpiration());
-        if (rep.getEventsListeners() != null)
-            realm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
+        if (rep.getLoginTheme() != null) realm.setLoginTheme(rep.getLoginTheme());
+        if (rep.getAccountTheme() != null) realm.setAccountTheme(rep.getAccountTheme());
+        if (rep.getAdminTheme() != null) realm.setAdminTheme(rep.getAdminTheme());
+        if (rep.getEmailTheme() != null) realm.setEmailTheme(rep.getEmailTheme());
+        if (rep.isEventsEnabled() != null) realm.setEventsEnabled(rep.isEventsEnabled());
+        if (rep.getEventsExpiration() != null) realm.setEventsExpiration(rep.getEventsExpiration());
+        if (rep.getEventsListeners() != null) realm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
 
-        if (rep.getPasswordPolicy() != null)
-            realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
         if (rep.getDefaultRoles() != null) {
             realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
@@ -376,15 +310,14 @@ public class RepresentationToModel {
         newRealm.addRequiredCredential(requiredCred);
     }
 
-    private static List<UserFederationProviderModel> convertFederationProviders(
-            List<UserFederationProviderRepresentation> providers) {
+
+    private static List<UserFederationProviderModel> convertFederationProviders(List<UserFederationProviderRepresentation> providers) {
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
 
         for (UserFederationProviderRepresentation representation : providers) {
-            UserFederationProviderModel model = new UserFederationProviderModel(representation.getId(),
-                    representation.getProviderName(), representation.getConfig(), representation.getPriority(),
-                    representation.getDisplayName(), representation.getFullSyncPeriod(), representation.getChangedSyncPeriod(),
-                    representation.getLastSync());
+            UserFederationProviderModel model = new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
+                    representation.getConfig(), representation.getPriority(), representation.getDisplayName(),
+                    representation.getFullSyncPeriod(), representation.getChangedSyncPeriod(), representation.getLastSync());
             result.add(model);
         }
         return result;
@@ -393,20 +326,16 @@ public class RepresentationToModel {
     // Roles
 
     public static void createRole(RealmModel newRealm, RoleRepresentation roleRep) {
-        RoleModel role = roleRep.getId() != null ? newRealm.addRole(roleRep.getId(), roleRep.getName()) : newRealm
-                .addRole(roleRep.getName());
-        if (roleRep.getDescription() != null)
-            role.setDescription(roleRep.getDescription());
+        RoleModel role = roleRep.getId()!=null ? newRealm.addRole(roleRep.getId(), roleRep.getName()) : newRealm.addRole(roleRep.getName());
+        if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
     }
 
     private static void addComposites(RoleModel role, RoleRepresentation roleRep, RealmModel realm) {
-        if (roleRep.getComposites() == null)
-            return;
+        if (roleRep.getComposites() == null) return;
         if (roleRep.getComposites().getRealm() != null) {
             for (String roleStr : roleRep.getComposites().getRealm()) {
                 RoleModel realmRole = realm.getRole(roleStr);
-                if (realmRole == null)
-                    throw new RuntimeException("Unable to find composite realm role: " + roleStr);
+                if (realmRole == null) throw new RuntimeException("Unable to find composite realm role: " + roleStr);
                 role.addCompositeRole(realmRole);
             }
         }
@@ -418,8 +347,7 @@ public class RepresentationToModel {
                 }
                 for (String roleStr : entry.getValue()) {
                     RoleModel appRole = app.getRole(roleStr);
-                    if (appRole == null)
-                        throw new RuntimeException("Unable to find composite app role: " + roleStr);
+                    if (appRole == null) throw new RuntimeException("Unable to find composite app role: " + roleStr);
                     role.addCompositeRole(appRole);
                 }
 
@@ -442,30 +370,23 @@ public class RepresentationToModel {
 
     /**
      * Does not create scope or role mappings!
-     * 
+     *
      * @param realm
      * @param resourceRep
      * @return
      */
-    public static ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep,
-            boolean addDefaultRoles) {
+    public static ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep, boolean addDefaultRoles) {
         logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
-        ApplicationModel applicationModel = resourceRep.getId() != null ? realm.addApplication(resourceRep.getId(),
-                resourceRep.getName()) : realm.addApplication(resourceRep.getName());
-        if (resourceRep.isEnabled() != null)
-            applicationModel.setEnabled(resourceRep.isEnabled());
+        ApplicationModel applicationModel = resourceRep.getId()!=null ? realm.addApplication(resourceRep.getId(), resourceRep.getName()) : realm.addApplication(resourceRep.getName());
+        if (resourceRep.isEnabled() != null) applicationModel.setEnabled(resourceRep.isEnabled());
         applicationModel.setManagementUrl(resourceRep.getAdminUrl());
         if (resourceRep.isSurrogateAuthRequired() != null)
             applicationModel.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
         applicationModel.setBaseUrl(resourceRep.getBaseUrl());
-        if (resourceRep.isBearerOnly() != null)
-            applicationModel.setBearerOnly(resourceRep.isBearerOnly());
-        if (resourceRep.isPublicClient() != null)
-            applicationModel.setPublicClient(resourceRep.isPublicClient());
-        if (resourceRep.isFrontchannelLogout() != null)
-            applicationModel.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
-        if (resourceRep.getProtocol() != null)
-            applicationModel.setProtocol(resourceRep.getProtocol());
+        if (resourceRep.isBearerOnly() != null) applicationModel.setBearerOnly(resourceRep.isBearerOnly());
+        if (resourceRep.isPublicClient() != null) applicationModel.setPublicClient(resourceRep.isPublicClient());
+        if (resourceRep.isFrontchannelLogout() != null) applicationModel.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
+        if (resourceRep.getProtocol() != null) applicationModel.setProtocol(resourceRep.getProtocol());
         if (resourceRep.isFullScopeAllowed() != null) {
             applicationModel.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
         } else {
@@ -493,6 +414,7 @@ public class RepresentationToModel {
             }
         }
 
+
         if (resourceRep.getRedirectUris() != null) {
             for (String redirectUri : resourceRep.getRedirectUris()) {
                 applicationModel.addRedirectUri(redirectUri);
@@ -515,7 +437,7 @@ public class RepresentationToModel {
                         if (uri.getPort() != -1) {
                             origin += ":" + uri.getPort();
                         }
-                        logger.debugv("adding default application origin: {0}", origin);
+                        logger.debugv("adding default application origin: {0}" , origin);
                         origins.add(origin);
                     }
                 }
@@ -538,8 +460,7 @@ public class RepresentationToModel {
         if (resourceRep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
             Set<ProtocolMapperModel> mappers = applicationModel.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers)
-                applicationModel.removeProtocolMapper(mapper);
+            for (ProtocolMapperModel mapper : mappers) applicationModel.removeProtocolMapper(mapper);
 
             for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
                 applicationModel.addProtocolMapper(toModel(mapper));
@@ -552,35 +473,25 @@ public class RepresentationToModel {
     }
 
     public static void updateApplication(ApplicationRepresentation rep, ApplicationModel resource) {
-        if (rep.getName() != null)
-            resource.setName(rep.getName());
-        if (rep.isEnabled() != null)
-            resource.setEnabled(rep.isEnabled());
-        if (rep.isBearerOnly() != null)
-            resource.setBearerOnly(rep.isBearerOnly());
-        if (rep.isPublicClient() != null)
-            resource.setPublicClient(rep.isPublicClient());
-        if (rep.isFullScopeAllowed() != null)
-            resource.setFullScopeAllowed(rep.isFullScopeAllowed());
-        if (rep.isFrontchannelLogout() != null)
-            resource.setFrontchannelLogout(rep.isFrontchannelLogout());
-        if (rep.getAdminUrl() != null)
-            resource.setManagementUrl(rep.getAdminUrl());
-        if (rep.getBaseUrl() != null)
-            resource.setBaseUrl(rep.getBaseUrl());
-        if (rep.isSurrogateAuthRequired() != null)
-            resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
-        if (rep.getNodeReRegistrationTimeout() != null)
-            resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
+        if (rep.getName() != null) resource.setName(rep.getName());
+        if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
+        if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
+        if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
+        if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
+        if (rep.isFrontchannelLogout() != null) resource.setFrontchannelLogout(rep.isFrontchannelLogout());
+        if (rep.getAdminUrl() != null) resource.setManagementUrl(rep.getAdminUrl());
+        if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
+        if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
+        if (rep.getNodeReRegistrationTimeout() != null) resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
         resource.updateApplication();
 
-        if (rep.getProtocol() != null)
-            resource.setProtocol(rep.getProtocol());
+        if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
                 resource.setAttribute(entry.getKey(), entry.getValue());
             }
         }
+
 
         if (rep.getNotBefore() != null) {
             resource.setNotBefore(rep.getNotBefore());
@@ -672,7 +583,7 @@ public class RepresentationToModel {
     }
 
     public static OAuthClientModel createOAuthClient(String id, String name, RealmModel realm) {
-        OAuthClientModel model = id != null ? realm.addOAuthClient(id, name) : realm.addOAuthClient(name);
+        OAuthClientModel model = id!=null ? realm.addOAuthClient(id, name) : realm.addOAuthClient(name);
         KeycloakModelUtils.generateSecret(model);
         return model;
     }
@@ -687,26 +598,19 @@ public class RepresentationToModel {
     }
 
     public static void updateOAuthClient(OAuthClientRepresentation rep, OAuthClientModel model) {
-        if (rep.getName() != null)
-            model.setClientId(rep.getName());
-        if (rep.isEnabled() != null)
-            model.setEnabled(rep.isEnabled());
-        if (rep.isPublicClient() != null)
-            model.setPublicClient(rep.isPublicClient());
-        if (rep.isFrontchannelLogout() != null)
-            model.setFrontchannelLogout(rep.isFrontchannelLogout());
-        if (rep.isFullScopeAllowed() != null)
-            model.setFullScopeAllowed(rep.isFullScopeAllowed());
-        if (rep.isDirectGrantsOnly() != null)
-            model.setDirectGrantsOnly(rep.isDirectGrantsOnly());
+        if (rep.getName() != null) model.setClientId(rep.getName());
+        if (rep.isEnabled() != null) model.setEnabled(rep.isEnabled());
+        if (rep.isPublicClient() != null) model.setPublicClient(rep.isPublicClient());
+        if (rep.isFrontchannelLogout() != null) model.setFrontchannelLogout(rep.isFrontchannelLogout());
+        if (rep.isFullScopeAllowed() != null) model.setFullScopeAllowed(rep.isFullScopeAllowed());
+        if (rep.isDirectGrantsOnly() != null) model.setDirectGrantsOnly(rep.isDirectGrantsOnly());
         if (rep.getClaims() != null) {
             setClaims(model, rep.getClaims());
         }
         if (rep.getNotBefore() != null) {
             model.setNotBefore(rep.getNotBefore());
         }
-        if (rep.getSecret() != null)
-            model.setSecret(rep.getSecret());
+        if (rep.getSecret() != null) model.setSecret(rep.getSecret());
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
             model.setRedirectUris(new HashSet<String>(redirectUris));
@@ -720,8 +624,7 @@ public class RepresentationToModel {
         if (rep.getNotBefore() != null) {
             model.setNotBefore(rep.getNotBefore());
         }
-        if (rep.getProtocol() != null)
-            model.setProtocol(rep.getProtocol());
+        if (rep.getProtocol() != null) model.setProtocol(rep.getProtocol());
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
                 model.setAttribute(entry.getKey(), entry.getValue());
@@ -733,8 +636,7 @@ public class RepresentationToModel {
         if (rep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
             Set<ProtocolMapperModel> mappers = model.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers)
-                model.removeProtocolMapper(mapper);
+            for (ProtocolMapperModel mapper : mappers) model.removeProtocolMapper(mapper);
 
             for (ProtocolMapperRepresentation mapper : rep.getProtocolMappers()) {
                 model.addProtocolMapper(toModel(mapper));
@@ -745,8 +647,7 @@ public class RepresentationToModel {
 
     // Scope mappings
 
-    public static void createApplicationScopeMappings(RealmModel realm, ApplicationModel applicationModel,
-            List<ScopeMappingRepresentation> mappings) {
+    public static void createApplicationScopeMappings(RealmModel realm, ApplicationModel applicationModel, List<ScopeMappingRepresentation> mappings) {
         for (ScopeMappingRepresentation mapping : mappings) {
             ClientModel client = realm.findClient(mapping.getClient());
             if (client == null) {
@@ -764,8 +665,7 @@ public class RepresentationToModel {
 
     // Users
 
-    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep,
-            Map<String, ApplicationModel> appMap) {
+    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ApplicationModel> appMap) {
         // Import users just to user storage. Don't federate
         UserModel user = session.userStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false);
         user.setEnabled(userRep.isEnabled());
@@ -791,8 +691,7 @@ public class RepresentationToModel {
         }
         if (userRep.getFederatedIdentities() != null) {
             for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
-                FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(),
-                        identity.getUserId(), identity.getUserName());
+                FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
                 session.users().addFederatedIdentity(newRealm, user, mappingModel);
             }
         }
@@ -828,8 +727,7 @@ public class RepresentationToModel {
             hashedCred.setDevice(cred.getDevice());
             hashedCred.setHashIterations(cred.getHashIterations());
             try {
-                if (cred.getSalt() != null)
-                    hashedCred.setSalt(Base64.decode(cred.getSalt()));
+                if (cred.getSalt() != null) hashedCred.setSalt(Base64.decode(cred.getSalt()));
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
@@ -847,8 +745,7 @@ public class RepresentationToModel {
 
     // Role mappings
 
-    public static void createApplicationRoleMappings(ApplicationModel applicationModel, UserModel user,
-            List<String> roleNames) {
+    public static void createApplicationRoleMappings(ApplicationModel applicationModel, UserModel user, List<String> roleNames) {
         if (user == null) {
             throw new RuntimeException("User not found");
         }
@@ -870,7 +767,6 @@ public class RepresentationToModel {
             }
         }
     }
-
     public static IdentityProviderModel toModel(IdentityProviderRepresentation representation) {
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
@@ -899,8 +795,7 @@ public class RepresentationToModel {
         return model;
     }
 
-    private static List<ClientIdentityProviderMappingModel> toModel(
-            List<ClientIdentityProviderMappingRepresentation> repIdentityProviders, RealmModel realm) {
+    private static List<ClientIdentityProviderMappingModel> toModel(List<ClientIdentityProviderMappingRepresentation> repIdentityProviders, RealmModel realm) {
         List<ClientIdentityProviderMappingModel> allowedIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
 
         if (repIdentityProviders == null || repIdentityProviders.isEmpty()) {
@@ -927,8 +822,7 @@ public class RepresentationToModel {
         return allowedIdentityProviders;
     }
 
-    private static void updateClientIdentityProvides(List<ClientIdentityProviderMappingRepresentation> identityProviders,
-            ClientModel resource) {
+    private static void updateClientIdentityProvides(List<ClientIdentityProviderMappingRepresentation> identityProviders, ClientModel resource) {
         if (identityProviders != null) {
             List<ClientIdentityProviderMappingModel> allowedIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
 

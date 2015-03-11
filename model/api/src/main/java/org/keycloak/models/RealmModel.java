@@ -1,5 +1,8 @@
 package org.keycloak.models;
 
+import org.keycloak.enums.SslRequired;
+import org.keycloak.provider.ProviderEvent;
+
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -7,9 +10,6 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.keycloak.enums.SslRequired;
-import org.keycloak.provider.ProviderEvent;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -178,7 +178,6 @@ public interface RealmModel extends RoleContainerModel {
     List<OAuthClientModel> getOAuthClients();
 
     Map<String, String> getBrowserSecurityHeaders();
-
     void setBrowserSecurityHeaders(Map<String, String> headers);
 
     Map<String, String> getSmtpConfig();
@@ -186,24 +185,16 @@ public interface RealmModel extends RoleContainerModel {
     void setSmtpConfig(Map<String, String> smtpConfig);
 
     List<IdentityProviderModel> getIdentityProviders();
-
     IdentityProviderModel getIdentityProviderById(String identityProviderId);
-
     void addIdentityProvider(IdentityProviderModel identityProvider);
-
     void removeIdentityProviderById(String providerId);
-
     void updateIdentityProvider(IdentityProviderModel identityProvider);
 
     List<UserFederationProviderModel> getUserFederationProviders();
 
-    UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority,
-            String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync);
-
+    UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync);
     void updateUserFederationProvider(UserFederationProviderModel provider);
-
     void removeUserFederationProvider(UserFederationProviderModel provider);
-
     void setUserFederationProviders(List<UserFederationProviderModel> providers);
 
     String getLoginTheme();
@@ -222,9 +213,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setEmailTheme(String name);
 
+
     /**
      * Time in seconds since epoc
-     * 
+     *
      * @return
      */
     int getNotBefore();

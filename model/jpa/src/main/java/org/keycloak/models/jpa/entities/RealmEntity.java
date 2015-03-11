@@ -1,13 +1,5 @@
 package org.keycloak.models.jpa.entities;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -23,117 +15,126 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Table(name = "REALM")
+@Table(name="REALM")
 @Entity
-@NamedQueries({ @NamedQuery(name = "getAllRealms", query = "select realm from RealmEntity realm"),
-        @NamedQuery(name = "getRealmByName", query = "select realm from RealmEntity realm where realm.name = :name"), })
+@NamedQueries({
+        @NamedQuery(name="getAllRealms", query="select realm from RealmEntity realm"),
+        @NamedQuery(name="getRealmByName", query="select realm from RealmEntity realm where realm.name = :name"),
+})
 public class RealmEntity {
     @Id
-    @Column(name = "ID", length = 36)
+    @Column(name="ID", length = 36)
     protected String id;
 
-    @Column(name = "NAME", unique = true)
+    @Column(name="NAME", unique = true)
     protected String name;
 
-    @Column(name = "ENABLED")
+    @Column(name="ENABLED")
     protected boolean enabled;
-    @Column(name = "SSL_REQUIRED")
+    @Column(name="SSL_REQUIRED")
     protected String sslRequired;
-    @Column(name = "REGISTRATION_ALLOWED")
+    @Column(name="REGISTRATION_ALLOWED")
     protected boolean registrationAllowed;
     @Column(name = "REGISTRATION_EMAIL_AS_USERNAME")
     protected boolean registrationEmailAsUsername;
-    @Column(name = "PASSWORD_CRED_GRANT_ALLOWED")
+    @Column(name="PASSWORD_CRED_GRANT_ALLOWED")
     protected boolean passwordCredentialGrantAllowed;
-    @Column(name = "VERIFY_EMAIL")
+    @Column(name="VERIFY_EMAIL")
     protected boolean verifyEmail;
-    @Column(name = "RESET_PASSWORD_ALLOWED")
+    @Column(name="RESET_PASSWORD_ALLOWED")
     protected boolean resetPasswordAllowed;
-    @Column(name = "REMEMBER_ME")
+    @Column(name="REMEMBER_ME")
     protected boolean rememberMe;
-    @Column(name = "PASSWORD_POLICY")
+    @Column(name="PASSWORD_POLICY")
     protected String passwordPolicy;
 
-    @Column(name = "SSO_IDLE_TIMEOUT")
+    @Column(name="SSO_IDLE_TIMEOUT")
     private int ssoSessionIdleTimeout;
-    @Column(name = "SSO_MAX_LIFESPAN")
+    @Column(name="SSO_MAX_LIFESPAN")
     private int ssoSessionMaxLifespan;
-    @Column(name = "ACCESS_TOKEN_LIFESPAN")
+    @Column(name="ACCESS_TOKEN_LIFESPAN")
     protected int accessTokenLifespan;
-    @Column(name = "ACCESS_CODE_LIFESPAN")
+    @Column(name="ACCESS_CODE_LIFESPAN")
     protected int accessCodeLifespan;
-    @Column(name = "USER_ACTION_LIFESPAN")
+    @Column(name="USER_ACTION_LIFESPAN")
     protected int accessCodeLifespanUserAction;
-    @Column(name = "LOGIN_LIFESPAN")
+    @Column(name="LOGIN_LIFESPAN")
     protected int accessCodeLifespanLogin;
-    @Column(name = "NOT_BEFORE")
+    @Column(name="NOT_BEFORE")
     protected int notBefore;
 
-    @Column(name = "PUBLIC_KEY", length = 2048)
+    @Column(name="PUBLIC_KEY", length = 2048)
     protected String publicKeyPem;
-    @Column(name = "PRIVATE_KEY", length = 2048)
+    @Column(name="PRIVATE_KEY", length = 2048)
     protected String privateKeyPem;
-    @Column(name = "CERTIFICATE", length = 2048)
+    @Column(name="CERTIFICATE", length = 2048)
     protected String certificatePem;
-    @Column(name = "CODE_SECRET", length = 255)
+    @Column(name="CODE_SECRET", length = 255)
     protected String codeSecret;
 
-    @Column(name = "LOGIN_THEME")
+    @Column(name="LOGIN_THEME")
     protected String loginTheme;
-    @Column(name = "ACCOUNT_THEME")
+    @Column(name="ACCOUNT_THEME")
     protected String accountTheme;
-    @Column(name = "ADMIN_THEME")
+    @Column(name="ADMIN_THEME")
     protected String adminTheme;
-    @Column(name = "EMAIL_THEME")
+    @Column(name="EMAIL_THEME")
     protected String emailTheme;
 
-    @OneToMany(cascade = { CascadeType.REMOVE }, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RealmAttributeEntity> attributes = new ArrayList<RealmAttributeEntity>();
 
-    @OneToMany(cascade = { CascadeType.REMOVE }, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
-    @OneToMany(cascade = { CascadeType.REMOVE }, orphanRemoval = true)
-    @JoinTable(name = "FED_PROVIDERS")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="FED_PROVIDERS")
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.REMOVE }, orphanRemoval = true)
-    @JoinTable(name = "REALM_APPLICATION", joinColumns = { @JoinColumn(name = "APPLICATION_ID") }, inverseJoinColumns = { @JoinColumn(name = "REALM_ID") })
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="APPLICATION_ID") }, inverseJoinColumns={ @JoinColumn(name="REALM_ID") })
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.REMOVE }, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @ElementCollection
-    @MapKeyColumn(name = "NAME")
-    @Column(name = "VALUE")
-    @CollectionTable(name = "REALM_SMTP_CONFIG", joinColumns = { @JoinColumn(name = "REALM_ID") })
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE")
+    @CollectionTable(name="REALM_SMTP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Map<String, String> smtpConfig = new HashMap<String, String>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.REMOVE }, orphanRemoval = true)
-    @JoinTable(name = "REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name = "REALM_ID") }, inverseJoinColumns = { @JoinColumn(name = "ROLE_ID") })
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     protected Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
-    @Column(name = "EVENTS_ENABLED")
+    @Column(name="EVENTS_ENABLED")
     protected boolean eventsEnabled;
-    @Column(name = "EVENTS_EXPIRATION")
+    @Column(name="EVENTS_EXPIRATION")
     protected long eventsExpiration;
 
     @ElementCollection
-    @Column(name = "VALUE")
-    @CollectionTable(name = "REALM_EVENTS_LISTENERS", joinColumns = { @JoinColumn(name = "REALM_ID") })
+    @Column(name="VALUE")
+    @CollectionTable(name="REALM_EVENTS_LISTENERS", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Set<String> eventsListeners = new HashSet<String>();
 
     @OneToOne
-    @JoinColumn(name = "MASTER_ADMIN_APP")
+    @JoinColumn(name="MASTER_ADMIN_APP")
     protected ApplicationEntity masterAdminApp;
 
-    @OneToMany(cascade = { CascadeType.REMOVE }, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     protected List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
 
     public String getId() {
@@ -255,7 +256,6 @@ public class RealmEntity {
     public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
-
     public int getAccessCodeLifespanLogin() {
         return accessCodeLifespanLogin;
     }
@@ -453,3 +453,4 @@ public class RealmEntity {
     }
 
 }
+

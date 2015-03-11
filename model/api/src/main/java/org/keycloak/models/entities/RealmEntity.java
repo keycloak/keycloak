@@ -20,7 +20,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
     private String passwordPolicy;
-    // --- brute force settings
+    //--- brute force settings
     private boolean bruteForceProtected;
     private int maxFailureWaitSeconds;
     private int minimumQuickLoginWaitSeconds;
@@ -28,7 +28,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private long quickLoginCheckMilliSeconds;
     private int maxDeltaTimeSeconds;
     private int failureFactor;
-    // --- end brute force settings
+    //--- end brute force settings
 
     private int ssoSessionIdleTimeout;
     private int ssoSessionMaxLifespan;
@@ -240,7 +240,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
-
     public int getAccessCodeLifespanLogin() {
         return accessCodeLifespanLogin;
     }
@@ -409,3 +408,5 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.certificatePem = certificatePem;
     }
 }
+
+

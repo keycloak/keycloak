@@ -17,26 +17,6 @@
  */
 package org.keycloak.services.resources;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
@@ -69,6 +49,25 @@ import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.SocialIdentityProvider;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
@@ -109,8 +108,7 @@ public class IdentityBrokerService {
     }
 
     public void init() {
-        this.event = new EventsManager(this.realmModel, this.session, this.clientConnection).createEventBuilder().event(
-                EventType.IDENTITY_PROVIDER_LOGIN);
+        this.event = new EventsManager(this.realmModel, this.session, this.clientConnection).createEventBuilder().event(EventType.IDENTITY_PROVIDER_LOGIN);
     }
 
     @GET
@@ -125,8 +123,7 @@ public class IdentityBrokerService {
         try {
             ClientSessionCode clientSessionCode = parseClientSessionCode(code, providerId);
             IdentityProvider identityProvider = getIdentityProvider(providerId);
-            AuthenticationResponse authenticationResponse = identityProvider.handleRequest(createAuthenticationRequest(
-                    providerId, clientSessionCode));
+            AuthenticationResponse authenticationResponse = identityProvider.handleRequest(createAuthenticationRequest(providerId, clientSessionCode));
 
             Response response = authenticationResponse.getResponse();
 
@@ -140,8 +137,7 @@ public class IdentityBrokerService {
         } catch (IdentityBrokerException e) {
             return redirectToErrorPage("Could not send authentication request to identity provider [" + providerId + "].", e);
         } catch (Exception e) {
-            return redirectToErrorPage("Unexpected error when handling authentication request to identity provider ["
-                    + providerId + "].", e);
+            return redirectToErrorPage("Unexpected error when handling authentication request to identity provider [" + providerId + "].", e);
         }
 
         return redirectToErrorPage("Could not proceed with authentication request to identity provider.");
@@ -176,8 +172,7 @@ public class IdentityBrokerService {
 
         try {
             AppAuthManager authManager = new AppAuthManager();
-            AuthResult authResult = authManager.authenticateBearerToken(this.session, this.realmModel, this.uriInfo,
-                    this.clientConnection, this.request.getHttpHeaders());
+            AuthResult authResult = authManager.authenticateBearerToken(this.session, this.realmModel, this.uriInfo, this.clientConnection, this.request.getHttpHeaders());
 
             if (authResult != null) {
                 String audience = authResult.getToken().getAudience();
@@ -192,27 +187,27 @@ public class IdentityBrokerService {
                 }
 
                 if (!clientModel.isAllowedRetrieveTokenFromIdentityProvider(providerId)) {
-                    return corsResponse(badRequest("Client [" + audience
-                            + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
+                    return corsResponse(badRequest("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
                 }
 
                 if (OAuthClientModel.class.isInstance(clientModel) && !forceRetrieval) {
                     return corsResponse(Flows.forms(this.session, this.realmModel, clientModel, this.uriInfo)
                             .setClientSessionCode(authManager.extractAuthorizationHeaderToken(this.request.getHttpHeaders()))
-                            .setAccessRequest("Your information from " + providerId + " identity provider.").setClient(clientModel)
-                            .setUriInfo(this.uriInfo).setActionUri(this.uriInfo.getRequestUri()).createOAuthGrant(), clientModel);
+                            .setAccessRequest("Your information from " + providerId + " identity provider.")
+                            .setClient(clientModel)
+                            .setUriInfo(this.uriInfo)
+                            .setActionUri(this.uriInfo.getRequestUri())
+                            .createOAuthGrant(), clientModel);
                 }
 
                 IdentityProvider identityProvider = getIdentityProvider(providerId);
                 IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerId);
 
                 if (identityProviderConfig.isStoreToken()) {
-                    FederatedIdentityModel identity = this.session.users().getFederatedIdentity(authResult.getUser(), providerId,
-                            this.realmModel);
+                    FederatedIdentityModel identity = this.session.users().getFederatedIdentity(authResult.getUser(), providerId, this.realmModel);
 
                     if (identity == null) {
-                        return corsResponse(badRequest("User [" + authResult.getUser().getId()
-                                + "] is not associated with identity provider [" + providerId + "]."), clientModel);
+                        return corsResponse(badRequest("User [" + authResult.getUser().getId() + "] is not associated with identity provider [" + providerId + "]."), clientModel);
                     }
 
                     this.event.success();
@@ -220,16 +215,14 @@ public class IdentityBrokerService {
                     return corsResponse(identityProvider.retrieveToken(identity), clientModel);
                 }
 
-                return corsResponse(badRequest("Identity Provider [" + providerId + "] does not support this operation."),
-                        clientModel);
+                return corsResponse(badRequest("Identity Provider [" + providerId + "] does not support this operation."), clientModel);
             }
 
             return badRequest("Invalid token.");
         } catch (IdentityBrokerException e) {
             return redirectToErrorPage("Could not obtain token fron identity provider [" + providerId + "].", e);
-        } catch (Exception e) {
-            return redirectToErrorPage("Unexpected error when retrieving token from identity provider [" + providerId + "].",
-                    e);
+        }  catch (Exception e) {
+            return redirectToErrorPage("Unexpected error when retrieving token from identity provider [" + providerId + "].", e);
         }
     }
 
@@ -237,7 +230,7 @@ public class IdentityBrokerService {
     @Path("{provider_id}/token")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response consentTokenRetrieval(@PathParam("provider_id") String providerId,
-            MultivaluedMap<String, String> formData) {
+                                          MultivaluedMap<String, String> formData) {
         if (formData.containsKey("cancel")) {
             return redirectToErrorPage("Permission not approved.");
         }
@@ -266,8 +259,7 @@ public class IdentityBrokerService {
             }
 
             ClientSessionCode clientSessionCode = parseClientSessionCode(relayState, providerId);
-            AuthenticationResponse authenticationResponse = identityProvider.handleResponse(createAuthenticationRequest(
-                    providerId, clientSessionCode));
+            AuthenticationResponse authenticationResponse = identityProvider.handleResponse(createAuthenticationRequest(providerId, clientSessionCode));
             Response response = authenticationResponse.getResponse();
 
             if (response != null) {
@@ -295,12 +287,10 @@ public class IdentityBrokerService {
             return performLocalAuthentication(identity, clientSessionCode);
         } catch (IdentityBrokerException e) {
             rollback();
-            return redirectToErrorPage("Authentication failed. Could not authenticate with identity provider [" + providerId
-                    + "].", e);
+            return redirectToErrorPage("Authentication failed. Could not authenticate with identity provider [" + providerId + "].", e);
         } catch (Exception e) {
             rollback();
-            return redirectToErrorPage(
-                    "Unexpected error when handling response from identity provider [" + providerId + "].", e);
+            return redirectToErrorPage("Unexpected error when handling response from identity provider [" + providerId + "].", e);
         } finally {
             if (this.session.getTransaction().isActive()) {
                 this.session.getTransaction().commit();
@@ -315,7 +305,8 @@ public class IdentityBrokerService {
         FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, updatedIdentity.getId(),
                 updatedIdentity.getUsername(), updatedIdentity.getToken());
 
-        this.event.event(EventType.IDENTITY_PROVIDER_LOGIN).detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
+        this.event.event(EventType.IDENTITY_PROVIDER_LOGIN)
+                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.IDENTITY_PROVIDER_IDENTITY, updatedIdentity.getUsername());
 
         UserModel federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
@@ -342,8 +333,8 @@ public class IdentityBrokerService {
 
         updateFederatedIdentity(updatedIdentity, federatedUser);
 
-        UserSessionModel userSession = this.session.sessions().createUserSession(this.realmModel, federatedUser,
-                federatedUser.getUsername(), this.clientConnection.getRemoteAddr(), "broker", false);
+        UserSessionModel userSession = this.session.sessions()
+                .createUserSession(this.realmModel, federatedUser, federatedUser.getUsername(), this.clientConnection.getRemoteAddr(), "broker", false);
 
         this.event.user(federatedUser);
         this.event.session(userSession);
@@ -354,24 +345,21 @@ public class IdentityBrokerService {
             LOGGER.debugf("Performing local authentication for user [%s].", federatedUser);
         }
 
-        return AuthenticationManager.nextActionAfterAuthentication(this.session, userSession, clientSession,
-                this.clientConnection, this.request, this.uriInfo, event);
+        return AuthenticationManager.nextActionAfterAuthentication(this.session, userSession, clientSession, this.clientConnection, this.request,
+                this.uriInfo, event);
     }
 
-    private Response performAccountLinking(ClientSessionModel clientSession, String providerId,
-            FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
+    private Response performAccountLinking(ClientSessionModel clientSession, String providerId, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
         this.event.event(EventType.IDENTITY_PROVIDER_ACCCOUNT_LINKING);
 
         if (federatedUser != null) {
-            return redirectToErrorPage("The identity returned by the identity provider [" + providerId
-                    + "] is already linked to other user.");
+            return redirectToErrorPage("The identity returned by the identity provider [" + providerId + "] is already linked to other user.");
         }
 
         UserModel authenticatedUser = clientSession.getUserSession().getUser();
 
         if (isDebugEnabled()) {
-            LOGGER.debugf("Linking account [%s] from identity provider [%s] to user [%s].", federatedIdentityModel,
-                    providerId, authenticatedUser);
+            LOGGER.debugf("Linking account [%s] from identity provider [%s] to user [%s].", federatedIdentityModel, providerId, authenticatedUser);
         }
 
         if (!authenticatedUser.isEnabled()) {
@@ -379,8 +367,7 @@ public class IdentityBrokerService {
             return redirectToErrorPage("User is disabled.");
         }
 
-        if (!authenticatedUser
-                .hasRole(this.realmModel.getApplicationByName(ACCOUNT_MANAGEMENT_APP).getRole(MANAGE_ACCOUNT))) {
+        if (!authenticatedUser.hasRole(this.realmModel.getApplicationByName(ACCOUNT_MANAGEMENT_APP).getRole(MANAGE_ACCOUNT))) {
             fireErrorEvent(Errors.NOT_ALLOWED);
             return redirectToErrorPage("Insufficient permissions to link identities.");
         }
@@ -393,16 +380,14 @@ public class IdentityBrokerService {
     }
 
     private void updateFederatedIdentity(FederatedIdentity updatedIdentity, UserModel federatedUser) {
-        FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser,
-                updatedIdentity.getIdentityProviderId(), this.realmModel);
+        FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, updatedIdentity.getIdentityProviderId(), this.realmModel);
 
         federatedIdentityModel.setToken(updatedIdentity.getToken());
 
         this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
 
         if (isDebugEnabled()) {
-            LOGGER.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser,
-                    updatedIdentity.getIdentityProviderId());
+            LOGGER.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, updatedIdentity.getIdentityProviderId());
         }
     }
 
@@ -446,13 +431,11 @@ public class IdentityBrokerService {
             relayState = clientSessionCode.getCode();
         }
 
-        return new AuthenticationRequest(this.session, this.realmModel, clientSession, this.request, this.uriInfo,
-                relayState, getRedirectUri(providerId));
+        return new AuthenticationRequest(this.session, this.realmModel, clientSession, this.request, this.uriInfo, relayState, getRedirectUri(providerId));
     }
 
     private String getRedirectUri(String providerId) {
-        return Urls.identityProviderAuthnResponse(this.uriInfo.getBaseUri(), providerId, this.realmModel.getName())
-                .toString();
+        return Urls.identityProviderAuthnResponse(this.uriInfo.getBaseUri(), providerId, this.realmModel.getName()).toString();
     }
 
     private Response redirectToErrorPage(String message) {
@@ -477,7 +460,9 @@ public class IdentityBrokerService {
 
         fireErrorEvent(message);
         return Flows.forms(this.session, this.realmModel, clientCode.getClientSession().getClient(), this.uriInfo)
-                .setClientSessionCode(clientCode.getCode()).setError(message).createLogin();
+                .setClientSessionCode(clientCode.getCode())
+                .setError(message)
+                .createLogin();
     }
 
     private Response badRequest(String message) {
@@ -534,14 +519,13 @@ public class IdentityBrokerService {
         }
 
         if (!clientModel.hasIdentityProvider(providerId)) {
-            throw new IdentityBrokerException("Client [" + clientModel.getClientId()
-                    + "] not authorized to authenticate with identity provider [" + providerId + "].");
+            throw new IdentityBrokerException("Client [" + clientModel.getClientId() + "] not authorized to authenticate with identity provider [" + providerId + "].");
         }
     }
 
     private UserModel createUser(FederatedIdentity updatedIdentity) {
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(updatedIdentity.getIdentityProviderId(),
-                updatedIdentity.getId(), updatedIdentity.getUsername(), updatedIdentity.getToken());
+        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(updatedIdentity.getIdentityProviderId(), updatedIdentity.getId(),
+                updatedIdentity.getUsername(), updatedIdentity.getToken());
         // Check if no user already exists with this username or email
         UserModel existingUser = null;
 
@@ -591,7 +575,8 @@ public class IdentityBrokerService {
 
         this.event.clone().user(federatedUser).event(EventType.REGISTER)
                 .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())
-                .detail(Details.IDENTITY_PROVIDER_IDENTITY, updatedIdentity.getUsername()).removeDetail("auth_method")
+                .detail(Details.IDENTITY_PROVIDER_IDENTITY, updatedIdentity.getUsername())
+                .removeDetail("auth_method")
                 .success();
 
         return federatedUser;
