@@ -6,6 +6,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.ClientConnection;
 import org.keycloak.VerificationException;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -32,6 +33,8 @@ import org.picketlink.identity.federation.saml.v2.protocol.AuthnRequestType;
 import org.picketlink.identity.federation.saml.v2.protocol.LogoutRequestType;
 import org.picketlink.identity.federation.saml.v2.protocol.NameIDPolicyType;
 import org.picketlink.identity.federation.saml.v2.protocol.RequestAbstractType;
+import org.picketlink.identity.federation.saml.v2.protocol.StatusResponseType;
+import org.picketlink.identity.federation.web.util.PostBindingUtil;
 import org.picketlink.identity.federation.web.util.RedirectBindingUtil;
 
 import javax.ws.rs.Consumes;
@@ -120,10 +123,20 @@ public class SamlService {
         }
 
         protected Response handleSamlResponse(String samlResponse, String relayState) {
+            event.event(EventType.LOGOUT);
+            SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
+            StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
+            // validate destination
+            if (!uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
+                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
+                event.detail(Details.REASON, "invalid_destination");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid request.");
+            }
+
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
             if (authResult == null) {
                 logger.warn("Unknown saml response.");
-                event.event(EventType.LOGIN);
+                event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_TOKEN);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
             }
@@ -132,16 +145,18 @@ public class SamlService {
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.warn("Unknown saml response.");
                 logger.warn("UserSession is not tagged as logging out.");
-                event.event(EventType.LOGIN);
-                event.error(Errors.INVALID_TOKEN);
+                event.event(EventType.LOGOUT);
+                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid Request");
             }
             logger.debug("logout response");
-            return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
+            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection);
+            event.success();
+            return response;
         }
 
         protected Response handleSamlRequest(String samlRequest, String relayState) {
-            SAMLDocumentHolder documentHolder = extractDocument(samlRequest);
+            SAMLDocumentHolder documentHolder = extractRequestDocument(samlRequest);
             if (documentHolder == null) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_TOKEN);
@@ -206,10 +221,16 @@ public class SamlService {
 
         protected abstract void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException;
 
-        protected abstract SAMLDocumentHolder extractDocument(String samlRequest);
+        protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
+        protected abstract SAMLDocumentHolder extractResponseDocument(String response);
 
         protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
-
+            // validate destination
+            if (!uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
+                event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
+                event.detail(Details.REASON, "invalid_destination");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid request.");
+            }
             String bindingType = getBindingType(requestAbstractType);
             if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING))) bindingType = SamlProtocol.SAML_POST_BINDING;
             String redirect = null;
@@ -251,7 +272,8 @@ public class SamlService {
                 if(isSupportedNameIdFormat(nameIdFormat)) {
                     clientSession.setNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
                 } else {
-                    event.error(Errors.INVALID_TOKEN);
+                    event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
+                    event.detail(Details.REASON, "unsupported_nameid_format");
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Unsupported NameIDFormat.");
                 }
             }
@@ -312,9 +334,14 @@ public class SamlService {
         protected abstract String getBindingType();
 
         protected Response logoutRequest(LogoutRequestType logoutRequest, ClientModel client, String relayState) {
+            // validate destination
+            if (!uriInfo.getAbsolutePath().equals(logoutRequest.getDestination())) {
+                event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+                event.detail(Details.REASON, "invalid_destination");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid request.");
+            }
+
             // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
-
-
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
             if (authResult != null) {
                 String logoutBinding = getBindingType();
@@ -387,8 +414,12 @@ public class SamlService {
         }
 
         @Override
-        protected SAMLDocumentHolder extractDocument(String samlRequest) {
-            return SAMLRequestParser.parsePostBinding(samlRequest);
+        protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
+            return SAMLRequestParser.parseRequestPostBinding(samlRequest);
+        }
+        @Override
+        protected SAMLDocumentHolder extractResponseDocument(String response) {
+            return SAMLRequestParser.parseResponsePostBinding(response);
         }
 
         @Override
@@ -455,8 +486,13 @@ public class SamlService {
         }
 
         @Override
-        protected SAMLDocumentHolder extractDocument(String samlRequest) {
-            return SAMLRequestParser.parseRedirectBinding(samlRequest);
+        protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
+            return SAMLRequestParser.parseRequestRedirectBinding(samlRequest);
+        }
+
+        @Override
+        protected SAMLDocumentHolder extractResponseDocument(String response) {
+            return SAMLRequestParser.parseRequestRedirectBinding(response);
         }
 
         @Override
