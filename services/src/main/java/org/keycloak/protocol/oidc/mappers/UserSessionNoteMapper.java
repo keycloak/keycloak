@@ -33,7 +33,7 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         configProperties.add(property);
         property = new ConfigProperty();
         property.setName(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
-        property.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
+        property.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_LABEL);
         property.setType(ConfigProperty.STRING_TYPE);
         property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
         configProperties.add(property);

@@ -391,7 +391,7 @@ public class AuthenticationManager {
                     .setClientSessionCode(accessCode.getCode())
                     .setAccessRequest(realmRoles, resourceRoles)
                     .setClient(client)
-                    .createOAuthGrant();
+                    .createOAuthGrant(clientSession);
         }
 
         event.success();

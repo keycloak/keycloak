@@ -24,6 +24,7 @@ import org.keycloak.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.login.freemarker.model.TotpBean;
 import org.keycloak.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -75,6 +76,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     private UserModel user;
 
     private ClientModel client;
+    private ClientSessionModel clientSession;
 
     private UriInfo uriInfo;
 
@@ -213,7 +215,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("register", new RegisterBean(formData));
                 break;
             case OAUTH_GRANT:
-                attributes.put("oauth", new OAuthGrantBean(accessCode, client, realmRolesRequested, resourceRolesRequested, this.accessRequestMessage));
+                attributes.put("oauth", new OAuthGrantBean(accessCode, clientSession, client, realmRolesRequested, resourceRolesRequested, this.accessRequestMessage));
                 break;
             case CODE:
                 attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? message : null));
@@ -265,7 +267,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return createResponse(LoginFormsPages.ERROR);
     }
 
-    public Response createOAuthGrant() {
+    public Response createOAuthGrant(ClientSessionModel clientSession) {
+        this.clientSession = clientSession;
         return createResponse(LoginFormsPages.OAUTH_GRANT);
     }
 

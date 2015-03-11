@@ -58,7 +58,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
 
     @Override
     public String getDisplayType() {
-        return "Role Mapper";
+        return "Role Name Mapper";
     }
 
     @Override
@@ -76,29 +76,35 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
                                             UserSessionModel userSession, ClientSessionModel clientSession) {
         String role = mappingModel.getConfig().get(ROLE_CONFIG);
         String newName = mappingModel.getConfig().get(NEW_ROLE_NAME);
-        String appName = null;
-        int scopeIndex = role.indexOf('.');
-        if (scopeIndex > -1) {
-            appName = role.substring(0, scopeIndex);
+
+        String[] scopedRole = ProtocolMapperUtils.parseRole(role);
+        String[] newScopedRole = ProtocolMapperUtils.parseRole(newName);
+        String appName = scopedRole[0];
+        String roleName = scopedRole[1];
+        if (appName != null) {
             AccessToken.Access access = token.getResourceAccess(appName);
             if (access == null) return token;
-
-            role = role.substring(scopeIndex + 1);
-            if (!access.getRoles().contains(role)) return token;
-            access.getRoles().remove(role);
+            if (!access.getRoles().contains(roleName)) return token;
+            access.getRoles().remove(roleName);
         } else {
             AccessToken.Access access = token.getRealmAccess();
             if (access == null) return token;
-            access.getRoles().remove(role);
+            access.getRoles().remove(roleName);
         }
 
-        String newAppName = null;
-        scopeIndex = newName.indexOf('.');
-        if (scopeIndex > -1) {
-            newAppName = role.substring(0, scopeIndex);
-            newName = role.substring(scopeIndex + 1);
-            token.addAccess(newAppName).addRole(newName);
+        String newAppName = newScopedRole[0];
+        String newRoleName = newScopedRole[1];
+        AccessToken.Access access = null;
+        if (newAppName == null) {
+            access = token.getRealmAccess();
+            if (access == null) {
+                access = new AccessToken.Access();
+                token.setRealmAccess(access);
+            }
+        } else {
+            access = token.addAccess(newAppName);
         }
+        access.addRole(newRoleName);
         return token;
     }
 

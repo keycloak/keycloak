@@ -3,6 +3,7 @@ package org.keycloak.protocol;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.AccessToken;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -40,5 +41,19 @@ public class ProtocolMapperUtils {
 
         }
         return null;
+    }
+
+    public static String[] parseRole(String role) {
+        int scopeIndex = role.indexOf('.');
+        if (scopeIndex > -1) {
+            String appName = role.substring(0, scopeIndex);
+            role = role.substring(scopeIndex + 1);
+            String[] rtn = {appName, role};
+            return rtn;
+        } else {
+            String[] rtn = {null, role};
+            return rtn;
+
+        }
     }
 }

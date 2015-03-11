@@ -65,13 +65,6 @@
                     <span tooltip-placement="right" tooltip="Should a statement specifying the method and timestamp be included in login responses?" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                    <label class="col-sm-2 control-label" for="samlMultiValuedRoles">Multi-valued Roles</label>
-                    <div class="col-sm-6">
-                        <input ng-model="samlMultiValuedRoles" ng-click="switchChange()" name="samlMultiValuedRoles" id="samlMultiValuedRoles" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="'On' means that there will be one role attribute with multiple values for each role in SAML response.  'Off' means that there will be an attribute defined for each role." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="samlServerSignature">Sign Documents</label>
                     <div class="col-sm-6">
                         <input ng-model="samlServerSignature" ng-click="switchChange()" name="samlServerSignature" id="samlServerSignature" onoffswitch />

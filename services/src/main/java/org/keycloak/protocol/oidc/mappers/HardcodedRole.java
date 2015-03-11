@@ -4,6 +4,7 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 
@@ -48,7 +49,7 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
 
     @Override
     public String getDisplayType() {
-        return "Add Role";
+        return "Hardcoded Role";
     }
 
     @Override
@@ -58,19 +59,18 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
 
     @Override
     public String getHelpText() {
-        return "Hardcode any role specify into the token.";
+        return "Hardcode a role into the access token.";
     }
 
     @Override
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionModel clientSession) {
         String role = mappingModel.getConfig().get(ROLE_CONFIG);
-        String appName = null;
-        int scopeIndex = role.indexOf('.');
-        if (scopeIndex > -1) {
-            appName = role.substring(0, scopeIndex);
-            role = role.substring(scopeIndex + 1);
-            token.addAccess(appName).addRole(role);
+        String[] scopedRole = ProtocolMapperUtils.parseRole(role);
+        String appName = scopedRole[0];
+        String roleName = scopedRole[1];
+        if (appName != null) {
+            token.addAccess(appName).addRole(roleName);
         } else {
             AccessToken.Access access = token.getRealmAccess();
             if (access == null) {
