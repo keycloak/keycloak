@@ -13,65 +13,65 @@ import org.keycloak.representations.idm.RealmRepresentation;
 
 public class ModelTest extends AbstractModelTest {
 
-	@Test
-	public void importExportRealm() {
-		RealmModel realm = realmManager.createRealm("original");
-		realm.setRegistrationAllowed(true);
-		realm.setRegistrationEmailAsUsername(true);
-		realm.setResetPasswordAllowed(true);
-		realm.setSslRequired(SslRequired.EXTERNAL);
-		realm.setVerifyEmail(true);
-		realm.setAccessTokenLifespan(1000);
-		realm.setPasswordPolicy(new PasswordPolicy("length"));
-		realm.setAccessCodeLifespan(1001);
-		realm.setAccessCodeLifespanUserAction(1002);
-		KeycloakModelUtils.generateRealmKeys(realm);
-		realm.addDefaultRole("default-role");
+    @Test
+    public void importExportRealm() {
+        RealmModel realm = realmManager.createRealm("original");
+        realm.setRegistrationAllowed(true);
+        realm.setRegistrationEmailAsUsername(true);
+        realm.setResetPasswordAllowed(true);
+        realm.setSslRequired(SslRequired.EXTERNAL);
+        realm.setVerifyEmail(true);
+        realm.setAccessTokenLifespan(1000);
+        realm.setPasswordPolicy(new PasswordPolicy("length"));
+        realm.setAccessCodeLifespan(1001);
+        realm.setAccessCodeLifespanUserAction(1002);
+        KeycloakModelUtils.generateRealmKeys(realm);
+        realm.addDefaultRole("default-role");
 
-		HashMap<String, String> smtp = new HashMap<String, String>();
-		smtp.put("from", "auto@keycloak");
-		smtp.put("hostname", "localhost");
-		realm.setSmtpConfig(smtp);
+        HashMap<String, String> smtp = new HashMap<String, String>();
+        smtp.put("from", "auto@keycloak");
+        smtp.put("hostname", "localhost");
+        realm.setSmtpConfig(smtp);
 
-		HashMap<String, String> social = new HashMap<String, String>();
-		social.put("google.key", "1234");
-		social.put("google.secret", "5678");
-		// FIXME: KEYCLOAK-883
-		// realm.setSocialConfig(social);
+        HashMap<String, String> social = new HashMap<String, String>();
+        social.put("google.key", "1234");
+        social.put("google.secret", "5678");
+        // FIXME: KEYCLOAK-883
+        // realm.setSocialConfig(social);
 
-		RealmModel persisted = realmManager.getRealm(realm.getId());
-		assertEquals(realm, persisted);
+        RealmModel persisted = realmManager.getRealm(realm.getId());
+        assertEquals(realm, persisted);
 
-		RealmModel copy = importExport(realm, "copy");
-		assertEquals(realm, copy);
-	}
+        RealmModel copy = importExport(realm, "copy");
+        assertEquals(realm, copy);
+    }
 
-	public static void assertEquals(RealmModel expected, RealmModel actual) {
-		Assert.assertEquals(expected.isRegistrationAllowed(), actual.isRegistrationAllowed());
-		Assert.assertEquals(expected.isRegistrationEmailAsUsername(), actual.isRegistrationEmailAsUsername());
-		Assert.assertEquals(expected.isResetPasswordAllowed(), actual.isResetPasswordAllowed());
-		Assert.assertEquals(expected.getSslRequired(), actual.getSslRequired());
-		Assert.assertEquals(expected.isVerifyEmail(), actual.isVerifyEmail());
-		Assert.assertEquals(expected.getAccessTokenLifespan(), actual.getAccessTokenLifespan());
+    public static void assertEquals(RealmModel expected, RealmModel actual) {
+        Assert.assertEquals(expected.isRegistrationAllowed(), actual.isRegistrationAllowed());
+        Assert.assertEquals(expected.isRegistrationEmailAsUsername(), actual.isRegistrationEmailAsUsername());
+        Assert.assertEquals(expected.isResetPasswordAllowed(), actual.isResetPasswordAllowed());
+        Assert.assertEquals(expected.getSslRequired(), actual.getSslRequired());
+        Assert.assertEquals(expected.isVerifyEmail(), actual.isVerifyEmail());
+        Assert.assertEquals(expected.getAccessTokenLifespan(), actual.getAccessTokenLifespan());
 
-		Assert.assertEquals(expected.getAccessCodeLifespan(), actual.getAccessCodeLifespan());
-		Assert.assertEquals(expected.getAccessCodeLifespanUserAction(), actual.getAccessCodeLifespanUserAction());
-		Assert.assertEquals(expected.getPublicKeyPem(), actual.getPublicKeyPem());
-		Assert.assertEquals(expected.getPrivateKeyPem(), actual.getPrivateKeyPem());
+        Assert.assertEquals(expected.getAccessCodeLifespan(), actual.getAccessCodeLifespan());
+        Assert.assertEquals(expected.getAccessCodeLifespanUserAction(), actual.getAccessCodeLifespanUserAction());
+        Assert.assertEquals(expected.getPublicKeyPem(), actual.getPublicKeyPem());
+        Assert.assertEquals(expected.getPrivateKeyPem(), actual.getPrivateKeyPem());
 
-		Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
+        Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
 
-		Assert.assertEquals(expected.getSmtpConfig(), actual.getSmtpConfig());
-		// FIXME: KEYCLOAK-883
-		// Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());
-	}
+        Assert.assertEquals(expected.getSmtpConfig(), actual.getSmtpConfig());
+        // FIXME: KEYCLOAK-883
+        // Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());
+    }
 
-	private RealmModel importExport(RealmModel src, String copyName) {
-		RealmRepresentation representation = ModelToRepresentation.toRepresentation(src, true);
-		representation.setRealm(copyName);
-		representation.setId(copyName);
-		RealmModel copy = realmManager.importRealm(representation);
-		return realmManager.getRealm(copy.getId());
-	}
+    private RealmModel importExport(RealmModel src, String copyName) {
+        RealmRepresentation representation = ModelToRepresentation.toRepresentation(src, true);
+        representation.setRealm(copyName);
+        representation.setId(copyName);
+        RealmModel copy = realmManager.importRealm(representation);
+        return realmManager.getRealm(copy.getId());
+    }
 
 }

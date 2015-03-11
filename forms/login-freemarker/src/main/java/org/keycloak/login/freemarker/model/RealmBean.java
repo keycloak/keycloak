@@ -30,43 +30,43 @@ import org.keycloak.representations.idm.CredentialRepresentation;
  */
 public class RealmBean {
 
-	private RealmModel realm;
+    private RealmModel realm;
 
-	public RealmBean(RealmModel realmModel) {
-		realm = realmModel;
-	}
+    public RealmBean(RealmModel realmModel) {
+        realm = realmModel;
+    }
 
-	public String getName() {
-		return realm.getName();
-	}
+    public String getName() {
+        return realm.getName();
+    }
 
-	public boolean isIdentityFederationEnabled() {
-		return realm.isIdentityFederationEnabled();
-	}
+    public boolean isIdentityFederationEnabled() {
+        return realm.isIdentityFederationEnabled();
+    }
 
-	public boolean isRegistrationAllowed() {
-		return realm.isRegistrationAllowed();
-	}
+    public boolean isRegistrationAllowed() {
+        return realm.isRegistrationAllowed();
+    }
 
-	public boolean isRegistrationEmailAsUsername() {
-		return realm.isRegistrationEmailAsUsername();
-	}
+    public boolean isRegistrationEmailAsUsername() {
+        return realm.isRegistrationEmailAsUsername();
+    }
 
-	public boolean isResetPasswordAllowed() {
-		return realm.isResetPasswordAllowed();
-	}
+    public boolean isResetPasswordAllowed() {
+        return realm.isResetPasswordAllowed();
+    }
 
-	public boolean isRememberMe() {
-		return realm.isRememberMe();
-	}
+    public boolean isRememberMe() {
+        return realm.isRememberMe();
+    }
 
-	public boolean isPassword() {
-		for (RequiredCredentialModel r : realm.getRequiredCredentials()) {
-			if (r.getType().equals(CredentialRepresentation.PASSWORD)) {
-				return true;
-			}
-		}
-		return false;
-	}
+    public boolean isPassword() {
+        for (RequiredCredentialModel r : realm.getRequiredCredentials()) {
+            if (r.getType().equals(CredentialRepresentation.PASSWORD)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 }
