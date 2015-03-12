@@ -515,7 +515,6 @@ public class SamlService {
     /**
      */
     @GET
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
                                     @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                     @QueryParam(GeneralConstants.RELAY_STATE) String relayState)  {
