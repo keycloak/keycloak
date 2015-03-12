@@ -31,6 +31,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.util.Time;
 
@@ -154,7 +155,7 @@ public class ClientsManagementService {
     }
 
     protected ApplicationModel authorizeApplication(String authorizationHeader, MultivaluedMap<String, String> formData) {
-        ClientModel client = OIDCLoginProtocolService.authorizeClientBase(authorizationHeader, formData, event, realm);
+        ClientModel client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formData, event, realm);
 
         if (client.isPublicClient()) {
             Map<String, String> error = new HashMap<String, String>();

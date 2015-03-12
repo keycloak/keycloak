@@ -5,6 +5,8 @@ package org.keycloak.events;
  */
 public interface Errors {
 
+    String INVALID_REQUEST = "invalid_request";
+
     String REALM_DISABLED = "realm_disabled";
 
     String CLIENT_NOT_FOUND = "client_not_found";

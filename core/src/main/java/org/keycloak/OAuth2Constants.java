@@ -25,6 +25,10 @@ public interface OAuth2Constants {
 
     String REFRESH_TOKEN = "refresh_token";
 
+    String AUTHORIZATION_CODE = "authorization_code";
+
+    String PASSWORD = "password";
+
 }
 
 

@@ -436,7 +436,19 @@ public class AccessTokenTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            Assert.assertEquals(400, response.getStatus());
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+        }
+
+        {   // test invalid password
+            String header = BasicAuthHelper.createHeader("test-app", "password");
+            Form form = new Form();
+            form.param("username", "test-user@localhost");
+            form.param("password", "invalid");
+            Response response = grantTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, header)
+                    .post(Entity.form(form));
+            Assert.assertEquals(401, response.getStatus());
             response.close();
         }
 
@@ -477,7 +489,7 @@ public class AccessTokenTest {
             }
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(401, response.getStatus());
+            Assert.assertEquals(403, response.getStatus());
             response.close();
 
             {
