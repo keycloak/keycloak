@@ -372,7 +372,7 @@ public class UserFederationManager implements UserProvider {
         for (UserCredentialModel cred : input) {
             UserFederationProvider providerSupportingCreds = null;
 
-            // Find provider, which supports required credential type
+            // Find first provider, which supports required credential type
             for (UserFederationProvider fedProvider : fedProviders) {
                 if (fedProvider.getSupportedCredentialTypes().contains(cred.getType())) {
                     providerSupportingCreds = fedProvider;

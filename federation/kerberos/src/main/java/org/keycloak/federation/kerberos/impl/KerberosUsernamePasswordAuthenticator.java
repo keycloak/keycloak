@@ -115,12 +115,14 @@ public class KerberosUsernamePasswordAuthenticator {
     protected String getKerberosPrincipal(String username) throws LoginException {
         if (username.contains("@")) {
             String[] tokens = username.split("@");
-            username = tokens[0];
+
             String kerberosRealm = tokens[1];
-            if (kerberosRealm.toUpperCase().equals(config.getKerberosRealm())) {
+            if (!kerberosRealm.toUpperCase().equals(config.getKerberosRealm())) {
                 logger.warn("Invalid kerberos realm. Expected realm: " + config.getKerberosRealm() + ", username: " + username);
-                throw new LoginException("Invalid kerberos realm");
+                throw new LoginException("Client not found");
             }
+
+            username = tokens[0];
         }
 
         return username + "@" + config.getKerberosRealm();
