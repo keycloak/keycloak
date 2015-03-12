@@ -540,12 +540,15 @@ public class IdentityBrokerService {
 
         String username = updatedIdentity.getUsername();
         if (this.realmModel.isRegistrationEmailAsUsername()) {
-          username = updatedIdentity.getEmail();
-          if (username == null) {
-            fireErrorEvent(Errors.FEDERATED_IDENTITY_REGISTRATION_EMAIL_MISSING);
-            throw new IdentityBrokerException("federatedIdentityRegistrationEmailMissing");
-				    // TODO KEYCLOAK-1053 (ask user to enter email address) should be implemented instead of plain exception as better solution for this case
-          }
+            username = updatedIdentity.getEmail();
+            if (username == null || username.trim().length() == 0) {
+                fireErrorEvent(Errors.FEDERATED_IDENTITY_REGISTRATION_EMAIL_MISSING);
+                throw new IdentityBrokerException("federatedIdentityRegistrationEmailMissing");
+                // TODO KEYCLOAK-1053 (ask user to enter email address) should be implemented instead of plain exception as better solution for this case
+            }
+            username = username.trim();
+        } else if (username != null) {
+            username = username.trim();
         }
 
         existingUser = this.session.users().getUserByUsername(username, this.realmModel);

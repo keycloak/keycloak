@@ -17,7 +17,7 @@
             <form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
                 <div class="${properties.kcFormGroupClass!}">
                     <div class="${properties.kcLabelWrapperClass!}">
-                        <label for="username" class="${properties.kcLabelClass!}">${rb.usernameOrEmail}</label>
+                        <label for="username" class="${properties.kcLabelClass!}"><#if !realm.registrationEmailAsUsername>${rb.usernameOrEmail}<#else>${rb.email}</#if></label>
                     </div>
 
                     <div class="${properties.kcInputWrapperClass!}">

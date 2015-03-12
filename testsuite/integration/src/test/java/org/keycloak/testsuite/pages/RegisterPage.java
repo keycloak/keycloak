@@ -21,6 +21,9 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.junit.Assert;
+
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -72,6 +75,42 @@ public class RegisterPage extends AbstractPage {
         usernameInput.clear();
         if (username != null) {
             usernameInput.sendKeys(username);
+        }
+
+        passwordInput.clear();
+        if (password != null) {
+            passwordInput.sendKeys(password);
+        }
+
+        passwordConfirmInput.clear();
+        if (passwordConfirm != null) {
+            passwordConfirmInput.sendKeys(passwordConfirm);
+        }
+
+        submitButton.click();
+    }
+
+    public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password, String passwordConfirm) {
+        firstNameInput.clear();
+        if (firstName != null) {
+            firstNameInput.sendKeys(firstName);
+        }
+
+        lastNameInput.clear();
+        if (lastName != null) {
+            lastNameInput.sendKeys(lastName);
+        }
+
+        emailInput.clear();
+        if (email != null) {
+            emailInput.sendKeys(email);
+        }
+
+        try {
+            usernameInput.clear();
+            Assert.fail("Form must be without username field");
+        } catch (NoSuchElementException e) {
+            // OK
         }
 
         passwordInput.clear();

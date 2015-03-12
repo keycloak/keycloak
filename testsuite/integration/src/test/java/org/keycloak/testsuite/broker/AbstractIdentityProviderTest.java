@@ -59,6 +59,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -68,6 +69,7 @@ import static com.thoughtworks.selenium.SeleneseTestBase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -124,7 +126,7 @@ public abstract class AbstractIdentityProviderTest {
     public void testSuccessfulAuthentication() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
 
-        assertSuccessfulAuthentication(identityProviderModel);
+        assertSuccessfulAuthentication(identityProviderModel, "test-user");
     }
 
     @Test
@@ -132,7 +134,77 @@ public abstract class AbstractIdentityProviderTest {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         identityProviderModel.setUpdateProfileFirstLogin(false);
 
-        assertSuccessfulAuthentication(identityProviderModel);
+        assertSuccessfulAuthentication(identityProviderModel, "test-user");
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
+
+        getRealm().setRegistrationEmailAsUsername(true);
+        brokerServerRule.stopSession(this.session, true);
+        this.session = brokerServerRule.startSession();
+
+        try {
+            IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+            identityProviderModel.setUpdateProfileFirstLogin(false);
+
+            authenticateWithIdentityProvider(identityProviderModel, "test-user");
+
+            // authenticated and redirected to app
+            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
+
+            // check correct user is created with email as username and bound to correct federated identity
+            RealmModel realm = getRealm();
+
+            UserModel federatedUser = session.users().getUserByUsername("test-user@localhost", realm);
+
+            assertNotNull(federatedUser);
+
+            assertEquals("test-user@localhost", federatedUser.getUsername());
+
+            doAssertFederatedUser(federatedUser, identityProviderModel);
+
+            Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
+
+            assertEquals(1, federatedIdentities.size());
+
+            FederatedIdentityModel federatedIdentityModel = federatedIdentities.iterator().next();
+
+            assertEquals(getProviderId(), federatedIdentityModel.getIdentityProvider());
+
+            driver.navigate().to("http://localhost:8081/test-app/logout");
+            driver.navigate().to("http://localhost:8081/test-app");
+
+            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+
+        } finally {
+            getRealm().setRegistrationEmailAsUsername(false);
+        }
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername_emailNotProvided() {
+
+        getRealm().setRegistrationEmailAsUsername(true);
+        brokerServerRule.stopSession(this.session, true);
+        this.session = brokerServerRule.startSession();
+
+        try {
+            IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+            identityProviderModel.setUpdateProfileFirstLogin(false);
+
+            authenticateWithIdentityProvider(identityProviderModel, "test-user-noemail");
+
+            RealmModel realm = getRealm();
+            UserModel federatedUser = session.users().getUserByUsername("test-user-noemail", realm);
+            assertNull(federatedUser);
+
+            // assert page is shown with correct error message
+            assertEquals("Email is not provided. Use another provider to create account please.", this.driver.findElement(By.className("kc-feedback-text")).getText());
+
+        } finally {
+            getRealm().setRegistrationEmailAsUsername(false);
+        }
     }
 
     @Test
@@ -313,7 +385,7 @@ public abstract class AbstractIdentityProviderTest {
 
         identityProviderModel.setStoreToken(true);
 
-        authenticateWithIdentityProvider(identityProviderModel);
+        authenticateWithIdentityProvider(identityProviderModel, "test-user");
 
         UserModel federatedUser = getFederatedUser();
         RealmModel realm = getRealm();
@@ -435,8 +507,8 @@ public abstract class AbstractIdentityProviderTest {
 
     protected abstract void doAssertTokenRetrieval(String pageSource);
 
-    private void assertSuccessfulAuthentication(IdentityProviderModel identityProviderModel) {
-        authenticateWithIdentityProvider(identityProviderModel);
+    private void assertSuccessfulAuthentication(IdentityProviderModel identityProviderModel, String username) {
+        authenticateWithIdentityProvider(identityProviderModel, username);
 
         // authenticated and redirected to app
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
@@ -464,7 +536,7 @@ public abstract class AbstractIdentityProviderTest {
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
     }
 
-    private void authenticateWithIdentityProvider(IdentityProviderModel identityProviderModel) {
+    private void authenticateWithIdentityProvider(IdentityProviderModel identityProviderModel, String username) {
         driver.navigate().to("http://localhost:8081/test-app");
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
@@ -475,7 +547,7 @@ public abstract class AbstractIdentityProviderTest {
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
 
         // log in to identity provider
-        this.loginPage.login("test-user", "password");
+        this.loginPage.login(username, "password");
 
         doAfterProviderAuthentication();
 

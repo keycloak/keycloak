@@ -60,10 +60,13 @@ public class RealmTest extends AbstractClientTest {
 
     @Test
     public void updateRealm() {
+        // first change
         RealmRepresentation rep = realm.toRepresentation();
         rep.setSsoSessionIdleTimeout(123);
         rep.setSsoSessionMaxLifespan(12);
         rep.setAccessCodeLifespanLogin(1234);
+        rep.setRegistrationAllowed(true);
+        rep.setRegistrationEmailAsUsername(true);
 
         realm.update(rep);
 
@@ -72,6 +75,18 @@ public class RealmTest extends AbstractClientTest {
         assertEquals(123, rep.getSsoSessionIdleTimeout().intValue());
         assertEquals(12, rep.getSsoSessionMaxLifespan().intValue());
         assertEquals(1234, rep.getAccessCodeLifespanLogin().intValue());
+        assertEquals(Boolean.TRUE, rep.isRegistrationAllowed());
+        assertEquals(Boolean.TRUE, rep.isRegistrationEmailAsUsername());
+
+        // second change
+        rep.setRegistrationAllowed(false);
+        rep.setRegistrationEmailAsUsername(false);
+
+        realm.update(rep);
+
+        rep = realm.toRepresentation();
+        assertEquals(Boolean.FALSE, rep.isRegistrationAllowed());
+        assertEquals(Boolean.FALSE, rep.isRegistrationEmailAsUsername());
     }
 
     @Test
