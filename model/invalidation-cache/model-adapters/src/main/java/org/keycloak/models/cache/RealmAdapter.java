@@ -109,6 +109,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isRegistrationEmailAsUsername() {
+        if (updated != null) return updated.isRegistrationEmailAsUsername();
+        return cached.isRegistrationEmailAsUsername();
+    }
+
+    @Override
+    public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername) {
+        getDelegateForUpdate();
+        updated.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+    }
+    
+    @Override
     public boolean isPasswordCredentialGrantAllowed() {
         if (updated != null) return updated.isPasswordCredentialGrantAllowed();
         return cached.isPasswordCredentialGrantAllowed();

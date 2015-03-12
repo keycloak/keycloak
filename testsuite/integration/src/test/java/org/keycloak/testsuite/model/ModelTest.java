@@ -17,6 +17,7 @@ public class ModelTest extends AbstractModelTest {
     public void importExportRealm() {
         RealmModel realm = realmManager.createRealm("original");
         realm.setRegistrationAllowed(true);
+        realm.setRegistrationEmailAsUsername(true);
         realm.setResetPasswordAllowed(true);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setVerifyEmail(true);
@@ -47,6 +48,7 @@ public class ModelTest extends AbstractModelTest {
 
     public static void assertEquals(RealmModel expected, RealmModel actual) {
         Assert.assertEquals(expected.isRegistrationAllowed(), actual.isRegistrationAllowed());
+        Assert.assertEquals(expected.isRegistrationEmailAsUsername(), actual.isRegistrationEmailAsUsername());
         Assert.assertEquals(expected.isResetPasswordAllowed(), actual.isResetPasswordAllowed());
         Assert.assertEquals(expected.getSslRequired(), actual.getSslRequired());
         Assert.assertEquals(expected.isVerifyEmail(), actual.isVerifyEmail());

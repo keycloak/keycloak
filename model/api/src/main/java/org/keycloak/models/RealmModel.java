@@ -47,6 +47,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setRegistrationAllowed(boolean registrationAllowed);
 
+    public boolean isRegistrationEmailAsUsername();
+
+    public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername);
+
     boolean isPasswordCredentialGrantAllowed();
 
     void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed);

@@ -6,6 +6,7 @@
         ${rb.registerWith} <strong>${realm.name}</strong>
     <#elseif section = "form">
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
+          <#if !realm.registrationEmailAsUsername>
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="username" class="${properties.kcLabelClass!}">${rb.username}</label>
@@ -14,7 +15,7 @@
                     <input type="text" id="username" class="${properties.kcInputClass!}" name="username" value="${(register.formData.username!'')?html}" />
                 </div>
             </div>
-
+          </#if>
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="firstName" class="${properties.kcLabelClass!}">${rb.firstName}</label>

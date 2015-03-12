@@ -1,6 +1,7 @@
 package org.keycloak.services.validation;
 
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
 
@@ -13,7 +14,7 @@ public class Validation {
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
 
-    public static String validateRegistrationForm(MultivaluedMap<String, String> formData, List<String> requiredCredentialTypes) {
+    public static String validateRegistrationForm(RealmModel realm, MultivaluedMap<String, String> formData, List<String> requiredCredentialTypes) {
         if (isEmpty(formData.getFirst("firstName"))) {
             return Messages.MISSING_FIRST_NAME;
         }
@@ -30,7 +31,7 @@ public class Validation {
             return Messages.INVALID_EMAIL;
         }
 
-        if (isEmpty(formData.getFirst("username"))) {
+        if (!realm.isRegistrationEmailAsUsername() && isEmpty(formData.getFirst("username"))) {
             return Messages.MISSING_USERNAME;
         }
 

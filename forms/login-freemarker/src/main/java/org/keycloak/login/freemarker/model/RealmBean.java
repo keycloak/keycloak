@@ -48,6 +48,10 @@ public class RealmBean {
         return realm.isRegistrationAllowed();
     }
 
+    public boolean isRegistrationEmailAsUsername() {
+        return realm.isRegistrationEmailAsUsername();
+    }
+
     public boolean isResetPasswordAllowed() {
         return realm.isResetPasswordAllowed();
     }

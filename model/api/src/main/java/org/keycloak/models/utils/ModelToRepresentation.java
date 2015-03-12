@@ -99,6 +99,7 @@ public class ModelToRepresentation {
         rep.setCertificate(realm.getCertificatePem());
         rep.setPasswordCredentialGrantAllowed(realm.isPasswordCredentialGrantAllowed());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
+        rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
         rep.setRememberMe(realm.isRememberMe());
         rep.setBruteForceProtected(realm.isBruteForceProtected());
         rep.setMaxFailureWaitSeconds(realm.getMaxFailureWaitSeconds());

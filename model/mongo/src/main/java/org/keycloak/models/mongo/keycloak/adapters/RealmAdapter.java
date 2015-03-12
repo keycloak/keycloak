@@ -123,6 +123,15 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
 
+    public boolean isRegistrationEmailAsUsername() {
+        return realm.isRegistrationEmailAsUsername();
+    }
+
+    public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername) {
+        realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+        updateRealm();
+    }
+
     @Override
     public boolean isRememberMe() {
         return realm.isRememberMe();

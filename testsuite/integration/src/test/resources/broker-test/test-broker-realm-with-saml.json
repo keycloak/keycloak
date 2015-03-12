@@ -32,6 +32,17 @@
         "realmRoles": ["manager"]
       },
       {
+            "username" : "test-user-noemail",
+            "enabled": true,
+            "firstName" : "Test",
+            "lastName" : "User",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": ["manager"]
+      },
+      {
         "username" : "pedroigor",
         "enabled": true,
         "email" : "psilva@redhat.com",

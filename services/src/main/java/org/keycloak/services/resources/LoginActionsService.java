@@ -430,6 +430,10 @@ public class LoginActionsService {
 
         String username = formData.getFirst("username");
         String email = formData.getFirst("email");
+        if (realm.isRegistrationEmailAsUsername()) {
+            username = email;
+            formData.putSingle(AuthenticationManager.FORM_USERNAME, username);
+        }
         ClientSessionModel clientSession = clientCode.getClientSession();
         event.client(clientSession.getClient())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
@@ -460,7 +464,7 @@ public class LoginActionsService {
         }
 
         // Validate here, so user is not created if password doesn't validate to passwordPolicy of current realm
-        String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
+        String error = Validation.validateRegistrationForm(realm, formData, requiredCredentialTypes);
         if (error == null) {
             error = Validation.validatePassword(formData, realm.getPasswordPolicy());
         }

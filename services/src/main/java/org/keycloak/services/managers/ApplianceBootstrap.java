@@ -56,6 +56,7 @@ public class ApplianceBootstrap {
         realm.setAccessCodeLifespanUserAction(300);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setRegistrationAllowed(false);
+        realm.setRegistrationEmailAsUsername(false);
         KeycloakModelUtils.generateRealmKeys(realm);
 
         UserModel adminUser = session.users().addUser(realm, "admin");

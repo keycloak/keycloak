@@ -193,4 +193,76 @@ public class RegisterTest {
         events.expectLogin().detail("username", "registerUserSuccess").user(userId).assertEvent();
     }
 
+    @Test
+    public void registerExistingUser_emailAsUsername() {
+        configureRelamRegistrationEmailAsUsername(true);
+
+        try {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", "test-user@localhost", "password", "password");
+
+            registerPage.assertCurrent();
+            Assert.assertEquals("Username already exists", registerPage.getError());
+
+            events.expectRegister("test-user@localhost", "test-user@localhost").user((String) null).error("username_in_use").assertEvent();
+        } finally {
+            configureRelamRegistrationEmailAsUsername(false);
+        }
+    }
+
+    @Test
+    public void registerUserMissingOrInvalidEmail_emailAsUsername() {
+        configureRelamRegistrationEmailAsUsername(true);
+
+        try {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", null, "password", "password");
+            registerPage.assertCurrent();
+            Assert.assertEquals("Please specify email", registerPage.getError());
+            events.expectRegister(null, null).removeDetail("username").removeDetail("email").error("invalid_registration").assertEvent();
+
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", "registerUserInvalidEmailemail", "password", "password");
+            registerPage.assertCurrent();
+            Assert.assertEquals("Invalid email address", registerPage.getError());
+            events.expectRegister("registerUserInvalidEmailemail", "registerUserInvalidEmailemail").error("invalid_registration").assertEvent();
+        } finally {
+            configureRelamRegistrationEmailAsUsername(false);
+        }
+    }
+
+    @Test
+    public void registerUserSuccess_emailAsUsername() {
+        configureRelamRegistrationEmailAsUsername(true);
+        
+        try {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", "registerUserSuccessE@email", "password", "password");
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            String userId = events.expectRegister("registerUserSuccessE@email", "registerUserSuccessE@email").assertEvent().getUserId();
+            events.expectLogin().detail("username", "registerUserSuccessE@email").user(userId).assertEvent();
+        } finally {
+            configureRelamRegistrationEmailAsUsername(false);
+        }
+    }
+
+    protected void configureRelamRegistrationEmailAsUsername(final boolean value) {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setRegistrationEmailAsUsername(value);
+            }
+        });
+    }
+
 }

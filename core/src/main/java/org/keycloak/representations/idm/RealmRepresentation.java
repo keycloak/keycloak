@@ -24,6 +24,7 @@ public class RealmRepresentation {
     protected String sslRequired;
     protected Boolean passwordCredentialGrantAllowed;
     protected Boolean registrationAllowed;
+    protected Boolean registrationEmailAsUsername;
     protected Boolean rememberMe;
     protected Boolean verifyEmail;
     protected Boolean resetPasswordAllowed;
@@ -262,6 +263,14 @@ public class RealmRepresentation {
 
     public void setRegistrationAllowed(Boolean registrationAllowed) {
         this.registrationAllowed = registrationAllowed;
+    }
+
+    public Boolean isRegistrationEmailAsUsername() {
+        return registrationEmailAsUsername;
+    }
+
+    public void setRegistrationEmailAsUsername(Boolean registrationEmailAsUsername) {
+        this.registrationEmailAsUsername = registrationEmailAsUsername;
     }
 
     public Boolean isRememberMe() {

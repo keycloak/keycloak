@@ -14,6 +14,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean enabled;
     private String sslRequired;
     private boolean registrationAllowed;
+    protected boolean registrationEmailAsUsername;
     private boolean rememberMe;
     private boolean verifyEmail;
     private boolean passwordCredentialGrantAllowed;
@@ -102,6 +103,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setRegistrationAllowed(boolean registrationAllowed) {
         this.registrationAllowed = registrationAllowed;
+    }
+
+    public boolean isRegistrationEmailAsUsername() {
+        return registrationEmailAsUsername;
+    }
+
+    public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername) {
+        this.registrationEmailAsUsername = registrationEmailAsUsername;
     }
 
     public boolean isRememberMe() {

@@ -33,6 +33,7 @@ public class CachedRealm {
     private boolean enabled;
     private SslRequired sslRequired;
     private boolean registrationAllowed;
+    private boolean registrationEmailAsUsername;
     private boolean rememberMe;
     private boolean verifyEmail;
     private boolean passwordCredentialGrantAllowed;
@@ -92,6 +93,7 @@ public class CachedRealm {
         enabled = model.isEnabled();
         sslRequired = model.getSslRequired();
         registrationAllowed = model.isRegistrationAllowed();
+        registrationEmailAsUsername = model.isRegistrationEmailAsUsername();
         rememberMe = model.isRememberMe();
         verifyEmail = model.isVerifyEmail();
         passwordCredentialGrantAllowed = model.isPasswordCredentialGrantAllowed();
@@ -203,6 +205,10 @@ public class CachedRealm {
 
     public boolean isRegistrationAllowed() {
         return registrationAllowed;
+    }
+
+    public boolean isRegistrationEmailAsUsername() {
+        return registrationEmailAsUsername;
     }
 
     public boolean isPasswordCredentialGrantAllowed() {

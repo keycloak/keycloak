@@ -124,6 +124,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isRegistrationEmailAsUsername() {
+        return realm.isRegistrationEmailAsUsername();
+    }
+
+    @Override
+    public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername) {
+        realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+        em.flush();
+    }
+
+    @Override
     public boolean isRememberMe() {
         return realm.isRememberMe();
     }
