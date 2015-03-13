@@ -52,6 +52,8 @@ public class PasswordPolicy {
                 list.add(new UpperCase(args));
             } else if (name.equals(SpecialChars.NAME)) {
                 list.add(new SpecialChars(args));
+            } else if (name.equals(NotUsername.NAME)) {
+                list.add(new NotUsername(args));
             } else if (name.equals(HashIterations.NAME)) {
                 list.add(new HashIterations(args));
             }
@@ -74,9 +76,9 @@ public class PasswordPolicy {
         return -1;
     }
 
-    public String validate(String password) {
+    public String validate(String username, String password) {
         for (Policy p : policies) {
-            String error = p.validate(password);
+            String error = p.validate(username, password);
             if (error != null) {
                 return error;
             }
@@ -85,7 +87,7 @@ public class PasswordPolicy {
     }
 
     private static interface Policy {
-        public String validate(String password);
+        public String validate(String username, String password);
     }
 
     private static class HashIterations implements Policy {
@@ -97,8 +99,20 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public String validate(String username, String password) {
             return null;
+        }
+    }
+
+    private static class NotUsername implements Policy {
+        private static final String NAME = "notUsername";
+
+        public NotUsername(String[] args) {
+        }
+
+        @Override
+        public String validate(String username, String password) {
+            return username.equals(password) ? "Invalid password: must not be equal to the username" : null;
         }
     }
 
@@ -111,7 +125,7 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public String validate(String username, String password) {
             return password.length() < min ? "Invalid password: minimum length " + min : null;
         }
     }
@@ -125,7 +139,7 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public String validate(String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isDigit(c)) {
@@ -145,7 +159,7 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public String validate(String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isLowerCase(c)) {
@@ -165,7 +179,7 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public String validate(String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isUpperCase(c)) {
@@ -185,7 +199,7 @@ public class PasswordPolicy {
         }
 
         @Override
-        public String validate(String password) {
+        public String validate(String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (!Character.isLetterOrDigit(c)) {

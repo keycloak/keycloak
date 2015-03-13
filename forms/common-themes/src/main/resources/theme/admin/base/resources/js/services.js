@@ -1042,7 +1042,8 @@ module.factory('PasswordPolicy', function() {
         digits:         "Minimal number (integer type) of digits in password. Default value is 1.",
         lowerCase:      "Minimal number (integer type) of lowercase characters in password. Default value is 1.",
         upperCase:      "Minimal number (integer type) of uppercase characters in password. Default value is 1.",
-        specialChars:   "Minimal number (integer type) of special characters in password. Default value is 1."
+        specialChars:   "Minimal number (integer type) of special characters in password. Default value is 1.",
+        notUsername:    "Block passwords that are equal to the username"
     }
 
     p.allPolicies = [
@@ -1051,7 +1052,8 @@ module.factory('PasswordPolicy', function() {
         { name: 'digits', value: 1 },
         { name: 'lowerCase', value: 1 },
         { name: 'upperCase', value: 1 },
-        { name: 'specialChars', value: 1 }
+        { name: 'specialChars', value: 1 },
+        { name: 'notUsername', value: 1 }
     ];
 
     p.parse = function(policyString) {
@@ -1068,9 +1070,9 @@ module.factory('PasswordPolicy', function() {
             var re = /(\w+)\(*(\d*)\)*/;
 
             var policyEntry = re.exec(policyToken);
-
-            policies.push({ name: policyEntry[1], value: parseInt(policyEntry[2]) });
-
+            if (null !== policyEntry) {
+                policies.push({ name: policyEntry[1], value: parseInt(policyEntry[2]) });
+            }
         }
 
         return policies;

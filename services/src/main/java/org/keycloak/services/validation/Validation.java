@@ -49,7 +49,7 @@ public class Validation {
     }
 
     public static String validatePassword(MultivaluedMap<String, String> formData, PasswordPolicy policy) {
-        return policy.validate(formData.getFirst("password"));
+        return policy.validate(formData.getFirst("username"), formData.getFirst("password"));
     }
 
     public static String validateUpdateProfileForm(MultivaluedMap<String, String> formData) {
