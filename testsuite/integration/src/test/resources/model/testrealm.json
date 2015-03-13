@@ -15,12 +15,12 @@
     "identityProviders" : [
         {
             "providerId" : "google",
-            "id" : "google",
+            "id" : "google1",
             "name" : "Google",
             "enabled": true,
             "config": {
-                "clientId": "clientId",
-                "clientSecret": "clientSecret"
+                "clientId": "googleId",
+                "clientSecret": "googleSecret"
             }
         }
     ],
@@ -111,9 +111,23 @@
         },
         {
             "name": "OtherApp",
-            "enabled": true
+            "enabled": true,
+            "protocolMappers" : [
+                {
+                    "name" : "gss delegation credential",
+                    "protocol" : "openid-connect",
+                    "protocolMapper" : "oidc-usersessionmodel-note-mapper",
+                    "consentRequired" : true,
+                    "consentText" : "gss delegation credential",
+                    "config" : {
+                        "user.session.note" : "gss_delegation_credential",
+                        "access.token.claim" : "true",
+                        "claim.name" : "gss_delegation_credential",
+                        "Claim JSON Type" : "String"
+                    }
+                }
+            ]
         }
-
     ],
     "oauthClients" : [
         {

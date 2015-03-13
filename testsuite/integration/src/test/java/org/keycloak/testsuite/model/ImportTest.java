@@ -4,11 +4,14 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.constants.KerberosConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -16,6 +19,9 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
@@ -197,12 +203,16 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("localhost", smtpConfig.get("host"));
         Assert.assertEquals("3025", smtpConfig.get("port"));
 
-        // Test social config
-        //FIXME: KEYCLOAK-883
-//        Map<String, String> socialConfig = realm.getSocialConfig();
-//        Assert.assertTrue(socialConfig.size() == 2);
-//        Assert.assertEquals("abc", socialConfig.get("google.key"));
-//        Assert.assertEquals("def", socialConfig.get("google.secret"));
+        // Test identity providers
+        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+        Assert.assertEquals(1, identityProviders.size());
+        IdentityProviderModel google = identityProviders.get(0);
+        Assert.assertEquals("google1", google.getId());
+        Assert.assertEquals("google", google.getProviderId());
+        Assert.assertEquals("Google", google.getName());
+        Assert.assertTrue(google.isEnabled());
+        Assert.assertEquals("googleId", google.getConfig().get("clientId"));
+        Assert.assertEquals("googleSecret", google.getConfig().get("clientSecret"));
 
         // Test federation providers
         List<UserFederationProviderModel> fedProviders = realm.getUserFederationProviders();
@@ -216,6 +226,23 @@ public class ImportTest extends AbstractModelTest {
         // Assert that federation link wasn't created during import
         UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");
         Assert.assertNull(factory.getInstance(session, null).getUserByUsername(realm, "wburke"));
+
+        // Test protocol mappers. Default application has all the builtin protocol mappers. OtherApp just gss credential
+        Assert.assertNotNull(application.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "username"));
+        Assert.assertNotNull(application.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "email"));
+        Assert.assertNotNull(application.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "given name"));
+        Assert.assertNull(application.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
+
+        Assert.assertEquals(1, otherApp.getProtocolMappers().size());
+        Assert.assertNull(otherApp.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "username"));
+        ProtocolMapperModel gssCredentialMapper = otherApp.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME);
+        Assert.assertEquals(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME, gssCredentialMapper.getName());
+        Assert.assertEquals( OIDCLoginProtocol.LOGIN_PROTOCOL, gssCredentialMapper.getProtocol());
+        Assert.assertEquals(UserSessionNoteMapper.PROVIDER_ID, gssCredentialMapper.getProtocolMapper());
+        String includeInAccessToken = gssCredentialMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
+        String includeInIdToken = gssCredentialMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
+        Assert.assertTrue(includeInAccessToken.equalsIgnoreCase("true"));
+        Assert.assertTrue(includeInIdToken == null || Boolean.parseBoolean(includeInIdToken) == false);
     }
 
     @Test
