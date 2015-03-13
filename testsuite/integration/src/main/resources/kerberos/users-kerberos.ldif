@@ -32,7 +32,7 @@ cn: LDAP
 sn: Service
 uid: ldap
 userPassword: randall
-krb5PrincipalName: ldap/${hostname}@KEYCLOAK.ORG
+krb5PrincipalName: ${ldapSaslPrincipal}
 krb5KeyVersionNumber: 0
 
 dn: uid=HTTP,ou=People,dc=keycloak,dc=org

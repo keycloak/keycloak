@@ -2,7 +2,6 @@ package org.keycloak.testutils.ldap;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,6 +34,7 @@ public class LDAPEmbeddedServer {
     protected final String bindHost;
     protected final int bindPort;
     protected final String ldifFile;
+    protected final String ldapSaslPrincipal;
 
     protected DirectoryService directoryService;
     protected LdapServer ldapServer;
@@ -47,16 +47,19 @@ public class LDAPEmbeddedServer {
         ldapEmbeddedServer.start();
     }
 
-    public LDAPEmbeddedServer(String baseDN, String bindHost, int bindPort, String ldifFile) {
+    public LDAPEmbeddedServer(String baseDN, String bindHost, int bindPort, String ldifFile, String ldapSaslPrincipal) {
         this.baseDN = baseDN;
         this.bindHost = bindHost;
         this.bindPort = bindPort;
         this.ldifFile = ldifFile;
+        this.ldapSaslPrincipal = ldapSaslPrincipal;
     }
 
 
     public void init() throws Exception {
-        log.info("Creating LDAP Directory Service. Config: baseDN=" + baseDN + ", bindHost=" + bindHost + ", bindPort=" + bindPort);
+        log.info("Creating LDAP Directory Service. Config: baseDN=" + baseDN + ", bindHost=" + bindHost + ", bindPort=" + bindPort +
+                ", ldapSaslPrincipal=" + ldapSaslPrincipal);
+
         this.directoryService = createDirectoryService();
 
         log.info("Importing LDIF: " + ldifFile);
@@ -133,9 +136,6 @@ public class LDAPEmbeddedServer {
         // Propagate the anonymous flag to the DS
         directoryService.setAllowAnonymousAccess(false);
 
-        ldapServer.setSaslHost( this.bindHost );
-        ldapServer.setSaslPrincipal( "ldap/" + this.bindHost + "@KEYCLOAK.ORG");
-        ldapServer.setSaslRealms(new ArrayList<String>());
         return ldapServer;
     }
 
@@ -143,6 +143,7 @@ public class LDAPEmbeddedServer {
     private void importLdif() throws Exception {
         Map<String, String> map = new HashMap<String, String>();
         map.put("hostname", this.bindHost);
+        map.put("ldapSaslPrincipal", this.ldapSaslPrincipal);
 
         // For now, assume that LDIF file is on classpath
         InputStream is = getClass().getClassLoader().getResourceAsStream(ldifFile);

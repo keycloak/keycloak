@@ -2,6 +2,7 @@ package org.keycloak.testutils.ldap;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,8 +49,8 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
     }
 
 
-    protected KerberosEmbeddedServer(String baseDN, String bindHost, int bindPort, String ldifFile, String kerberosRealm, int kdcPort, String kdcEncryptionTypes) {
-        super(baseDN, bindHost, bindPort, ldifFile);
+    protected KerberosEmbeddedServer(String baseDN, String bindHost, int bindPort, String ldifFile, String ldapSaslPrincipal, String kerberosRealm, int kdcPort, String kdcEncryptionTypes) {
+        super(baseDN, bindHost, bindPort, ldifFile, ldapSaslPrincipal);
         this.kdcEncryptionTypes = kdcEncryptionTypes;
         this.kerberosRealm = kerberosRealm;
         this.kdcPort = kdcPort;
@@ -79,7 +80,8 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
         LdapServer ldapServer = super.createLdapServer();
 
         ldapServer.setSaslHost( this.bindHost );
-        ldapServer.setSaslPrincipal( "ldap/" + this.bindHost + "@" + this.kerberosRealm);
+        ldapServer.setSaslPrincipal( this.ldapSaslPrincipal);
+        ldapServer.setSaslRealms(new ArrayList<String>());
 
         ldapServer.addSaslMechanismHandler(SupportedSaslMechanisms.PLAIN, new PlainMechanismHandler());
         ldapServer.addSaslMechanismHandler(SupportedSaslMechanisms.CRAM_MD5, new CramMd5MechanismHandler());
