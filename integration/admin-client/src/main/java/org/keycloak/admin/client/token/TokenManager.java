@@ -18,10 +18,12 @@ public class TokenManager {
 
     private AccessTokenResponse currentToken;
     private Date expirationTime;
-    private Config config;
+    private final Config config;
+    private final ResteasyClient client;
 
-    public TokenManager(Config config){
+    public TokenManager(Config config, ResteasyClient client){
         this.config = config;
+        this.client = client;
     }
 
     public String getAccessTokenString(){
@@ -38,7 +40,6 @@ public class TokenManager {
     }
 
     public AccessTokenResponse grantToken(){
-        ResteasyClient client = new ResteasyClientBuilder().build();
         ResteasyWebTarget target = client.target(config.getServerUrl());
 
         Form form = new Form()
@@ -60,7 +61,6 @@ public class TokenManager {
     }
 
     public AccessTokenResponse refreshToken(){
-        ResteasyClient client = new ResteasyClientBuilder().build();
         ResteasyWebTarget target = client.target(config.getServerUrl());
 
         Form form = new Form()
