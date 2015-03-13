@@ -136,7 +136,7 @@ public class AccessTokenPerfTest {
         }
 
         public String getLoginFormUrl(String state) {
-            UriBuilder b = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri(baseUrl));
+            UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(baseUrl));
             if (responseType != null) {
                 b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
             }
@@ -204,7 +204,7 @@ public class AccessTokenPerfTest {
 
             String authorization = BasicAuthHelper.createHeader(clientId, "password");
 
-            String res = client.target(OIDCLoginProtocolService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl)).build(realm)).request()
+            String res = client.target(OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl)).build(realm)).request()
                     .header(HttpHeaders.AUTHORIZATION, authorization)
                     .post(Entity.form(form), String.class);
             count.incrementAndGet();

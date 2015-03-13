@@ -42,7 +42,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
 
     private AccessTokenResponse resolveBearerToken(HttpServletRequest request, String redirectUri, String code) throws IOException, ServerRequest.HttpFailure {
         // Don't send sessionId in oauth clients for now
-        return ServerRequest.invokeAccessCodeToToken(client, publicClient, code, getUrl(request, codeUrl, false), redirectUri, clientId, credentials, null);
+        return ServerRequest.invokeAccessCodeToToken(client, publicClient, code, getUrl(request, tokenUrl, false), redirectUri, clientId, credentials, null);
     }
 
     /**
@@ -148,7 +148,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     public AccessTokenResponse refreshToken(HttpServletRequest request, String refreshToken) throws IOException, ServerRequest.HttpFailure {
-        return ServerRequest.invokeRefresh(client, publicClient, refreshToken, getUrl(request, refreshUrl, false), clientId, credentials);
+        return ServerRequest.invokeRefresh(client, publicClient, refreshToken, getUrl(request, tokenUrl, false), clientId, credentials);
     }
 
     public static IDToken extractIdToken(String idToken) {

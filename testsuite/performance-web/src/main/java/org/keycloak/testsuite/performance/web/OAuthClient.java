@@ -199,7 +199,7 @@ public class OAuthClient {
     }
 
     public String getLoginFormUrl() {
-        UriBuilder b = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(baseUrl));
         if (responseType != null) {
             b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
         }
@@ -216,7 +216,7 @@ public class OAuthClient {
     }
 
     public String getAccessTokenUrl() {
-        UriBuilder b = OIDCLoginProtocolService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
@@ -232,12 +232,12 @@ public class OAuthClient {
     }
 
     public String getResourceOwnerPasswordCredentialGrantUrl() {
-        UriBuilder b = OIDCLoginProtocolService.grantAccessTokenUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
     public String getRefreshTokenUrl() {
-        UriBuilder b = OIDCLoginProtocolService.refreshUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 

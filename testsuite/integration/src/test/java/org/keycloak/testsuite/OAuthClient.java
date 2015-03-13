@@ -67,10 +67,6 @@ public class OAuthClient {
 
     private String realm = "test";
 
-    private String responseType = OAuth2Constants.CODE;
-
-    private String grantType = "authorization_code";
-
     private String clientId = "test-app";
 
     private String redirectUri = "http://localhost:8081/app/auth";
@@ -113,9 +109,8 @@ public class OAuthClient {
         HttpPost post = new HttpPost(getAccessTokenUrl());
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-        if (grantType != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, grantType));
-        }
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+
         if (code != null) {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
         }
@@ -153,6 +148,7 @@ public class OAuthClient {
         post.setHeader("Authorization", authorization);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
         parameters.add(new BasicNameValuePair("username", username));
         parameters.add(new BasicNameValuePair("password", password));
 
@@ -199,9 +195,8 @@ public class OAuthClient {
         HttpPost post = new HttpPost(getRefreshTokenUrl());
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-        if (grantType != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, grantType));
-        }
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));
+
         if (refreshToken != null) {
             parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
         }
@@ -290,10 +285,8 @@ public class OAuthClient {
     }
 
     public String getLoginFormUrl() {
-        UriBuilder b = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri(baseUrl));
-        if (responseType != null) {
-            b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
-        }
+        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(baseUrl));
+        b.queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE);
         if (clientId != null) {
             b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
         }
@@ -307,7 +300,7 @@ public class OAuthClient {
     }
 
     public String getAccessTokenUrl() {
-        UriBuilder b = OIDCLoginProtocolService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
@@ -323,12 +316,12 @@ public class OAuthClient {
     }
 
     public String getResourceOwnerPasswordCredentialGrantUrl() {
-        UriBuilder b = OIDCLoginProtocolService.grantAccessTokenUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
     public String getRefreshTokenUrl() {
-        UriBuilder b = OIDCLoginProtocolService.refreshUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
@@ -348,11 +341,6 @@ public class OAuthClient {
 
     public OAuthClient redirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
-        return this;
-    }
-
-    public OAuthClient responseType(String responseType) {
-        this.responseType = responseType;
         return this;
     }
 

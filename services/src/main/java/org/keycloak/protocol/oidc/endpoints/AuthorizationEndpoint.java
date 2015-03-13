@@ -106,8 +106,7 @@ public class AuthorizationEndpoint {
      * @deprecated
      */
     public AuthorizationEndpoint legacy(String legacyResponseType) {
-        // TODO Change to warn once adapters has been updated
-        logger.debugv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
+        logger.warnv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
         this.legacyResponseType = legacyResponseType;
         return this;
     }

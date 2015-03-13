@@ -24,6 +24,7 @@ package org.keycloak.testsuite.oidc;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
@@ -68,7 +69,7 @@ public class UserInfoTest {
     public void testSuccessfulUserInfoRequest() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(grantTarget);
         Response response = executeUserInfoRequest(accessTokenResponse.getToken());
@@ -99,7 +100,8 @@ public class UserInfoTest {
     private AccessTokenResponse executeGrantAccessTokenRequest(WebTarget grantTarget) {
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
-        form.param("username", "test-user@localhost")
+        form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .param("username", "test-user@localhost")
                 .param("password", "password");
 
         Response response = grantTarget.request()

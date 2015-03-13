@@ -126,7 +126,7 @@ public class MultiTenancyTest {
     }
 
     private void doTenantRequests(String tenant, boolean logout) {
-        String tenantLoginUrl = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build(tenant).toString();
+        String tenantLoginUrl = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build(tenant).toString();
 
         driver.navigate().to("http://localhost:8081/multi-tenant?realm="+tenant);
         System.out.println("Current url: " + driver.getCurrentUrl());

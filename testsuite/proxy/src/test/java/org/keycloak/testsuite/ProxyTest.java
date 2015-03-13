@@ -188,7 +188,7 @@ public class ProxyTest {
     @WebResource
     protected LoginPage loginPage;
 
-    public static final String LOGIN_URL = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
+    public static final String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
 
     @Test
     public void testHttp() throws Exception {

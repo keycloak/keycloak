@@ -97,6 +97,7 @@ public class KeycloakInstalled {
         String state = UUID.randomUUID().toString();
 
         String authUrl = deployment.getAuthUrl().clone()
+                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .queryParam(OAuth2Constants.STATE, state)
@@ -153,6 +154,7 @@ public class KeycloakInstalled {
         String redirectUri = "urn:ietf:wg:oauth:2.0:oob";
 
         String authUrl = deployment.getAuthUrl().clone()
+                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .build().toString();

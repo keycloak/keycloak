@@ -53,7 +53,7 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
         for (Map.Entry<String, String> entry : credentials.entrySet()) {
             codeForm.param(entry.getKey(), entry.getValue());
         }
-        Response res = client.target(codeUrl).request().post(Entity.form(codeForm));
+        Response res = client.target(tokenUrl).request().post(Entity.form(codeForm));
         try {
             if (res.getStatus() == 400) {
                 throw new BadRequestException();

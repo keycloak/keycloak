@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
 import org.keycloak.events.Details;
@@ -763,7 +764,7 @@ public class AccountService {
 
     private Response login(String path) {
         OAuthRedirect oauth = new OAuthRedirect();
-        String authUrl = OIDCLoginProtocolService.loginPageUrl(uriInfo).build(realm.getName()).toString();
+        String authUrl = OIDCLoginProtocolService.authUrl(uriInfo).build(realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 
         oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_APP);

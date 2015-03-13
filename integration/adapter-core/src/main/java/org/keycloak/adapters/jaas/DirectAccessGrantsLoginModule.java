@@ -64,10 +64,11 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
 
     protected Auth directGrantAuth(String username, String password) throws IOException, VerificationException {
         String authServerBaseUrl = deployment.getAuthServerBaseUrl();
-        URI directGrantUri = KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.TOKEN_SERVICE_DIRECT_GRANT_PATH).build(deployment.getRealm());
+        URI directGrantUri = KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.TOKEN_PATH).build(deployment.getRealm());
         HttpPost post = new HttpPost(directGrantUri);
 
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+        formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
         formparams.add(new BasicNameValuePair("username", username));
         formparams.add(new BasicNameValuePair("password", password));
 

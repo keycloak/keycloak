@@ -66,7 +66,7 @@ import java.util.Map;
  */
 public class RelativeUriAdapterTest {
 
-    public static final String LOGIN_URL = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
+    public static final String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
     public static PublicKey realmPublicKey;
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
