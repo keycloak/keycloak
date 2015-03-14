@@ -167,6 +167,17 @@ public class IdentityBrokerService {
         return getToken(providerId, false);
     }
 
+    @GET
+    @Path("{provider_id}/export")
+    public Response export(@PathParam("provider_id") String providerId, @QueryParam("format") String format) {
+        try {
+            IdentityProvider identityProvider = getIdentityProvider(providerId);
+            return identityProvider.export(uriInfo, realmModel, format);
+        } catch (Exception e) {
+            return redirectToErrorPage("Could not export public broker configuration for identity provider [" + providerId + "].", e);
+        }
+    }
+
     private Response getToken(String providerId, boolean forceRetrieval) {
         this.event.event(EventType.IDENTITY_PROVIDER_RETRIEVE_TOKEN);
 
