@@ -31,6 +31,9 @@ Here's some of the features:
 * Password policies
 * OpenID Connect Support
 * SAML Support
+* Token claim and SAML assertion mappings, role name mappings, etc.  Ability to configure exactly what information you want in your tokens and SAML documents
+* IDP brokering or chaining.  You can set up Keycloak to be a child IDP to another SAML or OIDC IDP.
+* Kerberos bridging.  Logged in Kerberos users can access Keycloak SAML or OIDC applications via our Kerberos bridge.
 
 Please visit [http://keycloak.org](http://keycloak.org) for more information on Keycloak including how to download, documentation,
 and video tutorials.

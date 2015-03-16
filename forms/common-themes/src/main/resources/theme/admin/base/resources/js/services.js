@@ -1117,6 +1117,16 @@ module.factory('IdentityProvider', function($resource) {
     });
 });
 
+module.factory('IdentityProviderExport', function($resource) {
+    var url = authUrl + '/admin/realms/:realm/identity-provider/:id/export';
+    return {
+        url : function(parameters)
+        {
+            return url.replace(':realm', parameters.realm).replace(':id', parameters.id);
+        }
+    }
+});
+
 module.factory('IdentityProviderFactory', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/identity-provider/providers/:provider_id', {
         realm : '@realm',

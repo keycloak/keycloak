@@ -151,7 +151,7 @@ public class IdentityProvidersResource {
             throw new NotFoundException("Could not find identity provider: " + providerId);
         }
 
-        IdentityProviderResource identityProviderResource = new IdentityProviderResource(realm, session, identityProviderModel);
+        IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel);
         ResteasyProviderFactory.getInstance().injectProperties(identityProviderResource);
 
         return identityProviderResource;

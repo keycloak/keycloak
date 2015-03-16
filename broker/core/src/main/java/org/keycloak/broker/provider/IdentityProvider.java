@@ -19,9 +19,11 @@ package org.keycloak.broker.provider;
 
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * @author Pedro Igor
@@ -76,4 +78,12 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      * @return
      */
     Response retrieveToken(FederatedIdentityModel identity);
+
+    /**
+     * Export a representation of the IdentityProvider in a specific format.  For example, a SAML EntityDescriptor
+     *
+     * @return
+     */
+    Response export(UriInfo uriInfo, RealmModel realm, String format);
+
 }

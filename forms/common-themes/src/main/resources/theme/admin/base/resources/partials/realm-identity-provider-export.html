@@ -1,0 +1,26 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+
+    <data-kc-navigation data-kc-current="social" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
+            <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.id}}">{{identityProvider.name}} Provider</a></li>
+            <li class="active">{{identityProvider.name}} Provider Export</li>
+        </ol>
+        <h2 class="pull-left">{{identityProvider.name}} Provider Export</h2>
+        <form class="form-horizontal" name="realmForm" novalidate>
+            <fieldset class="border-top">
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <textarea class="form-control" rows="20" kc-select-action="click">{{exported}}</textarea>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+
+        <div class="pull-right form-actions">
+            <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit">Download</a>
+        </div>
+    </div>
+</div>

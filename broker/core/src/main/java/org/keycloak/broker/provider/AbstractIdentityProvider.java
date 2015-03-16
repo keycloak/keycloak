@@ -18,6 +18,10 @@
 package org.keycloak.broker.provider;
 
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * @author Pedro Igor
@@ -32,6 +36,11 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     public C getConfig() {
         return this.config;
+    }
+
+    @Override
+    public Response export(UriInfo uriInfo, RealmModel realm, String format) {
+        return Response.noContent().build();
     }
 
     @Override

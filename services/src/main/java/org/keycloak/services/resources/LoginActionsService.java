@@ -606,9 +606,6 @@ public class LoginActionsService {
         return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection);
     }
 
-
-
-
     @Path("profile")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
