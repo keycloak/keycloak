@@ -92,7 +92,7 @@ public class AdapterTestStrategy extends ExternalResource {
     @WebResource
     protected InputPage inputPage;
 
-    protected String LOGIN_URL = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri(AUTH_SERVER_URL)).build("demo").toString();
+    protected String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_URL)).build("demo").toString();
 
     public AdapterTestStrategy(String AUTH_SERVER_URL, String APP_SERVER_BASE_URL, AbstractKeycloakRule keycloakRule) {
         this.AUTH_SERVER_URL = AUTH_SERVER_URL;
@@ -420,11 +420,12 @@ public class AdapterTestStrategy extends ExternalResource {
     public void testBadUser() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_URL);
-        URI uri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("demo");
+        URI uri = OIDCLoginProtocolService.tokenUrl(builder).build("demo");
         WebTarget target = client.target(uri);
         String header = BasicAuthHelper.createHeader("customer-portal", "password");
         Form form = new Form();
-        form.param("username", "monkey@redhat.com")
+        form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
+            .param("username", "monkey@redhat.com")
             .param("password", "password");
         Response response = target.request()
                 .header(HttpHeaders.AUTHORIZATION, header)

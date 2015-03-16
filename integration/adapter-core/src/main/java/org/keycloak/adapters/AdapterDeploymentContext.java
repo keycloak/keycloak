@@ -168,13 +168,8 @@ public class AdapterDeploymentContext {
         }
 
         @Override
-        public String getCodeUrl() {
-            return (this.codeUrl != null) ? this.codeUrl : delegate.getCodeUrl();
-        }
-
-        @Override
-        public String getRefreshUrl() {
-            return (this.refreshUrl != null) ? this.refreshUrl : delegate.getRefreshUrl();
+        public String getTokenUrl() {
+            return (this.tokenUrl != null) ? this.tokenUrl : delegate.getTokenUrl();
         }
 
         @Override

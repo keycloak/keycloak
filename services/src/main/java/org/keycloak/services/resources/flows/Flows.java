@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
@@ -37,16 +38,16 @@ public class Flows {
     private Flows() {
     }
 
-    public static LoginFormsProvider forms(KeycloakSession session, RealmModel realm, ClientModel client, UriInfo uriInfo) {
-        return session.getProvider(LoginFormsProvider.class).setRealm(realm).setUriInfo(uriInfo).setClient(client);
+    public static LoginFormsProvider forms(KeycloakSession session, RealmModel realm, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
+        return session.getProvider(LoginFormsProvider.class).setRealm(realm).setUriInfo(uriInfo).setClient(client).setHttpHeaders(headers);
     }
 
     public static ErrorFlows errors() {
         return new ErrorFlows();
     }
 
-    public static Response forwardToSecurityFailurePage(KeycloakSession session, RealmModel realm, UriInfo uriInfo, String message) {
-        return Flows.forms(session, realm, null, uriInfo).setError(message).createErrorPage();
+    public static Response forwardToSecurityFailurePage(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String message, Object ... parameters) {
+        return Flows.forms(session, realm, null, uriInfo, headers).setError(message,parameters).createErrorPage();
     }
 
 

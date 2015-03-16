@@ -31,7 +31,7 @@ import org.openqa.selenium.WebDriver;
  */
 public class CookieTokenStoreAdapterTest {
 
-    public static final String LOGIN_URL = OIDCLoginProtocolService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
+    public static final String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
 
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {

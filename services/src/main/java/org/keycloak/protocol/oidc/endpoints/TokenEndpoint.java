@@ -47,6 +47,8 @@ import java.util.Map;
 public class TokenEndpoint {
 
     private static final Logger logger = Logger.getLogger(TokenEndpoint.class);
+    private MultivaluedMap<String, String> formParams;
+    private ClientModel client;
 
     private enum Action {
         AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD
@@ -74,10 +76,7 @@ public class TokenEndpoint {
 
     private Action action;
 
-    private String clientId;
     private String grantType;
-    private String code;
-    private String redirectUri;
 
     private String legacyGrantType;
 
@@ -89,15 +88,14 @@ public class TokenEndpoint {
     }
 
     @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response build(final MultivaluedMap<String, String> formData) {
+    public Response build() {
         switch (action) {
             case AUTHORIZATION_CODE:
-                return buildAuthorizationCodeAccessTokenResponse(formData);
+                return buildAuthorizationCodeAccessTokenResponse();
             case REFRESH_TOKEN:
-                return buildRefreshToken(formData);
+                return buildRefreshToken();
             case PASSWORD:
-                return buildResourceOwnerPasswordCredentialsGrant(formData);
+                return buildResourceOwnerPasswordCredentialsGrant();
         }
 
         throw new RuntimeException("Unknown action " + action);
@@ -115,23 +113,19 @@ public class TokenEndpoint {
      * @deprecated
      */
     public TokenEndpoint legacy(String legacyGrantType) {
-        // TODO Change to warn once adapters has been updated
-        logger.debugv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
+        logger.warnv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
         this.legacyGrantType = legacyGrantType;
         return this;
     }
 
     public TokenEndpoint init() {
-        MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
-
-        clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
-        grantType = params.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
-        code = params.getFirst(OIDCLoginProtocol.CODE_PARAM);
-        redirectUri = params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
+        formParams = request.getDecodedFormParameters();
+        grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
 
         checkSsl();
         checkRealm();
         checkGrantType();
+        checkClient();
 
         return this;
     }
@@ -148,15 +142,13 @@ public class TokenEndpoint {
         }
     }
 
-    private ClientModel authorizeClient(final MultivaluedMap<String, String> formData) {
+    private void checkClient() {
         String authorizationHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        ClientModel client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formData, event, realm);
+        client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formParams, event, realm);
 
         if ((client instanceof ApplicationModel) && ((ApplicationModel) client).isBearerOnly()) {
             throw new ErrorResponseException("invalid_client", "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
-
-        return client;
     }
 
     private void checkGrantType() {
@@ -182,8 +174,8 @@ public class TokenEndpoint {
         }
     }
 
-    public Response buildAuthorizationCodeAccessTokenResponse(final MultivaluedMap<String, String> formData) {
-        String code = formData.getFirst(OAuth2Constants.CODE);
+    public Response buildAuthorizationCodeAccessTokenResponse() {
+        String code = formParams.getFirst(OAuth2Constants.CODE);
         if (code == null) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException("invalid_request", "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
@@ -214,10 +206,8 @@ public class TokenEndpoint {
         event.user(userSession.getUser());
         event.session(userSession.getId());
 
-        ClientModel client = authorizeClient(formData);
-
         String redirectUri = clientSession.getNote(OIDCLoginProtocol.REDIRECT_URI_PARAM);
-        if (redirectUri != null && !redirectUri.equals(formData.getFirst(OAuth2Constants.REDIRECT_URI))) {
+        if (redirectUri != null && !redirectUri.equals(formParams.getFirst(OAuth2Constants.REDIRECT_URI))) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException("invalid_grant", "Incorrect redirect_uri", Response.Status.BAD_REQUEST);
         }
@@ -243,9 +233,9 @@ public class TokenEndpoint {
             throw new ErrorResponseException("invalid_grant", "Session not active", Response.Status.BAD_REQUEST);
         }
 
-        String adapterSessionId = formData.getFirst(AdapterConstants.APPLICATION_SESSION_STATE);
+        String adapterSessionId = formParams.getFirst(AdapterConstants.APPLICATION_SESSION_STATE);
         if (adapterSessionId != null) {
-            String adapterSessionHost = formData.getFirst(AdapterConstants.APPLICATION_SESSION_HOST);
+            String adapterSessionHost = formParams.getFirst(AdapterConstants.APPLICATION_SESSION_HOST);
             logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
 
             event.detail(AdapterConstants.APPLICATION_SESSION_STATE, adapterSessionId);
@@ -266,17 +256,15 @@ public class TokenEndpoint {
         return Cors.add(request, Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
-    public Response buildRefreshToken(final MultivaluedMap<String, String> formData) {
-        ClientModel client = authorizeClient(formData);
-
-        String refreshToken = formData.getFirst(OAuth2Constants.REFRESH_TOKEN);
+    public Response buildRefreshToken() {
+        String refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         if (refreshToken == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "No refresh token", Response.Status.BAD_REQUEST);
         }
 
         AccessTokenResponse res;
         try {
-            res = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event);
+            res = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
         } catch (OAuthErrorException e) {
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
@@ -287,14 +275,14 @@ public class TokenEndpoint {
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
-    public Response buildResourceOwnerPasswordCredentialsGrant(final MultivaluedMap<String, String> formData) {
+    public Response buildResourceOwnerPasswordCredentialsGrant() {
         if (!realm.isPasswordCredentialGrantAllowed()) {
             throw new ErrorResponseException("not_enabled", "Direct Grant REST API not enabled", Response.Status.FORBIDDEN);
         }
 
         event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
 
-        String username = formData.getFirst(AuthenticationManager.FORM_USERNAME);
+        String username = formParams.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             event.error(Errors.USERNAME_MISSING);
             throw new ErrorResponseException("invalid_request", "Missing parameter: username", Response.Status.UNAUTHORIZED);
@@ -304,9 +292,7 @@ public class TokenEndpoint {
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
         if (user != null) event.user(user);
 
-        ClientModel client = authorizeClient(formData);
-
-        AuthenticationManager.AuthenticationStatus authenticationStatus = authManager.authenticateForm(session, clientConnection, realm, formData);
+        AuthenticationManager.AuthenticationStatus authenticationStatus = authManager.authenticateForm(session, clientConnection, realm, formParams);
         Map<String, String> err;
 
         switch (authenticationStatus) {
@@ -324,7 +310,7 @@ public class TokenEndpoint {
                 throw new ErrorResponseException("invalid_grant", "Invalid user credentials", Response.Status.UNAUTHORIZED);
         }
 
-        String scope = formData.getFirst(OAuth2Constants.SCOPE);
+        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
         UserSessionProvider sessions = session.sessions();
 

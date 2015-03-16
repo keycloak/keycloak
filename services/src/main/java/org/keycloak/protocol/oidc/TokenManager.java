@@ -30,6 +30,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.Time;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashSet;
@@ -73,7 +74,7 @@ public class TokenManager {
         }
     }
 
-    public TokenValidation validateToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, AccessToken oldToken) throws OAuthErrorException {
+    public TokenValidation validateToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, AccessToken oldToken, HttpHeaders headers) throws OAuthErrorException {
         UserModel user = session.users().getUserById(oldToken.getSubject(), realm);
         if (user == null) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown user");
@@ -85,7 +86,7 @@ public class TokenManager {
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.logout(session, realm, userSession, uriInfo, connection);
+            AuthenticationManager.logout(session, realm, userSession, uriInfo, connection, headers);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
         ClientSessionModel clientSession = null;
@@ -124,12 +125,12 @@ public class TokenManager {
 
     }
 
-    public AccessTokenResponse refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient, String encodedRefreshToken, EventBuilder event) throws OAuthErrorException {
+    public AccessTokenResponse refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient, String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(realm, encodedRefreshToken);
 
         event.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
 
-        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken);
+        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers);
         // validate authorizedClient is same as validated client
         if (!validation.clientSession.getClient().getId().equals(authorizedClient.getId())) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");

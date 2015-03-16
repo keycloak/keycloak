@@ -33,6 +33,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -63,13 +64,17 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     protected UriInfo uriInfo;
 
-    public OIDCLoginProtocol(KeycloakSession session, RealmModel realm, UriInfo uriInfo) {
+    protected HttpHeaders headers;
+
+    public OIDCLoginProtocol(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         this.session = session;
         this.realm = realm;
         this.uriInfo = uriInfo;
+        this.headers = headers;
     }
 
-    public OIDCLoginProtocol() {
+    public OIDCLoginProtocol(){
+
     }
 
     @Override
@@ -87,6 +92,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public OIDCLoginProtocol setUriInfo(UriInfo uriInfo) {
         this.uriInfo = uriInfo;
+        return this;
+    }
+
+    @Override
+    public OIDCLoginProtocol setHttpHeaders(HttpHeaders headers){
+        this.headers = headers;
         return this;
     }
 

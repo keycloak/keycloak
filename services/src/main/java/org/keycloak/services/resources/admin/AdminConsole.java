@@ -8,6 +8,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.Config;
+import org.keycloak.Version;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
@@ -290,6 +291,7 @@ public class AdminConsole {
 
             map.put("authUrl", authUrl);
             map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + adminTheme);
+            map.put("resourceVersion", Version.RESOURCES_VERSION);
 
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
             Theme theme = themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);

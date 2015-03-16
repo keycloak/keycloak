@@ -18,8 +18,7 @@ public class AbstractOAuthClient {
     protected String clientId;
     protected Map<String, String> credentials;
     protected String authUrl;
-    protected String codeUrl;
-    protected String refreshUrl;
+    protected String tokenUrl;
     protected RelativeUrlsUsed relativeUrlsUsed;
     protected String scope;
     protected String stateCookieName = OAUTH_TOKEN_REQUEST_STATE;
@@ -54,20 +53,12 @@ public class AbstractOAuthClient {
         this.authUrl = authUrl;
     }
 
-    public String getCodeUrl() {
-        return codeUrl;
+    public String getTokenUrl() {
+        return tokenUrl;
     }
 
-    public void setCodeUrl(String codeUrl) {
-        this.codeUrl = codeUrl;
-    }
-
-    public String getRefreshUrl() {
-        return refreshUrl;
-    }
-
-    public void setRefreshUrl(String refreshUrl) {
-        this.refreshUrl = refreshUrl;
+    public void setTokenUrl(String tokenUrl) {
+        this.tokenUrl = tokenUrl;
     }
 
     public String getScope() {

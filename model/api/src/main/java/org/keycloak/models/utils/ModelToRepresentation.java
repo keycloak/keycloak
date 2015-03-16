@@ -155,6 +155,10 @@ public class ModelToRepresentation {
             rep.addIdentityProvider(toRepresentation(provider));
         }
 
+        rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
+        rep.getSupportedLocales().addAll(realm.getSupportedLocales());
+        rep.setDefaultLocale(realm.getDefaultLocale());
+
         return rep;
     }
 

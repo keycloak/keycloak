@@ -236,7 +236,7 @@ public class RequiredActionEmailVerificationTest {
         events.expectRequiredAction(EventType.VERIFY_EMAIL).session(sessionId).detail("email", "test-user@localhost").detail(Details.CODE_ID, mailCodeId).assertEvent();
 
         assertTrue(infoPage.isCurrent());
-        assertEquals("Email verified", infoPage.getInfo());
+        assertEquals("Your email address has been verified.", infoPage.getInfo());
 
         loginPage.open();
 

@@ -21,6 +21,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.flows.Flows;
 
@@ -91,7 +92,7 @@ public class LogoutEndpoint {
         if (redirectUri != null) {
             String validatedRedirect = RedirectUtils.verifyRealmRedirectUri(uriInfo, redirectUri, realm);
             if (validatedRedirect == null) {
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, "Invalid redirect uri.");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REDIRECT_URI);
             }
             return Response.status(302).location(UriBuilder.fromUri(validatedRedirect).build()).build();
         } else {
@@ -143,7 +144,7 @@ public class LogoutEndpoint {
     }
 
     private void logout(UserSessionModel userSession) {
-        authManager.logout(session, realm, userSession, uriInfo, clientConnection);
+        authManager.logout(session, realm, userSession, uriInfo, clientConnection, headers);
         event.user(userSession.getUser()).session(userSession).success();
     }
 

@@ -20,9 +20,10 @@ public class Keycloak {
 
     private Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret){
         config = new Config(serverUrl, realm, username, password, clientId, clientSecret);
-        tokenManager = new TokenManager(config);
-
         client = new ResteasyClientBuilder().build();
+
+        tokenManager = new TokenManager(config, client);
+
         target = client.target(config.getServerUrl());
 
         target.register(new BearerAuthFilter(tokenManager.getAccessTokenString()));

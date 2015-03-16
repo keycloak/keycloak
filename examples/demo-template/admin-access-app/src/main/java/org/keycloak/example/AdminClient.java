@@ -76,7 +76,7 @@ public class AdminClient {
 
         try {
             HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri(getBaseUrl(request) + "/auth")
-                    .path(ServiceUrlConstants.TOKEN_SERVICE_DIRECT_GRANT_PATH).build("demo"));
+                    .path(ServiceUrlConstants.TOKEN_PATH).build("demo"));
             List <NameValuePair> formparams = new ArrayList <NameValuePair>();
             formparams.add(new BasicNameValuePair("username", "admin"));
             formparams.add(new BasicNameValuePair("password", "password"));

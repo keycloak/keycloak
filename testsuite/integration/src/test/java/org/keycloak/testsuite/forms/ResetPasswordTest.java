@@ -504,7 +504,7 @@ public class ResetPasswordTest {
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).session(sessionId).detail(Details.USERNAME, username).assertEvent();
 
         assertTrue(infoPage.isCurrent());
-        assertEquals("Password updated", infoPage.getInfo());
+        assertEquals("Your password has been updated", infoPage.getInfo());
 
         loginPage.open();
 

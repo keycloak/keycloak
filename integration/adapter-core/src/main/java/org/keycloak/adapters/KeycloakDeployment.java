@@ -28,8 +28,7 @@ public class KeycloakDeployment {
     protected String authServerBaseUrl;
     protected String realmInfoUrl;
     protected KeycloakUriBuilder authUrl;
-    protected String codeUrl;
-    protected String refreshUrl;
+    protected String tokenUrl;
     protected KeycloakUriBuilder logoutUrl;
     protected String accountUrl;
     protected String registerNodeUrl;
@@ -131,7 +130,7 @@ public class KeycloakDeployment {
             log.debug("resolveBrowserUrls");
         }
 
-        String login = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(getRealm()).toString();
+        String login = authUrlBuilder.clone().path(ServiceUrlConstants.AUTH_PATH).build(getRealm()).toString();
         authUrl = KeycloakUriBuilder.fromUri(login);
     }
 
@@ -143,11 +142,10 @@ public class KeycloakDeployment {
             log.debug("resolveNonBrowserUrls");
         }
 
-        refreshUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(getRealm()).toString();
+        tokenUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_PATH).build(getRealm()).toString();
         logoutUrl = KeycloakUriBuilder.fromUri(authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());
         accountUrl = authUrlBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
         realmInfoUrl = authUrlBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
-        codeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(getRealm()).toString();
         registerNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
         unregisterNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
     }
@@ -164,12 +162,8 @@ public class KeycloakDeployment {
         return authUrl;
     }
 
-    public String getCodeUrl() {
-        return codeUrl;
-    }
-
-    public String getRefreshUrl() {
-        return refreshUrl;
+    public String getTokenUrl() {
+        return tokenUrl;
     }
 
     public KeycloakUriBuilder getLogoutUrl() {

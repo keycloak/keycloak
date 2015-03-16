@@ -1,5 +1,8 @@
 package org.keycloak.testutils.ldap;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 /**
  * Factory for ApacheDS based LDAP and Kerberos servers
  *
@@ -21,6 +24,7 @@ public class EmbeddedServersFactory {
     private String baseDN;
     private String bindHost;
     private int bindPort;
+    private String ldapSaslPrincipal;
     private String ldifFile;
     private String kerberosRealm;
     private int kdcPort;
@@ -39,6 +43,7 @@ public class EmbeddedServersFactory {
         this.bindHost = System.getProperty("ldap.host");
         String bindPort = System.getProperty("ldap.port");
         this.ldifFile = System.getProperty("ldap.ldif");
+        this.ldapSaslPrincipal = System.getProperty("ldap.saslPrincipal");
 
         this.kerberosRealm = System.getProperty("kerberos.realm");
         String kdcPort = System.getProperty("kerberos.port");
@@ -62,6 +67,16 @@ public class EmbeddedServersFactory {
         if (kdcEncryptionTypes == null || kdcEncryptionTypes.isEmpty()) {
             kdcEncryptionTypes = DEFAULT_KDC_ENCRYPTION_TYPES;
         }
+
+        if (ldapSaslPrincipal == null || ldapSaslPrincipal.isEmpty()) {
+            try {
+                // Same algorithm like sun.security.krb5.PrincipalName constructor
+                String canonicalHost = (InetAddress.getByName(bindHost)).getCanonicalHostName();
+                this.ldapSaslPrincipal = "ldap/" + canonicalHost + "@" + kerberosRealm;
+            } catch (UnknownHostException uhe) {
+                throw new RuntimeException(uhe);
+            }
+        }
     }
 
 
@@ -72,7 +87,7 @@ public class EmbeddedServersFactory {
             ldifFile = DEFAULT_LDIF_FILE;
         }
 
-        return new LDAPEmbeddedServer(baseDN, bindHost, bindPort, ldifFile);
+        return new LDAPEmbeddedServer(baseDN, bindHost, bindPort, ldifFile, ldapSaslPrincipal);
     }
 
 
@@ -83,6 +98,6 @@ public class EmbeddedServersFactory {
             ldifFile = DEFAULT_KERBEROS_LDIF_FILE;
         }
 
-        return new KerberosEmbeddedServer(baseDN, bindHost, bindPort, ldifFile, kerberosRealm, kdcPort, kdcEncryptionTypes);
+        return new KerberosEmbeddedServer(baseDN, bindHost, bindPort, ldifFile, ldapSaslPrincipal, kerberosRealm, kdcPort, kdcEncryptionTypes);
     }
 }

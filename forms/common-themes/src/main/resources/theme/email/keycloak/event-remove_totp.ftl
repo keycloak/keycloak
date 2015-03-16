@@ -1,1 +1,1 @@
-TOTP was removed from your account on ${event.date?datetime} from ${event.ipAddress}. If this was not you, please contact an admin.
+${formatter.format(rb.eventRemoveTotpBody,event.date, event.ipAddress)}

@@ -8,7 +8,7 @@
     <title>Camel page</title>
   </head>
   <body bgcolor="#E3F6CE">
-    <p>You will receive info from camel endpoint. Endpoint is accessible just for admin user</p>
+    <p>You will receive info from camel endpoint. Endpoint is accessible just for user with admin role</p>
     <p>Response from camel: <b><%= CamelClient.sendRequest(request) %></b> </p>
     <br><br>
   </body>

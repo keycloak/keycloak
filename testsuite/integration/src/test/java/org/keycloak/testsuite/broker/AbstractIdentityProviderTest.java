@@ -175,7 +175,7 @@ public abstract class AbstractIdentityProviderTest {
             driver.navigate().to("http://localhost:8081/test-app/logout");
             driver.navigate().to("http://localhost:8081/test-app");
 
-            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         } finally {
             getRealm().setRegistrationEmailAsUsername(false);
@@ -215,7 +215,7 @@ public abstract class AbstractIdentityProviderTest {
 
         this.driver.navigate().to("http://localhost:8081/test-app/");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         try {
             this.driver.findElement(By.className(getProviderId()));
@@ -245,7 +245,7 @@ public abstract class AbstractIdentityProviderTest {
 
         this.driver.navigate().to("http://localhost:8081/test-app/");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         try {
             this.driver.findElement(By.className(getProviderId()));
@@ -267,7 +267,7 @@ public abstract class AbstractIdentityProviderTest {
     public void testUserAlreadyExistsWhenUpdatingProfile() {
         this.driver.navigate().to("http://localhost:8081/test-app/");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         // choose the identity provider
         this.loginPage.clickSocial(getProviderId());
@@ -286,7 +286,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(element);
 
-        assertEquals("Email already exists", element.getText());
+        assertEquals("Email already exists.", element.getText());
 
         this.updateProfilePage.assertCurrent();
         this.updateProfilePage.update("Test", "User", "test-user@redhat.com");
@@ -306,7 +306,7 @@ public abstract class AbstractIdentityProviderTest {
 
         this.driver.navigate().to("http://localhost:8081/test-app/");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         // choose the identity provider
         this.loginPage.clickSocial(getProviderId());
@@ -374,7 +374,7 @@ public abstract class AbstractIdentityProviderTest {
     public void testIdentityProviderNotAllowed() {
         this.driver.navigate().to("http://localhost:8081/test-app/");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         driver.findElement(By.className("model-oidc-idp"));
     }
@@ -438,7 +438,7 @@ public abstract class AbstractIdentityProviderTest {
         driver.navigate().to("http://localhost:8081/test-app/logout");
         driver.navigate().to("http://localhost:8081/test-app");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
     }
 
     @Test
@@ -533,13 +533,13 @@ public abstract class AbstractIdentityProviderTest {
         driver.navigate().to("http://localhost:8081/test-app/logout");
         driver.navigate().to("http://localhost:8081/test-app");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
     }
 
     private void authenticateWithIdentityProvider(IdentityProviderModel identityProviderModel, String username) {
         driver.navigate().to("http://localhost:8081/test-app");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/login"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         // choose the identity provider
         this.loginPage.clickSocial(getProviderId());

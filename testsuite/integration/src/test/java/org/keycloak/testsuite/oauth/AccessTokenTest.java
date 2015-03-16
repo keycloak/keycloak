@@ -149,7 +149,7 @@ public class AccessTokenTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, "invalid");
         Assert.assertEquals(400, response.getStatusCode());
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID);
+        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").clearDetails().user((String) null).session((String) null);
         expectedEvent.assertEvent();
     }
 
@@ -190,7 +190,7 @@ public class AccessTokenTest {
         assertNull(tokenResponse.getAccessToken());
         assertNull(tokenResponse.getRefreshToken());
 
-        events.expectCodeToToken(codeId, sessionId).removeDetail(Details.TOKEN_ID).client((String) null).user((String) null).session((String) null).removeDetail(Details.REFRESH_TOKEN_ID).error(Errors.INVALID_CODE).assertEvent();
+        events.expectCodeToToken(codeId, sessionId).removeDetail(Details.TOKEN_ID).user((String) null).session((String) null).removeDetail(Details.REFRESH_TOKEN_ID).error(Errors.INVALID_CODE).assertEvent();
 
         events.clear();
     }
@@ -222,7 +222,7 @@ public class AccessTokenTest {
         Assert.assertEquals(400, response.getStatusCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
-        expectedEvent.error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).client((String) null).user((String) null);
+        expectedEvent.error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).user((String) null);
         expectedEvent.assertEvent();
 
         events.clear();
@@ -254,7 +254,7 @@ public class AccessTokenTest {
         Assert.assertEquals(400, response.getStatusCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
-        expectedEvent.error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).client((String) null).user((String) null);
+        expectedEvent.error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).user((String) null);
         expectedEvent.assertEvent();
 
         events.clear();
@@ -335,7 +335,7 @@ public class AccessTokenTest {
     public void testValidateAccessToken() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
         URI validateUri = OIDCLoginProtocolService.validateAccessTokenUrl(builder).build("test");
@@ -392,7 +392,7 @@ public class AccessTokenTest {
     public void testGrantAccessToken() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
 
         {   // test checkSsl
@@ -421,6 +421,7 @@ public class AccessTokenTest {
         {   // test null username
             String header = BasicAuthHelper.createHeader("test-app", "password");
             Form form = new Form();
+            form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
             form.param("password", "password");
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
@@ -432,6 +433,7 @@ public class AccessTokenTest {
         {   // test no password
             String header = BasicAuthHelper.createHeader("test-app", "password");
             Form form = new Form();
+            form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
             form.param("username", "test-user@localhost");
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
@@ -443,6 +445,7 @@ public class AccessTokenTest {
         {   // test invalid password
             String header = BasicAuthHelper.createHeader("test-app", "password");
             Form form = new Form();
+            form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
             form.param("username", "test-user@localhost");
             form.param("password", "invalid");
             Response response = grantTarget.request()
@@ -598,7 +601,7 @@ public class AccessTokenTest {
     public void testTokenMapping() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         {
             KeycloakSession session = keycloakRule.startSession();
@@ -721,7 +724,8 @@ public class AccessTokenTest {
     protected Response executeGrantAccessTokenRequest(WebTarget grantTarget) {
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
-        form.param("username", "test-user@localhost")
+        form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .param("username", "test-user@localhost")
                 .param("password", "password");
         return grantTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, header)

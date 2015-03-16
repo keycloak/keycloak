@@ -46,11 +46,26 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class KeycloakServer {
+
+    static {
+        try {
+            File f = new File(System.getProperty("user.home"), ".keycloak-test.properties");
+            if (f.isFile()) {
+                Properties p = new Properties();
+                p.load(new FileInputStream(f));
+                System.getProperties().putAll(p);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static final Logger log = Logger.getLogger(KeycloakServer.class);
 

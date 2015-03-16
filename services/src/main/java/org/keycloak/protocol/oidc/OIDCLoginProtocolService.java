@@ -67,6 +67,9 @@ public class OIDCLoginProtocolService {
     @Context
     private KeycloakSession session;
 
+    @Context
+    private HttpHeaders headers;
+
     public OIDCLoginProtocolService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
         this.realm = realm;
         this.tokenManager = new TokenManager();
@@ -83,29 +86,24 @@ public class OIDCLoginProtocolService {
         return baseUriBuilder.path(RealmsResource.class).path("{realm}/protocol/" + OIDCLoginProtocol.LOGIN_PROTOCOL);
     }
 
-    public static UriBuilder accessCodeToTokenUrl(UriBuilder baseUriBuilder) {
+    public static UriBuilder authUrl(UriInfo uriInfo) {
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return authUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder authUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OIDCLoginProtocolService.class, "accessCodeToToken");
+        return uriBuilder.path(OIDCLoginProtocolService.class, "auth");
+    }
+
+    public static UriBuilder tokenUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "token");
     }
 
     public static UriBuilder validateAccessTokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "validateAccessToken");
-    }
-
-    public static UriBuilder grantAccessTokenUrl(UriBuilder baseUriBuilder) {
-        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OIDCLoginProtocolService.class, "grantAccessToken");
-    }
-
-    public static UriBuilder loginPageUrl(UriInfo uriInfo) {
-        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
-        return loginPageUrl(baseUriBuilder);
-    }
-
-    public static UriBuilder loginPageUrl(UriBuilder baseUriBuilder) {
-        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OIDCLoginProtocolService.class, "loginPage");
     }
 
     public static UriBuilder logoutUrl(UriInfo uriInfo) {
@@ -116,11 +114,6 @@ public class OIDCLoginProtocolService {
     public static UriBuilder logoutUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "logout");
-    }
-
-    public static UriBuilder refreshUrl(UriBuilder baseUriBuilder) {
-        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OIDCLoginProtocolService.class, "refreshAccessToken");
     }
 
     /**
@@ -226,7 +219,7 @@ public class OIDCLoginProtocolService {
     @Path("oauth/oob")
     @GET
     public Response installedAppUrnCallback(final @QueryParam("code") String code, final @QueryParam("error") String error, final @QueryParam("error_description") String errorDescription) {
-        LoginFormsProvider forms = Flows.forms(session, realm, null, uriInfo);
+        LoginFormsProvider forms = Flows.forms(session, realm, null, uriInfo, headers);
         if (code != null) {
             return forms.setClientSessionCode(code).createCode();
         } else {

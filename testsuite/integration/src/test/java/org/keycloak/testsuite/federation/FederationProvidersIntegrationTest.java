@@ -236,12 +236,12 @@ public class FederationProvidersIntegrationTest {
         // check existing username
         registerPage.register("firstName", "lastName", "email@mail.cz", "existing", "Password1", "Password1");
         registerPage.assertCurrent();
-        Assert.assertEquals("Username already exists", registerPage.getError());
+        Assert.assertEquals("Username already exists.", registerPage.getError());
 
         // Check existing email
         registerPage.register("firstName", "lastName", "existing@email.org", "nonExisting", "Password1", "Password1");
         registerPage.assertCurrent();
-        Assert.assertEquals("Email already exists", registerPage.getError());
+        Assert.assertEquals("Email already exists.", registerPage.getError());
     }
 
     @Test

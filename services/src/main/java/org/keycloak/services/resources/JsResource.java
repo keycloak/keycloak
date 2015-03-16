@@ -1,9 +1,11 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.Config;
+import org.keycloak.Version;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Response;
@@ -39,6 +41,17 @@ public class JsResource {
     }
 
     @GET
+    @Path("/{version}/keycloak.js")
+    @Produces("text/javascript")
+    public Response getJsWithVersion(@PathParam("version") String version) {
+        if (!version.equals(Version.RESOURCES_VERSION)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        return getJs();
+    }
+
+    @GET
     @Path("/keycloak.min.js")
     @Produces("text/javascript")
     public Response getMinJs() {
@@ -52,6 +65,17 @@ public class JsResource {
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+    }
+
+    @GET
+    @Path("/{version}/keycloak.min.js")
+    @Produces("text/javascript")
+    public Response getMinJsWithVersion(@PathParam("version") String version) {
+        if (!version.equals(Version.RESOURCES_VERSION)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        return getMinJs();
     }
 
 }

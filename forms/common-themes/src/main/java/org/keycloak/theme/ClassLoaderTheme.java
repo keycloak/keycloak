@@ -2,10 +2,13 @@ package org.keycloak.theme;
 
 import org.keycloak.freemarker.Theme;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Properties;
+import java.util.ResourceBundle;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -26,7 +29,7 @@ public class ClassLoaderTheme implements Theme {
 
     private String resourceRoot;
 
-    private String messages;
+    private String messageRoot;
 
     private Properties properties;
 
@@ -43,7 +46,7 @@ public class ClassLoaderTheme implements Theme {
 
         this.templateRoot = themeRoot;
         this.resourceRoot = themeRoot + "resources/";
-        this.messages = themeRoot + "messages/messages.properties";
+        this.messageRoot = themeRoot + "messages/";
         this.properties = new Properties();
 
         URL p = classLoader.getResource(themeRoot + "theme.properties");
@@ -102,9 +105,13 @@ public class ClassLoaderTheme implements Theme {
     }
 
     @Override
-    public Properties getMessages() throws IOException {
+    public Properties getMessages(Locale locale) throws IOException {
+        if(locale == null){
+            return null;
+        }
         Properties m = new Properties();
-        URL url = classLoader.getResource(this.messages);
+
+        URL url = classLoader.getResource(this.messageRoot + "messages_" + locale.toString() + ".properties");
         if (url != null) {
             m.load(url.openStream());
         }

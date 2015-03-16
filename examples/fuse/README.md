@@ -31,7 +31,8 @@ Base steps
 ----------
 
 * Run external instance of Keycloak server on WildFly 8 or JBoss EAP 6.3 . Fuse demo suppose that server is running on [http://localhost:8080/auth](http://localhost:8080/auth)
-* Import realm `demo` from the file testrealm.json on `examples/fuse/testrealm.json` .
+* Import realm `demo` from the file testrealm.json on `examples/fuse/testrealm.json` . See [here](../demo-template/README.md#step-3-import-the-test-realm) 
+the details on how to import the realm
 * Then build examples, which is needed so the feature repository is added to your local maven repo:
 
 ```

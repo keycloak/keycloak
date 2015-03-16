@@ -108,7 +108,7 @@ public class OAuthRedirectUriTest {
             oauth.openLoginForm();
 
             Assert.assertTrue(errorPage.isCurrent());
-            Assert.assertEquals("Invalid redirect_uri", errorPage.getError());
+            Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } finally {
             keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -133,7 +133,7 @@ public class OAuthRedirectUriTest {
             oauth.openLoginForm();
 
             Assert.assertTrue(errorPage.isCurrent());
-            Assert.assertEquals("Invalid redirect_uri", errorPage.getError());
+            Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } finally {
             keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -158,7 +158,7 @@ public class OAuthRedirectUriTest {
             oauth.openLoginForm();
 
             Assert.assertTrue(errorPage.isCurrent());
-            Assert.assertEquals("Invalid redirect_uri", errorPage.getError());
+            Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } finally {
             keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -184,7 +184,7 @@ public class OAuthRedirectUriTest {
         oauth.openLoginForm();
 
         Assert.assertTrue(errorPage.isCurrent());
-        Assert.assertEquals("Invalid redirect_uri", errorPage.getError());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
 
     @Test
@@ -244,7 +244,7 @@ public class OAuthRedirectUriTest {
             Assert.assertTrue(loginPage.isCurrent());
         } else {
             Assert.assertTrue(errorPage.isCurrent());
-            Assert.assertEquals("Invalid redirect_uri", errorPage.getError());
+            Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         }
 
         if (expectValid) {
