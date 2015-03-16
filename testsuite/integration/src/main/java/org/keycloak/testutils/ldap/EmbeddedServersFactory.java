@@ -74,18 +74,6 @@ public class EmbeddedServersFactory {
         if (kdcEncryptionTypes == null || kdcEncryptionTypes.isEmpty()) {
             kdcEncryptionTypes = DEFAULT_KDC_ENCRYPTION_TYPES;
         }
-
-        if (ldapSaslPrincipal == null || ldapSaslPrincipal.isEmpty()) {
-            try {
-                // Same algorithm like sun.security.krb5.PrincipalName constructor
-                GSSName gssName = GSSManager.getInstance().createName("ldap@localhost", GSSName.NT_HOSTBASED_SERVICE);
-                GSSNameImpl gssName1 = (GSSNameImpl) gssName;
-                Krb5NameElement krb5NameElement = (Krb5NameElement) gssName1.getElement(KerberosSerializationUtils.KRB5_OID);
-                this.ldapSaslPrincipal = krb5NameElement.getKrb5PrincipalName().toString();
-            } catch (GSSException uhe) {
-                throw new RuntimeException(uhe);
-            }
-        }
     }
 
 
@@ -105,6 +93,19 @@ public class EmbeddedServersFactory {
         // Override LDIF file with default for embedded Kerberos
         if (ldifFile.equals(DEFAULT_LDIF_FILE)) {
             ldifFile = DEFAULT_KERBEROS_LDIF_FILE;
+        }
+
+        // Init ldap sasl principal just when creating kerberos server
+        if (ldapSaslPrincipal == null || ldapSaslPrincipal.isEmpty()) {
+            try {
+                // Same algorithm like sun.security.krb5.PrincipalName constructor
+                GSSName gssName = GSSManager.getInstance().createName("ldap@" + bindHost, GSSName.NT_HOSTBASED_SERVICE);
+                GSSNameImpl gssName1 = (GSSNameImpl) gssName;
+                Krb5NameElement krb5NameElement = (Krb5NameElement) gssName1.getElement(KerberosSerializationUtils.KRB5_OID);
+                this.ldapSaslPrincipal = krb5NameElement.getKrb5PrincipalName().toString();
+            } catch (GSSException uhe) {
+                throw new RuntimeException(uhe);
+            }
         }
 
         return new KerberosEmbeddedServer(baseDN, bindHost, bindPort, ldifFile, ldapSaslPrincipal, kerberosRealm, kdcPort, kdcEncryptionTypes);
