@@ -463,6 +463,7 @@ public class SamlProtocol implements LoginProtocol {
         SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
         builder.logoutRequestID(userSession.getNote(SAML_LOGOUT_REQUEST_ID));
         builder.destination(userSession.getNote(SAML_LOGOUT_ISSUER));
+        builder.issuer(getResponseIssuer(realm));
         String signingAlgorithm = userSession.getNote(SAML_LOGOUT_SIGNATURE_ALGORITHM);
         if (signingAlgorithm != null) {
             SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(signingAlgorithm);
@@ -546,6 +547,7 @@ public class SamlProtocol implements LoginProtocol {
     protected SAML2LogoutRequestBuilder createLogoutRequest(ClientSessionModel clientSession, ClientModel client) {
         // build userPrincipal with subject used at login
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
+                                         .issuer(getResponseIssuer(realm))
                                          .userPrincipal(clientSession.getNote(SAML_NAME_ID), clientSession.getNote(SAML_NAME_ID_FORMAT))
                                          .destination(client.getClientId());
         if (requiresRealmSignature(client)) {

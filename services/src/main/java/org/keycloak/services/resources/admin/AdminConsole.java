@@ -305,7 +305,7 @@ public class AdminConsole {
     }
 
     @GET
-    @Path("index.html")
+    @Path("{indexhtml: index.html}") // this expression is a hack to get around jaxdoclet generation bug.  Doesn't like index.html
     public Response getIndexHtmlRedirect() {
         return Response.status(302).location(uriInfo.getRequestUriBuilder().path("../").build()).build();
     }
