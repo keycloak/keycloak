@@ -161,7 +161,7 @@
             }
 
             if (options && options.idpHint) {
-                url += '&k_idp_hint=' + options.idpHint;
+                url += '&kc_idp_hint=' + options.idpHint;
             }
 
             return url;

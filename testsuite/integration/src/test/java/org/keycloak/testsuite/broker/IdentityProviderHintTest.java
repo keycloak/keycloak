@@ -54,7 +54,7 @@ public class IdentityProviderHintTest {
 
     @Test
     public void testSuccessfulRedirect() {
-        this.driver.navigate().to("http://localhost:8081/test-app?k_idp_hint=kc-oidc-idp");
+        this.driver.navigate().to("http://localhost:8081/test-app?kc_idp_hint=kc-oidc-idp");
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
 
@@ -72,7 +72,7 @@ public class IdentityProviderHintTest {
 
     @Test
     public void testInvalidIdentityProviderHint() {
-        this.driver.navigate().to("http://localhost:8081/test-app?k_idp_hint=invalid-idp-id");
+        this.driver.navigate().to("http://localhost:8081/test-app?kc_idp_hint=invalid-idp-id");
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
