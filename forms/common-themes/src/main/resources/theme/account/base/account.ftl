@@ -16,7 +16,7 @@
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="username" class="control-label">${rb.username}</label>
+                <label for="username" class="control-label">${msg("username")}</label>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -26,7 +26,7 @@
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="email" class="control-label">${rb.email}</label> <span class="required">*</span>
+            <label for="email" class="control-label">${msg("email")}</label> <span class="required">*</span>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -37,7 +37,7 @@
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="lastName" class="control-label">${rb.lastName}</label> <span class="required">*</span>
+                <label for="lastName" class="control-label">${msg("lastName")}</label> <span class="required">*</span>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -47,7 +47,7 @@
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="firstName" class="control-label">${rb.firstName}</label> <span class="required">*</span>
+                <label for="firstName" class="control-label">${msg("firstName")}</label> <span class="required">*</span>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -57,7 +57,7 @@
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="user.attributes.street" class="control-label">${rb.street}</label>
+                <label for="user.attributes.street" class="control-label">${msg("street")}</label>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -66,7 +66,7 @@
         </div>
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="user.attributes.locality" class="control-label">${rb.locality}</label>
+                <label for="user.attributes.locality" class="control-label">${msg("locality")}</label>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -75,7 +75,7 @@
         </div>
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="user.attributes.region" class="control-label">${rb.region}</label>
+                <label for="user.attributes.region" class="control-label">${msg("region")}</label>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -84,7 +84,7 @@
         </div>
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="user.attributes.postal_code" class="control-label">${rb.postal_code}</label>
+                <label for="user.attributes.postal_code" class="control-label">${msg("postal_code")}</label>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -93,7 +93,7 @@
         </div>
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="user.attributes.country" class="control-label">${rb.country}</label>
+                <label for="user.attributes.country" class="control-label">${msg("country")}</label>
             </div>
 
             <div class="col-sm-10 col-md-10">

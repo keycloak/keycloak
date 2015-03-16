@@ -14,7 +14,7 @@
         <#if password.passwordSet>
             <div class="form-group">
                 <div class="col-sm-2 col-md-2">
-                    <label for="password" class="control-label">${rb.password}</label>
+                    <label for="password" class="control-label">${msg("password")}</label>
                 </div>
 
                 <div class="col-sm-10 col-md-10">
@@ -27,7 +27,7 @@
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="password-new" class="control-label">${rb.passwordNew}</label>
+                <label for="password-new" class="control-label">${msg("passwordNew")}</label>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -37,7 +37,7 @@
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="password-confirm" class="control-label" class="two-lines">${rb.passwordConfirm}</label>
+                <label for="password-confirm" class="control-label" class="two-lines">${msg("passwordConfirm")}</label>
             </div>
 
             <div class="col-sm-10 col-md-10">

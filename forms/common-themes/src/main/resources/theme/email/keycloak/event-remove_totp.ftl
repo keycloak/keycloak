@@ -1,1 +1,1 @@
-${formatter.format(rb.eventRemoveTotpBody,event.date, event.ipAddress)}
+${msg("eventRemoveTotpBody",event.date, event.ipAddress)}

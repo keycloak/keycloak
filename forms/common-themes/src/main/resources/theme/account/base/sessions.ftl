@@ -42,6 +42,6 @@
 
     </table>
 
-    <a id="logout-all-sessions" href="${url.sessionsLogoutUrl}">${rb.doLogOutAllSessions}</a>
+    <a id="logout-all-sessions" href="${url.sessionsLogoutUrl}">${msg("doLogOutAllSessions")}</a>
 
 </@layout.mainLayout>

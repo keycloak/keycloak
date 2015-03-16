@@ -1,1 +1,1 @@
-${formatter.format(rb.eventLoginErrorBody,event.date,event.ipAddress)}
+${msg("eventLoginErrorBody",event.date,event.ipAddress)}

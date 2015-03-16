@@ -6,7 +6,7 @@ import org.keycloak.account.AccountProvider;
 import org.keycloak.account.freemarker.model.*;
 import org.keycloak.events.Event;
 import org.keycloak.freemarker.*;
-import org.keycloak.freemarker.beans.TextFormatterBean;
+import org.keycloak.freemarker.beans.MessageFormatterMethod;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.*;
+import org.keycloak.freemarker.beans.LocaleBean;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -86,14 +87,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         }
 
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, headers);
-        if(locale != null){
-            attributes.put("locale", locale);
-            attributes.put("formatter", new TextFormatterBean(locale));
-        }
         Properties messages;
         try {
             messages = theme.getMessages(locale);
-            attributes.put("rb", messages);
+            attributes.put("msg", new MessageFormatterMethod(locale, messages));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
             messages = new Properties();
@@ -113,7 +110,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         if (message != null) {
             String formattedMessage;
             if(messages.containsKey(message)){
-                formattedMessage = new MessageFormat(messages.getProperty(message).replace("'","''"),locale).format(parameters);
+                formattedMessage = new MessageFormat(messages.getProperty(message),locale).format(parameters);
             }else{
                 formattedMessage = message;
             }
@@ -129,6 +126,16 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         }
 
         attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
+
+        if (realm.isInternationalizationEnabled()) {
+            UriBuilder b;
+            switch (page) {
+                default:
+                    b = UriBuilder.fromUri(baseQueryUri).path(uriInfo.getPath());
+                    break;
+            }
+            attributes.put("locale", new LocaleBean(realm, locale, b, messages));
+        }
 
         attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported));
 
