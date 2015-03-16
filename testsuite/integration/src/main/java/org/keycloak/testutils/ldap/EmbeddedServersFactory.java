@@ -3,6 +3,13 @@ package org.keycloak.testutils.ldap;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.keycloak.util.KerberosSerializationUtils;
+import sun.security.jgss.GSSNameImpl;
+import sun.security.jgss.krb5.Krb5NameElement;
+
 /**
  * Factory for ApacheDS based LDAP and Kerberos servers
  *
@@ -71,9 +78,11 @@ public class EmbeddedServersFactory {
         if (ldapSaslPrincipal == null || ldapSaslPrincipal.isEmpty()) {
             try {
                 // Same algorithm like sun.security.krb5.PrincipalName constructor
-                String canonicalHost = (InetAddress.getByName(bindHost)).getCanonicalHostName();
-                this.ldapSaslPrincipal = "ldap/" + canonicalHost + "@" + kerberosRealm;
-            } catch (UnknownHostException uhe) {
+                GSSName gssName = GSSManager.getInstance().createName("ldap@localhost", GSSName.NT_HOSTBASED_SERVICE);
+                GSSNameImpl gssName1 = (GSSNameImpl) gssName;
+                Krb5NameElement krb5NameElement = (Krb5NameElement) gssName1.getElement(KerberosSerializationUtils.KRB5_OID);
+                this.ldapSaslPrincipal = krb5NameElement.getKrb5PrincipalName().toString();
+            } catch (GSSException uhe) {
                 throw new RuntimeException(uhe);
             }
         }
