@@ -796,7 +796,11 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config.postBindingResponse = $scope.getBoolean($scope.identityProvider.config.postBindingResponse);
             $scope.identityProvider.config.wantAuthnRequestsSigned = $scope.getBoolean($scope.identityProvider.config.wantAuthnRequestsSigned);
         } else {
+            $scope.identityProvider.config.validateSignature = true;
+            $scope.identityProvider.config.postBindingAuthnRequest = true;
             $scope.identityProvider.config.postBindingResponse = true;
+            $scope.identityProvider.config.wantAuthnRequestsSigned = true;
+            $scope.identityProvider.config.nameIDPolicyFormat = 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient';
         }
     }
 
@@ -806,6 +810,30 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         } else {
             $scope.identityProvider.config.debug = false;
         }
+    }
+});
+
+module.controller('RealmIdentityProviderExportCtrl', function(realm, identityProvider, $scope, $http, IdentityProviderExport) {
+    $scope.realm = realm;
+    $scope.identityProvider = identityProvider;
+    $scope.download = null;
+    $scope.exported = "";
+    $scope.exportedType = "";
+
+    var url = IdentityProviderExport.url({realm: realm.realm, id: identityProvider.id}) ;
+    $http.get(url).success(function(data, status, headers, config) {
+        $scope.exportedType = headers('Content-Type');
+        $scope.exported = data;
+    });
+
+    $scope.download = function() {
+        var suffix = "txt";
+        if ($scope.exportedType == 'application/xml') {
+            suffix = 'xml';
+        } else if ($scope.exportedType == 'application/json') {
+            suffix = 'json';
+        }
+        saveAs(new Blob([$scope.exported], { type: $scope.exportedType }), 'keycloak.' + suffix);
     }
 });
 

@@ -188,6 +188,24 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmIdentityProviderCtrl'
         })
+        .when('/realms/:realm/identity-provider-settings/provider/:provider_id/:id/export', {
+            templateUrl : resourceUrl + '/partials/realm-identity-provider-export.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                identityProvider : function(IdentityProviderLoader) {
+                    return IdentityProviderLoader();
+                },
+                providerFactory : function(IdentityProviderFactoryLoader) {
+                    return IdentityProviderFactoryLoader();
+                }
+            },
+            controller : 'RealmIdentityProviderExportCtrl'
+        })
         .when('/realms/:realm/default-roles', {
             templateUrl : resourceUrl + '/partials/realm-default-roles.html',
             resolve : {

@@ -47,7 +47,16 @@
                     <div class="form-group clearfix" data-ng-show="!importFile">
                         <label class="col-sm-2 control-label" for="nameIDPolicyFormat">NameID Policy Format</label>
                         <div class="col-sm-4">
-                            <input class="form-control" id="nameIDPolicyFormat" type="text" ng-model="identityProvider.config.nameIDPolicyFormat">
+                            <select id="nameIDPolicyFormat" ng-model="identityProvider.config.nameIDPolicyFormat">
+                                <option value="urn:oasis:names:tc:SAML:2.0:nameid-format:transient">Transient</option>
+                                <option value="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent">Persistent</option>
+                                <option value="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">Email</option>
+                                <option value="urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos">Kerberos</option>
+                                <option value="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">X.509 Subject Name</option>
+                                <option value="urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName">Windows Domain Qualified Name</option>
+                                <option value="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">Unspecified</option>
+                            </select>
+                            <!-- <input class="form-control" id="nameIDPolicyFormat" type="text" ng-model="identityProvider.config.nameIDPolicyFormat"> -->
                         </div>
                         <span tooltip-placement="right" tooltip="Specifies the URI reference corresponding to a name identifier format. Defaults to urn:oasis:names:tc:SAML:2.0:nameid-format:persistent." class="fa fa-info-circle"></span>
                     </div>
@@ -124,6 +133,7 @@
                 </fieldset>
 
                 <div class="pull-right form-actions">
+                    <a class="btn btn-lg btn-primary" href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.id}}/export" data-ng-show="!importFile && !newIdentityProvider">Export</a>
                     <button kc-save data-ng-show="!importFile">Save</button>
                     <button type="submit" data-ng-click="clearFileSelect()" data-ng-show="importFile" class="btn btn-lg btn-default">Cancel</button>
                     <button type="submit" data-ng-click="uploadFile()" data-ng-show="importFile" class="btn btn-lg btn-primary">Import from SAML Metadata</button>
