@@ -1,1 +1,1 @@
-Your password was changed on ${event.date?datetime} from ${event.ipAddress}. If this was not you, please contact an admin.
+${formatter.format(rb.eventUpdatePasswordBody,event.date, event.ipAddress)}

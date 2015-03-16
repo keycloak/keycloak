@@ -67,6 +67,9 @@ public class OIDCLoginProtocolService {
     @Context
     private KeycloakSession session;
 
+    @Context
+    private HttpHeaders headers;
+
     public OIDCLoginProtocolService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
         this.realm = realm;
         this.tokenManager = new TokenManager();
@@ -226,7 +229,7 @@ public class OIDCLoginProtocolService {
     @Path("oauth/oob")
     @GET
     public Response installedAppUrnCallback(final @QueryParam("code") String code, final @QueryParam("error") String error, final @QueryParam("error_description") String errorDescription) {
-        LoginFormsProvider forms = Flows.forms(session, realm, null, uriInfo);
+        LoginFormsProvider forms = Flows.forms(session, realm, null, uriInfo, headers);
         if (code != null) {
             return forms.setClientSessionCode(code).createCode();
         } else {

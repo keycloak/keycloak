@@ -48,7 +48,7 @@ public class Validation {
         return null;
     }
 
-    public static String validatePassword(MultivaluedMap<String, String> formData, PasswordPolicy policy) {
+    public static PasswordPolicy.Error validatePassword(MultivaluedMap<String, String> formData, PasswordPolicy policy) {
         return policy.validate(formData.getFirst("username"), formData.getFirst("password"));
     }
 

@@ -15,6 +15,19 @@
             <script type="text/javascript" src="${url.resourcesPath}/${script}"></script>
         </#list>
     </#if>
+    <#if realm.internationalizationEnabled>
+        <script type="text/javascript">
+            window.onload = function () {
+                var select = document.querySelector(".kc-locale-select");
+                select.onchange = function (event) {
+                    document.cookie = "KEYCLOAK_LOCALE=" + select.value+"; path=${url.localeCookiePath}";
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 0);
+                }
+            }
+        </script>
+    </#if>
 </head>
 <body class="admin-console user ${bodyClass}">
 
@@ -28,6 +41,15 @@
             <div class="navbar-collapse navbar-collapse-1">
                 <div class="container">
                     <ul class="nav navbar-nav navbar-utility">
+                        <#if realm.internationalizationEnabled>
+                            <li>
+                                <select class="kc-locale-select">
+                                    <#list realm.supportedLocales as l>
+                                        <option value="${l}" <#if locale.toLanguageTag()==l>selected="selected"</#if>>${rb["locale_" + l]}</option>
+                                    </#list>
+                                </select>
+                            <li>
+                        </#if>
                         <#if referrer?has_content && referrer.url?has_content><li><a href="${referrer.url}" id="referrer">Back to ${referrer.name}</a></li></#if>
                         <li><a href="${url.logoutUrl}">Sign Out</a></li>
                     </ul>

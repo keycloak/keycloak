@@ -21,6 +21,19 @@
             <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
         </#list>
     </#if>
+    <#if realm.internationalizationEnabled>
+        <script type="text/javascript">
+            window.onload = function () {
+                var select = document.querySelector(".kc-locale-select");
+                select.onchange = function (event) {
+                    document.cookie = "KEYCLOAK_LOCALE=" + select.value+"; path=${url.localeCookiePath}";
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 0);
+                }
+            }
+        </script>
+    </#if>
 </head>
 
 <body class="${properties.kcBodyClass!}">
@@ -31,6 +44,15 @@
 
             <div id="kc-header" class="${properties.kcHeaderClass!}">
                 <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}"><#nested "header"></div>
+                <#if realm.internationalizationEnabled>
+                    <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
+                        <select class="kc-locale-select">
+                            <#list realm.supportedLocales as l>
+                                <option value="${l}" <#if locale.toLanguageTag()==l>selected="selected"</#if>>${rb["locale_" + l]}</option>
+                            </#list>
+                        </select>
+                    </div>
+                </#if>
             </div>
 
             <#if displayMessage && message?has_content>

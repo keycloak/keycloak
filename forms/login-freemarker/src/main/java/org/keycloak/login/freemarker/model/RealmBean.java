@@ -25,6 +25,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
+import java.util.Set;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -58,6 +60,14 @@ public class RealmBean {
 
     public boolean isRememberMe() {
         return realm.isRememberMe();
+    }
+
+    public boolean isInternationalizationEnabled() {
+        return realm.isInternationalizationEnabled();
+    }
+
+    public Set<String> getSupportedLocales(){
+        return realm.getSupportedLocales();
     }
 
     public boolean isPassword() {

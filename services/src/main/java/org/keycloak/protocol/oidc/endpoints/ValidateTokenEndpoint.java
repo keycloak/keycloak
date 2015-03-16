@@ -20,10 +20,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,6 +39,9 @@ public class ValidateTokenEndpoint {
 
     @Context
     private UriInfo uriInfo;
+
+    @Context
+    private HttpHeaders headers;
 
     private TokenManager tokenManager;
     private RealmModel realm;
@@ -81,7 +81,7 @@ public class ValidateTokenEndpoint {
         event.user(token.getSubject()).session(token.getSessionState()).detail(Details.VALIDATE_ACCESS_TOKEN, token.getId());
 
         try {
-            tokenManager.validateToken(session, uriInfo, clientConnection, realm, token);
+            tokenManager.validateToken(session, uriInfo, clientConnection, realm, token, headers);
         } catch (OAuthErrorException e) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, e.getError());

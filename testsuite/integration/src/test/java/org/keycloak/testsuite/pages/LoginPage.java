@@ -56,7 +56,7 @@ public class LoginPage extends AbstractPage {
     @FindBy(linkText = "Register")
     private WebElement registerLink;
 
-    @FindBy(linkText = "Password")
+    @FindBy(linkText = "Forgot Password?")
     private WebElement resetPasswordLink;
 
     @FindBy(linkText = "Username")
