@@ -1180,7 +1180,9 @@ module.controller('ApplicationProtocolMapperCtrl', function($scope, realm, serve
     $scope.realm = realm;
     $scope.application = application;
     $scope.create = false;
-    var protocol = application.protocol;
+    if (application.protocol == null) {
+        application.protocol = 'openid-connect';
+    }
     $scope.protocol = application.protocol;
     $scope.mapper = angular.copy(mapper);
     var oldCopy = angular.copy($scope.realm);
@@ -1245,6 +1247,9 @@ module.controller('ApplicationProtocolMapperCreateCtrl', function($scope, realm,
     $scope.realm = realm;
     $scope.application = application;
     $scope.create = true;
+    if (application.protocol == null) {
+        application.protocol = 'openid-connect';
+    }
     var protocol = application.protocol;
     $scope.protocol = protocol;
     $scope.mapper = { protocol :  application.protocol, config: {}};
