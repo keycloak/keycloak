@@ -34,7 +34,8 @@ public class OAuthRedirect extends AbstractOAuthClient {
         UriBuilder uriBuilder = UriBuilder.fromUri(authUrl)
                 .queryParam(OAuth2Constants.CLIENT_ID, clientId)
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
-                .queryParam(OAuth2Constants.STATE, state);
+                .queryParam(OAuth2Constants.STATE, state)
+                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE);
         if (scope != null) {
             uriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
         }

@@ -181,11 +181,9 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         events.expectLogin()
                 .client("resource-owner")
                 .session((String) null)
-                .detail(Details.AUTH_METHOD, "oauth_credentials")
-                .detail(Details.RESPONSE_TYPE, "token")
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
+                .clearDetails()
                 .error(Errors.INVALID_CLIENT_CREDENTIALS)
+                .user((String) null)
                 .assertEvent();
     }
 

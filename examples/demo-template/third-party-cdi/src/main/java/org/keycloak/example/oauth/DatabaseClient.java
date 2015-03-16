@@ -109,7 +109,7 @@ public class DatabaseClient {
                 return UriUtils.getOrigin(request.getRequestURL().toString());
             case BROWSER_ONLY:
                 // Resolve baseURI from the codeURL (This is already non-relative and based on our hostname)
-                return UriUtils.getOrigin(oauthClient.getCodeUrl());
+                return UriUtils.getOrigin(oauthClient.getTokenUrl());
             case NEVER:
                 return "";
             default:

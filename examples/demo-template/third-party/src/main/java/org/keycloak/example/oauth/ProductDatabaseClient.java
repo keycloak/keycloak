@@ -104,7 +104,7 @@ public class ProductDatabaseClient {
                 return UriUtils.getOrigin(request.getRequestURL().toString());
             case BROWSER_ONLY:
                 // Resolve baseURI from the codeURL (This is already non-relative and based on our hostname)
-                return UriUtils.getOrigin(oAuthClient.getCodeUrl());
+                return UriUtils.getOrigin(oAuthClient.getTokenUrl());
             case NEVER:
                 return "";
             default:

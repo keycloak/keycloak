@@ -87,15 +87,15 @@ public class ServerRequest {
     }
 
     public static AccessTokenResponse invokeAccessCodeToToken(KeycloakDeployment deployment, String code, String redirectUri, String sessionId) throws HttpFailure, IOException {
-        String codeUrl = deployment.getCodeUrl();
+        String tokenUrl = deployment.getTokenUrl();
         String client_id = deployment.getResourceName();
         Map<String, String> credentials = deployment.getResourceCredentials();
         HttpClient client = deployment.getClient();
 
-        return invokeAccessCodeToToken(client, deployment.isPublicClient(), code, codeUrl, redirectUri, client_id, credentials, sessionId);
+        return invokeAccessCodeToToken(client, deployment.isPublicClient(), code, tokenUrl, redirectUri, client_id, credentials, sessionId);
     }
 
-    public static AccessTokenResponse invokeAccessCodeToToken(HttpClient client, boolean publicClient, String code, String codeUrl, String redirectUri, String client_id, Map<String, String> credentials, String sessionId) throws IOException, HttpFailure {
+    public static AccessTokenResponse invokeAccessCodeToToken(HttpClient client, boolean publicClient, String code, String tokenUrl, String redirectUri, String client_id, Map<String, String> credentials, String sessionId) throws IOException, HttpFailure {
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
         redirectUri = stripOauthParametersFromRedirect(redirectUri);
         formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "authorization_code"));
@@ -106,7 +106,7 @@ public class ServerRequest {
             formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_SESSION_HOST, HostUtils.getHostName()));
         }
         HttpResponse response = null;
-        HttpPost post = new HttpPost(codeUrl);
+        HttpPost post = new HttpPost(tokenUrl);
         if (!publicClient) {
             String clientSecret = credentials.get(CredentialRepresentation.SECRET);
             if (clientSecret != null) {
@@ -152,15 +152,15 @@ public class ServerRequest {
     }
 
     public static AccessTokenResponse invokeRefresh(KeycloakDeployment deployment, String refreshToken) throws IOException, HttpFailure {
-        String refreshUrl = deployment.getRefreshUrl();
+        String tokenUrl = deployment.getTokenUrl();
         String client_id = deployment.getResourceName();
         Map<String, String> credentials = deployment.getResourceCredentials();
         HttpClient client = deployment.getClient();
-        return invokeRefresh(client, deployment.isPublicClient(), refreshToken, refreshUrl, client_id, credentials);
+        return invokeRefresh(client, deployment.isPublicClient(), refreshToken, tokenUrl, client_id, credentials);
     }
 
 
-    public static AccessTokenResponse invokeRefresh(HttpClient client, boolean publicClient, String refreshToken, String refreshUrl, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
+    public static AccessTokenResponse invokeRefresh(HttpClient client, boolean publicClient, String refreshToken, String tokenUrl, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
         for (Map.Entry<String, String> entry : credentials.entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
@@ -168,7 +168,7 @@ public class ServerRequest {
         formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));
         formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
         HttpResponse response = null;
-        HttpPost post = new HttpPost(refreshUrl);
+        HttpPost post = new HttpPost(tokenUrl);
         if (!publicClient) {
             String clientSecret = credentials.get(CredentialRepresentation.SECRET);
             if (clientSecret != null) {

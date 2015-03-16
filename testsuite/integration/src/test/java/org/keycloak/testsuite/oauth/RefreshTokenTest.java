@@ -97,7 +97,7 @@ public class RefreshTokenTest {
     public void nullRefreshToken() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI uri = OIDCLoginProtocolService.refreshUrl(builder).build("test");
+        URI uri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget target = client.target(uri);
 
         org.keycloak.representations.AccessTokenResponse tokenResponse = null;
@@ -389,10 +389,10 @@ public class RefreshTokenTest {
     public void testCheckSsl() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.grantAccessTokenUrl(builder).build("test");
+        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI uri = OIDCLoginProtocolService.refreshUrl(builder).build("test");
+        URI uri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget refreshTarget = client.target(uri);
 
         String refreshToken = null;
@@ -452,6 +452,7 @@ public class RefreshTokenTest {
     protected Response executeRefreshToken(WebTarget refreshTarget, String refreshToken) {
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
+        form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN);
         form.param("refresh_token", refreshToken);
         return refreshTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
@@ -461,7 +462,8 @@ public class RefreshTokenTest {
     protected Response executeGrantAccessTokenRequest(WebTarget grantTarget) {
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
-        form.param("username", "test-user@localhost")
+        form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .param("username", "test-user@localhost")
                 .param("password", "password");
         return grantTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, header)

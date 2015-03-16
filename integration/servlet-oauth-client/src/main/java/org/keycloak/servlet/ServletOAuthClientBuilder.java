@@ -54,25 +54,20 @@ public class ServletOAuthClientBuilder {
         RelativeUrlsUsed useRelative = relativeUrls(serverBuilder, adapterConfig);
         oauthClient.setRelativeUrlsUsed(useRelative);
 
-        String authUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(adapterConfig.getRealm()).toString();
+        String authUrl = serverBuilder.clone().path(ServiceUrlConstants.AUTH_PATH).build(adapterConfig.getRealm()).toString();
 
         KeycloakUriBuilder tokenUrlBuilder;
-        KeycloakUriBuilder refreshUrlBuilder;
 
         if (useRelative == RelativeUrlsUsed.BROWSER_ONLY) {
             // Use absolute URI for refreshToken and codeToToken requests
             KeycloakUriBuilder nonBrowsersServerBuilder = KeycloakUriBuilder.fromUri(adapterConfig.getAuthServerUrlForBackendRequests());
             tokenUrlBuilder = nonBrowsersServerBuilder.clone();
-            refreshUrlBuilder = nonBrowsersServerBuilder.clone();
         } else {
             tokenUrlBuilder = serverBuilder.clone();
-            refreshUrlBuilder = serverBuilder.clone();
         }
-        String tokenUrl = tokenUrlBuilder.path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
-        String refreshUrl = refreshUrlBuilder.path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(adapterConfig.getRealm()).toString();
+        String tokenUrl = tokenUrlBuilder.path(ServiceUrlConstants.TOKEN_PATH).build(adapterConfig.getRealm()).toString();
         oauthClient.setAuthUrl(authUrl);
-        oauthClient.setCodeUrl(tokenUrl);
-        oauthClient.setRefreshUrl(refreshUrl);
+        oauthClient.setTokenUrl(tokenUrl);
     }
 
     private static RelativeUrlsUsed relativeUrls(KeycloakUriBuilder serverBuilder, AdapterConfig adapterConfig) {
