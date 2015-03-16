@@ -143,7 +143,9 @@ public class LDAPEmbeddedServer {
     private void importLdif() throws Exception {
         Map<String, String> map = new HashMap<String, String>();
         map.put("hostname", this.bindHost);
-        map.put("ldapSaslPrincipal", this.ldapSaslPrincipal);
+        if (this.ldapSaslPrincipal != null) {
+            map.put("ldapSaslPrincipal", this.ldapSaslPrincipal);
+        }
 
         // For now, assume that LDIF file is on classpath
         InputStream is = getClass().getClassLoader().getResourceAsStream(ldifFile);
