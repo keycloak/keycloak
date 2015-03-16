@@ -54,7 +54,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLIENT_ID_PARAM = "client_id";
     public static final String PROMPT_PARAM = "prompt";
     public static final String LOGIN_HINT_PARAM = "login_hint";
-    public static final String K_IDP_HINT = "k_idp_hint";
 
     private static final Logger log = Logger.getLogger(OIDCLoginProtocol.class);
 

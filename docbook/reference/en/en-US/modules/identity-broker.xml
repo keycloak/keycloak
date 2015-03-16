@@ -1008,9 +1008,9 @@ Authorization: Bearer {keycloak_access_token}]]></programlisting>
             Keycloak supports a specific HTTP query parameter that you can use as a hint to tell the server which identity provider should be used to authenticate the user.
         </para>
         <para>
-            For that, you can append the <literal>k_idp_hint</literal> as a query parameter to your application url, as follows:
+            For that, you can append the <literal>kc_idp_hint</literal> as a query parameter to your application url, as follows:
         </para>
-        <programlisting language="JAVA"><![CDATA[GET /myapplication.com?k_idp_hint=facebook HTTP/1.1
+        <programlisting language="JAVA"><![CDATA[GET /myapplication.com?kc_idp_hint=facebook HTTP/1.1
 Host: localhost:8080]]></programlisting>
         <para>
             In this case, is expected that your realm has an identity provider with an alias <literal>facebook</literal>.

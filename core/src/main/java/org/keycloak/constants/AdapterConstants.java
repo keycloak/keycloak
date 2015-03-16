@@ -31,5 +31,5 @@ public interface AdapterConstants {
     public static final String KEYCLOAK_ADAPTER_STATE_COOKIE = "KEYCLOAK_ADAPTER_STATE";
 
     // Request parameter used to specify the identifier of the identity provider that should be used to authenticate an user
-    String K_IDP_HINT = "k_idp_hint";
+    String KC_IDP_HINT = "kc_idp_hint";
 }

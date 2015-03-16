@@ -5,6 +5,7 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -132,7 +133,7 @@ public class AuthorizationEndpoint {
         scope = params.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
         loginHint = params.getFirst(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         prompt = params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
-        idpHint = params.getFirst(OIDCLoginProtocol.K_IDP_HINT);
+        idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
 
         checkSsl();
         checkRealm();
@@ -227,7 +228,7 @@ public class AuthorizationEndpoint {
         if (scope != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
         if (loginHint != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         if (prompt != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, prompt);
-        if (idpHint != null) clientSession.setNote(OIDCLoginProtocol.K_IDP_HINT, idpHint);
+        if (idpHint != null) clientSession.setNote(AdapterConstants.KC_IDP_HINT, idpHint);
     }
 
     private Response buildAuthorizationCodeAuthorizationResponse() {
