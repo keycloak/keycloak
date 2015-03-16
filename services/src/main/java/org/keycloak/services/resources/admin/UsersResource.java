@@ -267,9 +267,6 @@ public class UsersResource {
             for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
                 if (identityProviderModel.getId().equals(identity.getIdentityProvider())) {
                     FederatedIdentityRepresentation rep = ModelToRepresentation.toRepresentation(identity);
-
-                    rep.setIdentityProvider(identityProviderModel.getName());
-
                     result.add(rep);
                 }
             }

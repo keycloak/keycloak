@@ -1,9 +1,12 @@
 package org.keycloak.testsuite.admin;
 
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.ClientErrorException;
@@ -187,44 +190,53 @@ public class UserTest extends AbstractClientTest {
     }
 
     @Test
-    public void addFederatedIdentity() {
+    public void getFederatedIdentities() {
+        // Add sample identity provider
+        addSampleIdentityProvider();
+
+        // Add sample user
         createUser();
-
         UserResource user = realm.users().get("user1");
+        assertEquals(0, user.getFederatedIdentity().size());
 
+        // Add social link to the user
         FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
         link.setUserId("social-user-id");
         link.setUserName("social-username");
-
         Response response = user.addFederatedIdentity("social-provider-id", link);
         assertEquals(204, response.getStatus());
-    }
 
-    @Test
-    @Ignore("Refactor based on KEYCLOAK-883")
-    public void getFederatedIdentities() {
-        addFederatedIdentity();
-
-        UserResource user = realm.users().get("user1");
-        assertEquals(1, user.getFederatedIdentity().size());
-
-        FederatedIdentityRepresentation link = user.getFederatedIdentity().get(0);
+        // Verify social link is here
+        user = realm.users().get("user1");
+        List<FederatedIdentityRepresentation> federatedIdentities = user.getFederatedIdentity();
+        assertEquals(1, federatedIdentities.size());
+        link = federatedIdentities.get(0);
         assertEquals("social-provider-id", link.getIdentityProvider());
         assertEquals("social-user-id", link.getUserId());
         assertEquals("social-username", link.getUserName());
+
+        // Remove social link now
+        user.removeFederatedIdentity("social-provider-id");
+        assertEquals(0, user.getFederatedIdentity().size());
+
+        removeSampleIdentityProvider();
     }
 
-    @Test
-    @Ignore("Refactor based on KEYCLOAK-883")
-    public void removeFederatedIdentity() {
-        addFederatedIdentity();
+    private void addSampleIdentityProvider() {
+        List<IdentityProviderRepresentation> providers = realm.identityProviders().findAll();
+        Assert.assertEquals(0, providers.size());
 
-        UserResource user = realm.users().get("user1");
-        assertEquals(1, user.getFederatedIdentity().size());
+        IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
+        rep.setId("social-provider-id");
+        rep.setName("social-provider-name");
+        rep.setProviderId("social-provider-type");
+        realm.identityProviders().create(rep);
+    }
 
-        user.removeFederatedIdentity("social-provider-id");
-
-        assertEquals(0, user.getFederatedIdentity().size());
+    private void removeSampleIdentityProvider() {
+        IdentityProviderResource resource = realm.identityProviders().get("social-provider-id");
+        Assert.assertNotNull(resource);
+        resource.remove();
     }
 
     @Test
