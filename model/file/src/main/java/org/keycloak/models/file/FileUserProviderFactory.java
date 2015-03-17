@@ -17,6 +17,7 @@
 package org.keycloak.models.file;
 
 import org.keycloak.Config;
+import org.keycloak.connections.file.FileConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserProvider;
@@ -40,7 +41,8 @@ public class FileUserProviderFactory implements UserProviderFactory {
 
     @Override
     public UserProvider create(KeycloakSession session) {
-        return new FileUserProvider(session, InMemoryModel.getModelForSession(session));
+        FileConnectionProvider fcProvider = session.getProvider(FileConnectionProvider.class);
+        return new FileUserProvider(session, fcProvider);
     }
 
     @Override

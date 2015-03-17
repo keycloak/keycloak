@@ -46,6 +46,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.ApplicationEntity;
@@ -53,7 +54,6 @@ import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.entities.OAuthClientEntity;
 import org.keycloak.models.entities.RealmEntity;
 import org.keycloak.models.entities.RoleEntity;
-import org.keycloak.models.file.InMemoryModel;
 
 /**
  * RealmModel for JSON persistence.
@@ -769,8 +769,16 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void addRequiredCredential(String type) {
+        if (type == null) throw new NullPointerException("Credential type can not be null");
+
         RequiredCredentialModel credentialModel = initRequiredCredentialModel(type);
-        addRequiredCredential(credentialModel, realm.getRequiredCredentials());
+
+        List<RequiredCredentialEntity> requiredCredList = realm.getRequiredCredentials();
+        for (RequiredCredentialEntity cred : requiredCredList) {
+            if (type.equals(cred.getType())) return;
+        }
+
+        addRequiredCredential(credentialModel, requiredCredList);
     }
 
     protected void addRequiredCredential(RequiredCredentialModel credentialModel, List<RequiredCredentialEntity> persistentCollection) {

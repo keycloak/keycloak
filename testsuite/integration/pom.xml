@@ -421,6 +421,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/broker/***</exclude>
+                                <exclude>**/CacheTest.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
                                 <keycloak.realm.provider>file</keycloak.realm.provider>

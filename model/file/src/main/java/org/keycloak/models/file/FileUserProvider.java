@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.keycloak.connections.file.FileConnectionProvider;
+import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.ModelDuplicateException;
@@ -49,17 +51,19 @@ import org.keycloak.models.utils.CredentialValidation;
 public class FileUserProvider implements UserProvider {
 
     private final KeycloakSession session;
+    private FileConnectionProvider fcProvider;
     private final InMemoryModel inMemoryModel;
 
-    public FileUserProvider(KeycloakSession session, InMemoryModel inMemoryModel) {
+    public FileUserProvider(KeycloakSession session, FileConnectionProvider fcProvider) {
         this.session = session;
+        this.fcProvider = fcProvider;
         session.enlistForClose(this);
-        this.inMemoryModel = inMemoryModel;
+        this.inMemoryModel = fcProvider.getModel();
     }
 
     @Override
     public void close() {
-        inMemoryModel.sessionClosed(session);
+        fcProvider.sessionClosed(session);
     }
 
     @Override
