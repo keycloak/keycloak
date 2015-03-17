@@ -50,7 +50,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
     public void init() {
         ProviderManager pm = new ProviderManager(getClass().getClassLoader(), Config.scope().getArray("providers"));
 
-        for (Spi spi : ServiceLoader.load(Spi.class)) {
+        for (Spi spi : ServiceLoader.load(Spi.class, getClass().getClassLoader())) {
             Map<String, ProviderFactory> factories = new HashMap<String, ProviderFactory>();
             factoriesMap.put(spi.getProviderClass(), factories);
 
