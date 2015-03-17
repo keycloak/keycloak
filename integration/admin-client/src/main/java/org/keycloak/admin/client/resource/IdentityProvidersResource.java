@@ -16,7 +16,7 @@ import java.util.List;
  */
 public interface IdentityProvidersResource {
 
-    @Path("{id}")
+    @Path("instances/{id}")
     IdentityProviderResource get(@PathParam("id") String id);
 
     @GET

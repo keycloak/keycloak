@@ -1102,7 +1102,7 @@ module.factory('PasswordPolicy', function() {
 });
 
 module.factory('IdentityProvider', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/identity-provider/:id', {
+    return $resource(authUrl + '/admin/realms/:realm/identity-provider/instances/:id', {
         realm : '@realm'
     }, {
         create : {
@@ -1118,7 +1118,7 @@ module.factory('IdentityProvider', function($resource) {
 });
 
 module.factory('IdentityProviderExport', function($resource) {
-    var url = authUrl + '/admin/realms/:realm/identity-provider/:id/export';
+    var url = authUrl + '/admin/realms/:realm/identity-provider/instances/:id/export';
     return {
         url : function(parameters)
         {

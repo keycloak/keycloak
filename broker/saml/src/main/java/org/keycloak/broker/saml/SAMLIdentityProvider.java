@@ -301,20 +301,20 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authnBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
         }
 
-        String assertionConsumerService = uriInfo.getBaseUriBuilder().path("realms").path(realm.getName()).path("broker").path(getConfig().getProviderId()).build().toString();
+        String assertionConsumerService = uriInfo.getBaseUriBuilder().path("realms").path(realm.getName()).path("broker").path(getConfig().getId()).build().toString();
 
 
 
         String descriptor =
-                "<EntityDescriptor entityID=\"" + getEntityId(uriInfo, realm) + "\n" +
-                "    <SPSSODescriptor AuthnRequestsSigned=\"" + getConfig().isWantAuthnRequestsSigned() + "\n" +
+                "<EntityDescriptor entityID=\"" + getEntityId(uriInfo, realm) + "\">\n" +
+                "    <SPSSODescriptor AuthnRequestsSigned=\"" + getConfig().isWantAuthnRequestsSigned() + "\"\n" +
                 "            protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol http://schemas.xmlsoap.org/ws/2003/07/secext\">\n" +
                 "        <NameIDFormat>" + getConfig().getNameIDPolicyFormat() + "\n" +
                 "        </NameIDFormat>\n" +
 // todo single logout service description
 //                "        <SingleLogoutService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" Location=\"http://localhost:8081/sales-metadata/\"/>\n" +
                 "        <AssertionConsumerService\n" +
-                "                Binding=\"" + authnBinding + "\" Location=\"" + assertionConsumerService + "\n" +
+                "                Binding=\"" + authnBinding + "\" Location=\"" + assertionConsumerService + "\"\n" +
                 "                index=\"1\" isDefault=\"true\" />\n";
         if (getConfig().isWantAuthnRequestsSigned()) {
             descriptor +=

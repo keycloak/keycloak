@@ -638,7 +638,7 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
 
 });
 
-module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, realm, instance, providerFactory, IdentityProvider, serverInfo, $location, Notifications) {
+module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, realm, instance, providerFactory, IdentityProvider, serverInfo, $location, Notifications) {
     console.log('RealmIdentityProviderCtrl');
 
     $scope.realm = angular.copy(realm);
@@ -678,6 +678,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
     $scope.files = [];
     $scope.importFile = false;
+    $scope.importUrl = false;
 
     $scope.onFileSelect = function($files) {
         $scope.importFile = true;
@@ -685,6 +686,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     };
 
     $scope.clearFileSelect = function() {
+        $scope.importUrl = false;
         $scope.importFile = false;
         $scope.files = null;
     }
@@ -694,7 +696,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         for (var i = 0; i < $scope.files.length; i++) {
             var $file = $scope.files[i];
             $scope.upload = $upload.upload({
-                url: authUrl + '/admin/realms/' + realm.realm + '/identity-provider/',
+                url: authUrl + '/admin/realms/' + realm.realm + '/identity-provider/import',
                 // method: POST or PUT,
                 // headers: {'headerKey': 'headerValue'}, withCredential: true,
                 data: $scope.identityProvider,
@@ -713,6 +715,24 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             });
         }
     };
+
+    $scope.importFrom = function() {
+        $scope.identityProvider.fromUrl = $scope.fromUrl;
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/identity-provider/import', $scope.identityProvider)
+            .success(function(data, status, headers) {
+                $location.url("/realms/" + realm.realm + "/identity-provider-settings");
+                Notifications.success("The " + $scope.identityProvider.name + " provider has been created.");
+            }).error(function() {
+                Notifications.error("The provider can not be imported. Please verify the url.");
+            });
+    };
+    $scope.$watch('fromUrl', function(newVal, oldVal){
+        if ($scope.fromUrl && $scope.fromUrl.length > 0) {
+            $scope.importUrl = true;
+        } else{
+            $scope.importUrl = false;
+        }
+    });
 
     $scope.$watch('configuredProviders', function(configuredProviders) {
         if (configuredProviders) {

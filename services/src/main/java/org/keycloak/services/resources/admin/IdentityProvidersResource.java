@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -17,6 +18,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.social.SocialIdentityProvider;
 
@@ -102,8 +104,9 @@ public class IdentityProvidersResource {
     }
 
     @POST
+    @Path("import")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response createWithFile(@Context UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+    public Response importFrom(@Context UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
         this.auth.requireManage();
         Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
 
@@ -135,7 +138,47 @@ public class IdentityProvidersResource {
         return create(uriInfo, representation);
     }
 
-    @Path("{id}")
+    @POST
+    @Path("import")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response importFrom(@Context UriInfo uriInfo, Map<String, Object> data) throws IOException {
+        this.auth.requireManage();
+
+        String id = data.get("id").toString();
+        String name = data.get("name").toString();
+        String providerId = data.get("providerId").toString();
+        String enabled = data.get("enabled").toString();
+        String updateProfileFirstLogin = data.get("updateProfileFirstLogin").toString();
+        String storeToken = "false";
+
+        if (data.containsKey("storeToken")) {
+            storeToken = data.get("storeToken").toString();
+        }
+
+        String from = data.get("fromUrl").toString();
+        ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
+        InputStream inputStream = null;
+        try {
+            inputStream = executor.createRequest(from).getTarget(InputStream.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
+        Map config = providerFactory.parseConfig(inputStream);
+        IdentityProviderRepresentation representation = new IdentityProviderRepresentation();
+
+        representation.setId(id);
+        representation.setName(name);
+        representation.setProviderId(providerId);
+        representation.setEnabled(Boolean.valueOf(enabled));
+        representation.setUpdateProfileFirstLogin(Boolean.valueOf(updateProfileFirstLogin));
+        representation.setStoreToken(Boolean.valueOf(storeToken));
+        representation.setConfig(config);
+
+        return create(uriInfo, representation);
+    }
+
+    @Path("instances/{id}")
     public IdentityProviderResource getIdentityProvider(@PathParam("id") String providerId) {
         this.auth.requireView();
         IdentityProviderModel identityProviderModel = null;
