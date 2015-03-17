@@ -29,13 +29,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.ApplicationEntity;
 import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.entities.RoleEntity;
-import org.keycloak.models.file.InMemoryModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**

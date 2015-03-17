@@ -33,11 +33,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.entities.FederatedIdentityEntity;
 import org.keycloak.models.entities.RoleEntity;
 import org.keycloak.models.entities.UserEntity;
-import org.keycloak.models.file.InMemoryModel;
 
 /**
  * UserModel for JSON persistence.

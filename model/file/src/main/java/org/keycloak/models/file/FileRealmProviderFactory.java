@@ -17,6 +17,7 @@
 package org.keycloak.models.file;
 
 import org.keycloak.Config;
+import org.keycloak.connections.file.FileConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmProvider;
@@ -30,19 +31,9 @@ import org.keycloak.models.RealmProviderFactory;
  */
 public class FileRealmProviderFactory implements RealmProviderFactory {
 
-    private String directory;
-    private String fileName;
-
     @Override
     public void init(Config.Scope config) {
-        this.fileName = config.get("fileName");
-        if (fileName == null) fileName = "keycloak-model.json";
-        InMemoryModel.setFileName(fileName);
 
-        this.directory = config.get("directory");
-        if (directory == null) directory = System.getProperty("jboss.server.data.dir");
-        if (directory == null) directory = ".";
-        InMemoryModel.setDirectory(directory);
     }
 
     @Override
@@ -52,7 +43,8 @@ public class FileRealmProviderFactory implements RealmProviderFactory {
 
     @Override
     public RealmProvider create(KeycloakSession session) {
-        return new FileRealmProvider(session, InMemoryModel.getModelForSession(session));
+        FileConnectionProvider fcProvider = session.getProvider(FileConnectionProvider.class);
+        return new FileRealmProvider(session, fcProvider);
     }
 
     @Override

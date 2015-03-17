@@ -27,6 +27,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.List;
+import org.keycloak.connections.file.FileConnectionProvider;
+import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.entities.RealmEntity;
 
@@ -38,12 +40,19 @@ import org.keycloak.models.entities.RealmEntity;
 public class FileRealmProvider implements RealmProvider {
 
     private final KeycloakSession session;
+    private FileConnectionProvider fcProvider;
     private final InMemoryModel inMemoryModel;
 
-    public FileRealmProvider(KeycloakSession session, InMemoryModel inMemoryModel) {
+    public FileRealmProvider(KeycloakSession session, FileConnectionProvider fcProvider) {
         this.session = session;
+        this.fcProvider = fcProvider;
         session.enlistForClose(this);
-        this.inMemoryModel = inMemoryModel;
+        this.inMemoryModel = fcProvider.getModel();
+    }
+
+    @Override
+    public void close() {
+        fcProvider.sessionClosed(session);
     }
 
     @Override
@@ -83,11 +92,6 @@ public class FileRealmProvider implements RealmProvider {
     @Override
     public boolean removeRealm(String id) {
         return inMemoryModel.removeRealm(id);
-    }
-
-    @Override
-    public void close() {
-        inMemoryModel.sessionClosed(session);
     }
 
     @Override
