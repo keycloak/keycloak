@@ -65,7 +65,7 @@ public class IdentityProviderBean {
 
     private void addIdentityProvider(RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
         String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getId(), realm.getName()).toString();
-        providers.add(new IdentityProvider(identityProvider.getId(), identityProvider.getName(), loginUrl));
+        providers.add(new IdentityProvider(identityProvider.getId(), identityProvider.getProviderId(), identityProvider.getName(), loginUrl));
     }
 
     public List<IdentityProvider> getProviders() {
@@ -79,11 +79,13 @@ public class IdentityProviderBean {
     public static class IdentityProvider {
 
         private final String id;
+        private final String providerId; // This refer to providerType (facebook, google, etc.)
         private final String name;
         private final String loginUrl;
 
-        public IdentityProvider(String id, String name, String loginUrl) {
+        public IdentityProvider(String id, String providerId, String name, String loginUrl) {
             this.id = id;
+            this.providerId = providerId;
 
             if (name == null) {
                 name = id;
@@ -105,5 +107,8 @@ public class IdentityProviderBean {
             return loginUrl;
         }
 
+        public String getProviderId() {
+            return providerId;
+        }
     }
 }

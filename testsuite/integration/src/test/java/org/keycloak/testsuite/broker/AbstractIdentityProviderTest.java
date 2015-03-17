@@ -239,7 +239,7 @@ public abstract class AbstractIdentityProviderTest {
         // Provider button is available on login page
         this.driver.navigate().to("http://localhost:8081/test-app/");
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
-        this.driver.findElement(By.className(getProviderId()));
+        loginPage.findSocialButton(getProviderId());
 
         // Add identityProvider to client model
         List<ClientIdentityProviderMappingModel> appIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
@@ -251,7 +251,7 @@ public abstract class AbstractIdentityProviderTest {
 
         // Provider button still available on login page
         this.driver.navigate().to("http://localhost:8081/test-app/");
-        this.driver.findElement(By.className(getProviderId()));
+        loginPage.findSocialButton(getProviderId());
     }
 
     @Test
@@ -389,17 +389,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(identityModel.getToken());
 
-        ClientModel clientModel = realm.findClient("test-app");
-        ClientIdentityProviderMappingModel providerMappingModel = null;
-
-        for (ClientIdentityProviderMappingModel identityProviderMappingModel : clientModel.getIdentityProviders()) {
-            if (identityProviderMappingModel.getIdentityProvider().equals(getProviderId())) {
-                providerMappingModel = identityProviderMappingModel;
-                break;
-            }
-        }
-
-        providerMappingModel.setRetrieveToken(false);
+        configureRetrieveToken(realm.findClient("test-app"), getProviderId(), false);
 
         UserSessionStatus userSessionStatus = retrieveSessionStatus();
         String accessToken = userSessionStatus.getAccessTokenString();
@@ -417,7 +407,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
 
-        providerMappingModel.setRetrieveToken(true);
+        configureRetrieveToken(getRealm().findClient("test-app"), getProviderId(), true);
 
         client = ClientBuilder.newBuilder().register(authFilter).build();
         tokenEndpoint = client.target(tokenEndpointUrl);
@@ -470,14 +460,7 @@ public abstract class AbstractIdentityProviderTest {
         ClientModel clientModel = getRealm().findClient("third-party");
         assertEquals(0, clientModel.getIdentityProviders().size());
 
-        ClientIdentityProviderMappingModel providerMappingModel = new ClientIdentityProviderMappingModel();
-        providerMappingModel.setIdentityProvider(getProviderId());
-        providerMappingModel.setRetrieveToken(true);
-        List<ClientIdentityProviderMappingModel> providerMappingModels = new ArrayList<ClientIdentityProviderMappingModel>();
-        providerMappingModels.add(providerMappingModel);
-        clientModel.updateIdentityProviders(providerMappingModels);
-        brokerServerRule.stopSession(session, true);
-        session = brokerServerRule.startSession();
+        configureRetrieveToken(clientModel, getProviderId(), true);
 
         AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
         URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), getRealm().getName());
@@ -494,6 +477,33 @@ public abstract class AbstractIdentityProviderTest {
         assertNotNull(driver.getPageSource());
 
         doAssertTokenRetrieval(driver.getPageSource());
+    }
+
+    private void configureRetrieveToken(ClientModel clientModel, String providerId, boolean retrieveToken) {
+        List<ClientIdentityProviderMappingModel> providerMappingModels = clientModel.getIdentityProviders();
+        ClientIdentityProviderMappingModel providerMappingModel = null;
+
+        // Check if provider is already linked with this client
+        for (ClientIdentityProviderMappingModel current : providerMappingModels) {
+            if (current.getIdentityProvider().equals(providerId)) {
+                providerMappingModel = current;
+                break;
+            }
+        }
+
+        // Link provider with client if not linked yet
+        if (providerMappingModel == null) {
+            providerMappingModel = new ClientIdentityProviderMappingModel();
+            providerMappingModel.setIdentityProvider(providerId);
+            providerMappingModels.add(providerMappingModel);
+        }
+
+        providerMappingModel.setRetrieveToken(retrieveToken);
+
+        clientModel.updateIdentityProviders(providerMappingModels);
+
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
     }
 
     protected abstract void doAssertTokenRetrieval(String pageSource);

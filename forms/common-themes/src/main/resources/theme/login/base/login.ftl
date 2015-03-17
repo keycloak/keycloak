@@ -63,14 +63,6 @@
                      </div>
                 </div>
             </form>
-        <#elseif realm.social>
-            <div id="kc-social-providers">
-                <ul>
-                    <#list social.providers as p>
-                        <li><a href="${p.loginUrl}" class="zocial ${p.id}"> <span class="text">${p.name}</span></a></li>
-                    </#list>
-                </ul>
-            </div>
         </#if>
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed>
@@ -83,7 +75,7 @@
             <div id="kc-social-providers">
                 <ul>
                     <#list social.providers as p>
-                        <li><a href="${p.loginUrl}" class="zocial ${p.id}"> <span class="text">${p.name}</span></a></li>
+                        <li><a href="${p.loginUrl}" id="zocial-${p.id}" class="zocial ${p.providerId}"> <span class="text">${p.name}</span></a></li>
                     </#list>
                 </ul>
             </div>
