@@ -11,10 +11,6 @@
         <form class="form-horizontal" name="identityProviderForm" novalidate>
             <div class="form-group" ng-repeat="identityProvider in identityProviders">
                 <legend><span class="text">{{identityProvider.identityProvider.name}}</span></legend>
-                <label class="col-sm-2 control-label" for="{{identityProvider.identityProvider.id}}">Enable&nbsp;<span tooltip-placement="right" tooltip="If disabled, users can not login to the application using this identity provider." class="fa fa-info-circle"></span></label>
-                <div class="col-sm-4">
-                    <input ng-model="application.identityProviders[$index].id" name="identityProvider.identityProvider.id" id="identityProvider.identityProvider.id" value="identityProvider.identityProvider.id" onoffswitchmodel />
-                </div>
                 <div data-ng-show="application.identityProviders[$index].id">
                     <label class="col-sm-2 control-label" for="{{identityProvider.identityProvider.id}}retrieveToken">Can Retrieve Token&nbsp;<span tooltip-placement="right" tooltip="If disabled, the application can not retrieve tokens from the identity provider." class="fa fa-info-circle"></span></label>
                     <div class="col-sm-4">

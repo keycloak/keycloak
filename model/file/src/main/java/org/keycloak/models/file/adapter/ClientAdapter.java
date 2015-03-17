@@ -386,7 +386,7 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void updateAllowedIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
+    public void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
         List<ClientIdentityProviderMappingEntity> stored = new ArrayList<ClientIdentityProviderMappingEntity>();
 
         for (ClientIdentityProviderMappingModel model : identityProviders) {
@@ -414,19 +414,6 @@ public abstract class ClientAdapter implements ClientModel {
         }
 
         return models;
-    }
-
-    @Override
-    public boolean hasIdentityProvider(String providerId) {
-        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : clientEntity.getIdentityProviders()) {
-            String identityProvider = identityProviderMappingModel.getId();
-
-            if (identityProvider.equals(providerId)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     @Override

@@ -62,6 +62,7 @@ import javax.ws.rs.core.UriBuilder;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -226,40 +227,30 @@ public abstract class AbstractIdentityProviderTest {
     }
 
     @Test
-    public void testDisabledForApplication() {
+    public void testProviderOnLoginPage() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         RealmModel realm = getRealm();
         ApplicationModel applicationModel = realm.getApplicationByName("test-app");
-        List<ClientIdentityProviderMappingModel> allowedIdentityProviders = applicationModel.getIdentityProviders();
-        ClientIdentityProviderMappingModel mapping = null;
 
-        for (ClientIdentityProviderMappingModel model : allowedIdentityProviders) {
-            if (model.getIdentityProvider().equals(identityProviderModel.getId())) {
-                mapping = model;
-            }
-        }
+        // This client doesn't have any specific identity providers settings
+        ClientModel client2 = realm.findClient("test-app");
+        assertEquals(0, client2.getIdentityProviders().size());
 
-        assertNotNull(mapping);
-
-        allowedIdentityProviders.remove(mapping);
-
+        // Provider button is available on login page
         this.driver.navigate().to("http://localhost:8081/test-app/");
-
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+        this.driver.findElement(By.className(getProviderId()));
 
-        try {
-            this.driver.findElement(By.className(getProviderId()));
-            fail("Provider [" + getProviderId() + "] not disabled.");
-        } catch (NoSuchElementException nsee) {
+        // Add identityProvider to client model
+        List<ClientIdentityProviderMappingModel> appIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
+        ClientIdentityProviderMappingModel mapping = new ClientIdentityProviderMappingModel();
+        mapping.setIdentityProvider(getProviderId());
+        mapping.setRetrieveToken(true);
+        appIdentityProviders.add(mapping);
+        applicationModel.updateIdentityProviders(appIdentityProviders);
 
-        }
-
-        allowedIdentityProviders.add(mapping);
-
-        applicationModel.updateAllowedIdentityProviders(allowedIdentityProviders);
-
+        // Provider button still available on login page
         this.driver.navigate().to("http://localhost:8081/test-app/");
-
         this.driver.findElement(By.className(getProviderId()));
     }
 
@@ -477,16 +468,16 @@ public abstract class AbstractIdentityProviderTest {
         assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
 
         ClientModel clientModel = getRealm().findClient("third-party");
-        ClientIdentityProviderMappingModel providerMappingModel = null;
+        assertEquals(0, clientModel.getIdentityProviders().size());
 
-        for (ClientIdentityProviderMappingModel identityProviderMappingModel : clientModel.getIdentityProviders()) {
-            if (identityProviderMappingModel.getIdentityProvider().equals(getProviderId())) {
-                providerMappingModel = identityProviderMappingModel;
-                break;
-            }
-        }
-
+        ClientIdentityProviderMappingModel providerMappingModel = new ClientIdentityProviderMappingModel();
+        providerMappingModel.setIdentityProvider(getProviderId());
         providerMappingModel.setRetrieveToken(true);
+        List<ClientIdentityProviderMappingModel> providerMappingModels = new ArrayList<ClientIdentityProviderMappingModel>();
+        providerMappingModels.add(providerMappingModel);
+        clientModel.updateIdentityProviders(providerMappingModels);
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
 
         AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
         URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), getRealm().getName());

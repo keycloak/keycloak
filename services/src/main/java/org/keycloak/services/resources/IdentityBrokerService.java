@@ -182,10 +182,6 @@ public class IdentityBrokerService {
                     return badRequest("Invalid client.");
                 }
 
-                if (!clientModel.hasIdentityProvider(providerId)) {
-                    return corsResponse(badRequest("Client [" + audience + "] not authorized."), clientModel);
-                }
-
                 if (!clientModel.isAllowedRetrieveTokenFromIdentityProvider(providerId)) {
                     return corsResponse(badRequest("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
                 }
@@ -399,16 +395,16 @@ public class IdentityBrokerService {
             if (clientSession != null) {
                 ClientModel client = clientSession.getClient();
 
-                if (client != null) {
-                    LOGGER.debugf("Got authorization code from client [%s].", client.getClientId());
-                    this.event.client(client);
+                if (client == null) {
+                    throw new IdentityBrokerException("Invalid client");
                 }
+
+                LOGGER.debugf("Got authorization code from client [%s].", client.getClientId());
+                this.event.client(client);
 
                 if (clientSession.getUserSession() != null) {
                     this.event.session(clientSession.getUserSession());
                 }
-            } else {
-                validateClientPermissions(clientCode, providerId);
             }
 
             if (isDebugEnabled()) {
@@ -507,19 +503,6 @@ public class IdentityBrokerService {
         }
 
         throw new IdentityBrokerException("Configuration for identity provider [" + providerId + "] not found.");
-    }
-
-    private void validateClientPermissions(ClientSessionCode clientSessionCode, String providerId) {
-        ClientSessionModel clientSession = clientSessionCode.getClientSession();
-        ClientModel clientModel = clientSession.getClient();
-
-        if (clientModel == null) {
-            throw new IdentityBrokerException("Invalid client.");
-        }
-
-        if (!clientModel.hasIdentityProvider(providerId)) {
-            throw new IdentityBrokerException("Client [" + clientModel.getClientId() + "] not authorized to authenticate with identity provider [" + providerId + "].");
-        }
     }
 
     private UserModel createUser(FederatedIdentity updatedIdentity) {

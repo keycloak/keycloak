@@ -53,24 +53,6 @@ public class IdentityProviderBean {
 
             for (IdentityProviderModel identityProvider : identityProviders) {
                 if (identityProvider.isEnabled()) {
-                    String clientId = uriInfo.getQueryParameters().getFirst(OAuth2Constants.CLIENT_ID);
-
-                    if (clientId != null) {
-                        ClientModel clientModel = realm.findClient(clientId);
-
-                        if (clientModel != null && !clientModel.hasIdentityProvider(identityProvider.getId())) {
-                            if (ApplicationModel.class.isInstance(clientModel)) {
-                                ApplicationModel applicationModel = (ApplicationModel) clientModel;
-
-                                if (applicationModel.getName().equals(Constants.ACCOUNT_MANAGEMENT_APP)) {
-                                    addIdentityProvider(realm, baseURI, identityProvider);
-                                }
-                            }
-
-                            continue;
-                        }
-                    }
-
                     addIdentityProvider(realm, baseURI, identityProvider);
                 }
             }

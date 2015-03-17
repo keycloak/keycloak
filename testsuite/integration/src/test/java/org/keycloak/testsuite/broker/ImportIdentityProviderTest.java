@@ -133,7 +133,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
 
         identityProviders.remove(identityProviderMappingModel);
 
-        client.updateAllowedIdentityProviders(identityProviders);
+        client.updateIdentityProviders(identityProviders);
 
         client = realm.findClientById(client.getId());
         identityProviders = client.getIdentityProviders();
