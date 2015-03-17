@@ -9,6 +9,7 @@
     <dependencies>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
+        <module name="javax.ws.rs.api"/>
     </dependencies>
 
 </module>

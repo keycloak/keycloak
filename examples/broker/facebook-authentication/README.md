@@ -31,7 +31,9 @@ Make sure you've set up a application in Facebook
 This example application requires you to create a Facebook Application. How to create it is beyond the scope of this
 documentation.
 
-Please take a look on [Facebook Developer Console](https://developers.facebook.com/apps/) for more details.
+Please take a look on [Facebook Developer Console](https://developers.facebook.com/apps/) for more details. Make sure to use the correct
+redirect URI to be used as URL on Facebook. The facebook will redirect to this URI after finish authentication. For this example, it's the URL
+[http://localhost:8080/auth/realms/facebook-identity-provider-realm/broker/facebook](http://localhost:8080/auth/realms/facebook-identity-provider-realm/broker/facebook) .
 
 Once you have a Facebook Application configured, you need to obtain both **App ID** and **App Secret** and update the
 **facebook-identity-provider-realm.json** configuration file with these information. There you'll find a section as follows:
