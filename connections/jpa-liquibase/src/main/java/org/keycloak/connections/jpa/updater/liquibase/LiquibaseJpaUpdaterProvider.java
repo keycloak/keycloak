@@ -64,7 +64,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
                         statement.executeQuery("SELECT id FROM REALM");
 
                         logger.infov("Updating database from {0} to {1}", FIRST_VERSION, changeSets.get(changeSets.size() - 1).getId());
-                        liquibase.markNextChangeSetRan((Contexts) null);
+                        liquibase.markNextChangeSetRan(null);
                     } catch (SQLException e) {
                         logger.info("Initializing database schema");
                     }
