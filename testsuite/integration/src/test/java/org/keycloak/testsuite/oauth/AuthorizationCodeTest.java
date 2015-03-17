@@ -31,6 +31,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
@@ -44,6 +45,7 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
@@ -189,6 +191,15 @@ public class AuthorizationCodeTest {
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
+    }
+
+    @Test
+    public void authorizationRequestInvalidResponseType() throws IOException {
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        b.replaceQueryParam(OAuth2Constants.RESPONSE_TYPE, "token");
+        driver.navigate().to(b.build().toURL());
+        assertEquals("Invalid parameter: response_type", errorPage.getError());
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "token").assertEvent();
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {
