@@ -83,7 +83,7 @@ module.controller('GlobalCtrl', function($scope, $http, $location, Auth) {
     $scope.identity = Auth.getIdentity();
 
     $scope.loadSocialProfile = function() {
-        $http.get('http://localhost:8081/auth/realms/facebook-identity-provider-realm/broker/facebook/token').success(function(data) {
+        $http.get('/auth/realms/facebook-identity-provider-realm/broker/facebook/token').success(function(data) {
             var accessTokenParameter = 'access_token=';
             var accessToken = data.substring(data.indexOf(accessTokenParameter) + accessTokenParameter.length, data.indexOf('&'));
 

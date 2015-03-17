@@ -42,6 +42,12 @@
             ],
             "webOrigins": [
               "http://localhost:8080"
+            ],
+            "identityProviders": [
+                {
+                    "id": "facebook",
+                    "retrieveToken": true
+                }
             ]
         }
     ],

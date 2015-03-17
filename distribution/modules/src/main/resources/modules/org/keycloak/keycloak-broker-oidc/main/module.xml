@@ -10,6 +10,10 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
         <module name="org.keycloak.keycloak-broker-core"/>
+        <module name="org.codehaus.jackson.jackson-core-asl"/>
+        <module name="org.codehaus.jackson.jackson-mapper-asl"/>
+        <module name="org.codehaus.jackson.jackson-xc"/>
+        <module name="javax.ws.rs.api"/>
     </dependencies>
 
 </module>
