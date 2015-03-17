@@ -125,7 +125,7 @@
                 "clientSecret": "clientSecret",
                 "prompt": "prompt",
                 "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/tokens/login",
-                "tokenUrl": "http://localhost:8081/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/access/codes",
+                "tokenUrl": "http://localhost:8081/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/token",
                 "userInfoUrl": "http://localhost:8081/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
                 "defaultScope": "email profile"
             }
@@ -141,7 +141,7 @@
                 "clientSecret": "secret",
                 "prompt": "login",
                 "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/tokens/login",
-                "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/access/codes",
+                "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/token",
                 "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
                 "defaultScope": "email profile"
             }
