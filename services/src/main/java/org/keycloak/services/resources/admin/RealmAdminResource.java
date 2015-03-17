@@ -382,7 +382,7 @@ public class RealmAdminResource {
      * Query events.  Returns all events, or will query based on URL query parameters listed here
      *
      * @param client app or oauth client name
-     * @param type type type
+     * @param types type type
      * @param user user id
      * @param ipAddress
      * @param firstResult
@@ -393,7 +393,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Event> getEvents(@QueryParam("client") String client, @QueryParam("type") String type,
+    public List<Event> getEvents(@QueryParam("client") String client,
             @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults) {
@@ -405,9 +405,16 @@ public class RealmAdminResource {
         if (client != null) {
             query.client(client);
         }
-        if (type != null) {
-            query.type(EventType.valueOf(type));
+
+        List<String> types = uriInfo.getQueryParameters().get("type");
+        if (types != null) {
+            EventType[] t = new EventType[types.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = EventType.valueOf(types.get(i));
+            }
+            query.type(t);
         }
+
         if (user != null) {
             query.user(user);
         }

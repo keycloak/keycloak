@@ -1195,11 +1195,11 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
     $scope.realm = realm;
     $scope.page = 0;
     
-    $scope.eventTypes = [{tag:'LOGIN'}, {tag:'REGISTER'}, {tag:'LOGOUT'}, {tag:'CODE_TO_TOKEN'}, {tag:'REFRESH_TOKEN'}, 
+    $scope.eventTypes = [{tag:'LOGIN'}, {tag:'REGISTER'}, {tag:'LOGOUT'}, {tag:'CODE_TO_TOKEN'}, {tag:'REFRESH_TOKEN'},
                          {tag:'LOGIN_ERROR'}, {tag:'REGISTER_ERROR'}, {tag:'LOGOUT_ERROR'}, {tag:'CODE_TO_TOKEN_ERROR'}, {tag:'REFRESH_TOKEN_ERROR'},
                          {tag:'VALIDATE_ACCESS_TOKEN'}, {tag:'VALIDATE_ACCESS_TOKEN_ERROR'}, {tag:'SOCIAL_LINK'}, {tag:'SOCIAL_LINK_ERROR'}, {tag:'REMOVE_FEDERATED_IDENTITY'},
                          {tag:'REMOVE_SOCIAL_LINK_ERROR'}, {tag:'UPDATE_EMAIL'}, {tag:'UPDATE_PROFILE'}, {tag:'UPDATE_PASSWORD'}, {tag:'UPDATE_TOTP'}];
-    
+
     $scope.query = {
         id : realm.realm,
         max : 5,

@@ -31,16 +31,13 @@
                     </div>
                     <form class="form-horizontal">
                         <div class="form-group" data-ng-show="filter">
-      			<label class="col-sm-2 control-label" for="eventType">Event Type</label>
+      			            <label class="col-sm-2 control-label" for="eventType">Event Type</label>
                     	    <div class="col-sm-5">
-                    	        <select style="width:230px" data-ui-select2 data-ng-model="query.type" data-placeholder="Select Event Type">
-				    <!-- empty option gets placeholder working -->
-				    <option value=""></option>
-				    <!-- ng-repeat to populate dynamic options -->
-				    <option data-ng-repeat="event in eventTypes">{{event.tag}}</option>
-				</select>
-			    </div>
-			</div>
+                                <select ui-select2 id="reqActions" ng-model="query.type" data-placeholder="Select event types..." multiple>
+                                    <option ng-repeat="event in eventTypes|orderBy:'tag'">{{event.tag}}</option>
+                                </select>
+			                </div>
+			            </div>
                         <div class="form-group" data-ng-show="filter">
                             <label class="col-sm-2 control-label" for="client">Client</label>
                             <div class="col-sm-4">
