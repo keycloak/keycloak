@@ -15,6 +15,7 @@
         <module name="org.twitter4j"/>
         <module name="org.jboss.logging"/>
         <module name="javax.api"/>
+        <module name="javax.ws.rs.api"/>
         <module name="org.codehaus.jackson.jackson-core-asl"/>
         <module name="org.codehaus.jackson.jackson-mapper-asl"/>
         <module name="org.codehaus.jackson.jackson-xc"/>

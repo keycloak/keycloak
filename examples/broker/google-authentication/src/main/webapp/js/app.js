@@ -83,7 +83,7 @@ module.controller('GlobalCtrl', function($scope, $http, $location, Auth) {
     $scope.identity = Auth.getIdentity();
 
     $scope.loadSocialProfile = function() {
-        $http.get('http://localhost:8081/auth/realms/google-identity-provider-realm/broker/google/token').success(function(data) {
+        $http.get('/auth/realms/google-identity-provider-realm/broker/google/token').success(function(data) {
             var accessToken = data.access_token;
 
             var req = {

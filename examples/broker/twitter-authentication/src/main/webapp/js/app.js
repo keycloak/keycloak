@@ -87,7 +87,7 @@ module.controller('GlobalCtrl', function($scope, $http, $location, Auth) {
     $scope.identity = Auth.getIdentity();
 
     $scope.loadSocialProfile = function() {
-        $http.get('http://localhost:8080/twitter-authentication/twitter/showUser')
+        $http.get('/twitter-authentication/twitter/showUser')
             .success(function(profile) {
                 $scope.socialProfile = profile;
             })
