@@ -108,6 +108,15 @@ public class ModelToRepresentation {
         rep.setQuickLoginCheckMilliSeconds(realm.getQuickLoginCheckMilliSeconds());
         rep.setMaxDeltaTimeSeconds(realm.getMaxDeltaTimeSeconds());
         rep.setFailureFactor(realm.getFailureFactor());
+
+        rep.setEventsEnabled(realm.isEventsEnabled());
+        if (realm.getEventsExpiration() != 0) {
+            rep.setEventsExpiration(realm.getEventsExpiration());
+        }
+        if (realm.getEventsListeners() != null) {
+            rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
+        }
+
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
