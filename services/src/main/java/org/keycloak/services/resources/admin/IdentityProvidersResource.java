@@ -94,9 +94,6 @@ public class IdentityProvidersResource {
         try {
             this.realm.addIdentityProvider(RepresentationToModel.toModel(representation));
 
-            updateClientIdentityProviders(this.realm.getApplications(), representation);
-            updateClientIdentityProviders(this.realm.getOAuthClients(), representation);
-
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Identity Provider " + representation.getId() + " already exists");
@@ -219,18 +216,5 @@ public class IdentityProvidersResource {
         allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class));
 
         return allProviders;
-    }
-
-    private void updateClientIdentityProviders(List<? extends ClientModel> clients, IdentityProviderRepresentation identityProvider) {
-        for (ClientModel clientModel : clients) {
-            List<ClientIdentityProviderMappingModel> allowedIdentityProviders = clientModel.getIdentityProviders();
-            ClientIdentityProviderMappingModel providerMappingModel = new ClientIdentityProviderMappingModel();
-
-            providerMappingModel.setIdentityProvider(identityProvider.getId());
-
-            allowedIdentityProviders.add(providerMappingModel);
-
-            clientModel.updateAllowedIdentityProviders(allowedIdentityProviders);
-        }
     }
 }

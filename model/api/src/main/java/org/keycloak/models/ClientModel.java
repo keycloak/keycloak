@@ -98,9 +98,8 @@ public interface ClientModel {
 
     void setNotBefore(int notBefore);
 
-    void updateAllowedIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders);
+    void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders);
     List<ClientIdentityProviderMappingModel> getIdentityProviders();
-    boolean hasIdentityProvider(String providerId);
     boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId);
 
     Set<ProtocolMapperModel> getProtocolMappers();

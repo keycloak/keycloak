@@ -489,7 +489,7 @@ public class RepresentationToModel {
             }
         }
 
-        applicationModel.updateAllowedIdentityProviders(toModel(resourceRep.getIdentityProviders(), realm));
+        applicationModel.updateIdentityProviders(toModel(resourceRep.getIdentityProviders(), realm));
 
         return applicationModel;
     }
@@ -538,7 +538,7 @@ public class RepresentationToModel {
             }
         }
 
-        updateClientIdentityProvides(rep.getIdentityProviders(), resource);
+        updateClientIdentityProviders(rep.getIdentityProviders(), resource);
     }
 
     public static void setClaims(ClientModel model, ClaimRepresentation rep) {
@@ -613,7 +613,7 @@ public class RepresentationToModel {
     public static OAuthClientModel createOAuthClient(OAuthClientRepresentation rep, RealmModel realm) {
         OAuthClientModel model = createOAuthClient(rep.getId(), rep.getName(), realm);
 
-        model.updateAllowedIdentityProviders(toModel(rep.getIdentityProviders(), realm));
+        model.updateIdentityProviders(toModel(rep.getIdentityProviders(), realm));
 
         updateOAuthClient(rep, model);
         return model;
@@ -653,7 +653,7 @@ public class RepresentationToModel {
             }
         }
 
-        updateClientIdentityProvides(rep.getIdentityProviders(), model);
+        updateClientIdentityProviders(rep.getIdentityProviders(), model);
 
         if (rep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
@@ -818,35 +818,25 @@ public class RepresentationToModel {
     }
 
     private static List<ClientIdentityProviderMappingModel> toModel(List<ClientIdentityProviderMappingRepresentation> repIdentityProviders, RealmModel realm) {
-        List<ClientIdentityProviderMappingModel> allowedIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
+        List<ClientIdentityProviderMappingModel> result = new ArrayList<ClientIdentityProviderMappingModel>();
 
-        if (repIdentityProviders == null || repIdentityProviders.isEmpty()) {
-            allowedIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
-
-            for (IdentityProviderModel identityProvider : realm.getIdentityProviders()) {
-                ClientIdentityProviderMappingModel identityProviderMapping = new ClientIdentityProviderMappingModel();
-
-                identityProviderMapping.setIdentityProvider(identityProvider.getId());
-
-                allowedIdentityProviders.add(identityProviderMapping);
-            }
-        } else {
+        if (repIdentityProviders != null) {
             for (ClientIdentityProviderMappingRepresentation rep : repIdentityProviders) {
                 ClientIdentityProviderMappingModel identityProviderMapping = new ClientIdentityProviderMappingModel();
 
                 identityProviderMapping.setIdentityProvider(rep.getId());
                 identityProviderMapping.setRetrieveToken(rep.isRetrieveToken());
 
-                allowedIdentityProviders.add(identityProviderMapping);
+                result.add(identityProviderMapping);
             }
         }
 
-        return allowedIdentityProviders;
+        return result;
     }
 
-    private static void updateClientIdentityProvides(List<ClientIdentityProviderMappingRepresentation> identityProviders, ClientModel resource) {
+    private static void updateClientIdentityProviders(List<ClientIdentityProviderMappingRepresentation> identityProviders, ClientModel resource) {
         if (identityProviders != null) {
-            List<ClientIdentityProviderMappingModel> allowedIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
+            List<ClientIdentityProviderMappingModel> result = new ArrayList<ClientIdentityProviderMappingModel>();
 
             for (ClientIdentityProviderMappingRepresentation mappingRepresentation : identityProviders) {
                 ClientIdentityProviderMappingModel identityProviderMapping = new ClientIdentityProviderMappingModel();
@@ -854,10 +844,10 @@ public class RepresentationToModel {
                 identityProviderMapping.setIdentityProvider(mappingRepresentation.getId());
                 identityProviderMapping.setRetrieveToken(mappingRepresentation.isRetrieveToken());
 
-                allowedIdentityProviders.add(identityProviderMapping);
+                result.add(identityProviderMapping);
             }
 
-            resource.updateAllowedIdentityProviders(allowedIdentityProviders);
+            resource.updateIdentityProviders(result);
         }
     }
 }

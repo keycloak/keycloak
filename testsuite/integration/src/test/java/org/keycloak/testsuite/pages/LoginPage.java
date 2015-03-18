@@ -110,8 +110,14 @@ public class LoginPage extends AbstractPage {
         registerLink.click();
     }
 
-    public void clickSocial(String id) {
-        driver.findElement(By.className(id)).click();
+    public void clickSocial(String providerId) {
+        WebElement socialButton = findSocialButton(providerId);
+        socialButton.click();
+    }
+
+    public WebElement findSocialButton(String providerId) {
+        String id = "zocial-" + providerId;
+        return this.driver.findElement(By.id(id));
     }
 
     public void resetPassword() {

@@ -230,26 +230,12 @@ public class MongoUserProvider implements UserProvider {
         return result;
     }
 
-    private FederatedIdentityEntity findSocialLink(UserModel userModel, String socialProvider, RealmModel realm) {
-        UserModel user = getUserById(userModel.getId(), realm);
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        List<FederatedIdentityEntity> linkEntities = userEntity.getFederatedIdentities();
-        if (linkEntities == null) {
-            return null;
-        }
-
-        for (FederatedIdentityEntity federatedIdentityEntity : linkEntities) {
-            if (federatedIdentityEntity.getIdentityProvider().equals(socialProvider)) {
-                return federatedIdentityEntity;
-            }
-        }
-        return null;
-    }
-
-
     @Override
     public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
-        FederatedIdentityEntity federatedIdentityEntity = findSocialLink(user, socialProvider, realm);
+        user = getUserById(user.getId(), realm);
+        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
+        FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, socialProvider);
+
         return federatedIdentityEntity != null ? new FederatedIdentityModel(federatedIdentityEntity.getIdentityProvider(), federatedIdentityEntity.getUserId(),
                 federatedIdentityEntity.getUserName(), federatedIdentityEntity.getToken()) : null;
     }
