@@ -31,9 +31,9 @@ Make sure you've set up a application in Google
 This example application requires you to create a Google Application. How to create it is beyond the scope of this
 documentation.
 
-Please take a look on [Google Developer Console](https://developers.google.com/apps/) for more details.
+Please take a look on [Google Developer Console](https://cloud.google.com/console/project) for more details.
 
-Once you have a Google Application configured, you need to obtain both **App ID** and **App Secret** and update the
+Once you have a Google Application configured, you need to obtain both **Client ID** and **Client Secret** and update the
 **google-identity-provider-realm.json** configuration file with these information. There you'll find a section as follows:
 
         "identityProviders": [
@@ -51,7 +51,11 @@ Once you have a Google Application configured, you need to obtain both **App ID*
                 }
             ]
 
-Please, update both *clientId* and *clientSecret* configuration options with the **App ID** and **App Secret**.
+Please, update both *clientId* and *clientSecret* configuration options with the **Client ID** and **Client Secret**.
+
+Make sure to use the correct redirect URI to be used as URL on Google. The Google will redirect to this URI after finish authentication. For this example, it's the URL
+[http://localhost:8080/auth/realms/google-identity-provider-realm/broker/google](http://localhost:8080/auth/realms/google-identity-provider-realm/broker/google) .
+You can also determine the redirect URI from Keycloak admin console (It's in Identity provider settings for Google provider).
 
 Make sure you've set up the Keycloak Server
 --------------------------------------
@@ -125,7 +129,7 @@ create a new admin password before you can go to the create realm page.
 
 [http://localhost:8080/auth/admin/master/console/#/create/realm](http://localhost:8080/auth/admin/master/console/#/create/realm)
 
-Import the **google-identity-provider-realm.json** file that is in the saml/ example directory.
+Import the **google-identity-provider-realm.json** file that is in the google-authentication/ example directory.
 
 
 Start JBoss Enterprise Application Platform 6 or WildFly with the Web Profile

@@ -43,6 +43,12 @@
             ],
             "webOrigins": [
               "http://localhost:8080"
+            ],
+            "identityProviders": [
+                {
+                    "id": "twitter",
+                    "retrieveToken": true
+                }
             ]
         },
         {

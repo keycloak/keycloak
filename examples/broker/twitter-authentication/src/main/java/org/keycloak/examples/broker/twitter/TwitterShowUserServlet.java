@@ -68,6 +68,11 @@ public class TwitterShowUserServlet extends HttpServlet {
     }
 
     @Override
+    public void destroy() {
+        this.keycloak.close();
+    }
+
+    @Override
     protected void doGet(final HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         TwitterOAuthResponse twitterOAuthResponse = getTwitterOAuthResponse(request);
         ConfigurationBuilder cb = new ConfigurationBuilder();
@@ -132,6 +137,5 @@ public class TwitterShowUserServlet extends HttpServlet {
         this.keycloak = Keycloak.getInstance(authServer, realmName, "admin", "password", "admin-client", "password");
         IdentityProvidersResource providersResource = keycloak.realm(realmName).identityProviders();
         this.identityProvider = providersResource.get("twitter").toRepresentation();
-        this.keycloak = Keycloak.getInstance(authServer, realmName, "admin", "password", "admin-client", "password");
     }
 }

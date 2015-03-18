@@ -31,9 +31,9 @@ Make sure you've set up a application in Twitter
 This example application requires you to create a Twitter Application. How to create it is beyond the scope of this
 documentation.
 
-Please take a look on [Twitter Developer Console](https://developers.twitter.com/apps/) for more details.
+Please take a look on [Twitter Developer Console](https://dev.twitter.com/apps) for more details.
 
-Once you have a Twitter Application configured, you need to obtain both **App ID** and **App Secret** and update the
+Once you have a Twitter Application configured, you need to obtain both **Consumer Key** and **Consumer Secret** and update the
 **twitter-identity-provider-realm.json** configuration file with these information. There you'll find a section as follows:
 
         "identityProviders": [
@@ -51,7 +51,7 @@ Once you have a Twitter Application configured, you need to obtain both **App ID
                 }
             ]
 
-Please, update both *clientId* and *clientSecret* configuration options with the **App ID** and **App Secret**.
+Please, update both *clientId* and *clientSecret* configuration options with the **Consumer Key** and **Consumer Secret**.
 
 Make sure you've set up the Keycloak Server
 --------------------------------------
@@ -125,7 +125,7 @@ create a new admin password before you can go to the create realm page.
 
 [http://localhost:8080/auth/admin/master/console/#/create/realm](http://localhost:8080/auth/admin/master/console/#/create/realm)
 
-Import the **twitter-identity-provider-realm.json** file that is in the saml/ example directory.
+Import the **twitter-identity-provider-realm.json** file that is in the twitter-authentication/ example directory.
 
 
 Start JBoss Enterprise Application Platform 6 or WildFly with the Web Profile
@@ -156,7 +156,10 @@ _NOTE: The following build command assumes you have configured your Maven user s
 Access the application
 ---------------------
 
-The application will be running at the following URL: <http://localhost:8080/twitter-authentication>.
+The application will be running at the following URL: <http://localhost:8080/twitter-authentication/index.html>. This is angular based application.
+In addition, the example contains testing servlet, which will show you JSON with full info about your Twitter account. Servlet is accessible 
+on [http://localhost:8080/twitter-authentication/twitter/showUser](http://localhost:8080/twitter-authentication/twitter/showUser) . 
+
 
 
 Undeploy the Archive
