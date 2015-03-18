@@ -6,10 +6,12 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ProviderFactory;
@@ -80,11 +82,12 @@ public class IdentityProviderResource {
 
             if (oldProviderId != null && !oldProviderId.equals(newProviderId)) {
 
-                // User changed the ID (alias) of identity provider. We must update all clients
-                logger.info("Changing identityProviderMapping in all clients. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
+                // Admin changed the ID (alias) of identity provider. We must update all clients and users
+                logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
 
                 updateClientsAfterProviderAliasChange(this.realm.getApplications(), oldProviderId, newProviderId);
                 updateClientsAfterProviderAliasChange(this.realm.getOAuthClients(), oldProviderId, newProviderId);
+                updateUsersAfterProviderAliasChange(this.session.users().getUsers(this.realm), oldProviderId, newProviderId);
             }
 
             return Response.noContent().build();
@@ -123,6 +126,22 @@ public class IdentityProviderResource {
             }
         }
     }
+
+    private void updateUsersAfterProviderAliasChange(List<UserModel> users, String oldProviderId, String newProviderId) {
+        for (UserModel user : users) {
+            FederatedIdentityModel federatedIdentity = this.session.users().getFederatedIdentity(user, oldProviderId, this.realm);
+            if (federatedIdentity != null) {
+                // Remove old link first
+                this.session.users().removeFederatedIdentity(this.realm, user, oldProviderId);
+
+                // And create new
+                FederatedIdentityModel newFederatedIdentity = new FederatedIdentityModel(newProviderId, federatedIdentity.getUserId(), federatedIdentity.getUserName(),
+                        federatedIdentity.getToken());
+                this.session.users().addFederatedIdentity(this.realm, user, newFederatedIdentity);
+            }
+        }
+    }
+
 
     private IdentityProviderFactory getIdentityProviderFactory() {
         List<ProviderFactory> allProviders = new ArrayList<ProviderFactory>();
