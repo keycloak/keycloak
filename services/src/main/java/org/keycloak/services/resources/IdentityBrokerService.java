@@ -49,6 +49,7 @@ import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
 
 import javax.ws.rs.Consumes;
@@ -521,15 +522,10 @@ public class IdentityBrokerService {
         }
 
         String username = updatedIdentity.getUsername();
-        if (this.realmModel.isRegistrationEmailAsUsername()) {
+        if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(updatedIdentity.getEmail())) {
             username = updatedIdentity.getEmail();
-            if (username == null || username.trim().length() == 0) {
-                fireErrorEvent(Errors.FEDERATED_IDENTITY_REGISTRATION_EMAIL_MISSING);
-                throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_REGISTRATION_EMAIL_MISSING);
-                // TODO KEYCLOAK-1053 (ask user to enter email address) should be implemented instead of plain exception as better solution for this case
-            }
-            username = username.trim();
-        } else if (username != null) {
+        } 
+        if (username != null) {
             username = username.trim();
         }
 
