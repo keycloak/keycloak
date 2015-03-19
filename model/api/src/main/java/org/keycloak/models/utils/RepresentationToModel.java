@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
+import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -39,6 +40,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,6 +50,8 @@ public class RepresentationToModel {
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
+        convertDeprecatedSocialProviders(rep);
+
         newRealm.setName(rep.getRealm());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
@@ -253,6 +257,57 @@ public class RepresentationToModel {
         if(rep.getDefaultLocale() != null){
             newRealm.setDefaultLocale(rep.getDefaultLocale());
         }
+    }
+
+    private static void convertDeprecatedSocialProviders(RealmRepresentation rep) {
+        if (rep.isSocial() != null && rep.isSocial() && rep.getSocialProviders() != null && !rep.getSocialProviders().isEmpty() && rep.getIdentityProviders() == null) {
+            Boolean updateProfileFirstLogin = rep.isUpdateProfileOnInitialSocialLogin() != null && rep.isUpdateProfileOnInitialSocialLogin();
+            if (rep.getSocialProviders() != null) {
+
+                List<IdentityProviderRepresentation> identityProviders = new LinkedList<>();
+                for (String k : rep.getSocialProviders().keySet()) {
+                    if (k.endsWith(".key")) {
+                        String providerId = k.split("\\.")[0];
+                        String key = rep.getSocialProviders().get(k);
+                        String secret = rep.getSocialProviders().get(k.replace(".key", ".secret"));
+
+                        IdentityProviderRepresentation identityProvider = new IdentityProviderRepresentation();
+                        identityProvider.setId(providerId);
+                        identityProvider.setProviderId(providerId);
+                        identityProvider.setName(providerId);
+                        identityProvider.setEnabled(true);
+                        identityProvider.setUpdateProfileFirstLogin(updateProfileFirstLogin);
+
+                        Map<String, String> config = new HashMap<>();
+                        config.put("clientId", key);
+                        config.put("clientSecret", secret);
+                        identityProvider.setConfig(config);
+
+                        identityProviders.add(identityProvider);
+                    }
+                }
+                rep.setIdentityProviders(identityProviders);
+            }
+        }
+
+        rep.setSocial(null);
+        rep.setSocialProviders(null);
+        rep.setUpdateProfileOnInitialSocialLogin(false);
+    }
+
+    private static void convertDeprecatedSocialProviders(UserRepresentation user) {
+        if (user.getSocialLinks() != null && !user.getSocialLinks().isEmpty() && user.getFederatedIdentities() == null) {
+            List<FederatedIdentityRepresentation> federatedIdentities = new LinkedList<>();
+            for (SocialLinkRepresentation social : user.getSocialLinks()) {
+                FederatedIdentityRepresentation federatedIdentity = new FederatedIdentityRepresentation();
+                federatedIdentity.setIdentityProvider(social.getSocialProvider());
+                federatedIdentity.setUserId(social.getSocialUserId());
+                federatedIdentity.setUserName(social.getSocialUsername());
+            }
+            user.setFederatedIdentities(federatedIdentities);
+        }
+
+        user.setSocialLinks(null);
     }
 
     public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
@@ -688,6 +743,8 @@ public class RepresentationToModel {
     // Users
 
     public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ApplicationModel> appMap) {
+        convertDeprecatedSocialProviders(userRep);
+
         // Import users just to user storage. Don't federate
         UserModel user = session.userStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false);
         user.setEnabled(userRep.isEnabled());
