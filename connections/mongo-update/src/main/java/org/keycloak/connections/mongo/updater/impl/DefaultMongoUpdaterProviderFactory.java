@@ -1,6 +1,8 @@
-package org.keycloak.connections.mongo.updater;
+package org.keycloak.connections.mongo.updater.impl;
 
 import org.keycloak.Config;
+import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
+import org.keycloak.connections.mongo.updater.MongoUpdaterProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 

@@ -25,10 +25,13 @@ public class MapMapper<T extends Map> implements Mapper<T, BasicDBObject> {
 
     @Override
     public BasicDBObject convertObject(MapperContext<T, BasicDBObject> context) {
-        T objectToConvert = context.getObjectToConvert();
+        T mapToConvert = context.getObjectToConvert();
+        return convertMap(mapToConvert);
+    }
 
+    public static BasicDBObject convertMap(Map mapToConvert) {
         BasicDBObject dbObject = new BasicDBObject();
-        Set<Map.Entry> entries = objectToConvert.entrySet();
+        Set<Map.Entry> entries = mapToConvert.entrySet();
         for (Map.Entry entry : entries) {
             String key = (String)entry.getKey();
             Object value = entry.getValue();

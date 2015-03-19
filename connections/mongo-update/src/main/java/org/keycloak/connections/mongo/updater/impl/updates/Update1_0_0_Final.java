@@ -1,8 +1,9 @@
-package org.keycloak.connections.mongo.updater.updates;
+package org.keycloak.connections.mongo.updater.impl.updates;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
-import org.keycloak.connections.mongo.updater.DefaultMongoUpdaterProvider;
+import org.keycloak.connections.mongo.updater.impl.DefaultMongoUpdaterProvider;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -15,7 +16,7 @@ public class Update1_0_0_Final extends Update {
     }
 
     @Override
-    public void update() throws ClassNotFoundException {
+    public void update(KeycloakSession session) throws ClassNotFoundException {
         DBCollection realmsCollection = db.getCollection("realms");
         realmsCollection.ensureIndex(new BasicDBObject("name", 1), new BasicDBObject("unique", true));
 

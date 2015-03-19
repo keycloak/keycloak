@@ -1,24 +1,20 @@
-package org.keycloak.connections.mongo.updater;
+package org.keycloak.connections.mongo.updater.impl;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
 import org.jboss.logging.Logger;
-import org.keycloak.connections.mongo.updater.updates.Update;
-import org.keycloak.connections.mongo.updater.updates.Update1_0_0_Final;
-import org.keycloak.connections.mongo.updater.updates.Update1_1_0_Beta1;
-import org.keycloak.connections.mongo.updater.updates.Update1_2_0_Beta1;
+import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
+import org.keycloak.connections.mongo.updater.impl.updates.Update;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_0_0_Final;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_1_0_Beta1;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_2_0_Beta1;
+import org.keycloak.models.KeycloakSession;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -36,7 +32,7 @@ public class DefaultMongoUpdaterProvider implements MongoUpdaterProvider {
     };
 
     @Override
-    public void update(DB db) {
+    public void update(KeycloakSession session, DB db) {
         log.debug("Starting database update");
         try {
             boolean changeLogExists = db.collectionExists(CHANGE_LOG_COLLECTION);
@@ -81,17 +77,19 @@ public class DefaultMongoUpdaterProvider implements MongoUpdaterProvider {
 
                     u.setLog(log);
                     u.setDb(db);
-                    u.update();
+                    u.update(session);
 
                     createLog(changeLog, u, ++order);
 
                     log.debugv("Completed updates for {0}", u.getId());
                 }
+                log.debug("Completed database update");
+            } else {
+                log.debug("Skip database update. Database is already up to date");
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to update database", e);
         }
-        log.debug("Completed database update");
     }
 
     private void createLog(DBCollection changeLog, Update update, int orderExecuted) {

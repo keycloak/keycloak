@@ -10,7 +10,7 @@ import org.keycloak.Config;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.impl.MongoStoreImpl;
 import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocationContext;
-import org.keycloak.connections.mongo.updater.DefaultMongoUpdaterProvider;
+import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -51,7 +51,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
     @Override
     public MongoConnectionProvider create(KeycloakSession session) {
-        lazyInit();
+        lazyInit(session);
 
         TransactionMongoStoreInvocationContext invocationContext = new TransactionMongoStoreInvocationContext(mongoStore);
         session.getTransaction().enlist(new MongoKeycloakTransaction(invocationContext));
@@ -69,7 +69,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     }
 
 
-    private void lazyInit() {
+    private void lazyInit(KeycloakSession session) {
         if (client == null) {
             synchronized (this) {
                 if (client == null) {
@@ -94,7 +94,13 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
                         String databaseSchema = config.get("databaseSchema");
                         if (databaseSchema != null) {
                             if (databaseSchema.equals("update")) {
-                                new DefaultMongoUpdaterProvider().update(db);
+                                MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
+
+                                if (mongoUpdater == null) {
+                                    throw new RuntimeException("Can't update database: Mongo updater provider not found");
+                                }
+
+                                mongoUpdater.update(session, db);
                             } else {
                                 throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
                             }
