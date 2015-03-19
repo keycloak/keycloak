@@ -5,26 +5,12 @@
         <div id="content">
             <ol class="breadcrumb">
                 <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Social Providers</a></li>
-                <li class="active">{{identityProvider.name}} Settings</li>
+                <li class="active">{{identityProvider.alias}} Settings</li>
             </ol>
-            <h2 class="pull-left">{{identityProvider.name}} Provider Settings</h2>
+            <h2 class="pull-left">{{identityProvider.alias}} Provider Settings</h2>
             <p class="subtitle"><span class="required">*</span> Required fields</p>
             <form class="form-horizontal" name="realmForm" novalidate>
                 <fieldset>
-                    <div class="form-group clearfix">
-                        <label class="col-sm-2 control-label" for="identifier">Alias <span class="required">*</span></label>
-                        <div class="col-sm-4">
-                            <input class="form-control" id="identifier" type="text" ng-model="identityProvider.id" required>
-                        </div>
-                        <span tooltip-placement="right" tooltip="The alias unique identifies an identity provider and it is also used to build the redirect uri." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group clearfix">
-                        <label class="col-sm-2 control-label" for="name">Name <span class="required">*</span></label>
-                        <div class="col-sm-4">
-                            <input class="form-control" id="name" type="text" ng-model="identityProvider.name" required>
-                        </div>
-                        <span tooltip-placement="right" tooltip="The friendly name for this identity provider." class="fa fa-info-circle"></span>
-                    </div>
                     <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="clientId">Client ID <span class="required">*</span></label>
                         <div class="col-sm-4">

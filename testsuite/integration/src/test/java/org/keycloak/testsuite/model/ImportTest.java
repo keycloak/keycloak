@@ -207,9 +207,8 @@ public class ImportTest extends AbstractModelTest {
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         Assert.assertEquals(1, identityProviders.size());
         IdentityProviderModel google = identityProviders.get(0);
-        Assert.assertEquals("google1", google.getId());
+        Assert.assertEquals("google1", google.getAlias());
         Assert.assertEquals("google", google.getProviderId());
-        Assert.assertEquals("Google", google.getName());
         Assert.assertTrue(google.isEnabled());
         Assert.assertEquals("googleId", google.getConfig().get("clientId"));
         Assert.assertEquals("googleSecret", google.getConfig().get("clientSecret"));

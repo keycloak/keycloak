@@ -47,8 +47,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="false"/>
-            <column name="PROVIDER_NONIMAL_ID" type="VARCHAR(255)"/>
-            <column name="PROVIDER_NAME" type="VARCHAR(255)"/>
+            <column name="PROVIDER_ALIAS" type="VARCHAR(255)"/>
             <column name="PROVIDER_ID" type="VARCHAR(255)"/>
             <column name="UPDATE_PROFILE_FIRST_LOGIN" type="BOOLEAN" defaultValueBoolean="false"/>
             <column name="STORE_TOKEN" type="BOOLEAN" defaultValueBoolean="false"/>
@@ -95,7 +94,7 @@
         <addForeignKeyConstraint baseColumnNames="IDENTITY_PROVIDER_ID" baseTableName="CLIENT_IDENTITY_PROVIDER_MAPPING" constraintName="FK_7CELWNIBJI49AVXSRTUF6XJ12" referencedColumnNames="INTERNAL_ID" referencedTableName="IDENTITY_PROVIDER"/>
         <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_IDENTITY_PROVIDER_MAPPING" constraintName="FK_56ELWNIBJI49AVXSRTUF6XJ23" referencedColumnNames="ID" referencedTableName="CLIENT"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_SUPPORTED_LOCALES" constraintName="FK_SUPPORTED_LOCALES_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
-        <addUniqueConstraint columnNames="PROVIDER_NONIMAL_ID" constraintName="UK_2DAELWNIBJI49AVXSRTUF6XJ33" tableName="IDENTITY_PROVIDER"/>
+        <addUniqueConstraint columnNames="PROVIDER_ALIAS, REALM_ID" constraintName="UK_2DAELWNIBJI49AVXSRTUF6XJ33" tableName="IDENTITY_PROVIDER"/>
         <addUniqueConstraint columnNames="IDENTITY_PROVIDER_ID,CLIENT_ID" constraintName="UK_7CAELWNIBJI49AVXSRTUF6XJ12" tableName="CLIENT_IDENTITY_PROVIDER_MAPPING"/>
 
         <addColumn tableName="REALM">

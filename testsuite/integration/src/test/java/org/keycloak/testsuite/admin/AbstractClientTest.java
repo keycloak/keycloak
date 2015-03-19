@@ -102,7 +102,7 @@ public abstract class AbstractClientTest {
         } else if (o1 instanceof OAuthClientRepresentation) {
             return ((OAuthClientRepresentation) o1).getName();
         } else if (o1 instanceof IdentityProviderRepresentation) {
-            return ((IdentityProviderRepresentation) o1).getId();
+            return ((IdentityProviderRepresentation) o1).getAlias();
         }
         throw new IllegalArgumentException();
     }

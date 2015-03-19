@@ -327,7 +327,7 @@ public abstract class AbstractIdentityProviderTest {
 
         // Link my "pedroigor" identity with "test-user" from brokered Keycloak
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-        accountFederatedIdentityPage.clickAddProvider(identityProviderModel.getId());
+        accountFederatedIdentityPage.clickAddProvider(identityProviderModel.getAlias());
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
         this.loginPage.login("test-user", "password");
@@ -335,28 +335,28 @@ public abstract class AbstractIdentityProviderTest {
 
         // Assert identity linked in account management
         assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getId() + "\""));
+        assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getAlias() + "\""));
 
         // Logout from account management
         accountFederatedIdentityPage.logout();
         assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
 
         // Assert I am logged immediately to account management due to previously linked "test-user" identity
-        loginPage.clickSocial(identityProviderModel.getId());
+        loginPage.clickSocial(identityProviderModel.getAlias());
         doAfterProviderAuthentication();
         assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getId() + "\""));
+        assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getAlias() + "\""));
 
         // Unlink my "test-user"
-        accountFederatedIdentityPage.clickRemoveProvider(identityProviderModel.getId());
-        assertTrue(driver.getPageSource().contains("id=\"add-" + identityProviderModel.getId() + "\""));
+        accountFederatedIdentityPage.clickRemoveProvider(identityProviderModel.getAlias());
+        assertTrue(driver.getPageSource().contains("id=\"add-" + identityProviderModel.getAlias() + "\""));
 
         // Logout from account management
         accountFederatedIdentityPage.logout();
         assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
 
         // Try to login. Previous link is not valid anymore, so now it should try to register new user
-        this.loginPage.clickSocial(identityProviderModel.getId());
+        this.loginPage.clickSocial(identityProviderModel.getAlias());
         doAfterProviderAuthentication();
         this.updateProfilePage.assertCurrent();
     }
@@ -579,7 +579,7 @@ public abstract class AbstractIdentityProviderTest {
     protected abstract String getProviderId();
 
     protected IdentityProviderModel getIdentityProviderModel() {
-        IdentityProviderModel identityProviderModel = getRealm().getIdentityProviderById(getProviderId());
+        IdentityProviderModel identityProviderModel = getRealm().getIdentityProviderByAlias(getProviderId());
 
         assertNotNull(identityProviderModel);
 

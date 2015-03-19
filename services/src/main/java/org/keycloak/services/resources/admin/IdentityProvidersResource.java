@@ -56,21 +56,6 @@ public class IdentityProvidersResource {
         this.auth.init(RealmAuth.Resource.IDENTITY_PROVIDER);
     }
 
-    @GET
-    @NoCache
-    @Produces("application/json")
-    public List<IdentityProviderRepresentation> getIdentityProviders() {
-        this.auth.requireView();
-
-        List<IdentityProviderRepresentation> representations = new ArrayList<IdentityProviderRepresentation>();
-
-        for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
-            representations.add(ModelToRepresentation.toRepresentation(identityProviderModel));
-        }
-
-        return representations;
-    }
-
     @Path("/providers/{provider_id}")
     @GET
     @NoCache
@@ -87,71 +72,28 @@ public class IdentityProvidersResource {
     }
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(@Context UriInfo uriInfo, IdentityProviderRepresentation representation) {
-        this.auth.requireManage();
-
-        try {
-            this.realm.addIdentityProvider(RepresentationToModel.toModel(representation));
-
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
-        } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Identity Provider " + representation.getId() + " already exists");
-        }
-    }
-
-    @POST
-    @Path("import")
+    @Path("import-config")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response importFrom(@Context UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, String> importFrom(@Context UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
         this.auth.requireManage();
         Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
-
-        String id = formDataMap.get("id").get(0).getBodyAsString();
-        String name = formDataMap.get("name").get(0).getBodyAsString();
         String providerId = formDataMap.get("providerId").get(0).getBodyAsString();
-        String enabled = formDataMap.get("enabled").get(0).getBodyAsString();
-        String updateProfileFirstLogin = formDataMap.get("updateProfileFirstLogin").get(0).getBodyAsString();
-        String storeToken = "false";
-
-        if (formDataMap.containsKey("storeToken")) {
-            storeToken = formDataMap.get("storeToken").get(0).getBodyAsString();
-        }
-
         InputPart file = formDataMap.get("file").get(0);
         InputStream inputStream = file.getBody(InputStream.class, null);
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
-        Map config = providerFactory.parseConfig(inputStream);
-        IdentityProviderRepresentation representation = new IdentityProviderRepresentation();
-
-        representation.setId(id);
-        representation.setName(name);
-        representation.setProviderId(providerId);
-        representation.setEnabled(Boolean.valueOf(enabled));
-        representation.setUpdateProfileFirstLogin(Boolean.valueOf(updateProfileFirstLogin));
-        representation.setStoreToken(Boolean.valueOf(storeToken));
-        representation.setConfig(config);
-
-        return create(uriInfo, representation);
+        Map<String, String> config = providerFactory.parseConfig(inputStream);
+        return config;
     }
 
     @POST
-    @Path("import")
+    @Path("import-config")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response importFrom(@Context UriInfo uriInfo, Map<String, Object> data) throws IOException {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, String> importFrom(@Context UriInfo uriInfo, Map<String, Object> data) throws IOException {
         this.auth.requireManage();
 
-        String id = data.get("id").toString();
-        String name = data.get("name").toString();
         String providerId = data.get("providerId").toString();
-        String enabled = data.get("enabled").toString();
-        String updateProfileFirstLogin = data.get("updateProfileFirstLogin").toString();
-        String storeToken = "false";
-
-        if (data.containsKey("storeToken")) {
-            storeToken = data.get("storeToken").toString();
-        }
-
         String from = data.get("fromUrl").toString();
         ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
         InputStream inputStream = null;
@@ -161,34 +103,55 @@ public class IdentityProvidersResource {
             throw new RuntimeException(e);
         }
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
-        Map config = providerFactory.parseConfig(inputStream);
-        IdentityProviderRepresentation representation = new IdentityProviderRepresentation();
-
-        representation.setId(id);
-        representation.setName(name);
-        representation.setProviderId(providerId);
-        representation.setEnabled(Boolean.valueOf(enabled));
-        representation.setUpdateProfileFirstLogin(Boolean.valueOf(updateProfileFirstLogin));
-        representation.setStoreToken(Boolean.valueOf(storeToken));
-        representation.setConfig(config);
-
-        return create(uriInfo, representation);
+        Map<String, String> config = providerFactory.parseConfig(inputStream);
+        return config;
     }
 
-    @Path("instances/{id}")
-    public IdentityProviderResource getIdentityProvider(@PathParam("id") String providerId) {
+    @GET
+    @Path("instances")
+    @NoCache
+    @Produces("application/json")
+    public List<IdentityProviderRepresentation> getIdentityProviders() {
+        this.auth.requireView();
+
+        List<IdentityProviderRepresentation> representations = new ArrayList<IdentityProviderRepresentation>();
+
+        for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
+            representations.add(ModelToRepresentation.toRepresentation(identityProviderModel));
+        }
+
+        return representations;
+    }
+
+    @POST
+    @Path("instances")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response create(@Context UriInfo uriInfo, IdentityProviderRepresentation representation) {
+        this.auth.requireManage();
+
+        try {
+            this.realm.addIdentityProvider(RepresentationToModel.toModel(representation));
+
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
+        } catch (ModelDuplicateException e) {
+            return Flows.errors().exists("Identity Provider " + representation.getAlias() + " already exists");
+        }
+    }
+
+    @Path("instances/{alias}")
+    public IdentityProviderResource getIdentityProvider(@PathParam("alias") String alias) {
         this.auth.requireView();
         IdentityProviderModel identityProviderModel = null;
 
         for (IdentityProviderModel storedIdentityProvider : this.realm.getIdentityProviders()) {
-            if (storedIdentityProvider.getId().equals(providerId)
-                    || storedIdentityProvider.getInternalId().equals(providerId)) {
+            if (storedIdentityProvider.getAlias().equals(alias)
+                    || storedIdentityProvider.getInternalId().equals(alias)) {
                 identityProviderModel = storedIdentityProvider;
             }
         }
 
         if (identityProviderModel == null) {
-            throw new NotFoundException("Could not find identity provider: " + providerId);
+            throw new NotFoundException("Could not find identity provider: " + alias);
         }
 
         IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel);

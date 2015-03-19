@@ -643,9 +643,9 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public IdentityProviderModel getIdentityProviderById(String identityProviderId) {
+    public IdentityProviderModel getIdentityProviderByAlias(String alias) {
         for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
-            if (identityProviderModel.getId().equals(identityProviderId)) {
+            if (identityProviderModel.getAlias().equals(alias)) {
                 return identityProviderModel;
             }
         }
@@ -666,9 +666,9 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void removeIdentityProviderById(String providerId) {
+    public void removeIdentityProviderByAlias(String alias) {
         getDelegateForUpdate();
-        updated.removeIdentityProviderById(providerId);
+        updated.removeIdentityProviderByAlias(alias);
     }
 
     @Override

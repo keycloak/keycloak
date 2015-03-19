@@ -83,7 +83,7 @@ public class ClientIdentityProviderMappingEntity {
 
             Key key = (Key) o;
 
-            if (identityProvider != null ? !identityProvider.getId().equals(key.identityProvider.getId()) : key.identityProvider != null)
+            if (identityProvider != null ? !identityProvider.getAlias().equals(key.identityProvider.getAlias()) : key.identityProvider != null)
                 return false;
             if (client != null ? !client.getId().equals(key.client != null ? key.client.getId() : null) : key.client != null) return false;
 
@@ -105,7 +105,7 @@ public class ClientIdentityProviderMappingEntity {
 
         ClientIdentityProviderMappingEntity key = (ClientIdentityProviderMappingEntity) o;
 
-        if (identityProvider != null ? !identityProvider.getId().equals(key.identityProvider.getId()) : key.identityProvider != null)
+        if (identityProvider != null ? !identityProvider.getAlias().equals(key.identityProvider.getAlias()) : key.identityProvider != null)
             return false;
         if (client != null ? !client.getId().equals(key.client != null ? key.client.getId() : null) : key.client != null) return false;
 

@@ -84,13 +84,13 @@ public class ServerInfoAdminResource {
     }
 
     private void setSocialProviders(ServerInfoRepresentation info) {
-        info.socialProviders = new LinkedList<IdentityProviderRepresentation>();
+        info.socialProviders = new LinkedList<>();
         List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class);
         setIdentityProviders(providerFactories, info.socialProviders, "Social");
     }
 
     private void setIdentityProviders(ServerInfoRepresentation info) {
-        info.identityProviders = new LinkedList<IdentityProviderRepresentation>();
+        info.identityProviders = new LinkedList<>();
         List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(IdentityProvider.class);
         setIdentityProviders(providerFactories, info.identityProviders, "User-defined");
 
@@ -98,24 +98,16 @@ public class ServerInfoAdminResource {
         setIdentityProviders(providerFactories, info.identityProviders, "Social");
     }
 
-    public void setIdentityProviders(List<ProviderFactory> factories, List<IdentityProviderRepresentation> providers, String groupName) {
+    public void setIdentityProviders(List<ProviderFactory> factories, List<Map<String, String>> providers, String groupName) {
         for (ProviderFactory providerFactory : factories) {
             IdentityProviderFactory factory = (IdentityProviderFactory) providerFactory;
-            IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
+            Map<String, String> data = new HashMap<>();
+            data.put("groupName", groupName);
+            data.put("name", factory.getName());
+            data.put("id", factory.getId());
 
-            rep.setId(factory.getId());
-            rep.setName(factory.getName());
-            rep.setGroupName(groupName);
-
-            providers.add(rep);
+            providers.add(data);
         }
-
-        Collections.sort(providers, new Comparator<IdentityProviderRepresentation>() {
-            @Override
-            public int compare(IdentityProviderRepresentation o1, IdentityProviderRepresentation o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
     }
 
     private void setEventListeners(ServerInfoRepresentation info) {
@@ -194,8 +186,8 @@ public class ServerInfoAdminResource {
 
         private Map<String, List<String>> themes;
 
-        private List<IdentityProviderRepresentation> socialProviders;
-        public List<IdentityProviderRepresentation> identityProviders;
+        private List<Map<String, String>> socialProviders;
+        public List<Map<String, String>> identityProviders;
         private List<String> protocols;
         private List<Map<String, String>> applicationImporters;
 
@@ -220,11 +212,11 @@ public class ServerInfoAdminResource {
             return themes;
         }
 
-        public List<IdentityProviderRepresentation> getSocialProviders() {
+        public List<Map<String, String>> getSocialProviders() {
             return socialProviders;
         }
 
-        public List<IdentityProviderRepresentation> getIdentityProviders() {
+        public List<Map<String, String>> getIdentityProviders() {
             return this.identityProviders;
         }
 

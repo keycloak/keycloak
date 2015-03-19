@@ -793,9 +793,8 @@ public class RepresentationToModel {
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
         identityProviderModel.setInternalId(representation.getInternalId());
-        identityProviderModel.setId(representation.getId());
+        identityProviderModel.setAlias(representation.getAlias());
         identityProviderModel.setProviderId(representation.getProviderId());
-        identityProviderModel.setName(representation.getName());
         identityProviderModel.setEnabled(representation.isEnabled());
         identityProviderModel.setUpdateProfileFirstLogin(representation.isUpdateProfileFirstLogin());
         identityProviderModel.setAuthenticateByDefault(representation.isAuthenticateByDefault());

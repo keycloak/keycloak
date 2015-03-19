@@ -10,9 +10,8 @@
     "publicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgj8r0029eL0jJKXv6XbNj+QqsZO25HhZ0IjTEtb8mfh0tju/X8c6dXgILh5wU7OF00U+0mSYSE/+rrYKmY5g4oCleTe1+abavATP1tamtXGAUYqdutaXPrVn9yMsCWEPchSPZlEGq5iBJdA+xh9ejUmZJYXmln26HUVWq71/jC9GpjbRmFQ37f0X7WJoGyiqyttfKkKfUeBmRbX/0P0Zm6DVze8HjCDVPBllZE0a3HCgSF0rp0+s1xn7o91qdWKVattAVsGNjjDPz/sgwHOyyhDtSyajwXU+K/QUZ9pV4moGtwC9uIEymTylP7bu7qnxXIhfouEa+fEjAzTs0HJ5JQIDAQAB",
     "identityProviders" : [
         {
-            "id" : "model-google",
+            "alias" : "model-google",
             "providerId" : "google",
-            "name" : "Google",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
             "storeToken": "true",
@@ -22,9 +21,8 @@
             }
         },
         {
-            "id" : "model-facebook",
+            "alias" : "model-facebook",
             "providerId" : "facebook",
-            "name" : "Facebook",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
             "config": {
@@ -36,9 +34,8 @@
             }
         },
         {
-            "id" : "model-github",
+            "alias" : "model-github",
             "providerId" : "github",
-            "name" : "GitHub",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
             "storeToken": "false",
@@ -51,9 +48,8 @@
             }
         },
         {
-            "id" : "model-twitter",
+            "alias" : "model-twitter",
             "providerId" : "twitter",
-            "name" : "Twitter",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
             "storeToken": true,
@@ -66,9 +62,8 @@
             }
         },
         {
-          "id" : "model-saml-signed-idp",
+          "alias" : "model-saml-signed-idp",
           "providerId" : "saml",
-          "name" : "SAML Signed IdP",
           "enabled": true,
           "updateProfileFirstLogin" : "true",
           "config": {
@@ -83,9 +78,8 @@
           }
         },
         {
-            "id" : "kc-saml-signed-idp",
+            "alias" : "kc-saml-signed-idp",
             "providerId" : "saml",
-            "name" : "SAML Signed IdP",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
             "config": {
@@ -100,9 +94,8 @@
             }
         },
         {
-            "id" : "kc-saml-idp-basic",
+            "alias" : "kc-saml-idp-basic",
             "providerId" : "saml",
-            "name" : "SAML Signed IdP",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
             "config": {
@@ -114,9 +107,8 @@
             }
         },
         {
-            "id" : "model-oidc-idp",
+            "alias" : "model-oidc-idp",
             "providerId" : "oidc",
-            "name" : "OIDC IdP",
             "enabled": false,
             "updateProfileFirstLogin" : "false",
             "authenticateByDefault" : "false",
@@ -131,9 +123,8 @@
             }
         },
         {
-            "id" : "kc-oidc-idp",
+            "alias" : "kc-oidc-idp",
             "providerId" : "oidc",
-            "name" : "KeyCloak OIDC IdP",
             "enabled": true,
             "updateProfileFirstLogin" : "false",
             "config": {
@@ -147,9 +138,8 @@
             }
         },
         {
-            "id" : "model-kerberos",
+            "alias" : "model-kerberos",
             "providerId" : "kerberos",
-            "name" : "Kerberos",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
             "authenticateByDefault" : "false",

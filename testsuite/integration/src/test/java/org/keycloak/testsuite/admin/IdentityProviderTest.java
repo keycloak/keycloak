@@ -46,8 +46,7 @@ public class IdentityProviderTest extends AbstractClientTest {
         assertNotNull(representation);
 
         assertNotNull(representation.getInternalId());
-        assertEquals("New Identity Provider", representation.getName());
-        assertEquals("new-identity-provider", representation.getId());
+        assertEquals("new-identity-provider", representation.getAlias());
         assertEquals("oidc", representation.getProviderId());
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertEquals("clientSecret", representation.getConfig().get("clientSecret"));
@@ -72,9 +71,9 @@ public class IdentityProviderTest extends AbstractClientTest {
 
         assertNotNull(representation);
 
-        assertEquals("update-identity-provider", representation.getId());
+        assertEquals("update-identity-provider", representation.getAlias());
 
-        representation.setId("changed-alias");
+        representation.setAlias("changed-alias");
         representation.setEnabled(false);
         representation.setStoreToken(true);
         representation.getConfig().put("clientId", "changedClientId");
@@ -113,9 +112,8 @@ public class IdentityProviderTest extends AbstractClientTest {
     private IdentityProviderRepresentation create(String id, String providerId, String name) {
         IdentityProviderRepresentation identityProviderRepresentation = new IdentityProviderRepresentation();
 
-        identityProviderRepresentation.setId(id);
+        identityProviderRepresentation.setAlias(id);
         identityProviderRepresentation.setProviderId(providerId);
-        identityProviderRepresentation.setName(name);
         identityProviderRepresentation.setEnabled(true);
 
         return identityProviderRepresentation;

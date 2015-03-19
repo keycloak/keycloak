@@ -117,11 +117,11 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 PublicKey publicKey = realm.getPublicKey();
 
                 if (privateKey == null) {
-                    throw new IdentityBrokerException("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + realm.getName() + "] does not have a private key.");
+                    throw new IdentityBrokerException("Identity Provider [" + getConfig().getAlias() + "] wants a signed authentication request. But the Realm [" + realm.getName() + "] does not have a private key.");
                 }
 
                 if (publicKey == null) {
-                    throw new IdentityBrokerException("Identity Provider [" + getConfig().getName() + "] wants a signed authentication request. But the Realm [" + realm.getName() + "] does not have a public key.");
+                    throw new IdentityBrokerException("Identity Provider [" + getConfig().getAlias() + "] wants a signed authentication request. But the Realm [" + realm.getName() + "] does not have a public key.");
                 }
 
                 KeyPair keypair = new KeyPair(publicKey, privateKey);
@@ -301,7 +301,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authnBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
         }
 
-        String assertionConsumerService = uriInfo.getBaseUriBuilder().path("realms").path(realm.getName()).path("broker").path(getConfig().getId()).build().toString();
+        String assertionConsumerService = uriInfo.getBaseUriBuilder().path("realms").path(realm.getName()).path("broker").path(getConfig().getAlias()).build().toString();
 
 
 

@@ -64,7 +64,7 @@ public class IdentityProviderResource {
         this.auth.requireManage();
         removeClientIdentityProviders(this.realm.getApplications(), this.identityProviderModel);
         removeClientIdentityProviders(this.realm.getOAuthClients(), this.identityProviderModel);
-        this.realm.removeIdentityProviderById(this.identityProviderModel.getId());
+        this.realm.removeIdentityProviderByAlias(this.identityProviderModel.getAlias());
         return Response.noContent().build();
     }
 
@@ -75,7 +75,7 @@ public class IdentityProviderResource {
             this.auth.requireManage();
 
             String internalId = providerRep.getInternalId();
-            String newProviderId = providerRep.getId();
+            String newProviderId = providerRep.getAlias();
             String oldProviderId = getProviderIdByInternalId(this.realm, internalId);
 
             this.realm.updateIdentityProvider(RepresentationToModel.toModel(providerRep));
@@ -92,7 +92,7 @@ public class IdentityProviderResource {
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Identity Provider " + providerRep.getId() + " already exists");
+            return Flows.errors().exists("Identity Provider " + providerRep.getAlias() + " already exists");
         }
     }
 
@@ -101,7 +101,7 @@ public class IdentityProviderResource {
         List<IdentityProviderModel> providerModels = realm.getIdentityProviders();
         for (IdentityProviderModel providerModel : providerModels) {
             if (providerModel.getInternalId().equals(providerInternalId)) {
-                return providerModel.getId();
+                return providerModel.getAlias();
             }
         }
 
@@ -175,7 +175,7 @@ public class IdentityProviderResource {
             List<ClientIdentityProviderMappingModel> identityProviders = clientModel.getIdentityProviders();
 
             for (ClientIdentityProviderMappingModel providerMappingModel : new ArrayList<ClientIdentityProviderMappingModel>(identityProviders)) {
-                if (providerMappingModel.getIdentityProvider().equals(identityProvider.getId())) {
+                if (providerMappingModel.getIdentityProvider().equals(identityProvider.getAlias())) {
                     identityProviders.remove(providerMappingModel);
                     clientModel.updateIdentityProviders(identityProviders);
                     break;

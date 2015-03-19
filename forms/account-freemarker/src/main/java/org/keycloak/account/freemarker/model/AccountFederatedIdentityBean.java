@@ -34,7 +34,7 @@ public class AccountFederatedIdentityBean {
         int availableIdentities = 0;
         if (identityProviders != null && !identityProviders.isEmpty()) {
             for (IdentityProviderModel provider : identityProviders) {
-                String providerId = provider.getId();
+                String providerId = provider.getAlias();
 
                 FederatedIdentityModel identity = getIdentity(identities, providerId);
 
@@ -49,7 +49,7 @@ public class AccountFederatedIdentityBean {
                         .queryParam("stateChecker", stateChecker)
                         .build().toString();
 
-                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, provider.getId(), provider.getName(), actionUrl);
+                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, provider.getAlias(), actionUrl);
                 this.identities.add(entry);
             }
         }
@@ -79,22 +79,16 @@ public class AccountFederatedIdentityBean {
 
         private FederatedIdentityModel federatedIdentityModel;
         private final String providerId;
-        private final String providerName;
         private final String actionUrl;
 
-        public FederatedIdentityEntry(FederatedIdentityModel federatedIdentityModel, String providerId, String providerName, String actionUrl) {
+        public FederatedIdentityEntry(FederatedIdentityModel federatedIdentityModel, String providerId, String actionUrl) {
             this.federatedIdentityModel = federatedIdentityModel;
             this.providerId = providerId;
-            this.providerName = providerName;
             this.actionUrl = actionUrl;
         }
 
         public String getProviderId() {
             return providerId;
-        }
-
-        public String getProviderName() {
-            return providerName;
         }
 
         public String getUserId() {

@@ -72,9 +72,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertFalse(identityProviders.isEmpty());
 
         IdentityProviderModel identityProviderModel = identityProviders.get(0);
-        String identityProviderId = identityProviderModel.getId();
+        String identityProviderId = identityProviderModel.getAlias();
 
-        identityProviderModel.setName("Changed Name");
         identityProviderModel.getConfig().put("config-added", "value-added");
         identityProviderModel.setEnabled(false);
         identityProviderModel.setUpdateProfileFirstLogin(false);
@@ -87,16 +86,14 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
 
         realm = this.realmManager.getRealm(realm.getId());
 
-        identityProviderModel = realm.getIdentityProviderById(identityProviderId);
+        identityProviderModel = realm.getIdentityProviderByAlias(identityProviderId);
 
-        assertEquals("Changed Name", identityProviderModel.getName());
         assertEquals("value-added", identityProviderModel.getConfig().get("config-added"));
         assertFalse(identityProviderModel.isEnabled());
         assertFalse(identityProviderModel.isUpdateProfileFirstLogin());
         assertTrue(identityProviderModel.isStoreToken());
         assertTrue(identityProviderModel.isAuthenticateByDefault());
 
-        identityProviderModel.setName("Changed Name Again");
         identityProviderModel.getConfig().remove("config-added");
         identityProviderModel.setEnabled(true);
         identityProviderModel.setUpdateProfileFirstLogin(true);
@@ -107,9 +104,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         commit();
 
         realm = this.realmManager.getRealm(realm.getId());
-        identityProviderModel = realm.getIdentityProviderById(identityProviderId);
+        identityProviderModel = realm.getIdentityProviderByAlias(identityProviderId);
 
-        assertEquals("Changed Name Again", identityProviderModel.getName());
         assertFalse(identityProviderModel.getConfig().containsKey("config-added"));
         assertTrue(identityProviderModel.isEnabled());
         assertTrue(identityProviderModel.isUpdateProfileFirstLogin());
@@ -149,7 +145,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         Set<String> checkedProviders = new HashSet<String>(getExpectedProviders());
 
         for (IdentityProviderModel identityProvider : identityProviders) {
-            if (identityProvider.getId().startsWith("model-")) {
+            if (identityProvider.getAlias().startsWith("model-")) {
                 String providerId = identityProvider.getProviderId();
 
                 if (SAMLIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
@@ -179,9 +175,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         GoogleIdentityProvider googleIdentityProvider = new GoogleIdentityProviderFactory().create(identityProvider);
         OIDCIdentityProviderConfig config = googleIdentityProvider.getConfig();
 
-        assertEquals("model-google", config.getId());
+        assertEquals("model-google", config.getAlias());
         assertEquals(GoogleIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
-        assertEquals("Google", config.getName());
         assertEquals(true, config.isEnabled());
         assertEquals(true, config.isUpdateProfileFirstLogin());
         assertEquals(false, config.isAuthenticateByDefault());
@@ -198,9 +193,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         SAMLIdentityProvider samlIdentityProvider = new SAMLIdentityProviderFactory().create(identityProvider);
         SAMLIdentityProviderConfig config = samlIdentityProvider.getConfig();
 
-        assertEquals("model-saml-signed-idp", config.getId());
+        assertEquals("model-saml-signed-idp", config.getAlias());
         assertEquals(SAMLIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
-        assertEquals("SAML Signed IdP", config.getName());
         assertEquals(true, config.isEnabled());
         assertEquals(true, config.isUpdateProfileFirstLogin());
         assertEquals(false, config.isAuthenticateByDefault());
@@ -219,9 +213,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         OIDCIdentityProvider googleIdentityProvider = new OIDCIdentityProviderFactory().create(identityProvider);
         OIDCIdentityProviderConfig config = googleIdentityProvider.getConfig();
 
-        assertEquals("model-oidc-idp", config.getId());
+        assertEquals("model-oidc-idp", config.getAlias());
         assertEquals(OIDCIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
-        assertEquals("OIDC IdP", config.getName());
         assertEquals(false, config.isEnabled());
         assertEquals(false, config.isUpdateProfileFirstLogin());
         assertEquals(false, config.isAuthenticateByDefault());
@@ -234,9 +227,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         FacebookIdentityProvider facebookIdentityProvider = new FacebookIdentityProviderFactory().create(identityProvider);
         OAuth2IdentityProviderConfig config = facebookIdentityProvider.getConfig();
 
-        assertEquals("model-facebook", config.getId());
+        assertEquals("model-facebook", config.getAlias());
         assertEquals(FacebookIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
-        assertEquals("Facebook", config.getName());
         assertEquals(true, config.isEnabled());
         assertEquals(true, config.isUpdateProfileFirstLogin());
         assertEquals(false, config.isAuthenticateByDefault());
@@ -252,9 +244,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         GitHubIdentityProvider gitHubIdentityProvider = new GitHubIdentityProviderFactory().create(identityProvider);
         OAuth2IdentityProviderConfig config = gitHubIdentityProvider.getConfig();
 
-        assertEquals("model-github", config.getId());
+        assertEquals("model-github", config.getAlias());
         assertEquals(GitHubIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
-        assertEquals("GitHub", config.getName());
         assertEquals(true, config.isEnabled());
         assertEquals(true, config.isUpdateProfileFirstLogin());
         assertEquals(false, config.isAuthenticateByDefault());
@@ -270,9 +261,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         TwitterIdentityProvider twitterIdentityProvider = new TwitterIdentityProviderFactory().create(identityProvider);
         OAuth2IdentityProviderConfig config = twitterIdentityProvider.getConfig();
 
-        assertEquals("model-twitter", config.getId());
+        assertEquals("model-twitter", config.getAlias());
         assertEquals(TwitterIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
-        assertEquals("Twitter", config.getName());
         assertEquals(true, config.isEnabled());
         assertEquals(true, config.isUpdateProfileFirstLogin());
         assertEquals(false, config.isAuthenticateByDefault());

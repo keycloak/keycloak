@@ -833,9 +833,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
             identityProviderModel.setProviderId(entity.getProviderId());
-            identityProviderModel.setId(entity.getId());
+            identityProviderModel.setAlias(entity.getAlias());
             identityProviderModel.setInternalId(entity.getInternalId());
-            identityProviderModel.setName(entity.getName());
             identityProviderModel.setConfig(entity.getConfig());
             identityProviderModel.setEnabled(entity.isEnabled());
             identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
@@ -849,9 +848,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public IdentityProviderModel getIdentityProviderById(String identityProviderId) {
+    public IdentityProviderModel getIdentityProviderByAlias(String alias) {
         for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
-            if (identityProviderModel.getId().equals(identityProviderId)) {
+            if (identityProviderModel.getAlias().equals(alias)) {
                 return identityProviderModel;
             }
         }
@@ -864,9 +863,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         IdentityProviderEntity entity = new IdentityProviderEntity();
 
         entity.setInternalId(KeycloakModelUtils.generateId());
-        entity.setId(identityProvider.getId());
+        entity.setAlias(identityProvider.getAlias());
         entity.setProviderId(identityProvider.getProviderId());
-        entity.setName(identityProvider.getName());
         entity.setEnabled(identityProvider.isEnabled());
         entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
         entity.setStoreToken(identityProvider.isStoreToken());
@@ -878,10 +876,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public void removeIdentityProviderById(String providerId) {
+    public void removeIdentityProviderByAlias(String alias) {
         IdentityProviderEntity toRemove;
         for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
-            if (entity.getId().equals(providerId)) {
+            if (entity.getAlias().equals(alias)) {
                 realm.getIdentityProviders().remove(entity);
                 updateRealm();
                 break;
@@ -893,8 +891,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
         for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
-                entity.setId(identityProvider.getId());
-                entity.setName(identityProvider.getName());
+                entity.setAlias(identityProvider.getAlias());
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());

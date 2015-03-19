@@ -296,7 +296,7 @@ public class IdentityBrokerService {
     private Response performLocalAuthentication(FederatedIdentity updatedIdentity, ClientSessionCode clientCode) {
         ClientSessionModel clientSession = clientCode.getClientSession();
         IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(updatedIdentity.getIdentityProviderId());
-        String providerId = identityProviderConfig.getId();
+        String providerId = identityProviderConfig.getAlias();
         FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, updatedIdentity.getId(),
                 updatedIdentity.getUsername(), updatedIdentity.getToken());
 
@@ -465,20 +465,20 @@ public class IdentityBrokerService {
         return Flows.errors().error(message, Status.BAD_REQUEST);
     }
 
-    private IdentityProvider getIdentityProvider(String providerId) {
-        IdentityProviderModel identityProviderModel = this.realmModel.getIdentityProviderById(providerId);
+    private IdentityProvider getIdentityProvider(String alias) {
+        IdentityProviderModel identityProviderModel = this.realmModel.getIdentityProviderByAlias(alias);
 
         if (identityProviderModel != null) {
             IdentityProviderFactory providerFactory = getIdentityProviderFactory(identityProviderModel);
 
             if (providerFactory == null) {
-                throw new IdentityBrokerException("Could not find factory for identity provider [" + providerId + "].");
+                throw new IdentityBrokerException("Could not find factory for identity provider [" + alias + "].");
             }
 
             return providerFactory.create(identityProviderModel);
         }
 
-        throw new IdentityBrokerException("Identity Provider [" + providerId + "] not found.");
+        throw new IdentityBrokerException("Identity Provider [" + alias + "] not found.");
     }
 
     private IdentityProviderFactory getIdentityProviderFactory(IdentityProviderModel model) {
@@ -497,7 +497,7 @@ public class IdentityBrokerService {
 
     private IdentityProviderModel getIdentityProviderConfig(String providerId) {
         for (IdentityProviderModel model : this.realmModel.getIdentityProviders()) {
-            if (model.getId().equals(providerId)) {
+            if (model.getAlias().equals(providerId)) {
                 return model;
             }
         }

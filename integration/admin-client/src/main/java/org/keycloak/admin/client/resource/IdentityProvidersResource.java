@@ -20,10 +20,12 @@ public interface IdentityProvidersResource {
     IdentityProviderResource get(@PathParam("id") String id);
 
     @GET
+    @Path("instances")
     @Produces(MediaType.APPLICATION_JSON)
     List<IdentityProviderRepresentation> findAll();
 
     @POST
+    @Path("instances")
     @Consumes(MediaType.APPLICATION_JSON)
     void create(IdentityProviderRepresentation identityProvider);
 }
