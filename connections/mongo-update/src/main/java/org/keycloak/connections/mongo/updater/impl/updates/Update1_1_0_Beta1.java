@@ -1,12 +1,11 @@
-package org.keycloak.connections.mongo.updater.updates;
+package org.keycloak.connections.mongo.updater.impl.updates;
 
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
-
-import java.util.Arrays;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -19,7 +18,7 @@ public class Update1_1_0_Beta1 extends Update {
     }
 
     @Override
-    public void update() {
+    public void update(KeycloakSession session) {
         deleteEntries("clientSessions");
         deleteEntries("sessions");
 

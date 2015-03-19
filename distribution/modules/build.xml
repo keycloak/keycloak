@@ -269,6 +269,10 @@
             <maven-resource group="org.keycloak" artifact="keycloak-connections-mongo"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-connections-mongo-update">
+            <maven-resource group="org.keycloak" artifact="keycloak-connections-mongo-update"/>
+        </module-def>
+
         <module-def name="org.keycloak.keycloak-model-mongo">
             <maven-resource group="org.keycloak" artifact="keycloak-model-mongo"/>
         </module-def>

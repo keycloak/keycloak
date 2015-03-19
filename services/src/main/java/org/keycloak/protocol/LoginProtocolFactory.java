@@ -19,5 +19,12 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
      * @return
      */
     List<ProtocolMapperModel> getBuiltinMappers();
+
+    /**
+     * List of mappers, which are added to new clients by default
+     * @return
+     */
+    List<ProtocolMapperModel> getDefaultBuiltinMappers();
+
     Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager);
 }

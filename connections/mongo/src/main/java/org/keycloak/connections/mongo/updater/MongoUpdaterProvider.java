@@ -1,6 +1,7 @@
 package org.keycloak.connections.mongo.updater;
 
 import com.mongodb.DB;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 
 /**
@@ -8,6 +9,6 @@ import org.keycloak.provider.Provider;
  */
 public interface MongoUpdaterProvider extends Provider {
 
-    public void update(DB db);
+    public void update(KeycloakSession session, DB db);
 
 }

@@ -54,6 +54,7 @@ public class ApplianceBootstrap {
         realm.setSsoSessionMaxLifespan(36000);
         realm.setAccessCodeLifespan(60);
         realm.setAccessCodeLifespanUserAction(300);
+        realm.setAccessCodeLifespanLogin(1800);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setRegistrationAllowed(false);
         realm.setRegistrationEmailAsUsername(false);

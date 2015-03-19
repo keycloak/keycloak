@@ -51,6 +51,11 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         return builtins;
     }
 
+    @Override
+    public List<ProtocolMapperModel> getDefaultBuiltinMappers() {
+        return defaultBuiltins;
+    }
+
     static List<ProtocolMapperModel> builtins = new ArrayList<>();
     static List<ProtocolMapperModel> defaultBuiltins = new ArrayList<>();
 
