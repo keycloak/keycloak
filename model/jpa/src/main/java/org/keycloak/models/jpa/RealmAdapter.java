@@ -1000,8 +1000,8 @@ public class RealmAdapter implements RealmModel {
         if (!role.getContainer().equals(this)) return false;
         session.users().preRemove(this, role);
         RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        realm.getRoles().remove(role);
-        realm.getDefaultRoles().remove(role);
+        realm.getRoles().remove(roleEntity);
+        realm.getDefaultRoles().remove(roleEntity);
 
         em.createNativeQuery("delete from COMPOSITE_ROLE where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();

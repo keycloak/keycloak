@@ -3,6 +3,7 @@ package org.keycloak.admin.client.resource;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -27,5 +28,8 @@ public interface RolesResource {
     @Path("{roleName}")
     public RoleResource get(@PathParam("roleName") String roleName);
 
+    @Path("{role-name}")
+    @DELETE
+    public void deleteRole(final @PathParam("role-name") String roleName);
 
 }
