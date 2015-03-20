@@ -109,7 +109,7 @@ public class KerberosLdapTest extends AbstractKerberosTest {
 
         // Successfully change password now
         changePasswordPage.changePassword("theduke", "newPass", "newPass");
-        Assert.assertTrue(driver.getPageSource().contains("Your password has been updated"));
+        Assert.assertTrue(driver.getPageSource().contains("Your password has been updated."));
         changePasswordPage.logout();
 
         // Login with old password doesn't work, but with new password works
@@ -136,7 +136,7 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         loginPage.login("jduke", "newPass");
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword("newPass", "theduke", "theduke");
-        Assert.assertTrue(driver.getPageSource().contains("Your password has been updated"));
+        Assert.assertTrue(driver.getPageSource().contains("Your password has been updated."));
         changePasswordPage.logout();
 
         spnegoResponse.close();

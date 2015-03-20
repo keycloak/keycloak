@@ -2,17 +2,17 @@
 <@layout.mainLayout active='totp' bodyClass='totp'; section>
 
     <#if totp.enabled>
-        <h2>Authenticators</h2>
+        <h2>${msg("authenticatorTitle")}</h2>
 
         <table class="table table-bordered table-striped">
             <thead
                 <tr>
-                   <th colspan="2">Configured Authenticators</th>
+                   <th colspan="2">${msg("configureAuthenticators")}/th>
                 </tr>
             </thead>
             <tbody>
             <tr>
-                <td class="provider">Mobile</td>
+                <td class="provider">${msg("mobile")}</td>
                 <td class="action">
                     <a id="remove-mobile" href="${url.totpRemoveUrl}"><i class="pficon pficon-delete"></i></a>
                 </td>
@@ -20,23 +20,21 @@
             </tbody>
         </table>
     <#else>
-        <h2>Authenticator</h2>
+        <h2>${msg("authenticatorTitle")}</h2>
 
         <hr/>
 
         <ol>
             <li>
-                Install <a href="https://fedorahosted.org/freeotp/" target="_blank">FreeOTP</a> or
-                <a href="http://code.google.com/p/google-authenticator/" target="_blank">Google Authenticator</a>
-                on your mobile
+                <p>${msg("totpStep1")}</p>
             </li>
             <li>
-                Open the application and scan the barcode or enter the key<br/>
+                <p>${msg("totpStep2")}</p>
                 <img src="${totp.totpSecretQrCodeUrl}" alt="Figure: Barcode"><br/>
                 <span class="code">${totp.totpSecretEncoded}</span>
             </li>
             <li>
-                Enter the one-time code provided by the application and click Submit to finish the setup.
+                <p>${msg("totpStep3")}</p>
             </li>
         </ol>
 
@@ -58,8 +56,8 @@
             <div class="form-group">
                 <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                     <div class="">
-                        <button type="submit" class="btn btn-primary btn-lg" name="submitAction" value="Save">Save</button>
-                        <button type="submit" class="btn btn-default btn-lg" name="submitAction" value="Cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-lg" name="submitAction" value="Save">${msg("doSave")}</button>
+                        <button type="submit" class="btn btn-default btn-lg" name="submitAction" value="Cancel">${msg("doCancel")}</button>
                     </div>
                 </div>
             </div>

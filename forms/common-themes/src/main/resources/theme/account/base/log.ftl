@@ -3,18 +3,18 @@
 
     <div class="row">
         <div class="col-md-10">
-            <h2>Account Log</h2>
+            <h2>${msg("accountLogHtmlTitle")}</h2>
         </div>
     </div>
 
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
-            <td>Date</td>
-            <td>Event</td>
-            <td>IP</td>
-            <td>Client</td>
-            <td>Details</td>
+            <td>${msg("date")}</td>
+            <td>${msg("event")}</td>
+            <td>${msg("ip")}</td>
+            <td>${msg("client")}</td>
+            <td>${msg("details")}</td>
         </tr>
         </thead>
 

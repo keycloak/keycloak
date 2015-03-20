@@ -12,9 +12,9 @@
                 <#if oauth.claimsRequested??>
                     <li>
                         <span>
-                        Personal Info:&nbsp;
+                            ${msg("personalInfo")}&nbsp;
                             <#list oauth.claimsRequested as claim>
-                            ${claim}&nbsp;
+                                ${advancedMsg(claim)}<#if claim_has_next>,&nbsp;</#if>
                             </#list>
                         </span>
                     </li>
@@ -29,7 +29,7 @@
                 <#if oauth.realmRolesRequested??>
                     <#list oauth.realmRolesRequested as role>
                         <li>
-                            <span><#if role.description??>${role.description}<#else>${role.name}</#if></span>
+                            <span><#if role.description??>${advancedMsg(role.description)}<#else>${advancedMsg(role.name)}</#if></span>
                         </li>
                     </#list>
                 </#if>
@@ -37,8 +37,8 @@
                     <#list oauth.resourceRolesRequested?keys as resource>
                         <#list oauth.resourceRolesRequested[resource] as role>
                             <li>
-                                <span class="kc-role"><#if role.description??>${role.description}<#else>${role.name}</#if></span>
-                                <span class="kc-resource">in <strong>${resource}</strong></span>
+                                <span class="kc-role"><#if role.description??>${advancedMsg(role.description)}<#else>${advancedMsg(role.name)}</#if></span>
+                                <span class="kc-resource">${msg("inResource", resource)}</span>
                             </li>
                         </#list>
                     </#list>

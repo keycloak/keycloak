@@ -3,10 +3,10 @@
 
     <div class="row">
         <div class="col-md-10">
-            <h2>Change Password</h2>
+            <h2>${msg("changePasswordHtmlTitle")}</h2>
         </div>
         <div class="col-md-2 subtitle">
-            <span class="subtitle">All fields required</span>
+            <span class="subtitle">${msg("allFieldsRequired")}</span>
         </div>
     </div>
 
@@ -48,8 +48,8 @@
         <div class="form-group">
             <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                 <div class="">
-                    <button type="submit" class="btn btn-primary btn-lg" name="submitAction" value="Save">Save</button>
-                    <button type="submit" class="btn btn-default btn-lg" name="submitAction" value="Cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-lg" name="submitAction" value="Save">${msg("doSave")}</button>
+                    <button type="submit" class="btn btn-default btn-lg" name="submitAction" value="Cancel">${msg("doCancel")}</button>
                 </div>
             </div>
         </div>

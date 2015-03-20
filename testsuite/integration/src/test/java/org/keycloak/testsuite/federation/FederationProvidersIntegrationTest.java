@@ -209,7 +209,7 @@ public class FederationProvidersIntegrationTest {
         loginPage.login("johnkeycloak", "Password1");
         changePasswordPage.changePassword("Password1", "New-password1", "New-password1");
 
-        Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
 
         changePasswordPage.logout();
 
@@ -224,7 +224,7 @@ public class FederationProvidersIntegrationTest {
         // Change password back to previous value
         changePasswordPage.open();
         changePasswordPage.changePassword("New-password1", "Password1", "Password1");
-        Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
     }
 
     @Test
