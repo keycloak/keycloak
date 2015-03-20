@@ -44,7 +44,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
 
 }
 }]]></programlisting>
-            The example uses a MaxList which has a maximum size and is concurrency safe. When the maximum size is reached
+            The example uses an imagined MaxList which has a maximum size and is concurrency safe. When the maximum size is reached
             and new entries are added the oldest entry is removed. Keycloak creates a single instance of
             EventListenerProviderFactory which makes it possible to store state for multiple requests. EventListenerProvider
             instances are created by calling create on the factory for each requests so these should be light-weight.
@@ -116,10 +116,10 @@ public class MyEventListenerProvider implements EventListenerProvider {
                 Next you need to register this module with Keycloak. This is done by editing keycloak-server.json and adding
                 it to the providers:
 <programlisting><![CDATA[{
-"providers": [
-    ...
-    "module:org.keycloak.examples.event-sysout"
-]
+    "providers": [
+        ...
+        "module:org.keycloak.examples.event-sysout"
+    ]
 }]]></programlisting>
             </para>
         </section>
@@ -147,6 +147,21 @@ public class MyEventListenerProvider implements EventListenerProvider {
     "providers": [
         "classpath:/home/user/providers/*"
     ]
+}]]></programlisting>
+            </para>
+        </section>
+
+        <section>
+            <title>Configuring a provider</title>
+            <para>
+                You can pass configuration options to your provider by setting them in <literal>keycloak-server.json</literal>.
+                For example to set the max value for <literal>my-event-listener</literal> add:
+<programlisting><![CDATA[{
+    "eventsListener": {
+        "my-event-listener": {
+            "max": 100
+        }
+    }
 }]]></programlisting>
             </para>
         </section>
