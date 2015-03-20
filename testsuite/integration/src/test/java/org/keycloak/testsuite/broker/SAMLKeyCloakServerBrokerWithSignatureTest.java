@@ -37,6 +37,11 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             server.importRealm(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-saml-with-signature.json"));
         }
+
+        @Override
+        protected String[] getTestRealms() {
+            return new String[] { "realm-with-saml-signed-idp" };
+        }
     };
 
     @Override

@@ -1,9 +1,11 @@
 package org.keycloak.picketlink.idm;
 
 import org.jboss.logging.Logger;
+import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.event.CredentialUpdatedEvent;
 import org.picketlink.idm.event.EventBridge;
+import org.picketlink.idm.internal.ContextualIdentityManager;
 import org.picketlink.idm.ldap.internal.LDAPIdentityStore;
 import org.picketlink.idm.ldap.internal.LDAPOperationManager;
 import org.picketlink.idm.model.basic.User;
@@ -37,9 +39,10 @@ public class KeycloakEventBridge implements EventBridge {
         if (updateUserAccountAfterPasswordUpdate && event instanceof CredentialUpdatedEvent) {
             CredentialUpdatedEvent credEvent = ((CredentialUpdatedEvent) event);
             PartitionManager partitionManager = credEvent.getPartitionMananger();
-            IdentityContext identityCtx = (IdentityContext)partitionManager.createIdentityManager();
+            ContextualIdentityManager identityManager = (ContextualIdentityManager) partitionManager.createIdentityManager();
+            IdentityContext identityCtx = identityManager.getIdentityContext();
 
-            CredentialStore store = ((StoreSelector)partitionManager).getStoreForCredentialOperation(identityCtx, credEvent.getCredential().getClass());
+            CredentialStore store = identityManager.getStoreSelector().getStoreForCredentialOperation(identityCtx, credEvent.getCredential().getClass());
             if (store instanceof LDAPIdentityStore) {
                 LDAPIdentityStore ldapStore = (LDAPIdentityStore)store;
                 LDAPOperationManager operationManager = ldapStore.getOperationManager();

@@ -51,8 +51,8 @@ public class IdentityProviderEntity {
     private boolean authenticateByDefault;
 
     @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value", columnDefinition = "TEXT")
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE", columnDefinition = "TEXT")
     @CollectionTable(name="IDENTITY_PROVIDER_CONFIG", joinColumns={ @JoinColumn(name="IDENTITY_PROVIDER_ID") })
     private Map<String, String> config;
 

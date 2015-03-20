@@ -176,6 +176,9 @@ public abstract class AbstractIdentityProviderTest {
             // authenticated and redirected to app
             assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
 
+            brokerServerRule.stopSession(session, true);
+            session = brokerServerRule.startSession();
+
             // check correct user is created with email as username and bound to correct federated identity
             RealmModel realm = getRealm();
 
@@ -217,6 +220,9 @@ public abstract class AbstractIdentityProviderTest {
             identityProviderModel.setUpdateProfileFirstLogin(false);
 
             authenticateWithIdentityProvider(identityProviderModel, "test-user-noemail");
+
+            brokerServerRule.stopSession(session, true);
+            session = brokerServerRule.startSession();
 
             // check correct user is created with username from provider as email is not available
             RealmModel realm = getRealm();
@@ -562,6 +568,9 @@ public abstract class AbstractIdentityProviderTest {
 
         doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail);
 
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
+
         RealmModel realm = getRealm();
 
         Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
@@ -610,9 +619,12 @@ public abstract class AbstractIdentityProviderTest {
         UserSessionStatus userSessionStatus = retrieveSessionStatus();
         IDToken idToken = userSessionStatus.getIdToken();
         KeycloakSession samlServerSession = brokerServerRule.startSession();
-        RealmModel brokerRealm = samlServerSession.realms().getRealm("realm-with-broker");
-
-        return samlServerSession.users().getUserById(idToken.getSubject(), brokerRealm);
+        try {
+            RealmModel brokerRealm = samlServerSession.realms().getRealm("realm-with-broker");
+            return samlServerSession.users().getUserById(idToken.getSubject(), brokerRealm);
+        } finally {
+            brokerServerRule.stopSession(samlServerSession, false);
+        }
     }
 
     protected void doAfterProviderAuthentication() {
@@ -677,7 +689,7 @@ public abstract class AbstractIdentityProviderTest {
                 this.session.users().removeFederatedIdentity(realm, user, fedIdentity.getIdentityProvider());
             }
 
-            if (!user.getUsername().equals("pedroigor")) {
+            if (!"pedroigor".equals(user.getUsername())) {
                 this.session.users().removeUser(realm, user);
             }
         }

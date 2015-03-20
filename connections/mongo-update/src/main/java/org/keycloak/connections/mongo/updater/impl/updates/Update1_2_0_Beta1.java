@@ -33,6 +33,9 @@ public class Update1_2_0_Beta1 extends Update {
 
     @Override
     public void update(KeycloakSession session) {
+        deleteEntries("clientSessions");
+        deleteEntries("sessions");
+
         convertSocialToIdFedRealms();
         convertSocialToIdFedUsers();
         addAccessCodeLoginTimeout();
