@@ -18,11 +18,11 @@ import javax.ws.rs.core.MultivaluedMap;
 public interface TokenService {
 
     @POST
-    @Path("/realms/{realm}/protocol/openid-connect/grants/access")
+    @Path("/realms/{realm}/protocol/openid-connect/token")
     public AccessTokenResponse grantToken(@PathParam("realm") String realm, MultivaluedMap<String, String> map);
 
     @POST
-    @Path("/realms/{realm}/protocol/openid-connect/refresh")
+    @Path("/realms/{realm}/protocol/openid-connect/token")
     public AccessTokenResponse refreshToken(@PathParam("realm") String realm, MultivaluedMap<String, String> map);
 
 }

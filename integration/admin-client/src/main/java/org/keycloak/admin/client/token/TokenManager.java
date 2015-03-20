@@ -43,6 +43,7 @@ public class TokenManager {
         ResteasyWebTarget target = client.target(config.getServerUrl());
 
         Form form = new Form()
+                .param("grant_type", "password")
                 .param("username", config.getUsername())
                 .param("password", config.getPassword());
 
@@ -64,6 +65,7 @@ public class TokenManager {
         ResteasyWebTarget target = client.target(config.getServerUrl());
 
         Form form = new Form()
+                .param("grant_type", "refresh_token")
                 .param("username", config.getUsername())
                 .param("password", config.getPassword());
 
