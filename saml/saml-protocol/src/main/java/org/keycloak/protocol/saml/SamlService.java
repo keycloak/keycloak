@@ -358,7 +358,6 @@ public class SamlService {
                 if (relayState != null) userSession.setNote(SamlProtocol.SAML_LOGOUT_RELAY_STATE, relayState);
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_REQUEST_ID, logoutRequest.getID());
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING, logoutBinding);
-                userSession.setNote(SamlProtocol.SAML_LOGOUT_ISSUER, logoutRequest.getIssuer().getValue());
                 userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL);
                 // remove client from logout requests
                 for (ClientSessionModel clientSession : userSession.getClientSessions()) {
@@ -446,46 +445,11 @@ public class SamlService {
             if (!"true".equals(client.getAttribute("saml.client.signature"))) {
                 return;
             }
-            MultivaluedMap<String, String> encodedParams = uriInfo.getQueryParameters(false);
-            String request = encodedParams.getFirst(GeneralConstants.SAML_REQUEST_KEY);
-            String algorithm = encodedParams.getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
-            String signature = encodedParams.getFirst(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
-
-            if (request == null) throw new VerificationException("SAMLRequest as null");
-            if (algorithm == null) throw new VerificationException("SigAlg as null");
-            if (signature == null) throw new VerificationException("Signature as null");
-
-            // Shibboleth doesn't sign the document for redirect binding.
-            // todo maybe a flag?
-            // SamlProtocolUtils.verifyDocumentSignature(client, documentHolder.getSamlDocument());
-
             PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
-
-
-            UriBuilder builder = UriBuilder.fromPath("/")
-                    .queryParam(GeneralConstants.SAML_REQUEST_KEY, request);
-            if (encodedParams.containsKey(GeneralConstants.RELAY_STATE)) {
-                builder.queryParam(GeneralConstants.RELAY_STATE, encodedParams.getFirst(GeneralConstants.RELAY_STATE));
-            }
-            builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, algorithm);
-            String rawQuery = builder.build().getRawQuery();
-
-            try {
-                byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
-
-                SignatureAlgorithm signatureAlgorithm = SamlProtocol.getSignatureAlgorithm(client);
-                Signature validator = signatureAlgorithm.createSignature(); // todo plugin signature alg
-                validator.initVerify(publicKey);
-                validator.update(rawQuery.getBytes("UTF-8"));
-                if (!validator.verify(decodedSignature)) {
-                    throw new VerificationException("Invalid query param signature");
-                }
-            } catch (Exception e) {
-                throw new VerificationException(e);
-            }
-
-
+            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo);
         }
+
+
 
         @Override
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {

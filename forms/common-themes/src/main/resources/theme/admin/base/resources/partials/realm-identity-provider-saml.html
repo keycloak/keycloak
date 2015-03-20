@@ -45,6 +45,13 @@
                         <span tooltip-placement="right" tooltip="The Url that must be used to send authentication requests(SAML AuthnRequest)." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group clearfix" data-ng-show="!importFile && !importUrl">
+                        <label class="col-sm-2 control-label" for="singleSignOnServiceUrl">Single Logout Service Url</label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="singleLogoutServiceUrl" type="text" ng-model="identityProvider.config.singleLogoutServiceUrl" required>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The Url that must be used to send logout requests." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="nameIDPolicyFormat">NameID Policy Format</label>
                         <div class="col-sm-4">
                             <select id="nameIDPolicyFormat" ng-model="identityProvider.config.nameIDPolicyFormat"

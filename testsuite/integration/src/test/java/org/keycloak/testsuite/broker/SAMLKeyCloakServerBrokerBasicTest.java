@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.broker;
 
 import org.junit.ClassRule;
+import org.junit.Test;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -60,12 +61,25 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
         try {
             SAML2Request saml2Request = new SAML2Request();
             ResponseType responseType = (ResponseType) saml2Request
-                    .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(URLDecoder.decode(pageSource, "UTF-8")));
+                    .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(pageSource));
+                    //.getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(URLDecoder.decode(pageSource, "UTF-8")));
 
             assertNotNull(responseType);
             assertFalse(responseType.getAssertions().isEmpty());
         } catch (Exception e) {
             fail("Could not parse token.");
         }
+    }
+
+    @Override
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile() {
+        super.testSuccessfulAuthenticationWithoutUpdateProfile();
+    }
+
+    @Override
+    @Test
+    public void testTokenStorageAndRetrievalByOAuthClient() {
+        super.testTokenStorageAndRetrievalByOAuthClient();
     }
 }

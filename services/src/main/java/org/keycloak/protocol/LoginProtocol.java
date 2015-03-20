@@ -1,5 +1,6 @@
 package org.keycloak.protocol;
 
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -23,6 +24,8 @@ public interface LoginProtocol extends Provider {
     LoginProtocol setUriInfo(UriInfo uriInfo);
 
     LoginProtocol setHttpHeaders(HttpHeaders headers);
+
+    LoginProtocol setEventBuilder(EventBuilder event);
 
     Response cancelLogin(ClientSessionModel clientSession);
     Response invalidSessionError(ClientSessionModel clientSession);

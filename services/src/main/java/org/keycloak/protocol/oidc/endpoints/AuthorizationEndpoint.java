@@ -254,7 +254,7 @@ public class AuthorizationEndpoint {
         if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
 
         if (prompt != null && prompt.equals("none")) {
-            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers);
+            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers, event);
             return oauth.cancelLogin(clientSession);
         }
 

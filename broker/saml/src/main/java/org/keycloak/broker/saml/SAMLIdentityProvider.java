@@ -23,13 +23,19 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SAML2AuthnRequestBuilder;
+import org.keycloak.protocol.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.protocol.saml.SAML2NameIDPolicyBuilder;
+import org.keycloak.services.managers.EventsManager;
 import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
+import org.picketlink.common.exceptions.ConfigurationException;
+import org.picketlink.common.exceptions.ParsingException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.common.util.StaxParserUtil;
@@ -63,6 +69,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.namespace.QName;
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -85,6 +92,11 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     }
 
     @Override
+    public Object callback(RealmModel realm, Callback callback) {
+        return new SAMLEndpoint(realm, getConfig(), callback);
+    }
+
+    @Override
     public AuthenticationResponse handleRequest(AuthenticationRequest request) {
         try {
             UriInfo uriInfo = request.getUriInfo();
@@ -99,12 +111,14 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
             String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
 
+            String assertionConsumerServiceUrl = UriBuilder.fromUri(request.getRedirectUri()).path("endpoint").build().toString();
+
             if (getConfig().isPostBindingResponse()) {
                 protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
             }
 
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
-                    .assertionConsumerUrl(request.getRedirectUri())
+                    .assertionConsumerUrl(assertionConsumerServiceUrl)
                     .destination(destinationUrl)
                     .issuer(issuerURL)
                     .forceAuthn(getConfig().isForceAuthn())
@@ -293,6 +307,27 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     }
 
     @Override
+    public Response logout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+        if (getConfig().getSingleLogoutServiceUrl() == null) return null;
+
+        SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
+                .issuer(getEntityId(uriInfo, realm))
+                .sessionIndex(userSession.getNote("SAML_FEDERATED_SESSION_INDEX"))
+                .userPrincipal(userSession.getNote("SAML_FEDERATED_SUBJECT"), userSession.getNote("SAML_FEDERATED_SUBJECT_NAMEFORMAT"))
+                .destination(getConfig().getSingleLogoutServiceUrl());
+        if (getConfig().isWantAuthnRequestsSigned()) {
+            logoutBuilder.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                    .signDocument();
+        }
+        try {
+            return logoutBuilder.relayState(userSession.getId()).postBinding().request();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
     public Response export(UriInfo uriInfo, RealmModel realm, String format) {
 
         String authnBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
@@ -301,7 +336,12 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authnBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
         }
 
-        String assertionConsumerService = uriInfo.getBaseUriBuilder().path("realms").path(realm.getName()).path("broker").path(getConfig().getAlias()).build().toString();
+        String endpoint = uriInfo.getBaseUriBuilder()
+                .path("realms").path(realm.getName())
+                .path("broker")
+                .path(getConfig().getAlias())
+                .path("endpoint")
+                .build().toString();
 
 
 
@@ -312,9 +352,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 "        <NameIDFormat>" + getConfig().getNameIDPolicyFormat() + "\n" +
                 "        </NameIDFormat>\n" +
 // todo single logout service description
-//                "        <SingleLogoutService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" Location=\"http://localhost:8081/sales-metadata/\"/>\n" +
+                "        <SingleLogoutService Binding=\"" + authnBinding + "\" Location=\"" + endpoint + "\"/>\n" +
                 "        <AssertionConsumerService\n" +
-                "                Binding=\"" + authnBinding + "\" Location=\"" + assertionConsumerService + "\"\n" +
+                "                Binding=\"" + authnBinding + "\" Location=\"" + endpoint + "\"\n" +
                 "                index=\"1\" isDefault=\"true\" />\n";
         if (getConfig().isWantAuthnRequestsSigned()) {
             descriptor +=

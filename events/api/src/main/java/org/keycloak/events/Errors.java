@@ -26,6 +26,7 @@ public interface Errors {
     String INVALID_REDIRECT_URI = "invalid_redirect_uri";
     String INVALID_CODE = "invalid_code";
     String INVALID_TOKEN = "invalid_token";
+    String INVALID_SAML_RESPONSE = "invalid_saml_response";
     String INVALID_SAML_AUTHN_REQUEST = "invalid_authn_request";
     String INVALID_SAML_LOGOUT_REQUEST = "invalid_logout_request";
     String INVALID_SAML_LOGOUT_RESPONSE = "invalid_logout_response";

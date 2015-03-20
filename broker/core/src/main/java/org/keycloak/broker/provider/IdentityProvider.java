@@ -20,15 +20,28 @@ package org.keycloak.broker.provider;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.Map;
 
 /**
  * @author Pedro Igor
  */
 public interface IdentityProvider<C extends IdentityProviderModel> extends Provider {
+
+    public interface Callback {
+        public Response authenticated(Map<String, String> userNotes, IdentityProviderModel identityProviderConfig, FederatedIdentity federatedIdentity, String code);
+    }
+
+    /**
+     * JAXRS callback endpoint
+     *
+     * @return
+     */
+    Object callback(RealmModel realm, Callback callback);
 
     /**
      * <p>Initiates the authentication process by sending an authentication request to an identity provider. This method is called
@@ -78,6 +91,8 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      * @return
      */
     Response retrieveToken(FederatedIdentityModel identity);
+
+    Response logout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm);
 
     /**
      * Export a representation of the IdentityProvider in a specific format.  For example, a SAML EntityDescriptor

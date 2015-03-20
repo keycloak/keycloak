@@ -546,7 +546,7 @@ public abstract class AbstractIdentityProviderTest {
         this.loginPage.clickSocial(getProviderId());
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
-
+        System.out.println(this.driver.getCurrentUrl());
         // log in to identity provider
         this.loginPage.login(username, "password");
 

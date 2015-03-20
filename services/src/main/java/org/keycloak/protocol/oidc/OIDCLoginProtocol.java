@@ -24,6 +24,9 @@ package org.keycloak.protocol.oidc;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -54,6 +57,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLIENT_ID_PARAM = "client_id";
     public static final String PROMPT_PARAM = "prompt";
     public static final String LOGIN_HINT_PARAM = "login_hint";
+    public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
 
     private static final Logger log = Logger.getLogger(OIDCLoginProtocol.class);
 
@@ -65,11 +69,14 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     protected HttpHeaders headers;
 
-    public OIDCLoginProtocol(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+    protected EventBuilder event;
+
+    public OIDCLoginProtocol(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, EventBuilder event) {
         this.session = session;
         this.realm = realm;
         this.uriInfo = uriInfo;
         this.headers = headers;
+        this.event = event;
     }
 
     public OIDCLoginProtocol(){
@@ -97,6 +104,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public OIDCLoginProtocol setHttpHeaders(HttpHeaders headers){
         this.headers = headers;
+        return this;
+    }
+
+    @Override
+    public OIDCLoginProtocol setEventBuilder(EventBuilder event) {
+        this.event = event;
         return this;
     }
 
@@ -168,7 +181,19 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public Response finishLogout(UserSessionModel userSession) {
-        throw new RuntimeException("NOT IMPLEMENTED");
+        String redirectUri = userSession.getNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
+        event.event(EventType.LOGOUT);
+        if (redirectUri != null) {
+            event.detail(Details.REDIRECT_URI, redirectUri);
+        }
+        event.user(userSession.getUser()).session(userSession).success();
+
+
+        if (redirectUri != null) {
+            return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
+        } else {
+            return Response.ok().build();
+        }
     }
 
     @Override
