@@ -1,2 +1,2 @@
-org.keycloak.theme.DefaultKeycloakThemeProviderFactory
+org.keycloak.theme.JarThemeProviderFactory
 org.keycloak.theme.FolderThemeProviderFactory

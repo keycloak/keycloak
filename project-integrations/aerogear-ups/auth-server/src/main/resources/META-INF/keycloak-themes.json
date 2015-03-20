@@ -1,0 +1,6 @@
+{
+    "themes": [{
+        "name" : "aerogear",
+        "types": [ "admin", "account", "login" ]
+    }]
+}
