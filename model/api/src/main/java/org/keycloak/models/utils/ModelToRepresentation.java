@@ -353,8 +353,7 @@ public class ModelToRepresentation {
 
         providerRep.setInternalId(identityProviderModel.getInternalId());
         providerRep.setProviderId(identityProviderModel.getProviderId());
-        providerRep.setId(identityProviderModel.getId());
-        providerRep.setName(identityProviderModel.getName());
+        providerRep.setAlias(identityProviderModel.getAlias());
         providerRep.setEnabled(identityProviderModel.isEnabled());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setUpdateProfileFirstLogin(identityProviderModel.isUpdateProfileFirstLogin());

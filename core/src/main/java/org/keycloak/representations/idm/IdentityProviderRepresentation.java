@@ -25,15 +25,13 @@ import java.util.Map;
  */
 public class IdentityProviderRepresentation {
 
-    protected String id;
+    protected String alias;
     protected String internalId;
     protected String providerId;
-    protected String name;
     protected boolean enabled = true;
     protected boolean updateProfileFirstLogin = true;
     protected boolean storeToken;
     protected boolean authenticateByDefault;
-    protected String groupName;
     protected Map<String, String> config = new HashMap<String, String>();
 
     public String getInternalId() {
@@ -44,12 +42,12 @@ public class IdentityProviderRepresentation {
         this.internalId = internalId;
     }
 
-    public String getId() {
-        return this.id;
+    public String getAlias() {
+        return this.alias;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     public String getProviderId() {
@@ -58,14 +56,6 @@ public class IdentityProviderRepresentation {
 
     public void setProviderId(String providerId) {
         this.providerId = providerId;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public Map<String, String> getConfig() {
@@ -106,13 +96,5 @@ public class IdentityProviderRepresentation {
 
     public void setStoreToken(boolean storeToken) {
         this.storeToken = storeToken;
-    }
-
-    public String getGroupName() {
-        return this.groupName;
-    }
-
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
     }
 }

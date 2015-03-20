@@ -1102,15 +1102,10 @@ module.factory('PasswordPolicy', function() {
 });
 
 module.factory('IdentityProvider', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/identity-provider/instances/:id', {
-        realm : '@realm'
+    return $resource(authUrl + '/admin/realms/:realm/identity-provider/instances/:alias', {
+        realm : '@realm',
+        alias : '@alias'
     }, {
-        create : {
-            method : 'POST'
-        },
-        delete : {
-            method : 'DELETE'
-        },
         update: {
             method : 'PUT'
         }
@@ -1118,11 +1113,11 @@ module.factory('IdentityProvider', function($resource) {
 });
 
 module.factory('IdentityProviderExport', function($resource) {
-    var url = authUrl + '/admin/realms/:realm/identity-provider/instances/:id/export';
+    var url = authUrl + '/admin/realms/:realm/identity-provider/instances/:alias/export';
     return {
         url : function(parameters)
         {
-            return url.replace(':realm', parameters.realm).replace(':id', parameters.id);
+            return url.replace(':realm', parameters.realm).replace(':alias', parameters.alias);
         }
     }
 });

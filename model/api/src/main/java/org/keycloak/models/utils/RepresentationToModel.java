@@ -272,9 +272,8 @@ public class RepresentationToModel {
                         String secret = rep.getSocialProviders().get(k.replace(".key", ".secret"));
 
                         IdentityProviderRepresentation identityProvider = new IdentityProviderRepresentation();
-                        identityProvider.setId(providerId);
+                        identityProvider.setAlias(providerId);
                         identityProvider.setProviderId(providerId);
-                        identityProvider.setName(providerId);
                         identityProvider.setEnabled(true);
                         identityProvider.setUpdateProfileFirstLogin(updateProfileFirstLogin);
 
@@ -850,9 +849,8 @@ public class RepresentationToModel {
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
         identityProviderModel.setInternalId(representation.getInternalId());
-        identityProviderModel.setId(representation.getId());
+        identityProviderModel.setAlias(representation.getAlias());
         identityProviderModel.setProviderId(representation.getProviderId());
-        identityProviderModel.setName(representation.getName());
         identityProviderModel.setEnabled(representation.isEnabled());
         identityProviderModel.setUpdateProfileFirstLogin(representation.isUpdateProfileFirstLogin());
         identityProviderModel.setAuthenticateByDefault(representation.isAuthenticateByDefault());

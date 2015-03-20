@@ -70,7 +70,7 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
         try {
             SAML2Request saml2Request = new SAML2Request();
             ResponseType responseType = (ResponseType) saml2Request
-                        .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(URLDecoder.decode(pageSource, "UTF-8")));
+                        .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(pageSource));
 
             assertNotNull(responseType);
             assertFalse(responseType.getAssertions().isEmpty());

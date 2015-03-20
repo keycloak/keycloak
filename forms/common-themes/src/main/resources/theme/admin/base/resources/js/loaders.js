@@ -301,7 +301,7 @@ module.factory('IdentityProviderLoader', function(Loader, IdentityProvider, $rou
     return Loader.get(IdentityProvider, function () {
         return {
             realm: $route.current.params.realm,
-            id: $route.current.params.id
+            alias: $route.current.params.alias
         }
     });
 });

@@ -23,6 +23,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("userinfo_endpoint")
     private String userinfoEndpoint;
 
+    @JsonProperty("end_session_endpoint")
+    private String logoutEndpoint;
+
     @JsonProperty("jwks_uri")
     private String jwksUri;
 
@@ -79,6 +82,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setJwksUri(String jwksUri) {
         this.jwksUri = jwksUri;
+    }
+
+    public String getLogoutEndpoint() {
+        return logoutEndpoint;
+    }
+
+    public void setLogoutEndpoint(String logoutEndpoint) {
+        this.logoutEndpoint = logoutEndpoint;
     }
 
     public List<String> getGrantTypesSupported() {

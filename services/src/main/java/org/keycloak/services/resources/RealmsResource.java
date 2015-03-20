@@ -189,7 +189,8 @@ public class RealmsResource {
 
         IdentityBrokerService brokerService = new IdentityBrokerService(realm);
         ResteasyProviderFactory.getInstance().injectProperties(brokerService);
-        
+        //resourceContext.initResource(brokerService);
+
         brokerService.init();
 
         return brokerService;

@@ -5,10 +5,10 @@
     <div id="content">
         <ol class="breadcrumb">
             <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
-            <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.id}}">{{identityProvider.name}} Provider</a></li>
-            <li class="active">{{identityProvider.name}} Provider Export</li>
+            <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}} Provider</a></li>
+            <li class="active">{{identityProvider.alias}} Provider Export</li>
         </ol>
-        <h2 class="pull-left">{{identityProvider.name}} Provider Export</h2>
+        <h2 class="pull-left">{{identityProvider.alias}} Provider Export</h2>
         <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset class="border-top">
                 <div class="form-group">

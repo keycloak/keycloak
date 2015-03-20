@@ -43,7 +43,13 @@ public class SALM2LoginResponseBuilder {
     protected String requestID;
     protected String authMethod;
     protected String requestIssuer;
+    protected String sessionIndex;
 
+
+    public SALM2LoginResponseBuilder sessionIndex(String sessionIndex) {
+        this.sessionIndex = sessionIndex;
+        return this;
+    }
 
     public SALM2LoginResponseBuilder destination(String destination) {
         this.destination = destination;
@@ -135,8 +141,8 @@ public class SALM2LoginResponseBuilder {
 
             AuthnStatementType authnStatement = StatementUtil.createAuthnStatement(XMLTimeUtil.getIssueInstant(),
                     authContextRef);
-
-            authnStatement.setSessionIndex(assertion.getID());
+            if (sessionIndex != null) authnStatement.setSessionIndex(sessionIndex);
+            else authnStatement.setSessionIndex(assertion.getID());
 
             assertion.addStatement(authnStatement);
         }

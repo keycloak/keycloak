@@ -317,7 +317,7 @@ public abstract class ClientAdapter implements ClientModel {
             boolean toRemove = true;
 
             for (ClientIdentityProviderMappingModel model : identityProviders) {
-                if (model.getIdentityProvider().equals(identityProvider.getId())) {
+                if (model.getIdentityProvider().equals(identityProvider.getAlias())) {
                     toRemove = false;
                     break;
                 }
@@ -326,7 +326,7 @@ public abstract class ClientAdapter implements ClientModel {
             if (toRemove) {
                 remove.add(entity);
             } else {
-                already.add(entity.getIdentityProvider().getId());
+                already.add(entity.getIdentityProvider().getAlias());
             }
         }
         for (ClientIdentityProviderMappingEntity entity : remove) {
@@ -342,14 +342,14 @@ public abstract class ClientAdapter implements ClientModel {
                 entities.add(mappingEntity);
             } else {
                 for (ClientIdentityProviderMappingEntity entity : entities) {
-                    if (entity.getIdentityProvider().getId().equals(model.getIdentityProvider())) {
+                    if (entity.getIdentityProvider().getAlias().equals(model.getIdentityProvider())) {
                         mappingEntity = entity;
                         break;
                     }
                 }
             }
 
-            TypedQuery<IdentityProviderEntity> query = em.createNamedQuery("findIdentityProviderById", IdentityProviderEntity.class).setParameter("id", model.getIdentityProvider());
+            TypedQuery<IdentityProviderEntity> query = em.createNamedQuery("findIdentityProviderByAlias", IdentityProviderEntity.class).setParameter("alias", model.getIdentityProvider());
             IdentityProviderEntity identityProviderEntity = query.getSingleResult();
 
             mappingEntity.setIdentityProvider(identityProviderEntity);
@@ -368,7 +368,7 @@ public abstract class ClientAdapter implements ClientModel {
         for (ClientIdentityProviderMappingEntity entity : this.entity.getIdentityProviders()) {
             ClientIdentityProviderMappingModel model = new ClientIdentityProviderMappingModel();
 
-            model.setIdentityProvider(entity.getIdentityProvider().getId());
+            model.setIdentityProvider(entity.getIdentityProvider().getAlias());
             model.setRetrieveToken(entity.isRetrieveToken());
 
             models.add(model);

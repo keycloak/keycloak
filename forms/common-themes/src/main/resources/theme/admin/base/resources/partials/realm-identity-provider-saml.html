@@ -5,25 +5,18 @@
         <div id="content">
             <ol class="breadcrumb">
                 <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
-                <li class="active">{{identityProvider.name}} Provider Settings</li>
+                <li class="active">{{identityProvider.alias}} Provider Settings</li>
             </ol>
-            <h2 class="pull-left">{{identityProvider.name}} Provider Settings</h2>
+            <h2 class="pull-left">{{identityProvider.alias}} Provider Settings</h2>
             <p class="subtitle"><span class="required">*</span> Required fields</p>
             <form class="form-horizontal" name="realmForm" novalidate>
                 <fieldset>
                     <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="identifier">Alias <span class="required">*</span></label>
                         <div class="col-sm-4">
-                            <input class="form-control" id="identifier" type="text" ng-model="identityProvider.id" data-ng-readonly="!newIdentityProvider" required>
+                            <input class="form-control" id="identifier" type="text" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
                         </div>
                         <span tooltip-placement="right" tooltip="The alias unique identifies an identity provider and it is also used to build the redirect uri." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group clearfix">
-                        <label class="col-sm-2 control-label" for="name">Name <span class="required">*</span></label>
-                        <div class="col-sm-4">
-                            <input class="form-control" id="name" type="text" ng-model="identityProvider.name" required>
-                        </div>
-                        <span tooltip-placement="right" tooltip="The friendly name for this identity provider." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="newIdentityProvider && !importFile">
                         <label class="col-sm-2 control-label" for="fromUrl">Import From Url</label>
@@ -52,17 +45,18 @@
                         <span tooltip-placement="right" tooltip="The Url that must be used to send authentication requests(SAML AuthnRequest)." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group clearfix" data-ng-show="!importFile && !importUrl">
+                        <label class="col-sm-2 control-label" for="singleSignOnServiceUrl">Single Logout Service Url</label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="singleLogoutServiceUrl" type="text" ng-model="identityProvider.config.singleLogoutServiceUrl" required>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The Url that must be used to send logout requests." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="nameIDPolicyFormat">NameID Policy Format</label>
                         <div class="col-sm-4">
-                            <select id="nameIDPolicyFormat" ng-model="identityProvider.config.nameIDPolicyFormat">
-                                <option value="urn:oasis:names:tc:SAML:2.0:nameid-format:transient">Transient</option>
-                                <option value="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent">Persistent</option>
-                                <option value="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">Email</option>
-                                <option value="urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos">Kerberos</option>
-                                <option value="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">X.509 Subject Name</option>
-                                <option value="urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName">Windows Domain Qualified Name</option>
-                                <option value="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">Unspecified</option>
-                            </select>
+                            <select id="nameIDPolicyFormat" ng-model="identityProvider.config.nameIDPolicyFormat"
+                                    ng-options="nameFormat.format as nameFormat.name for nameFormat in nameIdFormats">
+                             </select>
                             <!-- <input class="form-control" id="nameIDPolicyFormat" type="text" ng-model="identityProvider.config.nameIDPolicyFormat"> -->
                         </div>
                         <span tooltip-placement="right" tooltip="Specifies the URI reference corresponding to a name identifier format. Defaults to urn:oasis:names:tc:SAML:2.0:nameid-format:persistent." class="fa fa-info-circle"></span>
@@ -77,35 +71,35 @@
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="wantAuthnRequestsSigned">Want AuthnRequests Signed</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.wantAuthnRequestsSigned" id="wantAuthnRequestsSigned" onoffswitch />
+                            <input ng-model="identityProvider.config.wantAuthnRequestsSigned" id="wantAuthnRequestsSigned" value="'true'" onoffswitchmodel />
                         </div>
                         <span tooltip-placement="right" tooltip=" Indicates whether the identity provider expects signed a AuthnRequest." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="forceAuthn">Force Authentication</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.forceAuthn" id="forceAuthn" onoffswitch />
+                            <input ng-model="identityProvider.config.forceAuthn" id="forceAuthn" value="'true'" onoffswitchmodel />
                         </div>
                         <span tooltip-placement="right" tooltip=" Indicates whether the identity provider must authenticate the presenter directly rather than rely on a previous security context." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="validateSignature">Validate Signature</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.validateSignature" id="validateSignature" onoffswitch />
+                            <input ng-model="identityProvider.config.validateSignature" id="validateSignature" value="'true'" onoffswitchmodel />
                         </div>
                         <span tooltip-placement="right" tooltip="Enable/disable signature validation of SAML responses." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="postBindingResponse">HTTP-POST Binding Response</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.postBindingResponse" id="postBindingResponse" onoffswitch />
+                            <input ng-model="identityProvider.config.postBindingResponse" id="postBindingResponse" value="'true'" onoffswitchmodel />
                         </div>
                         <span tooltip-placement="right" tooltip="Indicates whether the identity provider must respond to the AuthnRequest using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="postBindingAuthnRequest">HTTP-POST Binding for AuthnRequest</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.postBindingAuthnRequest" id="postBindingAuthnRequest" onoffswitch />
+                            <input ng-model="identityProvider.config.postBindingAuthnRequest" id="postBindingAuthnRequest" value="'true'" onoffswitchmodel />
                         </div>
                         <span tooltip-placement="right" tooltip="Indicates whether the AuthnRequest must be sent using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used." class="fa fa-info-circle"></span>
                     </div>
@@ -140,9 +134,9 @@
                 </fieldset>
 
                 <div class="pull-right form-actions">
-                    <a class="btn btn-lg btn-primary" href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.id}}/export" data-ng-show="!importFile && !newIdentityProvider">Export</a>
-                    <button kc-save data-ng-show="!importFile && !importUrl">Save</button>
-                    <button type="submit" data-ng-click="clearFileSelect()" data-ng-show="importFile || importUrl" class="btn btn-lg btn-default">Cancel</button>
+                    <a class="btn btn-lg btn-primary" href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}/export" data-ng-show="!importFile && !newIdentityProvider">Export</a>
+                    <button kc-save data-ng-show="changed">Save</button>
+                    <button type="submit" data-ng-click="cancel()" data-ng-show="changed" class="btn btn-lg btn-default">Cancel</button>
                     <button type="submit" data-ng-click="uploadFile()" data-ng-show="importFile" class="btn btn-lg btn-primary">Import</button>
                     <button type="submit" data-ng-click="importFrom()" data-ng-show="importUrl" class="btn btn-lg btn-primary">Import</button>
                     <button kc-delete data-ng-click="remove()" data-ng-show="!newIdentityProvider">Delete</button>

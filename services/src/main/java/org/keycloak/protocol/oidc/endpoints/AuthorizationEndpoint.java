@@ -235,7 +235,7 @@ public class AuthorizationEndpoint {
         String accessCode = new ClientSessionCode(realm, clientSession).getCode();
 
         if (idpHint != null && !"".equals(idpHint)) {
-            IdentityProviderModel identityProviderModel = realm.getIdentityProviderById(idpHint);
+            IdentityProviderModel identityProviderModel = realm.getIdentityProviderByAlias(idpHint);
 
             if (identityProviderModel == null) {
                 return Flows.forms(session, realm, null, uriInfo, headers)
@@ -254,14 +254,14 @@ public class AuthorizationEndpoint {
         if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
 
         if (prompt != null && prompt.equals("none")) {
-            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers);
+            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers, event);
             return oauth.cancelLogin(clientSession);
         }
 
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         for (IdentityProviderModel identityProvider : identityProviders) {
             if (identityProvider.isAuthenticateByDefault()) {
-                return buildRedirectToIdentityProvider(identityProvider.getId(), accessCode);
+                return buildRedirectToIdentityProvider(identityProvider.getAlias(), accessCode);
             }
         }
 
@@ -269,7 +269,7 @@ public class AuthorizationEndpoint {
         if (requiredCredentials.isEmpty()) {
             if (!identityProviders.isEmpty()) {
                 if (identityProviders.size() == 1) {
-                    return buildRedirectToIdentityProvider(identityProviders.get(0).getId(), accessCode);
+                    return buildRedirectToIdentityProvider(identityProviders.get(0).getAlias(), accessCode);
                 }
 
                 return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.IDENTITY_PROVIDER_NOT_UNIQUE, realm.getName()).createErrorPage();

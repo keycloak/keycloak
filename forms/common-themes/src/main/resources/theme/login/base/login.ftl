@@ -75,7 +75,7 @@
             <div id="kc-social-providers">
                 <ul>
                     <#list social.providers as p>
-                        <li><a href="${p.loginUrl}" id="zocial-${p.id}" class="zocial ${p.providerId}"> <span class="text">${p.name}</span></a></li>
+                        <li><a href="${p.loginUrl}" id="zocial-${p.alias}" class="zocial ${p.providerId}"> <span class="text">${p.alias}</span></a></li>
                     </#list>
                 </ul>
             </div>

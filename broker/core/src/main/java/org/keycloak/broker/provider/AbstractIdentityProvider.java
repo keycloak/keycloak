@@ -19,6 +19,7 @@ package org.keycloak.broker.provider;
 
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -48,4 +49,13 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         // no-op
     }
 
+    @Override
+    public Object callback(RealmModel realm, AuthenticationCallback callback) {
+        return null;
+    }
+
+    @Override
+    public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+        return null;
+    }
 }

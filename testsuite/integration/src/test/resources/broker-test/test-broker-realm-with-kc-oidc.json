@@ -12,7 +12,7 @@
         "enabled": true,
         "secret": "secret",
         "redirectUris": [
-          "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-oidc-idp"
+          "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-oidc-idp/endpoint"
         ],
         "claims": {
           "name" : true,

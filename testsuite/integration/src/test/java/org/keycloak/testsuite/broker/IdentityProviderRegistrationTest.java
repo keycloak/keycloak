@@ -61,7 +61,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
 
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
-        identityProviderModel.setId("custom-provider");
+        identityProviderModel.setAlias("custom-provider");
 
         CustomSocialProvider customSocialProvider = providerFactory.create(identityProviderModel);
 
@@ -69,7 +69,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
         IdentityProviderModel config = customSocialProvider.getConfig();
 
         assertNotNull(config);
-        assertEquals("custom-provider", config.getId());
+        assertEquals("custom-provider", config.getAlias());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
 
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
-        identityProviderModel.setId("custom-provider");
+        identityProviderModel.setAlias("custom-provider");
 
         CustomIdentityProvider provider = providerFactory.create(identityProviderModel);
 
@@ -92,7 +92,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
         IdentityProviderModel config = provider.getConfig();
 
         assertNotNull(config);
-        assertEquals("custom-provider", config.getId());
+        assertEquals("custom-provider", config.getAlias());
     }
 
     private Set<String> getInstalledProviders() {

@@ -19,7 +19,6 @@ package org.keycloak.testsuite.broker.provider;
 
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 
@@ -35,17 +34,7 @@ public class CustomIdentityProvider extends AbstractIdentityProvider<IdentityPro
     }
 
     @Override
-    public AuthenticationResponse handleRequest(AuthenticationRequest request) {
-        return null;
-    }
-
-    @Override
-    public String getRelayState(AuthenticationRequest request) {
-        return null;
-    }
-
-    @Override
-    public AuthenticationResponse handleResponse(AuthenticationRequest request) {
+    public Response handleRequest(AuthenticationRequest request) {
         return null;
     }
 

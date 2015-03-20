@@ -56,7 +56,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public Map<String, String>  parseConfig(InputStream inputStream) {
+    public Map<String, String> parseConfig(InputStream inputStream) {
         try {
             Object parsedObject = new SAMLParser().parse(inputStream);
             EntityDescriptorType entityType;
@@ -90,6 +90,18 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                                 singleSignOnServiceUrl = endpoint.getLocation().toString();
                             }
                         }
+                        String singleLogoutServiceUrl = null;
+                        for (EndpointType endpoint : idpDescriptor.getSingleLogoutService()) {
+                            if (postBinding && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
+                                singleLogoutServiceUrl = endpoint.getLocation().toString();
+                                break;
+                            } else if (!postBinding && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())){
+                                singleLogoutServiceUrl = endpoint.getLocation().toString();
+                                break;
+                            }
+
+                        }
+                        samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
                         samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
                         samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
                         samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());

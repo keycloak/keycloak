@@ -20,7 +20,7 @@ import java.util.Map;
 @Entity
 @Table(name="IDENTITY_PROVIDER")
 @NamedQueries({
-        @NamedQuery(name="findIdentityProviderById", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.id = :id")
+        @NamedQuery(name="findIdentityProviderByAlias", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.alias = :alias")
 })
 public class IdentityProviderEntity {
 
@@ -35,11 +35,8 @@ public class IdentityProviderEntity {
     @Column(name="PROVIDER_ID")
     private String providerId;
 
-    @Column(name="PROVIDER_NONIMAL_ID")
-    private String id;
-
-    @Column(name="PROVIDER_NAME")
-    private String name;
+    @Column(name="PROVIDER_ALIAS")
+    private String alias;
 
     @Column(name="ENABLED")
     private boolean enabled;
@@ -83,20 +80,12 @@ public class IdentityProviderEntity {
         this.realm = realm;
     }
 
-    public String getId() {
-        return this.id;
+    public String getAlias() {
+        return this.alias;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     public boolean isEnabled() {

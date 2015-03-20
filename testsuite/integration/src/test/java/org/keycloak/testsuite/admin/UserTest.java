@@ -227,8 +227,7 @@ public class UserTest extends AbstractClientTest {
         Assert.assertEquals(0, providers.size());
 
         IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
-        rep.setId("social-provider-id");
-        rep.setName("social-provider-name");
+        rep.setAlias("social-provider-id");
         rep.setProviderId("social-provider-type");
         realm.identityProviders().create(rep);
     }

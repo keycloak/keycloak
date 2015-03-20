@@ -39,6 +39,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("singleSignOnServiceUrl", singleSignOnServiceUrl);
     }
 
+    public String getSingleLogoutServiceUrl() {
+        return getConfig().get("singleLogoutServiceUrl");
+    }
+
+    public void setSingleLogoutServiceUrl(String singleLogoutServiceUrl) {
+        getConfig().put("singleLogoutServiceUrl", singleLogoutServiceUrl);
+    }
+
     public boolean isValidateSignature() {
         return Boolean.valueOf(getConfig().get("validateSignature"));
     }

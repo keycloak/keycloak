@@ -33,18 +33,13 @@ public class IdentityProviderModel {
     /**
      * <p>An user-defined identifier to unique identify an identity provider instance.</p>
      */
-    private String id;
+    private String alias;
 
     /**
      * <p>An identifier used to reference a specific identity provider implementation. The value of this field is the same
      * across instances of the same provider implementation.</p>
      */
     private String providerId;
-
-    /**
-     * <p>An user-defined friendly name for an identity provider instance.</p>
-     */
-    private String name;
 
     private boolean enabled;
 
@@ -69,8 +64,7 @@ public class IdentityProviderModel {
     public IdentityProviderModel(IdentityProviderModel model) {
         this.internalId = model.getInternalId();
         this.providerId = model.getProviderId();
-        this.id = model.getId();
-        this.name = model.getName();
+        this.alias = model.getAlias();
         this.config = new HashMap<String, String>(model.getConfig());
         this.enabled = model.isEnabled();
         this.updateProfileFirstLogin = model.isUpdateProfileFirstLogin();
@@ -86,12 +80,12 @@ public class IdentityProviderModel {
         this.internalId = internalId;
     }
 
-    public String getId() {
-        return this.id;
+    public String getAlias() {
+        return this.alias;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setAlias(String id) {
+        this.alias = id;
     }
 
     public String getProviderId() {
@@ -100,14 +94,6 @@ public class IdentityProviderModel {
 
     public void setProviderId(String providerId) {
         this.providerId = providerId;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public boolean isEnabled() {

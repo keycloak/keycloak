@@ -4,7 +4,6 @@
     <h2></h2>
     <div id="content">
         <h2 class="pull-left"><span>{{realm.realm}}</span> Identity Providers Settings</h2>
-        <p class="subtitle"><span class="required">*</span> Required fields</p>
 
         <form name="realmForm" novalidate class="form-horizontal">
             <fieldset>
@@ -18,7 +17,6 @@
                                     <div class="select-kc">
                                         <select ng-model="provider"
                                                 ng-options="p.name group by p.groupName for p in allProviders track by p.id"
-                                                ng-
                                                 data-ng-change="addProvider(provider); provider = null">
                                             <option value="" disabled selected>Add provider...</option>
                                         </select>
@@ -28,27 +26,22 @@
                         </tr>
                         <tr ng-show="configuredProviders.length > 0">
                             <th>Name</th>
-                            <th>Redirect URI</th>
+                            <th>Callback URI</th>
                         </tr>
                         </thead>
                         <tbody ng-show="configuredProviders.length > 0">
                         <tr ng-repeat="identityProvider in configuredProviders">
                             <td>
-                                <a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.id}}">{{identityProvider.name}}</a>
+                                <a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}}</a>
                             </td>
-                            <td ng-show="!changed">
-                                {{callbackUrl}}{{identityProvider.id}}
+                            <td>
+                                {{callbackUrl}}{{identityProvider.alias}}/endpoint
                             </td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
             </fieldset>
-
-            <div class="pull-right form-actions">
-                <button type="submit" kc-reset data-ng-show="changed">Clear changes</button>
-                <button type="submit" kc-save class="primary" data-ng-show="changed">Save changes</button>
-            </div>
         </form>
     </div>
 </div>

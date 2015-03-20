@@ -871,9 +871,9 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public IdentityProviderModel getIdentityProviderById(String identityProviderId) {
+    public IdentityProviderModel getIdentityProviderByAlias(String alias) {
         for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
-            if (identityProviderModel.getId().equals(identityProviderId)) {
+            if (identityProviderModel.getAlias().equals(alias)) {
                 return identityProviderModel;
             }
         }
@@ -883,15 +883,15 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
-        if (identityProvider.getId() == null) throw new NullPointerException("identityProvider.getId() == null");
+        if (identityProvider.getAlias() == null) throw new NullPointerException("identityProvider.getAlias() == null");
         if (identityProvider.getInternalId() == null) identityProvider.setInternalId(KeycloakModelUtils.generateId());
         allIdProviders.put(identityProvider.getInternalId(), identityProvider);
     }
 
     @Override
-    public void removeIdentityProviderById(String providerId) {
+    public void removeIdentityProviderByAlias(String alias) {
         for (IdentityProviderModel provider : getIdentityProviders()) {
-            if (provider.getId().equals(providerId)) {
+            if (provider.getAlias().equals(alias)) {
                 allIdProviders.remove(provider.getInternalId());
                 break;
             }
@@ -900,7 +900,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
-        removeIdentityProviderById(identityProvider.getId());
+        removeIdentityProviderByAlias(identityProvider.getAlias());
         addIdentityProvider(identityProvider);
     }
 

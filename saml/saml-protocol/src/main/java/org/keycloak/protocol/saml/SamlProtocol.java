@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
 import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -94,6 +95,8 @@ public class SamlProtocol implements LoginProtocol {
 
     protected HttpHeaders headers;
 
+    protected EventBuilder event;
+
 
     @Override
     public SamlProtocol setSession(KeycloakSession session) {
@@ -118,6 +121,13 @@ public class SamlProtocol implements LoginProtocol {
         this.headers = headers;
         return this;
     }
+
+    @Override
+    public SamlProtocol setEventBuilder(EventBuilder event) {
+        this.event = event;
+        return this;
+    }
+
 
     @Override
     public Response cancelLogin(ClientSessionModel clientSession) {
@@ -262,6 +272,7 @@ public class SamlProtocol implements LoginProtocol {
         builder.requestID(requestID)
                .destination(redirectUri)
                .issuer(responseIssuer)
+               .sessionIndex(clientSession.getId())
                .requestIssuer(clientSession.getClient().getClientId())
                .nameIdentifier(nameIdFormat, nameId)
                .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
@@ -348,10 +359,6 @@ public class SamlProtocol implements LoginProtocol {
 
     public static boolean includeAuthnStatement(ClientModel client) {
         return "true".equals(client.getAttribute(SAML_AUTHNSTATEMENT));
-    }
-
-    public static boolean multivaluedRoles(ClientModel client) {
-        return "true".equals(client.getAttribute(SAML_MULTIVALUED_ROLES));
     }
 
     public static SignatureAlgorithm getSignatureAlgorithm(ClientModel client) {
@@ -457,10 +464,13 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public Response finishLogout(UserSessionModel userSession) {
         logger.debug("finishLogout");
+        String logoutBindingUri = userSession.getNote(SAML_LOGOUT_BINDING_URI);
+        String logoutRelayState = userSession.getNote(SAML_LOGOUT_RELAY_STATE);
         SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
         builder.logoutRequestID(userSession.getNote(SAML_LOGOUT_REQUEST_ID));
-        builder.destination(userSession.getNote(SAML_LOGOUT_ISSUER));
+        builder.destination(logoutBindingUri);
         builder.issuer(getResponseIssuer(realm));
+        builder.relayState(logoutRelayState);
         String signingAlgorithm = userSession.getNote(SAML_LOGOUT_SIGNATURE_ALGORITHM);
         if (signingAlgorithm != null) {
             SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(signingAlgorithm);
@@ -471,9 +481,9 @@ public class SamlProtocol implements LoginProtocol {
 
         try {
             if (isLogoutPostBindingForInitiator(userSession)) {
-                return builder.postBinding().response(userSession.getNote(SAML_LOGOUT_BINDING_URI));
+                return builder.postBinding().response(logoutBindingUri);
             } else {
-                return builder.redirectBinding().response(userSession.getNote(SAML_LOGOUT_BINDING_URI));
+                return builder.redirectBinding().response(logoutBindingUri);
             }
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);

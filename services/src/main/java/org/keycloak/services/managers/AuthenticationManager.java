@@ -6,6 +6,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -27,6 +28,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
@@ -144,9 +146,6 @@ public class AuthenticationManager {
             }
         }
 
-        if (redirectClients.size() == 0) {
-            return finishBrowserLogout(session, realm, userSession, uriInfo, connection, headers);
-        }
         for (ClientSessionModel nextRedirectClient : redirectClients) {
             String authMethod = nextRedirectClient.getAuthMethod();
             LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
@@ -167,18 +166,26 @@ public class AuthenticationManager {
             }
 
         }
+        String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
+        if (brokerId != null) {
+            IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
+            Response response = identityProvider.keycloakInitiatedBrowserLogout(userSession, uriInfo, realm);
+            if (response != null) return response;
+        }
         return finishBrowserLogout(session, realm, userSession, uriInfo, connection, headers);
     }
 
-    protected static Response finishBrowserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
+    public static Response finishBrowserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         expireIdentityCookie(realm, uriInfo, connection);
         expireRememberMeCookie(realm, uriInfo, connection);
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
         String method = userSession.getNote(KEYCLOAK_LOGOUT_PROTOCOL);
+        EventBuilder event = new EventsManager(realm, session, connection).createEventBuilder();
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, method);
         protocol.setRealm(realm)
                 .setHttpHeaders(headers)
-                .setUriInfo(uriInfo);
+                .setUriInfo(uriInfo)
+                .setEventBuilder(event);
         Response response = protocol.finishLogout(userSession);
         session.sessions().removeUserSession(realm, userSession);
         return response;

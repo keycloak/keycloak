@@ -26,7 +26,7 @@ import java.util.Map;
 public class IdentityProviderEntity {
 
     private String internalId;
-    private String id;
+    private String alias;
     private String providerId;
     private String name;
     private boolean enabled;
@@ -92,12 +92,12 @@ public class IdentityProviderEntity {
         this.providerId = providerId;
     }
 
-    public String getId() {
-        return id;
+    public String getAlias() {
+        return alias;
     }
 
-    public void setId(String providerNonimalId) {
-        this.id = providerNonimalId;
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     public Map<String, String> getConfig() {

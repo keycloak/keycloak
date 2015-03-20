@@ -171,4 +171,6 @@ public class Messages {
     public static final String CLIENT_NOT_FOUND = "clientNotFoundMessage";
 
     public static final String INVALID_PARAMETER = "invalidParameterMessage";
+
+    public static final String IDENTITY_PROVIDER_LOGIN_FAILURE = "identityProviderLoginFailure";
 }

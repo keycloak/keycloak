@@ -19,10 +19,16 @@ import java.net.URI;
 public class SAML2LogoutRequestBuilder extends SAML2BindingBuilder<SAML2LogoutRequestBuilder> {
     protected String userPrincipal;
     protected String userPrincipalFormat;
+    protected String sessionIndex;
 
     public SAML2LogoutRequestBuilder userPrincipal(String nameID, String nameIDformat) {
         this.userPrincipal = nameID;
         this.userPrincipalFormat = nameIDformat;
+        return this;
+    }
+
+    public SAML2LogoutRequestBuilder sessionIndex(String index) {
+        this.sessionIndex = index;
         return this;
     }
 
@@ -58,7 +64,7 @@ public class SAML2LogoutRequestBuilder extends SAML2BindingBuilder<SAML2LogoutRe
             issuerID.setValue(issuer);
             lort.setIssuer(issuerID);
         }
-
+        if (sessionIndex != null) lort.addSessionIndex(sessionIndex);
 
         long assertionValidity = PicketLinkCoreSTS.instance().getConfiguration().getIssuedTokenTimeout();
 

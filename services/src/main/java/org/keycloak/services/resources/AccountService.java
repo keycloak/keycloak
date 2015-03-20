@@ -652,7 +652,7 @@ public class AccountService {
         boolean hasProvider = false;
 
         for (IdentityProviderModel model : realm.getIdentityProviders()) {
-            if (model.getId().equals(providerId)) {
+            if (model.getAlias().equals(providerId)) {
                 hasProvider = true;
             }
         }

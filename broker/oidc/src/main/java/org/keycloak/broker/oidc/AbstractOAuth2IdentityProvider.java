@@ -19,20 +19,34 @@ package org.keycloak.broker.oidc;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.jboss.resteasy.logging.Logger;
+import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.managers.EventsManager;
+import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.flows.Flows;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +54,7 @@ import java.util.regex.Pattern;
  * @author Pedro Igor
  */
 public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> {
+    protected static final Logger logger = Logger.getLogger(AbstractOAuth2IdentityProvider.class);
 
     public static final String OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
     protected static ObjectMapper mapper = new ObjectMapper();
@@ -54,6 +69,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public static final String OAUTH2_PARAMETER_CLIENT_SECRET = "client_secret";
     public static final String OAUTH2_PARAMETER_GRANT_TYPE = "grant_type";
 
+    protected AuthenticationCallback callback;
+
     public AbstractOAuth2IdentityProvider(C config) {
         super(config);
 
@@ -63,58 +80,19 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     @Override
-    public AuthenticationResponse handleRequest(AuthenticationRequest request) {
+    public Object callback(RealmModel realm, AuthenticationCallback callback) {
+        this.callback = callback;
+        return new Endpoint(realm);
+    }
+
+    @Override
+    public Response handleRequest(AuthenticationRequest request) {
         try {
             URI authorizationUrl = createAuthorizationUrl(request).build();
 
-            return AuthenticationResponse.temporaryRedirect(authorizationUrl);
+            return Response.temporaryRedirect(authorizationUrl).build();
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not create authentication request.", e);
-        }
-    }
-
-    @Override
-    public String getRelayState(AuthenticationRequest request) {
-        UriInfo uriInfo = request.getUriInfo();
-        return uriInfo.getQueryParameters().getFirst(OAUTH2_PARAMETER_STATE);
-    }
-
-    @Override
-    public AuthenticationResponse handleResponse(AuthenticationRequest request) {
-        UriInfo uriInfo = request.getUriInfo();
-        String error = uriInfo.getQueryParameters().getFirst(OAuth2Constants.ERROR);
-
-        if (error != null) {
-            if (error.equals("access_denied")) {
-                throw new IdentityBrokerException("Access denied.");
-            } else {
-                throw new IdentityBrokerException(error);
-            }
-        }
-
-        try {
-            String authorizationCode = uriInfo.getQueryParameters().getFirst(OAUTH2_PARAMETER_CODE);
-
-            if (authorizationCode != null) {
-                String response = SimpleHttp.doPost(getConfig().getTokenUrl())
-                        .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                        .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                        .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
-                        .param(OAUTH2_PARAMETER_REDIRECT_URI, request.getRedirectUri())
-                        .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE).asString();
-
-                FederatedIdentity federatedIdentity = getFederatedIdentity(response);
-
-                if (getConfig().isStoreToken()) {
-                    federatedIdentity.setToken(response);
-                }
-
-                return AuthenticationResponse.end(federatedIdentity);
-            }
-
-            throw new IdentityBrokerException("No authorization code from identity provider.");
-        } catch (Exception e) {
-            throw new IdentityBrokerException("Could not process response from identity provider.", e);
         }
     }
 
@@ -184,4 +162,63 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected abstract String getDefaultScopes();
+
+    protected class Endpoint {
+        protected RealmModel realm;
+
+        @Context
+        protected KeycloakSession session;
+
+        @Context
+        protected ClientConnection clientConnection;
+
+        @Context
+        protected HttpHeaders headers;
+
+        @Context
+        protected UriInfo uriInfo;
+
+        public Endpoint(RealmModel realm) {
+            this.realm = realm;
+        }
+
+        @GET
+        public Response authResponse(@QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_STATE) String state,
+                                     @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
+                                     @QueryParam(OAuth2Constants.ERROR) String error) {
+
+            EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+            if (error != null) {
+                //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
+                event.event(EventType.LOGIN);
+                event.error(error);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+            }
+
+            try {
+
+                if (authorizationCode != null) {
+                    String response = SimpleHttp.doPost(getConfig().getTokenUrl())
+                            .param(OAUTH2_PARAMETER_CODE, authorizationCode)
+                            .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                            .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
+                            .param(OAUTH2_PARAMETER_REDIRECT_URI, uriInfo.getAbsolutePath().toString())
+                            .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE).asString();
+
+                    FederatedIdentity federatedIdentity = getFederatedIdentity(response);
+
+                    if (getConfig().isStoreToken()) {
+                        federatedIdentity.setToken(response);
+                    }
+
+                    return callback.authenticated(new HashMap<String, String>(), getConfig(), federatedIdentity, state);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to make identity provider oauth callback", e);
+            }
+            event.event(EventType.LOGIN);
+            event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
+            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+        }
+    }
 }

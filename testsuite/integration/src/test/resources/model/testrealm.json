@@ -15,8 +15,7 @@
     "identityProviders" : [
         {
             "providerId" : "google",
-            "id" : "google1",
-            "name" : "Google",
+            "alias" : "google1",
             "enabled": true,
             "config": {
                 "clientId": "googleId",
