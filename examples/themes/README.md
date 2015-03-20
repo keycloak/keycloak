@@ -10,16 +10,16 @@ To use the theme you can either deploy it as a module or copy it to the Keycloak
 
 To deploy as a module run:
 
-   mvn clean install
-   $KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.example.sunrisetheme --resources=target/keycloak-example-themes.jar"
+    mvn clean install
+    $KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.example.sunrisetheme --resources=target/keycloak-example-themes.jar"
 
 Then open $KEYCLOAK_HOME/standalone/configuration/keycloak-server.json and register the theme module by adding:
     
-   "theme": {
-       "module": {
-           "modules": [ "org.keycloak.example.sunrisetheme" ]
-       }
-   }
+    "theme": {
+        "module": {
+            "modules": [ "org.keycloak.example.sunrisetheme" ]
+        }
+    }
 
 Alternatively you can copy `src/main/resources/theme/login` to `standalone/configuration/themes/login/`. 
 
@@ -40,11 +40,11 @@ To deploy as a module run:
 
 Then open $KEYCLOAK_HOME/standalone/configuration/keycloak-server.json and register the theme module by adding:
     
-   "theme": {
-       "module": {
-           "modules": [ "org.keycloak.example.logotheme" ]
-       }
-   }
+    "theme": {
+        "module": {
+            "modules": [ "org.keycloak.example.logotheme" ]
+        }
+    }
 
 Alternatively you can copy:
 

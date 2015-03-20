@@ -34,5 +34,6 @@
         <module>basic-auth</module>
         <module>fuse</module>
         <module>kerberos</module>
+        <module>themes</module>
     </modules>
 </project>
