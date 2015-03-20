@@ -1,1 +1,1 @@
-${formatter.format(rb.passwordResetBody,link, linkExpiration)}
+${msg("passwordResetBody",link, linkExpiration)}

@@ -133,7 +133,7 @@ public class OIDCLoginProtocolService {
     public Object registerPage() {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.register().init();
+        return endpoint.init().register();
     }
 
     /**

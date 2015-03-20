@@ -6,11 +6,12 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.freemarker.*;
-import org.keycloak.freemarker.beans.TextFormatterBean;
+import org.keycloak.freemarker.beans.MessageFormatterMethod;
 import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.freemarker.model.ClientBean;
 import org.keycloak.login.freemarker.model.CodeBean;
+import org.keycloak.freemarker.beans.LocaleBean;
 import org.keycloak.login.freemarker.model.LoginBean;
 import org.keycloak.login.freemarker.model.MessageBean;
 import org.keycloak.login.freemarker.model.OAuthGrantBean;
@@ -27,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.flows.Urls;
 
 import javax.ws.rs.core.*;
@@ -176,13 +176,9 @@ import java.util.concurrent.TimeUnit;
 
         Properties messages;
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders);
-        if(locale != null){
-            attributes.put("locale", locale);
-            attributes.put("formatter", new TextFormatterBean(locale));
-        }
         try {
             messages = theme.getMessages(locale);
-            attributes.put("rb", messages);
+            attributes.put("msg", new MessageFormatterMethod(locale, messages));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
             messages = new Properties();
@@ -191,7 +187,7 @@ import java.util.concurrent.TimeUnit;
         if (message != null) {
             String formattedMessage;
             if(messages.containsKey(message)){
-                formattedMessage = new MessageFormat(messages.getProperty(message).replace("'","''"),locale).format(parameters);
+                formattedMessage = new MessageFormat(messages.getProperty(message),locale).format(parameters);
             }else{
                 formattedMessage = message;
             }
@@ -207,6 +203,22 @@ import java.util.concurrent.TimeUnit;
             attributes.put("realm", new RealmBean(realm));
             attributes.put("social", new IdentityProviderBean(realm, baseUri, this.uriInfo));
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
+
+            if (realm.isInternationalizationEnabled()) {
+                UriBuilder b;
+                switch (page) {
+                    case LOGIN:
+                        b = UriBuilder.fromUri(Urls.realmLoginPage(baseUri, realm.getName()));
+                        break;
+                    case REGISTER:
+                        b = UriBuilder.fromUri(Urls.realmRegisterPage(baseUri, realm.getName()));
+                        break;
+                    default:
+                        b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                        break;
+                }
+                attributes.put("locale", new LocaleBean(realm, locale, b, messages));
+            }
         }
 
         if (client != null) {

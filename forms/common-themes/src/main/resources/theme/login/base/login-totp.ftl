@@ -1,9 +1,9 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout; section>
     <#if section = "title">
-        ${formatter.format(rb.loginTitle,realm.name)}
+        ${msg("loginTitle",realm.name)}
     <#elseif section = "header">
-        ${formatter.format(rb.loginTitleHtml,realm.name)}
+        ${msg("loginTitleHtml",realm.name)}
     <#elseif section = "form">
         <form id="kc-totp-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <input id="username" name="username" value="${login.username!''}" type="hidden" />
@@ -11,7 +11,7 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="totp" class="${properties.kcLabelClass!}">${rb.authenticatorCode}</label>
+                    <label for="totp" class="${properties.kcLabelClass!}">${msg("doLogIn")}</label>
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
@@ -27,8 +27,8 @@
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="${rb.doLogIn}"/>
-                        <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.doCancel}"/>
+                        <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
+                        <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${msg("doCancel")}"/>
                     </div>
                 </div>
             </div>
