@@ -60,6 +60,7 @@
         <module name="org.keycloak.keycloak-social-github" services="import"/>
         <module name="org.keycloak.keycloak-social-google" services="import"/>
         <module name="org.keycloak.keycloak-social-twitter" services="import"/>
+        <module name="org.keycloak.keycloak-social-linkedin" services="import"/>
         <module name="org.keycloak.keycloak-timer-api" services="import"/>
         <module name="org.keycloak.keycloak-timer-basic" services="import"/>
 
