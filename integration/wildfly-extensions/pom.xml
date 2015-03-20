@@ -43,6 +43,18 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-forms-common-freemarker</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-forms-common-themes</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-services</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

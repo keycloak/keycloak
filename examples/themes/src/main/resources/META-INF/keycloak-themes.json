@@ -1,0 +1,9 @@
+{
+    "themes": [{
+        "name" : "logo-example",
+        "types": [ "admin", "account", "login", "welcome" ]
+    }, {
+        "name" : "sunrise",
+        "types": [ "login" ]
+    }]
+}

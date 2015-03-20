@@ -32,16 +32,26 @@ import java.util.Map;
  */
 public interface IdentityProvider<C extends IdentityProviderModel> extends Provider {
 
-    public interface Callback {
+    public interface AuthenticationCallback {
+        /**
+         * This method should be called by provider after the JAXRS callback endpoint has finished authentication
+         * with the remote IDP
+         *
+         * @param userNotes notes to add to the UserSessionModel
+         * @param identityProviderConfig provider config
+         * @param federatedIdentity federated identity
+         * @param code relayState or state parameter used to identity the client session
+         * @return
+         */
         public Response authenticated(Map<String, String> userNotes, IdentityProviderModel identityProviderConfig, FederatedIdentity federatedIdentity, String code);
     }
 
     /**
-     * JAXRS callback endpoint
+     * JAXRS callback endpoint for when the remote IDP wants to callback to keycloak.
      *
      * @return
      */
-    Object callback(RealmModel realm, Callback callback);
+    Object callback(RealmModel realm, AuthenticationCallback callback);
 
     /**
      * <p>Initiates the authentication process by sending an authentication request to an identity provider. This method is called
@@ -57,31 +67,7 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
  *                    identity provider.
      * @return
      */
-    AuthenticationResponse handleRequest(AuthenticationRequest request);
-
-    /**
-     * <p>Obtains state information sent to the identity provider during the authentication request. Implementations must always
-     * return the same state in order to check the validity of a response from the identity provider.</p>
-     *
-     * <p>This method is invoked on each response from the identity provider.</p>
-     *
-     * @param request The request sent by the identity provider in a response to an authentication request.
-     * @return
-     */
-    String getRelayState(AuthenticationRequest request);
-
-    /**
-     * <p>Handles a response from the identity provider after a successful authentication request is made. Usually, the response will
-     * contain all the necessary information in order to trust the authentication performed by the identity provider and resolve
-     * the identity information for the authenticating user.</p>
-     *
-     * <p>If the response is trusted and proves user's authenticity, this method may return a
-     * {@link FederatedIdentity} in the response. In this case, the authentication flow stops.</p>
-     *
-     * @param request
-     * @return
-     */
-    AuthenticationResponse handleResponse(AuthenticationRequest request);
+    Response handleRequest(AuthenticationRequest request);
 
     /**
      * <p>Returns a {@link javax.ws.rs.core.Response} containing the token previously stored during the authentication process for a
@@ -92,7 +78,16 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      */
     Response retrieveToken(FederatedIdentityModel identity);
 
-    Response logout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm);
+    /**
+     * Called when a Keycloak application initiates a logout through the browser.  This is expected to do a logout
+     * with the IDP
+     *
+     * @param userSession
+     * @param uriInfo
+     * @param realm
+     * @return null if this is not supported by this provider
+     */
+    Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm);
 
     /**
      * Export a representation of the IdentityProvider in a specific format.  For example, a SAML EntityDescriptor

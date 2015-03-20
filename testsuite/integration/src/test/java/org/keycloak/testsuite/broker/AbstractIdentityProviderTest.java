@@ -32,6 +32,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.testsuite.OAuthClient;
@@ -70,7 +71,6 @@ import static com.thoughtworks.selenium.SeleneseTestBase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -127,7 +127,7 @@ public abstract class AbstractIdentityProviderTest {
     public void testSuccessfulAuthentication() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
 
-        assertSuccessfulAuthentication(identityProviderModel, "test-user");
+        assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com");
     }
 
     @Test
@@ -135,7 +135,29 @@ public abstract class AbstractIdentityProviderTest {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         identityProviderModel.setUpdateProfileFirstLogin(false);
 
-        assertSuccessfulAuthentication(identityProviderModel, "test-user");
+        assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost");
+    }
+
+    /**
+     * Test for KEYCLOAK-1053 - verify email action is not performed if email is not provided, login is normal, but action stays in set to be performed later
+     */
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled() {
+        getRealm().setVerifyEmail(true);
+        brokerServerRule.stopSession(this.session, true);
+        this.session = brokerServerRule.startSession();
+
+        try {
+            IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+            identityProviderModel.setUpdateProfileFirstLogin(false);
+
+            UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", null);
+
+            federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL);
+
+        } finally {
+            getRealm().setVerifyEmail(false);
+        }
     }
 
     @Test
@@ -163,7 +185,7 @@ public abstract class AbstractIdentityProviderTest {
 
             assertEquals("test-user@localhost", federatedUser.getUsername());
 
-            doAssertFederatedUser(federatedUser, identityProviderModel);
+            doAssertFederatedUser(federatedUser, identityProviderModel, "test-user@localhost");
 
             Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
 
@@ -196,16 +218,36 @@ public abstract class AbstractIdentityProviderTest {
 
             authenticateWithIdentityProvider(identityProviderModel, "test-user-noemail");
 
+            // check correct user is created with username from provider as email is not available
             RealmModel realm = getRealm();
-            UserModel federatedUser = session.users().getUserByUsername("test-user-noemail", realm);
-            assertNull(federatedUser);
+            UserModel federatedUser = getFederatedUser();
+            assertNotNull(federatedUser);
 
-            // assert page is shown with correct error message
-            assertEquals("Email is not provided. Use another provider to create account please.", this.driver.findElement(By.className("kc-feedback-text")).getText());
+            doAssertFederatedUserNoEmail(federatedUser);
+
+            Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
+
+            assertEquals(1, federatedIdentities.size());
+
+            FederatedIdentityModel federatedIdentityModel = federatedIdentities.iterator().next();
+
+            assertEquals(getProviderId(), federatedIdentityModel.getIdentityProvider());
+
+            driver.navigate().to("http://localhost:8081/test-app/logout");
+            driver.navigate().to("http://localhost:8081/test-app");
+
+            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         } finally {
             getRealm().setRegistrationEmailAsUsername(false);
         }
+    }
+
+    protected void doAssertFederatedUserNoEmail(UserModel federatedUser) {
+        assertEquals("test-user-noemail", federatedUser.getUsername());
+        assertEquals(null, federatedUser.getEmail());
+        assertEquals("Test", federatedUser.getFirstName());
+        assertEquals("User", federatedUser.getLastName());
     }
 
     @Test
@@ -508,7 +550,7 @@ public abstract class AbstractIdentityProviderTest {
 
     protected abstract void doAssertTokenRetrieval(String pageSource);
 
-    private void assertSuccessfulAuthentication(IdentityProviderModel identityProviderModel, String username) {
+    private UserModel assertSuccessfulAuthentication(IdentityProviderModel identityProviderModel, String username, String expectedEmail) {
         authenticateWithIdentityProvider(identityProviderModel, username);
 
         // authenticated and redirected to app
@@ -518,7 +560,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(federatedUser);
 
-        doAssertFederatedUser(federatedUser, identityProviderModel);
+        doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail);
 
         RealmModel realm = getRealm();
 
@@ -535,6 +577,7 @@ public abstract class AbstractIdentityProviderTest {
         driver.navigate().to("http://localhost:8081/test-app");
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+        return federatedUser;
     }
 
     private void authenticateWithIdentityProvider(IdentityProviderModel identityProviderModel, String username) {
@@ -593,17 +636,16 @@ public abstract class AbstractIdentityProviderTest {
         return this.session.realms().getRealm("realm-with-broker");
     }
 
-    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel) {
+    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel, String expectedEmail) {
         if (identityProviderModel.isUpdateProfileFirstLogin()) {
-            String userEmail = "new@email.com";
             String userFirstName = "New first";
             String userLastName = "New last";
 
-            assertEquals(userEmail, federatedUser.getEmail());
+            assertEquals(expectedEmail, federatedUser.getEmail());
             assertEquals(userFirstName, federatedUser.getFirstName());
             assertEquals(userLastName, federatedUser.getLastName());
         } else {
-            assertEquals("test-user@localhost", federatedUser.getEmail());
+            assertEquals(expectedEmail, federatedUser.getEmail());
             assertEquals("Test", federatedUser.getFirstName());
             assertEquals("User", federatedUser.getLastName());
         }

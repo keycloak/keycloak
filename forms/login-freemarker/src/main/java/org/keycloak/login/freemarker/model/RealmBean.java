@@ -66,10 +66,6 @@ public class RealmBean {
         return realm.isInternationalizationEnabled();
     }
 
-    public Set<String> getSupportedLocales(){
-        return realm.getSupportedLocales();
-    }
-
     public boolean isPassword() {
         for (RequiredCredentialModel r : realm.getRequiredCredentials()) {
             if (r.getType().equals(CredentialRepresentation.PASSWORD)) {

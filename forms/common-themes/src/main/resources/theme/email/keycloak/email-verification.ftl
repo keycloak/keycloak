@@ -1,1 +1,1 @@
-${formatter.format(rb.emailVerificationBody,link, linkExpiration)}
+${msg("emailVerificationBody",link, linkExpiration)}

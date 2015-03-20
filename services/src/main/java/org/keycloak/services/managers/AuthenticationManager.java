@@ -21,6 +21,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
@@ -32,6 +33,7 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Cookie;
@@ -45,6 +47,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.Iterator;
 
 /**
  * Stateless object that manages authentication
@@ -166,7 +169,7 @@ public class AuthenticationManager {
         String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
         if (brokerId != null) {
             IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
-            Response response = identityProvider.logout(userSession, uriInfo, realm);
+            Response response = identityProvider.keycloakInitiatedBrowserLogout(userSession, uriInfo, realm);
             if (response != null) return response;
         }
         return finishBrowserLogout(session, realm, userSession, uriInfo, connection, headers);
@@ -373,17 +376,28 @@ public class AuthenticationManager {
 
         Set<UserModel.RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
-            UserModel.RequiredAction action = user.getRequiredActions().iterator().next();
-            accessCode.setRequiredAction(action);
-
-            LoginFormsProvider loginFormsProvider = Flows.forms(session, realm, client, uriInfo, request.getHttpHeaders()).setClientSessionCode(accessCode.getCode()).setUser(user);
-            if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL)) {
-                event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
-                LoginActionsService.createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
+            Iterator<RequiredAction> i = user.getRequiredActions().iterator();
+            UserModel.RequiredAction action = i.next();
+            
+            if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL) && Validation.isEmpty(user.getEmail())) {
+                if (i.hasNext())
+                    action = i.next();
+                else
+                    action = null;
             }
 
-            return loginFormsProvider
-                    .createResponse(action);
+            if (action != null) {
+                accessCode.setRequiredAction(action);
+
+                LoginFormsProvider loginFormsProvider = Flows.forms(session, realm, client, uriInfo, request.getHttpHeaders()).setClientSessionCode(accessCode.getCode())
+                        .setUser(user);
+                if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL)) {
+                    event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
+                    LoginActionsService.createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
+                }
+
+                return loginFormsProvider.createResponse(action);
+            }
         }
 
         if (!isResource) {

@@ -50,12 +50,12 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     @Override
-    public Object callback(RealmModel realm, Callback callback) {
+    public Object callback(RealmModel realm, AuthenticationCallback callback) {
         return null;
     }
 
     @Override
-    public Response logout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+    public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         return null;
     }
 }

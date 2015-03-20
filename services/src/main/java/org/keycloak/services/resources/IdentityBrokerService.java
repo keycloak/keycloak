@@ -22,7 +22,6 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
 import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -50,6 +49,7 @@ import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
 
 import javax.ws.rs.Consumes;
@@ -77,7 +77,7 @@ import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
  * @author Pedro Igor
  */
 @Path("/broker")
-public class IdentityBrokerService implements IdentityProvider.Callback {
+public class IdentityBrokerService implements IdentityProvider.AuthenticationCallback {
 
     private static final Logger LOGGER = Logger.getLogger(IdentityBrokerService.class);
     public static final String BROKER_PROVIDER_ID = "BROKER_PROVIDER_ID";
@@ -125,9 +125,7 @@ public class IdentityBrokerService implements IdentityProvider.Callback {
         try {
             ClientSessionCode clientSessionCode = parseClientSessionCode(code);
             IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
-            AuthenticationResponse authenticationResponse = identityProvider.handleRequest(createAuthenticationRequest(providerId, clientSessionCode));
-
-            Response response = authenticationResponse.getResponse();
+            Response response = identityProvider.handleRequest(createAuthenticationRequest(providerId, clientSessionCode));
 
             if (response != null) {
                 this.event.success();
@@ -143,18 +141,6 @@ public class IdentityBrokerService implements IdentityProvider.Callback {
         }
 
         return redirectToErrorPage(Messages.COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST);
-    }
-
-    @GET
-    @Path("{provider_id}")
-    public Response handleResponseGet(@PathParam("provider_id") String providerId) {
-        return handleResponse(providerId);
-    }
-
-    @POST
-    @Path("{provider_id}")
-    public Response handleResponsePost(@PathParam("provider_id") String providerId) {
-        return handleResponse(providerId);
     }
 
     @Path("{provider_id}/endpoint")
@@ -310,117 +296,6 @@ public class IdentityBrokerService implements IdentityProvider.Callback {
             userSession.setNote(entry.getKey(), entry.getValue());
         }
         userSession.setNote(BROKER_PROVIDER_ID, providerId);
-
-        if (isDebugEnabled()) {
-            LOGGER.debugf("Performing local authentication for user [%s].", federatedUser);
-        }
-
-        return AuthenticationManager.nextActionAfterAuthentication(this.session, userSession, clientSession, this.clientConnection, this.request,
-                this.uriInfo, event);
-    }
-
-    private Response handleResponse(String providerId) {
-        if (isDebugEnabled()) {
-            LOGGER.debugf("Handling authentication response from identity provider [%s].", providerId);
-        }
-        this.event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-        this.event.detail(Details.IDENTITY_PROVIDER, providerId);
-        IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerId);
-
-        try {
-            IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
-            String relayState = identityProvider.getRelayState(createAuthenticationRequest(providerId, null));
-
-            if (relayState == null) {
-                return redirectToErrorPage(Messages.NO_RELAY_STATE_IN_RESPONSE, providerId);
-            }
-
-            if (isDebugEnabled()) {
-                LOGGER.debugf("Relay state is valid: [%s].", relayState);
-            }
-
-            ClientSessionCode clientSessionCode = parseClientSessionCode(relayState);
-            AuthenticationResponse authenticationResponse = identityProvider.handleResponse(createAuthenticationRequest(providerId, clientSessionCode));
-            Response response = authenticationResponse.getResponse();
-
-            if (response != null) {
-                if (isDebugEnabled()) {
-                    LOGGER.debugf("Identity provider [%s] is going to send a response [%s].", identityProvider, response);
-                }
-                return response;
-            }
-
-            FederatedIdentity identity = authenticationResponse.getUser();
-
-            if (isDebugEnabled()) {
-                LOGGER.debugf("Identity provider [%s] returned with identity [%s].", providerId, identity);
-            }
-
-            if (!identityProviderConfig.isStoreToken()) {
-                if (isDebugEnabled()) {
-                    LOGGER.debugf("Token will not be stored for identity provider [%s].", providerId);
-                }
-                identity.setToken(null);
-            }
-
-            identity.setIdentityProviderId(providerId);
-
-            return performLocalAuthentication(identity, clientSessionCode);
-        } catch (IdentityBrokerException e) {
-            rollback();
-            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_AUTHENTICATION_FAILED, e, providerId);
-        } catch (Exception e) {
-            rollback();
-            return redirectToErrorPage(Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE, e, providerId);
-        } finally {
-            if (this.session.getTransaction().isActive()) {
-                this.session.getTransaction().commit();
-            }
-        }
-    }
-
-    private Response performLocalAuthentication(FederatedIdentity updatedIdentity, ClientSessionCode clientCode) {
-        ClientSessionModel clientSession = clientCode.getClientSession();
-        IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(updatedIdentity.getIdentityProviderId());
-        String providerId = identityProviderConfig.getAlias();
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, updatedIdentity.getId(),
-                updatedIdentity.getUsername(), updatedIdentity.getToken());
-
-        this.event.event(EventType.IDENTITY_PROVIDER_LOGIN)
-                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.IDENTITY_PROVIDER_IDENTITY, updatedIdentity.getUsername());
-
-        UserModel federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
-
-        // Check if federatedUser is already authenticated (this means linking social into existing federatedUser account)
-        if (clientSession.getUserSession() != null) {
-            return performAccountLinking(clientSession, providerId, federatedIdentityModel, federatedUser);
-        }
-
-        if (federatedUser == null) {
-            try {
-                federatedUser = createUser(updatedIdentity);
-
-                if (identityProviderConfig.isUpdateProfileFirstLogin()) {
-                    if (isDebugEnabled()) {
-                        LOGGER.debugf("Identity provider requires update profile action.", federatedUser);
-                    }
-                    federatedUser.addRequiredAction(UPDATE_PROFILE);
-                }
-            } catch (Exception e) {
-                return redirectToLoginPage(e, clientCode);
-            }
-        }
-
-        updateFederatedIdentity(updatedIdentity, federatedUser);
-
-        UserSessionModel userSession = this.session.sessions()
-                .createUserSession(this.realmModel, federatedUser, federatedUser.getUsername(), this.clientConnection.getRemoteAddr(), "broker", false);
-
-        this.event.user(federatedUser);
-        this.event.session(userSession);
-
-        TokenManager.attachClientSession(userSession, clientSession);
 
         if (isDebugEnabled()) {
             LOGGER.debugf("Performing local authentication for user [%s].", federatedUser);
@@ -607,15 +482,10 @@ public class IdentityBrokerService implements IdentityProvider.Callback {
         }
 
         String username = updatedIdentity.getUsername();
-        if (this.realmModel.isRegistrationEmailAsUsername()) {
+        if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(updatedIdentity.getEmail())) {
             username = updatedIdentity.getEmail();
-            if (username == null || username.trim().length() == 0) {
-                fireErrorEvent(Errors.FEDERATED_IDENTITY_REGISTRATION_EMAIL_MISSING);
-                throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_REGISTRATION_EMAIL_MISSING);
-                // TODO KEYCLOAK-1053 (ask user to enter email address) should be implemented instead of plain exception as better solution for this case
-            }
-            username = username.trim();
-        } else if (username != null) {
+        } 
+        if (username != null) {
             username = username.trim();
         }
 

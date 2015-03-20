@@ -1,3 +1,58 @@
+.kc-dropdown{
+    position: relative;
+}
+.kc-dropdown > a{
+    position: absolute;
+    right: 0px;
+    display:block;
+    padding: 11px 10px 12px;
+    line-height: 12px;
+    font-size: 12px;
+    color: #fff !important;
+    text-decoration: none;
+}
+.kc-dropdown > a::after{
+    content: "\2c5";
+    margin-left: 4px;
+}
+.kc-dropdown:hover > a{
+    background-color: rgba(0,0,0,0.2);
+}
+.kc-dropdown ul li a{
+    padding: 1px 11px;
+    font-size: 12px;
+    color: #000 !important;
+    border: 1px solid #fff;
+    text-decoration: none;
+    display:block;
+    line-height: 20px;
+}
+.kc-dropdown ul li a:hover{
+    color: #4d5258;
+    background-color: #d4edfa;
+    border-color: #b3d3e7;
+}
+.kc-dropdown ul{
+    position: absolute;
+    right: 0px;
+    top: 35px;
+    z-index: 2000;
+    list-style:none;
+    display:none;
+    padding: 5px 0px;
+    margin: 0px;
+    background-color: #fff !important;
+    border: 1px solid #b6b6b6;
+    border-radius: 1px;
+    -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+    background-clip: padding-box;
+    min-width: 100px;
+}
+.kc-dropdown:hover ul{
+    display:block;
+}
+
 .login-pf .container {
     padding-top: 40px;
 }
@@ -237,8 +292,6 @@ ol#kc-totp-settings li:first-of-type {
     }
 
     #kc-form {
-        padding-left: 15px;
-        padding-right: 15px;
         float: none;
     }
 

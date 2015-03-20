@@ -1,36 +1,31 @@
-package org.keycloak.theme;
+package org.keycloak.connections.mongo.updater.impl;
 
 import org.keycloak.Config;
-import org.keycloak.freemarker.ThemeProvider;
-import org.keycloak.freemarker.ThemeProviderFactory;
+import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
+import org.keycloak.connections.mongo.updater.MongoUpdaterProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultKeycloakThemeProviderFactory implements ThemeProviderFactory {
-
-    private DefaultKeycloakThemeProvider themeProvider;
+public class DefaultMongoUpdaterProviderFactory implements MongoUpdaterProviderFactory {
 
     @Override
-    public ThemeProvider create(KeycloakSession session) {
-        return themeProvider;
+    public MongoUpdaterProvider create(KeycloakSession session) {
+        return new DefaultMongoUpdaterProvider();
     }
 
     @Override
     public void init(Config.Scope config) {
-        themeProvider = new DefaultKeycloakThemeProvider();
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
 
     }
-
     @Override
     public void close() {
-        themeProvider = null;
     }
 
     @Override

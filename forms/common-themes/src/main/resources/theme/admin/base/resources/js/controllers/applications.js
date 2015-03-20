@@ -1181,11 +1181,11 @@ module.controller('ApplicationProtocolMapperCtrl', function($scope, realm, serve
     }
     $scope.protocol = application.protocol;
     $scope.mapper = angular.copy(mapper);
-    var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
+    $scope.boolval = true;
+    $scope.boolvalId = 'boolval';
 
-    console.log('protocol: ' + protocol);
-    var protocolMappers = serverInfo.protocolMapperTypes[$scope.protocol];
+    var protocolMappers = serverInfo.protocolMapperTypes[application.protocol];
     for (var i = 0; i < protocolMappers.length; i++) {
         if (protocolMappers[i].id == mapper.protocolMapper) {
             $scope.mapperType = protocolMappers[i];

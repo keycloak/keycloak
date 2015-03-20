@@ -1,1 +1,2 @@
 org.keycloak.connections.mongo.MongoConnectionSpi
+org.keycloak.connections.mongo.updater.MongoUpdaterSpi

@@ -69,7 +69,7 @@ public class Urls {
 
     public static URI identityProviderAuthnResponse(URI baseUri, String providerId, String realmName) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
-                .path(IdentityBrokerService.class, "handleResponseGet")
+                .path(IdentityBrokerService.class, "getEndpoint")
                 .build(realmName, providerId);
     }
 

@@ -1,9 +1,11 @@
-package org.keycloak.connections.mongo.updater.updates;
+package org.keycloak.connections.mongo.updater.impl.updates;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Arrays;
 
@@ -18,7 +20,7 @@ public abstract class Update {
 
     public abstract String getId();
 
-    public abstract void update() throws ClassNotFoundException;
+    public abstract void update(KeycloakSession session) throws ClassNotFoundException;
 
     protected DBCollection createCollection(String name) {
         if (db.collectionExists(name)) {
@@ -49,6 +51,17 @@ public abstract class Update {
     protected void deleteEntries(String collection) {
         db.getCollection(collection).remove(new BasicDBObject());
         log.debugv("Deleted entries from {0}", collection);
+    }
+
+    protected String insertApplicationRole(DBCollection roles, String roleName, String applicationId) {
+        BasicDBObject role = new BasicDBObject();
+        String roleId = KeycloakModelUtils.generateId();
+        role.append("_id", roleId);
+        role.append("name", roleName);
+        role.append("applicationId", applicationId);
+        role.append("nameIndex", applicationId + "//" + roleName);
+        roles.insert(role);
+        return roleId;
     }
 
     public void setLog(Logger log) {

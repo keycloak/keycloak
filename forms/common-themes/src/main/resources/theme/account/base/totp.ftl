@@ -46,7 +46,7 @@
             <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
             <div class="form-group">
                 <div class="col-sm-2 col-md-2">
-                    <label for="totp" class="control-label">${rb.authenticatorCode}</label>
+                    <label for="totp" class="control-label">${msg("authenticatorCode")}</label>
                 </div>
 
                 <div class="col-sm-10 col-md-10">

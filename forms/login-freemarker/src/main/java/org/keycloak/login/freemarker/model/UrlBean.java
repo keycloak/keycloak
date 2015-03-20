@@ -34,9 +34,7 @@ public class UrlBean {
 
     private final URI actionuri;
     private URI baseURI;
-
     private Theme theme;
-
     private String realm;
 
     public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI actionUri) {
@@ -84,10 +82,6 @@ public class UrlBean {
 
     public String getLoginEmailVerificationUrl() {
         return Urls.loginActionEmailVerification(baseURI, realm).toString();
-    }
-
-    public String getLocaleCookiePath(){
-        return Urls.localeCookiePath(baseURI, realm);
     }
 
     public String getOauthAction() {

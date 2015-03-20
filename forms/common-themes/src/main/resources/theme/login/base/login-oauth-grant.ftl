@@ -2,12 +2,12 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout bodyClass="oauth"; section>
     <#if section = "title">
-        ${rb.oauthGrantTitle}
+        ${msg("oauthGrantTitle")}
     <#elseif section = "header">
-        ${formatter.format(rb.oauthGrantTitleHtml,(realm.name!''), (client.clientId!''))}
+        ${msg("oauthGrantTitleHtml",(realm.name!''), (client.clientId!''))}
     <#elseif section = "form">
         <div id="kc-oauth" class="content-area">
-            <h3>${rb.oauthGrantRequest}</h3>
+            <h3>${msg("oauthGrantRequest")}</h3>
             <ul>
                 <#if oauth.claimsRequested??>
                     <li>
@@ -55,8 +55,8 @@
 
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                         <div class="${properties.kcFormButtonsWrapperClass!}">
-                            <input class="btn btn-primary btn-lg" name="accept" id="kc-login" type="submit" value="${rb.doYes}"/>
-                            <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.doNo}"/>
+                            <input class="btn btn-primary btn-lg" name="accept" id="kc-login" type="submit" value="${msg("doYes")}"/>
+                            <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${msg("doNo")}"/>
                         </div>
                     </div>
                 </div>

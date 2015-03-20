@@ -25,6 +25,14 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
+
+    public static final String USERNAME = "username";
+    public static final String EMAIL = "email";
+    public static final String EMAIL_VERIFIED = "email verified";
+    public static final String GIVEN_NAME = "given name";
+    public static final String FAMILY_NAME = "family name";
+    public static final String FULL_NAME = "full name";
+
     @Override
     public LoginProtocol create(KeycloakSession session) {
         return new OIDCLoginProtocol().setSession(session);
@@ -35,41 +43,46 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         return builtins;
     }
 
+    @Override
+    public List<ProtocolMapperModel> getDefaultBuiltinMappers() {
+        return defaultBuiltins;
+    }
+
     static List<ProtocolMapperModel> builtins = new ArrayList<>();
     static List<ProtocolMapperModel> defaultBuiltins = new ArrayList<>();
 
     static {
 
         ProtocolMapperModel model;
-        model = UserPropertyMapper.createClaimMapper("username",
+        model = UserPropertyMapper.createClaimMapper(USERNAME,
                 "username",
                 "preferred_username", "String",
-                true, "username",
+                true, USERNAME,
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
-        model = UserPropertyMapper.createClaimMapper("email",
+        model = UserPropertyMapper.createClaimMapper(EMAIL,
                 "email",
                 "email", "String",
-                true, "email",
+                true, EMAIL,
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
-        model = UserPropertyMapper.createClaimMapper("given name",
+        model = UserPropertyMapper.createClaimMapper(GIVEN_NAME,
                 "firstName",
                 "given_name", "String",
-                true, "given name",
+                true, GIVEN_NAME,
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
-        model = UserPropertyMapper.createClaimMapper("family name",
+        model = UserPropertyMapper.createClaimMapper(FAMILY_NAME,
                 "lastName",
                 "family_name", "String",
-                true, "family name",
+                true, FAMILY_NAME,
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
-        model = UserPropertyMapper.createClaimMapper("email verified",
+        model = UserPropertyMapper.createClaimMapper(EMAIL_VERIFIED,
                 "emailVerified",
                 "email_verified", "boolean",
                 false, null,
@@ -77,11 +90,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         builtins.add(model);
 
         ProtocolMapperModel fullName = new ProtocolMapperModel();
-        fullName.setName("full name");
+        fullName.setName(FULL_NAME);
         fullName.setProtocolMapper(FullNameMapper.PROVIDER_ID);
         fullName.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         fullName.setConsentRequired(true);
-        fullName.setConsentText("full name");
+        fullName.setConsentText(FULL_NAME);
         Map<String, String> config = new HashMap<String, String>();
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");

@@ -234,8 +234,6 @@ module.factory('ApplicationRoleListLoader', function(Loader, ApplicationRole, $r
 
 module.factory('ApplicationLoader', function(Loader, Application, $route, $q) {
     return Loader.get(Application, function() {
-        console.log('application loader****');
-        console.log($route.current.params.application);
         return {
             realm : $route.current.params.realm,
             application : $route.current.params.application

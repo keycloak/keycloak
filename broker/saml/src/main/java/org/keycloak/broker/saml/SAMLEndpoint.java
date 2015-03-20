@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.VerificationException;
-import org.keycloak.broker.provider.AuthenticationResponse;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -12,7 +11,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -40,7 +38,6 @@ import org.picketlink.identity.federation.saml.v2.assertion.AuthnStatementType;
 import org.picketlink.identity.federation.saml.v2.assertion.EncryptedAssertionType;
 import org.picketlink.identity.federation.saml.v2.assertion.NameIDType;
 import org.picketlink.identity.federation.saml.v2.assertion.SubjectType;
-import org.picketlink.identity.federation.saml.v2.profiles.sso.ecp.RequestType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.picketlink.identity.federation.saml.v2.protocol.StatusResponseType;
 import org.w3c.dom.Document;
@@ -74,7 +71,7 @@ public class SAMLEndpoint {
     protected RealmModel realm;
     protected EventBuilder event;
     protected SAMLIdentityProviderConfig config;
-    protected IdentityProvider.Callback callback;
+    protected IdentityProvider.AuthenticationCallback callback;
 
     @Context
     private UriInfo uriInfo;
@@ -92,7 +89,7 @@ public class SAMLEndpoint {
     private HttpHeaders headers;
 
 
-    public SAMLEndpoint(RealmModel realm, SAMLIdentityProviderConfig config, IdentityProvider.Callback callback) {
+    public SAMLEndpoint(RealmModel realm, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback) {
         this.realm = realm;
         this.config = config;
         this.callback = callback;
@@ -265,21 +262,21 @@ public class SAMLEndpoint {
                     logger.error("logout response validation failed", e);
                     event.event(EventType.LOGOUT);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUESTER);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
             }
             if (relayState == null) {
                 logger.error("no valid user session");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             UserSessionModel userSession = session.sessions().getUserSession(realm, relayState);
             if (userSession == null) {
                 logger.error("no valid user session");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.error("usersession in different state");

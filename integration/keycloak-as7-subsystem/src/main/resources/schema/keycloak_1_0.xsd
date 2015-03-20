@@ -46,6 +46,7 @@
                 <xs:element name="use-resource-role-mappings" type="xs:boolean" minOccurs="0" maxOccurs="1" />
                 <xs:element name="bearer-only" type="xs:boolean" minOccurs="0" maxOccurs="1" />
                 <xs:element name="credential" maxOccurs="unbounded" minOccurs="0" type="xs:credential-type"/>
+                <xs:element name="enable-basic-auth" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

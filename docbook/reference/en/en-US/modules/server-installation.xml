@@ -449,17 +449,16 @@ keycloak-war-dist-all-&project.version;/
 },
 ]]></programlisting>
 
-You can also change the location of the data file by specifying parameters on the realm:<programlisting><![CDATA[
-    "realm": {
-        "provider": "file",
-        "file" : {
-            "directory" : "/mydirectory",
-            "fileName" : "myfilename.json"
-        }
-    },
+You can also change the location of the data file by adding a connectionsFile snippet:<programlisting><![CDATA[
+"connectionsFile": {
+   "default" : {
+        "directory": "/mydirectory",
+        "fileName": "myfilename.json"
+    }
+}
 ]]></programlisting>
 
-                All configuration options are optional. Default value for directory is ${jboss.server.data.dir}. Default file name
+All configuration options are optional. Default value for directory is <literal>${jboss.server.data.dir}</literal>. Default file name
                 is <literal>keycloak-model.json</literal>.
             </para>
         </section>

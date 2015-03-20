@@ -45,14 +45,24 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
     }
 
     @Override
-    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel) {
+    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel, String expectedEmail) {
         if (identityProviderModel.isUpdateProfileFirstLogin()) {
-            super.doAssertFederatedUser(federatedUser, identityProviderModel);
+            super.doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail);
         } else {
-            assertEquals("test-user@localhost", federatedUser.getEmail());
+            if (expectedEmail == null)
+                expectedEmail = "";
+            assertEquals(expectedEmail, federatedUser.getEmail());
             assertNull(federatedUser.getFirstName());
             assertNull(federatedUser.getLastName());
         }
+    }
+
+    @Override
+    protected void doAssertFederatedUserNoEmail(UserModel federatedUser) {
+        assertEquals("", federatedUser.getUsername());
+        assertEquals("", federatedUser.getEmail());
+        assertEquals(null, federatedUser.getFirstName());
+        assertEquals(null, federatedUser.getLastName());
     }
 
     @Override

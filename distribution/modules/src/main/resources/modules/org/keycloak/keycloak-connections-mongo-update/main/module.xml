@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-connections-mongo-update">
+    <resources>
+        <!-- Insert resources here -->
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-connections-mongo"/>
+        <module name="org.keycloak.keycloak-services"/>
+        <module name="org.mongodb.mongo-java-driver"/>
+        <module name="org.jboss.logging"/>
+        <module name="javax.api"/>
+    </dependencies>
+
+</module>

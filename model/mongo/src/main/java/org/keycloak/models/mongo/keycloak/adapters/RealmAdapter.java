@@ -1101,9 +1101,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setSupportedLocales(Set<String> locales) {
         if (locales != null) {
-            realm.setEventsListeners(new ArrayList<String>(locales));
+            realm.setSupportedLocales(new ArrayList<String>(locales));
         } else {
-            realm.setEventsListeners(Collections.EMPTY_LIST);
+            realm.setSupportedLocales(Collections.EMPTY_LIST);
         }
         updateRealm();
     }

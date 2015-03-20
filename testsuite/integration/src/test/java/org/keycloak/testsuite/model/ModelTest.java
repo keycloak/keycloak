@@ -9,7 +9,9 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class ModelTest extends AbstractModelTest {
 
@@ -33,11 +35,14 @@ public class ModelTest extends AbstractModelTest {
         smtp.put("hostname", "localhost");
         realm.setSmtpConfig(smtp);
 
-        HashMap<String, String> social = new HashMap<String,String>();
-        social.put("google.key", "1234");
-        social.put("google.secret", "5678");
-        //FIXME: KEYCLOAK-883
-//        realm.setSocialConfig(social);
+        realm.setDefaultLocale("en");
+        realm.setAccessCodeLifespanLogin(100);
+        realm.setInternationalizationEnabled(true);
+        realm.setRegistrationEmailAsUsername(true);
+        realm.setSupportedLocales(new HashSet<String>(Arrays.asList("en", "cz")));
+        realm.setEventsListeners(new HashSet<String>(Arrays.asList("jpa", "mongo", "foo")));
+        realm.setEventsExpiration(200);
+        realm.setEventsEnabled(true);
 
         RealmModel persisted = realmManager.getRealm(realm.getId());
         assertEquals(realm, persisted);
@@ -62,8 +67,15 @@ public class ModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
 
         Assert.assertEquals(expected.getSmtpConfig(), actual.getSmtpConfig());
-        //FIXME: KEYCLOAK-883
-//        Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());
+
+        Assert.assertEquals(expected.getDefaultLocale(), actual.getDefaultLocale());
+        Assert.assertEquals(expected.getAccessCodeLifespanLogin(), actual.getAccessCodeLifespanLogin());
+        Assert.assertEquals(expected.isInternationalizationEnabled(), actual.isInternationalizationEnabled());
+        Assert.assertEquals(expected.isRegistrationEmailAsUsername(), actual.isRegistrationEmailAsUsername());
+        Assert.assertEquals(expected.getSupportedLocales(), actual.getSupportedLocales());
+        Assert.assertEquals(expected.getEventsListeners(), actual.getEventsListeners());
+        Assert.assertEquals(expected.getEventsExpiration(), actual.getEventsExpiration());
+        Assert.assertEquals(expected.isEventsEnabled(), actual.isEventsEnabled());
     }
 
     private RealmModel importExport(RealmModel src, String copyName) {

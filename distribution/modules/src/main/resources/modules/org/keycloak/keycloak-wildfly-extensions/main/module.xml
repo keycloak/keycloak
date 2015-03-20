@@ -8,6 +8,8 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
         <module name="org.keycloak.keycloak-services"/>
+        <module name="org.keycloak.keycloak-forms-common-freemarker"/>
+        <module name="org.keycloak.keycloak-forms-common-themes"/>
         <module name="org.jboss.modules"/>
     </dependencies>
 </module>

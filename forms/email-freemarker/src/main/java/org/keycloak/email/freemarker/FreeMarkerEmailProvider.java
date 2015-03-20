@@ -10,7 +10,7 @@ import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
-import org.keycloak.freemarker.beans.TextFormatterBean;
+import org.keycloak.freemarker.beans.MessageFormatterMethod;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -20,6 +20,7 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.text.MessageFormat;
 import java.util.*;
 
 /**
@@ -84,9 +85,8 @@ public class FreeMarkerEmailProvider implements EmailProvider {
             Locale locale = LocaleHelper.getLocale(realm, user);
             attributes.put("locale", locale);
             Properties rb = theme.getMessages(locale);
-            attributes.put("rb", rb);
-            attributes.put("formatter", new TextFormatterBean(locale));
-            String subject =  rb.getProperty(subjectKey);
+            attributes.put("msg", new MessageFormatterMethod(locale, rb));
+            String subject = new MessageFormat(rb.getProperty(subjectKey,subjectKey),locale).format(new Object[0]);
             String body = freeMarker.processTemplate(attributes, template, theme);
 
             send(subject, body);
