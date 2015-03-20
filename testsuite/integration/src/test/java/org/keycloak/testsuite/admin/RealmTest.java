@@ -4,14 +4,18 @@ import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
+import javax.ws.rs.NotFoundException;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -99,6 +103,29 @@ public class RealmTest extends AbstractClientTest {
         assertNull(rep.getCodeSecret());
         assertNotNull(rep.getPublicKey());
         assertNotNull(rep.getCertificate());
+    }
+
+    @Test
+    // KEYCLOAK-1110
+    public void deleteDefaultRole() {
+        RoleRepresentation role = new RoleRepresentation("test", "test");
+        realm.roles().create(role);
+
+        assertNotNull(realm.roles().get("test").toRepresentation());
+
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setDefaultRoles(new LinkedList<String>());
+        rep.getDefaultRoles().add("test");
+
+        realm.update(rep);
+
+        realm.roles().deleteRole("test");
+
+        try {
+            realm.roles().get("testsadfsadf").toRepresentation();
+            fail("Expected NotFoundException");
+        } catch (NotFoundException e) {
+        }
     }
 
 }
