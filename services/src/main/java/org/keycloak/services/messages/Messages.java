@@ -171,6 +171,4 @@ public class Messages {
     public static final String CLIENT_NOT_FOUND = "clientNotFoundMessage";
 
     public static final String INVALID_PARAMETER = "invalidParameterMessage";
-
-    public static final String FEDERATED_IDENTITY_REGISTRATION_EMAIL_MISSING = "federatedIdentityRegistrationEmailMissingMessage";
 }
