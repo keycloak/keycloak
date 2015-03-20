@@ -26,7 +26,7 @@ public class JarThemeProvider implements ThemeProvider {
 
     @Override
     public Theme getTheme(String name, Theme.Type type) throws IOException {
-        return hasTheme(name, type) ? new ClassLoaderTheme(name, type, getClass().getClassLoader()) : null;
+        return hasTheme(name, type) ? themes.get(type).get(name) : null;
     }
 
     @Override
