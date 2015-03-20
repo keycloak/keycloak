@@ -68,6 +68,12 @@ public class SecureDeploymentDefinition extends SimpleResourceDefinition {
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode(false))
                     .build();
+    protected static final SimpleAttributeDefinition ENABLE_BASIC_AUTH =
+            new SimpleAttributeDefinitionBuilder("enable-basic-auth", ModelType.BOOLEAN, true)
+                    .setXmlName("enable-basic-auth")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(false))
+                    .build();
     protected static final SimpleAttributeDefinition PUBLIC_CLIENT =
             new SimpleAttributeDefinitionBuilder("public-client", ModelType.BOOLEAN, true)
                     .setXmlName("public-client")
@@ -81,6 +87,7 @@ public class SecureDeploymentDefinition extends SimpleResourceDefinition {
         DEPLOYMENT_ONLY_ATTRIBUTES.add(RESOURCE);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(USE_RESOURCE_ROLE_MAPPINGS);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(BEARER_ONLY);
+        DEPLOYMENT_ONLY_ATTRIBUTES.add(ENABLE_BASIC_AUTH);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(PUBLIC_CLIENT);
     }
 
