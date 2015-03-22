@@ -71,13 +71,11 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_SERVER_SIGNATURE = "saml.server.signature";
     public static final String SAML_ASSERTION_SIGNATURE = "saml.assertion.signature";
     public static final String SAML_AUTHNSTATEMENT = "saml.authnstatement";
-    public static final String SAML_MULTIVALUED_ROLES = "saml.multivalued.roles";
     public static final String SAML_SIGNATURE_ALGORITHM = "saml.signature.algorithm";
     public static final String SAML_ENCRYPT = "saml.encrypt";
     public static final String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
     public static final String SAML_REQUEST_ID = "SAML_REQUEST_ID";
     public static final String SAML_LOGOUT_BINDING = "saml.logout.binding";
-    public static final String SAML_LOGOUT_ISSUER = "saml.logout.issuer";
     public static final String SAML_LOGOUT_REQUEST_ID = "SAML_LOGOUT_REQUEST_ID";
     public static final String SAML_LOGOUT_RELAY_STATE = "SAML_LOGOUT_RELAY_STATE";
     public static final String SAML_LOGOUT_BINDING_URI = "SAML_LOGOUT_BINDING_URI";
