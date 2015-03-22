@@ -49,6 +49,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     public static final String LOGIN_PROTOCOL = "openid-connect";
     public static final String STATE_PARAM = "state";
+    public static final String LOGOUT_STATE_PARAM = "OIDC_LOGOUT_STATE_PARAM";
     public static final String SCOPE_PARAM = "scope";
     public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
@@ -182,6 +183,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public Response finishLogout(UserSessionModel userSession) {
         String redirectUri = userSession.getNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
+        String state = userSession.getNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM);
         event.event(EventType.LOGOUT);
         if (redirectUri != null) {
             event.detail(Details.REDIRECT_URI, redirectUri);
@@ -190,7 +192,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
 
         if (redirectUri != null) {
-            return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
+            UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
+            if (state != null) uriBuilder.queryParam(STATE_PARAM, state);
+            return Response.status(302).location(uriBuilder.build()).build();
         } else {
             return Response.ok().build();
         }

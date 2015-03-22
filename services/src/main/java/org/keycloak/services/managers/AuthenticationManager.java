@@ -84,7 +84,7 @@ public class AuthenticationManager {
         return userSession != null && userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
     }
 
-    public static void logout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
+    public static void backchannelLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         if (userSession == null) return;
         UserModel user = userSession.getUser();
         userSession.setState(UserSessionModel.State.LOGGING_OUT);
@@ -461,7 +461,7 @@ public class AuthenticationManager {
 
             UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
             if (!isSessionValid(realm, userSession)) {
-                if (userSession != null) logout(session, realm, userSession, uriInfo, connection, headers);
+                if (userSession != null) backchannelLogout(session, realm, userSession, uriInfo, connection, headers);
                 logger.debug("User session not active");
                 return null;
             }

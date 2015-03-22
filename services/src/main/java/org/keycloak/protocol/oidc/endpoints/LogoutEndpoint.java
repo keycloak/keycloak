@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oidc.endpoints;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
@@ -18,6 +19,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -42,6 +44,7 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LogoutEndpoint {
+    protected static Logger logger = Logger.getLogger(LogoutEndpoint.class);
 
     @Context
     private KeycloakSession session;
@@ -78,28 +81,60 @@ public class LogoutEndpoint {
      */
     @GET
     @NoCache
-    public Response logout(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri) {
-        if (redirectUri != null) {
-            String validatedUri = RedirectUtils.verifyRealmRedirectUri(uriInfo, redirectUri, realm);
+    public Response logout(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, // deprecated
+                           @QueryParam("id_token_hint") String encodedIdToken,
+                           @QueryParam("post_logout_redirect_uri") String postLogoutRedirectUri,
+                           @QueryParam("state") String state) {
+        String redirect = postLogoutRedirectUri != null ? postLogoutRedirectUri : redirectUri;
+
+        if (redirect != null) {
+            String validatedUri = RedirectUtils.verifyRealmRedirectUri(uriInfo, redirect, realm);
             if (validatedUri == null) {
                 event.event(EventType.LOGOUT);
-                event.detail(Details.REDIRECT_URI, redirectUri);
+                event.detail(Details.REDIRECT_URI, redirect);
                 event.error(Errors.INVALID_REDIRECT_URI);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REDIRECT_URI);
             }
-            redirectUri = validatedUri;
+            redirect = validatedUri;
+        }
+
+        UserSessionModel userSession = null;
+        boolean error = false;
+        if (encodedIdToken != null) {
+            try {
+                IDToken idToken = tokenManager.verifyIDToken(realm, encodedIdToken);
+                userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
+                if (userSession == null) {
+                    error = true;
+                }
+            } catch (OAuthErrorException e) {
+                error = true;
+            }
+            if (error) {
+                event.event(EventType.LOGOUT);
+                event.error(Errors.INVALID_TOKEN);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE);
+            }
         }
 
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
         if (authResult != null) {
-            if (redirectUri != null) authResult.getSession().setNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, redirectUri);
-            authResult.getSession().setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
+            userSession = userSession != null ? userSession : authResult.getSession();
+            if (redirectUri != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, redirect);
+            if (state != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM, state);
+            userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
             return AuthenticationManager.browserLogout(session, realm, authResult.getSession(), uriInfo, clientConnection, headers);
+        } else if (userSession != null) { // non browser logout
+            event.event(EventType.LOGOUT);
+            authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+            event.user(userSession.getUser()).session(userSession).success();
         }
 
         if (redirectUri != null) {
-            return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
+            UriBuilder uriBuilder = UriBuilder.fromUri(redirect);
+            if (state != null) uriBuilder.queryParam(OIDCLoginProtocol.STATE_PARAM, state);
+            return Response.status(302).location(uriBuilder.build()).build();
         } else {
             return Response.ok().build();
         }
@@ -149,7 +184,7 @@ public class LogoutEndpoint {
     }
 
     private void logout(UserSessionModel userSession) {
-        authManager.logout(session, realm, userSession, uriInfo, clientConnection, headers);
+        authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
         event.user(userSession.getUser()).session(userSession).success();
     }
 

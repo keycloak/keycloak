@@ -86,7 +86,7 @@ public class TokenManager {
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.logout(session, realm, userSession, uriInfo, connection, headers);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
         ClientSessionModel clientSession = null;
@@ -165,6 +165,26 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
         }
         return refreshToken;
+    }
+    public IDToken verifyIDToken(RealmModel realm, String encodedIDToken) throws OAuthErrorException {
+        JWSInput jws = new JWSInput(encodedIDToken);
+        IDToken idToken = null;
+        try {
+            if (!RSAProvider.verify(jws, realm.getPublicKey())) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
+            }
+            idToken = jws.readJsonContent(IDToken.class);
+        } catch (IOException e) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
+        }
+        if (idToken.isExpired()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+        }
+
+        if (idToken.getIssuedAt() < realm.getNotBefore()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+        }
+        return idToken;
     }
 
     public AccessToken createClientAccessToken(KeycloakSession session, Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession, ClientSessionModel clientSession) {
@@ -405,6 +425,7 @@ public class TokenManager {
             idToken.issuedNow();
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());
+            idToken.setSessionState(accessToken.getSessionState());
             if (realm.getAccessTokenLifespan() > 0) {
                 idToken.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
             }
