@@ -128,7 +128,7 @@ public class RegisterTest {
             registerPage.register("firstName", "lastName", "registerPasswordPolicy@email", "registerPasswordPolicy", "pass", "pass");
 
             registerPage.assertCurrent();
-            Assert.assertEquals("Invalid password: minimum length 8", registerPage.getError());
+            Assert.assertEquals("Invalid password: minimum length 8.", registerPage.getError());
 
             events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email").user((String) null).error("invalid_registration").assertEvent();
 

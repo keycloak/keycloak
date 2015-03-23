@@ -28,10 +28,8 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
@@ -106,7 +104,7 @@ public class AuthorizationCodeTest {
         oauth.doLogin("test-user@localhost", "password");
 
         String title = driver.getTitle();
-        Assert.assertTrue(title.startsWith("Success code="));
+        Assert.assertEquals("Success code", title);
 
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
         keycloakRule.verifyCode(code);
@@ -136,7 +134,7 @@ public class AuthorizationCodeTest {
         driver.findElement(By.name("cancel")).click();
 
         String title = driver.getTitle();
-        Assert.assertTrue(title.equals("Error error=access_denied"));
+        Assert.assertEquals("Error code: access_denied",title);
 
         String error = driver.findElement(By.id(OAuth2Constants.ERROR)).getText();
         assertEquals("access_denied", error);

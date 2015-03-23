@@ -3,19 +3,19 @@
 
     <div class="row">
         <div class="col-md-10">
-            <h2>Sessions</h2>
+            <h2>${msg("sessionsHtmlTitle")}</h2>
         </div>
     </div>
 
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
-            <td>IP</td>
-            <td>Started</td>
-            <td>Last Access</td>
-            <td>Expires</td>
-            <td>Applications</td>
-            <td>Clients</td>
+            <td>${msg("ip")}</td>
+            <td>${msg("started")}</td>
+            <td>${msg("lastAccess")}</td>
+            <td>${msg("expires")}</td>
+            <td>${msg("applications")}</td>
+            <td>${msg("clients")}</td>
         </tr>
         </thead>
 

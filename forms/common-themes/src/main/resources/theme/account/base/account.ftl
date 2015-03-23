@@ -3,10 +3,10 @@
 
     <div class="row">
         <div class="col-md-10">
-            <h2>Edit Account</h2>
+            <h2>${msg("editAccountHtmlTtile")}</h2>
         </div>
         <div class="col-md-2 subtitle">
-            <span class="subtitle"><span class="required">*</span> Required fields</span>
+            <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
         </div>
     </div>
 
@@ -104,9 +104,9 @@
         <div class="form-group">
             <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                 <div class="">
-                    <#if url.referrerURI??><a href="${url.referrerURI}">Back to application</a></#if>
-                    <button type="submit" class="btn btn-primary btn-lg" name="submitAction" value="Save">Save</button>
-                    <button type="submit" class="btn btn-default btn-lg" name="submitAction" value="Cancel">Cancel</button>
+                    <#if url.referrerURI??><a href="${url.referrerURI}">${msg("backToApplication")}/a></#if>
+                    <button type="submit" class="btn btn-primary btn-lg" name="submitAction" value="Save">${msg("doSave")}</button>
+                    <button type="submit" class="btn btn-default btn-lg" name="submitAction" value="Cancel">${msg("doCancel")}</button>
                 </div>
             </div>
         </div>

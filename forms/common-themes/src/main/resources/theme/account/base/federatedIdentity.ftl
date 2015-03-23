@@ -3,7 +3,7 @@
 
     <div class="row">
         <div class="col-md-10">
-            <h2>Federated Identities</h2>
+            <h2>${msg("federatedIdentitiesHtmlTitle")}</h2>
         </div>
     </div>
 
@@ -19,10 +19,10 @@
                 <div class="col-sm-5 col-md-5">
                     <#if identity.connected>
                         <#if federatedIdentity.removeLinkPossible>
-                            <a href="${identity.actionUrl}" type="submit" id="remove-${identity.providerId!}" class="btn btn-primary btn-lg">Remove ${identity.providerName!}</a>
+                            <a href="${identity.actionUrl}" type="submit" id="remove-${identity.providerId!}" class="btn btn-primary btn-lg">${msg("doRemove")}</a>
                         </#if>
                     <#else>
-                        <a href="${identity.actionUrl}" type="submit" id="add-${identity.providerId!}" class="btn btn-primary btn-lg">Add ${identity.providerName!}</a>
+                        <a href="${identity.actionUrl}" type="submit" id="add-${identity.providerId!}" class="btn btn-primary btn-lg">${msg("doAdd")}</a>
                     </#if>
                 </div>
             </div>
