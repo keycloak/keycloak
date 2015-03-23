@@ -2,13 +2,11 @@ package org.keycloak.theme;
 
 import org.keycloak.freemarker.Theme;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Locale;
 import java.util.Properties;
-import java.util.ResourceBundle;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -42,7 +40,7 @@ public class ClassLoaderTheme implements Theme {
         this.type = type;
         this.classLoader = classLoader;
 
-        String themeRoot = "theme/" + type.toString().toLowerCase() + "/" + name + "/";
+        String themeRoot = "theme/" + name + "/" + type.toString().toLowerCase() + "/";
 
         this.templateRoot = themeRoot;
         this.resourceRoot = themeRoot + "resources/";
@@ -58,10 +56,6 @@ public class ClassLoaderTheme implements Theme {
             this.parentName = null;
             this.importName = null;
         }
-    }
-
-    public ClassLoaderTheme() {
-
     }
 
     @Override
