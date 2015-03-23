@@ -141,5 +141,17 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+
+        <!-- KEYCLOAK-1106 APPLICATION_ID and REALM_ID switched in REALM_APPLICATION table -->
+        <dropForeignKeyConstraint baseTableName="REALM_APPLICATION" constraintName="FK_71S3P0DIUXAWWQQSA528UBY2Q" />
+        <dropForeignKeyConstraint baseTableName="REALM_APPLICATION" constraintName="FK_L5QGA3RFME47335JY8JXYXH3I" />
+        <dropUniqueConstraint tableName="REALM_APPLICATION" constraintName="UK_L5QGA3RFME47335JY8JXYXH3I" />
+        <renameColumn tableName="REALM_APPLICATION" oldColumnName="APPLICATION_ID" newColumnName="APPLICATION_ID_TMP" columnDataType="VARCHAR(36)"/>
+        <renameColumn tableName="REALM_APPLICATION" oldColumnName="REALM_ID" newColumnName="APPLICATION_ID" columnDataType="VARCHAR(36)"/>
+        <renameColumn tableName="REALM_APPLICATION" oldColumnName="APPLICATION_ID_TMP" newColumnName="REALM_ID" columnDataType="VARCHAR(36)"/>
+        <addUniqueConstraint columnNames="APPLICATION_ID" constraintName="UK_M6QGA3RFME47335JY8JXYXH3I" tableName="REALM_APPLICATION"/>
+        <addForeignKeyConstraint baseColumnNames="APPLICATION_ID" baseTableName="REALM_APPLICATION" constraintName="FK_82S3P0DIUXAWWQQSA528UBY2Q" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_APPLICATION" constraintName="FK_M6QGA3RFME47335JY8JXYXH3I" referencedColumnNames="ID" referencedTableName="REALM"/>
+
     </changeSet>
 </databaseChangeLog>

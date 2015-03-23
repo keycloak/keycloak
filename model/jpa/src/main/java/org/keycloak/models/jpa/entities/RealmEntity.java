@@ -104,7 +104,7 @@ public class RealmEntity {
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="APPLICATION_ID") }, inverseJoinColumns={ @JoinColumn(name="REALM_ID") })
+    @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="APPLICATION_ID") })
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
