@@ -11,9 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ExtendingThemeManagerFactory implements ThemeProviderFactory {
 
-    private ConcurrentHashMap<ThemeKey, Theme> themeCache = new ConcurrentHashMap<ThemeKey, Theme>();
-
-    private ExtendingThemeManager themeManager;
+    private ConcurrentHashMap<ThemeKey, Theme> themeCache;
 
     @Override
     public ThemeProvider create(KeycloakSession session) {
@@ -23,7 +21,7 @@ public class ExtendingThemeManagerFactory implements ThemeProviderFactory {
     @Override
     public void init(Config.Scope config) {
         if(Config.scope("theme").getBoolean("cacheThemes", true)) {
-            themeCache = new ConcurrentHashMap<ThemeKey, Theme>();
+            themeCache = new ConcurrentHashMap<>();
         }
     }
 

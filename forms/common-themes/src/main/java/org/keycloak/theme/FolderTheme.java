@@ -18,11 +18,13 @@ public class FolderTheme implements Theme {
     private String parentName;
     private String importName;
     private File themeDir;
+    private String name;
     private Type type;
     private final Properties properties;
 
-    public FolderTheme(File themeDir, Type type) throws IOException {
+    public FolderTheme(File themeDir, String name, Type type) throws IOException {
         this.themeDir = themeDir;
+        this.name = name;
         this.type = type;
         this.properties = new Properties();
 
@@ -36,7 +38,7 @@ public class FolderTheme implements Theme {
 
     @Override
     public String getName() {
-        return themeDir.getName();
+        return name;
     }
 
     @Override

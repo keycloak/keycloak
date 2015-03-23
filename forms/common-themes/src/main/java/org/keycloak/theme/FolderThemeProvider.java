@@ -29,7 +29,7 @@ public class FolderThemeProvider implements ThemeProvider {
     @Override
     public Theme getTheme(String name, Theme.Type type) throws IOException {
         File themeDir = getThemeDir(name, type);
-        return themeDir.isDirectory() ? new FolderTheme(themeDir, type) : null;
+        return themeDir.isDirectory() ? new FolderTheme(themeDir, name, type) : null;
     }
 
     @Override
