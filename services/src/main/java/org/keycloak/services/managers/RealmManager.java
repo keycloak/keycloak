@@ -179,11 +179,13 @@ public class RealmManager {
             realmAdminApp = applicationManager.createApplication(realm, realmAdminApplicationName);
         }
         RoleModel adminRole = realmAdminApp.addRole(AdminRoles.REALM_ADMIN);
+        adminRole.setDescription("${role_"+AdminRoles.REALM_ADMIN+"}");
         realmAdminApp.setBearerOnly(true);
         realmAdminApp.setFullScopeAllowed(false);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.addRole(r);
+            role.setDescription("${role_"+r+"}");
             adminRole.addCompositeRole(role);
         }
     }
@@ -202,6 +204,7 @@ public class RealmManager {
 
             for (String role : AccountRoles.ALL) {
                 application.addDefaultRole(role);
+                application.getRole(role).setDescription("${role_"+role+"}");
             }
         }
     }

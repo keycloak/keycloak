@@ -35,6 +35,7 @@ import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -72,6 +73,8 @@ public class OAuthClient {
     private String redirectUri = "http://localhost:8081/app/auth";
 
     private String state = "mystate";
+
+    private String uiLocales = null;
 
     private PublicKey realmPublicKey;
 
@@ -296,6 +299,9 @@ public class OAuthClient {
         if (state != null) {
             b.queryParam(OAuth2Constants.STATE, state);
         }
+        if(uiLocales != null){
+            b.queryParam(LocaleHelper.UI_LOCALES_PARAM, uiLocales);
+        }
         return b.build(realm).toString();
     }
 
@@ -346,6 +352,11 @@ public class OAuthClient {
 
     public OAuthClient state(String state) {
         this.state = state;
+        return this;
+    }
+
+    public OAuthClient uiLocales(String uiLocales){
+        this.uiLocales = uiLocales;
         return this;
     }
 

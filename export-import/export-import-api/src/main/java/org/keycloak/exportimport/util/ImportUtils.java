@@ -112,10 +112,12 @@ public class ImportUtils {
 
             RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
             adminRole.addCompositeRole(createRealmRole);
+            createRealmRole.setDescription("${role_"+AdminRoles.CREATE_REALM+"}");
         } else {
             adminRealm = model.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
+        adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
 
         ApplicationModel realmAdminApp = KeycloakModelUtils.createApplication(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationName(realm));
         realmAdminApp.setBearerOnly(true);
@@ -123,6 +125,7 @@ public class ImportUtils {
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.addRole(r);
+            role.setDescription("${role_"+r+"}");
             adminRole.addCompositeRole(role);
         }
     }

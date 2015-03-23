@@ -32,6 +32,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String GIVEN_NAME = "given name";
     public static final String FAMILY_NAME = "family name";
     public static final String FULL_NAME = "full name";
+    public static final String USERNAME_CONSENT_TEXT = "${username}";
+    public static final String EMAIL_CONSENT_TEXT = "${email}";
+    public static final String EMAIL_VERIFIED_CONSENT_TEXT = "${emailVerified}";
+    public static final String GIVEN_NAME_CONSENT_TEXT = "${givenName}";
+    public static final String FAMILY_NAME_CONSENT_TEXT = "${familyName}";
+    public static final String FULL_NAME_CONSENT_TEXT = "${fullName}";
+
 
     @Override
     public LoginProtocol create(KeycloakSession session) {
@@ -57,35 +64,35 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         model = UserPropertyMapper.createClaimMapper(USERNAME,
                 "username",
                 "preferred_username", "String",
-                true, USERNAME,
+                true, USERNAME_CONSENT_TEXT,
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
         model = UserPropertyMapper.createClaimMapper(EMAIL,
                 "email",
                 "email", "String",
-                true, EMAIL,
+                true, EMAIL_CONSENT_TEXT,
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
         model = UserPropertyMapper.createClaimMapper(GIVEN_NAME,
                 "firstName",
                 "given_name", "String",
-                true, GIVEN_NAME,
+                true, GIVEN_NAME_CONSENT_TEXT,
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
         model = UserPropertyMapper.createClaimMapper(FAMILY_NAME,
                 "lastName",
                 "family_name", "String",
-                true, FAMILY_NAME,
+                true, FAMILY_NAME_CONSENT_TEXT,
                 true, true);
         builtins.add(model);
         defaultBuiltins.add(model);
         model = UserPropertyMapper.createClaimMapper(EMAIL_VERIFIED,
                 "emailVerified",
                 "email_verified", "boolean",
-                false, null,
+                false, EMAIL_VERIFIED_CONSENT_TEXT,
                 true, true);
         builtins.add(model);
 
@@ -94,7 +101,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         fullName.setProtocolMapper(FullNameMapper.PROVIDER_ID);
         fullName.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         fullName.setConsentRequired(true);
-        fullName.setConsentText(FULL_NAME);
+        fullName.setConsentText(FULL_NAME_CONSENT_TEXT);
         Map<String, String> config = new HashMap<String, String>();
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
@@ -108,7 +115,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         model = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
-                true, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
+                true, "${gssDelegationCredential}",
                 true, false);
         builtins.add(model);
     }

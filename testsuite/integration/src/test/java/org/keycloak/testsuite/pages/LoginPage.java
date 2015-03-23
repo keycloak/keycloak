@@ -68,6 +68,12 @@ public class LoginPage extends AbstractPage {
     @FindBy(className = "feedback-warning")
     private WebElement loginWarningMessage;
 
+    @FindBy(id = "kc-current-locale-link")
+    private WebElement languageText;
+
+    @FindBy(id = "kc-locale-dropdown")
+    private WebElement localeDropdown;
+
     public void login(String username, String password) {
         usernameInput.clear();
         usernameInput.sendKeys(username);
@@ -103,7 +109,7 @@ public class LoginPage extends AbstractPage {
 
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Log in to test");
+        return driver.getTitle().equals("Log in to test") || driver.getTitle().equals("Anmeldung bei test");
     }
 
     public void clickRegister() {
@@ -143,6 +149,14 @@ public class LoginPage extends AbstractPage {
     public void open() {
         oauth.openLoginForm();
         assertCurrent();
+    }
+
+    public String getLanguageDropdownText() {
+        return languageText.getText();
+    }
+
+    public void openLanguage(String language){
+        localeDropdown.findElement(By.linkText(language)).click();
     }
 
 }

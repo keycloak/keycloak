@@ -111,7 +111,6 @@ public class ProfileTest {
         assertEquals("Last", profile.getString("lastName"));
 
         JSONObject attributes = profile.getJSONObject("attributes");
-        assertEquals(2, attributes.length());
         assertEquals("value1", attributes.getString("key1"));
         assertEquals("value2", attributes.getString("key2"));
     }
