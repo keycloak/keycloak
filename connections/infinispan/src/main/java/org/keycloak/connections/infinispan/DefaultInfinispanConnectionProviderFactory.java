@@ -87,10 +87,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         boolean clustered = config.getBoolean("clustered", false);
         boolean async = config.getBoolean("async", true);
+        boolean allowDuplicateJMXDomains = config.getBoolean("allowDuplicateJMXDomains", true);
 
         if (clustered) {
             gcb.transport().defaultTransport();
         }
+        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
+
         cacheManager = new DefaultCacheManager(gcb.build());
         containerManaged = false;
 

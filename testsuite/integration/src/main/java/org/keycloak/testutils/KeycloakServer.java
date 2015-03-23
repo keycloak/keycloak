@@ -47,7 +47,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -292,7 +291,7 @@ public class KeycloakServer {
         di.setDeploymentName("Keycloak");
 
         di.setDefaultServletConfig(new DefaultServletConfig(true));
-        di.addWelcomePage("theme/welcome/keycloak/resources/index.html");
+        di.addWelcomePage("theme/keycloak/welcome/resources/index.html");
 
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
         di.addFilter(filter);

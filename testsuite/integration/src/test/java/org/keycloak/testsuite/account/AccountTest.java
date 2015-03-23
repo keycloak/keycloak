@@ -207,11 +207,11 @@ public class AccountTest {
 
         changePasswordPage.changePassword("password", "new-password", "new-password2");
 
-        Assert.assertEquals("Password confirmation doesn't match", profilePage.getError());
+        Assert.assertEquals("Password confirmation doesn't match.", profilePage.getError());
 
         changePasswordPage.changePassword("password", "new-password", "new-password");
 
-        Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
 
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
 
@@ -256,7 +256,7 @@ public class AccountTest {
 
             changePasswordPage.changePassword("password", "new-password", "new-password");
 
-            Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
+            Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
 
             events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
         } finally {
@@ -318,7 +318,7 @@ public class AccountTest {
 
         profilePage.updateProfile("New first", "New last", "new@email.com");
 
-        Assert.assertEquals("Your account has been updated", profilePage.getSuccess());
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
         Assert.assertEquals("New first", profilePage.getFirstName());
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
@@ -341,7 +341,7 @@ public class AccountTest {
         // Error with false code
         totpPage.configure(totp.generate(totpPage.getTotpSecret() + "123"));
 
-        Assert.assertEquals("Invalid authenticator code", profilePage.getError());
+        Assert.assertEquals("Invalid authenticator code.", profilePage.getError());
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 

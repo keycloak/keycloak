@@ -6,6 +6,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.freemarker.*;
+import org.keycloak.freemarker.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.freemarker.beans.MessageFormatterMethod;
 import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.LoginFormsProvider;
@@ -239,6 +240,7 @@ import java.util.concurrent.TimeUnit;
                 break;
             case OAUTH_GRANT:
                 attributes.put("oauth", new OAuthGrantBean(accessCode, clientSession, client, realmRolesRequested, resourceRolesRequested, this.accessRequestMessage));
+                attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messages));
                 break;
             case CODE:
                 attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? message : null));

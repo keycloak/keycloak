@@ -9,7 +9,7 @@ It can be used for social applications as well as enterprise applications.  It i
 Here's some of the features:
 
 * SSO and Single Log Out for browser applications
-* Social Broker.  Enable Google, Facebook, Yahoo, Twitter social login with no code required.
+* Social Broker.  Enable Google, Facebook, Yahoo, Twitter, GitHub, LinkedIn social login with no code required.
 * Optional LDAP/Active Directory integration
 * Optional User Registration
 * Password and TOTP support (via Google Authenticator or FreeOTP).  Client cert auth coming soon.

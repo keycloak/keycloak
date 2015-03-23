@@ -20,7 +20,7 @@ public class FreeMarkerUtil {
 
     public FreeMarkerUtil() {
         if (Config.scope("theme").getBoolean("cacheTemplates", true)) {
-            cache = new ConcurrentHashMap<String, Template>();
+            cache = new ConcurrentHashMap<>();
         }
     }
 

@@ -13,7 +13,7 @@ import java.io.Serializable;
 /**
  * @author pedroigor
  */
-@Table(name="CLIENT_IDENTITY_PROVIDER_MAPPING")
+@Table(name="CLIENT_IDENTITY_PROV_MAPPING")
 @Entity
 @IdClass(ClientIdentityProviderMappingEntity.Key.class)
 public class ClientIdentityProviderMappingEntity {

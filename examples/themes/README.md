@@ -21,7 +21,7 @@ Then open $KEYCLOAK_HOME/standalone/configuration/keycloak-server.json and regis
         }
     }
 
-Alternatively you can copy `src/main/resources/theme/login` to `standalone/configuration/themes/login/`. 
+Alternatively you can copy `src/main/resources/theme/sunrise` to `standalone/configuration/themes/`. 
 
 Once you've added the theme open the admin console, select your realm, click on `Theme`. In the dropdown for `Login Theme` select `sunrise`. Click `Save` and login to the realm to see the new theme in action.
 
@@ -46,13 +46,7 @@ Then open $KEYCLOAK_HOME/standalone/configuration/keycloak-server.json and regis
         }
     }
 
-Alternatively you can copy:
-
-* `account/logo-example` to `standalone/configuration/themes/account/`
-* `login/logo-example` to `standalone/configuration/themes/login/`
-* `admin/logo-example` to `standalone/configuration/themes/admin/`
-* `welcome/logo-example` to `standalone/configuration/themes/welcome/`
-
+Alternatively you can copy `src/main/resources/theme/logo-example` to `standalone/configuration/themes/`. 
 
 Once you've added the theme open the admin console, select your realm, click on `Theme`. In the dropdowns for `Login Theme`, `Account Theme` and `Admin Console Theme` select `logo-example`. Click `Save` and login to the realm to see the new theme in action.
 

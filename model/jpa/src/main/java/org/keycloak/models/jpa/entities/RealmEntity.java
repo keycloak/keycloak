@@ -47,7 +47,7 @@ public class RealmEntity {
     protected String sslRequired;
     @Column(name="REGISTRATION_ALLOWED")
     protected boolean registrationAllowed;
-    @Column(name = "REGISTRATION_EMAIL_AS_USERNAME")
+    @Column(name = "REG_EMAIL_AS_USERNAME")
     protected boolean registrationEmailAsUsername;
     @Column(name="PASSWORD_CRED_GRANT_ALLOWED")
     protected boolean passwordCredentialGrantAllowed;
@@ -104,7 +104,7 @@ public class RealmEntity {
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="APPLICATION_ID") }, inverseJoinColumns={ @JoinColumn(name="REALM_ID") })
+    @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="APPLICATION_ID") })
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")

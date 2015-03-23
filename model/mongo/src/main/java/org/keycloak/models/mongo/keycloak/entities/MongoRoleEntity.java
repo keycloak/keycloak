@@ -69,7 +69,7 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
 
             // Realm might be already removed at this point
             if (realmEntity != null) {
-                mongoStore.pullItemFromList(realmEntity, "defaultRoles", getId(), invContext);
+                mongoStore.pullItemFromList(realmEntity, "defaultRoles", getName(), invContext);
             }
         }
 
@@ -79,7 +79,7 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
 
             // Application might be already removed at this point
             if (appEntity != null) {
-                mongoStore.pullItemFromList(appEntity, "defaultRoles", getId(), invContext);
+                mongoStore.pullItemFromList(appEntity, "defaultRoles", getName(), invContext);
             }
         }
 

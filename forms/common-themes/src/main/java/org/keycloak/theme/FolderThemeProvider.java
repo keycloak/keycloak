@@ -15,10 +15,10 @@ import java.util.Set;
  */
 public class FolderThemeProvider implements ThemeProvider {
 
-    private File rootDir;
+    private File themesDir;
 
-    public FolderThemeProvider(File rootDir) {
-        this.rootDir = rootDir;
+    public FolderThemeProvider(File themesDir) {
+        this.themesDir = themesDir;
     }
 
     @Override
@@ -28,51 +28,41 @@ public class FolderThemeProvider implements ThemeProvider {
 
     @Override
     public Theme getTheme(String name, Theme.Type type) throws IOException {
-        if (hasTheme(name, type)) {
-            return new FolderTheme(new File(getTypeDir(type), name), type);
-        }
-        return null;
+        File themeDir = getThemeDir(name, type);
+        return themeDir.isDirectory() ? new FolderTheme(themeDir, name, type) : null;
     }
 
     @Override
     public Set<String> nameSet(Theme.Type type) {
-        File typeDir = getTypeDir(type);
-        if (typeDir != null) {
-            File[] themes = typeDir.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    return pathname.isDirectory();
-                }
-            });
-
+        final String typeName = type.name().toLowerCase();
+        File[] themeDirs = themesDir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.isDirectory() && new File(pathname, typeName).isDirectory();
+            }
+        });
+        if (themeDirs != null) {
             Set<String> names = new HashSet<String>();
-            for (File t : themes) {
-                names.add(t.getName());
+            for (File themeDir : themeDirs) {
+                names.add(themeDir.getName());
             }
             return names;
+        } else {
+            return Collections.emptySet();
         }
-
-        return Collections.emptySet();
-    }
-
-    private File getTypeDir(Theme.Type type) {
-        if (rootDir != null && rootDir.isDirectory()) {
-            File typeDir = new File(rootDir, type.name().toLowerCase());
-            if (typeDir.isDirectory()) {
-                return typeDir;
-            }
-        }
-        return null;
     }
 
     @Override
     public boolean hasTheme(String name, Theme.Type type) {
-        File typeDir = getTypeDir(type);
-        return typeDir != null && new File(typeDir, name).isDirectory();
+        return getThemeDir(name, type).isDirectory();
     }
 
     @Override
     public void close() {
+    }
+
+    private File getThemeDir(String name, Theme.Type type) {
+        return new File(themesDir, name + File.separator + type.name().toLowerCase());
     }
 
 }

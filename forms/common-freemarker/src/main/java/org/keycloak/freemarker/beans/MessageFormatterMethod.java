@@ -22,8 +22,8 @@ public class MessageFormatterMethod implements TemplateMethodModelEx {
 
     @Override
     public Object exec(List list) throws TemplateModelException {
-        String key = list.get(0).toString();
         if (list.size() >= 1) {
+            String key = list.get(0).toString();
             return new MessageFormat(messages.getProperty(key,key),locale).format(list.subList(1, list.size()).toArray());
         } else {
             return null;

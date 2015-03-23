@@ -146,7 +146,7 @@ public abstract class AbstractKerberosTest {
 
         // Successfully change password now
         changePasswordPage.changePassword("theduke", "newPass", "newPass");
-        Assert.assertTrue(driver.getPageSource().contains("Your password has been updated"));
+        Assert.assertTrue(driver.getPageSource().contains("Your password has been updated."));
         changePasswordPage.logout();
 
         // Login with old password doesn't work, but with new password works

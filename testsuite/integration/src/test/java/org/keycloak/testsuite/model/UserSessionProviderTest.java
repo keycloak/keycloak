@@ -302,13 +302,18 @@ public class UserSessionProviderTest {
 
             // Login lifespan is largest
             String clientSessionId = session.sessions().createClientSession(realm, realm.findClient("test-app")).getId();
+            resetSession();
 
             Time.setOffset(25);
             session.sessions().removeExpiredUserSessions(realm);
+            resetSession();
+
             assertNotNull(session.sessions().getClientSession(clientSessionId));
 
             Time.setOffset(35);
             session.sessions().removeExpiredUserSessions(realm);
+            resetSession();
+
             assertNull(session.sessions().getClientSession(clientSessionId));
 
             // User action is largest
@@ -316,13 +321,18 @@ public class UserSessionProviderTest {
 
             Time.setOffset(0);
             clientSessionId = session.sessions().createClientSession(realm, realm.findClient("test-app")).getId();
+            resetSession();
 
             Time.setOffset(35);
             session.sessions().removeExpiredUserSessions(realm);
+            resetSession();
+
             assertNotNull(session.sessions().getClientSession(clientSessionId));
 
             Time.setOffset(45);
             session.sessions().removeExpiredUserSessions(realm);
+            resetSession();
+
             assertNull(session.sessions().getClientSession(clientSessionId));
 
             // Access code is largest
@@ -330,13 +340,18 @@ public class UserSessionProviderTest {
 
             Time.setOffset(0);
             clientSessionId = session.sessions().createClientSession(realm, realm.findClient("test-app")).getId();
+            resetSession();
 
             Time.setOffset(45);
             session.sessions().removeExpiredUserSessions(realm);
+            resetSession();
+
             assertNotNull(session.sessions().getClientSession(clientSessionId));
 
             Time.setOffset(55);
             session.sessions().removeExpiredUserSessions(realm);
+            resetSession();
+
             assertNull(session.sessions().getClientSession(clientSessionId));
         } finally {
             Time.setOffset(0);
