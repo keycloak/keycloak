@@ -76,7 +76,6 @@ import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
  *
  * @author Pedro Igor
  */
-@Path("/broker")
 public class IdentityBrokerService implements IdentityProvider.AuthenticationCallback {
 
     private static final Logger LOGGER = Logger.getLogger(IdentityBrokerService.class);
