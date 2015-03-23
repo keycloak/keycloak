@@ -65,6 +65,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
+        attributes.put("realm", realm.getName());
 
         send("passwordResetSubject", "password-reset.ftl", attributes);
     }
@@ -74,6 +75,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
+        attributes.put("realm", realm.getName());
 
         send("emailVerificationSubject", "email-verification.ftl", attributes);
     }

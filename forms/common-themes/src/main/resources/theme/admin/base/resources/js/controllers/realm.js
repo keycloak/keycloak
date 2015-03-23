@@ -407,7 +407,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     $scope.supportedLocalesOptions = {
         'multiple' : true,
         'simple_tags' : true,
-        'tags' : ['en', 'de']
+        'tags' : ['en', 'de', 'pt-BR']
     };
 
     $scope.$watch('realm.supportedLocales', function(oldVal, newVal) {
@@ -1265,7 +1265,7 @@ module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmE
 module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
     $scope.realm = realm;
     $scope.page = 0;
-    
+
     $scope.eventTypes = [{tag:'LOGIN'}, {tag:'REGISTER'}, {tag:'LOGOUT'}, {tag:'CODE_TO_TOKEN'}, {tag:'REFRESH_TOKEN'},
                          {tag:'LOGIN_ERROR'}, {tag:'REGISTER_ERROR'}, {tag:'LOGOUT_ERROR'}, {tag:'CODE_TO_TOKEN_ERROR'}, {tag:'REFRESH_TOKEN_ERROR'},
                          {tag:'VALIDATE_ACCESS_TOKEN'}, {tag:'VALIDATE_ACCESS_TOKEN_ERROR'}, {tag:'SOCIAL_LINK'}, {tag:'SOCIAL_LINK_ERROR'}, {tag:'REMOVE_FEDERATED_IDENTITY'},
@@ -1286,7 +1286,7 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
         }
         $scope.events = RealmEvents.query($scope.query);
     }
-    
+
     $scope.reset = function() {
     	$scope.query.first = 0;
     	$scope.query.max = 5;
@@ -1295,10 +1295,10 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
     	$scope.query.user = '';
     	$scope.query.dateFrom = '';
     	$scope.query.dateTo = '';
-    	
+
     	$scope.update();
     }
-    
+
     $scope.queryUpdate = function() {
         for (var i in $scope.query) {
             if ($scope.query[i] === '') {
@@ -1307,7 +1307,7 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
         }
         $scope.events = RealmEvents.query($scope.query);
     }
-    
+
     $scope.firstPage = function() {
         $scope.query.first = 0;
         $scope.queryUpdate();
