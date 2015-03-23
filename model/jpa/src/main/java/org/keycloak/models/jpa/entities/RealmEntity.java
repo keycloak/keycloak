@@ -47,7 +47,7 @@ public class RealmEntity {
     protected String sslRequired;
     @Column(name="REGISTRATION_ALLOWED")
     protected boolean registrationAllowed;
-    @Column(name = "REGISTRATION_EMAIL_AS_USERNAME")
+    @Column(name = "REG_EMAIL_AS_USERNAME")
     protected boolean registrationEmailAsUsername;
     @Column(name="PASSWORD_CRED_GRANT_ALLOWED")
     protected boolean passwordCredentialGrantAllowed;

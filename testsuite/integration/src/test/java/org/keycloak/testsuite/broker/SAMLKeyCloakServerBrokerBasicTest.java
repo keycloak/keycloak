@@ -38,6 +38,11 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             server.importRealm(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-saml.json"));
         }
+
+        @Override
+        protected String[] getTestRealms() {
+            return new String[] { "realm-with-saml-idp-basic" };
+        }
     };
 
     @Override
