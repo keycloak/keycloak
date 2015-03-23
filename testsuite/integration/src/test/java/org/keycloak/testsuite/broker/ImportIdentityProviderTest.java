@@ -38,6 +38,8 @@ import org.keycloak.social.google.GoogleIdentityProvider;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.social.twitter.TwitterIdentityProvider;
 import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
+import org.keycloak.social.linkedin.LinkedInIdentityProvider;
+import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -160,6 +162,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
                     assertGitHubIdentityProviderConfig(identityProvider);
                 } else if (TwitterIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertTwitterIdentityProviderConfig(identityProvider);
+                } else if (LinkedInIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertLinkedInIdentityProviderConfig(identityProvider);
                 } else {
                     continue;
                 }
@@ -255,6 +259,23 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals(GitHubIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
         assertEquals(GitHubIdentityProvider.TOKEN_URL, config.getTokenUrl());
         assertEquals(GitHubIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
+    }
+
+    private void assertLinkedInIdentityProviderConfig(IdentityProviderModel identityProvider) {
+      LinkedInIdentityProvider gitHubIdentityProvider = new LinkedInIdentityProviderFactory().create(identityProvider);
+      OAuth2IdentityProviderConfig config = gitHubIdentityProvider.getConfig();
+
+        assertEquals("model-linkedin", config.getAlias());
+      assertEquals(LinkedInIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
+      assertEquals(true, config.isEnabled());
+      assertEquals(true, config.isUpdateProfileFirstLogin());
+      assertEquals(false, config.isAuthenticateByDefault());
+      assertEquals(false, config.isStoreToken());
+      assertEquals("clientId", config.getClientId());
+      assertEquals("clientSecret", config.getClientSecret());
+      assertEquals(LinkedInIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
+      assertEquals(LinkedInIdentityProvider.TOKEN_URL, config.getTokenUrl());
+      assertEquals(LinkedInIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
     }
 
     private void assertTwitterIdentityProviderConfig(IdentityProviderModel identityProvider) {

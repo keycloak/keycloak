@@ -20,6 +20,7 @@
         <module>google</module>
         <module>twitter</module>
         <module>facebook</module>
+        <module>linkedin</module>
     </modules>
 
 </project>

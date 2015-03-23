@@ -62,6 +62,20 @@
             }
         },
         {
+            "alias" : "model-linkedin",
+            "providerId" : "linkedin",
+            "enabled": true,
+            "updateProfileFirstLogin" : "true",
+            "storeToken": false,
+            "config": {
+                "authorizationUrl": "authorizationUrl",
+                "tokenUrl": "tokenUrl",
+                "userInfoUrl": "userInfoUrl",
+                "clientId": "clientId",
+                "clientSecret": "clientSecret"
+            }
+        },
+        {
           "alias" : "model-saml-signed-idp",
           "providerId" : "saml",
           "enabled": true,
