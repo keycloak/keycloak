@@ -1,22 +1,41 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-    <div id="content-area" class="col-sm-9" role="main">
+    <div id="content-area" class="col-sm-9" role="main"  data-ng-init="initProvider()">
         <data-kc-navigation data-kc-current="social" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
         <h2></h2>
         <div id="content">
             <ol class="breadcrumb">
                 <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
-                <li class="active">{{identityProvider.name}} Provider Settings</li>
+                <li class="active">{{identityProvider.alias}} Provider Settings</li>
             </ol>
-            <h2 class="pull-left">{{identityProvider.name}} Provider Settings</h2>
+            <h2 class="pull-left">{{identityProvider.alias}} Provider Settings</h2>
             <p class="subtitle"><span class="required">*</span> Required fields</p>
             <form class="form-horizontal" name="realmForm" novalidate>
                 <fieldset>
                     <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="identifier">Alias <span class="required">*</span></label>
                         <div class="col-sm-4">
-                            <input class="form-control" id="identifier" type="text" ng-model="identityProvider.id" data-ng-readonly="!newIdentityProvider" required>
+                            <input class="form-control" id="identifier" type="text" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
                         </div>
                         <span tooltip-placement="right" tooltip="The alias unique identifies an identity provider and it is also used to build the redirect uri." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group" data-ng-show="newIdentityProvider && !importFile">
+                        <label class="col-sm-2 control-label" for="fromUrl">Import From Url</label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="fromUrl" type="text" ng-model="fromUrl">
+                        </div>
+                        <span tooltip-placement="right" tooltip="Import metadata from a remote IDP SAML entity descriptor." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group" data-ng-show="newIdentityProvider && !importUrl">
+                        <label class="col-sm-2 control-label">Import From File</label>
+                        <div class="col-sm-4">
+                            <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
+                                <a href="#" class="btn btn-default"><span class="kc-icon-upload">Icon: Upload</span>Choose a File...</a>
+                                <input id="import-file" type="file" class="transparent" ng-file-select="onFileSelect($files)">
+                            </div>
+                        <span class="kc-uploaded-file" data-ng-show="files.length > 0">
+                            {{files[0].name}}
+                        </span>
+                        </div>
                     </div>
                     <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="authorizationUrl">Authorization Url <span class="required">*</span></label>
@@ -33,11 +52,18 @@
                         <span tooltip-placement="right" tooltip="The Token Url." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group clearfix">
-                        <label class="col-sm-2 control-label" for="userInfoUrl">User Info Url <span class="required">*</span></label>
+                        <label class="col-sm-2 control-label" for="userInfoUrl">Logout Url</label>
                         <div class="col-sm-4">
-                            <input class="form-control" id="userInfoUrl" type="text" ng-model="identityProvider.config.userInfoUrl" required>
+                            <input class="form-control" id="logoutUrl" type="text" ng-model="identityProvider.config.logoutUrl">
                         </div>
-                        <span tooltip-placement="right" tooltip="The User Info Url." class="fa fa-info-circle"></span>
+                        <span tooltip-placement="right" tooltip="End session endpoint to use to logout user from external IDP." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="userInfoUrl">User Info Url</label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="userInfoUrl" type="text" ng-model="identityProvider.config.userInfoUrl">
+                        </div>
+                        <span tooltip-placement="right" tooltip="The User Info Url.  This is optional." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="clientId">Client ID <span class="required">*</span></label>
@@ -116,7 +142,10 @@
                 </fieldset>
 
                 <div class="pull-right form-actions">
-                    <button kc-save>Save</button>
+                    <button kc-save data-ng-show="changed">Save</button>
+                    <button type="submit" data-ng-click="cancel()" data-ng-show="changed" class="btn btn-lg btn-default">Cancel</button>
+                    <button type="submit" data-ng-click="uploadFile()" data-ng-show="importFile" class="btn btn-lg btn-primary">Import</button>
+                    <button type="submit" data-ng-click="importFrom()" data-ng-show="importUrl" class="btn btn-lg btn-primary">Import</button>
                     <button kc-delete data-ng-click="remove()" data-ng-show="!newIdentityProvider">Delete</button>
                 </div>
             </form>

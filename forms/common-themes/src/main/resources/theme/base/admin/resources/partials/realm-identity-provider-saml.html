@@ -47,7 +47,7 @@
                     <div class="form-group clearfix" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="singleSignOnServiceUrl">Single Logout Service Url</label>
                         <div class="col-sm-4">
-                            <input class="form-control" id="singleLogoutServiceUrl" type="text" ng-model="identityProvider.config.singleLogoutServiceUrl" required>
+                            <input class="form-control" id="singleLogoutServiceUrl" type="text" ng-model="identityProvider.config.singleLogoutServiceUrl">
                         </div>
                         <span tooltip-placement="right" tooltip="The Url that must be used to send logout requests." class="fa fa-info-circle"></span>
                     </div>
@@ -71,35 +71,35 @@
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="wantAuthnRequestsSigned">Want AuthnRequests Signed</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.wantAuthnRequestsSigned" id="wantAuthnRequestsSigned" value="'true'" onoffswitchmodel />
+                            <input ng-model="identityProvider.config.wantAuthnRequestsSigned" id="wantAuthnRequestsSigned" name="wantAuthnRequestsSigned" value="'true'" onoffswitchvalue />
                         </div>
                         <span tooltip-placement="right" tooltip=" Indicates whether the identity provider expects signed a AuthnRequest." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="forceAuthn">Force Authentication</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.forceAuthn" id="forceAuthn" value="'true'" onoffswitchmodel />
+                            <input ng-model="identityProvider.config.forceAuthn" id="forceAuthn" name="forceAuthn" value="'true'" onoffswitchvalue />
                         </div>
                         <span tooltip-placement="right" tooltip=" Indicates whether the identity provider must authenticate the presenter directly rather than rely on a previous security context." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="validateSignature">Validate Signature</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.validateSignature" id="validateSignature" value="'true'" onoffswitchmodel />
+                            <input ng-model="identityProvider.config.validateSignature" id="validateSignature" value="'true'" onoffswitchvalue />
                         </div>
                         <span tooltip-placement="right" tooltip="Enable/disable signature validation of SAML responses." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="postBindingResponse">HTTP-POST Binding Response</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.postBindingResponse" id="postBindingResponse" value="'true'" onoffswitchmodel />
+                            <input ng-model="identityProvider.config.postBindingResponse" id="postBindingResponse" value="'true'" onoffswitchvalue />
                         </div>
                         <span tooltip-placement="right" tooltip="Indicates whether the identity provider must respond to the AuthnRequest using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group" data-ng-show="!importFile && !importUrl">
                         <label class="col-sm-2 control-label" for="postBindingAuthnRequest">HTTP-POST Binding for AuthnRequest</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.postBindingAuthnRequest" id="postBindingAuthnRequest" value="'true'" onoffswitchmodel />
+                            <input ng-model="identityProvider.config.postBindingAuthnRequest" id="postBindingAuthnRequest" value="'true'" onoffswitchvalue />
                         </div>
                         <span tooltip-placement="right" tooltip="Indicates whether the AuthnRequest must be sent using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used." class="fa fa-info-circle"></span>
                     </div>

@@ -103,7 +103,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
-        if (getConfig().getLogoutUrl() == null) return null;
+        if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
         UriBuilder logoutUri = UriBuilder.fromUri(getConfig().getLogoutUrl())
                                          .queryParam("state", userSession.getId());
         String idToken = userSession.getNote(FEDERATED_ID_TOKEN);

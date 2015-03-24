@@ -643,6 +643,15 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
     $scope.realm = angular.copy(realm);
 
+    $scope.initProvider = function() {
+        if (instance && instance.alias) {
+
+        } else {
+            $scope.identityProvider.updateProfileFirstLogin = false;
+        }
+
+    };
+
     $scope.initSamlProvider = function() {
         $scope.nameIdFormats = [
             {
@@ -684,6 +693,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
         } else {
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
+            $scope.identityProvider.updateProfileFirstLogin = false;
         }
     }
 
@@ -698,7 +708,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.identityProvider.alias = providerFactory.name;
         $scope.identityProvider.providerId = providerFactory.id;
         $scope.identityProvider.enabled = true;
-        $scope.identityProvider.updateProfileFirstLogin = true;
+        $scope.identityProvider.updateProfileFirstLogin = false;
         $scope.identityProvider.authenticateByDefault = false;
         $scope.newIdentityProvider = true;
     }

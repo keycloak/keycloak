@@ -121,7 +121,7 @@ public class LogoutEndpoint {
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
         if (authResult != null) {
             userSession = userSession != null ? userSession : authResult.getSession();
-            if (redirectUri != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, redirect);
+            if (redirect != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, redirect);
             if (state != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM, state);
             userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
             return AuthenticationManager.browserLogout(session, realm, authResult.getSession(), uriInfo, clientConnection, headers);
@@ -131,7 +131,7 @@ public class LogoutEndpoint {
             event.user(userSession.getUser()).session(userSession).success();
         }
 
-        if (redirectUri != null) {
+        if (redirect != null) {
             UriBuilder uriBuilder = UriBuilder.fromUri(redirect);
             if (state != null) uriBuilder.queryParam(OIDCLoginProtocol.STATE_PARAM, state);
             return Response.status(302).location(uriBuilder.build()).build();

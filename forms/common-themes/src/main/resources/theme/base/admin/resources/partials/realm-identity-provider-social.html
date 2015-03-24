@@ -1,5 +1,5 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-    <div id="content-area" class="col-sm-9" role="main">
+    <div id="content-area" class="col-sm-9" role="main" data-ng-init="initProvider()">
         <data-kc-navigation data-kc-current="social" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
         <h2></h2>
         <div id="content">

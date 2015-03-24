@@ -118,7 +118,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     @Override
     public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
-        if (getConfig().getSingleLogoutServiceUrl() == null) return null;
+        if (getConfig().getSingleLogoutServiceUrl() == null || getConfig().getSingleLogoutServiceUrl().trim().equals("")) return null;
 
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                 .issuer(getEntityId(uriInfo, realm))
