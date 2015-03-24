@@ -18,25 +18,37 @@
                         </div>
                         <span tooltip-placement="right" tooltip="The alias unique identifies an identity provider and it is also used to build the redirect uri." class="fa fa-info-circle"></span>
                     </div>
-                    <div class="form-group" data-ng-show="newIdentityProvider && !importFile">
-                        <label class="col-sm-2 control-label" for="fromUrl">Import From Url</label>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="enabled">Enabled</label>
                         <div class="col-sm-4">
-                            <input class="form-control" id="fromUrl" type="text" ng-model="fromUrl">
+                            <input ng-model="identityProvider.enabled" id="enabled" onoffswitch />
                         </div>
-                        <span tooltip-placement="right" tooltip="Import metadata from a remote IDP SAML entity descriptor." class="fa fa-info-circle"></span>
+                        <span tooltip-placement="right" tooltip="Enable/disable this identity provider." class="fa fa-info-circle"></span>
                     </div>
-                    <div class="form-group" data-ng-show="newIdentityProvider && !importUrl">
-                        <label class="col-sm-2 control-label">Import From File</label>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="authenticateByDefault">Authenticate By Default</label>
                         <div class="col-sm-4">
-                            <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
-                                <a href="#" class="btn btn-default"><span class="kc-icon-upload">Icon: Upload</span>Choose a File...</a>
-                                <input id="import-file" type="file" class="transparent" ng-file-select="onFileSelect($files)">
-                            </div>
-                        <span class="kc-uploaded-file" data-ng-show="files.length > 0">
-                            {{files[0].name}}
-                        </span>
+                            <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch />
                         </div>
+                        <span tooltip-placement="right" tooltip="Indicates if this provider should be tried by default for authentication even before displaying login screen" class="fa fa-info-circle"></span>
                     </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="enabled">Store Tokens</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.storeToken" id="storeToken" onoffswitch />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Enable/disable if tokens must be stored when authenticating users." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="updateProfileFirstLogin">Update Profile on First Login</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.updateProfileFirstLogin" name="identityProvider.updateProfileFirstLogin" id="updateProfileFirstLogin" onoffswitch />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Indicates if user must update his profile right after the first login." class="fa fa-info-circle"></span>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend uncollapsed><span class="text">OpenID Connect Config</span> <span tooltip-placement="right" tooltip="OIDC SP and external IDP configuration." class="fa fa-info-circle"></span></legend>
                     <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="authorizationUrl">Authorization Url <span class="required">*</span></label>
                         <div class="col-sm-4">
@@ -111,41 +123,40 @@
                         </div>
                         <span tooltip-placement="right" tooltip="Specifies whether the Authorization Server prompts the End-User for reauthentication and consent." class="fa fa-info-circle"></span>
                     </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="enabled">Store Tokens</label>
+                </fieldset>
+                <fieldset>
+                    <legend uncollapsed><span class="text">Import External IDP Config</span> <span tooltip-placement="right" tooltip="Allows you to load external IDP metadata from a config file or to download it from a URL." class="fa fa-info-circle"></span></legend>
+                    <div class="form-group" data-ng-show="newIdentityProvider">
+                        <label class="col-sm-2 control-label" for="fromUrl">Import From Url</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.storeToken" id="storeToken" onoffswitch />
+                            <input class="form-control" id="fromUrl" type="text" ng-model="fromUrl">
                         </div>
-                        <span tooltip-placement="right" tooltip="Enable/disable if tokens must be stored when authenticating users." class="fa fa-info-circle"></span>
+                        <span tooltip-placement="right" tooltip="Import metadata from a remote IDP discovery descriptor." class="fa fa-info-circle"></span>
+                        <div class="col-sm-4" data-ng-show="importUrl">
+                            <button type="submit" data-ng-click="importFrom()" data-ng-show="importUrl" class="btn btn-primary">Import</button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="enabled">Enabled</label>
+                    <div class="form-group" data-ng-show="newIdentityProvider">
+                        <label class="col-sm-2 control-label">Import From File</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.enabled" id="enabled" onoffswitch />
+                            <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
+                                <a href="#" class="btn btn-default"><span class="kc-icon-upload">Icon: Upload</span>Choose a File...</a>
+                                <input id="import-file" type="file" class="transparent" ng-file-select="onFileSelect($files)">
+                            </div>
+                        <span class="kc-uploaded-file" data-ng-show="files.length > 0">
+                            {{files[0].name}}
+                        </span>
+                        <span tooltip-placement="right" tooltip="Import metadata from a downloaded IDP discovery descriptor." class="fa fa-info-circle"></span>
                         </div>
-                        <span tooltip-placement="right" tooltip="Enable/disable this identity provider." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="updateProfileFirstLogin">Update Profile on First Login</label>
-                        <div class="col-sm-4">
-                            <input ng-model="identityProvider.updateProfileFirstLogin" name="identityProvider.updateProfileFirstLogin" id="updateProfileFirstLogin" onoffswitch />
+                        <div class="col-sm-4" data-ng-show="importFile">
+                            <button type="submit" data-ng-click="uploadFile()" data-ng-show="importFile" class="btn btn-primary">Import</button>
                         </div>
-                        <span tooltip-placement="right" tooltip="Indicates if user must update his profile right after the first login." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="authenticateByDefault">Authenticate By Default</label>
-                        <div class="col-sm-4">
-                            <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch />
-                        </div>
-                        <span tooltip-placement="right" tooltip="Indicates if this provider should be tried by default for authentication even before displaying login screen" class="fa fa-info-circle"></span>
                     </div>
                 </fieldset>
 
                 <div class="pull-right form-actions">
                     <button kc-save data-ng-show="changed">Save</button>
                     <button type="submit" data-ng-click="cancel()" data-ng-show="changed" class="btn btn-lg btn-default">Cancel</button>
-                    <button type="submit" data-ng-click="uploadFile()" data-ng-show="importFile" class="btn btn-lg btn-primary">Import</button>
-                    <button type="submit" data-ng-click="importFrom()" data-ng-show="importUrl" class="btn btn-lg btn-primary">Import</button>
                     <button kc-delete data-ng-click="remove()" data-ng-show="!newIdentityProvider">Delete</button>
                 </div>
             </form>
