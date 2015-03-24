@@ -33,9 +33,11 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -47,6 +49,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,6 +60,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     protected static final Logger logger = Logger.getLogger(AbstractOAuth2IdentityProvider.class);
 
     public static final String OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
+    public static final String FEDERATED_ACCESS_TOKEN = "FEDERATED_ACCESS_TOKEN";
+    public static final String FEDERATED_REFRESH_TOKEN = "FEDERATED_REFRESH_TOKEN";
+    public static final String FEDERATED_TOKEN_EXPIRATION = "FEDERATED_TOKEN_EXPIRATION";
     protected static ObjectMapper mapper = new ObjectMapper();
 
     public static final String OAUTH2_PARAMETER_ACCESS_TOKEN = "access_token";
@@ -69,7 +75,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public static final String OAUTH2_PARAMETER_CLIENT_SECRET = "client_secret";
     public static final String OAUTH2_PARAMETER_GRANT_TYPE = "grant_type";
 
-    protected AuthenticationCallback callback;
 
     public AbstractOAuth2IdentityProvider(C config) {
         super(config);
@@ -81,8 +86,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback) {
-        this.callback = callback;
-        return new Endpoint(realm);
+        return new Endpoint(callback, realm);
     }
 
     @Override
@@ -124,8 +128,17 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return null;
     }
 
-    protected FederatedIdentity getFederatedIdentity(String response) {
-        String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
+    protected FederatedIdentity getFederatedIdentity(Map<String, String> notes, String response) {
+        AccessTokenResponse tokenResponse = null;
+        try {
+            tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
+        } catch (IOException e) {
+            throw new IdentityBrokerException("Could not decode access token response.", e);
+        }
+        String accessToken = tokenResponse.getToken();
+        notes.put(FEDERATED_ACCESS_TOKEN, accessToken);
+        notes.put(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
+        notes.put(FEDERATED_TOKEN_EXPIRATION, Long.toString(tokenResponse.getExpiresIn()));
 
         if (accessToken == null) {
             throw new IdentityBrokerException("No access token from server.");
@@ -164,6 +177,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     protected abstract String getDefaultScopes();
 
     protected class Endpoint {
+        protected AuthenticationCallback callback;
         protected RealmModel realm;
 
         @Context
@@ -178,7 +192,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         @Context
         protected UriInfo uriInfo;
 
-        public Endpoint(RealmModel realm) {
+        public Endpoint(AuthenticationCallback callback, RealmModel realm) {
+            this.callback = callback;
             this.realm = realm;
         }
 
@@ -205,13 +220,14 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                             .param(OAUTH2_PARAMETER_REDIRECT_URI, uriInfo.getAbsolutePath().toString())
                             .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE).asString();
 
-                    FederatedIdentity federatedIdentity = getFederatedIdentity(response);
+                    HashMap<String, String> userNotes = new HashMap<String, String>();
+                    FederatedIdentity federatedIdentity = getFederatedIdentity(userNotes, response);
 
                     if (getConfig().isStoreToken()) {
                         federatedIdentity.setToken(response);
                     }
 
-                    return callback.authenticated(new HashMap<String, String>(), getConfig(), federatedIdentity, state);
+                    return callback.authenticated(userNotes, getConfig(), federatedIdentity, state);
                 }
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);

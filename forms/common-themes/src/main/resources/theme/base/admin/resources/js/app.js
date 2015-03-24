@@ -1299,6 +1299,53 @@ module.directive('onoffswitchmodel', function() {
     }
 });
 
+/**
+ * Directive for presenting an ON-OFF switch for checkbox.
+ * This directive provides some additional capabilities to the default onoffswitch such as:
+ *
+ * - Specific scope to specify the value. Instead of just true or false.
+ *
+ * Usage: <input ng-model="mmm" name="nnn" id="iii" onoffswitchvalue [on-text="ooo" off-text="fff"] />
+ */
+module.directive('onoffswitchvalue', function() {
+    return {
+        restrict: "EA",
+        replace: true,
+        scope: {
+            name: '@',
+            id: '@',
+            value: '=',
+            ngModel: '=',
+            ngDisabled: '=',
+            kcOnText: '@onText',
+            kcOffText: '@offText'
+        },
+        // TODO - The same code acts differently when put into the templateURL. Find why and move the code there.
+        //templateUrl: "templates/kc-switch.html",
+        template: "<span><div class='onoffswitch' tabindex='0'><input type='checkbox' ng-true-value='{{value}}' ng-model='ngModel' ng-disabled='ngDisabled' class='onoffswitch-checkbox' name='{{name}}' id='{{id}}'><label for='{{id}}' class='onoffswitch-label'><span class='onoffswitch-inner'><span class='onoffswitch-active'>{{kcOnText}}</span><span class='onoffswitch-inactive'>{{kcOffText}}</span></span><span class='onoffswitch-switch'></span></label></div></span>",
+        compile: function(element, attrs) {
+            /*
+             We don't want to propagate basic attributes to the root element of directive. Id should be passed to the
+             input element only to achieve proper label binding (and validity).
+             */
+            element.removeAttr('name');
+            element.removeAttr('id');
+
+            if (!attrs.onText) { attrs.onText = "ON"; }
+            if (!attrs.offText) { attrs.offText = "OFF"; }
+
+            element.bind('keydown', function(e){
+                var code = e.keyCode || e.which;
+                if (code === 32 || code === 13) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    $(e.target).find('input').click();
+                }
+            });
+        }
+    }
+});
+
 module.directive('kcInput', function() {
     var d = {
         scope : true,

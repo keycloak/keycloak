@@ -1,6 +1,11 @@
 package org.keycloak.representations;
 
+import org.codehaus.jackson.annotate.JsonAnyGetter;
+import org.codehaus.jackson.annotate.JsonAnySetter;
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * OAuth 2.0 Access Token Response json
@@ -32,6 +37,10 @@ public class AccessTokenResponse {
 
     @JsonProperty("session-state")
     protected String sessionState;
+
+    protected Map<String, Object> otherClaims = new HashMap<String, Object>();
+
+
 
     public String getToken() {
         return token;
@@ -96,4 +105,15 @@ public class AccessTokenResponse {
     public void setSessionState(String sessionState) {
         this.sessionState = sessionState;
     }
+
+    @JsonAnyGetter
+    public Map<String, Object> getOtherClaims() {
+        return otherClaims;
+    }
+
+    @JsonAnySetter
+    public void setOtherClaims(String name, Object value) {
+        otherClaims.put(name, value);
+    }
+
 }

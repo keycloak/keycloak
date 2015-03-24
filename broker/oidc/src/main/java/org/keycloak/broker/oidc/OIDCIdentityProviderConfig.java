@@ -31,8 +31,21 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     public String getPrompt() {
         return getConfig().get("prompt");
     }
+    public void setPrompt(String prompt) {
+        getConfig().put("prompt", prompt);
+    }
 
     public String getIssuer() {
         return getConfig().get("issuer");
     }
+    public void setIssuer(String issuer) {
+        getConfig().put("issuer", issuer);
+    }
+    public String getLogoutUrl() {
+        return getConfig().get("logoutUrl");
+    }
+    public void setLogoutUrl(String url) {
+        getConfig().put("logoutUrl", url);
+    }
+
 }

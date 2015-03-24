@@ -19,6 +19,13 @@ package org.keycloak.broker.oidc;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.util.JsonSerialization;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Pedro Igor
@@ -40,5 +47,23 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public Map<String, String> parseConfig(InputStream inputStream) {
+        OIDCConfigurationRepresentation rep = null;
+        try {
+            rep = JsonSerialization.readValue(inputStream, OIDCConfigurationRepresentation.class);
+        } catch (IOException e) {
+            throw new RuntimeException("failed to load openid connect metadata", e);
+        }
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig(new IdentityProviderModel());
+        config.setIssuer(rep.getIssuer());
+        config.setLogoutUrl(rep.getLogoutEndpoint());
+        config.setAuthorizationUrl(rep.getAuthorizationEndpoint());
+        config.setTokenUrl(rep.getTokenEndpoint());
+        config.setUserInfoUrl(rep.getUserinfoEndpoint());
+        return config.getConfig();
+
     }
 }

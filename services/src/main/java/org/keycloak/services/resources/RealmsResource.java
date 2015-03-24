@@ -79,6 +79,10 @@ public class RealmsResource {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getProtocol");
     }
 
+    public static UriBuilder brokerUrl(UriInfo uriInfo) {
+        return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getBrokerService");
+    }
+
     @Path("{realm}/login-status-iframe.html")
     @Deprecated
     public Object getLoginStatusIframe(final @PathParam("realm") String name,

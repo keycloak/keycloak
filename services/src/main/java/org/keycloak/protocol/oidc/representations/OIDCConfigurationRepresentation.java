@@ -1,8 +1,12 @@
 package org.keycloak.protocol.oidc.representations;
 
+import org.codehaus.jackson.annotate.JsonAnyGetter;
+import org.codehaus.jackson.annotate.JsonAnySetter;
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -43,6 +47,8 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("response_modes_supported")
     private List<String> responseModesSupported;
+
+    protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
         return issuer;
@@ -131,4 +137,15 @@ public class OIDCConfigurationRepresentation {
     public void setResponseModesSupported(List<String> responseModesSupported) {
         this.responseModesSupported = responseModesSupported;
     }
+
+    @JsonAnyGetter
+    public Map<String, Object> getOtherClaims() {
+        return otherClaims;
+    }
+
+    @JsonAnySetter
+    public void setOtherClaims(String name, Object value) {
+        otherClaims.put(name, value);
+    }
+
 }
