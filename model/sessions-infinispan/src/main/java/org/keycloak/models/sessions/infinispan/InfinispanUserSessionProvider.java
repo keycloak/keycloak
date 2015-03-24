@@ -21,6 +21,7 @@ import org.keycloak.models.sessions.infinispan.mapreduce.FirstResultReducer;
 import org.keycloak.models.sessions.infinispan.mapreduce.LargestResultReducer;
 import org.keycloak.models.sessions.infinispan.mapreduce.SessionMapper;
 import org.keycloak.models.sessions.infinispan.mapreduce.UserSessionMapper;
+import org.keycloak.models.sessions.infinispan.mapreduce.UserSessionNoteMapper;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.util.Time;
@@ -170,6 +171,16 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
 
         return userSessions;
+    }
+
+    public List<UserSessionModel> getUserSessionsByNote(RealmModel realm, Map<String, String> notes) {
+        Map<String, UserSessionEntity> sessions = new MapReduceTask(sessionCache)
+                .mappedWith(UserSessionNoteMapper.create(realm.getId()).notes(notes))
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        return wrapUserSessions(realm, sessions.values());
+
     }
 
     @Override
