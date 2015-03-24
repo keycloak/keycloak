@@ -13,9 +13,11 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class SimpleHttp {
 
@@ -116,7 +118,11 @@ public class SimpleHttp {
                 connection.setDoOutput(false);
             }
 
+            String ce = connection.getHeaderField("Content-Encoding");
             is = connection.getInputStream();
+            if ("gzip".equals(ce)) {
+              is = new GZIPInputStream(is);
+	          }
             return toString(is);
         } finally {
             if (os != null) {

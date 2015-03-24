@@ -127,6 +127,11 @@
             <artifactId>keycloak-social-linkedin</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-social-stackoverflow</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- ldap federation api -->
         <dependency>
