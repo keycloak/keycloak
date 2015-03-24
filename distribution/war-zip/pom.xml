@@ -48,7 +48,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>            
+            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.4</version>
@@ -76,5 +76,97 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>set-as-home-eap</id>
+            <activation>
+                <property>
+                    <name>env.OPENSHIFT_JBOSSEAP_VERSION</name>
+                    <value>6</value>
+                </property>
+            </activation>
+            <properties>
+                <openshift.as.config.dir>${env.OPENSHIFT_JBOSSEAP_DIR}/standalone/configuration
+                </openshift.as.config.dir>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>set-as-home-wildfly</id>
+            <activation>
+                <property>
+                    <name>env.OPENSHIFT_WILDFLY_VERSION</name>
+                    <value>8</value>
+                </property>
+            </activation>
+            <properties>
+                <openshift.as.config.dir>${env.OPENSHIFT_WILDFLY_DIR}/standalone/configuration</openshift.as.config.dir>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>openshift</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>clean-deployments-dir</id>
+                                <phase>clean</phase>
+                                <configuration>
+                                    <tasks>
+                                        <delete dir="${project.basedir}/../../deployments"/>
+                                    </tasks>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>zip-keycloak-war</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <mkdir dir="${project.basedir}/../../deployments"/>
+                                        <zip destfile="${project.basedir}/../../deployments/ROOT.war">
+                                            <fileset
+                                                    dir="${project.build.directory}/unpacked/deployments/auth-server.war"
+                                                    includes="**/*"/>
+                                        </zip>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-keycloak-server-to-config-dir</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json"
+                                              todir="${env.OPENSHIFT_DATA_DIR}"
+                                              overwrite="false"/>
+                                        <replace file="${env.OPENSHIFT_DATA_DIR}/keycloak-server.json"
+                                                 token="KeycloakDS" value="ExampleDS"/>
+                                        <copy file="${env.OPENSHIFT_DATA_DIR}/keycloak-server.json"
+                                              todir="${openshift.as.config.dir}"/>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 
 </project>

@@ -24,26 +24,55 @@
             </plugin>
         </plugins>
     </build>
-    <modules>
-        <module>subsystem-war</module>
-        <module>modules</module>
-        <module>as7-adapter-zip</module>
-        <module>tomcat6-adapter-zip</module>
-        <module>tomcat7-adapter-zip</module>
-        <module>tomcat8-adapter-zip</module>
-        <module>eap6-adapter-zip</module>
-        <module>wildfly-adapter-zip</module>
-        <module>jetty81-adapter-zip</module>
-        <module>jetty91-adapter-zip</module>
-        <module>jetty92-adapter-zip</module>
-        <module>js-adapter-zip</module>
-        <module>examples-docs-zip</module>
-        <module>theme-template-zip</module>
-        <module>war-zip</module>
-        <module>war-dist</module>
-        <module>osgi</module>
-        <module>proxy</module>
-        <module>appliance-dist</module>
-        <module>src-dist</module>
-    </modules>
+
+    <profiles>
+        <profile>
+            <id>all-modules</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>subsystem-war</module>
+                <module>modules</module>
+                <module>as7-adapter-zip</module>
+                <module>tomcat6-adapter-zip</module>
+                <module>tomcat7-adapter-zip</module>
+                <module>tomcat8-adapter-zip</module>
+                <module>eap6-adapter-zip</module>
+                <module>wildfly-adapter-zip</module>
+                <module>jetty81-adapter-zip</module>
+                <module>jetty91-adapter-zip</module>
+                <module>jetty92-adapter-zip</module>
+                <module>js-adapter-zip</module>
+                <module>examples-docs-zip</module>
+                <module>theme-template-zip</module>
+                <module>war-zip</module>
+                <module>war-dist</module>
+                <module>osgi</module>
+                <module>proxy</module>
+                <module>appliance-dist</module>
+                <module>src-dist</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>openshift</id>
+            <modules>
+                <!-- Build only needed modules to save build time and space -->
+                <module>subsystem-war</module>
+                <module>modules</module>
+                <module>as7-adapter-zip</module>
+                <module>tomcat6-adapter-zip</module>
+                <module>tomcat7-adapter-zip</module>
+                <module>tomcat8-adapter-zip</module>
+                <module>eap6-adapter-zip</module>
+                <module>wildfly-adapter-zip</module>
+                <module>jetty81-adapter-zip</module>
+                <module>jetty91-adapter-zip</module>
+                <module>jetty92-adapter-zip</module>
+                <module>js-adapter-zip</module>
+                <module>war-zip</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
