@@ -19,9 +19,6 @@
             <column name="PROTOCOL_MAPPER_NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="APPLIED_BY_DEFAULT" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
             <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
@@ -152,6 +149,16 @@
         <addUniqueConstraint columnNames="APPLICATION_ID" constraintName="UK_M6QGA3RFME47335JY8JXYXH3I" tableName="REALM_APPLICATION"/>
         <addForeignKeyConstraint baseColumnNames="APPLICATION_ID" baseTableName="REALM_APPLICATION" constraintName="FK_82S3P0DIUXAWWQQSA528UBY2Q" referencedColumnNames="ID" referencedTableName="CLIENT"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_APPLICATION" constraintName="FK_M6QGA3RFME47335JY8JXYXH3I" referencedColumnNames="ID" referencedTableName="REALM"/>
+
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate1_2_0_Beta1"/>
+
+        <!-- Remove obsolete 'social' stuff -->
+        <dropForeignKeyConstraint baseTableName="USER_SOCIAL_LINK" constraintName="FK_68CJYS5UWM55UY823Y75XG4OM" />
+        <dropPrimaryKey tableName="USER_SOCIAL_LINK" constraintName="CONSTRAINT_3" />
+        <dropTable tableName="USER_SOCIAL_LINK" />
+        <dropForeignKeyConstraint baseTableName="REALM_SOCIAL_CONFIG" constraintName="FK_SV5I3C2TI7G0G922FGE683SOV" />
+        <dropPrimaryKey tableName="REALM_SOCIAL_CONFIG" constraintName="CONSTRAINT_1" />
+        <dropTable tableName="REALM_SOCIAL_CONFIG" />
 
     </changeSet>
 </databaseChangeLog>

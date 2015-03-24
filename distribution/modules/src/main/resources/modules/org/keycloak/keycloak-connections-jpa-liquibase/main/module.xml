@@ -10,6 +10,7 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
         <module name="org.keycloak.keycloak-connections-jpa"/>
+        <module name="org.keycloak.keycloak-services"/>
         <module name="org.liquibase"/>
         <module name="javax.persistence.api"/>
         <module name="org.jboss.logging"/>

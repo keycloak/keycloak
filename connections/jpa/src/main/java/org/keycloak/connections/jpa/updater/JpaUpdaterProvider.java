@@ -1,5 +1,6 @@
 package org.keycloak.connections.jpa.updater;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 
 import java.sql.Connection;
@@ -15,7 +16,7 @@ public interface JpaUpdaterProvider extends Provider {
 
     public String getCurrentVersionSql();
 
-    public void update(Connection connection);
+    public void update(KeycloakSession session, Connection connection);
 
     public void validate(Connection connection);
 
