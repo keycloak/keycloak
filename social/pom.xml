@@ -21,6 +21,7 @@
         <module>twitter</module>
         <module>facebook</module>
         <module>linkedin</module>
+        <module>stackoverflow</module>
     </modules>
 
 </project>

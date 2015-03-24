@@ -239,6 +239,10 @@
     	  <module-def name="org.keycloak.keycloak-social-linkedin">
     	      <maven-resource group="org.keycloak" artifact="keycloak-social-linkedin"/>
     	  </module-def>
+    	
+      	<module-def name="org.keycloak.keycloak-social-stackoverflow">
+    	      <maven-resource group="org.keycloak" artifact="keycloak-social-stackoverflow"/>
+    	  </module-def>
 
         <module-def name="org.keycloak.keycloak-kerberos-federation">
             <maven-resource group="org.keycloak" artifact="keycloak-kerberos-federation"/>

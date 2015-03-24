@@ -807,6 +807,78 @@
                     </tbody>
                 </tgroup>
             </table>
+        </section>
+        <section>
+            <title>StackOverflow</title>
+            <para>
+                To enable login with StackOverflow you first have to register an OAuth application on
+                <ulink url="https://stackapps.com/">StackApps</ulink>. Then you need to copy the client id, secret and key into the Keycloak Admin Console.
+            </para>
+            <para>
+                Let's see first how to create an application with StackOverflow.
+            </para>
+            <orderedlist>
+                <listitem>
+                    <para>
+                        Go to <ulink url="http://stackapps.com/apps/oauth/register">registering your application on Stack Apps</ulink> url and login here. 
+                        Use any value for <literal>Application Name</literal>, <literal>Application Website</literal> and <literal>Description</literal> you want.
+                        Set <literal>OAuth Domain</literal> to the domain where your Keycloak instance runs.
+                        Click the <literal>Register Your Application</literal> button.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Copy <literal>Client Id</literal>, <literal>Client Secret</literal> and <literal>Key</literal> from the shown page.
+                    </para>
+                </listitem>
+            </orderedlist>
+            <para>
+                Now that you have the client id, secret and key, you can proceed with the creation of a StackOverflow Identity Provider in Keycloak. As follows:
+            </para>
+            <orderedlist>
+                <listitem>
+                    <para>
+                        Select the <literal>StackOverflow</literal> identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console. You should be presented with a specific page to configure the selected provided.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Copy the client id, client secret and key to their corresponding fields in the Keycloak Admin Console. Click <literal>Save</literal>.
+                    </para>
+                </listitem>
+            </orderedlist>
+            <para>
+                That is it! This pretty much what you need to do in order to setup this identity provider.
+            </para>
+            <para>
+                The table below lists some additional configuration options you may use when configuring this provider.
+            </para>
+            <table>
+                <title>Configuration Options</title>
+                <tgroup align="left" cols="2">
+                    <thead>
+                        <row>
+                            <entry>
+                                Configuration
+                            </entry>
+                            <entry>
+                                Description
+                            </entry>
+                        </row>
+                    </thead>
+                    <tbody valign="top">
+                        <row>
+                            <entry>
+                                <literal>Default Scopes</literal>
+                            </entry>
+                            <entry>
+                                Allows you to manually specify the scopes that users must authorize when authenticating with this provider. 
+                                For a complete list of scopes, please take a look at application configuration in <ulink url="https://api.stackexchange.com/docs/authentication#scope">StackExchange API Authentication</ulink> documentation. Keycloak uses the empty scope by default.
+                            </entry>
+                        </row>
+                    </tbody>
+                </tgroup>
+            </table>
         </section>        
     </section>
 

@@ -17,6 +17,11 @@
  */
 package org.keycloak.testsuite.broker;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.junit.Test;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
@@ -36,15 +41,13 @@ import org.keycloak.social.github.GitHubIdentityProvider;
 import org.keycloak.social.github.GitHubIdentityProviderFactory;
 import org.keycloak.social.google.GoogleIdentityProvider;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
-import org.keycloak.social.twitter.TwitterIdentityProvider;
-import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInIdentityProvider;
 import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.keycloak.social.stackoverflow.StackOverflowIdentityProviderConfig;
+import org.keycloak.social.stackoverflow.StackoverflowIdentityProvider;
+import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
+import org.keycloak.social.twitter.TwitterIdentityProvider;
+import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -164,6 +167,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
                     assertTwitterIdentityProviderConfig(identityProvider);
                 } else if (LinkedInIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertLinkedInIdentityProviderConfig(identityProvider);
+                } else if (StackoverflowIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertStackoverflowIdentityProviderConfig(identityProvider);
                 } else {
                     continue;
                 }
@@ -262,8 +267,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     }
 
     private void assertLinkedInIdentityProviderConfig(IdentityProviderModel identityProvider) {
-      LinkedInIdentityProvider gitHubIdentityProvider = new LinkedInIdentityProviderFactory().create(identityProvider);
-      OAuth2IdentityProviderConfig config = gitHubIdentityProvider.getConfig();
+        LinkedInIdentityProvider liIdentityProvider = new LinkedInIdentityProviderFactory().create(identityProvider);
+        OAuth2IdentityProviderConfig config = liIdentityProvider.getConfig();
 
         assertEquals("model-linkedin", config.getAlias());
       assertEquals(LinkedInIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
@@ -276,6 +281,24 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
       assertEquals(LinkedInIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
       assertEquals(LinkedInIdentityProvider.TOKEN_URL, config.getTokenUrl());
       assertEquals(LinkedInIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
+    }
+
+    private void assertStackoverflowIdentityProviderConfig(IdentityProviderModel identityProvider) {
+        StackoverflowIdentityProvider soIdentityProvider = new StackoverflowIdentityProviderFactory().create(identityProvider);
+        StackOverflowIdentityProviderConfig config = soIdentityProvider.getConfig();
+
+        assertEquals("model-stackoverflow", config.getAlias());
+        assertEquals(StackoverflowIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
+        assertEquals(true, config.isEnabled());
+        assertEquals(true, config.isUpdateProfileFirstLogin());
+        assertEquals(false, config.isAuthenticateByDefault());
+        assertEquals(false, config.isStoreToken());
+        assertEquals("clientId", config.getClientId());
+        assertEquals("clientSecret", config.getClientSecret());
+        assertEquals("keyValue", config.getKey());
+        assertEquals(StackoverflowIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
+        assertEquals(StackoverflowIdentityProvider.TOKEN_URL, config.getTokenUrl());
+        assertEquals(StackoverflowIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
     }
 
     private void assertTwitterIdentityProviderConfig(IdentityProviderModel identityProvider) {
