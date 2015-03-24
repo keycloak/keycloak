@@ -13,17 +13,22 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.protocol.saml.SAMLRequestParser;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
+import org.keycloak.protocol.saml.SignatureAlgorithm;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.flows.Flows;
 import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
+import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.common.util.StaxParserUtil;
@@ -38,6 +43,8 @@ import org.picketlink.identity.federation.saml.v2.assertion.AuthnStatementType;
 import org.picketlink.identity.federation.saml.v2.assertion.EncryptedAssertionType;
 import org.picketlink.identity.federation.saml.v2.assertion.NameIDType;
 import org.picketlink.identity.federation.saml.v2.assertion.SubjectType;
+import org.picketlink.identity.federation.saml.v2.protocol.LogoutRequestType;
+import org.picketlink.identity.federation.saml.v2.protocol.RequestAbstractType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.picketlink.identity.federation.saml.v2.protocol.StatusResponseType;
 import org.w3c.dom.Document;
@@ -53,8 +60,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.namespace.QName;
+import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -68,6 +77,7 @@ import java.util.Map;
  */
 public class SAMLEndpoint {
     protected static final Logger logger = Logger.getLogger(SAMLEndpoint.class);
+    public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
     protected RealmModel realm;
     protected EventBuilder event;
     protected SAMLIdentityProviderConfig config;
@@ -161,21 +171,111 @@ public class SAMLEndpoint {
             event = new EventsManager(realm, session, clientConnection).createEventBuilder();
             Response response = basicChecks(samlRequest, samlResponse);
             if (response != null) return response;
-            if (samlRequest != null) throw new RuntimeException("NOT IMPLEMETED");//return handleSamlRequest(samlRequest, relayState);
+            if (samlRequest != null) return handleSamlRequest(samlRequest, relayState);
             else return handleSamlResponse(samlResponse, relayState);
         }
 
-        protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState) {
+        protected Response handleSamlRequest(String samlRequest, String relayState) {
+            SAMLDocumentHolder holder = extractRequestDocument(samlRequest);
+            RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
+            // validate destination
+            if (!uriInfo.getAbsolutePath().toString().equals(requestAbstractType.getDestination())) {
+                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                event.error(Errors.INVALID_SAML_RESPONSE);
+                event.detail(Details.REASON, "invalid_destination");
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
+            }
             if (config.isValidateSignature()) {
                 try {
                     verifySignature(holder);
                 } catch (VerificationException e) {
                     logger.error("validation failed", e);
-                    event.event(EventType.LOGIN);
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
                     return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUESTER);
                 }
             }
+
+            if (requestAbstractType instanceof LogoutRequestType) {
+                logger.debug("** logout request");
+                event.event(EventType.LOGOUT);
+                LogoutRequestType logout = (LogoutRequestType) requestAbstractType;
+                return logoutRequest(logout, relayState);
+
+            } else {
+                event.event(EventType.LOGIN);
+                event.error(Errors.INVALID_TOKEN);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
+            }
+        }
+
+        protected Response logoutRequest(LogoutRequestType request, String relayState) {
+            UserModel user = session.users().getUserByUsername(request.getNameID().getValue(), realm);
+            if (user == null) {
+                event.event(EventType.LOGOUT);
+                event.error(Errors.USER_SESSION_NOT_FOUND);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+            }
+            List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
+            if (sessions == null || sessions.size() == 0) {
+                event.event(EventType.LOGOUT);
+                event.error(Errors.USER_SESSION_NOT_FOUND);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+            }
+            for (UserSessionModel userSession : sessions) {
+                String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
+                if (!config.getAlias().equals(brokerId)) continue;
+                boolean logout = false;
+                if (request.getSessionIndex() == null || request.getSessionIndex().size() == 0) {
+                    logout = true;
+                } else {
+                    for (String sessionIndex : request.getSessionIndex()) {
+                        if (sessionIndex.equals(userSession.getNote(SAML_FEDERATED_SESSION_INDEX))) {
+                            logout = true;
+                            break;
+                        }
+                    }
+                }
+                if (logout) {
+                    try {
+                        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+                    } catch (Exception e) {
+                        logger.error("Failed to logout", e);
+                    }
+                }
+
+                String issuerURL = getEntityId(uriInfo, realm);
+                SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
+                builder.logoutRequestID(request.getID());
+                builder.destination(config.getSingleLogoutServiceUrl());
+                builder.issuer(issuerURL);
+                builder.relayState(relayState);
+                if (config.isWantAuthnRequestsSigned()) {
+                    builder.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                           .signDocument();
+                }
+                try {
+                    if (config.isPostBindingResponse()) {
+                        return builder.postBinding().response();
+                    } else {
+                        return builder.redirectBinding().response();
+                    }
+                } catch (ConfigurationException e) {
+                    throw new RuntimeException(e);
+                } catch (ProcessingException e) {
+                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+            throw new RuntimeException("Unreachable");
+        }
+
+        private String getEntityId(UriInfo uriInfo, RealmModel realm) {
+            return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
+        }
+        protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState) {
 
             try {
                 AssertionType assertion = getAssertion(responseType);
@@ -205,7 +305,7 @@ public class SAMLEndpoint {
                     }
                 }
                 if (authn != null && authn.getSessionIndex() != null) {
-                    notes.put("SAML_FEDERATED_SESSION_INDEX", authn.getSessionIndex());
+                    notes.put(SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
                 }
                 return callback.authenticated(notes, config, identity, relayState);
 
@@ -241,7 +341,17 @@ public class SAMLEndpoint {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.error(Errors.INVALID_SAML_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
+                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+            }
+            if (config.isValidateSignature()) {
+                try {
+                    verifySignature(holder);
+                } catch (VerificationException e) {
+                    logger.error("validation failed", e);
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SIGNATURE);
+                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                }
             }
             if (statusResponse instanceof ResponseType) {
                 return handleLoginResponse(samlResponse, holder, (ResponseType)statusResponse, relayState);
@@ -255,16 +365,6 @@ public class SAMLEndpoint {
         }
 
         protected Response handleLogoutResponse(SAMLDocumentHolder holder, StatusResponseType responseType, String relayState) {
-            if (config.isValidateSignature()) {
-                try {
-                    verifySignature(holder);
-                } catch (VerificationException e) {
-                    logger.error("logout response validation failed", e);
-                    event.event(EventType.LOGOUT);
-                    event.error(Errors.INVALID_SIGNATURE);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
-                }
-            }
             if (relayState == null) {
                 logger.error("no valid user session");
                 event.event(EventType.LOGOUT);
