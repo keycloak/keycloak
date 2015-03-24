@@ -79,13 +79,6 @@
             </div>
         </div>
     </div>
-
-    <!--
-        <p class="powered">
-            <a href="http://www.keycloak.org">${msg("poweredByKeycloak")}</a>
-        </p>
-    </div>
-    -->
 </body>
 </html>
 </#macro>

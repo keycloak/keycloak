@@ -407,7 +407,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     $scope.supportedLocalesOptions = {
         'multiple' : true,
         'simple_tags' : true,
-        'tags' : ['en', 'de']
+        'tags' : ['en', 'de', 'pt-BR']
     };
 
     $scope.$watch('realm.supportedLocales', function(oldVal, newVal) {
