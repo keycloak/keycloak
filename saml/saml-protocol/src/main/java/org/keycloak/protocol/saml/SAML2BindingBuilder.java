@@ -307,7 +307,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
 
     protected String buildHtml(String samlResponse, String actionUrl, boolean asRequest) {
         if (destination == null) {
-            throw SALM2LoginResponseBuilder.logger.nullValueError("Destination is null");
+            throw SAML2LoginResponseBuilder.logger.nullValueError("Destination is null");
         }
 
         StringBuilder builder = new StringBuilder();
