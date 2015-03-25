@@ -3,6 +3,7 @@ package org.keycloak.broker.oidc;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -27,13 +28,13 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
     }
 
     @Override
-    public Object callback(RealmModel realm, AuthenticationCallback callback) {
-        return new KeycloakEndpoint(callback, realm);
+    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
+        return new KeycloakEndpoint(callback, realm, event);
     }
 
     protected class KeycloakEndpoint extends OIDCEndpoint {
-        public KeycloakEndpoint(AuthenticationCallback callback, RealmModel realm) {
-            super(callback, realm);
+        public KeycloakEndpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event) {
+            super(callback, realm, event);
         }
 
         @POST
