@@ -17,6 +17,7 @@
  */
 package org.keycloak.broker.provider;
 
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -50,7 +51,7 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     @Override
-    public Object callback(RealmModel realm, AuthenticationCallback callback) {
+    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
         return null;
     }
 

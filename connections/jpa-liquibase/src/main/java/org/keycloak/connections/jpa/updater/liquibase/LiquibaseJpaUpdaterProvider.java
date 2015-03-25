@@ -28,6 +28,7 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.servicelocator.ServiceLocator;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.models.KeycloakSession;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -50,8 +51,11 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     @Override
-    public void update(Connection connection) {
+    public void update(KeycloakSession session, Connection connection) {
         logger.debug("Starting database update");
+
+        // Need ThreadLocal as liquibase doesn't seem to have API to inject custom objects into tasks
+        ThreadLocalSessionContext.setCurrentSession(session);
 
         try {
             Liquibase liquibase = getLiquibase(connection);
@@ -81,7 +85,10 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to update database", e);
+        } finally {
+            ThreadLocalSessionContext.removeCurrentSession();
         }
+
         logger.debug("Completed database update");
     }
 

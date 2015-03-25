@@ -20,6 +20,7 @@ package org.keycloak.broker.saml;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -45,7 +46,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     }
 
     @Override
-    public Object callback(RealmModel realm, AuthenticationCallback callback) {
+    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
         return new SAMLEndpoint(realm, getConfig(), callback);
     }
 

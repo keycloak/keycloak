@@ -1,6 +1,6 @@
 package org.keycloak.services.scheduled;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 

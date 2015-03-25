@@ -140,7 +140,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             }
 
                             if (currentVersion == null || !JpaUpdaterProvider.LAST_VERSION.equals(currentVersion)) {
-                                updater.update(connection);
+                                updater.update(session, connection);
                             } else {
                                 logger.debug("Database is up to date");
                             }

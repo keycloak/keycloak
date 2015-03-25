@@ -145,7 +145,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @Path("{provider_id}/endpoint")
     public Object getEndpoint(@PathParam("provider_id") String providerId) {
         IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
-        Object callback = identityProvider.callback(realmModel, this);
+        Object callback = identityProvider.callback(realmModel, this, event);
         ResteasyProviderFactory.getInstance().injectProperties(callback);
         //resourceContext.initResource(brokerService);
         return callback;
