@@ -32,6 +32,8 @@ public class FederatedIdentity {
     private String email;
     private String token;
     private String identityProviderId;
+    private String brokerSessionId;
+    private String brokerUserId;
 
     public FederatedIdentity(String id) {
         if (id == null) {
@@ -100,6 +102,22 @@ public class FederatedIdentity {
 
     public void setIdentityProviderId(String identityProviderId) {
         this.identityProviderId = identityProviderId;
+    }
+
+    public String getBrokerSessionId() {
+        return brokerSessionId;
+    }
+
+    public void setBrokerSessionId(String brokerSessionId) {
+        this.brokerSessionId = brokerSessionId;
+    }
+
+    public String getBrokerUserId() {
+        return brokerUserId;
+    }
+
+    public void setBrokerUserId(String brokerUserId) {
+        this.brokerUserId = brokerUserId;
     }
 
     @Override

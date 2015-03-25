@@ -129,16 +129,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected FederatedIdentity getFederatedIdentity(Map<String, String> notes, String response) {
-        AccessTokenResponse tokenResponse = null;
-        try {
-            tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
-        } catch (IOException e) {
-            throw new IdentityBrokerException("Could not decode access token response.", e);
-        }
-        String accessToken = tokenResponse.getToken();
-        notes.put(FEDERATED_ACCESS_TOKEN, accessToken);
-        notes.put(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
-        notes.put(FEDERATED_TOKEN_EXPIRATION, Long.toString(tokenResponse.getExpiresIn()));
+        String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
 
         if (accessToken == null) {
             throw new IdentityBrokerException("No access token from server.");
@@ -146,6 +137,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         return doGetFederatedIdentity(accessToken);
     }
+
 
     protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
         return null;
@@ -213,12 +205,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             try {
 
                 if (authorizationCode != null) {
-                    String response = SimpleHttp.doPost(getConfig().getTokenUrl())
-                            .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                            .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                            .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
-                            .param(OAUTH2_PARAMETER_REDIRECT_URI, uriInfo.getAbsolutePath().toString())
-                            .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE).asString();
+                    String response = generateTokenRequest(authorizationCode).asString();
 
                     HashMap<String, String> userNotes = new HashMap<String, String>();
                     FederatedIdentity federatedIdentity = getFederatedIdentity(userNotes, response);
@@ -235,6 +222,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             event.event(EventType.LOGIN);
             event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+        }
+
+        public SimpleHttp generateTokenRequest(String authorizationCode) {
+            return SimpleHttp.doPost(getConfig().getTokenUrl())
+                    .param(OAUTH2_PARAMETER_CODE, authorizationCode)
+                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
+                    .param(OAUTH2_PARAMETER_REDIRECT_URI, uriInfo.getAbsolutePath().toString())
+                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
         }
     }
 }

@@ -15,11 +15,15 @@ public interface UserSessionProvider extends Provider {
     ClientSessionModel getClientSession(RealmModel realm, String id);
     ClientSessionModel getClientSession(String id);
 
-    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe);
+    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel getUserSession(RealmModel realm, String id);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults);
+    List<UserSessionModel> getUserSessionByBrokerUserId(RealmModel realm, String brokerUserId);
+    UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
+
+    List<UserSessionModel> getUserSessionsByNote(RealmModel realm, String noteName, String noteValue);
 
     int getActiveUserSessions(RealmModel realm, ClientModel client);
     void removeUserSession(RealmModel realm, UserSessionModel session);

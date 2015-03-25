@@ -78,6 +78,8 @@ import java.util.Map;
 public class SAMLEndpoint {
     protected static final Logger logger = Logger.getLogger(SAMLEndpoint.class);
     public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
+    public static final String SAML_FEDERATED_SUBJECT = "SAML_FEDERATED_SUBJECT";
+    public static final String SAML_FEDERATED_SUBJECT_NAMEFORMAT = "SAML_FEDERATED_SUBJECT_NAMEFORMAT";
     protected RealmModel realm;
     protected EventBuilder event;
     protected SAMLIdentityProviderConfig config;
@@ -179,7 +181,7 @@ public class SAMLEndpoint {
             SAMLDocumentHolder holder = extractRequestDocument(samlRequest);
             RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
             // validate destination
-            if (!uriInfo.getAbsolutePath().toString().equals(requestAbstractType.getDestination())) {
+            if (!uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.error(Errors.INVALID_SAML_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
@@ -210,66 +212,55 @@ public class SAMLEndpoint {
         }
 
         protected Response logoutRequest(LogoutRequestType request, String relayState) {
-            UserModel user = session.users().getUserByUsername(request.getNameID().getValue(), realm);
-            if (user == null) {
-                event.event(EventType.LOGOUT);
-                event.error(Errors.USER_SESSION_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
-            }
-            List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
-            if (sessions == null || sessions.size() == 0) {
-                event.event(EventType.LOGOUT);
-                event.error(Errors.USER_SESSION_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
-            }
-            for (UserSessionModel userSession : sessions) {
-                String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
-                if (!config.getAlias().equals(brokerId)) continue;
-                boolean logout = false;
-                if (request.getSessionIndex() == null || request.getSessionIndex().size() == 0) {
-                    logout = true;
-                } else {
-                    for (String sessionIndex : request.getSessionIndex()) {
-                        if (sessionIndex.equals(userSession.getNote(SAML_FEDERATED_SESSION_INDEX))) {
-                            logout = true;
-                            break;
-                        }
-                    }
-                }
-                if (logout) {
+            String brokerUserId = config.getAlias() + "." + request.getNameID().getValue();
+            if (request.getSessionIndex() == null || request.getSessionIndex().isEmpty()) {
+                List<UserSessionModel> userSessions = session.sessions().getUserSessionByBrokerUserId(realm, brokerUserId);
+                for (UserSessionModel userSession : userSessions) {
                     try {
                         AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
                     } catch (Exception e) {
-                        logger.error("Failed to logout", e);
+                        logger.warn("failed to do backchannel logout for userSession", e);
                     }
                 }
 
-                String issuerURL = getEntityId(uriInfo, realm);
-                SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
-                builder.logoutRequestID(request.getID());
-                builder.destination(config.getSingleLogoutServiceUrl());
-                builder.issuer(issuerURL);
-                builder.relayState(relayState);
-                if (config.isWantAuthnRequestsSigned()) {
-                    builder.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
-                           .signDocument();
-                }
-                try {
-                    if (config.isPostBindingResponse()) {
-                        return builder.postBinding().response();
-                    } else {
-                        return builder.redirectBinding().response();
+            }  else {
+                for (String sessionIndex : request.getSessionIndex()) {
+                    String brokerSessionId = brokerUserId + "." + sessionIndex;
+                    UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId);
+                    if (userSession != null) {
+                        try {
+                            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+                        } catch (Exception e) {
+                            logger.warn("failed to do backchannel logout for userSession", e);
+                        }
                     }
-                } catch (ConfigurationException e) {
-                    throw new RuntimeException(e);
-                } catch (ProcessingException e) {
-                    throw new RuntimeException(e);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
                 }
-
             }
-            throw new RuntimeException("Unreachable");
+
+            String issuerURL = getEntityId(uriInfo, realm);
+            SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
+            builder.logoutRequestID(request.getID());
+            builder.destination(config.getSingleLogoutServiceUrl());
+            builder.issuer(issuerURL);
+            builder.relayState(relayState);
+            if (config.isWantAuthnRequestsSigned()) {
+                builder.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                        .signDocument();
+            }
+            try {
+                if (config.isPostBindingResponse()) {
+                    return builder.postBinding().response();
+                } else {
+                    return builder.redirectBinding().response();
+                }
+            } catch (ConfigurationException e) {
+                throw new RuntimeException(e);
+            } catch (ProcessingException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
         }
 
         private String getEntityId(UriInfo uriInfo, RealmModel realm) {
@@ -283,8 +274,8 @@ public class SAMLEndpoint {
                 SubjectType.STSubType subType = subject.getSubType();
                 NameIDType subjectNameID = (NameIDType) subType.getBaseID();
                 Map<String, String> notes = new HashMap<>();
-                notes.put("SAML_FEDERATED_SUBJECT", subjectNameID.getValue());
-                if (subjectNameID.getFormat() != null) notes.put("SAML_FEDERATED_SUBJECT_NAMEFORMAT", subjectNameID.getFormat().toString());
+                notes.put(SAML_FEDERATED_SUBJECT, subjectNameID.getValue());
+                if (subjectNameID.getFormat() != null) notes.put(SAML_FEDERATED_SUBJECT_NAMEFORMAT, subjectNameID.getFormat().toString());
                 FederatedIdentity identity = new FederatedIdentity(subjectNameID.getValue());
 
                 identity.setUsername(subjectNameID.getValue());
@@ -304,7 +295,10 @@ public class SAMLEndpoint {
                         break;
                     }
                 }
+                String brokerUserId = config.getAlias() + "." + subjectNameID.getValue();
+                identity.setBrokerUserId(brokerUserId);
                 if (authn != null && authn.getSessionIndex() != null) {
+                    identity.setBrokerSessionId(identity.getBrokerUserId() + "." + authn.getSessionIndex());
                     notes.put(SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
                 }
                 return callback.authenticated(notes, config, identity, relayState);

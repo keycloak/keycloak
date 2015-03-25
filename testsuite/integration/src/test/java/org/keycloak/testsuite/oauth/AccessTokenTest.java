@@ -454,6 +454,17 @@ public class AccessTokenTest {
             Assert.assertEquals(401, response.getStatus());
             response.close();
         }
+        {   // test no password
+            String header = BasicAuthHelper.createHeader("test-app", "password");
+            Form form = new Form();
+            form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
+            form.param("username", "test-user@localhost");
+            Response response = grantTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, header)
+                    .post(Entity.form(form));
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+        }
 
         {   // test bearer-only
 

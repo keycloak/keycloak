@@ -90,8 +90,8 @@ public class AuthenticationManager {
         userSession.setState(UserSessionModel.State.LOGGING_OUT);
 
         logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
-        expireIdentityCookie(realm, uriInfo, connection);
-        expireRememberMeCookie(realm, uriInfo, connection);
+        //expireIdentityCookie(realm, uriInfo, connection);
+        //expireRememberMeCookie(realm, uriInfo, connection);
 
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
             ClientModel client = clientSession.getClient();

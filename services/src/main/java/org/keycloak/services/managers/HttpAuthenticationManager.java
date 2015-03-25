@@ -116,7 +116,7 @@ public class HttpAuthenticationManager {
             event.error(Errors.USER_DISABLED);
             response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.ACCOUNT_DISABLED);
         } else {
-            UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), authMethod, false);
+            UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), authMethod, false, null, null);
 
             // Propagate state (like kerberos delegation credentials etc) as attributes of userSession
             for (Map.Entry<String, String> entry : authState.entrySet()) {

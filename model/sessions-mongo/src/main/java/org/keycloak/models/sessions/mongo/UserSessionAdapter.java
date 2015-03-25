@@ -42,6 +42,16 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     }
 
     @Override
+    public String getBrokerSessionId() {
+        return entity.getBrokerSessionId();
+    }
+
+    @Override
+    public String getBrokerUserId() {
+        return entity.getBrokerUserId();
+    }
+
+    @Override
     public UserModel getUser() {
         return keycloakSession.users().getUserById(entity.getUser(), realm);
     }

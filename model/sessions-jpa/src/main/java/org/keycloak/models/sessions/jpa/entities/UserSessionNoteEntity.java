@@ -17,6 +17,7 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 @NamedQueries({
+        @NamedQuery(name = "selectNoteByNameValue", query="select r from UserSessionNoteEntity r where r.name = :name and r.value = :value"),
         @NamedQuery(name = "removeUserSessionNoteByUser", query="delete from UserSessionNoteEntity r where r.userSession IN (select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId)"),
         @NamedQuery(name = "removeUserSessionNoteByRealm", query="delete from UserSessionNoteEntity r where r.userSession IN (select c from UserSessionEntity c where c.realmId = :realmId)"),
         @NamedQuery(name = "removeUserSessionNoteByExpired", query = "delete from UserSessionNoteEntity r where r.userSession IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime))")

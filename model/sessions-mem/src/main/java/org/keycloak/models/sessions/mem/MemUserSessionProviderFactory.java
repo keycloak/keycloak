@@ -10,6 +10,7 @@ import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureKey;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -24,10 +25,12 @@ public class MemUserSessionProviderFactory implements UserSessionProviderFactory
     private ConcurrentHashMap<String, ClientSessionEntity> clientSessions = new ConcurrentHashMap<String, ClientSessionEntity>();
 
     private ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures = new ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity>();
+    private final ConcurrentHashMap<String, String> userSessionsByBrokerSessionId = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<String>> userSessionsByBrokerUserId = new ConcurrentHashMap<>();
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
-        return new MemUserSessionProvider(session, userSessions, clientSessions, loginFailures);
+        return new MemUserSessionProvider(session, userSessions, userSessionsByBrokerSessionId, userSessionsByBrokerUserId, clientSessions, loginFailures);
     }
 
     @Override
@@ -43,6 +46,8 @@ public class MemUserSessionProviderFactory implements UserSessionProviderFactory
     public void close() {
         userSessions.clear();
         loginFailures.clear();
+        userSessionsByBrokerSessionId.clear();
+        userSessionsByBrokerUserId.clear();
     }
 
     @Override

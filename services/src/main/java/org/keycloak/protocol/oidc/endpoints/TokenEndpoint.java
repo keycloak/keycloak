@@ -314,7 +314,7 @@ public class TokenEndpoint {
 
         UserSessionProvider sessions = session.sessions();
 
-        UserSessionModel userSession = sessions.createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "oauth_credentials", false);
+        UserSessionModel userSession = sessions.createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "oauth_credentials", false, null, null);
         event.session(userSession);
 
         ClientSessionModel clientSession = sessions.createClientSession(realm, client);

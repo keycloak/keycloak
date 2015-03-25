@@ -47,5 +47,14 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     public void setLogoutUrl(String url) {
         getConfig().put("logoutUrl", url);
     }
+    public String getSigningCertificate() {
+        return getConfig().get("signingCertificate");
+    }
+
+    public void setSigningCertificate(String signingCertificate) {
+        getConfig().put("signingCertificate", signingCertificate);
+    }
+
+
 
 }

@@ -74,7 +74,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
 
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         MongoUserSessionEntity entity = new MongoUserSessionEntity();
         entity.setRealmId(realm.getId());
         entity.setUser(user.getId());
@@ -83,6 +83,8 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         entity.setAuthMethod(authMethod);
         entity.setRememberMe(rememberMe);
         entity.setRealmId(realm.getId());
+        entity.setBrokerSessionId(brokerSessionId);
+        entity.setBrokerUserId(brokerUserId);
 
         int currentTime = Time.currentTime();
 
@@ -114,6 +116,39 @@ public class MongoUserSessionProvider implements UserSessionProvider {
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user) {
         DBObject query = new BasicDBObject("user", user.getId());
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        for (MongoUserSessionEntity e : mongoStore.loadEntities(MongoUserSessionEntity.class, query, invocationContext)) {
+            sessions.add(new UserSessionAdapter(session, this, e, realm, invocationContext));
+        }
+        return sessions;
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessionByBrokerUserId(RealmModel realm, String brokerUserId) {
+        DBObject query = new BasicDBObject("brokerUserId", brokerUserId);
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        for (MongoUserSessionEntity e : mongoStore.loadEntities(MongoUserSessionEntity.class, query, invocationContext)) {
+            sessions.add(new UserSessionAdapter(session, this, e, realm, invocationContext));
+        }
+        return sessions;
+    }
+
+    @Override
+    public UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
+        DBObject query = new BasicDBObject("brokerSessionId", brokerSessionId);
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        for (MongoUserSessionEntity e : mongoStore.loadEntities(MongoUserSessionEntity.class, query, invocationContext)) {
+            sessions.add(new UserSessionAdapter(session, this, e, realm, invocationContext));
+        }
+        if (sessions.isEmpty()) return null;
+        return sessions.get(0);
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessionsByNote(RealmModel realm, String noteName, String noteValue) {
+        DBObject query = new QueryBuilder()
+                          .and("realmId").is(realm.getId())
+                          .and("notes." + noteName).is(noteValue).get();
         List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
         for (MongoUserSessionEntity e : mongoStore.loadEntities(MongoUserSessionEntity.class, query, invocationContext)) {
             sessions.add(new UserSessionAdapter(session, this, e, realm, invocationContext));

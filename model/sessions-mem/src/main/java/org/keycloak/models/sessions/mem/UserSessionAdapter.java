@@ -38,6 +38,16 @@ public class UserSessionAdapter implements UserSessionModel {
         return entity.getId();
     }
 
+    @Override
+    public String getBrokerSessionId() {
+        return entity.getBrokerSessionId();
+    }
+
+    @Override
+    public String getBrokerUserId() {
+        return entity.getBrokerUserId();
+    }
+
     public void setId(String id) {
         entity.setId(id);
     }

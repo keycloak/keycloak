@@ -10,6 +10,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
+import org.keycloak.models.sessions.jpa.entities.UserSessionNoteEntity;
 import org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
@@ -19,6 +20,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -84,7 +86,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setRealmId(realm.getId());
@@ -93,6 +95,8 @@ public class JpaUserSessionProvider implements UserSessionProvider {
         entity.setIpAddress(ipAddress);
         entity.setAuthMethod(authMethod);
         entity.setRememberMe(rememberMe);
+        entity.setBrokerSessionId(brokerSessionId);
+        entity.setBrokerUserId(brokerUserId);
 
         int currentTime = Time.currentTime();
 
@@ -117,6 +121,44 @@ public class JpaUserSessionProvider implements UserSessionProvider {
                 .setParameter("userId", user.getId());
         for (UserSessionEntity e : query.getResultList()) {
             sessions.add(new UserSessionAdapter(session, em, realm, e));
+        }
+        return sessions;
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessionByBrokerUserId(RealmModel realm, String brokerUserId) {
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionByBrokerUserId", UserSessionEntity.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("brokerUserId", brokerUserId);
+        for (UserSessionEntity e : query.getResultList()) {
+            sessions.add(new UserSessionAdapter(session, em, realm, e));
+        }
+        return sessions;
+    }
+
+    @Override
+    public UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionByBrokerSessionId", UserSessionEntity.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("brokerSessionId", brokerSessionId);
+        for (UserSessionEntity e : query.getResultList()) {
+            sessions.add(new UserSessionAdapter(session, em, realm, e));
+        }
+        if (sessions.isEmpty()) return null;
+        return sessions.get(0);
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessionsByNote(RealmModel realm, String noteName, String noteValue) {
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        TypedQuery<UserSessionNoteEntity> query = em.createNamedQuery("selectNoteByNameValue", UserSessionNoteEntity.class)
+                .setParameter("name", noteName)
+                .setParameter("value", noteValue);
+        for (UserSessionNoteEntity note : query.getResultList()) {
+            if (!note.getUserSession().getRealmId().equals(realm.getId())) continue;
+            sessions.add(new UserSessionAdapter(session, em, realm, note.getUserSession()));
         }
         return sessions;
     }

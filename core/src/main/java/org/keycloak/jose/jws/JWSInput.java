@@ -2,6 +2,7 @@ package org.keycloak.jose.jws;
 
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
+import static org.keycloak.jose.jws.Algorithm.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -71,6 +72,13 @@ public class JWSInput {
 
     public byte[] getSignature() {
         return signature;
+    }
+
+    public boolean verify(String key) {
+        if (header.getAlgorithm().getProvider() == null) {
+            throw new RuntimeException("signing algorithm not supported");
+        }
+        return header.getAlgorithm().getProvider().verify(this, key);
     }
 
     public <T> T readJsonContent(Class<T> type) throws IOException {
