@@ -19,9 +19,9 @@ import org.keycloak.provider.ProviderFactory;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MigrationUtils {
+public class DefaultMigrationProvider {
 
-    private MigrationUtils() {}
+    private DefaultMigrationProvider() {}
 
     /**
      *
@@ -29,11 +29,11 @@ public class MigrationUtils {
      * @param claimMask mask used on ClientModel in 1.1.0
      * @return set of 1.2.0.Beta1 protocol mappers corresponding to given claimMask
      */
-    public static Collection<ProtocolMapperModel> getMappersForClaimMask(KeycloakSession session, Long claimMask) {
+    public static List<ProtocolMapperModel> getMappersForClaimMask(KeycloakSession session, Long claimMask) {
         Map<String, ProtocolMapperModel> allMappers = getAllDefaultMappers(session);
 
         if (claimMask == null) {
-            return allMappers.values();
+            return new ArrayList<ProtocolMapperModel>(allMappers.values());
         }
 
         if (!ClaimMask.hasUsername(claimMask)) {
@@ -48,7 +48,7 @@ public class MigrationUtils {
             allMappers.remove(OIDCLoginProtocolFactory.GIVEN_NAME);
         }
 
-        return allMappers.values();
+        return new ArrayList<ProtocolMapperModel>(allMappers.values());
     }
 
     private static Map<String, ProtocolMapperModel> getAllDefaultMappers(KeycloakSession session) {

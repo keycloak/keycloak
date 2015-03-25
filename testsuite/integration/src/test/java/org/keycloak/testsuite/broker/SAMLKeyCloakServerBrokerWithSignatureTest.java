@@ -18,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -54,9 +55,12 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
         if (identityProviderModel.isUpdateProfileFirstLogin()) {
             super.doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail);
         } else {
-            if (expectedEmail == null)
-                expectedEmail = "";
-            assertEquals(expectedEmail, federatedUser.getEmail());
+            if (expectedEmail == null) {
+                // Need to handle differences for various databases (like Oracle)
+                assertTrue(federatedUser.getEmail() == null || federatedUser.getEmail().equals(""));
+            } else {
+                assertEquals(expectedEmail, federatedUser.getEmail());
+            }
             assertNull(federatedUser.getFirstName());
             assertNull(federatedUser.getLastName());
         }

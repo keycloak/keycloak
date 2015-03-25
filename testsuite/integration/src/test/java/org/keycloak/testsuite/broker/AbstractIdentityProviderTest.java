@@ -153,7 +153,7 @@ public abstract class AbstractIdentityProviderTest {
 
             UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", null);
 
-            federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL);
+            assertTrue(federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL));
 
         } finally {
             getRealm().setVerifyEmail(false);

@@ -38,6 +38,11 @@ public class IdentityProviderHintTest {
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             server.importRealm(getClass().getResourceAsStream("/broker-test/test-broker-realm-with-kc-oidc.json"));
         }
+
+        @Override
+        protected String[] getTestRealms() {
+            return new String[] { "realm-with-oidc-identity-provider" };
+        }
     };
 
     @Rule

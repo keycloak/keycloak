@@ -25,7 +25,9 @@ public class MemoryUserCache implements UserCache {
 
             @Override
             public CachedUser put(String key, CachedUser value) {
-                usersByUsername.put(value.getUsername(), value);
+                if (value.getUsername() != null) {
+                    usersByUsername.put(value.getUsername(), value);
+                }
                 if (value.getEmail() != null) {
                     usersByEmail.put(value.getEmail(), value);
                 }
@@ -57,7 +59,7 @@ public class MemoryUserCache implements UserCache {
             }
 
             private void removeUser(CachedUser value) {
-                usersByUsername.remove(value.getUsername());
+                if (value.getUsername() != null) usersByUsername.remove(value.getUsername());
                 if (value.getEmail() != null) usersByEmail.remove(value.getEmail());
             }
         }
