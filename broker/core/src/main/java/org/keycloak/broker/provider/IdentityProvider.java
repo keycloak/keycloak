@@ -17,6 +17,7 @@
  */
 package org.keycloak.broker.provider;
 
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
@@ -51,7 +52,7 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      *
      * @return
      */
-    Object callback(RealmModel realm, AuthenticationCallback callback);
+    Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event);
 
     /**
      * <p>Initiates the authentication process by sending an authentication request to an identity provider. This method is called

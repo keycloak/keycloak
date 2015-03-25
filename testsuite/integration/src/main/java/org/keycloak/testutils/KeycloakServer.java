@@ -134,6 +134,14 @@ public class KeycloakServer {
             }
         }
 
+        if (System.getProperty("keycloak.port") != null) {
+            config.setPort(Integer.valueOf(System.getProperty("keycloak.port")));
+        }
+
+        if (System.getProperty("keycloak.bind.address") != null) {
+            config.setHost(System.getProperty("keycloak.bind.address"));
+        }
+
         if (System.getenv("KEYCLOAK_DEV_PORT") != null) {
             config.setPort(Integer.valueOf(System.getenv("KEYCLOAK_DEV_PORT")));
         }

@@ -19,7 +19,7 @@ package org.keycloak.broker.oidc;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.util.SimpleHttp;
@@ -34,7 +34,6 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.JsonSerialization;
@@ -85,8 +84,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     @Override
-    public Object callback(RealmModel realm, AuthenticationCallback callback) {
-        return new Endpoint(callback, realm);
+    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
+        return new Endpoint(callback, realm, event);
     }
 
     @Override
@@ -179,6 +178,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     protected class Endpoint {
         protected AuthenticationCallback callback;
         protected RealmModel realm;
+        protected EventBuilder event;
 
         @Context
         protected KeycloakSession session;
@@ -192,17 +192,16 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         @Context
         protected UriInfo uriInfo;
 
-        public Endpoint(AuthenticationCallback callback, RealmModel realm) {
+        public Endpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event) {
             this.callback = callback;
             this.realm = realm;
+            this.event = event;
         }
 
         @GET
         public Response authResponse(@QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_STATE) String state,
                                      @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
                                      @QueryParam(OAuth2Constants.ERROR) String error) {
-
-            EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
             if (error != null) {
                 //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
                 event.event(EventType.LOGIN);

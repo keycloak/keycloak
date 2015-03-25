@@ -69,7 +69,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     @Override
-    public Object callback(RealmModel realm, AuthenticationCallback callback) {
+    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
         return new Endpoint(realm, callback);
     }
 
