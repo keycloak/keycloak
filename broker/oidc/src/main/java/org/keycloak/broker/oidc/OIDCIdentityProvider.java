@@ -110,6 +110,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
         }
+
     }
 
     @Override
@@ -185,6 +186,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             identity.setId(id);
             identity.setName(name);
             identity.setEmail(email);
+
+            identity.setBrokerUserId(getConfig().getAlias() + "." + id);
+            if (tokenResponse.getSessionState() != null) {
+                identity.setBrokerSessionId(getConfig().getAlias() + "." + tokenResponse.getSessionState());
+            }
 
             if (preferredUsername == null) {
                 preferredUsername = email;

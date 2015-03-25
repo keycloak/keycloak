@@ -171,7 +171,7 @@ public class ResourceAdminManager {
                         String host = clientSession.getNote(AdapterConstants.APPLICATION_SESSION_HOST);
                         adapterSessionIds.add(host, adapterSessionId);
                     }
-                    if (clientSession.getUserSession() != null) userSessions.add(clientSession.getId());
+                    if (clientSession.getUserSession() != null) userSessions.add(clientSession.getUserSession().getId());
                 }
             }
 
