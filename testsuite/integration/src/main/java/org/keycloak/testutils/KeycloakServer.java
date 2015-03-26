@@ -53,19 +53,6 @@ import java.util.Properties;
  */
 public class KeycloakServer {
 
-    static {
-        try {
-            File f = new File(System.getProperty("user.home"), ".keycloak-test.properties");
-            if (f.isFile()) {
-                Properties p = new Properties();
-                p.load(new FileInputStream(f));
-                System.getProperties().putAll(p);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static final Logger log = Logger.getLogger(KeycloakServer.class);
 
     private boolean sysout = false;
@@ -122,6 +109,13 @@ public class KeycloakServer {
     }
 
     public static KeycloakServer bootstrapKeycloakServer(String[] args) throws Throwable {
+        File f = new File(System.getProperty("user.home"), ".keycloak-server.properties");
+        if (f.isFile()) {
+            Properties p = new Properties();
+            p.load(new FileInputStream(f));
+            System.getProperties().putAll(p);
+        }
+
         KeycloakServerConfig config = new KeycloakServerConfig();
 
         for (int i = 0; i < args.length; i++) {
