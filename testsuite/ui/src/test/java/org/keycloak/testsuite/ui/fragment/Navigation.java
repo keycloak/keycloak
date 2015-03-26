@@ -1,13 +1,19 @@
 package org.keycloak.testsuite.ui.fragment;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import static org.jboss.arquillian.graphene.Graphene.waitModel;
 import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElement;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 
 public class Navigation {
+	
+	@Drone
+	private WebDriver driver;
 
     @FindByJQuery("a:contains('Settings')")
     private WebElement settingsLink;
@@ -59,6 +65,10 @@ public class Navigation {
     //@FindBy(css = "#content > div:nth-child(1) > h2:nth-child(1)")
     private WebElement currentHeader;
 
+	public void selectRealm(String realmName) {
+		driver.findElement(By.linkText(realmName)).click();
+	}
+	
     public void settings() {
         openPage(settingsLink, "General Settings");
     }

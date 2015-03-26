@@ -7,6 +7,7 @@ import org.openqa.selenium.support.ui.Select;
 
 import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElement;
 import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElementNotPresent;
+import org.openqa.selenium.By;
 
 /**
  * Created by fkiss.
@@ -32,6 +33,7 @@ public class ThemesSettingsPage extends AbstractPage {
     private WebElement patternFlyThemeLink;
 
     public void changeLoginTheme(String themeName){
+		waitGuiForElement(By.id("loginTheme"));
         loginThemeSelect.selectByVisibleText(themeName);
     }
 
@@ -66,7 +68,4 @@ public class ThemesSettingsPage extends AbstractPage {
         primaryButton.click();
     }
 
-    public void cancelTheme(){
-        cancelTheme();
-    }
 }
