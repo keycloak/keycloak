@@ -152,13 +152,12 @@
 
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate1_2_0_Beta1"/>
 
-        <!-- Remove obsolete 'social' stuff -->
+        <!-- Remove obsolete 'social' and 'claims' stuff -->
         <dropForeignKeyConstraint baseTableName="USER_SOCIAL_LINK" constraintName="FK_68CJYS5UWM55UY823Y75XG4OM" />
-        <dropPrimaryKey tableName="USER_SOCIAL_LINK" constraintName="CONSTRAINT_3" />
-        <dropTable tableName="USER_SOCIAL_LINK" />
+        <dropTable tableName="USER_SOCIAL_LINK" cascadeConstraints="true" />
         <dropForeignKeyConstraint baseTableName="REALM_SOCIAL_CONFIG" constraintName="FK_SV5I3C2TI7G0G922FGE683SOV" />
-        <dropPrimaryKey tableName="REALM_SOCIAL_CONFIG" constraintName="CONSTRAINT_1" />
-        <dropTable tableName="REALM_SOCIAL_CONFIG" />
+        <dropTable tableName="REALM_SOCIAL_CONFIG" cascadeConstraints="true" />
+        <dropColumn tableName="CLIENT" columnName="ALLOWED_CLAIMS_MASK" />
 
     </changeSet>
 </databaseChangeLog>

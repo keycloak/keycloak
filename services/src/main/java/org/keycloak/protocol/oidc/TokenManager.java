@@ -314,7 +314,7 @@ public class TokenManager {
         token.audience(client.getClientId());
         token.issuedNow();
         token.issuedFor(client.getClientId());
-        token.issuer(realm.getName());
+        token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
         if (session != null) {
             token.setSessionState(session.getId());
         }

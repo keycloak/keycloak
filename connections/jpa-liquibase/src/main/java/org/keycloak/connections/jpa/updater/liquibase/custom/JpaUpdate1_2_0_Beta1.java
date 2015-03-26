@@ -2,7 +2,6 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -12,11 +11,11 @@ import liquibase.statement.core.InsertStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
 import org.keycloak.Config;
+import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClaimMask;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.util.MigrationUtils;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -296,8 +295,10 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
                     Object acmObj = resultSet.getObject("ALLOWED_CLAIMS_MASK");
                     long mask = (acmObj != null) ? (Long) acmObj : ClaimMask.ALL;
 
-                    Collection<ProtocolMapperModel> protocolMappers = MigrationUtils.getMappersForClaimMask(this.kcSession, mask);
-                    for (ProtocolMapperModel protocolMapper : protocolMappers) {
+                    MigrationProvider migrationProvider = this.kcSession.getProvider(MigrationProvider.class);
+                    List<ProtocolMapperRepresentation> protocolMappers = migrationProvider.getMappersForClaimMask(mask);
+
+                    for (ProtocolMapperRepresentation protocolMapper : protocolMappers) {
                         String mapperId = KeycloakModelUtils.generateId();
 
                         InsertStatement insert = new InsertStatement(null, null, protocolMapperTableName)

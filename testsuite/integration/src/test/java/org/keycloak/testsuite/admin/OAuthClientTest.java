@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 
 import static org.junit.Assert.assertEquals;
@@ -31,6 +32,14 @@ public class OAuthClientTest extends AbstractClientTest {
         createOAuthClient();
 
         realm.oAuthClients().get("my-client").remove();
+    }
+
+    @Test
+    public void testProtocolMappers() {
+        createOAuthClient();
+        ProtocolMappersResource mappersResource = realm.oAuthClients().get("my-client").getProtocolMappers();
+
+        ApplicationTest.protocolMappersTest(mappersResource);
     }
 
     @Test

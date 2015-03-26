@@ -59,6 +59,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PROMPT_PARAM = "prompt";
     public static final String LOGIN_HINT_PARAM = "login_hint";
     public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
+    public static final String ISSUER = "iss";
 
     private static final Logger log = Logger.getLogger(OIDCLoginProtocol.class);
 

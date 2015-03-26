@@ -72,7 +72,7 @@ public class RSAVerifierTest {
 
         token = new AccessToken();
         token.subject("CN=Client")
-                .issuer("domain")
+                .issuer("http://localhost:8080/auth/realm")
                 .addAccess("service").addRole("admin");
     }
 
@@ -102,7 +102,7 @@ public class RSAVerifierTest {
     }
 
     private AccessToken verifySkeletonKeyToken(String encoded) throws VerificationException {
-        return RSATokenVerifier.verifyToken(encoded, idpPair.getPublic(), "domain");
+        return RSATokenVerifier.verifyToken(encoded, idpPair.getPublic(), "http://localhost:8080/auth/realm");
     }
 
    /*

@@ -107,7 +107,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         String tokenString = response.getToken();
         AccessToken token = null;
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealm());
+            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");

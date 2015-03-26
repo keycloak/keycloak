@@ -32,6 +32,7 @@ import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.Time;
@@ -192,12 +193,12 @@ public class AuthenticationManager {
     }
 
 
-    public static AccessToken createIdentityToken(RealmModel realm, UserModel user, UserSessionModel session) {
+    public static AccessToken createIdentityToken(RealmModel realm, UserModel user, UserSessionModel session, String issuer) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
         token.subject(user.getId());
-        token.issuer(realm.getName());
+        token.issuer(issuer);
         if (session != null) {
             token.setSessionState(session.getId());
         }
@@ -209,7 +210,8 @@ public class AuthenticationManager {
 
     public static void createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
-        AccessToken identityToken = createIdentityToken(realm, user, session);
+        String issuer = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+        AccessToken identityToken = createIdentityToken(realm, user, session, issuer);
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
@@ -443,7 +445,7 @@ public class AuthenticationManager {
 
     protected AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, String tokenString, HttpHeaders headers) {
         try {
-            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName(), checkActive);
+            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), checkActive);
             if (checkActive) {
                 if (!token.isActive() || token.getIssuedAt() < realm.getNotBefore()) {
                     logger.debug("identity cookie expired");

@@ -1,6 +1,5 @@
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 
@@ -16,37 +15,40 @@ import javax.ws.rs.core.MediaType;
 /**
  * @author rodrigo.sasaki@icarros.com.br
  */
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
 public interface OAuthClientResource {
 
+    @Path("protocol-mappers")
+    public ProtocolMappersResource getProtocolMappers();
+
+    // TODO
+    // @Path("certificates/{attr}")
+    // public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix);
+
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     public OAuthClientRepresentation toRepresentation();
 
     @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
     public void update(OAuthClientRepresentation oAuthClientRepresentation);
 
     @DELETE
     public void remove();
 
-    @GET
-    @Path("claims")
-    public ClaimRepresentation getClaims();
-
-    @PUT
-    @Path("claims")
-    public ClaimRepresentation updateClaims(ClaimRepresentation claimRepresentation);
-
     @POST
     @Path("client-secret")
+    @Consumes("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public CredentialRepresentation generateNewSecret();
 
     @GET
     @Path("client-secret")
+    @Produces(MediaType.APPLICATION_JSON)
     public CredentialRepresentation getSecret();
 
     @GET
     @Path("installation")
+    @Produces(MediaType.APPLICATION_JSON)
     public String getInstallationJson();
 
     @Path("/scope-mappings")

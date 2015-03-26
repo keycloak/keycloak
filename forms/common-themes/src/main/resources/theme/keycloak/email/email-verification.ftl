@@ -1,1 +1,1 @@
-${msg("emailVerificationBody",link, linkExpiration)}
+${msg("emailVerificationBody",link, linkExpiration, realmName)}

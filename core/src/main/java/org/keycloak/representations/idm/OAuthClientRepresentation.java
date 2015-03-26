@@ -14,6 +14,7 @@ public class OAuthClientRepresentation {
     protected List<String> webOrigins;
     protected Boolean enabled;
     protected String secret;
+    @Deprecated
     protected ClaimRepresentation claims;
     protected Integer notBefore;
     protected Boolean publicClient;

@@ -18,6 +18,7 @@ public class ApplicationRepresentation {
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
+    @Deprecated
     protected ClaimRepresentation claims;
     protected Integer notBefore;
     protected Boolean bearerOnly;

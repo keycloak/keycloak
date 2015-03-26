@@ -65,7 +65,7 @@ public class ApplicationModelTest extends AbstractModelTest {
         representation.setId(null);
 
         RealmModel realm = realmManager.createRealm("copy");
-        ApplicationModel copy = RepresentationToModel.createApplication(realm, representation, true);
+        ApplicationModel copy = RepresentationToModel.createApplication(session, realm, representation, true);
 
         assertEquals(application, copy);
     }

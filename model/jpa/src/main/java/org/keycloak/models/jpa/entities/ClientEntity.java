@@ -40,8 +40,6 @@ public abstract class ClientEntity {
     private boolean enabled;
     @Column(name="SECRET")
     private String secret;
-    @Column(name="ALLOWED_CLAIMS_MASK")
-    private long allowedClaimsMask;
     @Column(name="NOT_BEFORE")
     private int notBefore;
     @Column(name="PUBLIC_CLIENT")
@@ -109,14 +107,6 @@ public abstract class ClientEntity {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public long getAllowedClaimsMask() {
-        return allowedClaimsMask;
-    }
-
-    public void setAllowedClaimsMask(long allowedClaimsMask) {
-        this.allowedClaimsMask = allowedClaimsMask;
     }
 
     public Set<String> getWebOrigins() {

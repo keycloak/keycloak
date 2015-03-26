@@ -165,18 +165,6 @@
                 "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
                 "defaultScope": "email profile"
             }
-        },
-        {
-            "alias" : "model-kerberos",
-            "providerId" : "kerberos",
-            "enabled": true,
-            "updateProfileFirstLogin" : "true",
-            "authenticateByDefault" : "false",
-            "config": {
-                "serverPrincipal": "HTTP/server.domain.org@DOMAIN.ORG",
-                "keyTab": "/etc/http.keytab",
-                "debug": "true"
-            }
         }
     ],
     "users": [
