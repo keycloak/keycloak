@@ -90,7 +90,7 @@ public class RelativeUriAdapterTest {
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(realm, adminConsole);
             clientSession.setNote(OIDCLoginProtocol.ISSUER, "http://localhost:8081/auth/realms/master");
-            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "user", null, "form", false);
+            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "user", null, "form", false, null, null);
             AccessToken token = tm.createClientAccessToken(session, tm.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession, clientSession);
             adminToken = tm.encodeToken(adminRealm, token);
 
