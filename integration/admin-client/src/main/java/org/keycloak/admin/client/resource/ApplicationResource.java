@@ -1,8 +1,6 @@
 package org.keycloak.admin.client.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 
@@ -24,6 +22,9 @@ import java.util.Set;
  * @author rodrigo.sasaki@icarros.com.br
  */
 public interface ApplicationResource {
+
+    @Path("protocol-mappers")
+    public ProtocolMappersResource getProtocolMappers();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -50,16 +51,6 @@ public interface ApplicationResource {
     @Path("allowed-origins")
     @Consumes(MediaType.APPLICATION_JSON)
     public void removeAllowedOrigins(Set<String> originsToRemove);
-
-    @GET
-    @Path("claims")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ClaimRepresentation getClaims();
-
-    @PUT
-    @Path("claims")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void updateClaims(ClaimRepresentation claimRepresentation);
 
     @POST
     @Path("client-secret")

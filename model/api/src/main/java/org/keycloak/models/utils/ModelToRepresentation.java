@@ -192,21 +192,6 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static ClaimRepresentation toRepresentation(ClientModel model) {
-        ClaimRepresentation rep = new ClaimRepresentation();
-        rep.setAddress(ClaimMask.hasAddress(model.getAllowedClaimsMask()));
-        rep.setEmail(ClaimMask.hasEmail(model.getAllowedClaimsMask()));
-        rep.setGender(ClaimMask.hasGender(model.getAllowedClaimsMask()));
-        rep.setLocale(ClaimMask.hasLocale(model.getAllowedClaimsMask()));
-        rep.setName(ClaimMask.hasName(model.getAllowedClaimsMask()));
-        rep.setPhone(ClaimMask.hasPhone(model.getAllowedClaimsMask()));
-        rep.setPicture(ClaimMask.hasPicture(model.getAllowedClaimsMask()));
-        rep.setProfile(ClaimMask.hasProfile(model.getAllowedClaimsMask()));
-        rep.setWebsite(ClaimMask.hasWebsite(model.getAllowedClaimsMask()));
-        rep.setUsername(ClaimMask.hasUsername(model.getAllowedClaimsMask()));
-        return rep;
-    }
-
     public static FederatedIdentityRepresentation toRepresentation(FederatedIdentityModel socialLink) {
         FederatedIdentityRepresentation rep = new FederatedIdentityRepresentation();
         rep.setUserName(socialLink.getUserName());

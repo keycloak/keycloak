@@ -73,16 +73,6 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public long getAllowedClaimsMask() {
-        return entity.getAllowedClaimsMask();
-    }
-
-    @Override
-    public void setAllowedClaimsMask(long mask) {
-        entity.setAllowedClaimsMask(mask);
-    }
-
-    @Override
     public boolean isPublicClient() {
         return entity.isPublicClient();
     }

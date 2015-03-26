@@ -56,14 +56,6 @@ public class ClientEntity extends AbstractIdentifiableEntity {
         this.secret = secret;
     }
 
-    public long getAllowedClaimsMask() {
-        return allowedClaimsMask;
-    }
-
-    public void setAllowedClaimsMask(long allowedClaimsMask) {
-        this.allowedClaimsMask = allowedClaimsMask;
-    }
-
     public int getNotBefore() {
         return notBefore;
     }

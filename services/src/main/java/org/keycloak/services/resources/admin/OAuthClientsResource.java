@@ -89,7 +89,7 @@ public class OAuthClientsResource {
         auth.requireManage();
 
         try {
-            OAuthClientModel oauth = RepresentationToModel.createOAuthClient(rep, realm);
+            OAuthClientModel oauth = RepresentationToModel.createOAuthClient(session, rep, realm);
             return Response.created(uriInfo.getAbsolutePathBuilder().path(getClientPath(oauth)).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Client " + rep.getName() + " already exists");

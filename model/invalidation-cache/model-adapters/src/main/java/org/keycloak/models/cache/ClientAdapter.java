@@ -44,16 +44,6 @@ public abstract class ClientAdapter implements ClientModel {
     @Override
     public abstract String getClientId();
 
-    public long getAllowedClaimsMask() {
-        if (updatedClient != null) return updatedClient.getAllowedClaimsMask();
-        return cachedClient.getAllowedClaimsMask();
-    }
-
-    public void setAllowedClaimsMask(long mask) {
-        getDelegateForUpdate();
-        updatedClient.setAllowedClaimsMask(mask);
-    }
-
     public Set<String> getWebOrigins() {
         if (updatedClient != null) return updatedClient.getWebOrigins();
         return cachedClient.getWebOrigins();

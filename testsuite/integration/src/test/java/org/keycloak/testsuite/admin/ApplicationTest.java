@@ -3,9 +3,12 @@ package org.keycloak.testsuite.admin;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ApplicationResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -17,6 +20,8 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -113,4 +118,63 @@ public class ApplicationTest extends AbstractClientTest {
         assertNull(realm.applications().get("my-app").toRepresentation().getDefaultRoles());
     }
 
+    @Test
+    public void testProtocolMappers() {
+        createApplication();
+        ProtocolMappersResource mappersResource = realm.applications().get("my-app").getProtocolMappers();
+
+        protocolMappersTest(mappersResource);
+    }
+
+
+    public static void protocolMappersTest(ProtocolMappersResource mappersResource) {
+        // assert default mappers found
+        List<ProtocolMapperRepresentation> protocolMappers = mappersResource.getMappers();
+
+        String emailMapperId = null;
+        String usernameMapperId = null;
+        String fooMapperId = null;
+        for (ProtocolMapperRepresentation mapper : protocolMappers) {
+            if (mapper.getName().equals(OIDCLoginProtocolFactory.EMAIL)) {
+                emailMapperId = mapper.getId();
+            } else if (mapper.getName().equals(OIDCLoginProtocolFactory.USERNAME)) {
+                usernameMapperId = mapper.getId();
+            } else if (mapper.getName().equals("foo")) {
+                fooMapperId = mapper.getId();
+            }
+        }
+
+        assertNotNull(emailMapperId);
+        assertNotNull(usernameMapperId);
+        assertNull(fooMapperId);
+
+        // Create foo mapper
+        ProtocolMapperRepresentation fooMapper = new ProtocolMapperRepresentation();
+        fooMapper.setName("foo");
+        fooMapper.setProtocol("fooProtocol");
+        fooMapper.setProtocolMapper("fooMapper");
+        fooMapper.setConsentRequired(true);
+        Response response = mappersResource.createMapper(fooMapper);
+        String location = response.getLocation().toString();
+        fooMapperId = location.substring(location.lastIndexOf("/") + 1);
+        response.close();
+
+        fooMapper = mappersResource.getMapperById(fooMapperId);
+        assertEquals(fooMapper.getName(), "foo");
+
+        // Update foo mapper
+        fooMapper.setProtocolMapper("foo-mapper-updated");
+        mappersResource.update(fooMapperId, fooMapper);
+
+        fooMapper = mappersResource.getMapperById(fooMapperId);
+        assertEquals(fooMapper.getProtocolMapper(), "foo-mapper-updated");
+
+        // Remove foo mapper
+        mappersResource.delete(fooMapperId);
+        try {
+            mappersResource.getMapperById(fooMapperId);
+            fail("Not expected to find deleted mapper");
+        } catch (NotFoundException nfe) {
+        }
+    }
 }

@@ -169,8 +169,6 @@ public class ExportUtils {
         ApplicationRepresentation appRep = ModelToRepresentation.toRepresentation(app);
 
         appRep.setSecret(app.getSecret());
-        ClaimRepresentation claimRep = ModelToRepresentation.toRepresentation((ClientModel)app);
-        appRep.setClaims(claimRep);
         return appRep;
     }
 

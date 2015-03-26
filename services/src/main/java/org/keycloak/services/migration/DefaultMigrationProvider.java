@@ -1,4 +1,4 @@
-package org.keycloak.services.util;
+package org.keycloak.services.migration;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -6,34 +6,36 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 /**
  * Various common utils needed for migration from older version to newer
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class DefaultMigrationProvider {
+public class DefaultMigrationProvider implements MigrationProvider {
 
-    private DefaultMigrationProvider() {}
+    private final KeycloakSession session;
 
-    /**
-     *
-     * @param session
-     * @param claimMask mask used on ClientModel in 1.1.0
-     * @return set of 1.2.0.Beta1 protocol mappers corresponding to given claimMask
-     */
-    public static List<ProtocolMapperModel> getMappersForClaimMask(KeycloakSession session, Long claimMask) {
-        Map<String, ProtocolMapperModel> allMappers = getAllDefaultMappers(session);
+    public DefaultMigrationProvider(KeycloakSession session) {
+        this.session = session;
+    }
+
+    @Override
+    public List<ProtocolMapperRepresentation> getMappersForClaimMask(Long claimMask) {
+        Map<String, ProtocolMapperRepresentation> allMappers = getAllDefaultMappers(session);
 
         if (claimMask == null) {
-            return new ArrayList<ProtocolMapperModel>(allMappers.values());
+            return new ArrayList<ProtocolMapperRepresentation>(allMappers.values());
         }
 
         if (!ClaimMask.hasUsername(claimMask)) {
@@ -48,11 +50,15 @@ public class DefaultMigrationProvider {
             allMappers.remove(OIDCLoginProtocolFactory.GIVEN_NAME);
         }
 
-        return new ArrayList<ProtocolMapperModel>(allMappers.values());
+        return new ArrayList<ProtocolMapperRepresentation>(allMappers.values());
     }
 
-    private static Map<String, ProtocolMapperModel> getAllDefaultMappers(KeycloakSession session) {
-        Map<String, ProtocolMapperModel> allMappers = new HashMap<String, ProtocolMapperModel>();
+    @Override
+    public void close() {
+    }
+
+    private static Map<String, ProtocolMapperRepresentation> getAllDefaultMappers(KeycloakSession session) {
+        Map<String, ProtocolMapperRepresentation> allMappers = new HashMap<String, ProtocolMapperRepresentation>();
 
         List<ProviderFactory> loginProtocolFactories = session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class);
 
@@ -61,7 +67,8 @@ public class DefaultMigrationProvider {
             List<ProtocolMapperModel> currentMappers = loginProtocolFactory.getDefaultBuiltinMappers();
 
             for (ProtocolMapperModel protocolMapper : currentMappers) {
-                allMappers.put(protocolMapper.getName(), protocolMapper);
+                ProtocolMapperRepresentation rep = ModelToRepresentation.toRepresentation(protocolMapper);
+                allMappers.put(protocolMapper.getName(), rep);
             }
         }
 

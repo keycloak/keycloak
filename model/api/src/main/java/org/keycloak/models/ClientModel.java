@@ -30,10 +30,6 @@ public interface ClientModel {
      */
     String getClientId();
 
-    long getAllowedClaimsMask();
-
-    void setAllowedClaimsMask(long mask);
-
     Set<String> getWebOrigins();
 
     void setWebOrigins(Set<String> webOrigins);

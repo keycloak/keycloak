@@ -178,7 +178,6 @@ public final class KeycloakModelUtils {
         ApplicationModel app = realm.addApplication(name);
         generateSecret(app);
         app.setFullScopeAllowed(true);
-        app.setAllowedClaimsMask(ClaimMask.ALL);
 
         return app;
     }

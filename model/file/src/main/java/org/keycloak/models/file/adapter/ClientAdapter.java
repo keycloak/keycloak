@@ -70,16 +70,6 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public long getAllowedClaimsMask() {
-        return clientEntity.getAllowedClaimsMask();
-    }
-
-    @Override
-    public void setAllowedClaimsMask(long mask) {
-        clientEntity.setAllowedClaimsMask(mask);
-    }
-
-    @Override
     public Set<String> getWebOrigins() {
         Set<String> result = new HashSet<String>();
         if (clientEntity.getWebOrigins() != null) {
