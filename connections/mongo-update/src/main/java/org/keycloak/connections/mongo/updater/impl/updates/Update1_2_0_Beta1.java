@@ -70,7 +70,7 @@ public class Update1_2_0_Beta1 extends Update {
                             DBObject identityProvider = new BasicDBObjectBuilder()
                                     .add("internalId", KeycloakModelUtils.generateId())
                                     .add("providerId", socialProviderId)
-                                    .add("alias", socialProviderId.substring(0, 1).toUpperCase() + socialProviderId.substring(1))
+                                    .add("alias", socialProviderId)
                                     .add("updateProfileFirstLogin", updateProfileOnInitialSocialLogin)
                                     .add("enabled", true)
                                     .add("storeToken", false)
