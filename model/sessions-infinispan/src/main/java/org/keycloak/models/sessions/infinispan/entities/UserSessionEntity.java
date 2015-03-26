@@ -12,6 +12,9 @@ public class UserSessionEntity extends SessionEntity {
 
     private String user;
 
+    private String brokerSessionId;
+    private String brokerUserId;
+
     private String loginUsername;
 
     private String ipAddress;
@@ -108,5 +111,21 @@ public class UserSessionEntity extends SessionEntity {
 
     public void setState(UserSessionModel.State state) {
         this.state = state;
+    }
+
+    public String getBrokerSessionId() {
+        return brokerSessionId;
+    }
+
+    public void setBrokerSessionId(String brokerSessionId) {
+        this.brokerSessionId = brokerSessionId;
+    }
+
+    public String getBrokerUserId() {
+        return brokerUserId;
+    }
+
+    public void setBrokerUserId(String brokerUserId) {
+        this.brokerUserId = brokerUserId;
     }
 }

@@ -615,8 +615,7 @@ public class AccountService {
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel s : sessions) {
             if (!s.getId().equals(auth.getSession().getId())) {
-                new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, s);
-                session.sessions().removeUserSession(realm, s);
+                AuthenticationManager.backchannelLogout(session, realm, s, uriInfo, clientConnection, headers);
             }
         }
 

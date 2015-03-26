@@ -20,6 +20,8 @@ import java.util.Collection;
 @Table(name = "USER_SESSION")
 @NamedQueries({
         @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId order by s.started, s.id"),
+        @NamedQuery(name = "getUserSessionByBrokerSessionId", query = "select s from UserSessionEntity s where s.realmId = :realmId and s.brokerSessionId = :brokerSessionId order by s.started, s.id"),
+        @NamedQuery(name = "getUserSessionByBrokerUserId", query = "select s from UserSessionEntity s where s.realmId = :realmId and s.brokerUserId = :brokerUserId order by s.started, s.id"),
         @NamedQuery(name = "getUserSessionByClient", query = "select s from UserSessionEntity s join s.clientSessions c where s.realmId = :realmId and c.clientId = :clientId order by s.started, s.id"),
         @NamedQuery(name = "getActiveUserSessionByClient", query = "select count(s) from UserSessionEntity s join s.clientSessions c where s.realmId = :realmId and c.clientId = :clientId"),
         @NamedQuery(name = "removeUserSessionByRealm", query = "delete from UserSessionEntity s where s.realmId = :realmId"),
@@ -34,6 +36,12 @@ public class UserSessionEntity {
 
     @Column(name="USER_ID")
     protected String userId;
+
+    @Column(name="BROKER_SESSION_ID")
+    protected String brokerSessionId;
+
+    @Column(name="BROKER_USER_ID")
+    protected String brokerUserId;
 
     @Column(name="LOGIN_USERNAME")
     protected String loginUsername;
@@ -155,5 +163,21 @@ public class UserSessionEntity {
 
     public void setNotes(Collection<UserSessionNoteEntity> notes) {
         this.notes = notes;
+    }
+
+    public String getBrokerSessionId() {
+        return brokerSessionId;
+    }
+
+    public void setBrokerSessionId(String brokerSessionId) {
+        this.brokerSessionId = brokerSessionId;
+    }
+
+    public String getBrokerUserId() {
+        return brokerUserId;
+    }
+
+    public void setBrokerUserId(String brokerUserId) {
+        this.brokerUserId = brokerUserId;
     }
 }

@@ -14,6 +14,8 @@ import java.util.Map;
 public class UserSessionEntity {
 
     private String id;
+    private String brokerSessionId;
+    private String brokerUserId;
     private String realm;
     private String user;
     private String loginUsername;
@@ -125,5 +127,21 @@ public class UserSessionEntity {
 
     public void setState(UserSessionModel.State state) {
         this.state = state;
+    }
+
+    public String getBrokerSessionId() {
+        return brokerSessionId;
+    }
+
+    public void setBrokerSessionId(String brokerSessionId) {
+        this.brokerSessionId = brokerSessionId;
+    }
+
+    public String getBrokerUserId() {
+        return brokerUserId;
+    }
+
+    public void setBrokerUserId(String brokerUserId) {
+        this.brokerUserId = brokerUserId;
     }
 }

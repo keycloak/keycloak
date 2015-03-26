@@ -70,7 +70,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         String id = KeycloakModelUtils.generateId();
 
         UserSessionEntity entity = new UserSessionEntity();
@@ -81,6 +81,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setIpAddress(ipAddress);
         entity.setAuthMethod(authMethod);
         entity.setRememberMe(rememberMe);
+        entity.setBrokerSessionId(brokerSessionId);
+        entity.setBrokerUserId(brokerUserId);
 
         int currentTime = Time.currentTime();
 
@@ -122,6 +124,28 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 .execute();
 
         return wrapUserSessions(realm, sessions.values());
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessionByBrokerUserId(RealmModel realm, String brokerUserId) {
+        Map<String, UserSessionEntity> sessions = new MapReduceTask(sessionCache)
+                .mappedWith(UserSessionMapper.create(realm.getId()).brokerUserId(brokerUserId))
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        return wrapUserSessions(realm, sessions.values());
+    }
+
+    @Override
+    public UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
+        Map<String, UserSessionEntity> sessions = new MapReduceTask(sessionCache)
+                .mappedWith(UserSessionMapper.create(realm.getId()).brokerSessionId(brokerSessionId))
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        List<UserSessionModel> userSessionModels = wrapUserSessions(realm, sessions.values());
+        if (userSessionModels.isEmpty()) return null;
+        return userSessionModels.get(0);
     }
 
     @Override
@@ -173,7 +197,14 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return userSessions;
     }
 
-    public List<UserSessionModel> getUserSessionsByNote(RealmModel realm, Map<String, String> notes) {
+    @Override
+    public List<UserSessionModel> getUserSessionsByNote(RealmModel realm, String noteName, String noteValue) {
+        HashMap<String, String> notes = new HashMap<>();
+        notes.put(noteName, noteValue);
+        return getUserSessionsByNotes(realm, notes);
+    }
+
+    public List<UserSessionModel> getUserSessionsByNotes(RealmModel realm, Map<String, String> notes) {
         Map<String, UserSessionEntity> sessions = new MapReduceTask(sessionCache)
                 .mappedWith(UserSessionNoteMapper.create(realm.getId()).notes(notes))
                 .reducedWith(new FirstResultReducer())

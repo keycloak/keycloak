@@ -21,6 +21,9 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
 
     private String realmId;
 
+    private String brokerSessionId;
+    private String brokerUserId;
+
     private String user;
 
     private String loginUsername;
@@ -135,5 +138,21 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
 
     public void setState(UserSessionModel.State state) {
         this.state = state;
+    }
+
+    public String getBrokerSessionId() {
+        return brokerSessionId;
+    }
+
+    public void setBrokerSessionId(String brokerSessionId) {
+        this.brokerSessionId = brokerSessionId;
+    }
+
+    public String getBrokerUserId() {
+        return brokerUserId;
+    }
+
+    public void setBrokerUserId(String brokerUserId) {
+        this.brokerUserId = brokerUserId;
     }
 }

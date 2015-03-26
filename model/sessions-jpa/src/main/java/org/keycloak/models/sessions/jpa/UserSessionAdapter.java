@@ -41,6 +41,16 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
+    public String getBrokerSessionId() {
+        return entity.getBrokerSessionId();
+    }
+
+    @Override
+    public String getBrokerUserId() {
+        return entity.getBrokerUserId();
+    }
+
+    @Override
     public UserModel getUser() {
         return session.users().getUserById(entity.getUserId(), realm);
     }

@@ -437,14 +437,15 @@ public class SamlProtocol implements LoginProtocol {
     public Response frontchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
         if (!(client instanceof ApplicationModel)) return null;
-        SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(clientSession, client);
         try {
             if (isLogoutPostBindingForClient(clientSession)) {
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
+                SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
                 return logoutBuilder.postBinding().request(bindingUri);
             } else {
                 logger.debug("frontchannel redirect binding");
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_REDIRECT_BINDING);
+                SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
                 return logoutBuilder.redirectBinding().request(bindingUri);
             }
         } catch (ConfigurationException e) {
@@ -504,7 +505,7 @@ public class SamlProtocol implements LoginProtocol {
             logger.warnv("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: {1}", client.getClientId());
             return;
         }
-        SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(clientSession, client);
+        SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(logoutUrl, clientSession, client);
 
 
         String logoutRequestString = null;
@@ -549,12 +550,12 @@ public class SamlProtocol implements LoginProtocol {
 
     }
 
-    protected SAML2LogoutRequestBuilder createLogoutRequest(ClientSessionModel clientSession, ClientModel client) {
+    protected SAML2LogoutRequestBuilder createLogoutRequest(String logoutUrl, ClientSessionModel clientSession, ClientModel client) {
         // build userPrincipal with subject used at login
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                                          .issuer(getResponseIssuer(realm))
                                          .userPrincipal(clientSession.getNote(SAML_NAME_ID), clientSession.getNote(SAML_NAME_ID_FORMAT))
-                                         .destination(client.getClientId());
+                                         .destination(logoutUrl);
         if (requiresRealmSignature(client)) {
             logoutBuilder.signatureAlgorithm(getSignatureAlgorithm(client))
                          .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())

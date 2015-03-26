@@ -123,8 +123,8 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                 .issuer(getEntityId(uriInfo, realm))
-                .sessionIndex(userSession.getNote("SAML_FEDERATED_SESSION_INDEX"))
-                .userPrincipal(userSession.getNote("SAML_FEDERATED_SUBJECT"), userSession.getNote("SAML_FEDERATED_SUBJECT_NAMEFORMAT"))
+                .sessionIndex(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX))
+                .userPrincipal(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT), userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEFORMAT))
                 .destination(getConfig().getSingleLogoutServiceUrl());
         if (getConfig().isWantAuthnRequestsSigned()) {
             logoutBuilder.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())

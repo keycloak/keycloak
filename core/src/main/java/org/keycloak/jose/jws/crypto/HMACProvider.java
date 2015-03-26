@@ -14,7 +14,7 @@ import java.security.NoSuchAlgorithmException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class HMACProvider {
+public class HMACProvider implements SignatureProvider {
     private static String getJavaAlgorithm(Algorithm alg) {
         switch (alg) {
             case HS256:
@@ -82,5 +82,8 @@ public class HMACProvider {
         }
     }
 
-
+    @Override
+    public boolean verify(JWSInput input, String key) {
+        return false;
+    }
 }

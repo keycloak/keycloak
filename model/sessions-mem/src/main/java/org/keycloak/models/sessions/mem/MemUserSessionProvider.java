@@ -19,10 +19,13 @@ import org.keycloak.util.Time;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -31,14 +34,18 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     private final KeycloakSession session;
     private final ConcurrentHashMap<String, UserSessionEntity> userSessions;
+    private final ConcurrentHashMap<String, String> userSessionsByBrokerSessionId;
+    private final ConcurrentHashMap<String, Set<String>> userSessionsByBrokerUserId;
     private final ConcurrentHashMap<String, ClientSessionEntity> clientSessions;
     private final ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures;
 
-    public MemUserSessionProvider(KeycloakSession session, ConcurrentHashMap<String, UserSessionEntity> userSessions, ConcurrentHashMap<String, ClientSessionEntity> clientSessions, ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures) {
+    public MemUserSessionProvider(KeycloakSession session, ConcurrentHashMap<String, UserSessionEntity> userSessions, ConcurrentHashMap<String, String> userSessionsByBrokerSessionId, ConcurrentHashMap<String, Set<String>> userSessionsByBrokerUserId, ConcurrentHashMap<String, ClientSessionEntity> clientSessions, ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures) {
         this.session = session;
         this.userSessions = userSessions;
         this.clientSessions = clientSessions;
         this.loginFailures = loginFailures;
+        this.userSessionsByBrokerSessionId = userSessionsByBrokerSessionId;
+        this.userSessionsByBrokerUserId = userSessionsByBrokerUserId;
     }
 
     @Override
@@ -69,7 +76,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         String id = KeycloakModelUtils.generateId();
 
         UserSessionEntity entity = new UserSessionEntity();
@@ -85,10 +92,53 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
+        entity.setBrokerSessionId(brokerSessionId);
+        entity.setBrokerUserId(brokerUserId);
 
         userSessions.put(id, entity);
+        if (brokerSessionId != null) {
+            userSessionsByBrokerSessionId.put(brokerSessionId, id);
+        }
+        if (brokerUserId != null) {
+            while (true) {  // while loop gets around a race condition when a user session is removed
+                Set<String> set = userSessionsByBrokerUserId.get(brokerUserId);
+                if (set == null) {
+                    Set<String> value = new HashSet<>();
+                    set = userSessionsByBrokerUserId.putIfAbsent(brokerUserId, value);
+                    if (set == null) {
+                        set = value;
+                    }
+                }
+                synchronized (set) {
+                    set.add(id);
+                }
+                if (userSessionsByBrokerUserId.get(brokerUserId) == set) {
+                    // we are ensured set isn't deleted before the new id is added
+                    break;
+                }
+            }
+        }
 
         return new UserSessionAdapter(session, this, realm, entity);
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessionByBrokerUserId(RealmModel realm, String brokerUserId) {
+        Set<String> sessions = userSessionsByBrokerUserId.get(brokerUserId);
+        if (sessions == null) return Collections.emptyList();
+        List<UserSessionModel> userSessions = new LinkedList<UserSessionModel>();
+        for (String id : sessions) {
+            UserSessionModel userSession = getUserSession(realm, id);
+            if (userSession != null) userSessions.add(userSession);
+        }
+        return userSessions;
+    }
+
+    @Override
+    public UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
+        String id = userSessionsByBrokerSessionId.get(brokerSessionId);
+        if (id == null) return null;
+        return getUserSession(realm, id);
     }
 
     @Override
@@ -110,6 +160,17 @@ public class MemUserSessionProvider implements UserSessionProvider {
         List<UserSessionModel> userSessions = new LinkedList<UserSessionModel>();
         for (UserSessionEntity s : this.userSessions.values()) {
             if (s.getRealm().equals(realm.getId()) && s.getUser().equals(user.getId())) {
+                userSessions.add(new UserSessionAdapter(session, this, realm, s));
+            }
+        }
+        return userSessions;
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessionsByNote(RealmModel realm, String noteName, String noteValue) {
+        List<UserSessionModel> userSessions = new LinkedList<UserSessionModel>();
+        for (UserSessionEntity s : this.userSessions.values()) {
+            if (s.getRealm().equals(realm.getId()) && noteValue.equals(s.getNotes().get(noteName))) {
                 userSessions.add(new UserSessionAdapter(session, this, realm, s));
             }
         }
@@ -158,9 +219,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
         UserSessionEntity entity = getUserSessionEntity(realm, session.getId());
         if (entity != null) {
             userSessions.remove(entity.getId());
-            for (ClientSessionEntity clientSession : entity.getClientSessions()) {
-                clientSessions.remove(clientSession.getId());
-            }
+            remove(entity);
         }
     }
 
@@ -171,12 +230,29 @@ public class MemUserSessionProvider implements UserSessionProvider {
             UserSessionEntity s = itr.next();
             if (s.getRealm().equals(realm.getId()) && s.getUser().equals(user.getId())) {
                 itr.remove();
+                remove(s);
+            }
+        }
+    }
 
-                for (ClientSessionEntity clientSession : s.getClientSessions()) {
-                    clientSessions.remove(clientSession.getId());
+    protected void remove(UserSessionEntity s) {
+        if (s.getBrokerSessionId() != null) {
+            userSessionsByBrokerSessionId.remove(s.getBrokerSessionId());
+        }
+        if (s.getBrokerUserId() != null) {
+            Set<String> set = userSessionsByBrokerUserId.get(s.getBrokerUserId());
+            if (set != null) {
+                synchronized (set) {
+                    set.remove(s.getId());
+                    // this is a race condition :(
+                    // Since it will be very rare for a user to have concurrent sessions, I'm hoping we never hit this
+                    if (set.isEmpty()) userSessionsByBrokerUserId.remove(s.getBrokerUserId());
                 }
             }
         }
+        for (ClientSessionEntity clientSession : s.getClientSessions()) {
+           clientSessions.remove(clientSession.getId());
+       }
     }
 
     @Override
@@ -187,9 +263,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
             if (s.getRealm().equals(realm.getId()) && (s.getLastSessionRefresh() < Time.currentTime() - realm.getSsoSessionIdleTimeout() || s.getStarted() < Time.currentTime() - realm.getSsoSessionMaxLifespan())) {
                 itr.remove();
 
-                for (ClientSessionEntity clientSession : s.getClientSessions()) {
-                    clientSessions.remove(clientSession.getId());
-                }
+                remove(s);
             }
         }
         int expired = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
@@ -210,9 +284,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
             if (s.getRealm().equals(realm.getId())) {
                 itr.remove();
 
-                for (ClientSessionEntity clientSession : s.getClientSessions()) {
-                    clientSessions.remove(clientSession.getId());
-                }
+                remove(s);
             }
         }
         Iterator<ClientSessionEntity> citr = clientSessions.values().iterator();

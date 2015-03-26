@@ -700,6 +700,9 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     }
 
     $scope.hidePassword = true;
+    $scope.fromUrl = {
+        data: ''
+    };
 
     if (instance && instance.alias) {
         $scope.identityProvider = angular.copy(instance);
@@ -798,21 +801,22 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             return;
         }
         var input = {
-            fromUrl: $scope.fromUrl,
+            fromUrl: $scope.fromUrl.data,
             providerId: providerFactory.id
         }
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/identity-provider/import-config', input)
             .success(function(data, status, headers) {
                 setConfig(data);
-                $scope.fromUrl = null;
+                $scope.fromUrl.data = '';
                 $scope.importUrl = false;
                 Notifications.success("Imported config information from url.");
             }).error(function() {
                 Notifications.error("Config can not be imported. Please verify the url.");
             });
     };
-    $scope.$watch('fromUrl', function(newVal, oldVal){
-        if ($scope.fromUrl && $scope.fromUrl.length > 0) {
+    $scope.$watch('fromUrl.data', function(newVal, oldVal){
+        console.log('watch fromUrl: ' + newVal + " " + oldVal);
+        if ($scope.fromUrl.data && $scope.fromUrl.data.length > 0) {
             $scope.importUrl = true;
         } else{
             $scope.importUrl = false;

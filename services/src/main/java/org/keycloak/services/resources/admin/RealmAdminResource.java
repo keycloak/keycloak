@@ -15,6 +15,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -23,6 +24,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.ClientConnection;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -42,6 +44,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -66,6 +69,12 @@ public class RealmAdminResource {
 
     @Context
     protected UriInfo uriInfo;
+
+    @Context
+    protected ClientConnection connection;
+
+    @Context
+    protected HttpHeaders headers;
 
     public RealmAdminResource(RealmAuth auth, RealmModel realm, TokenManager tokenManager) {
         this.auth = auth;
@@ -297,8 +306,7 @@ public class RealmAdminResource {
     public void deleteSession(@PathParam("session") String sessionId) {
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
-        session.sessions().removeUserSession(realm, userSession);
-        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, userSession);
+        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers);
     }
 
     /**

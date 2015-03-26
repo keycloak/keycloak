@@ -285,7 +285,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         updateFederatedIdentity(federatedIdentity, federatedUser);
 
         UserSessionModel userSession = this.session.sessions()
-                .createUserSession(this.realmModel, federatedUser, federatedUser.getUsername(), this.clientConnection.getRemoteAddr(), "broker", false);
+                .createUserSession(this.realmModel, federatedUser, federatedUser.getUsername(), this.clientConnection.getRemoteAddr(), "broker", false, federatedIdentity.getBrokerSessionId(), federatedIdentity.getBrokerUserId());
 
         this.event.user(federatedUser);
         this.event.session(userSession);

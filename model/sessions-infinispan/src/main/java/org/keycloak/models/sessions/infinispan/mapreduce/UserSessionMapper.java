@@ -30,6 +30,9 @@ public class UserSessionMapper implements Mapper<String, SessionEntity, String, 
 
     private Long expiredRefresh;
 
+    private String brokerSessionId;
+    private String brokerUserId;
+
     public static UserSessionMapper create(String realm) {
         return new UserSessionMapper(realm);
     }
@@ -50,6 +53,16 @@ public class UserSessionMapper implements Mapper<String, SessionEntity, String, 
         return this;
     }
 
+    public UserSessionMapper brokerSessionId(String id) {
+        this.brokerSessionId = id;
+        return this;
+    }
+
+    public UserSessionMapper brokerUserId(String id) {
+        this.brokerUserId = id;
+        return this;
+    }
+
     @Override
     public void map(String key, SessionEntity e, Collector collector) {
         if (!(e instanceof UserSessionEntity)) {
@@ -65,6 +78,9 @@ public class UserSessionMapper implements Mapper<String, SessionEntity, String, 
         if (user != null && !entity.getUser().equals(user)) {
             return;
         }
+
+        if (brokerSessionId != null && !brokerSessionId.equals(entity.getBrokerSessionId())) return;
+        if (brokerUserId != null && !brokerUserId.equals(entity.getBrokerUserId())) return;
 
         if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {
             return;

@@ -131,23 +131,6 @@ public class ResourceAdminManager {
         }
     }
 
-    public void logoutSession(URI requestUri, RealmModel realm, UserSessionModel session) {
-        ApacheHttpClient4Executor executor = createExecutor();
-
-        try {
-            // Map from "app" to clientSessions for this app
-            MultivaluedHashMap<ApplicationModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ApplicationModel, ClientSessionModel>();
-            putClientSessions(clientSessions, session);
-
-            logger.debugv("logging out {0} resources ", clientSessions.size());
-            for (Map.Entry<ApplicationModel, List<ClientSessionModel>> entry : clientSessions.entrySet()) {
-                logoutClientSessions(requestUri, realm, entry.getKey(), entry.getValue(), executor);
-            }
-        } finally {
-            executor.getHttpClient().getConnectionManager().shutdown();
-        }
-    }
-
     public void logoutUserFromApplication(URI requestUri, RealmModel realm, ApplicationModel resource, UserModel user, KeycloakSession session) {
         ApacheHttpClient4Executor executor = createExecutor();
 
@@ -179,6 +162,7 @@ public class ResourceAdminManager {
 
             // Key is host, value is list of http sessions for this host
             MultivaluedHashMap<String, String> adapterSessionIds = null;
+            List<String> userSessions = new LinkedList<>();
             if (clientSessions != null && clientSessions.size() > 0) {
                 adapterSessionIds = new MultivaluedHashMap<String, String>();
                 for (ClientSessionModel clientSession : clientSessions) {
@@ -187,6 +171,7 @@ public class ResourceAdminManager {
                         String host = clientSession.getNote(AdapterConstants.APPLICATION_SESSION_HOST);
                         adapterSessionIds.add(host, adapterSessionId);
                     }
+                    if (clientSession.getUserSession() != null) userSessions.add(clientSession.getUserSession().getId());
                 }
             }
 
@@ -202,7 +187,7 @@ public class ResourceAdminManager {
                     String host = entry.getKey();
                     List<String> sessionIds = entry.getValue();
                     String currentHostMgmtUrl = managementUrl.replace(APPLICATION_SESSION_HOST_PROPERTY, host);
-                    allPassed = sendLogoutRequest(realm, resource, sessionIds, client, 0, currentHostMgmtUrl) && allPassed;
+                    allPassed = sendLogoutRequest(realm, resource, sessionIds, userSessions, client, 0, currentHostMgmtUrl) && allPassed;
                 }
 
                 return allPassed;
@@ -213,7 +198,7 @@ public class ResourceAdminManager {
                     allSessionIds.addAll(currentIds);
                 }
 
-                return sendLogoutRequest(realm, resource, allSessionIds, client, 0, managementUrl);
+                return sendLogoutRequest(realm, resource, allSessionIds, userSessions, client, 0, managementUrl);
             }
         } else {
             logger.debugv("Can't logout {0}: no management url", resource.getName());
@@ -265,7 +250,7 @@ public class ResourceAdminManager {
         // Propagate this to all hosts
         GlobalRequestResult result = new GlobalRequestResult();
         for (String mgmtUrl : mgmtUrls) {
-            if (sendLogoutRequest(realm, resource, null, executor, notBefore, mgmtUrl)) {
+            if (sendLogoutRequest(realm, resource, null, null, executor, notBefore, mgmtUrl)) {
                 result.addSuccessRequest(mgmtUrl);
             } else {
                 result.addFailedRequest(mgmtUrl);
@@ -274,8 +259,8 @@ public class ResourceAdminManager {
         return result;
     }
 
-    protected boolean sendLogoutRequest(RealmModel realm, ApplicationModel resource, List<String> adapterSessionIds, ApacheHttpClient4Executor client, int notBefore, String managementUrl) {
-        LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), adapterSessionIds, notBefore);
+    protected boolean sendLogoutRequest(RealmModel realm, ApplicationModel resource, List<String> adapterSessionIds, List<String> userSessions, ApacheHttpClient4Executor client, int notBefore, String managementUrl) {
+        LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), adapterSessionIds, notBefore, userSessions);
         String token = new TokenManager().encodeToken(realm, adminAction);
         if (logger.isDebugEnabled()) logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getName(), managementUrl);
         ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());

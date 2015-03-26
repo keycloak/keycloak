@@ -9,6 +9,15 @@ public interface UserSessionModel {
 
     String getId();
 
+    /**
+     * If created via a broker external login, this is an identifier that can be
+     * used to match external broker backchannel logout requests to a UserSession
+     *
+     * @return
+     */
+    String getBrokerSessionId();
+    String getBrokerUserId();
+
     UserModel getUser();
 
     String getLoginUsername();
