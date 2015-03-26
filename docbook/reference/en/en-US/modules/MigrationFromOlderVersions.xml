@@ -82,6 +82,13 @@
         <section>
             <title>Migrating from 1.1.0.Final to 1.2.0.Beta1</title>
             <simplesect>
+                <title>Database changed</title>
+                <para>
+                    This release contains a number of changes to the database. Remember to backup your database prior to
+                    upgrading.
+                </para>
+            </simplesect>
+            <simplesect>
                 <title><literal>iss</literal> in access and id tokens</title>
                 <para>
                     The value of <literal>iss</literal> claim in access and id tokens have changed from <literal>realm name</literal>
