@@ -1,6 +1,5 @@
 package org.keycloak.connections.mongo.updater.impl.updates;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -12,14 +11,11 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import org.keycloak.Config;
 import org.keycloak.connections.mongo.impl.types.MapMapper;
+import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.services.util.MigrationUtils;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -74,8 +70,7 @@ public class Update1_2_0_Beta1 extends Update {
                             DBObject identityProvider = new BasicDBObjectBuilder()
                                     .add("internalId", KeycloakModelUtils.generateId())
                                     .add("providerId", socialProviderId)
-                                    .add("name", socialProviderId)
-                                    .add("id", socialProviderId)
+                                    .add("alias", socialProviderId.substring(0, 1).toUpperCase() + socialProviderId.substring(1))
                                     .add("updateProfileFirstLogin", updateProfileOnInitialSocialLogin)
                                     .add("enabled", true)
                                     .add("storeToken", false)
@@ -241,9 +236,10 @@ public class Update1_2_0_Beta1 extends Update {
                 currentClient.put("protocolMappers", dbProtocolMappers);
 
                 Object claimMask = currentClient.get("allowedClaimsMask");
-                Collection<ProtocolMapperModel> clientProtocolMappers = MigrationUtils.getMappersForClaimMask(session, (Long) claimMask);
+                MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
+                List<ProtocolMapperRepresentation> protocolMappers = migrationProvider.getMappersForClaimMask((Long) claimMask);
 
-                for (ProtocolMapperModel protocolMapper : clientProtocolMappers) {
+                for (ProtocolMapperRepresentation protocolMapper : protocolMappers) {
                     BasicDBObject dbMapper = new BasicDBObject();
                     dbMapper.put("id", KeycloakModelUtils.generateId());
                     dbMapper.put("protocol", protocolMapper.getProtocol());
@@ -259,6 +255,7 @@ public class Update1_2_0_Beta1 extends Update {
                     dbProtocolMappers.add(dbMapper);
                 }
 
+                // Remove obsolete keys from client
                 currentClient.remove("allowedClaimsMask");
 
                 log.debugv("Added default mappers to application {1}", currentClient.get("name"));

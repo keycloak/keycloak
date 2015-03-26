@@ -60,17 +60,6 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     }
 
     @Override
-    public long getAllowedClaimsMask() {
-        return getMongoEntityAsClient().getAllowedClaimsMask();
-    }
-
-    @Override
-    public void setAllowedClaimsMask(long mask) {
-        getMongoEntityAsClient().setAllowedClaimsMask(mask);
-        updateMongoEntity();
-    }
-
-    @Override
     public Set<String> getWebOrigins() {
         Set<String> result = new HashSet<String>();
         if (getMongoEntityAsClient().getWebOrigins() != null) {

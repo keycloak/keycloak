@@ -3,6 +3,7 @@ package org.keycloak.models.utils;
 import net.iharder.Base64;
 import org.jboss.logging.Logger;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
@@ -129,7 +130,7 @@ public class RepresentationToModel {
         importIdentityProviders(rep, newRealm);
 
         if (rep.getApplications() != null) {
-            Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
+            Map<String, ApplicationModel> appMap = createApplications(session, rep, newRealm);
         }
 
         if (rep.getRoles() != null) {
@@ -189,7 +190,7 @@ public class RepresentationToModel {
         }
 
         if (rep.getOauthClients() != null) {
-            createOAuthClients(rep, newRealm);
+            createOAuthClients(session, rep, newRealm);
         }
 
 
@@ -302,11 +303,22 @@ public class RepresentationToModel {
                 federatedIdentity.setIdentityProvider(social.getSocialProvider());
                 federatedIdentity.setUserId(social.getSocialUserId());
                 federatedIdentity.setUserName(social.getSocialUsername());
+                federatedIdentities.add(federatedIdentity);
             }
             user.setFederatedIdentities(federatedIdentities);
         }
 
         user.setSocialLinks(null);
+    }
+
+    private static List<ProtocolMapperRepresentation> convertDeprecatedClaimsMask(KeycloakSession session, ClaimRepresentation claimRep) {
+        if (claimRep == null) {
+            return null;
+        }
+
+        long mask = getClaimsMask(claimRep);
+        MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
+        return migrationProvider.getMappersForClaimMask(mask);
     }
 
     public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
@@ -435,10 +447,10 @@ public class RepresentationToModel {
 
     // APPLICATIONS
 
-    private static Map<String, ApplicationModel> createApplications(RealmRepresentation rep, RealmModel realm) {
+    private static Map<String, ApplicationModel> createApplications(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
         Map<String, ApplicationModel> appMap = new HashMap<String, ApplicationModel>();
         for (ApplicationRepresentation resourceRep : rep.getApplications()) {
-            ApplicationModel app = createApplication(realm, resourceRep, false);
+            ApplicationModel app = createApplication(session, realm, resourceRep, false);
             appMap.put(app.getName(), app);
         }
         return appMap;
@@ -451,8 +463,16 @@ public class RepresentationToModel {
      * @param resourceRep
      * @return
      */
-    public static ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep, boolean addDefaultRoles) {
+    public static ApplicationModel createApplication(KeycloakSession session, RealmModel realm, ApplicationRepresentation resourceRep, boolean addDefaultRoles) {
         logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
+
+        if (resourceRep.getProtocolMappers() == null) {
+            List<ProtocolMapperRepresentation> convertedProtocolMappers = convertDeprecatedClaimsMask(session, resourceRep.getClaims());
+            if (convertedProtocolMappers != null) {
+                resourceRep.setProtocolMappers(convertedProtocolMappers);
+            }
+        }
+
         ApplicationModel applicationModel = resourceRep.getId()!=null ? realm.addApplication(resourceRep.getId(), resourceRep.getName()) : realm.addApplication(resourceRep.getName());
         if (resourceRep.isEnabled() != null) applicationModel.setEnabled(resourceRep.isEnabled());
         applicationModel.setManagementUrl(resourceRep.getAdminUrl());
@@ -595,8 +615,9 @@ public class RepresentationToModel {
         updateClientIdentityProviders(rep.getIdentityProviders(), resource);
     }
 
-    public static void setClaims(ClientModel model, ClaimRepresentation rep) {
-        long mask = model.getAllowedClaimsMask();
+    public static long getClaimsMask(ClaimRepresentation rep) {
+        long mask = ClaimMask.ALL;
+
         if (rep.getAddress()) {
             mask |= ClaimMask.ADDRESS;
         } else {
@@ -647,14 +668,14 @@ public class RepresentationToModel {
         } else {
             mask &= ~ClaimMask.WEBSITE;
         }
-        model.setAllowedClaimsMask(mask);
+        return mask;
     }
 
     // OAuth clients
 
-    private static void createOAuthClients(RealmRepresentation realmRep, RealmModel realm) {
+    private static void createOAuthClients(KeycloakSession session, RealmRepresentation realmRep, RealmModel realm) {
         for (OAuthClientRepresentation rep : realmRep.getOauthClients()) {
-            createOAuthClient(rep, realm);
+            createOAuthClient(session, rep, realm);
         }
     }
 
@@ -664,25 +685,29 @@ public class RepresentationToModel {
         return model;
     }
 
-    public static OAuthClientModel createOAuthClient(OAuthClientRepresentation rep, RealmModel realm) {
+    public static OAuthClientModel createOAuthClient(KeycloakSession session, OAuthClientRepresentation rep, RealmModel realm) {
         OAuthClientModel model = createOAuthClient(rep.getId(), rep.getName(), realm);
 
         model.updateIdentityProviders(toModel(rep.getIdentityProviders(), realm));
 
-        updateOAuthClient(rep, model);
+        updateOAuthClient(session, rep, model);
         return model;
     }
 
-    public static void updateOAuthClient(OAuthClientRepresentation rep, OAuthClientModel model) {
+    public static void updateOAuthClient(KeycloakSession session, OAuthClientRepresentation rep, OAuthClientModel model) {
+        if (rep.getProtocolMappers() == null) {
+            List<ProtocolMapperRepresentation> convertedProtocolMappers = convertDeprecatedClaimsMask(session, rep.getClaims());
+            if (convertedProtocolMappers != null) {
+                rep.setProtocolMappers(convertedProtocolMappers);
+            }
+        }
+
         if (rep.getName() != null) model.setClientId(rep.getName());
         if (rep.isEnabled() != null) model.setEnabled(rep.isEnabled());
         if (rep.isPublicClient() != null) model.setPublicClient(rep.isPublicClient());
         if (rep.isFrontchannelLogout() != null) model.setFrontchannelLogout(rep.isFrontchannelLogout());
         if (rep.isFullScopeAllowed() != null) model.setFullScopeAllowed(rep.isFullScopeAllowed());
         if (rep.isDirectGrantsOnly() != null) model.setDirectGrantsOnly(rep.isDirectGrantsOnly());
-        if (rep.getClaims() != null) {
-            setClaims(model, rep.getClaims());
-        }
         if (rep.getNotBefore() != null) {
             model.setNotBefore(rep.getNotBefore());
         }

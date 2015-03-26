@@ -65,16 +65,6 @@ public class OAuthClientResource  {
     }
 
     /**
-     * Base path for managing allowed oauth client claims
-     *
-     * @return
-     */
-    @Path("claims")
-    public ClaimResource getClaimResource() {
-        return new ClaimResource(oauthClient, auth);
-    }
-
-    /**
      * interface for updating attached ProtocolMappers
      *
      * @return
@@ -111,7 +101,7 @@ public class OAuthClientResource  {
         auth.requireManage();
 
         try {
-            RepresentationToModel.updateOAuthClient(rep, oauthClient);
+            RepresentationToModel.updateOAuthClient(session, rep, oauthClient);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Client " + rep.getName() + " already exists");

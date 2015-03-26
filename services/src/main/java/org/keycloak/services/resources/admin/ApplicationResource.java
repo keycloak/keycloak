@@ -78,16 +78,6 @@ public class ApplicationResource {
         auth.init(RealmAuth.Resource.APPLICATION);
     }
 
-    /**
-     * base path for managing allowed application claims
-     *
-     * @return
-     */
-    @Path("claims")
-    public ClaimResource getClaimResource() {
-        return new ClaimResource(application, auth);
-    }
-
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers() {
         ProtocolMappersResource mappers = new ProtocolMappersResource(application, auth);

@@ -23,7 +23,6 @@ public class CachedClient {
     protected String id;
     protected String name;
     protected String realm;
-    protected long allowedClaimsMask;
     protected Set<String> redirectUris = new HashSet<String>();
     protected boolean enabled;
     protected String secret;
@@ -51,7 +50,6 @@ public class CachedClient {
         directGrantsOnly = model.isDirectGrantsOnly();
         frontchannelLogout = model.isFrontchannelLogout();
         publicClient = model.isPublicClient();
-        allowedClaimsMask = model.getAllowedClaimsMask();
         fullScopeAllowed = model.isFullScopeAllowed();
         redirectUris.addAll(model.getRedirectUris());
         webOrigins.addAll(model.getWebOrigins());
@@ -74,10 +72,6 @@ public class CachedClient {
 
     public String getRealm() {
         return realm;
-    }
-
-    public long getAllowedClaimsMask() {
-        return allowedClaimsMask;
     }
 
     public Set<String> getRedirectUris() {
