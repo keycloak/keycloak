@@ -39,6 +39,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.flows.Urls;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -52,6 +53,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,6 +67,9 @@ public class UserInfoEndpoint {
 
     @Context
     private HttpResponse response;
+
+    @Context
+    private UriInfo uriInfo;
 
     @Context
     private KeycloakSession session;
@@ -114,7 +119,7 @@ public class UserInfoEndpoint {
 
         AccessToken token = null;
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
+            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
         } catch (Exception e) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Token invalid", Status.FORBIDDEN);
         }

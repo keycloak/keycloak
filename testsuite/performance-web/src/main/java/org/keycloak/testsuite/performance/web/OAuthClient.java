@@ -166,7 +166,7 @@ public class OAuthClient {
 
     public AccessToken verifyToken(String token) {
         try {
-            return RSATokenVerifier.verifyToken(token, realmPublicKey, realm);
+            return RSATokenVerifier.verifyToken(token, realmPublicKey, baseUrl + "/" + realm);
         } catch (VerificationException e) {
             throw new RuntimeException("Failed to verify token", e);
         }

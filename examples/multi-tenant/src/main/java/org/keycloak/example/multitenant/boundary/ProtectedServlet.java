@@ -52,7 +52,7 @@ public class ProtectedServlet extends HttpServlet {
         PrintWriter writer = resp.getWriter();
 
         writer.write("Realm: ");
-        writer.write(principal.getKeycloakSecurityContext().getIdToken().getIssuer());
+        writer.write(principal.getKeycloakSecurityContext().getRealm());
 
         writer.write("<br/>User: ");
         writer.write(principal.getKeycloakSecurityContext().getIdToken().getPreferredUsername());

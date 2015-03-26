@@ -158,6 +158,10 @@ public class Urls {
         return requiredActionsBase(baseUri).path(LoginActionsService.class, "usernameReminder");
     }
 
+    public static String realmIssuer(URI baseUri, String realmId) {
+        return realmBase(baseUri).path("{realm}").build(realmId).toString();
+    }
+
     private static UriBuilder realmBase(URI baseUri) {
         return UriBuilder.fromUri(baseUri).path(RealmsResource.class);
     }

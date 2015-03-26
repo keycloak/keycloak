@@ -12,11 +12,11 @@ import java.security.PublicKey;
  * @version $Revision: 1 $
  */
 public class RSATokenVerifier {
-    public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realm) throws VerificationException {
-        return verifyToken(tokenString, realmKey, realm, true);
+    public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realmUrl) throws VerificationException {
+        return verifyToken(tokenString, realmKey, realmUrl, true);
     }
 
-    public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realm, boolean checkActive) throws VerificationException {
+    public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realmUrl, boolean checkActive) throws VerificationException {
         JWSInput input = null;
         try {
             input = new JWSInput(tokenString);
@@ -35,7 +35,7 @@ public class RSATokenVerifier {
         if (user == null) {
             throw new VerificationException("Token user was null.");
         }
-        if (!realm.equals(token.getIssuer())) {
+        if (!realmUrl.equals(token.getIssuer())) {
             throw new VerificationException("Token audience doesn't match domain.");
 
         }

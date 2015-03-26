@@ -29,6 +29,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.flows.Urls;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.OPTIONS;
@@ -319,6 +320,7 @@ public class TokenEndpoint {
 
         ClientSessionModel clientSession = sessions.createClientSession(realm, client);
         clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
 
         TokenManager.attachClientSession(userSession, clientSession);
 

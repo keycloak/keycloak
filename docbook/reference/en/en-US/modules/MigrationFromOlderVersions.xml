@@ -80,6 +80,30 @@
     <section>
         <title>Version specific migration</title>
         <section>
+            <title>Migrating from 1.1.0.Final to 1.2.0.Beta1</title>
+            <simplesect>
+                <title><literal>iss</literal> in access and id tokens</title>
+                <para>
+                    The value of <literal>iss</literal> claim in access and id tokens have changed from <literal>realm name</literal>
+                    to <literal>realm url</literal>. This is required by OpenID Connect specification. If you're using our adapters
+                    there's no change required, other than if you've been using bearer-only without specifying <literal>auth-server-url</literal>
+                    you have to add it now. If you're using another library (or RSATokenVerifier) you need to make the corresponding
+                    changes when verifying <literal>iss</literal>.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>OpenID Connect endpoints</title>
+                <para>
+                    To comply with OpenID Connect specification the authentication and token endpoints have been changed
+                    to having a single authentication endpoint and a single token endpoint. As per-spec <literal>response_type</literal>
+                    and <literal>grant_type</literal> parameters are used to select the required flow. The old endpoints (<literal>/realms/{realm}/protocols/openid-connect/login</literal>,
+                    <literal>/realms/{realm}/protocols/openid-connect/grants/access</literal>, <literal>/realms/{realm}/protocols/openid-connect/refresh</literal>,
+                    <literal>/realms/{realm}/protocols/openid-connect/access/codes)</literal> are now deprecated and will be removed
+                    in a future version.
+                </para>
+            </simplesect>
+        </section>
+        <section>
             <title>Migrating from 1.1.0.Beta2 to 1.1.0.Final</title>
             <itemizedlist>
                 <listitem>

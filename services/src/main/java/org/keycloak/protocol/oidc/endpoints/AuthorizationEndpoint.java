@@ -223,6 +223,7 @@ public class AuthorizationEndpoint {
         clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
         clientSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, responseType);
         clientSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUriParam);
+        clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
 
         if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
         if (scope != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);

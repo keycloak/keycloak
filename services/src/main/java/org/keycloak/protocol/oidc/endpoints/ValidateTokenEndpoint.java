@@ -15,6 +15,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.flows.Urls;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -68,7 +69,7 @@ public class ValidateTokenEndpoint {
         event.event(EventType.VALIDATE_ACCESS_TOKEN);
         AccessToken token = null;
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
+            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
         } catch (Exception e) {
             Map<String, String> err = new HashMap<String, String>();
             err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
