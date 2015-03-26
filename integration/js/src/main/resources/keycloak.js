@@ -567,7 +567,12 @@
                 var oauth = {};
 
                 oauth.newUrl = url.split('?')[0];
-                var params = url.split('?')[1].split('&');
+                var paramString = url.split('?')[1];
+                var fragIndex = paramString.indexOf('#');
+                if (fragIndex != -1) {
+                    paramString = paramString.substring(0, fragIndex);
+                }
+                var params = paramString.split('&');
                 for (var i = 0; i < params.length; i++) {
                     var p = params[i].split('=');
                     switch (decodeURIComponent(p[0])) {
