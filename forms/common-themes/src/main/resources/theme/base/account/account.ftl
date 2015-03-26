@@ -34,6 +34,15 @@
             </div>
         </div>
 
+        <div class="form-group">
+            <div class="col-sm-2 col-md-2">
+                <label for="firstName" class="control-label">${msg("firstName")}</label> <span class="required">*</span>
+            </div>
+
+            <div class="col-sm-10 col-md-10">
+                <input type="text" class="form-control" id="firstName" name="firstName" value="${(account.firstName!'')?html}"/>
+            </div>
+        </div>
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
@@ -42,16 +51,6 @@
 
             <div class="col-sm-10 col-md-10">
                 <input type="text" class="form-control" id="lastName" name="lastName" value="${(account.lastName!'')?html}"/>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <div class="col-sm-2 col-md-2">
-                <label for="firstName" class="control-label">${msg("firstName")}</label> <span class="required">*</span>
-            </div>
-
-            <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="firstName" name="firstName" value="${(account.firstName!'')?html}"/>
             </div>
         </div>
 
