@@ -1,7 +1,6 @@
 package org.keycloak.broker.oidc;
 
 import org.keycloak.broker.oidc.util.SimpleHttp;
-import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;

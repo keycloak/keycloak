@@ -117,12 +117,12 @@
                         <span tooltip-placement="right" tooltip="Indicates whether the AuthnRequest must be sent using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used." class="fa fa-info-circle"></span>
                     </div>
                  </fieldset>
-                <fieldset>
+                <fieldset data-ng-show="newIdentityProvider">
                     <legend uncollapsed><span class="text">Import External IDP Config</span> <span tooltip-placement="right" tooltip="Allows you to load external IDP metadata from a config file or to download it from a URL." class="fa fa-info-circle"></span></legend>
                     <div class="form-group" data-ng-show="newIdentityProvider">
                         <label class="col-sm-2 control-label" for="fromUrl">Import From Url</label>
                         <div class="col-sm-4">
-                            <input class="form-control" id="fromUrl" type="text" ng-model="fromUrl">
+                            <input class="form-control" id="fromUrl" type="text" ng-model="fromUrl.data">
                         </div>
                         <span tooltip-placement="right" tooltip="Import metadata from a remote IDP SAML entity descriptor." class="fa fa-info-circle"></span>
                         <div class="col-sm-4" data-ng-show="importUrl">

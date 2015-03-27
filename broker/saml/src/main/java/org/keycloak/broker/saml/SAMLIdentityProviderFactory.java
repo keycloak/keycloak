@@ -19,7 +19,6 @@ package org.keycloak.broker.saml;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ParsingException;
 import org.picketlink.common.util.DocumentUtil;

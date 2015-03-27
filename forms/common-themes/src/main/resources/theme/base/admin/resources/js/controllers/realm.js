@@ -710,7 +710,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     } else {
         $scope.identityProvider = {};
         $scope.identityProvider.config = {};
-        $scope.identityProvider.alias = providerFactory.name;
+        $scope.identityProvider.alias = providerFactory.id;
         $scope.identityProvider.providerId = providerFactory.id;
         $scope.identityProvider.enabled = true;
         $scope.identityProvider.updateProfileFirstLogin = false;
@@ -774,7 +774,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         for (var i = 0; i < $scope.files.length; i++) {
             var $file = $scope.files[i];
             $scope.upload = $upload.upload({
-                url: authUrl + '/admin/realms/' + realm.realm + '/identity-provider/import',
+                url: authUrl + '/admin/realms/' + realm.realm + '/identity-provider/import-config',
                 // method: POST or PUT,
                 // headers: {'headerKey': 'headerValue'}, withCredential: true,
                 data: input,

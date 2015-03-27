@@ -33,10 +33,8 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;

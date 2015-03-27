@@ -1,7 +1,6 @@
 package org.keycloak.broker.saml;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.VerificationException;
 import org.keycloak.broker.provider.FederatedIdentity;
@@ -13,17 +12,14 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.protocol.saml.SAMLRequestParser;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
-import org.keycloak.protocol.saml.SignatureAlgorithm;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.flows.Flows;
 import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.constants.JBossSAMLConstants;
@@ -93,9 +89,6 @@ public class SAMLEndpoint {
 
     @Context
     private ClientConnection clientConnection;
-
-    @Context
-    private HttpRequest request;
 
     @Context
     private HttpHeaders headers;
