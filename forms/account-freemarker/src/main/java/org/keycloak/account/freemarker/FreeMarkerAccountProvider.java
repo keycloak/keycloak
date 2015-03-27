@@ -138,11 +138,9 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         }
 
         attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported));
+        attributes.put("account", new AccountBean(user, profileFormData));
 
         switch (page) {
-            case ACCOUNT:
-                attributes.put("account", new AccountBean(user, profileFormData));
-                break;
             case TOTP:
                 attributes.put("totp", new TotpBean(realm, user, baseUri));
                 break;
