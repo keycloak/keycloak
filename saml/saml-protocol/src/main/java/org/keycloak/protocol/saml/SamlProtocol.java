@@ -266,10 +266,12 @@ public class SamlProtocol implements LoginProtocol {
         clientSession.setNote(SAML_NAME_ID, nameId);
         clientSession.setNote(SAML_NAME_ID_FORMAT, nameIdFormat);
 
-        SALM2LoginResponseBuilder builder = new SALM2LoginResponseBuilder();
+        SAML2LoginResponseBuilder builder = new SAML2LoginResponseBuilder();
         builder.requestID(requestID)
                .destination(redirectUri)
                .issuer(responseIssuer)
+               .assertionExpiration(realm.getAccessCodeLifespan())
+               .subjectExpiration(realm.getAccessTokenLifespan())
                .sessionIndex(clientSession.getId())
                .requestIssuer(clientSession.getClient().getClientId())
                .nameIdentifier(nameIdFormat, nameId)
