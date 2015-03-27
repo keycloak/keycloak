@@ -109,6 +109,21 @@
                     in a future version.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>Theme changes</title>
+                <para>
+                    The layout of themes have changed. The directory hierarchy used to be <literal>type/name</literal>
+                    this is now changed to <literal>name/type</literal>. For example a login theme named <literal>sunrise</literal>
+                    used to be deployed to <literal>standalone/configuration/themes/login/sunrise</literal>, which is now
+                    moved to <literal>standalone/configuration/themes/sunrise/login</literal>. This change was done to
+                    make it easier to have group the different types for the same theme into one folder.
+                </para>
+                <para>
+                    If you deployed themes as a JAR in the past you had to create a custom theme loader which required
+                    Java code. This has been simplified to only requiring a plain text file (<literal>META-INF/keycloak-themes.json</literal>)
+                    to describe the themes included in a JAR. See the <link linkend='themes'>themes</link> section in the docs for more information.
+                </para>
+            </simplesect>
         </section>
         <section>
             <title>Migrating from 1.1.0.Beta2 to 1.1.0.Final</title>
