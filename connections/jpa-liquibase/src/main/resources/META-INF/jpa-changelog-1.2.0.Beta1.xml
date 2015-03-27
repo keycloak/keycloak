@@ -110,6 +110,8 @@
         </addColumn>
         <addColumn tableName="USER_SESSION">
             <column name="USER_SESSION_STATE" type="INT" />
+            <column name="BROKER_SESSION_ID" type="VARCHAR(255)" />
+            <column name="BROKER_USER_ID" type="VARCHAR(255)" />
         </addColumn>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_PCM" tableName="PROTOCOL_MAPPER"/>
         <addPrimaryKey columnNames="INTERNAL_ID" constraintName="CONSTRAINT_2B" tableName="IDENTITY_PROVIDER"/>

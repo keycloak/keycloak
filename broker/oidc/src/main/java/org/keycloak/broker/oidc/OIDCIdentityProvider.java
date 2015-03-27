@@ -18,24 +18,19 @@
 package org.keycloak.broker.oidc;
 
 import org.codehaus.jackson.JsonNode;
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.IdentityProvider;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
-import org.keycloak.representations.adapters.action.AdminAction;
-import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
@@ -44,13 +39,10 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -238,7 +230,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     }
                 }
 
-                throw new IdentityBrokerException("Wrong issuer from id_token..");
+                throw new IdentityBrokerException("Wrong issuer from id_token. Got: " + iss + " expected: " + getConfig().getIssuer());
             }
             return idToken;
         } catch (IOException e) {

@@ -4,6 +4,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.core.UriBuilder;
@@ -33,7 +34,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         UriBuilder uriBuilder = RealmsResource.protocolUrl(uriInfo);
 
         OIDCConfigurationRepresentation config = new OIDCConfigurationRepresentation();
-        config.setIssuer(realm.getName());
+        config.setIssuer(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
         config.setAuthorizationEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "auth").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setTokenEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "token").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setUserinfoEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "issueUserInfo").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
