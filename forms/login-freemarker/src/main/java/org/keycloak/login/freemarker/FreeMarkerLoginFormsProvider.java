@@ -8,6 +8,7 @@ import org.keycloak.email.EmailProvider;
 import org.keycloak.freemarker.*;
 import org.keycloak.freemarker.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.freemarker.beans.MessageFormatterMethod;
+import org.keycloak.login.FormMessage;
 import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.freemarker.model.ClientBean;
@@ -32,6 +33,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Urls;
 
 import javax.ws.rs.core.*;
+
 import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
@@ -55,9 +57,8 @@ import java.util.concurrent.TimeUnit;
     private Map<String, String> httpResponseHeaders = new HashMap<String, String>();
     private String accessRequestMessage;
     private URI actionUri;
-    private Object[] parameters;
 
-    private String message;
+    private List<FormMessage> messages = null;
     private MessageType messageType = MessageType.ERROR;
 
     private MultivaluedMap<String, String> formData;
@@ -134,7 +135,7 @@ import java.util.concurrent.TimeUnit;
                 return Response.serverError().build();
         }
 
-        if (message == null) {
+        if (messages == null) {
             setWarning(actionMessage);
         }
 
@@ -175,24 +176,34 @@ import java.util.concurrent.TimeUnit;
             logger.warn("Failed to load properties", e);
         }
 
-        Properties messages;
+        Properties messagesBundle;
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders);
         try {
-            messages = theme.getMessages(locale);
-            attributes.put("msg", new MessageFormatterMethod(locale, messages));
+            messagesBundle = theme.getMessages(locale);
+            attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
-            messages = new Properties();
+            messagesBundle = new Properties();
         }
 
-        if (message != null) {
-            String formattedMessage;
-            if(messages.containsKey(message)){
-                formattedMessage = new MessageFormat(messages.getProperty(message),locale).format(parameters);
-            }else{
-                formattedMessage = message;
+        if (messages != null) {
+            Map<String, MessageBean> messagesPerField = new HashMap<String, MessageBean>();
+            MessageBean wholeMessage = new MessageBean(null, messageType);
+            for (FormMessage message : this.messages) {
+                String formattedMessageText = formatMessageMessage(message, messagesBundle, locale);
+                if (formattedMessageText != null) {
+                    wholeMessage.appendSummaryLine(formattedMessageText);
+                    MessageBean fm = messagesPerField.get(message.getField());
+                    if (fm == null) {
+                        messagesPerField.put(message.getField(), new MessageBean(formattedMessageText, messageType));
+                    } else {
+                        fm.appendSummaryLine(formattedMessageText);
+                    }
+                }
             }
-            attributes.put("message", new MessageBean(formattedMessage, messageType));
+            
+            attributes.put("message", wholeMessage);
+            attributes.put("messagePerField", messagesPerField);
         }
         if (page == LoginFormsPages.OAUTH_GRANT) {
             // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
@@ -218,7 +229,7 @@ import java.util.concurrent.TimeUnit;
                         b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
                         break;
                 }
-                attributes.put("locale", new LocaleBean(realm, locale, b, messages));
+                attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
             }
         }
 
@@ -240,10 +251,10 @@ import java.util.concurrent.TimeUnit;
                 break;
             case OAUTH_GRANT:
                 attributes.put("oauth", new OAuthGrantBean(accessCode, clientSession, client, realmRolesRequested, resourceRolesRequested, this.accessRequestMessage));
-                attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messages));
+                attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;
             case CODE:
-                attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? message : null));
+                attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? getFirstMessageUnformatted() : null));
                 break;
         }
 
@@ -303,24 +314,46 @@ import java.util.concurrent.TimeUnit;
         return createResponse(LoginFormsPages.CODE);
     }
 
-    public FreeMarkerLoginFormsProvider setError(String message, Object ... parameters) {
-        this.message = message;
+    protected void setMessage(MessageType type, String message, Object... parameters) {
+        messageType = type;
+        messages = new ArrayList<>();
+        messages.add(new FormMessage(null, message, parameters));
+    }
+
+    protected String getFirstMessageUnformatted() {
+        if (messages != null && !messages.isEmpty()) {
+            return messages.get(0).getMessage();
+        }
+        return null;
+    }
+
+    protected String formatMessageMessage(FormMessage message, Properties messagesBundle, Locale locale) {
+        if (message == null)
+            return null;
+        if (messagesBundle.containsKey(message.getMessage())) {
+            return new MessageFormat(messagesBundle.getProperty(message.getMessage()), locale).format(message.getParameters());
+        } else {
+            return message.getMessage();
+        }
+    }
+    public FreeMarkerLoginFormsProvider setError(String message, Object... parameters) {
+        setMessage(MessageType.ERROR, message, parameters);
+        return this;
+    }
+
+    public LoginFormsProvider setErrors(List<FormMessage> messages) {
         this.messageType = MessageType.ERROR;
-        this.parameters = parameters;
+        this.messages = new ArrayList<>(messages);
         return this;
     }
 
     public FreeMarkerLoginFormsProvider setSuccess(String message, Object ... parameters) {
-        this.message = message;
-        this.messageType = MessageType.SUCCESS;
-        this.parameters = parameters;
+        setMessage(MessageType.SUCCESS, message, parameters);
         return this;
     }
 
     public FreeMarkerLoginFormsProvider setWarning(String message, Object ... parameters) {
-        this.message = message;
-        this.messageType = MessageType.WARNING;
-        this.parameters = parameters;
+        setMessage(MessageType.WARNING, message, parameters);
         return this;
     }
 

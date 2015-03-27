@@ -41,6 +41,15 @@ public class MessageBean {
         return summary;
     }
 
+    public void appendSummaryLine(String newLine) {
+        if (newLine == null)
+            return;
+        if (summary == null)
+            summary = newLine;
+        else
+            summary = summary + "<br>" + newLine;
+    }
+
     public String getType() {
         return this.type.toString().toLowerCase();
     }
