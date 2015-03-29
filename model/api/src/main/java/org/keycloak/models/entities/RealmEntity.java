@@ -62,6 +62,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean eventsEnabled;
     private long eventsExpiration;
     private List<String> eventsListeners = new ArrayList<String>();
+    private List<String> enabledEventTypes = new ArrayList<String>();
 
     private String adminAppId;
 
@@ -380,6 +381,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.eventsListeners = eventsListeners;
     }
 
+    public List<String> getEnabledEventTypes() {
+        return enabledEventTypes;
+    }
+
+    public void setEnabledEventTypes(List<String> enabledEventTypes) {
+        this.enabledEventTypes = enabledEventTypes;
+    }
+    
     public String getAdminAppId() {
         return adminAppId;
     }

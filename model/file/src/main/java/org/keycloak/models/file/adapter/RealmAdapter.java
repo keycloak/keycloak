@@ -46,6 +46,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
@@ -1037,6 +1038,20 @@ public class RealmAdapter implements RealmModel {
         } else {
             realm.setEventsListeners(Collections.EMPTY_LIST);
         }
+    }
+    
+    @Override
+    public Set<String> getEnabledEventTypes() {
+        return new HashSet<String>(realm.getEnabledEventTypes());
+    }
+
+    @Override
+    public void setEnabledEventTypes(Set<String> enabledEventTypes) {
+        if (enabledEventTypes != null) {
+            realm.setEnabledEventTypes(new ArrayList<String>(enabledEventTypes));
+        } else {
+            realm.setEnabledEventTypes(Collections.EMPTY_LIST);
+        }        
     }
 
     @Override

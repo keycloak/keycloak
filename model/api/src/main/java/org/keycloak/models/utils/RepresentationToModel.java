@@ -357,6 +357,7 @@ public class RepresentationToModel {
         if (rep.isEventsEnabled() != null) realm.setEventsEnabled(rep.isEventsEnabled());
         if (rep.getEventsExpiration() != null) realm.setEventsExpiration(rep.getEventsExpiration());
         if (rep.getEventsListeners() != null) realm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
+        if (rep.getEnabledEventTypes() != null) realm.setEnabledEventTypes(new HashSet<String>(rep.getEnabledEventTypes()));
 
         if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 

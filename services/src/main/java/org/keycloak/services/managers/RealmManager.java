@@ -25,6 +25,7 @@ import org.keycloak.timer.TimerProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -160,6 +161,9 @@ public class RealmManager {
         realm.setEventsExpiration(rep.getEventsExpiration() != null ? rep.getEventsExpiration() : 0);
         if (rep.getEventsListeners() != null) {
             realm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
+        }
+        if(rep.getEnabledEventTypes() != null) {
+            realm.setEnabledEventTypes(new HashSet<String>(rep.getEnabledEventTypes()));
         }
     }
 

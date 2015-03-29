@@ -807,6 +807,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public Set<String> getEnabledEventTypes() {
+        if (updated != null) return updated.getEnabledEventTypes();
+        return cached.getEnabledEventTypes();
+    }
+
+    @Override
+    public void setEnabledEventTypes(Set<String> enabledEventTypes) {
+        getDelegateForUpdate();
+        updated.setEnabledEventTypes(enabledEventTypes);        
+    }
+    
+    @Override
     public ApplicationModel getMasterAdminApp() {
         return cacheSession.getRealm(Config.getAdminRealm()).getApplicationById(cached.getMasterAdminApp());
     }

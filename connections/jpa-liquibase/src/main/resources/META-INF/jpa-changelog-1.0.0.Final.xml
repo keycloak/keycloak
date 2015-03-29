@@ -92,6 +92,7 @@
             <column name="SESSION_ID" type="VARCHAR(255)"/>
             <column name="TIME" type="BIGINT"/>
             <column name="TYPE" type="VARCHAR(255)"/>
+            <column name="EVENT_GROUP" type="VARCHAR(255)"/>
             <column name="USER_ID" type="VARCHAR(255)"/>
         </createTable>
         <createTable tableName="FED_PROVIDERS">
@@ -191,6 +192,12 @@
             </column>
         </createTable>
         <createTable tableName="REALM_EVENTS_LISTENERS">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="REALM_ENABLED_EVENT_TYPES">
             <column name="REALM_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
@@ -405,6 +412,7 @@
         <addForeignKeyConstraint baseColumnNames="CHILD_ROLE" baseTableName="COMPOSITE_ROLE" constraintName="FK_GR7THLLB9LU8Q4VQA4524JJY8" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
         <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="REALM_DEFAULT_ROLES" constraintName="FK_H4WPD7W4HSOOLNI3H0SW7BTJE" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_EVENTS_LISTENERS" constraintName="FK_H846O4H0W8EPX5NXEV9F5Y69J" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_ENABLED_EVENT_TYPES" constraintName="FK_H846O4H0W8EPX5NWEDRF5Y69J" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_APPLICATION" constraintName="FK_L5QGA3RFME47335JY8JXYXH3I" referencedColumnNames="ID" referencedTableName="CLIENT"/>
         <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="WEB_ORIGINS" constraintName="FK_LOJPHO213XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="CLIENT"/>
         <addForeignKeyConstraint baseColumnNames="APPLICATION_ID" baseTableName="APPLICATION_DEFAULT_ROLES" constraintName="FK_MAYLTS7KLWQW2H8M2B5JOYTKY" referencedColumnNames="ID" referencedTableName="CLIENT"/>

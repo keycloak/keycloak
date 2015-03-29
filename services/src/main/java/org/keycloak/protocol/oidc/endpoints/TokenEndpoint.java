@@ -9,6 +9,7 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -40,6 +41,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.Map;
 
 /**
@@ -85,7 +87,7 @@ public class TokenEndpoint {
         this.tokenManager = tokenManager;
         this.authManager = authManager;
         this.realm = realm;
-        this.event = event;
+        this.event = event.eventGroup(EventGroup.USER);
     }
 
     @POST

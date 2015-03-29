@@ -129,6 +129,11 @@ public class RealmEntity {
     @Column(name="VALUE")
     @CollectionTable(name="REALM_EVENTS_LISTENERS", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Set<String> eventsListeners = new HashSet<String>();
+    
+    @ElementCollection
+    @Column(name="VALUE")
+    @CollectionTable(name="REALM_ENABLED_EVENT_TYPES", joinColumns={ @JoinColumn(name="REALM_ID") })
+    protected Set<String> enabledEventTypes = new HashSet<String>();
 
     @OneToOne
     @JoinColumn(name="MASTER_ADMIN_APP")
@@ -418,7 +423,15 @@ public class RealmEntity {
     public void setEventsListeners(Set<String> eventsListeners) {
         this.eventsListeners = eventsListeners;
     }
+    
+    public Set<String> getEnabledEventTypes() {
+        return enabledEventTypes;
+    }
 
+    public void setEnabledEventTypes(Set<String> enabledEventTypes) {
+        this.enabledEventTypes = enabledEventTypes;
+    }
+    
     public ApplicationEntity getMasterAdminApp() {
         return masterAdminApp;
     }

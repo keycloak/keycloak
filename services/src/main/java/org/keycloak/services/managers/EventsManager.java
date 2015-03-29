@@ -5,11 +5,14 @@ import org.keycloak.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -50,8 +53,13 @@ public class EventsManager {
                 }
             }
         }
+        
+        Set<EventType> enabledEventTypes = new HashSet<EventType>();
+        for(String type : realm.getEnabledEventTypes()) {
+            enabledEventTypes.add(EventType.valueOf(type));
+        }
 
-        return new EventBuilder(listeners, realm, clientConnection.getRemoteAddr());
+        return new EventBuilder(listeners, enabledEventTypes, realm, clientConnection.getRemoteAddr());
     }
 
 }

@@ -1238,6 +1238,19 @@ module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmE
     });
 
     $scope.eventListeners = serverInfo.eventListeners;
+    
+    // Admin can choose any number of these eventTypes for persistence.
+	// By default, admin view events are not persisted.
+    $scope.enabledEventTypes = [{tag:'LOGIN'}, {tag:'REGISTER'}, {tag:'LOGOUT'}, {tag:'CODE_TO_TOKEN'},
+    	{tag:'REFRESH_TOKEN'}, {tag:'VALIDATE_ACCESS_TOKEN'}, {tag:'LOGIN_ERROR'}, {tag:'REGISTER_ERROR'},
+    	{tag:'LOGOUT_ERROR'}, {tag:'CODE_TO_TOKEN_ERROR'}, {tag:'REFRESH_TOKEN_ERROR'}, {tag:'VALIDATE_ACCESS_TOKEN_ERROR'},
+    	{tag:'UPDATE_EMAIL'}, {tag:'UPDATE_PROFILE'}, {tag:'UPDATE_PASSWORD'}, {tag:'UPDATE_TOTP'},
+    	{tag:'UPLOAD_REALM'}, {tag:'IMPORT_REALM'}, {tag:'UPDATE_REALM'}, {tag:'DELETE_REALM'},
+    	{tag:'CREATE_USER'}, {tag:'UPDATE_USER'}, {tag:'DELETE_USER'}, {tag:'VIEW_USER_SESSIONS'},
+    	{tag:'CREATE_APPLICATION'}, {tag:'UPDATE_APPLICATION'}, {tag:'DELETE_APPLICATION'}, {tag:'VIEW_APPLICATION'},
+    	{tag:'CREATE_OAUTH_CLIENT'}, {tag:'UPDATE_OAUTH_CLIENT'}, {tag:'VIEW_OAUTH_CLIENT'}, {tag:'DELETE_OAUTH_CLIENT'},
+    	{tag:'CREATE_PROVIDER'}, {tag:'UPDATE_PROVIDER'}, {tag:'DELETE_PROVIDER'}, {tag:'VIEW_ROLE'},
+    	{tag:'CREATE_ROLE'}, {tag:'UPDATE_ROLE'}, {tag:'DELETE_ROLE'}, {tag:'VIEW_SERVER_INFO'}]
 
     var oldCopy = angular.copy($scope.eventsConfig);
     $scope.changed = false;
@@ -1282,10 +1295,18 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm) {
     $scope.realm = realm;
     $scope.page = 0;
     
-    $scope.eventTypes = [{tag:'LOGIN'}, {tag:'REGISTER'}, {tag:'LOGOUT'}, {tag:'CODE_TO_TOKEN'}, {tag:'REFRESH_TOKEN'},
-                         {tag:'LOGIN_ERROR'}, {tag:'REGISTER_ERROR'}, {tag:'LOGOUT_ERROR'}, {tag:'CODE_TO_TOKEN_ERROR'}, {tag:'REFRESH_TOKEN_ERROR'},
-                         {tag:'VALIDATE_ACCESS_TOKEN'}, {tag:'VALIDATE_ACCESS_TOKEN_ERROR'}, {tag:'SOCIAL_LINK'}, {tag:'SOCIAL_LINK_ERROR'}, {tag:'REMOVE_FEDERATED_IDENTITY'},
-                         {tag:'REMOVE_SOCIAL_LINK_ERROR'}, {tag:'UPDATE_EMAIL'}, {tag:'UPDATE_PROFILE'}, {tag:'UPDATE_PASSWORD'}, {tag:'UPDATE_TOTP'}];
+    // Admin can filter events view by selecting any one or multiple of these events.
+    $scope.eventTypes = [{tag:'LOGIN'}, {tag:'REGISTER'}, {tag:'LOGOUT'}, {tag:'CODE_TO_TOKEN'}, 
+                         {tag:'REFRESH_TOKEN'}, {tag:'LOGIN_ERROR'}, {tag:'REGISTER_ERROR'}, {tag:'LOGOUT_ERROR'},
+                         {tag:'CODE_TO_TOKEN_ERROR'}, {tag:'REFRESH_TOKEN_ERROR'}, {tag:'VALIDATE_ACCESS_TOKEN'}, {tag:'VALIDATE_ACCESS_TOKEN_ERROR'}, 
+                         {tag:'SOCIAL_LINK'}, {tag:'SOCIAL_LINK_ERROR'}, {tag:'REMOVE_FEDERATED_IDENTITY'}, {tag:'REMOVE_SOCIAL_LINK_ERROR'},
+                         {tag:'UPDATE_EMAIL'}, {tag:'UPDATE_PROFILE'}, {tag:'UPDATE_PASSWORD'}, {tag:'UPDATE_TOTP'},
+                         {tag:'UPLOAD_REALM'}, {tag:'IMPORT_REALM'}, {tag:'UPDATE_REALM'}, {tag:'DELETE_REALM'},
+                     	 {tag:'CREATE_USER'}, {tag:'UPDATE_USER'}, {tag:'DELETE_USER'}, {tag:'VIEW_USER_SESSIONS'},
+                     	 {tag:'CREATE_APPLICATION'}, {tag:'UPDATE_APPLICATION'}, {tag:'DELETE_APPLICATION'}, {tag:'VIEW_APPLICATION'},
+                     	 {tag:'CREATE_OAUTH_CLIENT'}, {tag:'UPDATE_OAUTH_CLIENT'}, {tag:'VIEW_OAUTH_CLIENT'}, {tag:'DELETE_OAUTH_CLIENT'},
+                     	 {tag:'CREATE_PROVIDER'}, {tag:'UPDATE_PROVIDER'}, {tag:'DELETE_PROVIDER'}, {tag:'VIEW_ROLE'},
+                     	 {tag:'CREATE_ROLE'}, {tag:'UPDATE_ROLE'}, {tag:'DELETE_ROLE'}, {tag:'VIEW_SERVER_INFO'}];
 
     $scope.query = {
         id : realm.realm,

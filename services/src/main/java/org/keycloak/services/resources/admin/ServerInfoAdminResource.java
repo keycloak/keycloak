@@ -3,7 +3,10 @@ package org.keycloak.services.resources.admin;
 import org.keycloak.Version;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.exportimport.ApplicationImporter;
 import org.keycloak.exportimport.ApplicationImporterFactory;
 import org.keycloak.freemarker.Theme;
@@ -23,6 +26,7 @@ import org.keycloak.social.SocialIdentityProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -40,7 +44,13 @@ public class ServerInfoAdminResource {
 
     @Context
     private KeycloakSession session;
-
+    
+    private EventBuilder event;
+    
+    public ServerInfoAdminResource(EventBuilder event) {
+        this.event = event;
+    }
+    
     /**
      * Returns a list of themes, social providers, auth providers, and event listeners available on this server
      *
@@ -60,6 +70,12 @@ public class ServerInfoAdminResource {
         setProviders(info);
         setProtocolMapperTypes(info);
         setBuiltinProtocolMappers(info);
+        
+        event.event(EventType.VIEW_SERVER_INFO)
+            .detail(Details.SERVER_VERSION, info.version)
+            .detail(Details.SERVER_TIME, info.serverTime)
+            .success();
+        
         return info;
     }
 

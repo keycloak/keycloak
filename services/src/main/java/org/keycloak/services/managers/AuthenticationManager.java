@@ -9,6 +9,7 @@ import org.keycloak.VerificationException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
@@ -43,6 +44,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -374,7 +376,7 @@ public class AuthenticationManager {
         logger.debugv("processAccessCode: go to oauth page?: {0}",
                 !isResource);
 
-        event.detail(Details.CODE_ID, clientSession.getId());
+        event.eventGroup(EventGroup.USER).detail(Details.CODE_ID, clientSession.getId());
 
         Set<UserModel.RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {

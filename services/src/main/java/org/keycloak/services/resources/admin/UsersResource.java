@@ -7,6 +7,9 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -24,7 +27,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
@@ -57,6 +59,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,6 +82,8 @@ public class UsersResource {
     private RealmAuth auth;
 
     private TokenManager tokenManager;
+    
+    private EventBuilder event;
 
     @Context
     protected ClientConnection clientConnection;
@@ -91,11 +96,12 @@ public class UsersResource {
 
     @Context
     protected HttpHeaders headers;
-
-    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
+    
+    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager, EventBuilder event) {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
+        this.event = event;
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -120,10 +126,15 @@ public class UsersResource {
             }
             updateUserFromRep(user, rep);
 
+            event.event(EventType.UPDATE_USER)
+                .user(user)
+                .detail(Details.USERNAME, user.getUsername())
+                .success();
+            
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
-
+            
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("User exists with same username or email");
@@ -155,11 +166,16 @@ public class UsersResource {
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             updateUserFromRep(user, rep);
-
+            
+            event.event(EventType.CREATE_USER)
+                .user(user)
+                .detail(Details.USERNAME, user.getUsername())
+                .success();
+            
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
-
+            
             return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getUsername()).build()).build();
         } catch (ModelDuplicateException e) {
             if (session.getTransaction().isActive()) {
@@ -220,6 +236,12 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
+        
+        event.event(EventType.VIEW_USER)
+            .user(user)
+            .detail(Details.USERNAME, user.getUsername())
+            .success();
+        
         return ModelToRepresentation.toRepresentation(user);
     }
 
@@ -245,6 +267,12 @@ public class UsersResource {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
             reps.add(rep);
         }
+        
+        event.event(EventType.VIEW_USER_SESSIONS)
+            .user(user)
+            .detail(Details.USERNAME, user.getUsername())
+            .success();
+
         return reps;
     }
 
@@ -276,6 +304,12 @@ public class UsersResource {
                 }
             }
         }
+        
+        event.event(EventType.VIEW_USER_SOCIAL_LOGINS)
+            .user(user)
+            .detail(Details.USERNAME, user.getUsername())
+            .success();
+        
         return result;
     }
 
@@ -326,10 +360,16 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
+
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
         }
+        
+        event.event(EventType.INVALIDATE_USER_SESSIONS)
+            .user(user)
+            .detail(Details.USERNAME, user.getUsername())
+            .success();
     }
 
     /**
@@ -350,6 +390,12 @@ public class UsersResource {
 
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
+            
+            event.event(EventType.DELETE_USER)
+                .user(user)
+                .detail(Details.USERNAME, user.getUsername())
+                .success();
+            
             return Response.noContent().build();
         } else {
             return Flows.errors().error("User couldn't be deleted", Response.Status.BAD_REQUEST);

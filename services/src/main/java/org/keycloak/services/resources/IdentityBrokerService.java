@@ -29,6 +29,7 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -61,6 +62,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -109,7 +111,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     public void init() {
-        this.event = new EventsManager(this.realmModel, this.session, this.clientConnection).createEventBuilder().event(EventType.IDENTITY_PROVIDER_LOGIN);
+        this.event = new EventsManager(this.realmModel, this.session, this.clientConnection).createEventBuilder().event(EventType.IDENTITY_PROVIDER_LOGIN).eventGroup(EventGroup.USER);
     }
 
     @GET
