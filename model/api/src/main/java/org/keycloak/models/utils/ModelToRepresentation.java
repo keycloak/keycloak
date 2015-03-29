@@ -116,6 +116,9 @@ public class ModelToRepresentation {
         if (realm.getEventsListeners() != null) {
             rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
         }
+        if (realm.getEnabledEventTypes() != null) {
+            rep.setEnabledEventTypes(new LinkedList<String>(realm.getEnabledEventTypes()));
+        }
 
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
@@ -182,6 +185,11 @@ public class ModelToRepresentation {
         if (realm.getEventsListeners() != null) {
             rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
         }
+        
+        if(realm.getEnabledEventTypes() != null) {
+            rep.setEnabledEventTypes(new LinkedList<String>(realm.getEnabledEventTypes()));
+        }
+        
         return rep;
     }
 

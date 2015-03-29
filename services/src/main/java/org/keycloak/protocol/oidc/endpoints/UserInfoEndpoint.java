@@ -26,6 +26,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -54,6 +55,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -114,6 +116,7 @@ public class UserInfoEndpoint {
 
     private Response issueUserInfo(String tokenString) {
         EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder()
+                .eventGroup(EventGroup.USER)
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 

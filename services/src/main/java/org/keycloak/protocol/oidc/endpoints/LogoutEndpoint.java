@@ -9,6 +9,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -70,7 +71,7 @@ public class LogoutEndpoint {
         this.tokenManager = tokenManager;
         this.authManager = authManager;
         this.realm = realm;
-        this.event = event;
+        this.event = event.eventGroup(EventGroup.USER);
     }
 
     /**

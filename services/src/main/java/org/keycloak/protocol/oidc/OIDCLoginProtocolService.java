@@ -1,18 +1,10 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
+import org.keycloak.events.EventGroup;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.login.LoginFormsProvider;
@@ -25,8 +17,6 @@ import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.endpoints.ValidateTokenEndpoint;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
@@ -39,12 +29,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.Providers;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -73,7 +59,7 @@ public class OIDCLoginProtocolService {
     public OIDCLoginProtocolService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
         this.realm = realm;
         this.tokenManager = new TokenManager();
-        this.event = event;
+        this.event = event.eventGroup(EventGroup.USER);
         this.authManager = authManager;
     }
 

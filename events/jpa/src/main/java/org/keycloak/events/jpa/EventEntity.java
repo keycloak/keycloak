@@ -21,6 +21,9 @@ public class EventEntity {
 
     @Column(name="TYPE")
     private String type;
+    
+    @Column(name="EVENT_GROUP")
+    private String eventGroup;
 
     @Column(name="REALM_ID")
     private String realmId;
@@ -67,6 +70,14 @@ public class EventEntity {
         this.type = type;
     }
 
+    public String getEventGroup() {
+        return eventGroup;
+    }
+
+    public void setEventGroup(String eventGroup) {
+        this.eventGroup = eventGroup;
+    }
+    
     public String getRealmId() {
         return realmId;
     }

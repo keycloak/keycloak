@@ -34,7 +34,7 @@
       			            <label class="col-sm-2 control-label" for="eventType">Event Type</label>
                     	    <div class="col-sm-5">
                                 <select ui-select2 id="reqActions" ng-model="query.type" data-placeholder="Select event types..." multiple>
-                                    <option ng-repeat="event in eventTypes|orderBy:'tag'">{{event.tag}}</option>
+                                    <option ng-repeat="event in eventTypes">{{event.tag}}</option>
                                 </select>
 			                </div>
 			            </div>

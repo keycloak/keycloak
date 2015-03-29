@@ -10,6 +10,7 @@ public class RealmEventsConfigRepresentation {
     protected boolean eventsEnabled;
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
+    protected List<String> enabledEventTypes;
 
     public boolean isEventsEnabled() {
         return eventsEnabled;
@@ -33,5 +34,13 @@ public class RealmEventsConfigRepresentation {
 
     public void setEventsListeners(List<String> eventsListeners) {
         this.eventsListeners = eventsListeners;
+    }
+
+    public List<String> getEnabledEventTypes() {
+        return enabledEventTypes;
+    }
+
+    public void setEnabledEventTypes(List<String> enabledEventTypes) {
+        this.enabledEventTypes = enabledEventTypes;
     }
 }

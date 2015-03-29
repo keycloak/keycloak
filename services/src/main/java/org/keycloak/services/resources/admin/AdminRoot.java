@@ -8,6 +8,9 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -16,6 +19,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 
@@ -27,6 +31,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 
 /**
@@ -69,9 +74,6 @@ public class AdminRoot {
     public static UriBuilder adminBaseUrl(UriBuilder base) {
         return base.path(AdminRoot.class);
     }
-
-
-
 
     /**
      * Convenience path to master realm admin console
@@ -124,7 +126,9 @@ public class AdminRoot {
     public AdminConsole getAdminConsole(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        AdminConsole service = new AdminConsole(realm);
+        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        event.eventGroup(EventGroup.ADMIN).detail(Details.REALM_NAME, realm.getName());
+        AdminConsole service = new AdminConsole(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }
@@ -187,7 +191,9 @@ public class AdminRoot {
 
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
 
-        RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
+        EventBuilder event = new EventsManager(auth.getRealm(), session, clientConnection).createEventBuilder();
+        event.eventGroup(EventGroup.ADMIN);
+        RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager, event);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);
         return adminResource;
@@ -208,8 +214,10 @@ public class AdminRoot {
             logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
         }
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
-
-        ServerInfoAdminResource adminResource = new ServerInfoAdminResource();
+        
+        EventBuilder event = new EventsManager(auth.getRealm(), session, clientConnection).createEventBuilder();
+        event.eventGroup(EventGroup.ADMIN);
+        ServerInfoAdminResource adminResource = new ServerInfoAdminResource(event);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);
         return adminResource;

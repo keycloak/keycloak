@@ -11,6 +11,8 @@ public class Event {
     private long time;
 
     private EventType type;
+    
+    private EventGroup eventGroup;
 
     private String realmId;
 
@@ -40,6 +42,14 @@ public class Event {
 
     public void setType(EventType type) {
         this.type = type;
+    }
+    
+    public EventGroup getEventGroup() {
+        return eventGroup;
+    }
+
+    public void setEventGroup(EventGroup group) {
+        this.eventGroup = group;
     }
 
     public String getRealmId() {
@@ -102,6 +112,7 @@ public class Event {
         Event clone = new Event();
         clone.time = time;
         clone.type = type;
+        clone.eventGroup = eventGroup;
         clone.realmId = realmId;
         clone.clientId = clientId;
         clone.userId = userId;

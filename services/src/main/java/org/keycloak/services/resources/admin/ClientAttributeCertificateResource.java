@@ -6,6 +6,9 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -21,6 +24,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,18 +43,20 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class ClientAttributeCertificateResource {
+    
     public static final String PRIVATE_KEY = "private.key";
     public static final String X509CERTIFICATE = "certificate";
 
     protected RealmModel realm;
     private RealmAuth auth;
+    private EventBuilder event;
     protected ClientModel client;
     protected KeycloakSession session;
     protected String attributePrefix;
     protected String privateAttribute;
     protected String certificateAttribute;
 
-    public ClientAttributeCertificateResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, String attributePrefix) {
+    public ClientAttributeCertificateResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, String attributePrefix, EventBuilder event) {
         this.realm = realm;
         this.auth = auth;
         this.client = client;
@@ -58,6 +64,7 @@ public class ClientAttributeCertificateResource {
         this.attributePrefix = attributePrefix;
         this.privateAttribute = attributePrefix + "." + PRIVATE_KEY;
         this.certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
+        this.event = event;
     }
 
     public static class ClientKeyPairInfo {
@@ -93,6 +100,9 @@ public class ClientAttributeCertificateResource {
         ClientKeyPairInfo info = new ClientKeyPairInfo();
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
+        
+        event.event(EventType.VIEW_CLIENT_CERTIFICATE).client(client).success();
+
         return info;
     }
 
@@ -131,6 +141,9 @@ public class ClientAttributeCertificateResource {
         ClientKeyPairInfo info = new ClientKeyPairInfo();
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
+        
+        event.event(EventType.GENERATE_CLIENT_CERTIFICATE).client(client).success();
+                
         return info;
     }
 
@@ -187,8 +200,9 @@ public class ClientAttributeCertificateResource {
             client.setAttribute(certificateAttribute, certPem);
             info.setCertificate(certPem);
         }
-
-
+        
+        event.event(EventType.UPLOAD_CLIENT_CERTIFICATE).client(client).success();
+                
         return info;
     }
 
@@ -314,6 +328,9 @@ public class ClientAttributeCertificateResource {
             stream.flush();
             stream.close();
             byte[] rtn = stream.toByteArray();
+            
+            event.event(EventType.DOWNLOAD_CLIENT_CERTIFICATE).client(client).success();
+            
             return rtn;
         } catch (Exception e) {
             throw new RuntimeException(e);

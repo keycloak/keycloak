@@ -4,6 +4,9 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
@@ -31,6 +34,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 
 /**
@@ -43,6 +47,7 @@ public class OAuthClientResource  {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
     protected RealmModel realm;
     private RealmAuth auth;
+    private EventBuilder event;
     protected OAuthClientModel oauthClient;
     protected KeycloakSession session;
     @Context
@@ -55,11 +60,12 @@ public class OAuthClientResource  {
         return (KeycloakApplication)application;
     }
 
-    public OAuthClientResource(RealmModel realm, RealmAuth auth, OAuthClientModel oauthClient, KeycloakSession session) {
+    public OAuthClientResource(RealmModel realm, RealmAuth auth, OAuthClientModel oauthClient, KeycloakSession session, EventBuilder event) {
         this.realm = realm;
         this.auth = auth;
         this.oauthClient = oauthClient;
         this.session = session;
+        this.event = event;
 
         auth.init(RealmAuth.Resource.CLIENT);
     }
@@ -84,7 +90,7 @@ public class OAuthClientResource  {
      */
     @Path("certificates/{attr}")
     public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix) {
-        return new ClientAttributeCertificateResource(realm, auth, oauthClient, session, attributePrefix);
+        return new ClientAttributeCertificateResource(realm, auth, oauthClient, session, attributePrefix, event);
     }
 
 
@@ -102,6 +108,8 @@ public class OAuthClientResource  {
 
         try {
             RepresentationToModel.updateOAuthClient(session, rep, oauthClient);
+            event.event(EventType.UPDATE_OAUTH_CLIENT).client(oauthClient).success();
+            
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Client " + rep.getName() + " already exists");
@@ -118,7 +126,9 @@ public class OAuthClientResource  {
     @Produces(MediaType.APPLICATION_JSON)
     public OAuthClientRepresentation getOAuthClient() {
         auth.requireView();
-
+        
+        event.event(EventType.VIEW_OAUTH_CLIENT).client(oauthClient).success();
+        
         return ModelToRepresentation.toRepresentation(oauthClient);
     }
 
@@ -150,7 +160,9 @@ public class OAuthClientResource  {
     @NoCache
     public void deleteOAuthClient() {
         auth.requireManage();
-
+        
+        event.event(EventType.DELETE_OAUTH_CLIENT).client(oauthClient).success();
+        
         new OAuthClientManager(new RealmManager(session)).removeClient(realm, oauthClient);
     }
 

@@ -5,6 +5,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -130,6 +131,7 @@ public class RealmsResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        event.eventGroup(EventGroup.USER);
         AuthenticationManager authManager = new AuthenticationManager(protector);
         LoginActionsService service = new LoginActionsService(realm, authManager, event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
@@ -143,6 +145,7 @@ public class RealmsResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        event.eventGroup(EventGroup.USER);
         ClientsManagementService service = new ClientsManagementService(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
@@ -169,6 +172,7 @@ public class RealmsResource {
         }
 
         EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+        event.eventGroup(EventGroup.USER);
         AccountService accountService = new AccountService(realm, application, event);
         ResteasyProviderFactory.getInstance().injectProperties(accountService);
         //resourceContext.initResource(accountService);

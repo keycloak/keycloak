@@ -68,6 +68,7 @@ public class RealmRepresentation {
     protected Boolean eventsEnabled;
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
+    protected List<String> enabledEventTypes;
     private List<IdentityProviderRepresentation> identityProviders;
     private List<ProtocolMapperRepresentation> protocolMappers;
     private Boolean identityFederationEnabled;
@@ -502,6 +503,14 @@ public class RealmRepresentation {
 
     public void setEventsListeners(List<String> eventsListeners) {
         this.eventsListeners = eventsListeners;
+    }
+    
+    public List<String> getEnabledEventTypes() {
+        return enabledEventTypes;
+    }
+
+    public void setEnabledEventTypes(List<String> enabledEventTypes) {
+        this.enabledEventTypes = enabledEventTypes;
     }
 
     public List<UserFederationProviderRepresentation> getUserFederationProviders() {

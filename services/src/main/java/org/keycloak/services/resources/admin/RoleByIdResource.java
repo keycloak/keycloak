@@ -3,7 +3,11 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -18,6 +22,8 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+
 import java.util.List;
 import java.util.Set;
 
@@ -31,12 +37,17 @@ public class RoleByIdResource extends RoleResource {
     protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;
     private final RealmAuth auth;
+    private EventBuilder event;
 
-    public RoleByIdResource(RealmModel realm, RealmAuth auth) {
+    @Context
+    protected KeycloakSession session;
+
+    public RoleByIdResource(RealmModel realm, RealmAuth auth, EventBuilder event) {
         super(realm);
 
         this.realm = realm;
         this.auth = auth;
+        this.event = event;
     }
 
     /**
@@ -52,6 +63,12 @@ public class RoleByIdResource extends RoleResource {
     public RoleRepresentation getRole(final @PathParam("role-id") String id) {
         RoleModel roleModel = getRoleModel(id);
         auth.requireView();
+        
+        event.event(EventType.VIEW_ROLE)
+            .detail(Details.ROLE_ID, roleModel.getId())
+            .detail(Details.ROLE_NAME, roleModel.getName())
+            .success();
+        
         return getRole(roleModel);
     }
 
@@ -88,6 +105,11 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         deleteRole(role);
+        
+        event.event(EventType.DELETE_ROLE)
+            .detail(Details.ROLE_ID, role.getId())
+            .detail(Details.ROLE_NAME, role.getName())
+            .success();
     }
 
     /**
@@ -103,6 +125,11 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         updateRole(rep, role);
+        
+        event.event(EventType.UPDATE_ROLE)
+            .detail(Details.ROLE_ID, role.getId())
+            .detail(Details.ROLE_NAME, role.getName())
+            .success();
     }
 
     /**
@@ -118,6 +145,11 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         addComposites(roles, role);
+        
+        event.event(EventType.MAKE_ROLE_COMPOSITE)
+            .detail(Details.ROLE_ID, role.getId())
+            .detail(Details.ROLE_NAME, role.getName())
+            .success();
     }
 
     /**

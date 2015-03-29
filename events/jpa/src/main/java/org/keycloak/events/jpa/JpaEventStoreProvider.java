@@ -4,12 +4,14 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
@@ -70,6 +72,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         e.setId(UUID.randomUUID().toString());
         e.setTime(o.getTime());
         e.setType(o.getType().toString());
+        e.setEventGroup(o.getEventGroup().toString());
         e.setRealmId(o.getRealmId());
         e.setClientId(o.getClientId());
         e.setUserId(o.getUserId());
@@ -88,6 +91,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         Event e = new Event();
         e.setTime(o.getTime());
         e.setType(EventType.valueOf(o.getType()));
+        e.setEventGroup(EventGroup.valueOf(o.getEventGroup()));
         e.setRealmId(o.getRealmId());
         e.setClientId(o.getClientId());
         e.setUserId(o.getUserId());
