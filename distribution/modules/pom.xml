@@ -144,6 +144,12 @@
             <groupId>org.jboss.aesh</groupId>
             <artifactId>aesh</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcmail-jdk15on</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
