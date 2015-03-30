@@ -129,7 +129,7 @@ Then edit `<WILDFLY HOME>/standalone/configuration/standalone.xml` and add the f
     <secure-deployment name="product-portal.war">
         <realm>demo</realm>
         <resource>product-portal</resource>
-        <credential name="secret">484ba263-8bb5-4048-bb6f-40da75e9eefb</credential>
+        <credential name="secret">APPLICATION SECRET</credential>
     </secure-deployment>
 
 In the above snippet replace the following:
