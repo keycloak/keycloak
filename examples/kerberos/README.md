@@ -31,8 +31,18 @@ Alternatively you can use OpenJDK7 but in this case you will need to use aes256-
 you can add system property to the maven command when running ApacheDS Kerberos server `-Dkerberos.encTypes=aes256-cts-hmac-sha1-96` (see below) and for 
 client add encryption types to configuration file like `/etc/krb5.conf` (but they should be already available. See below).
 
+Also if you are on Linux, make sure that record like:
+```
+127.0.0.1       localhost
+```
+is in your `/etc/hosts` before other records for the 127.0.0.1 host to avoid issues related to incompatible reverse lookup (Ensure the similar for other OS as well)
 
-**4)**  Run ApacheDS based Kerberos server embedded in Keycloak. Easiest is to checkout keycloak sources, build and then run KerberosEmbeddedServer 
+
+**4)** Configure Kerberos client (On linux it's in file `/etc/krb5.conf` ). You need to configure `KEYCLOAK.ORG` realm and enable `forwardable` flag, which is needed 
+for credential delegation example, as application needs to forward Kerberos ticket and authenticate with it against LDAP server. 
+See [this file](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/src/main/resources/kerberos/test-krb5.conf) for inspiration.
+
+**5)**  Run ApacheDS based Kerberos server embedded in Keycloak. Easiest is to checkout keycloak sources, build and then run KerberosEmbeddedServer 
 as shown here: 
 
 ```
@@ -43,11 +53,6 @@ mvn exec:java -Pkerberos
 ```
 
 More details about embedded Kerberos server in [testsuite README](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/README.md#kerberos-server).
-
-
-**5)** Configure Kerberos client (On linux it's in file `/etc/krb5.conf` ). You need to configure `KEYCLOAK.ORG` realm and enable `forwardable` flag, which is needed 
-for credential delegation example, as application needs to forward Kerberos ticket and authenticate with it against LDAP server. 
-See [this file](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/src/main/resources/kerberos/test-krb5.conf) for inspiration.
 
   
 **6)** Configure browser (Firefox, Chrome or other) and enable SPNEGO authentication and credential delegation for `localhost` . 
