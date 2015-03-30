@@ -18,6 +18,7 @@ import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 public abstract class BasePropertiesFederationProvider implements UserFederationProvider {
@@ -159,4 +160,17 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
     public void close() {
 
     }
+    
+    @Override
+    public boolean supportRoles() {return false;}
+    @Override
+    public RoleModel createRole(RealmModel realm, RoleModel role) {return null;}
+    @Override
+    public boolean removeRole(RealmModel realm, RoleModel role) {return false;}
+    @Override
+    public void grantRole(RealmModel realm, UserModel user, RoleModel role) {}
+    @Override
+    public void revokeRole(RealmModel realm, UserModel user, RoleModel role) {}
+    @Override
+    public RoleModel proxy(RoleModel local) {return null;}
 }

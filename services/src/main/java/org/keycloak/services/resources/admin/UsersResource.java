@@ -18,6 +18,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderFactory;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -53,6 +56,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,6 +70,7 @@ import java.util.concurrent.TimeUnit;
  * Base resource for managing users
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 public class UsersResource {
@@ -541,12 +546,40 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        for (RoleRepresentation role : roles) {
-            RoleModel roleModel = realm.getRole(role.getName());
-            if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                throw new NotFoundException("Role not found");
+        try{
+            
+        	for (RoleRepresentation role : roles) {
+        		RoleModel roleModel = realm.getRole(role.getName());
+        		if (roleModel == null || !roleModel.getId().equals(role.getId())) {
+        			throw new NotFoundException("Role not found");
+        		}
+        		user.grantRole(roleModel);
+        	}
+
+        	try {
+        		for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
+        			UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, federation.getProviderName());
+    		
+        			UserFederationProvider fed = factory.getInstance(session, federation);
+        			for (RoleRepresentation role : roles) {
+        				RoleModel roleModel = realm.getRole(role.getName());
+        				if (fed.synchronizeRegistrations()) {
+        					fed.grantRole(realm, user, roleModel);
+        				}
+        			}
+        		}
+        	} catch (IllegalStateException ise) {
+        		logger.warn("Ignore the exception because either user federation is read-only or syncing to user federation is turned off in configuration.  Keycloak role mapping could get out of sync with LDAP group/user mapping though. " + ise);
+        	}
+        	if (session.getTransaction().isActive()) {
+        		session.getTransaction().commit();
+        	}
+        }
+        catch (Exception e) {
+        	if (session.getTransaction().isActive()) {
+                session.getTransaction().setRollbackOnly();
             }
-            user.grantRole(roleModel);
+        	throw new NotFoundException("Action failed, changes rolled back: " + e.getMessage());
         }
 
 
@@ -570,20 +603,49 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        if (roles == null) {
-            Set<RoleModel> roleModels = user.getRealmRoleMappings();
-            for (RoleModel roleModel : roleModels) {
-                user.deleteRoleMapping(roleModel);
-            }
+        ArrayList<RoleModel> deleted = new ArrayList<RoleModel>();
+        
+        try{
+        	if (roles == null) {
+        		Set<RoleModel> roleModels = user.getRealmRoleMappings();
+        		for (RoleModel roleModel : roleModels) {
+        			user.deleteRoleMapping(roleModel);
+        			deleted.add(roleModel);
+        		}
 
-        } else {
-            for (RoleRepresentation role : roles) {
-                RoleModel roleModel = realm.getRole(role.getName());
-                if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                    throw new NotFoundException("Role not found");
-                }
-                user.deleteRoleMapping(roleModel);
+        	} else {
+        		for (RoleRepresentation role : roles) {
+        			RoleModel roleModel = realm.getRole(role.getName());
+        			if (roleModel == null || !roleModel.getId().equals(role.getId())) {
+        				throw new NotFoundException("Role not found");
+        			}
+        			user.deleteRoleMapping(roleModel);
+        			deleted.add(roleModel);
+        		}
+        	}
+        	
+        	try {
+        		for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
+        			UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, federation.getProviderName());
+    		
+        			UserFederationProvider fed = factory.getInstance(session, federation);
+        			
+        			for (RoleModel role : deleted) {
+        				fed.revokeRole(realm, user, role);
+        			}
+        		}
+        	} catch (IllegalStateException ise) {
+        		logger.warn("Ignore the exception because either user federation is read-only or syncing to user federation is turned off in configuration.  Keycloak role mapping could get out of sync with LDAP group/user mapping though. " + ise);
+        	}
+        	if (session.getTransaction().isActive()) {
+        		session.getTransaction().commit();
+        	}
+        }
+        catch (Exception e) {
+            if (session.getTransaction().isActive()) {
+            	session.getTransaction().setRollbackOnly();
             }
+            throw new NotFoundException("Action failed, changes rolled back: " + e.getMessage());
         }
     }
 

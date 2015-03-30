@@ -10,6 +10,7 @@ import java.util.Set;
  * SPI for plugging in federation storage.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 public interface UserFederationProvider extends Provider {
@@ -142,5 +143,12 @@ public interface UserFederationProvider extends Provider {
     boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input);
     boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input);
     void close();
+    
+    boolean supportRoles();
+    RoleModel createRole(RealmModel realm, RoleModel role);
+	boolean removeRole(RealmModel realm, RoleModel role);
+	void grantRole(RealmModel realm, UserModel user, RoleModel role);
+	void revokeRole(RealmModel realm, UserModel user, RoleModel role);
+	RoleModel proxy(RoleModel local);
 
 }

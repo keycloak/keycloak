@@ -1,9 +1,11 @@
 package org.keycloak.models.entities;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  */
 public class RoleEntity extends AbstractIdentifiableEntity {
 
@@ -14,6 +16,9 @@ public class RoleEntity extends AbstractIdentifiableEntity {
 
     private String realmId;
     private String applicationId;
+    
+    private Map<String, String> attributes;
+    private String federationLink;
 
     public String getName() {
         return name;
@@ -53,5 +58,21 @@ public class RoleEntity extends AbstractIdentifiableEntity {
 
     public void setApplicationId(String applicationId) {
         this.applicationId = applicationId;
+    }
+    
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+    
+    public String getFederationLink() {
+        return federationLink;
+    }
+
+    public void setFederationLink(String federationLink) {
+        this.federationLink = federationLink;
     }
 }

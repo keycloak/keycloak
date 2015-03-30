@@ -1,9 +1,11 @@
 package org.keycloak.models;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 public interface RoleModel {
@@ -28,5 +30,12 @@ public interface RoleModel {
     RoleContainerModel getContainer();
 
     boolean hasRole(RoleModel role);
+    
+    void setAttribute(String name, String value);
+    void removeAttribute(String name);
+    String getAttribute(String name);
+    Map<String, String> getAttributes();
+    String getFederationLink();
+    void setFederationLink(String link);
 
 }

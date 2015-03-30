@@ -2,6 +2,7 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -13,14 +14,17 @@ import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * Wrapper around RoleData object, which will persist wrapped object after each set operation (compatibility with picketlink based idm)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  */
 public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implements RoleModel {
 
@@ -159,5 +163,43 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
     public int hashCode() {
         return getId().hashCode();
     }
+    
+    @Override
+    public void setAttribute(String name, String value) {
+        if (role.getAttributes() == null) {
+            role.setAttributes(new HashMap<String, String>());
+        }
 
+        role.getAttributes().put(name, value);
+        updateRole();
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        if (role.getAttributes() == null) return;
+
+        role.getAttributes().remove(name);
+        updateRole();
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        return role.getAttributes()==null ? null : role.getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        return role.getAttributes()==null ? Collections.<String, String>emptyMap() : Collections.unmodifiableMap(role.getAttributes());
+    }
+
+    @Override
+    public String getFederationLink() {
+        return role.getFederationLink();
+    }
+
+    @Override
+    public void setFederationLink(String link) {
+        role.setFederationLink(link);
+        updateRole();
+    }
 }

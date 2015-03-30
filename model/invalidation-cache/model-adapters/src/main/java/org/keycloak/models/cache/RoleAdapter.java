@@ -9,10 +9,12 @@ import org.keycloak.models.cache.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 public class RoleAdapter implements RoleModel {
@@ -133,5 +135,41 @@ public class RoleAdapter implements RoleModel {
     public int hashCode() {
         return getId().hashCode();
     }
+    
+    @Override
+    public void setAttribute(String name, String value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getDelegateForUpdate();
+        updated.removeAttribute(name);
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        if (updated != null) return updated.getAttribute(name);
+        return cached.getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        if (updated != null) return updated.getAttributes();
+        return cached.getAttributes();
+    }
+    
+    @Override
+    public String getFederationLink() {
+        if (updated != null) return updated.getFederationLink();
+        return cached.getFederationLink();
+    }
+
+    @Override
+    public void setFederationLink(String link) {
+        getDelegateForUpdate();
+        updated.setFederationLink(link);
+   }
 
 }

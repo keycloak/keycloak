@@ -90,4 +90,34 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     public void close() {
 
     }
+    
+    @Override
+    public boolean supportRoles() {
+        return false;
+    }
+
+	@Override
+	public RoleModel createRole(RealmModel realm, RoleModel role) {
+		return null;
+	}
+
+	@Override
+	public boolean removeRole(RealmModel realm, RoleModel role) {
+		return false;
+	}
+
+	@Override
+	public void grantRole(RealmModel realm, UserModel user, RoleModel role) {
+		
+	}
+
+	@Override
+	public void revokeRole(RealmModel realm, UserModel user, RoleModel role) {
+		
+	}
+
+	@Override
+	public RoleModel proxy(RoleModel local) {
+		return null;
+	}
 }
