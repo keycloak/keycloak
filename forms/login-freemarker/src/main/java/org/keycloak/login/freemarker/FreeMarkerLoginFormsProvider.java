@@ -16,6 +16,7 @@ import org.keycloak.login.freemarker.model.CodeBean;
 import org.keycloak.freemarker.beans.LocaleBean;
 import org.keycloak.login.freemarker.model.LoginBean;
 import org.keycloak.login.freemarker.model.MessageBean;
+import org.keycloak.login.freemarker.model.MessagesPerFieldBean;
 import org.keycloak.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.login.freemarker.model.ProfileBean;
 import org.keycloak.login.freemarker.model.RealmBean;
@@ -186,25 +187,20 @@ import java.util.concurrent.TimeUnit;
             messagesBundle = new Properties();
         }
 
+        MessagesPerFieldBean messagesPerField = new MessagesPerFieldBean();
         if (messages != null) {
-            Map<String, MessageBean> messagesPerField = new HashMap<String, MessageBean>();
             MessageBean wholeMessage = new MessageBean(null, messageType);
             for (FormMessage message : this.messages) {
                 String formattedMessageText = formatMessageMessage(message, messagesBundle, locale);
                 if (formattedMessageText != null) {
                     wholeMessage.appendSummaryLine(formattedMessageText);
-                    MessageBean fm = messagesPerField.get(message.getField());
-                    if (fm == null) {
-                        messagesPerField.put(message.getField(), new MessageBean(formattedMessageText, messageType));
-                    } else {
-                        fm.appendSummaryLine(formattedMessageText);
-                    }
+                    messagesPerField.addMessage(message.getField(), formattedMessageText, messageType);
                 }
             }
-            
             attributes.put("message", wholeMessage);
-            attributes.put("messagePerField", messagesPerField);
         }
+        attributes.put("messagesPerField", messagesPerField);
+
         if (page == LoginFormsPages.OAUTH_GRANT) {
             // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
             uriBuilder.replaceQuery(null);
