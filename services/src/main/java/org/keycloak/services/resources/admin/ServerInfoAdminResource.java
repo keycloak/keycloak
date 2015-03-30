@@ -4,6 +4,7 @@ import org.keycloak.Version;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.exportimport.ApplicationImporter;
 import org.keycloak.exportimport.ApplicationImporterFactory;
 import org.keycloak.freemarker.Theme;
@@ -16,7 +17,6 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.social.SocialIdentityProvider;
@@ -24,7 +24,6 @@ import org.keycloak.social.SocialIdentityProvider;
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -60,6 +59,7 @@ public class ServerInfoAdminResource {
         setProviders(info);
         setProtocolMapperTypes(info);
         setBuiltinProtocolMappers(info);
+        setEventTypes(info);
         return info;
     }
 
@@ -178,6 +178,15 @@ public class ServerInfoAdminResource {
         }
     }
 
+    private void setEventTypes(ServerInfoRepresentation info) {
+        List<String> eventTypes = new LinkedList<>();
+        for (EventType t : EventType.values()) {
+            eventTypes.add(t.name());
+        }
+        Collections.sort(eventTypes);
+        info.setEventTypes(eventTypes);
+    }
+
     public static class ServerInfoRepresentation {
 
         private String version;
@@ -196,6 +205,8 @@ public class ServerInfoAdminResource {
         private List<String> eventListeners;
         private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
         private Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers;
+
+        private List<String> eventTypes;
 
         public ServerInfoRepresentation() {
         }
@@ -246,6 +257,14 @@ public class ServerInfoAdminResource {
 
         public void setBuiltinProtocolMappers(Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers) {
             this.builtinProtocolMappers = builtinProtocolMappers;
+        }
+
+        public List<String> getEventTypes() {
+            return eventTypes;
+        }
+
+        public void setEventTypes(List<String> eventTypes) {
+            this.eventTypes = eventTypes;
         }
     }
 

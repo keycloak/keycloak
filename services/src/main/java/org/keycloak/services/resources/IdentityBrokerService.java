@@ -29,6 +29,7 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -45,7 +46,6 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
@@ -109,7 +109,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     public void init() {
-        this.event = new EventsManager(this.realmModel, this.session, this.clientConnection).createEventBuilder().event(EventType.IDENTITY_PROVIDER_LOGIN);
+        this.event = new EventBuilder(EventGroup.USER, realmModel, session, clientConnection).event(EventType.IDENTITY_PROVIDER_LOGIN);
     }
 
     @GET
@@ -254,7 +254,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         this.event.event(EventType.IDENTITY_PROVIDER_LOGIN)
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.IDENTITY_PROVIDER_IDENTITY, federatedIdentity.getUsername());
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, federatedIdentity.getUsername());
 
         UserModel federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
 
@@ -514,7 +514,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         this.event.clone().user(federatedUser).event(EventType.REGISTER)
                 .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())
-                .detail(Details.IDENTITY_PROVIDER_IDENTITY, updatedIdentity.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, updatedIdentity.getUsername())
                 .removeDetail("auth_method")
                 .success();
 

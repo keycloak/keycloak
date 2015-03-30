@@ -79,6 +79,7 @@ public class CachedRealm {
     private boolean eventsEnabled;
     private long eventsExpiration;
     private Set<String> eventsListeners = new HashSet<String>();
+    private Set<String> enabledEventTypes = new HashSet<String>();
     private List<String> defaultRoles = new LinkedList<String>();
     private Map<String, String> realmRoles = new HashMap<String, String>();
     private Map<String, String> applications = new HashMap<String, String>();
@@ -146,6 +147,7 @@ public class CachedRealm {
         eventsEnabled = model.isEventsEnabled();
         eventsExpiration = model.getEventsExpiration();
         eventsListeners.addAll(model.getEventsListeners());
+        enabledEventTypes.addAll(model.getEnabledEventTypes());
         defaultRoles.addAll(model.getDefaultRoles());
         masterAdminApp = model.getMasterAdminApp().getId();
 
@@ -347,6 +349,10 @@ public class CachedRealm {
 
     public Set<String> getEventsListeners() {
         return eventsListeners;
+    }
+    
+    public Set<String> getEnabledEventTypes() {
+        return enabledEventTypes;
     }
 
     public List<UserFederationProviderModel> getUserFederationProviders() {

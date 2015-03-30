@@ -2,6 +2,8 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -22,6 +24,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -34,12 +37,14 @@ public class RoleContainerResource extends RoleResource {
     private final RealmModel realm;
     private final RealmAuth auth;
     protected RoleContainerModel roleContainer;
+    private EventBuilder event;
 
-    public RoleContainerResource(RealmModel realm, RealmAuth auth, RoleContainerModel roleContainer) {
+    public RoleContainerResource(RealmModel realm, RealmAuth auth, RoleContainerModel roleContainer, EventBuilder event) {
         super(realm);
         this.realm = realm;
         this.auth = auth;
         this.roleContainer = roleContainer;
+        this.event = event;
     }
 
     /**
@@ -58,6 +63,9 @@ public class RoleContainerResource extends RoleResource {
         for (RoleModel roleModel : roleModels) {
             roles.add(ModelToRepresentation.toRepresentation(roleModel));
         }
+        
+        event.event(EventType.VIEW_ROLES).representation(roles).success();
+        
         return roles;
     }
 
@@ -76,6 +84,11 @@ public class RoleContainerResource extends RoleResource {
         try {
             RoleModel role = roleContainer.addRole(rep.getName());
             role.setDescription(rep.getDescription());
+            
+            event.event(EventType.CREATE_ROLE)
+                .representation(rep)
+                .success();
+            
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Role with name " + rep.getName() + " already exists");
@@ -99,7 +112,14 @@ public class RoleContainerResource extends RoleResource {
         if (roleModel == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        return getRole(roleModel);
+
+        RoleRepresentation rep = getRole(roleModel);
+
+        event.event(EventType.VIEW_ROLE)
+            .representation(rep)
+            .success();
+
+        return rep;
     }
 
     /**
@@ -113,11 +133,16 @@ public class RoleContainerResource extends RoleResource {
     public void deleteRole(final @PathParam("role-name") String roleName) {
         auth.requireManage();
 
+        RoleRepresentation rep = getRole(roleName);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         deleteRole(role);
+        
+        event.event(EventType.DELETE_ROLE)
+            .representation(rep)
+            .success();
     }
 
     /**
@@ -139,6 +164,11 @@ public class RoleContainerResource extends RoleResource {
         }
         try {
             updateRole(rep, role);
+            
+            event.event(EventType.UPDATE_ROLE)
+                .representation(rep)
+                .success();
+            
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Role with name " + rep.getName() + " already exists");

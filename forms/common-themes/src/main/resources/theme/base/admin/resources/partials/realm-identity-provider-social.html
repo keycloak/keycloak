@@ -12,6 +12,15 @@
             <form class="form-horizontal" name="realmForm" novalidate>
                 <fieldset>
                     <div class="form-group clearfix">
+                        <label class="col-sm-2 control-label" for="redirectUri">Redirect URI</label>
+                        <div class="col-sm-6">
+                            <input class="form-control" id="redirectUri" type="text" value="{{callbackUrl}}{{identityProvider.alias}}/endpoint" readonly kc-select-action="click">
+                        </div>
+                        <span tooltip-placement="right" tooltip="The redirect uri to use when configuring the identity provider" class="fa fa-info-circle"></span>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="clientId">Client ID <span class="required">*</span></label>
                         <div class="col-sm-4">
                             <input class="form-control" id="clientId" type="text" ng-model="identityProvider.config.clientId" required>

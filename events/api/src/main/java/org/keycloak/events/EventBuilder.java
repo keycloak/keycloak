@@ -1,12 +1,17 @@
 package org.keycloak.events;
 
 import org.jboss.logging.Logger;
+import org.keycloak.ClientConnection;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -16,18 +21,47 @@ public class EventBuilder {
 
     private static final Logger log = Logger.getLogger(EventBuilder.class);
 
+    private EventStoreProvider store;
     private List<EventListenerProvider> listeners;
+    private RealmModel realm;
     private Event event;
 
-    public EventBuilder(List<EventListenerProvider> listeners, RealmModel realm, String ipAddress) {
-        this.listeners = listeners;
-        this.event = new Event();
+    public EventBuilder(EventGroup group, RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
+        this.realm = realm;
+
+        event = new Event();
+        event.setGroup(group);
+
+        if (realm.isEventsEnabled()) {
+            EventStoreProvider store = session.getProvider(EventStoreProvider.class);
+            if (store != null) {
+                this.store = store;
+            } else {
+                log.error("Events enabled, but no event store provider configured");
+            }
+        }
+
+        if (realm.getEventsListeners() != null && !realm.getEventsListeners().isEmpty()) {
+            this.listeners = new LinkedList<>();
+            for (String id : realm.getEventsListeners()) {
+                EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
+                if (listener != null) {
+                    listeners.add(listener);
+                } else {
+                    log.error("Event listener '" + id + "' registered, but provider not found");
+                }
+            }
+        }
 
         realm(realm);
-        ipAddress(ipAddress);
+        ipAddress(clientConnection.getRemoteAddr());
     }
 
-    EventBuilder() {
+    private EventBuilder(EventStoreProvider store, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
+        this.store = store;
+        this.listeners = listeners;
+        this.realm = realm;
+        this.event = event;
     }
 
     public EventBuilder realm(RealmModel realm) {
@@ -92,6 +126,18 @@ public class EventBuilder {
         return this;
     }
 
+    public EventBuilder representation(Object value) {
+        if (value == null || value.equals("")) {
+            return this;
+        }
+        try {
+            event.setRepresentation(JsonSerialization.writeValueAsPrettyString(value));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return this;
+    }
+
     public EventBuilder removeDetail(String key) {
         if (event.getDetails() != null) {
             event.getDetails().remove(key);
@@ -114,26 +160,21 @@ public class EventBuilder {
     }
 
     public EventBuilder clone() {
-        EventBuilder clone = new EventBuilder();
-        clone.listeners = listeners;
-        clone.event = event.clone();
-        return clone;
-    }
-
-    public EventBuilder reset() {
-        Event old = event;
-
-        event = new Event();
-        event.setRealmId(old.getRealmId());
-        event.setIpAddress(old.getIpAddress());
-        event.setClientId(old.getClientId());
-        event.setUserId(old.getUserId());
-
-        return this;
+        return new EventBuilder(store, listeners, realm, event.clone());
     }
 
     private void send() {
         event.setTime(System.currentTimeMillis());
+
+        if (store != null) {
+            if (realm.getEnabledEventTypes() != null && !realm.getEnabledEventTypes().isEmpty() ? realm.getEnabledEventTypes().contains(event.getType().name()) : event.getType().isSaveByDefault()) {
+                try {
+                    store.onEvent(event);
+                } catch (Throwable t) {
+                    log.error("Failed to save event", t);
+                }
+            }
+        }
 
         if (listeners != null) {
             for (EventListenerProvider l : listeners) {

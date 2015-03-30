@@ -1139,6 +1139,17 @@ public class RealmAdapter implements RealmModel {
         realm.setEventsListeners(listeners);
         em.flush();
     }
+    
+    @Override
+    public Set<String> getEnabledEventTypes() {
+        return realm.getEnabledEventTypes();
+    }
+
+    @Override
+    public void setEnabledEventTypes(Set<String> enabledEventTypes) {
+        realm.setEnabledEventTypes(enabledEventTypes);
+        em.flush();
+    }
 
     @Override
     public ApplicationModel getMasterAdminApp() {

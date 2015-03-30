@@ -1046,6 +1046,21 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public Set<String> getEnabledEventTypes() {
+        return new HashSet<String>(realm.getEnabledEventTypes());
+    }
+
+    @Override
+    public void setEnabledEventTypes(Set<String> enabledEventTypes) {
+        if (enabledEventTypes != null) {
+            realm.setEnabledEventTypes(new ArrayList<String>(enabledEventTypes));
+        } else {
+            realm.setEnabledEventTypes(Collections.EMPTY_LIST);
+        }
+        updateRealm();
+    }
+
+    @Override
     public ApplicationModel getMasterAdminApp() {
         MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, realm.getAdminAppId(), invocationContext);
         return appData != null ? new ApplicationAdapter(session, this, appData, invocationContext) : null;

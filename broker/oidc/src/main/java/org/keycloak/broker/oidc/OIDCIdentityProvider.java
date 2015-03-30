@@ -25,6 +25,7 @@ import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.RealmModel;
@@ -32,7 +33,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
@@ -88,14 +88,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             UserSessionModel userSession = session.sessions().getUserSession(realm, state);
             if (userSession == null) {
                 logger.error("no valid user session");
-                EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+                EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.error("usersession in different state");
-                EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+                EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE);

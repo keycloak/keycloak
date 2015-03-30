@@ -236,6 +236,10 @@ public interface RealmModel extends RoleContainerModel {
     Set<String> getEventsListeners();
 
     void setEventsListeners(Set<String> listeners);
+    
+    Set<String> getEnabledEventTypes();
+
+    void setEnabledEventTypes(Set<String> enabledEventTypes);
 
     ApplicationModel getMasterAdminApp();
 

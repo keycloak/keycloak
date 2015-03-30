@@ -29,6 +29,7 @@ import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
@@ -537,7 +538,7 @@ public class LoginActionsService {
         AttributeFormDataProcessor.process(formData, realm, user);
 
         event.user(user).success();
-        event.reset();
+        event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
 
         return processLogin(code, formData);
     }

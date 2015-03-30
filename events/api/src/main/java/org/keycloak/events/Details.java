@@ -13,7 +13,7 @@ public interface Details {
     String RESPONSE_TYPE = "response_type";
     String AUTH_METHOD = "auth_method";
     String IDENTITY_PROVIDER = "identity_provider";
-    String IDENTITY_PROVIDER_IDENTITY = "identity_provider_identity";
+    String IDENTITY_PROVIDER_USERNAME = "identity_provider_identity";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
     String REMEMBER_ME = "remember_me";
@@ -23,4 +23,10 @@ public interface Details {
     String UPDATED_REFRESH_TOKEN_ID = "updated_refresh_token_id";
     String NODE_HOST = "node_host";
     String REASON = "reason";
+
+    String REALM = "realm";
+    String REPRESENTATION = "representation";
+
+    String APPLICATION_CLUSTER_NODE = "application_cluster_node";
+
 }

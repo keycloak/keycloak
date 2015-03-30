@@ -31,13 +31,11 @@
                     </div>
                     <form class="form-horizontal">
                         <div class="form-group" data-ng-show="filter">
-      			            <label class="col-sm-2 control-label" for="eventType">Event Type</label>
+      			    <label class="col-sm-2 control-label" for="eventTypes">Event Type</label>
                     	    <div class="col-sm-5">
-                                <select ui-select2 id="reqActions" ng-model="query.type" data-placeholder="Select event types..." multiple>
-                                    <option ng-repeat="event in eventTypes|orderBy:'tag'">{{event.tag}}</option>
-                                </select>
-			                </div>
-			            </div>
+                                <input ui-select2="eventSelectOptions" id="eventTypes" ng-model="query.type" data-placeholder="Select event types..."/>
+			    </div>
+			</div>
                         <div class="form-group" data-ng-show="filter">
                             <label class="col-sm-2 control-label" for="client">Client</label>
                             <div class="col-sm-4">
@@ -58,7 +56,7 @@
                             </div>
                         </div>
                         <div class="form-group" data-ng-show="filter">
-                            <label class="col-sm-2 control-label" for="toDate">Date (To)</label>
+                            <label class="col-sm-2 control-label" for="dateTo">Date (To)</label>
                             <div class="col-sm-4">
                                 <input class="form-control" type="date" id="dateTo" name="dateTo" data-ng-model="query.dateTo">
                             </div>
@@ -107,6 +105,16 @@
                                             <td>{{value}}</td>
                                         </tr>
                                     </table>
+                                </td>
+                            </tr>
+                            <tr data-ng-show="event.representation">
+                                <td>Representation</td>
+                                <td>
+                                    <button type="button" class="btn btn-default btn-xs" ng-click="collapseRep = !collapseRep">
+                                        <span class="glyphicon glyphicon-plus" data-ng-show="!collapseRep"></span>
+                                        <span class="glyphicon glyphicon-minus" data-ng-show="collapseRep"></span>
+                                    </button>
+                                    <pre data-ng-show="collapseRep">{{event.representation}}</pre>
                                 </td>
                             </tr>
                         </table>

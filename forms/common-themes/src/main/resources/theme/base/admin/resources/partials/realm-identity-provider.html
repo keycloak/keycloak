@@ -26,7 +26,7 @@
                         </tr>
                         <tr ng-show="configuredProviders.length > 0">
                             <th>Name</th>
-                            <th>Callback URI</th>
+                            <th>Provider</th>
                         </tr>
                         </thead>
                         <tbody ng-show="configuredProviders.length > 0">
@@ -34,9 +34,7 @@
                             <td>
                                 <a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}}</a>
                             </td>
-                            <td>
-                                {{callbackUrl}}{{identityProvider.alias}}/endpoint
-                            </td>
+                            <td>{{identityProvider.providerId}}</td>
                         </tr>
                         </tbody>
                     </table>

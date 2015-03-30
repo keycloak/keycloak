@@ -18,33 +18,14 @@ public class JpaEventStoreProviderFactory implements EventStoreProviderFactory {
 
     public static final String ID = "jpa";
 
-    private Set<EventType> includedEvents = new HashSet<EventType>();
-
     @Override
     public EventStoreProvider create(KeycloakSession session) {
         JpaConnectionProvider connection = session.getProvider(JpaConnectionProvider.class);
-        return new JpaEventStoreProvider(connection.getEntityManager(), includedEvents);
+        return new JpaEventStoreProvider(connection.getEntityManager());
     }
 
     @Override
     public void init(Config.Scope config) {
-        String[] include = config.getArray("include-events");
-        if (include != null) {
-            for (String i : include) {
-                includedEvents.add(EventType.valueOf(i.toUpperCase()));
-            }
-        } else {
-            for (EventType i : EventType.values()) {
-                includedEvents.add(i);
-            }
-        }
-
-        String[] exclude = config.getArray("exclude-events");
-        if (exclude != null) {
-            for (String e : exclude) {
-                includedEvents.remove(EventType.valueOf(e.toUpperCase()));
-            }
-        }
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
@@ -63,6 +64,7 @@ public class RealmAdminResource {
     protected RealmAuth auth;
     protected RealmModel realm;
     private TokenManager tokenManager;
+    private EventBuilder event;
 
     @Context
     protected KeycloakSession session;
@@ -76,10 +78,11 @@ public class RealmAdminResource {
     @Context
     protected HttpHeaders headers;
 
-    public RealmAdminResource(RealmAuth auth, RealmModel realm, TokenManager tokenManager) {
+    public RealmAdminResource(RealmAuth auth, RealmModel realm, TokenManager tokenManager, EventBuilder event) {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
+        this.event = event;
 
         auth.init(RealmAuth.Resource.REALM);
     }
@@ -102,7 +105,7 @@ public class RealmAdminResource {
      */
     @Path("applications")
     public ApplicationsResource getApplications() {
-        ApplicationsResource applicationsResource = new ApplicationsResource(realm, auth);
+        ApplicationsResource applicationsResource = new ApplicationsResource(realm, auth, event);
         ResteasyProviderFactory.getInstance().injectProperties(applicationsResource);
         //resourceContext.initResource(applicationsResource);
         return applicationsResource;
@@ -115,7 +118,7 @@ public class RealmAdminResource {
      */
     @Path("applications-by-id")
     public ApplicationsByIdResource getApplicationsById() {
-        ApplicationsByIdResource applicationsResource = new ApplicationsByIdResource(realm, auth);
+        ApplicationsByIdResource applicationsResource = new ApplicationsByIdResource(realm, auth, event);
         ResteasyProviderFactory.getInstance().injectProperties(applicationsResource);
         //resourceContext.initResource(applicationsResource);
         return applicationsResource;
@@ -128,7 +131,7 @@ public class RealmAdminResource {
      */
     @Path("oauth-clients")
     public OAuthClientsResource getOAuthClients() {
-        OAuthClientsResource oauth = new OAuthClientsResource(realm, auth, session);
+        OAuthClientsResource oauth = new OAuthClientsResource(realm, auth, session, event);
         ResteasyProviderFactory.getInstance().injectProperties(oauth);
         //resourceContext.initResource(oauth);
         return oauth;
@@ -141,7 +144,7 @@ public class RealmAdminResource {
      */
     @Path("oauth-clients-by-id")
     public OAuthClientsByIdResource getOAuthClientsById() {
-        OAuthClientsByIdResource oauth = new OAuthClientsByIdResource(realm, auth, session);
+        OAuthClientsByIdResource oauth = new OAuthClientsByIdResource(realm, auth, session, event);
         ResteasyProviderFactory.getInstance().injectProperties(oauth);
         //resourceContext.initResource(oauth);
         return oauth;
@@ -154,7 +157,7 @@ public class RealmAdminResource {
      */
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(realm, auth, realm);
+        return new RoleContainerResource(realm, auth, realm, event);
     }
 
     /**
@@ -177,12 +180,17 @@ public class RealmAdminResource {
                 CacheUserProvider cache = (CacheUserProvider)session.userStorage();
                 rep.setUserCacheEnabled(cache.isEnabled());
             }
+            
+            event.event(EventType.VIEW_REALM).representation(rep).success();
+            
             return rep;
         } else {
             auth.requireAny();
 
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
+
+            event.event(EventType.VIEW_REALM).representation(rep).success();
 
             return rep;
         }
@@ -219,6 +227,8 @@ public class RealmAdminResource {
                 usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
             }
 
+            event.event(EventType.UPDATE_REALM).representation(rep).success();
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
@@ -233,9 +243,13 @@ public class RealmAdminResource {
     public void deleteRealm() {
         auth.requireManage();
 
+        RealmRepresentation rep = getRealm();
+
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
         }
+        
+        event.event(EventType.DELETE_REALM).representation(rep).success();
     }
 
     /**
@@ -245,7 +259,7 @@ public class RealmAdminResource {
      */
     @Path("users")
     public UsersResource users() {
-        UsersResource users = new UsersResource(realm, auth, tokenManager);
+        UsersResource users = new UsersResource(realm, auth, tokenManager, event);
         ResteasyProviderFactory.getInstance().injectProperties(users);
         //resourceContext.initResource(users);
         return users;
@@ -253,7 +267,7 @@ public class RealmAdminResource {
 
     @Path("user-federation")
     public UserFederationResource userFederation() {
-        UserFederationResource fed = new UserFederationResource(realm, auth);
+        UserFederationResource fed = new UserFederationResource(realm, auth, event);
         ResteasyProviderFactory.getInstance().injectProperties(fed);
         //resourceContext.initResource(fed);
         return fed;
@@ -266,7 +280,7 @@ public class RealmAdminResource {
      */
     @Path("roles-by-id")
     public RoleByIdResource rolesById() {
-        RoleByIdResource resource = new RoleByIdResource(realm, auth);
+        RoleByIdResource resource = new RoleByIdResource(realm, auth, event);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         //resourceContext.initResource(resource);
         return resource;
@@ -473,6 +487,6 @@ public class RealmAdminResource {
 
     @Path("identity-provider")
     public IdentityProvidersResource getIdentityProviderResource() {
-        return new IdentityProvidersResource(realm, session, this.auth);
+        return new IdentityProvidersResource(realm, session, this.auth, event);
     }
 }

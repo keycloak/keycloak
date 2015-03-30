@@ -34,7 +34,7 @@ public class MemEventStoreProviderFactory implements EventStoreProviderFactory {
 
         String excludes = config.get("excludes");
         if (excludes != null) {
-            excludedEvents = new HashSet<EventType>();
+            excludedEvents = new HashSet<>();
             for (String e : excludes.split(",")) {
                 excludedEvents.add(EventType.valueOf(e));
             }

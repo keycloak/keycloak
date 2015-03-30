@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
@@ -185,6 +186,7 @@ public class EventStoreProviderTest {
         Event e = new Event();
         e.setTime(time);
         e.setType(event);
+        e.setGroup(EventGroup.USER);
         e.setRealmId(realmId);
         e.setClientId(clientId);
         e.setUserId(userId);

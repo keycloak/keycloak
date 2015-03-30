@@ -1038,6 +1038,20 @@ public class RealmAdapter implements RealmModel {
             realm.setEventsListeners(Collections.EMPTY_LIST);
         }
     }
+    
+    @Override
+    public Set<String> getEnabledEventTypes() {
+        return new HashSet<String>(realm.getEnabledEventTypes());
+    }
+
+    @Override
+    public void setEnabledEventTypes(Set<String> enabledEventTypes) {
+        if (enabledEventTypes != null) {
+            realm.setEnabledEventTypes(new ArrayList<String>(enabledEventTypes));
+        } else {
+            realm.setEnabledEventTypes(Collections.EMPTY_LIST);
+        }        
+    }
 
     @Override
     public ApplicationModel getMasterAdminApp() {

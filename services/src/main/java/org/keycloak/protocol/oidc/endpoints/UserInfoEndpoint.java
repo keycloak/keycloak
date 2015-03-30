@@ -20,12 +20,12 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -36,8 +36,6 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.flows.Urls;
 
@@ -113,7 +111,7 @@ public class UserInfoEndpoint {
     }
 
     private Response issueUserInfo(String tokenString) {
-        EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder()
+        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection)
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 

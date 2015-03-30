@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.admin;
 
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 
@@ -8,8 +9,8 @@ import org.keycloak.models.RealmModel;
  * @version $Revision: 1 $
  */
 public class ApplicationsByIdResource extends ApplicationsResource {
-    public ApplicationsByIdResource(RealmModel realm, RealmAuth auth) {
-        super(realm, auth);
+    public ApplicationsByIdResource(RealmModel realm, RealmAuth auth, EventBuilder event) {
+        super(realm, auth, event);
     }
 
     @Override

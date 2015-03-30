@@ -18,6 +18,17 @@
                     </div>
                     <span tooltip-placement="right" tooltip="If enabled events are saved to the database which makes events available to the admin and account management consoles." class="fa fa-info-circle"></span>
                 </div>
+
+                <div class="form-group" data-ng-show="eventsConfig.eventsEnabled">
+                    <label class="col-sm-2 control-label" for="enabledEventTypes" class="control-label">Saved Types</label>
+
+                    <div class="col-sm-5">
+                        <input ui-select2="eventSelectOptions" id="enabledEventTypes" ng-model="eventsConfig.enabledEventTypes" data-placeholder="Select event types..."/>
+                    </div>
+
+                    <span tooltip-placement="right" tooltip="Configure what event types are saved. By default events related to login and users modifying their accounts are persisted." class="fa fa-info-circle"></span>
+                </div>
+
                 <div class="form-group" data-ng-show="access.manageEvents && eventsConfig.eventsEnabled">
                     <label class="col-sm-2 control-label" for="password">Clear Events</label>
                     <div class="col-sm-5">
