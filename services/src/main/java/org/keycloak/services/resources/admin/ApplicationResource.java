@@ -81,7 +81,7 @@ public class ApplicationResource {
         this.application = applicationModel;
         this.session = session;
         this.event = event;
-        
+
         auth.init(RealmAuth.Resource.APPLICATION);
     }
 
@@ -106,7 +106,7 @@ public class ApplicationResource {
         try {
             RepresentationToModel.updateApplication(rep, application);
             
-            event.event(EventType.UPDATE_APPLICATION).client(application).success();
+            event.event(EventType.UPDATE_APPLICATION).representation(rep).success();
                     
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
@@ -125,10 +125,12 @@ public class ApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ApplicationRepresentation getApplication() {
         auth.requireView();
-        
-        event.event(EventType.VIEW_APPLICATION).client(application).success();
 
-        return ModelToRepresentation.toRepresentation(application);
+        ApplicationRepresentation rep = ModelToRepresentation.toRepresentation(application);
+
+        event.event(EventType.VIEW_APPLICATION).representation(rep).success();
+
+        return rep;
     }
 
     /**
@@ -187,8 +189,9 @@ public class ApplicationResource {
     @NoCache
     public void deleteApplication() {
         auth.requireManage();
-        
-        event.event(EventType.DELETE_APPLICATION).client(application).success();
+
+        ApplicationRepresentation rep = getApplication();
+        event.event(EventType.DELETE_APPLICATION).representation(rep).success();
 
         new ApplicationManager(new RealmManager(session)).removeApplication(realm, application);
     }
@@ -346,7 +349,7 @@ public class ApplicationResource {
             sessions.add(rep);
         }
         
-        event.event(EventType.VIEW_APPLICATION_USER_SESSIONS).client(application).success();
+        event.event(EventType.VIEW_APPLICATION_USER_SESSIONS).representation(sessions).success();
         
         return sessions;
     }
@@ -360,7 +363,7 @@ public class ApplicationResource {
     public GlobalRequestResult logoutAll() {
         auth.requireManage();
         
-        event.event(EventType.INVALIDATE_APPLICATION_USER_SESSIONS).client(application).success();
+        event.event(EventType.LOGOUT_APPLICATION_USERS).success();
         
         return new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application);
     }
@@ -378,7 +381,7 @@ public class ApplicationResource {
             throw new NotFoundException("User not found");
         }
         
-        event.event(EventType.INVALIDATE_APPLICATION_USER_SESSION).client(application).user(user).success();
+        event.event(EventType.LOGOUT_USER).success();
 
         new ResourceAdminManager().logoutUserFromApplication(uriInfo.getRequestUri(), realm, application, user, session);
     }
@@ -401,7 +404,7 @@ public class ApplicationResource {
         if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
         application.registerNode(node, Time.currentTime());
         
-        event.event(EventType.REGISTER_APPLICATION_CLUSTER_NODE).client(application)
+        event.event(EventType.REGISTER_APPLICATION_CLUSTER_NODE)
             .detail(Details.APPLICATION_CLUSTER_NODE, node)
             .success();
     }
@@ -425,7 +428,7 @@ public class ApplicationResource {
 
         application.unregisterNode(node);
         
-        event.event(EventType.UNREGISTER_APPLICATION_CLUSTER_NODE).client(application)
+        event.event(EventType.UNREGISTER_APPLICATION_CLUSTER_NODE)
             .detail(Details.APPLICATION_CLUSTER_NODE, node)
             .success();
     }

@@ -39,7 +39,6 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UserManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
@@ -96,7 +95,7 @@ public class UsersResource {
 
     @Context
     protected HttpHeaders headers;
-    
+
     public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager, EventBuilder event) {
         this.auth = auth;
         this.realm = realm;
@@ -127,14 +126,13 @@ public class UsersResource {
             updateUserFromRep(user, rep);
 
             event.event(EventType.UPDATE_USER)
-                .user(user)
-                .detail(Details.USERNAME, user.getUsername())
+                .representation(rep)
                 .success();
             
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
-            
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("User exists with same username or email");
@@ -166,16 +164,15 @@ public class UsersResource {
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             updateUserFromRep(user, rep);
-            
+
             event.event(EventType.CREATE_USER)
-                .user(user)
-                .detail(Details.USERNAME, user.getUsername())
+                .representation(rep)
                 .success();
-            
+
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
-            
+
             return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getUsername()).build()).build();
         } catch (ModelDuplicateException e) {
             if (session.getTransaction().isActive()) {
@@ -236,13 +233,14 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        
+
+        UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
+
         event.event(EventType.VIEW_USER)
-            .user(user)
-            .detail(Details.USERNAME, user.getUsername())
+            .representation(rep)
             .success();
-        
-        return ModelToRepresentation.toRepresentation(user);
+
+        return rep;
     }
 
     /**
@@ -269,8 +267,7 @@ public class UsersResource {
         }
         
         event.event(EventType.VIEW_USER_SESSIONS)
-            .user(user)
-            .detail(Details.USERNAME, user.getUsername())
+            .representation(reps)
             .success();
 
         return reps;
@@ -305,9 +302,8 @@ public class UsersResource {
             }
         }
         
-        event.event(EventType.VIEW_USER_SOCIAL_LOGINS)
-            .user(user)
-            .detail(Details.USERNAME, user.getUsername())
+        event.event(EventType.VIEW_USER)
+            .representation(result)
             .success();
         
         return result;
@@ -366,9 +362,7 @@ public class UsersResource {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
         }
         
-        event.event(EventType.INVALIDATE_USER_SESSIONS)
-            .user(user)
-            .detail(Details.USERNAME, user.getUsername())
+        event.event(EventType.LOGOUT_USER_SESSIONS)
             .success();
     }
 
@@ -383,6 +377,7 @@ public class UsersResource {
     public Response deleteUser(final @PathParam("username") String username) {
         auth.requireManage();
 
+        UserRepresentation rep = getUser(username);
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -392,8 +387,7 @@ public class UsersResource {
         if (removed) {
             
             event.event(EventType.DELETE_USER)
-                .user(user)
-                .detail(Details.USERNAME, user.getUsername())
+                .representation(rep)
                 .success();
             
             return Response.noContent().build();

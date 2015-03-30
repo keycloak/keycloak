@@ -3,7 +3,6 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
@@ -63,13 +62,14 @@ public class RoleByIdResource extends RoleResource {
     public RoleRepresentation getRole(final @PathParam("role-id") String id) {
         RoleModel roleModel = getRoleModel(id);
         auth.requireView();
-        
+
+        RoleRepresentation rep = getRole(roleModel);
+
         event.event(EventType.VIEW_ROLE)
-            .detail(Details.ROLE_ID, roleModel.getId())
-            .detail(Details.ROLE_NAME, roleModel.getName())
+            .representation(rep)
             .success();
         
-        return getRole(roleModel);
+        return rep;
     }
 
     protected RoleModel getRoleModel(String id) {
@@ -102,13 +102,13 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @NoCache
     public void deleteRole(final @PathParam("role-id") String id) {
+        RoleRepresentation rep = getRole(id);
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         deleteRole(role);
         
         event.event(EventType.DELETE_ROLE)
-            .detail(Details.ROLE_ID, role.getId())
-            .detail(Details.ROLE_NAME, role.getName())
+            .representation(rep)
             .success();
     }
 
@@ -127,8 +127,7 @@ public class RoleByIdResource extends RoleResource {
         updateRole(rep, role);
         
         event.event(EventType.UPDATE_ROLE)
-            .detail(Details.ROLE_ID, role.getId())
-            .detail(Details.ROLE_NAME, role.getName())
+            .representation(rep)
             .success();
     }
 
@@ -145,10 +144,11 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         addComposites(roles, role);
-        
-        event.event(EventType.MAKE_ROLE_COMPOSITE)
-            .detail(Details.ROLE_ID, role.getId())
-            .detail(Details.ROLE_NAME, role.getName())
+
+        RoleRepresentation rep = getRole(id);
+
+        event.event(EventType.UPDATE_ROLE)
+            .representation(rep)
             .success();
     }
 

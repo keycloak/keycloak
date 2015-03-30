@@ -3,8 +3,6 @@ package org.keycloak.services.resources.admin;
 import org.keycloak.Version;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.exportimport.ApplicationImporter;
@@ -19,16 +17,13 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.social.SocialIdentityProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
-
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -44,13 +39,7 @@ public class ServerInfoAdminResource {
 
     @Context
     private KeycloakSession session;
-    
-    private EventBuilder event;
-    
-    public ServerInfoAdminResource(EventBuilder event) {
-        this.event = event;
-    }
-    
+
     /**
      * Returns a list of themes, social providers, auth providers, and event listeners available on this server
      *
@@ -70,12 +59,7 @@ public class ServerInfoAdminResource {
         setProviders(info);
         setProtocolMapperTypes(info);
         setBuiltinProtocolMappers(info);
-        
-        event.event(EventType.VIEW_SERVER_INFO)
-            .detail(Details.SERVER_VERSION, info.version)
-            .detail(Details.SERVER_TIME, info.serverTime)
-            .success();
-        
+        setEventTypes(info);
         return info;
     }
 
@@ -194,6 +178,15 @@ public class ServerInfoAdminResource {
         }
     }
 
+    private void setEventTypes(ServerInfoRepresentation info) {
+        List<String> eventTypes = new LinkedList<>();
+        for (EventType t : EventType.values()) {
+            eventTypes.add(t.name());
+        }
+        Collections.sort(eventTypes);
+        info.setEventTypes(eventTypes);
+    }
+
     public static class ServerInfoRepresentation {
 
         private String version;
@@ -212,6 +205,8 @@ public class ServerInfoAdminResource {
         private List<String> eventListeners;
         private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
         private Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers;
+
+        private List<String> eventTypes;
 
         public ServerInfoRepresentation() {
         }
@@ -262,6 +257,14 @@ public class ServerInfoAdminResource {
 
         public void setBuiltinProtocolMappers(Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers) {
             this.builtinProtocolMappers = builtinProtocolMappers;
+        }
+
+        public List<String> getEventTypes() {
+            return eventTypes;
+        }
+
+        public void setEventTypes(List<String> eventTypes) {
+            this.eventTypes = eventTypes;
         }
     }
 

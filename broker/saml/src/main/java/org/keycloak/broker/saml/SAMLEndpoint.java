@@ -9,6 +9,7 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -18,7 +19,6 @@ import org.keycloak.protocol.saml.SAMLRequestParser;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.picketlink.common.constants.GeneralConstants;
@@ -163,7 +163,7 @@ public class SAMLEndpoint {
         }
 
         public Response execute(String samlRequest, String samlResponse, String relayState) {
-            event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+            event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
             Response response = basicChecks(samlRequest, samlResponse);
             if (response != null) return response;
             if (samlRequest != null) return handleSamlRequest(samlRequest, relayState);

@@ -9,7 +9,6 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ApplicationModel;
@@ -36,7 +35,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.List;
 
 /**
@@ -90,7 +88,7 @@ public class AuthorizationEndpoint {
         this.authManager = authManager;
         this.realm = realm;
         this.event = event;
-        event.eventGroup(EventGroup.USER).event(EventType.LOGIN);
+        event.event(EventType.LOGIN);
     }
 
     @GET

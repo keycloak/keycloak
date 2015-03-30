@@ -8,7 +8,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderModel;
@@ -70,8 +69,7 @@ public class IdentityProvidersResource {
 
         if (providerFactory != null) {
             event.event(EventType.VIEW_IDENTITY_PROVIDERS)
-                .detail(Details.IDENTITY_PROVIDER_FACTORY, providerFactory.getId())
-                .detail(Details.IDENTITY_PROVIDER_FACTORY_IDENTITY, providerFactory.getName())
+                .representation(providerFactory)
                 .success();
             
             return Response.ok(providerFactory).build();
@@ -93,9 +91,8 @@ public class IdentityProvidersResource {
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
         Map<String, String> config = providerFactory.parseConfig(inputStream);
         
-        event.event(EventType.IMPORT_IDENTITY_PROVIDER_CONFIG)
-            .detail(Details.IDENTITY_PROVIDER_FACTORY, providerFactory.getId())
-            .detail(Details.IDENTITY_PROVIDER_FACTORY_IDENTITY, providerFactory.getName())
+        event.event(EventType.CREATE_IDENTITY_PROVIDER)
+            .representation(config)
             .success();
         
         return config;
@@ -120,9 +117,8 @@ public class IdentityProvidersResource {
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
         Map<String, String> config = providerFactory.parseConfig(inputStream);
         
-        event.event(EventType.IMPORT_IDENTITY_PROVIDER_CONFIG)
-            .detail(Details.IDENTITY_PROVIDER_FACTORY, providerFactory.getId())
-            .detail(Details.IDENTITY_PROVIDER_FACTORY_IDENTITY, providerFactory.getName())
+        event.event(EventType.CREATE_IDENTITY_PROVIDER)
+            .representation(config)
             .success();
         
         return config;
@@ -141,7 +137,7 @@ public class IdentityProvidersResource {
             representations.add(ModelToRepresentation.toRepresentation(identityProviderModel));
         }
         
-        event.event(EventType.VIEW_IDENTITY_PROVIDERS).success();
+        event.event(EventType.VIEW_IDENTITY_PROVIDERS).representation(representations).success();
 
         return representations;
     }
@@ -156,8 +152,7 @@ public class IdentityProvidersResource {
             this.realm.addIdentityProvider(RepresentationToModel.toModel(representation));
             
             event.event(EventType.CREATE_IDENTITY_PROVIDER)
-                .detail(Details.IDENTITY_PROVIDER, representation.getProviderId())
-                .detail(Details.IDENTITY_PROVIDER_ALIAS, representation.getAlias())
+                .representation(representation)
                 .success();
             
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
@@ -181,13 +176,12 @@ public class IdentityProvidersResource {
         if (identityProviderModel == null) {
             throw new NotFoundException("Could not find identity provider: " + alias);
         }
-        
+
         IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel, event);
         ResteasyProviderFactory.getInstance().injectProperties(identityProviderResource);
         
         event.event(EventType.VIEW_IDENTITY_PROVIDER)
-            .detail(Details.IDENTITY_PROVIDER, identityProviderModel.getProviderId())
-            .detail(Details.IDENTITY_PROVIDER_ALIAS, identityProviderModel.getAlias())
+            .representation(identityProviderResource)
             .success();
 
         return identityProviderResource;

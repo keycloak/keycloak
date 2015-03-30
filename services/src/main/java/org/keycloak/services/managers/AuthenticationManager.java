@@ -44,7 +44,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -183,7 +182,7 @@ public class AuthenticationManager {
         expireRememberMeCookie(realm, uriInfo, connection);
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
         String method = userSession.getNote(KEYCLOAK_LOGOUT_PROTOCOL);
-        EventBuilder event = new EventsManager(realm, session, connection).createEventBuilder();
+        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, connection);
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, method);
         protocol.setRealm(realm)
                 .setHttpHeaders(headers)
@@ -376,7 +375,7 @@ public class AuthenticationManager {
         logger.debugv("processAccessCode: go to oauth page?: {0}",
                 !isResource);
 
-        event.eventGroup(EventGroup.USER).detail(Details.CODE_ID, clientSession.getId());
+        event.detail(Details.CODE_ID, clientSession.getId());
 
         Set<UserModel.RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {

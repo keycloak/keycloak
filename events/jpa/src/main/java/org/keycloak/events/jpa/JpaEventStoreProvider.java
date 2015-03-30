@@ -10,11 +10,9 @@ import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -28,12 +26,9 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     private static final Logger logger = Logger.getLogger(JpaEventStoreProvider.class);
 
     private EntityManager em;
-    private EntityTransaction tx;
-    private Set<EventType> includedEvents;
 
-    public JpaEventStoreProvider(EntityManager em, Set<EventType> includedEvents) {
+    public JpaEventStoreProvider(EntityManager em) {
         this.em = em;
-        this.includedEvents = includedEvents;
     }
 
     @Override
@@ -58,9 +53,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void onEvent(Event event) {
-        if (includedEvents.contains(event.getType())) {
-            em.persist(convert(event));
-        }
+        em.persist(convert(event));
     }
 
     @Override
@@ -72,13 +65,14 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         e.setId(UUID.randomUUID().toString());
         e.setTime(o.getTime());
         e.setType(o.getType().toString());
-        e.setEventGroup(o.getEventGroup().toString());
+        e.setGroup(o.getGroup().toString());
         e.setRealmId(o.getRealmId());
         e.setClientId(o.getClientId());
         e.setUserId(o.getUserId());
         e.setSessionId(o.getSessionId());
         e.setIpAddress(o.getIpAddress());
         e.setError(o.getError());
+        e.setRepresentation(o.getRepresentation());
         try {
             e.setDetailsJson(mapper.writeValueAsString(o.getDetails()));
         } catch (IOException ex) {
@@ -91,13 +85,14 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         Event e = new Event();
         e.setTime(o.getTime());
         e.setType(EventType.valueOf(o.getType()));
-        e.setEventGroup(EventGroup.valueOf(o.getEventGroup()));
+        e.setGroup(EventGroup.valueOf(o.getGroup()));
         e.setRealmId(o.getRealmId());
         e.setClientId(o.getClientId());
         e.setUserId(o.getUserId());
         e.setSessionId(o.getSessionId());
         e.setIpAddress(o.getIpAddress());
         e.setError(o.getError());
+        e.setRepresentation(o.getRepresentation());
         try {
             Map<String, String> details = mapper.readValue(o.getDetailsJson(), mapType);
             e.setDetails(details);

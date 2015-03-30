@@ -8,7 +8,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
@@ -142,7 +141,9 @@ public class RealmsAdminResource {
             URI location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
             logger.debugv("imported realm success, sending back: {0}", location.toString());
             
-            event.event(EventType.IMPORT_REALM).detail(Details.REALM_NAME, realm.getName()).success();
+            event.event(EventType.CREATE_REALM)
+                    .representation(rep)
+                    .success();
             
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
@@ -191,9 +192,9 @@ public class RealmsAdminResource {
                 return Response.created(location).build();
             }
             
-            event.event(EventType.UPLOAD_REALM).detail(Details.REALM_NAME, realm.getName()).success();
+            event.event(EventType.CREATE_REALM).representation(rep).success();
         }
-        
+
         return Response.noContent().build();
     }
 
@@ -235,8 +236,8 @@ public class RealmsAdminResource {
         } else {
             realmAuth = new RealmAuth(auth, realm.getApplicationByName(realmManager.getRealmAdminApplicationName(auth.getRealm())));
         }
-        
-        event.detail(Details.REALM_NAME, realm.getName());
+
+        event.detail(Details.REALM, realm.getName());
         RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager, event);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);

@@ -161,5 +161,18 @@
         <dropTable tableName="REALM_SOCIAL_CONFIG" cascadeConstraints="true" />
         <dropColumn tableName="CLIENT" columnName="ALLOWED_CLAIMS_MASK" />
 
+        <createTable tableName="REALM_ENABLED_EVENT_TYPES">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_ENABLED_EVENT_TYPES" constraintName="FK_H846O4H0W8EPX5NWEDRF5Y69J" referencedColumnNames="ID" referencedTableName="REALM"/>
+
+        <addColumn tableName="EVENT_ENTITY">
+            <column name="EVENT_GROUP" type="VARCHAR(255)"/>
+            <column name="REPRESENTATION" type="BLOB"/>
+        </addColumn>
+        
     </changeSet>
 </databaseChangeLog>

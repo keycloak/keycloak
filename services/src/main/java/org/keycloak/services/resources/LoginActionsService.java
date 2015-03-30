@@ -64,7 +64,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -134,7 +133,7 @@ public class LoginActionsService {
     public LoginActionsService(RealmModel realm, AuthenticationManager authManager, EventBuilder event) {
         this.realm = realm;
         this.authManager = authManager;
-        this.event = event.eventGroup(EventGroup.USER);
+        this.event = event;
     }
 
     private boolean checkSsl() {
@@ -539,7 +538,7 @@ public class LoginActionsService {
         AttributeFormDataProcessor.process(formData, realm, user);
 
         event.user(user).success();
-        event.reset();
+        event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
 
         return processLogin(code, formData);
     }

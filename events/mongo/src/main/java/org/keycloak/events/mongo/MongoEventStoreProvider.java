@@ -12,7 +12,6 @@ import org.keycloak.events.EventType;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -20,11 +19,9 @@ import java.util.Set;
 public class MongoEventStoreProvider implements EventStoreProvider {
 
     private DBCollection events;
-    private Set<EventType> includedEvents;
 
-    public MongoEventStoreProvider(DBCollection events, Set<EventType> includedEvents) {
+    public MongoEventStoreProvider(DBCollection events) {
         this.events = events;
-        this.includedEvents = includedEvents;
     }
 
     @Override
@@ -52,9 +49,7 @@ public class MongoEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void onEvent(Event event) {
-        if (includedEvents.contains(event.getType())) {
-            events.insert(convert(event));
-        }
+       events.insert(convert(event));
     }
 
     @Override
@@ -65,13 +60,14 @@ public class MongoEventStoreProvider implements EventStoreProvider {
         BasicDBObject e = new BasicDBObject();
         e.put("time", o.getTime());
         e.put("type", o.getType().toString());
-        e.put("group", o.getEventGroup().toString());
+        e.put("group", o.getGroup().toString());
         e.put("realmId", o.getRealmId());
         e.put("clientId", o.getClientId());
         e.put("userId", o.getUserId());
         e.put("sessionId", o.getSessionId());
         e.put("ipAddress", o.getIpAddress());
         e.put("error", o.getError());
+        e.put("representation", o.getRepresentation());
 
         BasicDBObject details = new BasicDBObject();
         if (o.getDetails() != null) {
@@ -88,13 +84,14 @@ public class MongoEventStoreProvider implements EventStoreProvider {
         Event e = new Event();
         e.setTime(o.getLong("time"));
         e.setType(EventType.valueOf(o.getString("type")));
-        e.setEventGroup(EventGroup.valueOf(o.getString("group")));
+        e.setGroup(EventGroup.valueOf(o.getString("group")));
         e.setRealmId(o.getString("realmId"));
         e.setClientId(o.getString("clientId"));
         e.setUserId(o.getString("userId"));
         e.setSessionId(o.getString("sessionId"));
         e.setIpAddress(o.getString("ipAddress"));
         e.setError(o.getString("error"));
+        e.setRepresentation(o.getString("representation"));
 
         BasicDBObject d = (BasicDBObject) o.get("details");
         if (d != null) {

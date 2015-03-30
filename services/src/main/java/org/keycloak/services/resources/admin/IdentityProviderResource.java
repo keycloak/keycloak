@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
@@ -61,27 +60,29 @@ public class IdentityProviderResource {
     @NoCache
     @Produces("application/json")
     public IdentityProviderRepresentation getIdentityProvider() {
-        
+        IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(this.identityProviderModel);
+
         event.event(EventType.VIEW_IDENTITY_PROVIDER)
-            .detail(Details.IDENTITY_PROVIDER, identityProviderModel.getProviderId())
-            .detail(Details.IDENTITY_PROVIDER_ALIAS, identityProviderModel.getAlias())
+            .representation(rep)
             .success();
-        
-        return ModelToRepresentation.toRepresentation(this.identityProviderModel);
+
+        return rep;
     }
 
     @DELETE
     @NoCache
     public Response delete() {
         this.auth.requireManage();
+
+        IdentityProviderRepresentation rep = getIdentityProvider();
+
         removeClientIdentityProviders(this.realm.getApplications(), this.identityProviderModel);
         removeClientIdentityProviders(this.realm.getOAuthClients(), this.identityProviderModel);
 
         this.realm.removeIdentityProviderByAlias(this.identityProviderModel.getAlias());
         
         event.event(EventType.DELETE_IDENTITY_PROVIDER)
-            .detail(Details.IDENTITY_PROVIDER, identityProviderModel.getProviderId())
-            .detail(Details.IDENTITY_PROVIDER_ALIAS, identityProviderModel.getAlias())
+            .representation(rep)
             .success();
 
         return Response.noContent().build();
@@ -110,8 +111,7 @@ public class IdentityProviderResource {
             }
             
             event.event(EventType.UPDATE_IDENTITY_PROVIDER)
-                .detail(Details.IDENTITY_PROVIDER, identityProviderModel.getProviderId())
-                .detail(Details.IDENTITY_PROVIDER_ALIAS, identityProviderModel.getAlias())
+                .representation(providerRep)
                 .success();
 
             return Response.noContent().build();

@@ -26,7 +26,6 @@ import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientSessionModel;
@@ -186,7 +185,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public Response finishLogout(UserSessionModel userSession) {
         String redirectUri = userSession.getNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
         String state = userSession.getNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM);
-        event.eventGroup(EventGroup.USER).event(EventType.LOGOUT);
+        event.event(EventType.LOGOUT);
         if (redirectUri != null) {
             event.detail(Details.REDIRECT_URI, redirectUri);
         }

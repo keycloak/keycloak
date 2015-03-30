@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
@@ -108,7 +107,7 @@ public class OAuthClientResource  {
 
         try {
             RepresentationToModel.updateOAuthClient(session, rep, oauthClient);
-            event.event(EventType.UPDATE_OAUTH_CLIENT).client(oauthClient).success();
+            event.event(EventType.UPDATE_OAUTH_CLIENT).representation(rep).success();
             
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
@@ -126,10 +125,12 @@ public class OAuthClientResource  {
     @Produces(MediaType.APPLICATION_JSON)
     public OAuthClientRepresentation getOAuthClient() {
         auth.requireView();
-        
-        event.event(EventType.VIEW_OAUTH_CLIENT).client(oauthClient).success();
-        
-        return ModelToRepresentation.toRepresentation(oauthClient);
+
+        OAuthClientRepresentation rep = ModelToRepresentation.toRepresentation(oauthClient);
+
+        event.event(EventType.VIEW_OAUTH_CLIENT).representation(rep).success();
+
+        return rep;
     }
 
     /**
@@ -160,8 +161,10 @@ public class OAuthClientResource  {
     @NoCache
     public void deleteOAuthClient() {
         auth.requireManage();
-        
-        event.event(EventType.DELETE_OAUTH_CLIENT).client(oauthClient).success();
+
+        OAuthClientRepresentation rep = getOAuthClient();
+
+        event.event(EventType.DELETE_OAUTH_CLIENT).representation(rep).success();
         
         new OAuthClientManager(new RealmManager(session)).removeClient(realm, oauthClient);
     }

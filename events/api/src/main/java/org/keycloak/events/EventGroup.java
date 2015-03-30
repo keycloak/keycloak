@@ -6,7 +6,6 @@ package org.keycloak.events;
 public enum EventGroup {
     
     ADMIN,
-    USER,
-    EMAIL,
+    USER
     
 }

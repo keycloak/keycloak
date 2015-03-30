@@ -29,6 +29,7 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -36,7 +37,6 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.EventsManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.social.SocialIdentityProvider;
@@ -156,7 +156,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             } catch (Exception e) {
                 logger.error("Could get user profile from twitter.", e);
             }
-            EventBuilder event = new EventsManager(realm, session, clientConnection).createEventBuilder();
+            EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
             event.event(EventType.LOGIN);
             event.error("twitter_login_failed");
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);

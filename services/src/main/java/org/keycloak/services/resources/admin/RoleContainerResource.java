@@ -2,7 +2,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
@@ -65,7 +64,7 @@ public class RoleContainerResource extends RoleResource {
             roles.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         
-        event.event(EventType.VIEW_ROLES).success();
+        event.event(EventType.VIEW_ROLES).representation(roles).success();
         
         return roles;
     }
@@ -87,8 +86,7 @@ public class RoleContainerResource extends RoleResource {
             role.setDescription(rep.getDescription());
             
             event.event(EventType.CREATE_ROLE)
-                .detail(Details.ROLE_ID, role.getId())
-                .detail(Details.ROLE_NAME, role.getName())
+                .representation(rep)
                 .success();
             
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
@@ -114,13 +112,14 @@ public class RoleContainerResource extends RoleResource {
         if (roleModel == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        
+
+        RoleRepresentation rep = getRole(roleModel);
+
         event.event(EventType.VIEW_ROLE)
-            .detail(Details.ROLE_ID, roleModel.getId())
-            .detail(Details.ROLE_NAME, roleModel.getName())
+            .representation(rep)
             .success();
-        
-        return getRole(roleModel);
+
+        return rep;
     }
 
     /**
@@ -134,6 +133,7 @@ public class RoleContainerResource extends RoleResource {
     public void deleteRole(final @PathParam("role-name") String roleName) {
         auth.requireManage();
 
+        RoleRepresentation rep = getRole(roleName);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
@@ -141,8 +141,7 @@ public class RoleContainerResource extends RoleResource {
         deleteRole(role);
         
         event.event(EventType.DELETE_ROLE)
-            .detail(Details.ROLE_ID, role.getId())
-            .detail(Details.ROLE_NAME, role.getName())
+            .representation(rep)
             .success();
     }
 
@@ -167,8 +166,7 @@ public class RoleContainerResource extends RoleResource {
             updateRole(rep, role);
             
             event.event(EventType.UPDATE_ROLE)
-                .detail(Details.ROLE_ID, role.getId())
-                .detail(Details.ROLE_NAME, role.getName())
+                .representation(rep)
                 .success();
             
             return Response.noContent().build();

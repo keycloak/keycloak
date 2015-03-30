@@ -6,7 +6,6 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
@@ -101,7 +100,7 @@ public class ClientAttributeCertificateResource {
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
         
-        event.event(EventType.VIEW_CLIENT_CERTIFICATE).client(client).success();
+        event.event(EventType.VIEW_CLIENT_CERTIFICATE).representation(info).success();
 
         return info;
     }
@@ -142,7 +141,7 @@ public class ClientAttributeCertificateResource {
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
         
-        event.event(EventType.GENERATE_CLIENT_CERTIFICATE).client(client).success();
+        event.event(EventType.UPDATE_CLIENT_CERTIFICATE).representation(info).success();
                 
         return info;
     }
@@ -200,9 +199,9 @@ public class ClientAttributeCertificateResource {
             client.setAttribute(certificateAttribute, certPem);
             info.setCertificate(certPem);
         }
-        
-        event.event(EventType.UPLOAD_CLIENT_CERTIFICATE).client(client).success();
-                
+
+        event.event(EventType.UPDATE_CLIENT_CERTIFICATE).representation(info).success();
+
         return info;
     }
 
@@ -329,7 +328,7 @@ public class ClientAttributeCertificateResource {
             stream.close();
             byte[] rtn = stream.toByteArray();
             
-            event.event(EventType.DOWNLOAD_CLIENT_CERTIFICATE).client(client).success();
+            event.event(EventType.VIEW_CLIENT_CERTIFICATE).representation(rtn).success();
             
             return rtn;
         } catch (Exception e) {

@@ -1,16 +1,18 @@
 package org.keycloak.events;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.jboss.logging.Logger;
+import org.keycloak.ClientConnection;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.util.JsonSerialization;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -18,30 +20,48 @@ import org.keycloak.models.UserSessionModel;
 public class EventBuilder {
 
     private static final Logger log = Logger.getLogger(EventBuilder.class);
-    
-    // These events are excluded by default and not persisted.
-    private EventType[] events = {EventType.VIEW_REALM,
-            EventType.VIEW_REALM_APPLICATIONS, EventType.VIEW_APPLICATION, EventType.VIEW_APPLICATION_USER_SESSIONS,
-            EventType.VIEW_IDENTITY_PROVIDER, EventType.VIEW_IDENTITY_PROVIDERS, EventType.VIEW_OAUTH_CLIENT,
-            EventType.VIEW_OAUTH_CLIENTS, EventType.VIEW_PROVIDER, EventType.VIEW_PROVIDER_FACTORIES, EventType.VIEW_USER,
-            EventType.VIEW_USER_SESSIONS, EventType.VIEW_USER_SOCIAL_LOGINS, EventType.VIEW_ROLE, EventType.VIEW_ROLES,
-            EventType.VIEW_CLIENT_CERTIFICATE, EventType.VIEW_SERVER_INFO };
-    
-    private Event event;
-    private List<EventListenerProvider> listeners;
-    private Set<EventType> enabledEventTypes;
-    private Set<EventType> excludedEvents = new HashSet<EventType>(Arrays.asList(events));;
 
-    public EventBuilder(List<EventListenerProvider> listeners, Set<EventType> enabledEventTypes, RealmModel realm, String ipAddress) {
-        this.listeners = listeners;
-        this.enabledEventTypes = enabledEventTypes;
-        this.event = new Event();
+    private EventStoreProvider store;
+    private List<EventListenerProvider> listeners;
+    private RealmModel realm;
+    private Event event;
+
+    public EventBuilder(EventGroup group, RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
+        this.realm = realm;
+
+        event = new Event();
+        event.setGroup(group);
+
+        if (realm.isEventsEnabled()) {
+            EventStoreProvider store = session.getProvider(EventStoreProvider.class);
+            if (store != null) {
+                this.store = store;
+            } else {
+                log.error("Events enabled, but no event store provider configured");
+            }
+        }
+
+        if (realm.getEventsListeners() != null && !realm.getEventsListeners().isEmpty()) {
+            this.listeners = new LinkedList<>();
+            for (String id : realm.getEventsListeners()) {
+                EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
+                if (listener != null) {
+                    listeners.add(listener);
+                } else {
+                    log.error("Event listener '" + id + "' registered, but provider not found");
+                }
+            }
+        }
 
         realm(realm);
-        ipAddress(ipAddress);
+        ipAddress(clientConnection.getRemoteAddr());
     }
 
-    EventBuilder() {
+    private EventBuilder(EventStoreProvider store, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
+        this.store = store;
+        this.listeners = listeners;
+        this.realm = realm;
+        this.event = event;
     }
 
     public EventBuilder realm(RealmModel realm) {
@@ -94,11 +114,6 @@ public class EventBuilder {
         return this;
     }
 
-    public EventBuilder eventGroup(EventGroup e) {
-        event.setEventGroup(e);
-        return this;
-    }
-
     public EventBuilder detail(String key, String value) {
         if (value == null || value.equals("")) {
             return this;
@@ -107,9 +122,18 @@ public class EventBuilder {
         if (event.getDetails() == null) {
             event.setDetails(new HashMap<String, String>());
         }
+        event.getDetails().put(key, value);
+        return this;
+    }
 
-        if (value != null && !value.isEmpty()) {
-            event.getDetails().put(key, value);
+    public EventBuilder representation(Object value) {
+        if (value == null || value.equals("")) {
+            return this;
+        }
+        try {
+            event.setRepresentation(JsonSerialization.writeValueAsPrettyString(value));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return this;
     }
@@ -136,37 +160,26 @@ public class EventBuilder {
     }
 
     public EventBuilder clone() {
-        EventBuilder clone = new EventBuilder();
-        clone.listeners = listeners;
-        clone.event = event.clone();
-        return clone;
-    }
-
-    public EventBuilder reset() {
-        Event old = event;
-
-        event = new Event();
-        event.setRealmId(old.getRealmId());
-        event.setIpAddress(old.getIpAddress());
-        event.setClientId(old.getClientId());
-        event.setUserId(old.getUserId());
-
-        return this;
+        return new EventBuilder(store, listeners, realm, event.clone());
     }
 
     private void send() {
         event.setTime(System.currentTimeMillis());
 
+        if (store != null) {
+            if (realm.getEnabledEventTypes() != null && !realm.getEnabledEventTypes().isEmpty() ? realm.getEnabledEventTypes().contains(event.getType().name()) : event.getType().isSaveByDefault()) {
+                try {
+                    store.onEvent(event);
+                } catch (Throwable t) {
+                    log.error("Failed to save event", t);
+                }
+            }
+        }
+
         if (listeners != null) {
             for (EventListenerProvider l : listeners) {
                 try {
-                    if (enabledEventTypes != null && enabledEventTypes.size() > 0) {
-                        if (enabledEventTypes.contains(event.getType())) {
-                            l.onEvent(event);
-                        }
-                    } else if (!excludedEvents.contains(event.getType())) {
-                        l.onEvent(event);
-                    }
+                    l.onEvent(event);
                 } catch (Throwable t) {
                     log.error("Failed to send type to " + l, t);
                 }

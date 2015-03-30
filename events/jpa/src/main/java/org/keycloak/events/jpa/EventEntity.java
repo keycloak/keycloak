@@ -3,6 +3,7 @@ package org.keycloak.events.jpa;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 import javax.persistence.Table;
 
 /**
@@ -23,7 +24,7 @@ public class EventEntity {
     private String type;
     
     @Column(name="EVENT_GROUP")
-    private String eventGroup;
+    private String group;
 
     @Column(name="REALM_ID")
     private String realmId;
@@ -45,6 +46,10 @@ public class EventEntity {
 
     @Column(name="DETAILS_JSON", length = 2550)
     private String detailsJson;
+
+    @Column(name="REPRESENTATION")
+    @Lob
+    private String representation;
 
     public String getId() {
         return id;
@@ -70,12 +75,12 @@ public class EventEntity {
         this.type = type;
     }
 
-    public String getEventGroup() {
-        return eventGroup;
+    public String getGroup() {
+        return group;
     }
 
-    public void setEventGroup(String eventGroup) {
-        this.eventGroup = eventGroup;
+    public void setGroup(String group) {
+        this.group = group;
     }
     
     public String getRealmId() {
@@ -134,4 +139,11 @@ public class EventEntity {
         this.detailsJson = detailsJson;
     }
 
+    public String getRepresentation() {
+        return representation;
+    }
+
+    public void setRepresentation(String representation) {
+        this.representation = representation;
+    }
 }

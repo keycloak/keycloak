@@ -24,7 +24,7 @@ public class MemEventStoreProvider implements EventStoreProvider {
 
     @Override
     public EventQuery createQuery() {
-        return new MemEventQuery(new LinkedList<Event>(events));
+        return new MemEventQuery(new LinkedList<>(events));
     }
 
     @Override
@@ -59,7 +59,9 @@ public class MemEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void onEvent(Event event) {
-        events.add(0, event);
+        if (!excludedEvents.contains(event.getType())) {
+            events.add(0, event);
+        }
     }
 
     @Override

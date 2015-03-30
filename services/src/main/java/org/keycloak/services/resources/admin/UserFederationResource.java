@@ -11,7 +11,6 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.constants.KerberosConstants;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -49,12 +48,12 @@ public class UserFederationResource {
     protected RealmModel realm;
 
     protected  RealmAuth auth;
-    
+
     private EventBuilder event;
-    
+
     @Context
     protected UriInfo uriInfo;
-    
+
     @Context
     protected KeycloakSession session;
 
@@ -85,13 +84,13 @@ public class UserFederationResource {
             providers.add(rep);
         }
         
-        event.event(EventType.VIEW_PROVIDER_FACTORIES).success();
+        event.event(EventType.VIEW_FEDERATION_PROVIDERS).representation(providers).success();
         
         return providers;
     }
 
     /**
-     * Get a provider
+     * Get List of available provider factories
      *
      * @return
      */
@@ -109,7 +108,7 @@ public class UserFederationResource {
             rep.setId(factory.getId());
             rep.setOptions(((UserFederationProviderFactory)factory).getConfigurationOptions());
             
-            event.event(EventType.VIEW_PROVIDER).detail(Details.PROVIDER_ID, rep.getId()).success();
+            event.event(EventType.VIEW_FEDERATION_PROVIDER).representation(rep).success();
             
             return rep;
         }
@@ -135,12 +134,11 @@ public class UserFederationResource {
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
-        
-        event.event(EventType.CREATE_PROVIDER)
-            .detail(Details.PROVIDER_ID, model.getId())
-            .detail(Details.PROVIDER_NAME, model.getProviderName())
+
+        event.event(EventType.CREATE_FEDERATION_PROVIDER)
+            .representation(rep)
             .success();
-        
+
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
 
@@ -164,10 +162,9 @@ public class UserFederationResource {
         realm.updateUserFederationProvider(model);
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
-        
-        event.event(EventType.UPDATE_PROVIDER)
-            .detail(Details.PROVIDER_ID, model.getId())
-            .detail(Details.PROVIDER_NAME, model.getProviderName())
+
+        event.event(EventType.UPDATE_FEDERATION_PROVIDER)
+            .representation(rep)
             .success();
     }
 
@@ -184,13 +181,13 @@ public class UserFederationResource {
         auth.requireView();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
             if (model.getId().equals(id)) {
-                
-                event.event(EventType.VIEW_PROVIDER)
-                    .detail(Details.PROVIDER_ID, model.getId())
-                    .detail(Details.PROVIDER_NAME, model.getProviderName())
+                UserFederationProviderRepresentation rep = ModelToRepresentation.toRepresentation(model);
+
+                event.event(EventType.VIEW_FEDERATION_PROVIDER)
+                    .representation(rep)
                     .success();
                 
-                return ModelToRepresentation.toRepresentation(model);
+                return rep;
             }
         }
         
@@ -206,13 +203,14 @@ public class UserFederationResource {
     @Path("instances/{id}")
     public void deleteProviderInstance(@PathParam("id") String id) {
         auth.requireManage();
+
+        UserFederationProviderRepresentation rep = getProviderInstance(id);
         UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1, null, -1, -1, 0);
         realm.removeUserFederationProvider(model);
         new UsersSyncManager().removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), model);
         
-        event.event(EventType.DELETE_PROVIDER)
-            .detail(Details.PROVIDER_ID, model.getId())
-            .detail(Details.PROVIDER_NAME, model.getProviderName())
+        event.event(EventType.DELETE_FEDERATION_PROVIDER)
+            .representation(rep)
             .success();
     }
 

@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventGroup;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.login.LoginFormsProvider;
@@ -59,7 +58,7 @@ public class OIDCLoginProtocolService {
     public OIDCLoginProtocolService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
         this.realm = realm;
         this.tokenManager = new TokenManager();
-        this.event = event.eventGroup(EventGroup.USER);
+        this.event = event;
         this.authManager = authManager;
     }
 

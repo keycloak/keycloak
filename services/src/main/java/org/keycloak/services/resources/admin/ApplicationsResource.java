@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
@@ -78,7 +77,7 @@ public class ApplicationsResource {
             }
         }
         
-        event.event(EventType.VIEW_REALM_APPLICATIONS).success();
+        event.event(EventType.VIEW_APPLICATIONS).representation(rep).success();
         
         return rep;
     }
@@ -94,16 +93,16 @@ public class ApplicationsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createApplication(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
         auth.requireManage();
-        
+
         try {
             ApplicationModel applicationModel = RepresentationToModel.createApplication(session, realm, rep, true);
-            
-            event.event(EventType.CREATE_APPLICATION).client(applicationModel).success();
+
+            event.event(EventType.CREATE_APPLICATION).representation(rep).success();
+
             return Response.created(uriInfo.getAbsolutePathBuilder().path(getApplicationPath(applicationModel)).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Application " + rep.getName() + " already exists");
         }
-        
     }
 
     protected String getApplicationPath(ApplicationModel applicationModel) {

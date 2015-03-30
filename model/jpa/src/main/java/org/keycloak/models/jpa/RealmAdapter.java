@@ -23,7 +23,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;

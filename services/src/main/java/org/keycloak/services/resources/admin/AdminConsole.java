@@ -8,9 +8,6 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.Version;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
@@ -40,7 +37,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -72,11 +68,6 @@ public class AdminConsole {
     @Context
     protected KeycloakSession session;
 
-    /*
-    @Context
-    protected ResourceContext resourceContext;
-    */
-
     @Context
     protected Providers providers;
 
@@ -85,11 +76,9 @@ public class AdminConsole {
 
     protected AppAuthManager authManager;
     protected RealmModel realm;
-    private EventBuilder event;
 
-    public AdminConsole(RealmModel realm, EventBuilder event) {
+    public AdminConsole(RealmModel realm) {
         this.realm = realm;
-        this.event = event.detail(Details.REALM_NAME, realm.getName());
         this.authManager = new AppAuthManager();
     }
 
@@ -169,12 +158,6 @@ public class AdminConsole {
         if (consoleApp == null) {
             throw new NotFoundException("Could not find admin console application");
         }
-        
-        event.event(EventType.SET_REALM_ADAPTER_CONFIGURATION)
-            .client(consoleApp)
-            .detail(Details.REALM_REQUIRED_SSL, realm.getSslRequired().name().toLowerCase())
-            .success();
-        
         return new ApplicationManager().toInstallationRepresentation(realm, consoleApp, keycloak.getBaseUri(uriInfo));
 
     }
@@ -219,8 +202,6 @@ public class AdminConsole {
             logger.debug("setting up realm access for a realm user");
             addRealmAccess(realm, user, realmAccess);
         }
-        
-        event.event(EventType.SET_REALM_USER_PERMISSIONS).user(user).success();
 
         return Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess)).build();
     }
@@ -264,14 +245,12 @@ public class AdminConsole {
     @NoCache
     public Response logout() {
         URI redirect = AdminRoot.adminConsoleUrl(uriInfo).build(realm.getName());
-        
-        event.event(EventType.LOGOUT).detail(Details.REDIRECT_URI, redirect.toString()).success();
-                
+
         return Response.status(302).location(
                 OIDCLoginProtocolService.logoutUrl(uriInfo).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
         ).build();
     }
-    
+
     protected RealmModel getAdminstrationRealm(RealmManager realmManager) {
         return realmManager.getKeycloakAdminstrationRealm();
     }

@@ -83,7 +83,7 @@ public class RealmAdminResource {
         this.realm = realm;
         this.tokenManager = tokenManager;
         this.event = event;
-        
+
         auth.init(RealmAuth.Resource.REALM);
     }
 
@@ -181,7 +181,7 @@ public class RealmAdminResource {
                 rep.setUserCacheEnabled(cache.isEnabled());
             }
             
-            event.event(EventType.VIEW_REALM).success();
+            event.event(EventType.VIEW_REALM).representation(rep).success();
             
             return rep;
         } else {
@@ -189,9 +189,9 @@ public class RealmAdminResource {
 
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
-            
-            event.event(EventType.VIEW_REALM).success();
-            
+
+            event.event(EventType.VIEW_REALM).representation(rep).success();
+
             return rep;
         }
     }
@@ -226,9 +226,9 @@ public class RealmAdminResource {
             for (final UserFederationProviderModel fedProvider : federationProviders) {
                 usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
             }
-            
-            event.event(EventType.UPDATE_REALM).success();
-            
+
+            event.event(EventType.UPDATE_REALM).representation(rep).success();
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
@@ -243,11 +243,13 @@ public class RealmAdminResource {
     public void deleteRealm() {
         auth.requireManage();
 
+        RealmRepresentation rep = getRealm();
+
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
         }
         
-        event.event(EventType.DELETE_REALM).success();
+        event.event(EventType.DELETE_REALM).representation(rep).success();
     }
 
     /**

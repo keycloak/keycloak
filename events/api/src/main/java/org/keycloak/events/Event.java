@@ -12,7 +12,7 @@ public class Event {
 
     private EventType type;
     
-    private EventGroup eventGroup;
+    private EventGroup group;
 
     private String realmId;
 
@@ -25,6 +25,8 @@ public class Event {
     private String ipAddress;
 
     private String error;
+
+    private String representation;
 
     private Map<String, String> details;
 
@@ -44,12 +46,12 @@ public class Event {
         this.type = type;
     }
     
-    public EventGroup getEventGroup() {
-        return eventGroup;
+    public EventGroup getGroup() {
+        return group;
     }
 
-    public void setEventGroup(EventGroup group) {
-        this.eventGroup = group;
+    public void setGroup(EventGroup group) {
+        this.group = group;
     }
 
     public String getRealmId() {
@@ -100,6 +102,14 @@ public class Event {
         this.error = error;
     }
 
+    public String getRepresentation() {
+        return representation;
+    }
+
+    public void setRepresentation(String representation) {
+        this.representation = representation;
+    }
+
     public Map<String, String> getDetails() {
         return details;
     }
@@ -112,14 +122,15 @@ public class Event {
         Event clone = new Event();
         clone.time = time;
         clone.type = type;
-        clone.eventGroup = eventGroup;
+        clone.group = group;
         clone.realmId = realmId;
         clone.clientId = clientId;
         clone.userId = userId;
         clone.sessionId = sessionId;
         clone.ipAddress = ipAddress;
         clone.error = error;
-        clone.details = details != null ? new HashMap<String, String>(details) : null;
+        clone.details = details != null ? new HashMap<>(details) : null;
+        clone.representation = representation;
         return clone;
     }
 

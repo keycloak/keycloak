@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
@@ -52,7 +51,7 @@ public class OAuthClientsResource {
         this.realm = realm;
         this.session = session;
         this.event = event;
-        
+
         auth.init(RealmAuth.Resource.CLIENT);
     }
 
@@ -79,7 +78,7 @@ public class OAuthClientsResource {
             }
         }
         
-        event.event(EventType.VIEW_OAUTH_CLIENTS).success();
+        event.event(EventType.VIEW_OAUTH_CLIENTS).representation(rep).success();
         
         return rep;
     }
@@ -98,13 +97,12 @@ public class OAuthClientsResource {
 
         try {
             OAuthClientModel oauth = RepresentationToModel.createOAuthClient(session, rep, realm);
-            event.event(EventType.CREATE_OAUTH_CLIENT).client(oauth).success();
+            event.event(EventType.CREATE_OAUTH_CLIENT).representation(rep).success();
             
             return Response.created(uriInfo.getAbsolutePathBuilder().path(getClientPath(oauth)).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Client " + rep.getName() + " already exists");
         }
-        
     }
 
     protected String getClientPath(OAuthClientModel oauth) {
