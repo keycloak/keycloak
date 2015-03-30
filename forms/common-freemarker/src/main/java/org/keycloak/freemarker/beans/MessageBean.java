@@ -19,9 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.account.freemarker.model;
-
-import org.keycloak.account.freemarker.FreeMarkerAccountProvider;
+package org.keycloak.freemarker.beans;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -30,9 +28,9 @@ public class MessageBean {
 
     private String summary;
 
-    private FreeMarkerAccountProvider.MessageType type;
+    private MessageType type;
 
-    public MessageBean(String message, FreeMarkerAccountProvider.MessageType type) {
+    public MessageBean(String message, MessageType type) {
         this.summary = message;
         this.type = type;
     }
@@ -41,20 +39,29 @@ public class MessageBean {
         return summary;
     }
 
+    public void appendSummaryLine(String newLine) {
+        if (newLine == null)
+            return;
+        if (summary == null)
+            summary = newLine;
+        else
+            summary = summary + "<br>" + newLine;
+    }
+
     public String getType() {
         return this.type.toString().toLowerCase();
     }
 
     public boolean isSuccess() {
-        return FreeMarkerAccountProvider.MessageType.SUCCESS.equals(this.type);
+        return MessageType.SUCCESS.equals(this.type);
     }
 
     public boolean isWarning() {
-        return FreeMarkerAccountProvider.MessageType.WARNING.equals(this.type);
+        return MessageType.WARNING.equals(this.type);
     }
 
     public boolean isError() {
-        return FreeMarkerAccountProvider.MessageType.ERROR.equals(this.type);
+        return MessageType.ERROR.equals(this.type);
     }
 
 }

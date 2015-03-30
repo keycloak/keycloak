@@ -31,10 +31,10 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.login.FormMessage;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
@@ -618,9 +618,9 @@ public class LoginActionsService {
 
         initEvent(clientSession);
 
-        String error = Validation.validateUpdateProfileForm(formData);
-        if (error != null) {
-            return Flows.forms(session, realm, null, uriInfo, headers).setUser(user).setError(error)
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(formData);
+        if (errors != null && !errors.isEmpty()) {
+            return Flows.forms(session, realm, null, uriInfo, headers).setUser(user).setErrors(errors)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PROFILE);
         }

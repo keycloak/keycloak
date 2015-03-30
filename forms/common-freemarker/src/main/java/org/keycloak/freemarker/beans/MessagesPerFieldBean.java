@@ -3,13 +3,10 @@
  * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @authors tag. All rights reserved.
  */
-package org.keycloak.login.freemarker.model;
+package org.keycloak.freemarker.beans;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import org.keycloak.login.FormMessage;
-import org.keycloak.login.freemarker.FreeMarkerLoginFormsProvider.MessageType;
 
 /**
  * Bean used to hold form messages per field. Stored under <code>messagesPerField</code> key in Freemarker context.
@@ -24,7 +21,7 @@ public class MessagesPerFieldBean {
         if (messageText == null || messageText.trim().isEmpty())
             return;
         if (field == null)
-            field = FormMessage.GLOBAL;
+            field = "global";
 
         MessageBean fm = messagesPerField.get(field);
         if (fm == null) {

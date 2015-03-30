@@ -1,27 +1,50 @@
 package org.keycloak.login.freemarker;
 
+import java.io.IOException;
+import java.net.URI;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
-import org.keycloak.freemarker.*;
+import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
+import org.keycloak.freemarker.FreeMarkerException;
+import org.keycloak.freemarker.FreeMarkerUtil;
+import org.keycloak.freemarker.LocaleHelper;
+import org.keycloak.freemarker.Theme;
+import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.beans.AdvancedMessageFormatterMethod;
+import org.keycloak.freemarker.beans.LocaleBean;
+import org.keycloak.freemarker.beans.MessageBean;
 import org.keycloak.freemarker.beans.MessageFormatterMethod;
-import org.keycloak.login.FormMessage;
+import org.keycloak.freemarker.beans.MessageType;
+import org.keycloak.freemarker.beans.MessagesPerFieldBean;
 import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.freemarker.model.ClientBean;
 import org.keycloak.login.freemarker.model.CodeBean;
-import org.keycloak.freemarker.beans.LocaleBean;
+import org.keycloak.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.login.freemarker.model.LoginBean;
-import org.keycloak.login.freemarker.model.MessageBean;
-import org.keycloak.login.freemarker.model.MessagesPerFieldBean;
 import org.keycloak.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.login.freemarker.model.ProfileBean;
 import org.keycloak.login.freemarker.model.RealmBean;
 import org.keycloak.login.freemarker.model.RegisterBean;
-import org.keycloak.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.login.freemarker.model.TotpBean;
 import org.keycloak.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
@@ -30,16 +53,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Urls;
-
-import javax.ws.rs.core.*;
-
-import java.io.IOException;
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -47,8 +63,6 @@ import java.util.concurrent.TimeUnit;
     public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private static final Logger logger = Logger.getLogger(FreeMarkerLoginFormsProvider.class);
-
-    public static enum MessageType {SUCCESS, WARNING, ERROR}
 
     private String accessCode;
     private Response.Status status;
@@ -191,7 +205,7 @@ import java.util.concurrent.TimeUnit;
         if (messages != null) {
             MessageBean wholeMessage = new MessageBean(null, messageType);
             for (FormMessage message : this.messages) {
-                String formattedMessageText = formatMessageMessage(message, messagesBundle, locale);
+                String formattedMessageText = formatMessage(message, messagesBundle, locale);
                 if (formattedMessageText != null) {
                     wholeMessage.appendSummaryLine(formattedMessageText);
                     messagesPerField.addMessage(message.getField(), formattedMessageText, messageType);
@@ -323,7 +337,7 @@ import java.util.concurrent.TimeUnit;
         return null;
     }
 
-    protected String formatMessageMessage(FormMessage message, Properties messagesBundle, Locale locale) {
+    protected String formatMessage(FormMessage message, Properties messagesBundle, Locale locale) {
         if (message == null)
             return null;
         if (messagesBundle.containsKey(message.getMessage())) {
@@ -332,22 +346,27 @@ import java.util.concurrent.TimeUnit;
             return message.getMessage();
         }
     }
+
+    @Override
     public FreeMarkerLoginFormsProvider setError(String message, Object... parameters) {
         setMessage(MessageType.ERROR, message, parameters);
         return this;
     }
 
+    @Override
     public LoginFormsProvider setErrors(List<FormMessage> messages) {
         this.messageType = MessageType.ERROR;
         this.messages = new ArrayList<>(messages);
         return this;
     }
 
+    @Override
     public FreeMarkerLoginFormsProvider setSuccess(String message, Object ... parameters) {
         setMessage(MessageType.SUCCESS, message, parameters);
         return this;
     }
 
+    @Override
     public FreeMarkerLoginFormsProvider setWarning(String message, Object ... parameters) {
         setMessage(MessageType.WARNING, message, parameters);
         return this;

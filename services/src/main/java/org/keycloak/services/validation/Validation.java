@@ -6,9 +6,9 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.keycloak.login.FormMessage;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
 
@@ -67,24 +67,24 @@ public class Validation {
     }
 
 
-    public static String validateUpdateProfileForm(MultivaluedMap<String, String> formData) {
+    public static List<FormMessage> validateUpdateProfileForm(MultivaluedMap<String, String> formData) {
+        List<FormMessage> errors = new ArrayList<>();
+        
         if (isEmpty(formData.getFirst(FIELD_FIRST_NAME))) {
-            return Messages.MISSING_FIRST_NAME;
+            addError(errors, FIELD_FIRST_NAME, Messages.MISSING_FIRST_NAME);
         }
 
         if (isEmpty(formData.getFirst(FIELD_LAST_NAME))) {
-            return Messages.MISSING_LAST_NAME;
+            addError(errors, FIELD_LAST_NAME, Messages.MISSING_LAST_NAME);
         }
 
         if (isEmpty(formData.getFirst(FIELD_EMAIL))) {
-            return Messages.MISSING_EMAIL;
+            addError(errors, FIELD_EMAIL, Messages.MISSING_EMAIL);
+        } else if (!isEmailValid(formData.getFirst(FIELD_EMAIL))) {
+            addError(errors, FIELD_EMAIL, Messages.INVALID_EMAIL);
         }
 
-        if (!isEmailValid(formData.getFirst(FIELD_EMAIL))) {
-            return Messages.INVALID_EMAIL;
-        }
-
-        return null;
+        return errors;
     }
 
     public static boolean isEmpty(String s) {

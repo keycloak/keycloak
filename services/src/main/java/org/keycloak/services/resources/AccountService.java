@@ -34,6 +34,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.models.*;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -71,6 +72,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Variant;
+
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.HashSet;
@@ -405,10 +407,10 @@ public class AccountService {
 
         UserModel user = auth.getUser();
 
-        String error = Validation.validateUpdateProfileForm(formData);
-        if (error != null) {
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(formData);
+        if (errors != null && !errors.isEmpty()) {
             setReferrerOnPage();
-            return account.setError(error).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
+            return account.setErrors(errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         }
 
         try {

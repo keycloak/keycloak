@@ -3,7 +3,7 @@
  * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @authors tag. All rights reserved.
  */
-package org.keycloak.login;
+package org.keycloak.models.utils;
 
 import java.util.Arrays;
 
