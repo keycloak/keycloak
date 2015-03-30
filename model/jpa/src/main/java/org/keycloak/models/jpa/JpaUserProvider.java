@@ -135,15 +135,7 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm, UserFederationProviderModel link) {
-    	int num = em.createNamedQuery("deleteRolesByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", link.getId())
-                .executeUpdate();
-    	num = em.createNamedQuery("deleteRolesByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", link.getId())
-                .executeUpdate();
-        num = em.createNamedQuery("deleteUserRoleMappingsByRealmAndLink")
+    	int num = em.createNamedQuery("deleteUserRoleMappingsByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", link.getId())
                 .executeUpdate();
