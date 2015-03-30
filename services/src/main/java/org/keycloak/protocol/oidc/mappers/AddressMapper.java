@@ -52,7 +52,7 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
         address.setProtocolMapper(PROVIDER_ID);
         address.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         address.setConsentRequired(true);
-        address.setConsentText("address");
+        address.setConsentText("${address}");
         config = new HashMap<String, String>();
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
@@ -66,7 +66,7 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
         address.setProtocolMapper(PROVIDER_ID);
         address.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         address.setConsentRequired(true);
-        address.setConsentText("address");
+        address.setConsentText("${address}");
         config = new HashMap<String, String>();
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.toString(idToken));
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, Boolean.toString(accessToken));

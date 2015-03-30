@@ -66,21 +66,21 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
                 X500SAMLProfileConstants.EMAIL.get(),
                 JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get(),
                 X500SAMLProfileConstants.EMAIL.getFriendlyName(),
-                true, "email");
+                true, "${email}");
         builtins.add(model);
         model = UserPropertyAttributeStatementMapper.createAttributeMapper("X500 givenName",
                 "firstName",
                 X500SAMLProfileConstants.GIVEN_NAME.get(),
                 JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get(),
                 X500SAMLProfileConstants.GIVEN_NAME.getFriendlyName(),
-                true, "given name");
+                true, "${givenName}");
         builtins.add(model);
         model = UserPropertyAttributeStatementMapper.createAttributeMapper("X500 surname",
                 "lastName",
                 X500SAMLProfileConstants.SURNAME.get(),
                 JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get(),
                 X500SAMLProfileConstants.SURNAME.getFriendlyName(),
-                true, "family name");
+                true, "${familyName}");
         builtins.add(model);
         model = RoleListMapper.create("role list", "Role", AttributeStatementHelper.BASIC, null, false);
         builtins.add(model);

@@ -112,5 +112,9 @@
                 "roles": ["customer-user"]
             }
         ]
-    }
+    },
+
+    "internationalizationEnabled": true,
+    "supportedLocales": ["en", "de"],
+    "defaultLocale": "en"
 }
