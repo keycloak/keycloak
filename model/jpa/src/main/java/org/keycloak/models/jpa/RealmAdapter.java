@@ -23,6 +23,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -1137,6 +1138,17 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setEventsListeners(Set<String> listeners) {
         realm.setEventsListeners(listeners);
+        em.flush();
+    }
+    
+    @Override
+    public Set<String> getEnabledEventTypes() {
+        return realm.getEnabledEventTypes();
+    }
+
+    @Override
+    public void setEnabledEventTypes(Set<String> enabledEventTypes) {
+        realm.setEnabledEventTypes(enabledEventTypes);
         em.flush();
     }
 

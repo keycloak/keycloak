@@ -52,6 +52,19 @@
 
                     <span tooltip-placement="right" tooltip="Configure what listeners receive events for the realm." class="fa fa-info-circle"></span>
                 </div>
+                
+                <div class="form-group" data-ng-show="eventsConfig.eventsEnabled">
+                    <label class="col-sm-2 control-label" for="enabledEventTypes" class="control-label">Event Types</label>
+
+                    <div class="col-sm-5">
+                        <select ui-select2 ng-model="eventsConfig.enabledEventTypes" data-placeholder="Select an event type(s)..." multiple>
+                            <option ng-repeat="type in enabledEventTypes" value="{{type.tag}}">{{type.tag}}</option>
+                        </select>
+                    </div>
+
+                    <span tooltip-placement="right" tooltip="Configure what event types persist for the realm." class="fa fa-info-circle"></span>
+                </div>
+                
             </fieldset>
 
             <div class="pull-right form-actions" data-ng-show="access.manageEvents">

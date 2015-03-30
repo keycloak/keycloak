@@ -11,6 +11,9 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.constants.KerberosConstants;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
@@ -30,6 +33,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,16 +49,19 @@ public class UserFederationResource {
     protected RealmModel realm;
 
     protected  RealmAuth auth;
-
+    
+    private EventBuilder event;
+    
     @Context
     protected UriInfo uriInfo;
-
+    
     @Context
     protected KeycloakSession session;
 
-    public UserFederationResource(RealmModel realm, RealmAuth auth) {
+    public UserFederationResource(RealmModel realm, RealmAuth auth, EventBuilder event) {
         this.auth = auth;
         this.realm = realm;
+        this.event = event;
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -77,11 +84,14 @@ public class UserFederationResource {
             rep.setOptions(((UserFederationProviderFactory)factory).getConfigurationOptions());
             providers.add(rep);
         }
+        
+        event.event(EventType.VIEW_PROVIDER_FACTORIES).success();
+        
         return providers;
     }
 
     /**
-     * Get List of available provider factories
+     * Get a provider
      *
      * @return
      */
@@ -98,6 +108,9 @@ public class UserFederationResource {
             UserFederationProviderFactoryRepresentation rep = new UserFederationProviderFactoryRepresentation();
             rep.setId(factory.getId());
             rep.setOptions(((UserFederationProviderFactory)factory).getConfigurationOptions());
+            
+            event.event(EventType.VIEW_PROVIDER).detail(Details.PROVIDER_ID, rep.getId()).success();
+            
             return rep;
         }
         throw new NotFoundException("Could not find provider");
@@ -122,7 +135,12 @@ public class UserFederationResource {
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
-
+        
+        event.event(EventType.CREATE_PROVIDER)
+            .detail(Details.PROVIDER_ID, model.getId())
+            .detail(Details.PROVIDER_NAME, model.getProviderName())
+            .success();
+        
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
 
@@ -146,6 +164,11 @@ public class UserFederationResource {
         realm.updateUserFederationProvider(model);
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
+        
+        event.event(EventType.UPDATE_PROVIDER)
+            .detail(Details.PROVIDER_ID, model.getId())
+            .detail(Details.PROVIDER_NAME, model.getProviderName())
+            .success();
     }
 
     /**
@@ -161,9 +184,16 @@ public class UserFederationResource {
         auth.requireView();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
             if (model.getId().equals(id)) {
+                
+                event.event(EventType.VIEW_PROVIDER)
+                    .detail(Details.PROVIDER_ID, model.getId())
+                    .detail(Details.PROVIDER_NAME, model.getProviderName())
+                    .success();
+                
                 return ModelToRepresentation.toRepresentation(model);
             }
         }
+        
         throw new NotFoundException("could not find provider");
     }
 
@@ -179,6 +209,11 @@ public class UserFederationResource {
         UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1, null, -1, -1, 0);
         realm.removeUserFederationProvider(model);
         new UsersSyncManager().removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), model);
+        
+        event.event(EventType.DELETE_PROVIDER)
+            .detail(Details.PROVIDER_ID, model.getId())
+            .detail(Details.PROVIDER_NAME, model.getProviderName())
+            .success();
     }
 
 

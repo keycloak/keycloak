@@ -3,7 +3,9 @@ package org.keycloak.events.mongo;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+
 import org.keycloak.events.Event;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
@@ -63,6 +65,7 @@ public class MongoEventStoreProvider implements EventStoreProvider {
         BasicDBObject e = new BasicDBObject();
         e.put("time", o.getTime());
         e.put("type", o.getType().toString());
+        e.put("group", o.getEventGroup().toString());
         e.put("realmId", o.getRealmId());
         e.put("clientId", o.getClientId());
         e.put("userId", o.getUserId());
@@ -85,6 +88,7 @@ public class MongoEventStoreProvider implements EventStoreProvider {
         Event e = new Event();
         e.setTime(o.getLong("time"));
         e.setType(EventType.valueOf(o.getString("type")));
+        e.setEventGroup(EventGroup.valueOf(o.getString("group")));
         e.setRealmId(o.getString("realmId"));
         e.setClientId(o.getString("clientId"));
         e.setUserId(o.getString("userId"));

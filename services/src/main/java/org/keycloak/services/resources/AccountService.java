@@ -31,6 +31,7 @@ import org.keycloak.account.AccountProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.models.*;
@@ -71,6 +72,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Variant;
+
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.HashSet;
@@ -141,7 +143,7 @@ public class AccountService {
     public AccountService(RealmModel realm, ApplicationModel application, EventBuilder event) {
         this.realm = realm;
         this.application = application;
-        this.event = event;
+        this.event = event.eventGroup(EventGroup.USER);
         this.authManager = new AppAuthManager();
     }
 

@@ -29,6 +29,7 @@ import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
@@ -63,6 +64,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -132,7 +134,7 @@ public class LoginActionsService {
     public LoginActionsService(RealmModel realm, AuthenticationManager authManager, EventBuilder event) {
         this.realm = realm;
         this.authManager = authManager;
-        this.event = event;
+        this.event = event.eventGroup(EventGroup.USER);
     }
 
     private boolean checkSsl() {

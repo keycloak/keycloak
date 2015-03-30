@@ -2,6 +2,7 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
@@ -1041,6 +1042,21 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             realm.setEventsListeners(new ArrayList<String>(listeners));
         } else {
             realm.setEventsListeners(Collections.EMPTY_LIST);
+        }
+        updateRealm();
+    }
+
+    @Override
+    public Set<String> getEnabledEventTypes() {
+        return new HashSet<String>(realm.getEnabledEventTypes());
+    }
+
+    @Override
+    public void setEnabledEventTypes(Set<String> enabledEventTypes) {
+        if (enabledEventTypes != null) {
+            realm.setEnabledEventTypes(new ArrayList<String>(enabledEventTypes));
+        } else {
+            realm.setEnabledEventTypes(Collections.EMPTY_LIST);
         }
         updateRealm();
     }
