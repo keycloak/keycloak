@@ -24,6 +24,7 @@ import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 public class JpaUserProvider implements UserProvider {
@@ -134,7 +135,7 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm, UserFederationProviderModel link) {
-        int num = em.createNamedQuery("deleteUserRoleMappingsByRealmAndLink")
+    	int num = em.createNamedQuery("deleteUserRoleMappingsByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", link.getId())
                 .executeUpdate();

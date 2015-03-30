@@ -490,6 +490,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
             instance.config = {};
             instance.priority = 0;
             $scope.syncRegistrations = false;
+            $scope.supportRoles = false;
 
             $scope.userAccountControlsAfterPasswordUpdate = true;
             instance.config.userAccountControlsAfterPasswordUpdate = "true";
@@ -505,6 +506,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
             $scope.changedSyncEnabled = false;
         } else {
             $scope.syncRegistrations = instance.config.syncRegistrations && instance.config.syncRegistrations == "true";
+            $scope.supportRoles = instance.config.supportRoles && instance.config.supportRoles == "true";
             $scope.userAccountControlsAfterPasswordUpdate = instance.config.userAccountControlsAfterPasswordUpdate && instance.config.userAccountControlsAfterPasswordUpdate == "true";
             $scope.connectionPooling = instance.config.connectionPooling && instance.config.connectionPooling == "true";
             $scope.pagination = instance.config.pagination && instance.config.pagination == "true";
@@ -546,6 +548,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     }
 
     watchBooleanProperty('syncRegistrations');
+    watchBooleanProperty('supportRoles');
     watchBooleanProperty('userAccountControlsAfterPasswordUpdate');
     watchBooleanProperty('connectionPooling');
     watchBooleanProperty('pagination');

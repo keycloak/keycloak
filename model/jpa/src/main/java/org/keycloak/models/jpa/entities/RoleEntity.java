@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -10,13 +11,16 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 @Entity
@@ -25,7 +29,8 @@ import java.util.Collection;
 })
 @NamedQueries({
         @NamedQuery(name="getAppRoleByName", query="select role from RoleEntity role where role.name = :name and role.application = :application"),
-        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.applicationRole = false and role.name = :name and role.realm = :realm")
+        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.applicationRole = false and role.name = :name and role.realm = :realm"),
+        @NamedQuery(name="deleteRolesByRealmAndLink", query="delete from RoleEntity role where role.realmId = :realmId and role.federationLink=:link")
 })
 
 public class RoleEntity {
@@ -61,6 +66,12 @@ public class RoleEntity {
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
     private Collection<RoleEntity> compositeRoles = new ArrayList<RoleEntity>();
 
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
+    protected Collection<RoleAttributeEntity> attributes = new ArrayList<RoleAttributeEntity>();
+    
+    @Column(name="federation_link")
+    protected String federationLink;
+    
     public String getId() {
         return id;
     }
@@ -152,5 +163,21 @@ public class RoleEntity {
     @Override
     public int hashCode() {
         return id.hashCode();
+    }
+    
+    public Collection<RoleAttributeEntity> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Collection<RoleAttributeEntity> attributes) {
+        this.attributes = attributes;
+    }
+    
+    public String getFederationLink() {
+        return federationLink;
+    }
+
+    public void setFederationLink(String federationLink) {
+        this.federationLink = federationLink;
     }
 }

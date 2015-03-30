@@ -52,6 +52,7 @@ import java.util.Map;
  * Base resource class for the admin REST api of one realm
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 public class RealmAdminResource {
@@ -144,7 +145,9 @@ public class RealmAdminResource {
      */
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(realm, auth, realm);
+    	RoleContainerResource roleContainerResource = new RoleContainerResource(realm, auth, realm);
+    	ResteasyProviderFactory.getInstance().injectProperties(roleContainerResource);
+        return roleContainerResource;
     }
 
     /**

@@ -4,9 +4,13 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderFactory;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RoleRepresentation;
 
@@ -18,6 +22,8 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+
 import java.util.List;
 import java.util.Set;
 
@@ -25,12 +31,16 @@ import java.util.Set;
  * Sometimes its easier to just interact with roles by their ID instead of container/role-name
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 public class RoleByIdResource extends RoleResource {
     protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;
     private final RealmAuth auth;
+    
+    @Context
+    protected KeycloakSession session;
 
     public RoleByIdResource(RealmModel realm, RealmAuth auth) {
         super(realm);
@@ -85,9 +95,38 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @NoCache
     public void deleteRole(final @PathParam("role-id") String id) {
-        RoleModel role = getRoleModel(id);
-        auth.requireManage();
-        deleteRole(role);
+    	auth.requireManage();
+        
+        try {
+        	RoleModel role = getRoleModel(id);
+        	if (role == null) {
+        		throw new NotFoundException("Could not find role with id: " + id);
+        	}
+        	deleteRole(role);
+
+        	try {
+
+        		for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
+        			UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, federation.getProviderName());
+
+        			UserFederationProvider fed = factory.getInstance(session, federation);
+        			if (fed.synchronizeRegistrations()) {
+        				fed.removeRole(realm, role);
+        			}
+        		}
+
+        		if (session.getTransaction().isActive()) {
+        			session.getTransaction().commit();
+        		}
+        	} catch (IllegalStateException ise) {
+        		logger.warn("Ignore the exception because either user federation is read-only or syncing to user federation is turned off in configuration.  Keycloak roles could get out of sync with LDAP groups though. " + ise);
+        	}
+        } catch(Exception e) {
+        	logger.error("Failed to delete role with id " + id + ": " + e);
+        	if (session.getTransaction().isActive()) {
+        		session.getTransaction().setRollbackOnly();
+        	}
+        }
     }
 
     /**

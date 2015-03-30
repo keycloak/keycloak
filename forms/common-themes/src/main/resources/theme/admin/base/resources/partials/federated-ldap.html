@@ -110,7 +110,7 @@
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapBaseDn" type="text" ng-model="instance.config.baseDn" placeholder="LDAP Base DN" required>
                     </div>
-                    <span tooltip-placement="right" tooltip="Base DN of LDAP tree where your data are. Base DN is usually ancestor of User DN Suffix" class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Base DN of LDAP tree where your data are. Base DN is usually ancestor of User DN Suffix and Group DN Suffix if roles are supported" class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="ldapUserDnSuffix">User DN Suffix <span class="required">*</span></label>
@@ -136,6 +136,43 @@
                         <a class="btn btn-primary" data-ng-click="testAuthentication()">Test authentication</a>
                     </div>
                 </div>
+                
+                <div class="form-group clearfix block">
+                    <label class="col-sm-2 control-label" for="supportRoles">Support Roles</label>
+                    <div class="col-sm-4">
+                        <input ng-model="supportRoles" name="supportRoles" id="supportRoles" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Should roles be mapped to groups in LDAP store?" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix" data-ng-show="instance.config.supportRoles === 'true' ">
+                    <label class="col-sm-2 control-label" for="ldapGroupDnSuffix">Group DN Suffix <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="ldapGroupDnSuffix" type="text" ng-model="instance.config.groupDnSuffix" placeholder="LDAP Group DN Suffix" required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Base DN of LDAP tree where your groups are. This DN is parent of all DNs of LDAP groups" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix" data-ng-show="instance.config.supportRoles === 'true' ">
+                    <label class="col-sm-2 control-label" for="groupNameLDAPAttribute">Group LDAP attribute <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="groupNameLDAPAttribute" type="text" ng-model="instance.config.groupNameLDAPAttribute" placeholder="Group Name LDAP Attribute" required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Name of LDAP attribute, which is mapped as Keycloak rolename" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix" data-ng-show="instance.config.supportRoles === 'true' ">
+                    <label class="col-sm-2 control-label" for="groupObjectClasses">Group Object Classes<span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="groupObjectClasses" type="text" ng-model="instance.config.groupObjectClasses" placeholder="LDAP Group Object Classes (div. by comma)" required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="All values of LDAP objectClass attribute for groups in LDAP divided by comma" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix" data-ng-show="instance.config.supportRoles === 'true' ">
+                    <label class="col-sm-2 control-label" for="ldapMembershipAttribute">Membership LDAP attribute <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="ldapMembershipAttribute" type="text" ng-model="instance.config.membershipLDAPAttribute" placeholder="LDAP Membership Attribute" required>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Name of LDAP attribute, which tells which user belongs to which groups or which group has which users" class="fa fa-info-circle"></span>
+                </div>
+                
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="connectionPooling">Connection pooling</label>
                     <div class="col-sm-4">

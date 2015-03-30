@@ -4,11 +4,13 @@ import org.keycloak.models.ModelDuplicateException;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
+import org.picketlink.idm.RelationshipManager;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.basic.BasicModel;
+import org.picketlink.idm.model.basic.Role;
 import org.picketlink.idm.model.basic.User;
 import org.picketlink.idm.query.AttributeParameter;
 import org.picketlink.idm.query.QueryParameter;
@@ -19,6 +21,7 @@ import java.util.List;
  * Allow to directly call some operations against Picketlink IDM PartitionManager (hence LDAP).
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  */
 public class LDAPUtils {
 
@@ -136,5 +139,75 @@ public class LDAPUtils {
         }
 
         return fullName;
+    }
+    
+    public static Role addRole(PartitionManager partitionManager, String name) {
+        IdentityManager identityManager = getIdentityManager(partitionManager);
+
+        if (BasicModel.getRole(identityManager, name) != null) {
+            throw new ModelDuplicateException("Role with same name already exists");
+        }
+
+        Role picketlinkRole = new Role(name);
+        picketlinkRole.setName(name);
+        identityManager.add(picketlinkRole);
+        return picketlinkRole;
+    }
+    
+    public static boolean removeRole(PartitionManager partitionManager, String name) {
+        IdentityManager identityManager = getIdentityManager(partitionManager);
+
+        Role picketlinkRole = BasicModel.getRole(identityManager, name);
+        
+        if (picketlinkRole == null) {
+            return false;
+        }
+
+        identityManager.remove(picketlinkRole);
+        return true;
+    }
+    
+    public static void grantRole(PartitionManager partitionManager, String username, String rolename) {
+        IdentityManager identityManager = getIdentityManager(partitionManager);
+        
+        Role picketlinkRole = BasicModel.getRole(identityManager, rolename);
+        if (picketlinkRole == null) {
+            throw new IdentityManagementException("Role not found");
+        }
+        
+        User picketlinkUser = BasicModel.getUser(identityManager, username);
+        if (picketlinkUser == null) {
+            throw new IdentityManagementException("User not found");
+        }
+        
+        System.out.println("picketlinkUser dn is: " + picketlinkUser.getAttribute("dn"));
+        
+        RelationshipManager relationshipManager = getRelationshipManager(partitionManager);
+        
+        // Bug in picketlink BasicModel.grantRole method causes
+        // wrong user dn inserted under role if user lives anywhere
+        // other than the root level of the user tree in ldap.
+        BasicModel.grantRole(relationshipManager, picketlinkUser, picketlinkRole);
+    }
+    
+    public static void revokeRole(PartitionManager partitionManager, String username, String rolename) {
+        IdentityManager identityManager = getIdentityManager(partitionManager);
+        
+        Role picketlinkRole = BasicModel.getRole(identityManager, rolename);
+        if (picketlinkRole == null) {
+            throw new IdentityManagementException("Role not found");
+        }
+        
+        User picketlinkUser = BasicModel.getUser(identityManager, username);
+        if (picketlinkUser == null) {
+            throw new IdentityManagementException("User not found");
+        }
+        
+        RelationshipManager relationshipManager = getRelationshipManager(partitionManager);
+        BasicModel.revokeRole(relationshipManager, picketlinkUser, picketlinkRole);
+    }
+    
+    private static RelationshipManager getRelationshipManager(PartitionManager partitionManager) {
+        return partitionManager.createRelationshipManager();
     }
 }

@@ -45,3 +45,6 @@ catalog.xml
 #########
 target
 
+# Mac #
+#######
+.DS_Store

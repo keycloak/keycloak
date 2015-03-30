@@ -2,6 +2,7 @@ package org.keycloak.models;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  */
 public class LDAPConstants {
 
@@ -19,6 +20,12 @@ public class LDAPConstants {
     public static final String USER_DN_SUFFIX = "userDnSuffix";
     public static final String BIND_DN = "bindDn";
     public static final String BIND_CREDENTIAL = "bindCredential";
+    
+    public static final String SUPPORT_ROLES = "supportRoles";
+    public static final String GROUP_DN_SUFFIX = "groupDnSuffix";
+    public static final String GROUP_NAME_LDAP_ATTRIBUTE = "groupNameLDAPAttribute";
+    public static final String GROUP_OBJECT_CLASSES = "groupObjectClasses";
+    public static final String MEMBERSHIP_LDAP_ATTRIBUTE = "membershipLDAPAttribute";
 
     public static final String CONNECTION_POOLING = "connectionPooling";
     public static final String PAGINATION = "pagination";

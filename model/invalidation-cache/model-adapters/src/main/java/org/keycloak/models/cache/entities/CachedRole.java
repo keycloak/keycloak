@@ -3,11 +3,14 @@ package org.keycloak.models.cache.entities;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:jli@vizuri.com">Jiehuan Li</a>
  * @version $Revision: 1 $
  */
 public class CachedRole {
@@ -17,6 +20,8 @@ public class CachedRole {
     final protected String description;
     final protected boolean composite;
     final protected Set<String> composites = new HashSet<String>();
+    final protected String federationLink;
+    final protected Map<String, String> attributes = new HashMap<String, String>();
 
     public CachedRole(RoleModel model, RealmModel realm) {
         composite = model.isComposite();
@@ -29,7 +34,11 @@ public class CachedRole {
                 composites.add(child.getId());
             }
         }
-
+        federationLink = model.getFederationLink();
+        Map<String, String> attrMap = model.getAttributes();
+        for (String key: attrMap.keySet()) {
+        	attributes.put(key, attrMap.get(key));
+        }
     }
 
     public String getId() {
@@ -54,5 +63,13 @@ public class CachedRole {
 
     public Set<String> getComposites() {
         return composites;
+    }
+    
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+    
+    public String getFederationLink() {
+        return federationLink;
     }
 }

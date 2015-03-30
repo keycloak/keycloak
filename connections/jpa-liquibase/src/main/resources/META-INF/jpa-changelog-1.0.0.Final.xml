@@ -102,6 +102,15 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <createTable tableName="ROLE_ATTRIBUTE">
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
         <createTable tableName="KEYCLOAK_ROLE">
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
@@ -115,6 +124,7 @@
             <column name="REALM_ID" type="VARCHAR(255)"/>
             <column name="APPLICATION" type="VARCHAR(36)"/>
             <column name="REALM" type="VARCHAR(36)"/>
+            <column name="FEDERATION_LINK" type="VARCHAR(255)"/>
         </createTable>
         <createTable tableName="REALM">
             <column name="ID" type="VARCHAR(36)">
@@ -369,6 +379,7 @@
         <addPrimaryKey columnNames="CLIENT_ID, ROLE_ID" constraintName="CONSTRAINT_81" tableName="SCOPE_MAPPING"/>
         <addPrimaryKey columnNames="NAME, REALM_ID" constraintName="CONSTRAINT_9" tableName="REALM_ATTRIBUTE"/>
         <addPrimaryKey columnNames="REALM_ID, TYPE" constraintName="CONSTRAINT_92" tableName="REALM_REQUIRED_CREDENTIAL"/>
+        <addPrimaryKey columnNames="NAME, ROLE_ID" constraintName="CONSTRAINT_100" tableName="ROLE_ATTRIBUTE"/>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_A" tableName="KEYCLOAK_ROLE"/>
         <addPrimaryKey columnNames="ROLE_ID, USER_ID" constraintName="CONSTRAINT_C" tableName="USER_ROLE_MAPPING"/>
         <addPrimaryKey columnNames="REALM_ID, NAME" constraintName="CONSTRAINT_E" tableName="REALM_SMTP_CONFIG"/>
@@ -395,6 +406,7 @@
         <addForeignKeyConstraint baseColumnNames="REALM" baseTableName="KEYCLOAK_ROLE" constraintName="FK_6VYQFE4CN4WLQ8R6KT5VDSJ5C" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_SMTP_CONFIG" constraintName="FK_70EJ8XDXGXD0B9HH6180IRR0O" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="APPLICATION_ID" baseTableName="REALM_APPLICATION" constraintName="FK_71S3P0DIUXAWWQQSA528UBY2Q" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="ROLE_ATTRIBUTE" constraintName="FK_101" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
         <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="APPLICATION_DEFAULT_ROLES" constraintName="FK_8AELWNIBJI49AVXSRTUF6XJOW" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_ATTRIBUTE" constraintName="FK_8SHXD6L3E9ATQUKACXGPFFPTW" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="COMPOSITE" baseTableName="COMPOSITE_ROLE" constraintName="FK_A63WVEKFTU8JO1PNJ81E7MCE2" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
