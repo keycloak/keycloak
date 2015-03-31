@@ -1,11 +1,11 @@
 package org.keycloak.events.log;
 
-import java.util.Map;
-
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.productivity.java.syslog4j.SyslogConstants;
 import org.productivity.java.syslog4j.SyslogIF;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>

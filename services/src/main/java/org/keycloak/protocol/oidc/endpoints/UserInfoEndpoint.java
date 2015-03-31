@@ -25,7 +25,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -111,7 +110,7 @@ public class UserInfoEndpoint {
     }
 
     private Response issueUserInfo(String tokenString) {
-        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection)
+        EventBuilder event = new EventBuilder(realm, session, clientConnection)
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 

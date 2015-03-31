@@ -23,7 +23,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,14 +47,13 @@ public class ClientAttributeCertificateResource {
 
     protected RealmModel realm;
     private RealmAuth auth;
-    private EventBuilder event;
     protected ClientModel client;
     protected KeycloakSession session;
     protected String attributePrefix;
     protected String privateAttribute;
     protected String certificateAttribute;
 
-    public ClientAttributeCertificateResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, String attributePrefix, EventBuilder event) {
+    public ClientAttributeCertificateResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, String attributePrefix) {
         this.realm = realm;
         this.auth = auth;
         this.client = client;
@@ -63,7 +61,6 @@ public class ClientAttributeCertificateResource {
         this.attributePrefix = attributePrefix;
         this.privateAttribute = attributePrefix + "." + PRIVATE_KEY;
         this.certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
-        this.event = event;
     }
 
     public static class ClientKeyPairInfo {
@@ -99,9 +96,6 @@ public class ClientAttributeCertificateResource {
         ClientKeyPairInfo info = new ClientKeyPairInfo();
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
-        
-        event.event(EventType.VIEW_CLIENT_CERTIFICATE).representation(info).success();
-
         return info;
     }
 
@@ -140,9 +134,6 @@ public class ClientAttributeCertificateResource {
         ClientKeyPairInfo info = new ClientKeyPairInfo();
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
-        
-        event.event(EventType.UPDATE_CLIENT_CERTIFICATE).representation(info).success();
-                
         return info;
     }
 
@@ -199,8 +190,6 @@ public class ClientAttributeCertificateResource {
             client.setAttribute(certificateAttribute, certPem);
             info.setCertificate(certPem);
         }
-
-        event.event(EventType.UPDATE_CLIENT_CERTIFICATE).representation(info).success();
 
         return info;
     }
@@ -327,9 +316,6 @@ public class ClientAttributeCertificateResource {
             stream.flush();
             stream.close();
             byte[] rtn = stream.toByteArray();
-            
-            event.event(EventType.VIEW_CLIENT_CERTIFICATE).representation(rtn).success();
-            
             return rtn;
         } catch (Exception e) {
             throw new RuntimeException(e);

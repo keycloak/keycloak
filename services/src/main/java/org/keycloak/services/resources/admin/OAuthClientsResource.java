@@ -4,8 +4,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
@@ -25,7 +23,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,21 +33,13 @@ import java.util.List;
 public class OAuthClientsResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
     protected RealmModel realm;
-    private EventBuilder event;
     protected KeycloakSession session;
-    
-    /*
-    @Context
-    protected ResourceContext resourceContext;
-
-    */
     private RealmAuth auth;
 
-    public OAuthClientsResource(RealmModel realm, RealmAuth auth, KeycloakSession session, EventBuilder event) {
+    public OAuthClientsResource(RealmModel realm, RealmAuth auth, KeycloakSession session) {
         this.auth = auth;
         this.realm = realm;
         this.session = session;
-        this.event = event;
 
         auth.init(RealmAuth.Resource.CLIENT);
     }
@@ -77,9 +66,7 @@ public class OAuthClientsResource {
                 rep.add(client);
             }
         }
-        
-        event.event(EventType.VIEW_OAUTH_CLIENTS).representation(rep).success();
-        
+
         return rep;
     }
 
@@ -97,8 +84,6 @@ public class OAuthClientsResource {
 
         try {
             OAuthClientModel oauth = RepresentationToModel.createOAuthClient(session, rep, realm);
-            event.event(EventType.CREATE_OAUTH_CLIENT).representation(rep).success();
-            
             return Response.created(uriInfo.getAbsolutePathBuilder().path(getClientPath(oauth)).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Client " + rep.getName() + " already exists");
@@ -123,7 +108,7 @@ public class OAuthClientsResource {
         if (oauth == null) {
             throw new NotFoundException("OAuth Client not found");
         }
-        OAuthClientResource oAuthClientResource = new OAuthClientResource(realm, auth, oauth, session, event);
+        OAuthClientResource oAuthClientResource = new OAuthClientResource(realm, auth, oauth, session);
         ResteasyProviderFactory.getInstance().injectProperties(oAuthClientResource);
         //resourceContext.initResource(oAuthClientResource);
         return oAuthClientResource;

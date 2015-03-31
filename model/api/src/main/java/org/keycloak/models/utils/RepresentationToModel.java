@@ -265,6 +265,7 @@ public class RepresentationToModel {
             Boolean updateProfileFirstLogin = rep.isUpdateProfileOnInitialSocialLogin() != null && rep.isUpdateProfileOnInitialSocialLogin();
             if (rep.getSocialProviders() != null) {
 
+                logger.warn("Using deprecated 'social' configuration in JSON representation. It will be removed in future versions");
                 List<IdentityProviderRepresentation> identityProviders = new LinkedList<>();
                 for (String k : rep.getSocialProviders().keySet()) {
                     if (k.endsWith(".key")) {
@@ -297,6 +298,8 @@ public class RepresentationToModel {
 
     private static void convertDeprecatedSocialProviders(UserRepresentation user) {
         if (user.getSocialLinks() != null && !user.getSocialLinks().isEmpty() && user.getFederatedIdentities() == null) {
+
+            logger.warnf("Using deprecated 'socialLinks' configuration in JSON representation for user '%s'. It will be removed in future versions", user.getUsername());
             List<FederatedIdentityRepresentation> federatedIdentities = new LinkedList<>();
             for (SocialLinkRepresentation social : user.getSocialLinks()) {
                 FederatedIdentityRepresentation federatedIdentity = new FederatedIdentityRepresentation();
@@ -316,6 +319,7 @@ public class RepresentationToModel {
             return null;
         }
 
+        logger.warn("Using deprecated 'claims' configuration in JSON representation. It will be removed in future versions");
         long mask = getClaimsMask(claimRep);
         MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
         return migrationProvider.getMappersForClaimMask(mask);

@@ -4,11 +4,9 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
@@ -36,7 +34,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -53,12 +50,16 @@ public class RealmsAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmsAdminResource.class);
     protected AdminAuth auth;
     protected TokenManager tokenManager;
-    private EventBuilder event;
 
-    public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager, EventBuilder event) {
+    @Context
+    protected KeycloakSession session;
+
+    @Context
+    protected KeycloakApplication keycloak;
+
+    public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager) {
         this.auth = auth;
         this.tokenManager = tokenManager;
-        this.event = event;
     }
 
     public static final CacheControl noCache = new CacheControl();
@@ -66,17 +67,6 @@ public class RealmsAdminResource {
     static {
         noCache.setNoCache(true);
     }
-
-    /*
-    @Context
-    protected ResourceContext resourceContext;
-    */
-
-    @Context
-    protected KeycloakSession session;
-
-    @Context
-    protected KeycloakApplication keycloak;
 
     /**
      * Returns a list of realms.  This list is filtered based on what realms the caller is allowed to view.
@@ -101,7 +91,6 @@ public class RealmsAdminResource {
         logger.debug(("getRealms()"));
         return reps;
     }
-
 
     protected void addRealmRep(List<RealmRepresentation> reps, RealmModel realm, ApplicationModel realmManagementApplication) {
         if (auth.hasAppRole(realmManagementApplication, AdminRoles.MANAGE_REALM)) {
@@ -140,11 +129,7 @@ public class RealmsAdminResource {
 
             URI location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
             logger.debugv("imported realm success, sending back: {0}", location.toString());
-            
-            event.event(EventType.CREATE_REALM)
-                    .representation(rep)
-                    .success();
-            
+
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
@@ -191,8 +176,6 @@ public class RealmsAdminResource {
                 URI location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
                 return Response.created(location).build();
             }
-            
-            event.event(EventType.CREATE_REALM).representation(rep).success();
         }
 
         return Response.noContent().build();
@@ -237,8 +220,7 @@ public class RealmsAdminResource {
             realmAuth = new RealmAuth(auth, realm.getApplicationByName(realmManager.getRealmAdminApplicationName(auth.getRealm())));
         }
 
-        event.detail(Details.REALM, realm.getName());
-        RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager, event);
+        RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);
         return adminResource;
