@@ -50,6 +50,7 @@ import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
+import org.keycloak.util.ObjectUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -342,12 +343,15 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private void updateFederatedIdentity(FederatedIdentity updatedIdentity, UserModel federatedUser) {
         FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, updatedIdentity.getIdentityProviderId(), this.realmModel);
 
-        federatedIdentityModel.setToken(updatedIdentity.getToken());
+        // Skip DB write if tokens are null or equal
+        if (!ObjectUtil.isEqualOrNull(updatedIdentity.getToken(), federatedIdentityModel.getToken())) {
+            federatedIdentityModel.setToken(updatedIdentity.getToken());
 
-        this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
+            this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
 
-        if (isDebugEnabled()) {
-            LOGGER.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, updatedIdentity.getIdentityProviderId());
+            if (isDebugEnabled()) {
+                LOGGER.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, updatedIdentity.getIdentityProviderId());
+            }
         }
     }
 
