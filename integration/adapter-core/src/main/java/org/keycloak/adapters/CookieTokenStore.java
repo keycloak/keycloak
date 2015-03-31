@@ -18,7 +18,7 @@ import org.keycloak.util.KeycloakUriBuilder;
 public class CookieTokenStore {
 
     private static final Logger log = Logger.getLogger(CookieTokenStore.class);
-    private static final String DELIM = "@";
+    private static final String DELIM = "___";
 
     public static void setTokenCookie(KeycloakDeployment deployment, HttpFacade facade, RefreshableKeycloakSecurityContext session) {
         log.debugf("Set new %s cookie now", AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE);

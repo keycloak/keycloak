@@ -119,7 +119,7 @@ public class CatalinaHttpFacade implements HttpFacade {
 
         @Override
         public void resetCookie(String name, String path) {
-            setCookie(name, "", null, path, 0, false, false);
+            setCookie(name, "", path, null, 0, false, false);
         }
 
         @Override

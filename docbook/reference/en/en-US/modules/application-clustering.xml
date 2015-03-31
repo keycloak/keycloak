@@ -65,8 +65,15 @@
 </programlisting>
         </para>
         <para>
-            Default value of <literal>token-store</literal> is <literal>session</literal>, hence saving data in HTTP session. One disadvantage of cookie store is,
-            that whole info about account is passed in cookie KEYCLOAK_ADAPTER_STATE in each HTTP request. Hence it's not the best for network performance.
+            Default value of <literal>token-store</literal> is <literal>session</literal>, hence saving data in HTTP session.
+        </para>
+        <para>
+            One limitation of cookie store is, that whole info about account is passed in cookie KEYCLOAK_ADAPTER_STATE in each HTTP request.
+            Hence it's not the best for network performance.
+            Another small limitation is limited support for Single-Sign out. It works without issues if you init servlet logout (HttpServletRequest.logout)
+            from this application itself as the adapter will delete the KEYCLOAK_ADAPTER_STATE cookie. But back-channel logout initialized from different application can't be
+            propagated by Keycloak to this application with cookie store. Hence it's recommended to use very short value of access token
+            timeout (1 minute for example).
         </para>
     </section>
 
