@@ -111,7 +111,7 @@ public class UserInfoEndpoint {
     }
 
     private Response issueUserInfo(String tokenString) {
-        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection)
+        EventBuilder event = new EventBuilder(realm, session, clientConnection)
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 
