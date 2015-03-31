@@ -4,17 +4,20 @@ import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.PemUtils;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,10 +43,12 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
         @Path(AdapterConstants.K_LOGOUT)
         public Response backchannelLogout(String input) {
             JWSInput token = new JWSInput(input);
-            String signingCert = getConfig().getSigningCertificate();
-            if (signingCert != null && !signingCert.trim().equals("")) {
-                if (!token.verify(getConfig().getSigningCertificate())) {
-                    return Response.status(400).build();            }
+            PublicKey key = getExternalIdpKey();
+            if (key != null) {
+                if (!verify(token, key)) {
+                    logger.warn("Failed to verify logout request");
+                    return Response.status(400).build();
+                }
             }
             LogoutAction action = null;
             try {

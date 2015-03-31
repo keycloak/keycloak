@@ -50,19 +50,7 @@ public class KeycloakOIDCIdentityProviderFactory extends AbstractIdentityProvide
 
     @Override
     public Map<String, String> parseConfig(InputStream inputStream) {
-        OIDCConfigurationRepresentation rep = null;
-        try {
-            rep = JsonSerialization.readValue(inputStream, OIDCConfigurationRepresentation.class);
-        } catch (IOException e) {
-            throw new RuntimeException("failed to load openid connect metadata", e);
-        }
-        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig(new IdentityProviderModel());
-        config.setIssuer(rep.getIssuer());
-        config.setLogoutUrl(rep.getLogoutEndpoint());
-        config.setAuthorizationUrl(rep.getAuthorizationEndpoint());
-        config.setTokenUrl(rep.getTokenEndpoint());
-        config.setUserInfoUrl(rep.getUserinfoEndpoint());
-        return config.getConfig();
+        return OIDCIdentityProviderFactory.parseOIDCConfig(inputStream);
 
     }
 }
