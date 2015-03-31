@@ -17,13 +17,21 @@
  */
 package org.keycloak.broker.oidc;
 
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.PemUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.PublicKey;
 import java.util.Map;
 
 /**
@@ -50,6 +58,10 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public Map<String, String> parseConfig(InputStream inputStream) {
+        return parseOIDCConfig(inputStream);
+    }
+
+    protected static Map<String, String> parseOIDCConfig(InputStream inputStream) {
         OIDCConfigurationRepresentation rep = null;
         try {
             rep = JsonSerialization.readValue(inputStream, OIDCConfigurationRepresentation.class);
@@ -62,7 +74,27 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
         config.setAuthorizationUrl(rep.getAuthorizationEndpoint());
         config.setTokenUrl(rep.getTokenEndpoint());
         config.setUserInfoUrl(rep.getUserinfoEndpoint());
-        return config.getConfig();
+        if (rep.getJwksUri() != null) {
+            String uri = rep.getJwksUri();
+            String keySetString = null;
+            try {
+                keySetString = SimpleHttp.doGet(uri).asString();
+                JSONWebKeySet keySet = JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
+                for (JWK jwk : keySet.getKeys()) {
+                    JWKParser parse = JWKParser.create(jwk);
+                    if (parse.getJwk().getPublicKeyUse().equals(JWK.SIG_USE)) {
+                        PublicKey key = parse.toPublicKey();
+                        config.setPublicKeySignatureVerifier(KeycloakModelUtils.getPemFromKey(key));
+                        config.setValidateSignature(true);
+                        break;
+                    }
 
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("F   ailed to query JWKSet from: " + uri, e);
+            }
+
+        }
+        return config.getConfig();
     }
 }

@@ -19,6 +19,7 @@ package org.keycloak.broker.oidc;
 
 import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
+import org.keycloak.RSATokenVerifier;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.FederatedIdentity;
@@ -28,6 +29,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
@@ -38,6 +40,7 @@ import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.PemUtils;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -47,6 +50,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.security.PublicKey;
 import java.util.Map;
 
 /**
@@ -72,6 +76,28 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
         return new OIDCEndpoint(callback, realm, event);
+    }
+
+    protected PublicKey getExternalIdpKey() {
+        String signingCert = getConfig().getCertificateSignatureVerifier();
+        try {
+            if (signingCert != null && !signingCert.trim().equals("")) {
+                return PemUtils.decodeCertificate(signingCert).getPublicKey();
+            } else if (getConfig().getPublicKeySignatureVerifier() != null && !getConfig().getPublicKeySignatureVerifier().trim().equals("")) {
+                return PemUtils.decodePublicKey(getConfig().getPublicKeySignatureVerifier());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+
+    }
+
+    protected boolean verify(JWSInput jws, PublicKey key) {
+        if (key == null) return true;
+        if (!getConfig().isValidateSignature()) return true;
+        return RSAProvider.verify(jws, key);
+
     }
 
     protected class OIDCEndpoint extends Endpoint {
@@ -140,11 +166,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         } catch (IOException e) {
             throw new IdentityBrokerException("Could not decode access token response.", e);
         }
-        String accessToken = tokenResponse.getToken();
-
-        if (accessToken == null) {
-            throw new IdentityBrokerException("No access_token from server.");
-        }
+        PublicKey key = getExternalIdpKey();
+        String accessToken = verifyAccessToken(key, tokenResponse);
 
         String encodedIdToken = tokenResponse.getIdToken();
 
@@ -154,7 +177,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         notes.put(FEDERATED_TOKEN_EXPIRATION, Long.toString(tokenResponse.getExpiresIn()));
 
 
-        IDToken idToken = validateIdToken(encodedIdToken);
+        IDToken idToken = validateIdToken(key, encodedIdToken);
 
         try {
             String id = idToken.getSubject();
@@ -204,19 +227,32 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
-    private IDToken validateIdToken(String encodedToken) {
+    private String verifyAccessToken(PublicKey key, AccessTokenResponse tokenResponse) {
+        String accessToken = tokenResponse.getToken();
+
+        if (accessToken == null) {
+            throw new IdentityBrokerException("No access_token from server.");
+        }
+        return accessToken;
+    }
+
+   private IDToken validateIdToken(PublicKey key, String encodedToken) {
         if (encodedToken == null) {
             throw new IdentityBrokerException("No id_token from server.");
         }
 
         try {
-            IDToken idToken = new JWSInput(encodedToken).readJsonContent(IDToken.class);
+            JWSInput jws = new JWSInput(encodedToken);
+            if (!verify(jws, key)) {
+                throw new IdentityBrokerException("IDToken signature validation failed");
+            }
+            IDToken idToken = jws.readJsonContent(IDToken.class);
 
             String aud = idToken.getAudience();
             String iss = idToken.getIssuer();
 
             if (aud != null && !aud.equals(getConfig().getClientId())) {
-                throw new RuntimeException("Wrong audience from id_token..");
+                throw new IdentityBrokerException("Wrong audience from id_token..");
             }
 
             String trustedIssuers = getConfig().getIssuer();

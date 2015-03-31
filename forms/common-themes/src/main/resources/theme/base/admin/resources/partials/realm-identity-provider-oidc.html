@@ -132,6 +132,20 @@
                         </div>
                         <span tooltip-placement="right" tooltip="Specifies whether the Authorization Server prompts the End-User for reauthentication and consent." class="fa fa-info-circle"></span>
                     </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="validateSignature">Validate Signatures</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.config.validateSignature" id="validateSignature" value="'true'" onoffswitchvalue />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Enable/disable signature validation of external IDP signatures." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group clearfix" data-ng-show="identityProvider.config.validateSignature == 'true'">
+                        <label class="col-sm-2 control-label" for="publicKeySignatureVerifier">Validating Public Key</label>
+                        <div class="col-sm-4">
+                            <textarea class="form-control" id="publicKeySignatureVerifier" ng-model="identityProvider.config.publicKeySignatureVerifier"/>
+                        </div>
+                        <span tooltip-placement="right" tooltip="The public key in PEM format that must be used to verify external IDP signatures." class="fa fa-info-circle"></span>
+                    </div>
                 </fieldset>
                 <fieldset data-ng-show="newIdentityProvider">
                     <legend uncollapsed><span class="text">Import External IDP Config</span> <span tooltip-placement="right" tooltip="Allows you to load external IDP metadata from a config file or to download it from a URL." class="fa fa-info-circle"></span></legend>

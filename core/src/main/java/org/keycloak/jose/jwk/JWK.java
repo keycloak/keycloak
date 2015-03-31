@@ -1,6 +1,11 @@
 package org.keycloak.jose.jwk;
 
+import org.codehaus.jackson.annotate.JsonAnyGetter;
+import org.codehaus.jackson.annotate.JsonAnySetter;
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -15,6 +20,9 @@ public class JWK {
 
     public static final String PUBLIC_KEY_USE = "use";
 
+    public static final String SIG_USE = "sig";
+    public static final String ENCRYPTION_USE = "enc";
+
     @JsonProperty(KEY_ID)
     private String keyId;
 
@@ -26,6 +34,9 @@ public class JWK {
 
     @JsonProperty(PUBLIC_KEY_USE)
     private String publicKeyUse;
+
+    protected Map<String, Object> otherClaims = new HashMap<String, Object>();
+
 
     public String getKeyId() {
         return keyId;
@@ -58,5 +69,16 @@ public class JWK {
     public void setPublicKeyUse(String publicKeyUse) {
         this.publicKeyUse = publicKeyUse;
     }
+
+    @JsonAnyGetter
+    public Map<String, Object> getOtherClaims() {
+        return otherClaims;
+    }
+
+    @JsonAnySetter
+    public void setOtherClaims(String name, Object value) {
+        otherClaims.put(name, value);
+    }
+
 
 }

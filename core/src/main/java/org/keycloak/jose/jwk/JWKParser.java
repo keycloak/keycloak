@@ -17,29 +17,41 @@ public class JWKParser {
 
     private static TypeReference<Map<String,String>> typeRef = new TypeReference<Map<String,String>>() {};
 
-    private Map<String, String> values;
+    private JWK jwk;
 
     private JWKParser() {
+    }
+
+    public JWKParser(JWK jwk) {
+        this.jwk = jwk;
     }
 
     public static JWKParser create() {
         return new JWKParser();
     }
 
+    public static JWKParser create(JWK jwk) {
+        return new JWKParser(jwk);
+    }
+
     public JWKParser parse(String jwk) {
         try {
-            this.values = JsonSerialization.mapper.readValue(jwk, typeRef);
+            this.jwk = JsonSerialization.mapper.readValue(jwk, JWK.class);
             return this;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    public JWK getJwk() {
+        return jwk;
+    }
+
     public PublicKey toPublicKey() {
-        String algorithm = values.get(JWK.KEY_TYPE);
+        String algorithm = jwk.getKeyType();
         if (RSAPublicJWK.RSA.equals(algorithm)) {
-            BigInteger modulus = new BigInteger(1, Base64Url.decode(values.get(RSAPublicJWK.MODULUS)));
-            BigInteger publicExponent = new BigInteger(1, Base64Url.decode(values.get(RSAPublicJWK.PUBLIC_EXPONENT)));
+            BigInteger modulus = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.MODULUS).toString()));
+            BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.PUBLIC_EXPONENT).toString()));
 
             try {
                 return KeyFactory.getInstance("RSA").generatePublic(new RSAPublicKeySpec(modulus, publicExponent));
