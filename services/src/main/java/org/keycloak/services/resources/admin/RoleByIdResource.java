@@ -3,8 +3,6 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
@@ -22,7 +20,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-
 import java.util.List;
 import java.util.Set;
 
@@ -36,17 +33,15 @@ public class RoleByIdResource extends RoleResource {
     protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;
     private final RealmAuth auth;
-    private EventBuilder event;
 
     @Context
     protected KeycloakSession session;
 
-    public RoleByIdResource(RealmModel realm, RealmAuth auth, EventBuilder event) {
+    public RoleByIdResource(RealmModel realm, RealmAuth auth) {
         super(realm);
 
         this.realm = realm;
         this.auth = auth;
-        this.event = event;
     }
 
     /**
@@ -63,13 +58,7 @@ public class RoleByIdResource extends RoleResource {
         RoleModel roleModel = getRoleModel(id);
         auth.requireView();
 
-        RoleRepresentation rep = getRole(roleModel);
-
-        event.event(EventType.VIEW_ROLE)
-            .representation(rep)
-            .success();
-        
-        return rep;
+        return getRole(roleModel);
     }
 
     protected RoleModel getRoleModel(String id) {
@@ -102,14 +91,9 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @NoCache
     public void deleteRole(final @PathParam("role-id") String id) {
-        RoleRepresentation rep = getRole(id);
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         deleteRole(role);
-        
-        event.event(EventType.DELETE_ROLE)
-            .representation(rep)
-            .success();
     }
 
     /**
@@ -125,10 +109,6 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         updateRole(rep, role);
-        
-        event.event(EventType.UPDATE_ROLE)
-            .representation(rep)
-            .success();
     }
 
     /**
@@ -144,12 +124,6 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         addComposites(roles, role);
-
-        RoleRepresentation rep = getRole(id);
-
-        event.event(EventType.UPDATE_ROLE)
-            .representation(rep)
-            .success();
     }
 
     /**

@@ -538,7 +538,7 @@ public class LoginActionsService {
         AttributeFormDataProcessor.process(formData, realm, user);
 
         event.user(user).success();
-        event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+        event = new EventBuilder(realm, session, clientConnection);
 
         return processLogin(code, formData);
     }

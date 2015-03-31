@@ -182,7 +182,7 @@ public class AuthenticationManager {
         expireRememberMeCookie(realm, uriInfo, connection);
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
         String method = userSession.getNote(KEYCLOAK_LOGOUT_PROTOCOL);
-        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, connection);
+        EventBuilder event = new EventBuilder(realm, session, connection);
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, method);
         protocol.setRealm(realm)
                 .setHttpHeaders(headers)

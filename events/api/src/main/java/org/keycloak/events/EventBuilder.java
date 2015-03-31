@@ -7,9 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,11 +24,10 @@ public class EventBuilder {
     private RealmModel realm;
     private Event event;
 
-    public EventBuilder(EventGroup group, RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
+    public EventBuilder(RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
         this.realm = realm;
 
         event = new Event();
-        event.setGroup(group);
 
         if (realm.isEventsEnabled()) {
             EventStoreProvider store = session.getProvider(EventStoreProvider.class);
@@ -123,18 +120,6 @@ public class EventBuilder {
             event.setDetails(new HashMap<String, String>());
         }
         event.getDetails().put(key, value);
-        return this;
-    }
-
-    public EventBuilder representation(Object value) {
-        if (value == null || value.equals("")) {
-            return this;
-        }
-        try {
-            event.setRepresentation(JsonSerialization.writeValueAsPrettyString(value));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
         return this;
     }
 

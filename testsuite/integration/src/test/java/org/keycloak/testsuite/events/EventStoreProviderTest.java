@@ -186,7 +186,6 @@ public class EventStoreProviderTest {
         Event e = new Event();
         e.setTime(time);
         e.setType(event);
-        e.setGroup(EventGroup.USER);
         e.setRealmId(realmId);
         e.setClientId(clientId);
         e.setUserId(userId);

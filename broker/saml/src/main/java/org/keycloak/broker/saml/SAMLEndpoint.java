@@ -163,7 +163,7 @@ public class SAMLEndpoint {
         }
 
         public Response execute(String samlRequest, String samlResponse, String relayState) {
-            event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+            event = new EventBuilder(realm, session, clientConnection);
             Response response = basicChecks(samlRequest, samlResponse);
             if (response != null) return response;
             if (samlRequest != null) return handleSamlRequest(samlRequest, relayState);

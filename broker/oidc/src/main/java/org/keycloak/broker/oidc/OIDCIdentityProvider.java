@@ -88,14 +88,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             UserSessionModel userSession = session.sessions().getUserSession(realm, state);
             if (userSession == null) {
                 logger.error("no valid user session");
-                EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+                EventBuilder event = new EventBuilder(realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.error("usersession in different state");
-                EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+                EventBuilder event = new EventBuilder(realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE);

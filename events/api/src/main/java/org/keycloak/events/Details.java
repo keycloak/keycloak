@@ -24,9 +24,4 @@ public interface Details {
     String NODE_HOST = "node_host";
     String REASON = "reason";
 
-    String REALM = "realm";
-    String REPRESENTATION = "representation";
-
-    String APPLICATION_CLUSTER_NODE = "application_cluster_node";
-
 }

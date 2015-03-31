@@ -1,6 +1,5 @@
 package org.keycloak.services.resources.admin;
 
-import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
@@ -10,8 +9,8 @@ import org.keycloak.models.RealmModel;
  * @version $Revision: 1 $
  */
 public class OAuthClientsByIdResource extends OAuthClientsResource {
-    public OAuthClientsByIdResource(RealmModel realm, RealmAuth auth, KeycloakSession session, EventBuilder event) {
-        super(realm, auth, session, event);
+    public OAuthClientsByIdResource(RealmModel realm, RealmAuth auth, KeycloakSession session) {
+        super(realm, auth, session);
     }
 
     @Override
