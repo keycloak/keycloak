@@ -86,14 +86,6 @@
                     <artifactId>bcprov-jdk15on</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcmail-jdk15on</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcmail-jdk15</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.apache.tika</groupId>
                     <artifactId>tika-parsers</artifactId>
                 </exclusion>
