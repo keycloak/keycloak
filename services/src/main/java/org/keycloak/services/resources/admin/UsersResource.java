@@ -7,9 +7,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -58,7 +55,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,8 +78,6 @@ public class UsersResource {
 
     private TokenManager tokenManager;
     
-    private EventBuilder event;
-
     @Context
     protected ClientConnection clientConnection;
 
@@ -96,11 +90,10 @@ public class UsersResource {
     @Context
     protected HttpHeaders headers;
 
-    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager, EventBuilder event) {
+    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
-        this.event = event;
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -125,10 +118,6 @@ public class UsersResource {
             }
             updateUserFromRep(user, rep);
 
-            event.event(EventType.UPDATE_USER)
-                .representation(rep)
-                .success();
-            
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
@@ -164,10 +153,6 @@ public class UsersResource {
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             updateUserFromRep(user, rep);
-
-            event.event(EventType.CREATE_USER)
-                .representation(rep)
-                .success();
 
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
@@ -234,13 +219,7 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
-
-        event.event(EventType.VIEW_USER)
-            .representation(rep)
-            .success();
-
-        return rep;
+        return ModelToRepresentation.toRepresentation(user);
     }
 
     /**
@@ -265,11 +244,6 @@ public class UsersResource {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
             reps.add(rep);
         }
-        
-        event.event(EventType.VIEW_USER_SESSIONS)
-            .representation(reps)
-            .success();
-
         return reps;
     }
 
@@ -301,11 +275,6 @@ public class UsersResource {
                 }
             }
         }
-        
-        event.event(EventType.VIEW_USER)
-            .representation(result)
-            .success();
-        
         return result;
     }
 
@@ -361,9 +330,6 @@ public class UsersResource {
         for (UserSessionModel userSession : userSessions) {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
         }
-        
-        event.event(EventType.LOGOUT_USER_SESSIONS)
-            .success();
     }
 
     /**
@@ -385,11 +351,6 @@ public class UsersResource {
 
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
-            
-            event.event(EventType.DELETE_USER)
-                .representation(rep)
-                .success();
-            
             return Response.noContent().build();
         } else {
             return Flows.errors().error("User couldn't be deleted", Response.Status.BAD_REQUEST);
