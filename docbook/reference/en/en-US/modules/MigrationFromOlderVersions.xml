@@ -124,6 +124,37 @@
                     to describe the themes included in a JAR. See the <link linkend='themes'>themes</link> section in the docs for more information.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>Claims changes</title>
+                <para>
+                    Previously there was <literal>Claims</literal> tab in admin console for application and OAuth clients. This
+                    was used to configure which attributes should go into access token for particular application/client. This was removed
+                    and replaced with <link linkend='mappers'>Protocol mappers</link>, which are more flexible.
+                </para>
+                <para>
+                    You don't need to care about migration of database from previous version.
+                    We did migration scripts for both RDBMS and Mongo, which should ensure that claims configured for particular application/client
+                    will be converted into corresponding protocol mappers (Still it's safer to backup DB before migrating to newer version though).
+                    Same applies for exported JSON representation from previous version.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>Social migration to identity brokering</title>
+                <para>
+                    We refactored social providers SPI and replaced it with <link linkend="identity-broker">identity brokering SPI</link>,
+                    which is more flexible. The <literal>Social</literal> tab in admin console is renamed to <literal>Identity Provider</literal> tab.
+                </para>
+                <para>
+                    Again you don't need to care about migration of database from previous version similarly like for Claims/protocol mappers.
+                    Both configuration of social providers and "social links" to your users will be converted to corresponding Identity providers.
+                </para>
+                <para>
+                    Only required action from you would be to change allowed <literal>Redirect URI</literal> in the admin console of
+                    particular 3rd party social providers. You can first go to the Keycloak admin console and copy Redirect URI from the page where
+                    you configure the identity provider. Then you can simply paste this as allowed Redirect URI to the admin console
+                    of 3rd party provider (IE. Facebook admin console).
+                </para>
+            </simplesect>
         </section>
         <section>
             <title>Migrating from 1.1.0.Beta2 to 1.1.0.Final</title>
