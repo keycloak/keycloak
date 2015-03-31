@@ -4,8 +4,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -31,7 +29,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,14 +43,12 @@ public class IdentityProviderResource {
     private final RealmModel realm;
     private final KeycloakSession session;
     private final IdentityProviderModel identityProviderModel;
-    private EventBuilder event;
 
-    public IdentityProviderResource(RealmAuth auth, RealmModel realm, KeycloakSession session, IdentityProviderModel identityProviderModel, EventBuilder event) {
+    public IdentityProviderResource(RealmAuth auth, RealmModel realm, KeycloakSession session, IdentityProviderModel identityProviderModel) {
         this.realm = realm;
         this.session = session;
         this.identityProviderModel = identityProviderModel;
         this.auth = auth;
-        this.event = event;
     }
 
     @GET
@@ -61,10 +56,6 @@ public class IdentityProviderResource {
     @Produces("application/json")
     public IdentityProviderRepresentation getIdentityProvider() {
         IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(this.identityProviderModel);
-
-        event.event(EventType.VIEW_IDENTITY_PROVIDER)
-            .representation(rep)
-            .success();
 
         return rep;
     }
@@ -74,16 +65,10 @@ public class IdentityProviderResource {
     public Response delete() {
         this.auth.requireManage();
 
-        IdentityProviderRepresentation rep = getIdentityProvider();
-
         removeClientIdentityProviders(this.realm.getApplications(), this.identityProviderModel);
         removeClientIdentityProviders(this.realm.getOAuthClients(), this.identityProviderModel);
 
         this.realm.removeIdentityProviderByAlias(this.identityProviderModel.getAlias());
-        
-        event.event(EventType.DELETE_IDENTITY_PROVIDER)
-            .representation(rep)
-            .success();
 
         return Response.noContent().build();
     }
@@ -109,10 +94,6 @@ public class IdentityProviderResource {
                 updateClientsAfterProviderAliasChange(this.realm.getOAuthClients(), oldProviderId, newProviderId);
                 updateUsersAfterProviderAliasChange(this.session.users().getUsers(this.realm), oldProviderId, newProviderId);
             }
-            
-            event.event(EventType.UPDATE_IDENTITY_PROVIDER)
-                .representation(providerRep)
-                .success();
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {

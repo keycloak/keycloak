@@ -7,12 +7,8 @@ import org.keycloak.Config;
 import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventStoreProviderFactory;
-import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

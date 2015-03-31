@@ -109,7 +109,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     public void init() {
-        this.event = new EventBuilder(EventGroup.USER, realmModel, session, clientConnection).event(EventType.IDENTITY_PROVIDER_LOGIN);
+        this.event = new EventBuilder(realmModel, session, clientConnection).event(EventType.IDENTITY_PROVIDER_LOGIN);
     }
 
     @GET
