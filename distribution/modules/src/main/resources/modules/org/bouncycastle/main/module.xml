@@ -3,7 +3,6 @@
 <module xmlns="urn:jboss:module:1.1" name="org.bouncycastle">
     <resources>
         <resource-root path="bcprov-jdk15on-1.50.jar"/>
-        <resource-root path="bcmail-jdk15on-1.50.jar"/>
         <resource-root path="bcpkix-jdk15on-1.50.jar"/>
     </resources>
     <dependencies>
