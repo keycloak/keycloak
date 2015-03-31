@@ -9,7 +9,6 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -163,7 +162,7 @@ public class SAMLEndpoint {
         }
 
         public Response execute(String samlRequest, String samlResponse, String relayState) {
-            event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+            event = new EventBuilder(realm, session, clientConnection);
             Response response = basicChecks(samlRequest, samlResponse);
             if (response != null) return response;
             if (samlRequest != null) return handleSamlRequest(samlRequest, relayState);

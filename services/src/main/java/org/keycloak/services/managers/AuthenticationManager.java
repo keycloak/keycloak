@@ -9,7 +9,6 @@ import org.keycloak.VerificationException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventGroup;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
@@ -46,10 +45,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.Iterator;
 
 /**
  * Stateless object that manages authentication
@@ -182,7 +181,7 @@ public class AuthenticationManager {
         expireRememberMeCookie(realm, uriInfo, connection);
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
         String method = userSession.getNote(KEYCLOAK_LOGOUT_PROTOCOL);
-        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, connection);
+        EventBuilder event = new EventBuilder(realm, session, connection);
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, method);
         protocol.setRealm(realm)
                 .setHttpHeaders(headers)

@@ -5,7 +5,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventGroup;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -91,7 +90,7 @@ public class RealmsResource {
         // backward compatibility
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
         AuthenticationManager authManager = new AuthenticationManager(protector);
 
         LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -107,7 +106,7 @@ public class RealmsResource {
                                             final @PathParam("protocol") String protocol) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
         AuthenticationManager authManager = new AuthenticationManager(protector);
 
         LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
@@ -129,7 +128,7 @@ public class RealmsResource {
     public LoginActionsService getLoginActionsService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
         AuthenticationManager authManager = new AuthenticationManager(protector);
         LoginActionsService service = new LoginActionsService(realm, authManager, event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
@@ -142,7 +141,7 @@ public class RealmsResource {
     public ClientsManagementService getClientsManagementService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
         ClientsManagementService service = new ClientsManagementService(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
@@ -168,7 +167,7 @@ public class RealmsResource {
             throw new NotFoundException("account management not enabled");
         }
 
-        EventBuilder event = new EventBuilder(EventGroup.USER, realm, session, clientConnection);
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
         AccountService accountService = new AccountService(realm, application, event);
         ResteasyProviderFactory.getInstance().injectProperties(accountService);
         //resourceContext.initResource(accountService);
