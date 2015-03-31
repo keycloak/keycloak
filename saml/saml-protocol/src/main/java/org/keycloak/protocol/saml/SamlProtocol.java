@@ -431,6 +431,7 @@ public class SamlProtocol implements LoginProtocol {
             logoutServiceUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
         }
         if (logoutServiceUrl == null && client instanceof ApplicationModel) logoutServiceUrl = ((ApplicationModel)client).getManagementUrl();
+        if (logoutServiceUrl == null || logoutServiceUrl.trim().equals("")) return null;
         return ResourceAdminManager.resolveUri(uriInfo.getRequestUri(), logoutServiceUrl);
 
     }

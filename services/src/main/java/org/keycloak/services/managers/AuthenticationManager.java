@@ -85,14 +85,29 @@ public class AuthenticationManager {
         return userSession != null && userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
     }
 
+    public static void expireUserSessionCookie(KeycloakSession session, UserSessionModel userSession, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, ClientConnection connection) {
+        try {
+            // check to see if any identity cookie is set with the same session and expire it if necessary
+            Cookie cookie = headers.getCookies().get(KEYCLOAK_IDENTITY_COOKIE);
+            if (cookie == null) return;
+            String tokenString = cookie.getValue();
+            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), false);
+            UserSessionModel cookieSession = session.sessions().getUserSession(realm, token.getSessionState());
+            if (cookieSession == null || !cookieSession.getId().equals(userSession.getId())) return;
+            expireIdentityCookie(realm, uriInfo, connection);
+            expireRememberMeCookie(realm, uriInfo, connection);
+        } catch (Exception e) {
+        }
+
+    }
+
     public static void backchannelLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         if (userSession == null) return;
         UserModel user = userSession.getUser();
         userSession.setState(UserSessionModel.State.LOGGING_OUT);
 
         logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
-        //expireIdentityCookie(realm, uriInfo, connection);
-        //expireRememberMeCookie(realm, uriInfo, connection);
+        expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
             ClientModel client = clientSession.getClient();
@@ -293,7 +308,7 @@ public class AuthenticationManager {
         return authenticateIdentityCookie(session, realm, uriInfo, connection, headers, true);
     }
 
-    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers, boolean checkActive) {
+    public static AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers, boolean checkActive) {
         Cookie cookie = headers.getCookies().get(KEYCLOAK_IDENTITY_COOKIE);
         if (cookie == null || "".equals(cookie.getValue())) {
             logger.debugv("Could not find cookie: {0}", KEYCLOAK_IDENTITY_COOKIE);
@@ -443,7 +458,7 @@ public class AuthenticationManager {
         }
     }
 
-    protected AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, String tokenString, HttpHeaders headers) {
+    protected static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, String tokenString, HttpHeaders headers) {
         try {
             AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), checkActive);
             if (checkActive) {
@@ -594,7 +609,7 @@ public class AuthenticationManager {
         SUCCESS, ACCOUNT_TEMPORARILY_DISABLED, ACCOUNT_DISABLED, ACTIONS_REQUIRED, INVALID_USER, INVALID_CREDENTIALS, MISSING_PASSWORD, MISSING_TOTP, FAILED
     }
 
-    public class AuthResult {
+    public static class AuthResult {
         private final UserModel user;
         private final UserSessionModel session;
         private final AccessToken token;
