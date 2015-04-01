@@ -223,7 +223,7 @@ public class AdapterTestStrategy extends ExternalResource {
                 });
         Integer custSessionsCount = stats.get("customer-portal");
         Assert.assertNotNull(custSessionsCount);
-        Assert.assertTrue(1 == custSessionsCount);
+        Assert.assertEquals(1, custSessionsCount.intValue());
         Integer prodStatsCount = stats.get("product-portal");
         Assert.assertNotNull(prodStatsCount);
         Assert.assertTrue(1 == prodStatsCount);

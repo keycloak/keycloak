@@ -69,7 +69,7 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
 
     @Override
     protected void doAssertFederatedUserNoEmail(UserModel federatedUser) {
-        assertEquals("", federatedUser.getUsername());
+        assertEquals("kc-saml-idp-basic.", federatedUser.getUsername());
         assertEquals("", federatedUser.getEmail());
         assertEquals(null, federatedUser.getFirstName());
         assertEquals(null, federatedUser.getLastName());

@@ -39,6 +39,7 @@ import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.managers.AppAuthManager;
@@ -492,7 +493,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         String username = updatedIdentity.getUsername();
         if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(updatedIdentity.getEmail())) {
             username = updatedIdentity.getEmail();
-        } 
+        } else if (username == null) {
+            username = updatedIdentity.getIdentityProviderId() + "." + updatedIdentity.getId();
+        } else {
+            username = updatedIdentity.getIdentityProviderId() + "." + updatedIdentity.getUsername();
+        }
         if (username != null) {
             username = username.trim();
         }
