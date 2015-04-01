@@ -52,8 +52,8 @@ Once you run Apache Karaf, you need to run these commands from Karaf console (Ma
 ```
 feature:repo-add mvn:org.apache.camel.karaf/apache-camel/2.12.5/xml/features
 feature:repo-add mvn:org.apache.cxf.karaf/apache-cxf/2.7.14/xml/features
-feature:repo-add mvn:org.keycloak/keycloak-osgi-features/1.1.0.Final/xml/features
-feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.1.0.Final/xml/features
+feature:repo-add mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
+feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.2.0.Beta1/xml/features
 feature:install keycloak-fuse-example
 ```
 
@@ -88,8 +88,8 @@ as pax-web is not installed at the moment. Then run those commands:
 
 ```
 features:addurl mvn:org.ops4j.pax.web/pax-web-features/3.1.2/xml/features
-features:addurl mvn:org.keycloak/keycloak-osgi-features/1.1.0.Final/xml/features
-features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.1.0.Final/xml/features
+features:addurl mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
+features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.2.0.Beta1/xml/features
 features:install keycloak-pax-web-upgrade
 features:install pax-http-whiteboard/3.1.2
 features:install pax-war/3.1.2
@@ -110,8 +110,8 @@ This is snapshot version of JBoss Fuse, which is not released yet at this moment
 sufficient to install the demo (Replace Keycloak versions with the current Keycloak version number):
 
 ```
-features:addurl mvn:org.keycloak/keycloak-osgi-features/1.1.0.Final/xml/features
-features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.1.0.Final/xml/features
+features:addurl mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
+features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.2.0.Beta1/xml/features
 features:install keycloak-fuse-example
 ```
 

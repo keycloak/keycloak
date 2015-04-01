@@ -186,12 +186,7 @@
             "enabled": true,
             "publicClient": false,
             "directGrantsOnly": true,
-            "secret": "password",
-            "claims" : {
-                "name" : true,
-                "username" : true,
-                "email" : true
-            }
+            "secret": "password"
         }
     ],
     "scopeMappings": [
