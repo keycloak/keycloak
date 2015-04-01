@@ -11,7 +11,7 @@ package org.keycloak.freemarker.beans;
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public enum MessageType {
-	
-	SUCCESS, WARNING, ERROR
+
+    SUCCESS, WARNING, ERROR
 
 }

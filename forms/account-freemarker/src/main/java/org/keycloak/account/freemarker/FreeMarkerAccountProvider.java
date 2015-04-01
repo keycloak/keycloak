@@ -115,7 +115,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, headers);
         Properties messagesBundle;
         try {
-        	messagesBundle = theme.getMessages(locale);
+            messagesBundle = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
@@ -204,46 +204,45 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         return this;
     }
     
-	protected void setMessage(MessageType type, String message, Object... parameters) {
-		messageType = type;
-		messages = new ArrayList<>();
-		messages.add(new FormMessage(null, message, parameters));
-	}
+    protected void setMessage(MessageType type, String message, Object... parameters) {
+        messageType = type;
+        messages = new ArrayList<>();
+        messages.add(new FormMessage(null, message, parameters));
+    }
 
-	protected String formatMessage(FormMessage message, Properties messagesBundle, Locale locale) {
-		if (message == null)
-			return null;
-		if (messagesBundle.containsKey(message.getMessage())) {
-			return new MessageFormat(messagesBundle.getProperty(message.getMessage()), locale)
-					.format(message.getParameters());
-		} else {
-			return message.getMessage();
-		}
-	}
+    protected String formatMessage(FormMessage message, Properties messagesBundle, Locale locale) {
+        if (message == null)
+            return null;
+        if (messagesBundle.containsKey(message.getMessage())) {
+	    return new MessageFormat(messagesBundle.getProperty(message.getMessage()), locale).format(message.getParameters());
+        } else {
+            return message.getMessage();
+        }
+    }
   
-  @Override
-	public AccountProvider setErrors(List<FormMessage> messages) {
-		this.messageType = MessageType.ERROR;
-		this.messages = new ArrayList<>(messages);
-		return this;
-	}
+    @Override
+    public AccountProvider setErrors(List<FormMessage> messages) {
+        this.messageType = MessageType.ERROR;
+        this.messages = new ArrayList<>(messages);
+        return this;
+    }
 
 
     @Override
     public AccountProvider setError(String message, Object ... parameters) {
-    	  setMessage(MessageType.ERROR, message, parameters);
+        setMessage(MessageType.ERROR, message, parameters);
         return this;
     }
 
     @Override
     public AccountProvider setSuccess(String message, Object ... parameters) {
-    	  setMessage(MessageType.SUCCESS, message, parameters);
+        setMessage(MessageType.SUCCESS, message, parameters);
         return this;
     }
 
     @Override
     public AccountProvider setWarning(String message, Object ... parameters) {
-    	  setMessage(MessageType.WARNING, message, parameters);
+        setMessage(MessageType.WARNING, message, parameters);
         return this;
     }
 
