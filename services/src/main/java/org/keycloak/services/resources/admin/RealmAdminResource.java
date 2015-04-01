@@ -46,10 +46,12 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -218,8 +220,12 @@ public class RealmAdminResource {
             }
 
             return Response.noContent().build();
+        } catch (PatternSyntaxException e) {
+            return Flows.errors().exists("Specified regex pattern(s) is invalid.");
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
+            return Flows.errors().exists("Realm " + rep.getRealm() + " already exists.");
+        }  catch (Exception e) {
+            return Flows.errors().exists("Failed to update " + rep.getRealm() + " Realm.");
         }
     }
 

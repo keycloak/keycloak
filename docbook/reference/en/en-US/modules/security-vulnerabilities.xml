@@ -127,7 +127,9 @@
         </para>
         <para>
             In the admin console, per realm, you can set up a password policy to enforce that users pick hard to guess passwords.
-            The password policies that can be configured are Hash Iterations, length, digits, lowercase, uppercase and special characters.
+            A password has to match all policies. The password policies that can be configured are hash iterations, length, digits,
+            lowercase, uppercase, special characters, not username and regex patterns. Multiple regex patterns, separated by comma,
+            can be specified. If there's more than one regex added, password has to match all fully.
             Increasing number of Hash Iterations (n) does not worsen anything (and certainly not the cipher) and it greatly increases the 
             resistance to dictionary attacks. However the drawback to increasing n is that it has some cost (CPU usage, energy, delay) for 
             the legitimate parties. Increasing n also slightly increases the odds that a random password gives the same result as the right 
