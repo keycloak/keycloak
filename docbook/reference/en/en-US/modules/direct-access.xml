@@ -87,6 +87,7 @@ try {
 
    if (isPublic()) { // if client is public access type
        formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "customer-portal"));
+       formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "password"));
    } else {
        String authorization = BasicAuthHelper.createHeader("customer-portal", "secret-secret-secret");
        post.setHeader("Authorization", authorization);
