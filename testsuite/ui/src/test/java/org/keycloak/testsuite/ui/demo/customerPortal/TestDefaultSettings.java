@@ -27,6 +27,7 @@ public class TestDefaultSettings extends CustomerPortalAbstractTest {
 	public void afterTestDefaultSettings() {
 		driver.get(getKeycloakConsoleUrl());
 		loginPage.loginAsAdmin();
+		navigation.selectRealm("demo");
 		navigation.sessions();
 		sessionAndTokensPage.logoutAllSessions();
 		logOut();

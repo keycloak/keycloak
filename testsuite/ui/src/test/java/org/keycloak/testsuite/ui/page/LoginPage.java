@@ -27,7 +27,7 @@ public class LoginPage extends AbstractPage {
     @FindBy(linkText = "Register")
     private WebElement registerLink;
 
-	@FindBy(id = "kc-header-wrapper")
+	@FindBy(id = "kc-header")
 	private WebElement loginPageHeader;
 
 	public void login(String username, String password) {
