@@ -250,7 +250,7 @@ public abstract class AbstractIdentityProviderTest {
     }
 
     protected void doAssertFederatedUserNoEmail(UserModel federatedUser) {
-        assertEquals("test-user-noemail", federatedUser.getUsername());
+        assertEquals("kc-oidc-idp.test-user-noemail", federatedUser.getUsername());
         assertEquals(null, federatedUser.getEmail());
         assertEquals("Test", federatedUser.getFirstName());
         assertEquals("User", federatedUser.getLastName());
@@ -580,7 +580,7 @@ public abstract class AbstractIdentityProviderTest {
         FederatedIdentityModel federatedIdentityModel = federatedIdentities.iterator().next();
 
         assertEquals(getProviderId(), federatedIdentityModel.getIdentityProvider());
-        assertEquals(federatedUser.getUsername(), federatedIdentityModel.getUserName());
+        assertEquals(federatedUser.getUsername(), federatedIdentityModel.getIdentityProvider() + "." + federatedIdentityModel.getUserName());
 
         driver.navigate().to("http://localhost:8081/test-app/logout");
         driver.navigate().to("http://localhost:8081/test-app");

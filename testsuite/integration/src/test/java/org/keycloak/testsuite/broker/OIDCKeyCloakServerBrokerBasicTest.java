@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.broker;
 
 import org.junit.ClassRule;
+import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessTokenResponse;
@@ -65,5 +66,30 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
     @Override
     protected String getProviderId() {
         return "kc-oidc-idp";
+    }
+
+    @Test
+    public void testSuccessfulAuthentication() {
+        super.testSuccessfulAuthentication();
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile() {
+        super.testSuccessfulAuthenticationWithoutUpdateProfile();
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled() {
+        super.testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled();
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
+        super.testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername();
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername_emailNotProvided() {
+        super.testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername_emailNotProvided();
     }
 }
