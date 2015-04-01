@@ -36,8 +36,7 @@ public class Navigation {
 	@FindByJQuery("a:contains('Login')")
     private WebElement loginLink;
 
-    //@FindByJQuery("a:contains('Themes')")
-    @FindBy(css = ".nav-tabs > li:nth-child(7) > a:nth-child(1)")
+    @FindByJQuery("a:contains('Themes')")
     private WebElement themesLink;
 
 	@FindByJQuery("a:contains('Role Mappings')")
@@ -56,7 +55,6 @@ public class Navigation {
     private WebElement attributes;
 	
     @FindByJQuery("div[id='content'] h2:visible")
-    //@FindBy(css = "#content > div:nth-child(1) > h2:nth-child(1)")
     private WebElement currentHeader;
 
     public void settings() {
