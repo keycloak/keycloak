@@ -1,52 +1,55 @@
 package org.keycloak.account;
 
-import org.apache.http.client.methods.HttpHead;
-import org.keycloak.events.Event;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.provider.Provider;
+import java.util.List;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.List;
+
+import org.keycloak.events.Event;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface AccountProvider extends Provider {
 
-    AccountProvider setUriInfo(UriInfo uriInfo);
+	AccountProvider setUriInfo(UriInfo uriInfo);
 
-    AccountProvider setHttpHeaders(HttpHeaders httpHeaders);
+	AccountProvider setHttpHeaders(HttpHeaders httpHeaders);
 
-    Response createResponse(AccountPages page);
+	Response createResponse(AccountPages page);
 
-    AccountProvider setError(String message, Object ... parameters);
+	AccountProvider setError(String message, Object... parameters);
 
-    AccountProvider setSuccess(String message, Object ... parameters);
+	AccountProvider setErrors(List<FormMessage> messages);
 
-    AccountProvider setWarning(String message, Object ... parameters);
+	AccountProvider setSuccess(String message, Object... parameters);
 
-    AccountProvider setUser(UserModel user);
+	AccountProvider setWarning(String message, Object... parameters);
 
-    AccountProvider setProfileFormData(MultivaluedMap<String, String> formData);
+	AccountProvider setUser(UserModel user);
 
-    AccountProvider setStatus(Response.Status status);
+	AccountProvider setProfileFormData(MultivaluedMap<String, String> formData);
 
-    AccountProvider setRealm(RealmModel realm);
+	AccountProvider setStatus(Response.Status status);
 
-    AccountProvider setReferrer(String[] referrer);
+	AccountProvider setRealm(RealmModel realm);
 
-    AccountProvider setEvents(List<Event> events);
+	AccountProvider setReferrer(String[] referrer);
 
-    AccountProvider setSessions(List<UserSessionModel> sessions);
+	AccountProvider setEvents(List<Event> events);
 
-    AccountProvider setPasswordSet(boolean passwordSet);
+	AccountProvider setSessions(List<UserSessionModel> sessions);
 
-    AccountProvider setStateChecker(String stateChecker);
+	AccountProvider setPasswordSet(boolean passwordSet);
 
-    AccountProvider setFeatures(boolean social, boolean events, boolean passwordUpdateSupported);
+	AccountProvider setStateChecker(String stateChecker);
+
+	AccountProvider setFeatures(boolean social, boolean events, boolean passwordUpdateSupported);
 }

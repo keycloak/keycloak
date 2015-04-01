@@ -1,24 +1,53 @@
 package org.keycloak.account.freemarker;
 
+import java.io.IOException;
+import java.net.URI;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+
 import org.jboss.logging.Logger;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
-import org.keycloak.account.freemarker.model.*;
+import org.keycloak.account.freemarker.model.AccountBean;
+import org.keycloak.account.freemarker.model.AccountFederatedIdentityBean;
+import org.keycloak.account.freemarker.model.FeaturesBean;
+import org.keycloak.account.freemarker.model.LogBean;
+import org.keycloak.account.freemarker.model.PasswordBean;
+import org.keycloak.account.freemarker.model.RealmBean;
+import org.keycloak.account.freemarker.model.ReferrerBean;
+import org.keycloak.account.freemarker.model.SessionsBean;
+import org.keycloak.account.freemarker.model.TotpBean;
+import org.keycloak.account.freemarker.model.UrlBean;
 import org.keycloak.events.Event;
-import org.keycloak.freemarker.*;
+import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
+import org.keycloak.freemarker.FreeMarkerException;
+import org.keycloak.freemarker.FreeMarkerUtil;
+import org.keycloak.freemarker.LocaleHelper;
+import org.keycloak.freemarker.Theme;
+import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.freemarker.beans.LocaleBean;
+import org.keycloak.freemarker.beans.MessageBean;
 import org.keycloak.freemarker.beans.MessageFormatterMethod;
+import org.keycloak.freemarker.beans.MessageType;
+import org.keycloak.freemarker.beans.MessagesPerFieldBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.resources.flows.Urls;
-
-import javax.ws.rs.core.*;
-import java.io.IOException;
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.*;
-import org.keycloak.freemarker.beans.LocaleBean;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -43,13 +72,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private FreeMarkerUtil freeMarker;
     private HttpHeaders headers;
 
-    public static enum MessageType {SUCCESS, WARNING, ERROR}
-
     private UriInfo uriInfo;
 
-    private String message;
-    private Object[] parameters;
-    private MessageType messageType;
+    private List<FormMessage> messages = null;
+    private MessageType messageType = MessageType.ERROR;
 
     public FreeMarkerAccountProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
@@ -87,13 +113,13 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         }
 
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, headers);
-        Properties messages;
+        Properties messagesBundle;
         try {
-            messages = theme.getMessages(locale);
-            attributes.put("msg", new MessageFormatterMethod(locale, messages));
+        	messagesBundle = theme.getMessages(locale);
+            attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
-            messages = new Properties();
+            messagesBundle = new Properties();
         }
 
         URI baseUri = uriInfo.getBaseUri();
@@ -107,15 +133,19 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             attributes.put("stateChecker", stateChecker);
         }
 
-        if (message != null) {
-            String formattedMessage;
-            if(messages.containsKey(message)){
-                formattedMessage = new MessageFormat(messages.getProperty(message),locale).format(parameters);
-            }else{
-                formattedMessage = message;
+        MessagesPerFieldBean messagesPerField = new MessagesPerFieldBean();
+        if (messages != null) {
+            MessageBean wholeMessage = new MessageBean(null, messageType);
+            for (FormMessage message : this.messages) {
+                String formattedMessageText = formatMessage(message, messagesBundle, locale);
+                if (formattedMessageText != null) {
+                    wholeMessage.appendSummaryLine(formattedMessageText);
+                    messagesPerField.addMessage(message.getField(), formattedMessageText, messageType);
+                }
             }
-            attributes.put("message", new MessageBean(formattedMessage, messageType));
+            attributes.put("message", wholeMessage);
         }
+        attributes.put("messagesPerField", messagesPerField);
 
         if (referrer != null) {
             attributes.put("referrer", new ReferrerBean(referrer));
@@ -134,7 +164,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                     b = UriBuilder.fromUri(baseQueryUri).path(uriInfo.getPath());
                     break;
             }
-            attributes.put("locale", new LocaleBean(realm, locale, b, messages));
+            attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
         }
 
         attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported));
@@ -173,28 +203,47 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         this.passwordSet = passwordSet;
         return this;
     }
+    
+	protected void setMessage(MessageType type, String message, Object... parameters) {
+		messageType = type;
+		messages = new ArrayList<>();
+		messages.add(new FormMessage(null, message, parameters));
+	}
+
+	protected String formatMessage(FormMessage message, Properties messagesBundle, Locale locale) {
+		if (message == null)
+			return null;
+		if (messagesBundle.containsKey(message.getMessage())) {
+			return new MessageFormat(messagesBundle.getProperty(message.getMessage()), locale)
+					.format(message.getParameters());
+		} else {
+			return message.getMessage();
+		}
+	}
+  
+  @Override
+	public AccountProvider setErrors(List<FormMessage> messages) {
+		this.messageType = MessageType.ERROR;
+		this.messages = new ArrayList<>(messages);
+		return this;
+	}
+
 
     @Override
     public AccountProvider setError(String message, Object ... parameters) {
-        this.message = message;
-        this.parameters = parameters;
-        this.messageType = MessageType.ERROR;
+    	  setMessage(MessageType.ERROR, message, parameters);
         return this;
     }
 
     @Override
     public AccountProvider setSuccess(String message, Object ... parameters) {
-        this.message = message;
-        this.parameters = parameters;
-        this.messageType = MessageType.SUCCESS;
+    	  setMessage(MessageType.SUCCESS, message, parameters);
         return this;
     }
 
     @Override
     public AccountProvider setWarning(String message, Object ... parameters) {
-        this.message = message;
-        this.parameters = parameters;
-        this.messageType = MessageType.WARNING;
+    	  setMessage(MessageType.WARNING, message, parameters);
         return this;
     }
 
