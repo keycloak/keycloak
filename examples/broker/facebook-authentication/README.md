@@ -33,7 +33,7 @@ documentation.
 
 Please take a look on [Facebook Developer Console](https://developers.facebook.com/apps/) for more details. Make sure to use the correct
 redirect URI to be used as URL on Facebook. The facebook will redirect to this URI after finish authentication. For this example, it's the URL
-[http://localhost:8080/auth/realms/facebook-identity-provider-realm/broker/facebook](http://localhost:8080/auth/realms/facebook-identity-provider-realm/broker/facebook) .
+[http://localhost:8080/auth/realms/facebook-identity-provider-realm/broker/facebook/endpoint](http://localhost:8080/auth/realms/facebook-identity-provider-realm/broker/facebook/endpoint) .
 You can also determine this redirect URI from Keycloak admin console (It's in Identity provider settings for Facebook provider).
 
 Once you have a Facebook Application configured, you need to obtain both **App ID** and **App Secret** and update the

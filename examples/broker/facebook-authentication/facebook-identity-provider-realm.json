@@ -53,9 +53,8 @@
     ],
     "identityProviders": [
         {
-          "id" : "facebook",
+          "alias" : "facebook",
           "providerId" : "facebook",
-          "name" : "Facebook",
           "enabled": true,
           "updateProfileFirstLogin" : "true",
           "storeToken" : "true",

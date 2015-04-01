@@ -5,7 +5,7 @@ What is it?
 
 This example demonstrates how to broker a SAML Identity Provider in KeyCloak. In this case, the SAML Identity Provider
 belongs to a different realm than the application and we want to trust users from one realm to authenticate and access the
-applications in aonther realm.
+applications in another realm.
 
 There are two main realms in this example:
 
