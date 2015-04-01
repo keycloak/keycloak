@@ -34,8 +34,8 @@
                 <exclude name="**/subsystem-config.xml"/>
             </fileset>
         </copy>
-        <copy todir="target/examples/broker" overwrite="true">
-            <fileset dir="../../examples/broker">
+        <copy todir="target/examples/broker/saml-broker-authentication" overwrite="true">
+            <fileset dir="../../examples/broker/saml-broker-authentication">
                 <exclude name="**/target/**"/>
                 <exclude name="**/*.iml"/>
                 <exclude name="**/*.unconfigured"/>
