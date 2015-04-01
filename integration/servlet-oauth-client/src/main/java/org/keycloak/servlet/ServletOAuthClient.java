@@ -77,6 +77,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         String state = getStateCode();
 
         KeycloakUriBuilder uriBuilder =  KeycloakUriBuilder.fromUri(getUrl(request, authUrl, true))
+                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, clientId)
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .queryParam(OAuth2Constants.STATE, state);

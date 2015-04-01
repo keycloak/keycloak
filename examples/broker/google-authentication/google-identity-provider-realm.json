@@ -53,9 +53,8 @@
     ],
     "identityProviders": [
         {
-          "id" : "google",
+          "alias" : "google",
           "providerId" : "google",
-          "name" : "Google",
           "enabled": true,
           "updateProfileFirstLogin" : "true",
           "storeToken" : "true",

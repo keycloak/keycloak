@@ -54,7 +54,7 @@ Once you have a Google Application configured, you need to obtain both **Client 
 Please, update both *clientId* and *clientSecret* configuration options with the **Client ID** and **Client Secret**.
 
 Make sure to use the correct redirect URI to be used as URL on Google. The Google will redirect to this URI after finish authentication. For this example, it's the URL
-[http://localhost:8080/auth/realms/google-identity-provider-realm/broker/google](http://localhost:8080/auth/realms/google-identity-provider-realm/broker/google) .
+[http://localhost:8080/auth/realms/google-identity-provider-realm/broker/google/endpoint](http://localhost:8080/auth/realms/google-identity-provider-realm/broker/google/endpoint) .
 You can also determine the redirect URI from Keycloak admin console (It's in Identity provider settings for Google provider).
 
 Make sure you've set up the Keycloak Server

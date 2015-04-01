@@ -209,6 +209,7 @@
                         <id>generate-service-docs</id>
                         <phase>generate-resources</phase>
                         <configuration>
+                            <subpackages>org.keycloak.services.resources.admin:org.keycloak.protocol.oidc</subpackages>
                             <doclet>com.lunatech.doclets.jax.jaxrs.JAXRSDoclet</doclet>
                             <docletArtifacts>
                                 <docletArtifact>
@@ -225,6 +226,7 @@
                                 </offlineLink>
                             </offlineLinks>
                             <additionalparam>-disablejavascriptexample</additionalparam>
+                            <additionalparam>-pathexcludefilter '/admin/.*index.*' -pathexcludefilter '/admin' -pathexcludefilter '/admin/\\{realm\\}/console.*'</additionalparam>
                         </configuration>
                         <goals>
                             <goal>javadoc</goal>

@@ -14,7 +14,7 @@
 
         <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
 
-        <div class="form-group">
+        <div class="form-group ${messagesPerField.printIfExists('username','has-error')}">
             <div class="col-sm-2 col-md-2">
                 <label for="username" class="control-label">${msg("username")}</label>
             </div>
@@ -24,7 +24,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group ${messagesPerField.printIfExists('email','has-error')}">
             <div class="col-sm-2 col-md-2">
             <label for="email" class="control-label">${msg("email")}</label> <span class="required">*</span>
             </div>
@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group ${messagesPerField.printIfExists('firstName','has-error')}">
             <div class="col-sm-2 col-md-2">
                 <label for="firstName" class="control-label">${msg("firstName")}</label> <span class="required">*</span>
             </div>
@@ -44,7 +44,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group ${messagesPerField.printIfExists('lastName','has-error')}">
             <div class="col-sm-2 col-md-2">
                 <label for="lastName" class="control-label">${msg("lastName")}</label> <span class="required">*</span>
             </div>

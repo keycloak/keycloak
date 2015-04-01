@@ -47,9 +47,8 @@
     ],
     "identityProviders": [
         {
-          "id" : "saml-identity-provider",
+          "alias" : "saml-identity-provider",
           "providerId" : "saml",
-          "name" : "SAML v2 Identity Provider",
           "enabled": true,
           "updateProfileFirstLogin" : "true",
           "storeToken" : "true",

@@ -43,6 +43,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
@@ -72,6 +73,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -431,8 +434,8 @@ public class LoginActionsService {
             return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_CODE);
         }
 
-        String username = formData.getFirst("username");
-        String email = formData.getFirst("email");
+        String username = formData.getFirst(Validation.FIELD_USERNAME);
+        String email = formData.getFirst(Validation.FIELD_EMAIL);
         if (realm.isRegistrationEmailAsUsername()) {
             username = email;
             formData.putSingle(AuthenticationManager.FORM_USERNAME, username);
@@ -467,20 +470,12 @@ public class LoginActionsService {
         }
 
         // Validate here, so user is not created if password doesn't validate to passwordPolicy of current realm
-        String errorMessage = Validation.validateRegistrationForm(realm, formData, requiredCredentialTypes);
-        Object[] parameters = new Object[0];
-        if (errorMessage == null) {
-            PasswordPolicy.Error error = Validation.validatePassword(formData, realm.getPasswordPolicy());
-            if(error != null){
-                errorMessage = error.getMessage();
-                parameters = error.getParameters();
-            }
-        }
+        List<FormMessage> errors = Validation.validateRegistrationForm(realm, formData, requiredCredentialTypes, realm.getPasswordPolicy());
 
-        if (errorMessage != null) {
+        if (errors != null && !errors.isEmpty()) {
             event.error(Errors.INVALID_REGISTRATION);
             return Flows.forms(session, realm, client, uriInfo, headers)
-                    .setError(errorMessage, parameters)
+                    .setErrors(errors)
                     .setFormData(formData)
                     .setClientSessionCode(clientCode.getCode())
                     .createRegistration();
@@ -497,7 +492,7 @@ public class LoginActionsService {
         }
 
         // Validate that user with this email doesn't exist in realm or any federation provider
-        if (session.users().getUserByEmail(email, realm) != null) {
+        if (email != null && session.users().getUserByEmail(email, realm) != null) {
             event.error(Errors.EMAIL_IN_USE);
             return Flows.forms(session, realm, client, uriInfo, headers)
                     .setError(Messages.EMAIL_EXISTS)
@@ -632,9 +627,9 @@ public class LoginActionsService {
 
         initEvent(clientSession);
 
-        String error = Validation.validateUpdateProfileForm(formData);
-        if (error != null) {
-            return Flows.forms(session, realm, null, uriInfo, headers).setUser(user).setError(error)
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(formData);
+        if (errors != null && !errors.isEmpty()) {
+            return Flows.forms(session, realm, null, uriInfo, headers).setUser(user).setErrors(errors)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PROFILE);
         }

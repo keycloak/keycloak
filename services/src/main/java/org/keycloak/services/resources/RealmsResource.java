@@ -113,7 +113,6 @@ public class RealmsResource {
         Object endpoint = factory.createProtocolEndpoint(realm, event, authManager);
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        //resourceContext.initResource(tokenService);
         return endpoint;
     }
 
@@ -132,8 +131,6 @@ public class RealmsResource {
         AuthenticationManager authManager = new AuthenticationManager(protector);
         LoginActionsService service = new LoginActionsService(realm, authManager, event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
-
-        //resourceContext.initResource(service);
         return service;
     }
 
@@ -146,7 +143,6 @@ public class RealmsResource {
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }
-
 
     protected RealmModel locateRealm(String name, RealmManager realmManager) {
         RealmModel realm = realmManager.getRealmByName(name);

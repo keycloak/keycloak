@@ -132,7 +132,7 @@ public class AuthorizationEndpoint {
         state = params.getFirst(OIDCLoginProtocol.STATE_PARAM);
         scope = params.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
         loginHint = params.getFirst(OIDCLoginProtocol.LOGIN_HINT_PARAM);
-        prompt = params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
+        prompt = params.getFirst(OIDCLoginProtocol.PROMPT_PARAM);
         idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
 
         checkSsl();

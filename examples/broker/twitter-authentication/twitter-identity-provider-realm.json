@@ -64,9 +64,8 @@
     ],
     "identityProviders": [
         {
-          "id" : "twitter",
+          "alias" : "twitter",
           "providerId" : "twitter",
-          "name" : "Twitter",
           "enabled": true,
           "updateProfileFirstLogin" : "true",
           "storeToken" : "true",

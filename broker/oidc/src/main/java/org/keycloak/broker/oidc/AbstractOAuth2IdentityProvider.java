@@ -143,7 +143,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     ;
 
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
-        return UriBuilder.fromPath(getConfig().getAuthorizationUrl())
+        return UriBuilder.fromUri(getConfig().getAuthorizationUrl())
                 .queryParam(OAUTH2_PARAMETER_SCOPE, getConfig().getDefaultScope())
                 .queryParam(OAUTH2_PARAMETER_STATE, request.getState())
                 .queryParam(OAUTH2_PARAMETER_RESPONSE_TYPE, "code")

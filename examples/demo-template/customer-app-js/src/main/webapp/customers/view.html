@@ -26,11 +26,11 @@ User <b id="subject"></b> made this request.
 
         if (keycloak.idToken) {
             document.getElementById('profileType').innerHTML = 'IDToken';
-            document.getElementById('username').innerHTML = keycloak.idToken.preferred_username;
-            document.getElementById('email').innerHTML = keycloak.idToken.email;
-            document.getElementById('name').innerHTML = keycloak.idToken.name;
-            document.getElementById('givenName').innerHTML = keycloak.idToken.given_name;
-            document.getElementById('familyName').innerHTML = keycloak.idToken.family_name;
+            document.getElementById('username').innerHTML = keycloak.idTokenParsed.preferred_username;
+            document.getElementById('email').innerHTML = keycloak.idTokenParsed.email;
+            document.getElementById('name').innerHTML = keycloak.idTokenParsed.name;
+            document.getElementById('givenName').innerHTML = keycloak.idTokenParsed.given_name;
+            document.getElementById('familyName').innerHTML = keycloak.idTokenParsed.family_name;
         } else {
             keycloak.loadUserProfile(function() {
                 document.getElementById('profileType').innerHTML = 'Account Service';

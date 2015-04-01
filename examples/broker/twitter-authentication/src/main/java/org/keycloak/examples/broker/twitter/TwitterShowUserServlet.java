@@ -119,7 +119,7 @@ public class TwitterShowUserServlet extends HttpServlet {
     }
 
     private String getIdentityProviderTokenUrl() {
-        return this.authServer + "/realms/" + this.realmName + "/broker/" + this.identityProvider.getId() + "/token";
+        return this.authServer + "/realms/" + this.realmName + "/broker/" + this.identityProvider.getAlias() + "/token";
     }
 
     private void initKeyCloakClient(ServletConfig config) {

@@ -50,6 +50,9 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import java.util.Map;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -199,6 +202,25 @@ public class LoginTest {
     }
 
     @Test
+    public void loginPromptNone() {
+        driver.navigate().to(oauth.getLoginFormUrl().toString() + "&prompt=none");
+
+        assertFalse(loginPage.isCurrent());
+        assertTrue(appPage.isCurrent());
+
+        loginPage.open();
+        loginPage.login("login-test", "password");
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
+        driver.navigate().to(oauth.getLoginFormUrl().toString() + "&prompt=none");
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(userId).removeDetail(Details.USERNAME).detail(Details.AUTH_METHOD, "sso").assertEvent();
+    }
+
+    @Test
     public void loginNoTimeoutWithLongWait() {
         try {
             loginPage.open();
@@ -264,9 +286,9 @@ public class LoginTest {
 
         try {
             loginPage.open();
-            Assert.assertFalse(loginPage.isRememberMeChecked());
+            assertFalse(loginPage.isRememberMeChecked());
             loginPage.setRememberMe(true);
-            Assert.assertTrue(loginPage.isRememberMeChecked());
+            assertTrue(loginPage.isRememberMeChecked());
             loginPage.login("login-test", "password");
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -282,7 +304,7 @@ public class LoginTest {
 
             // Assert rememberMe checked and username/email prefilled
             loginPage.open();
-            Assert.assertTrue(loginPage.isRememberMeChecked());
+            assertTrue(loginPage.isRememberMeChecked());
             Assert.assertEquals("login-test", loginPage.getUsername());
 
             loginPage.setRememberMe(false);
