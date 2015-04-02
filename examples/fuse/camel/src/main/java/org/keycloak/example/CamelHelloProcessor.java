@@ -20,7 +20,6 @@ public class CamelHelloProcessor implements Processor {
         String username = accessToken.getPreferredUsername();
         String fullName = accessToken.getName();
 
-        // send a html response with fullName from LDAP
         exchange.getOut().setBody("Hello " + username + "! Your full name is " + fullName + ".");
     }
 }

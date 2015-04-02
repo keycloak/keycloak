@@ -39,7 +39,7 @@ public class RSATokenVerifier {
             throw new VerificationException("Realm URL is null. Make sure to add auth-server-url to the configuration of your adapter!");
         }
         if (!realmUrl.equals(token.getIssuer())) {
-            throw new VerificationException("Token audience doesn't match domain.");
+            throw new VerificationException("Token audience doesn't match domain. Token issuer is " + token.getIssuer() + ", but URL from configuration is " + realmUrl);
 
         }
         if (checkActive && !token.isActive()) {

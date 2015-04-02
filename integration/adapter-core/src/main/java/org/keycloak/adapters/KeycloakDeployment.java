@@ -90,7 +90,8 @@ public class KeycloakDeployment {
 
     public void setAuthServerBaseUrl(AdapterConfig config) {
         this.authServerBaseUrl = config.getAuthServerUrl();
-        if (authServerBaseUrl == null && config.getAuthServerUrlForBackendRequests() == null) return;
+        String authServerURLForBackendReqs = config.getAuthServerUrlForBackendRequests();
+        if (authServerBaseUrl == null && authServerURLForBackendReqs == null) return;
 
         URI authServerUri = null;
         if (authServerBaseUrl != null) {
@@ -98,7 +99,6 @@ public class KeycloakDeployment {
         }
 
         if (authServerUri == null || authServerUri.getHost() == null) {
-            String authServerURLForBackendReqs = config.getAuthServerUrlForBackendRequests();
             if (authServerURLForBackendReqs != null) {
                 relativeUrls = RelativeUrlsUsed.BROWSER_ONLY;
 
@@ -116,7 +116,13 @@ public class KeycloakDeployment {
             relativeUrls = RelativeUrlsUsed.NEVER;
             KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
             resolveBrowserUrls(serverBuilder);
-            resolveNonBrowserUrls(serverBuilder);
+
+            if (authServerURLForBackendReqs == null) {
+                resolveNonBrowserUrls(serverBuilder);
+            } else {
+                serverBuilder = KeycloakUriBuilder.fromUri(authServerURLForBackendReqs);
+                resolveNonBrowserUrls(serverBuilder);
+            }
         }
     }
 
@@ -132,6 +138,7 @@ public class KeycloakDeployment {
 
         String login = authUrlBuilder.clone().path(ServiceUrlConstants.AUTH_PATH).build(getRealm()).toString();
         authUrl = KeycloakUriBuilder.fromUri(login);
+        realmInfoUrl = authUrlBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
     }
 
     /**
@@ -145,7 +152,6 @@ public class KeycloakDeployment {
         tokenUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_PATH).build(getRealm()).toString();
         logoutUrl = KeycloakUriBuilder.fromUri(authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());
         accountUrl = authUrlBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
-        realmInfoUrl = authUrlBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
         registerNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
         unregisterNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
     }

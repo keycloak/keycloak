@@ -33,6 +33,9 @@ for I in *.war/WEB-INF/keycloak.json; do
   sed -i -e 's/\"bearer-only\" : true,/&\n    \"credentials\" : \{ \"secret\": \"password\" \},/' $I;
 done;
 
+# Configure database.war
+sed -i -e 's/\"auth-server-url\": \"\/auth\",/\"auth-server-url\": \"http:\/\/localhost:8000\/auth\",/' database.war/WEB-INF/keycloak.json;
+
 # Enable distributable for customer-portal
 sed -i -e 's/<\/module-name>/&\n    <distributable \/>/' customer-portal.war/WEB-INF/web.xml
 

@@ -29,10 +29,10 @@ This file contains configuration of the client application, which is used by JAA
  
 4) Start Fuse and install `keycloak` JAAS realm into Fuse. This could be done easily by installing `keycloak-jaas` feature, which has JAAS realm predefined 
 (you are able to override it by using your own `keycloak` JAAS realm with higher ranking). As long as you already installed `keycloak-fuse-example` feature as mentioned 
-in [examples readme](../README.md), you can skip this step as `keycloak-jaas` is installed already. Otherwise use those commands (replace Keycloak version with current one):
+in [examples readme](../README.md), you can skip this step as `keycloak-jaas` is installed already. Otherwise use those commands (replace Keycloak version in this command with the current version):
 
 ```
-features:addurl mvn:org.keycloak/keycloak-osgi-features/1.1.0.Final/xml/features
+features:addurl mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
 features:install keycloak-jaas
 ```
 

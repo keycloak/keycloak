@@ -33,7 +33,7 @@ public class KeycloakDeploymentBuilderTest {
         assertTrue(deployment.isExposeToken());
         assertEquals("234234-234234-234234", deployment.getResourceCredentials().get("secret"));
         assertEquals(20, ((ThreadSafeClientConnManager) deployment.getClient().getConnectionManager()).getMaxTotal());
-        assertEquals("https://localhost:8443/auth/realms/demo/protocol/openid-connect/token", deployment.getTokenUrl());
+        assertEquals("https://backend:8443/auth/realms/demo/protocol/openid-connect/token", deployment.getTokenUrl());
         assertTrue(deployment.isAlwaysRefreshToken());
         assertTrue(deployment.isRegisterNodeAtStartup());
         assertEquals(1000, deployment.getRegisterNodePeriod());

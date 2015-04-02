@@ -322,7 +322,7 @@ public class OAuthRequestAuthenticator {
             }
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
-            log.error("failed verification of token");
+            log.error("failed verification of token: " + e.getMessage());
             return challenge(403);
         }
         if (tokenResponse.getNotBeforePolicy() > deployment.getNotBefore()) {
