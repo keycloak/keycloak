@@ -146,16 +146,6 @@
             "adminUrl": "/database",
             "baseUrl": "/database",
             "bearerOnly": true
-        },
-        {
-            "name": "rest-resources",
-            "enabled": true,
-            "publicClient": true,
-            "adminUrl": "/rest-resources",
-            "baseUrl": "/rest-resources",
-            "redirectUris": [
-                "/rest-resources/*"
-            ]
         }
     ],
     "oauthClients": [
