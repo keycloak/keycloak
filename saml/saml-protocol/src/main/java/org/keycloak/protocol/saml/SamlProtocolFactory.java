@@ -12,9 +12,8 @@ import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.picketlink.common.constants.JBossSAMLURIConstants;
-import org.picketlink.identity.federation.core.saml.v2.constants.X500SAMLProfileConstants;
-import org.picketlink.identity.federation.core.sts.PicketLinkCoreSTS;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,8 +36,8 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
     @Override
     public void init(Config.Scope config) {
-        PicketLinkCoreSTS sts = PicketLinkCoreSTS.instance();
-        sts.installDefaultConfiguration();
+        //PicketLinkCoreSTS sts = PicketLinkCoreSTS.instance();
+        //sts.installDefaultConfiguration();
     }
 
     @Override

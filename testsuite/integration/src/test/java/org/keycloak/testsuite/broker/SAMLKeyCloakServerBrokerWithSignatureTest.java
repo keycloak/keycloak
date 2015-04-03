@@ -8,11 +8,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testutils.KeycloakServer;
-import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
-import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
-import org.picketlink.identity.federation.web.util.PostBindingUtil;
-
-import java.net.URLDecoder;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.saml.processing.web.util.PostBindingUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

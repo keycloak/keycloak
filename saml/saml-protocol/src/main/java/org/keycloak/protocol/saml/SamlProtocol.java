@@ -24,15 +24,14 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.admin.ClientAttributeCertificateResource;
 import org.keycloak.services.resources.flows.Flows;
-import org.picketlink.common.constants.GeneralConstants;
-import org.picketlink.common.constants.JBossSAMLURIConstants;
-import org.picketlink.common.exceptions.ConfigurationException;
-import org.picketlink.common.exceptions.ParsingException;
-import org.picketlink.common.exceptions.ProcessingException;
-import org.picketlink.identity.federation.saml.v2.assertion.AssertionType;
-import org.picketlink.identity.federation.saml.v2.assertion.AttributeStatementType;
-import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
-import org.picketlink.identity.federation.web.handlers.saml2.SAML2LogOutHandler;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -526,7 +525,7 @@ public class SamlProtocol implements LoginProtocol {
         try {
             ClientRequest request = executor.createRequest(logoutUrl);
             request.formParameter(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString);
-            request.formParameter(SAML2LogOutHandler.BACK_CHANNEL_LOGOUT, SAML2LogOutHandler.BACK_CHANNEL_LOGOUT);
+            request.formParameter("BACK_CHANNEL_LOGOUT", "BACK_CHANNEL_LOGOUT"); // for Picketlink adapter, todo remove this
             ClientResponse response = null;
             try {
                 response = request.post();
@@ -538,7 +537,7 @@ public class SamlProtocol implements LoginProtocol {
                     if (withSlash.equals(redirect)) {
                         request = executor.createRequest(withSlash);
                         request.formParameter(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString);
-                        request.formParameter(SAML2LogOutHandler.BACK_CHANNEL_LOGOUT, SAML2LogOutHandler.BACK_CHANNEL_LOGOUT);
+                        request.formParameter("BACK_CHANNEL_LOGOUT", "BACK_CHANNEL_LOGOUT"); // for Picketlink adapter, todo remove this
                         response = request.post();
                         response.releaseConnection();
                     }
@@ -556,6 +555,7 @@ public class SamlProtocol implements LoginProtocol {
     protected SAML2LogoutRequestBuilder createLogoutRequest(String logoutUrl, ClientSessionModel clientSession, ClientModel client) {
         // build userPrincipal with subject used at login
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
+                                         .assertionExpiration(realm.getAccessCodeLifespan())
                                          .issuer(getResponseIssuer(realm))
                                          .userPrincipal(clientSession.getNote(SAML_NAME_ID), clientSession.getNote(SAML_NAME_ID_FORMAT))
                                          .destination(logoutUrl);

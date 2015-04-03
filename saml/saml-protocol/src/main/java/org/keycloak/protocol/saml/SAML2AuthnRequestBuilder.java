@@ -17,12 +17,12 @@
  */
 package org.keycloak.protocol.saml;
 
-import org.picketlink.common.exceptions.ConfigurationException;
-import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
-import org.picketlink.identity.federation.core.saml.v2.common.IDGenerator;
-import org.picketlink.identity.federation.core.saml.v2.util.XMLTimeUtil;
-import org.picketlink.identity.federation.saml.v2.assertion.NameIDType;
-import org.picketlink.identity.federation.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.w3c.dom.Document;
 
 import java.net.URI;

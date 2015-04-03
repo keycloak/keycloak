@@ -6,7 +6,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
-import org.picketlink.identity.federation.saml.v2.assertion.AttributeStatementType;
+import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 
 import java.util.ArrayList;
 import java.util.List;

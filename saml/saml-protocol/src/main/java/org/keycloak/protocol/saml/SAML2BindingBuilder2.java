@@ -1,17 +1,16 @@
 package org.keycloak.protocol.saml;
 
 import org.jboss.logging.Logger;
-import org.picketlink.common.constants.GeneralConstants;
-import org.picketlink.common.constants.JBossSAMLConstants;
-import org.picketlink.common.constants.JBossSAMLURIConstants;
-import org.picketlink.common.exceptions.ConfigurationException;
-import org.picketlink.common.exceptions.ProcessingException;
-import org.picketlink.common.util.DocumentUtil;
-import org.picketlink.identity.federation.api.saml.v2.sig.SAML2Signature;
-import org.picketlink.identity.federation.core.util.XMLEncryptionUtil;
-import org.picketlink.identity.federation.core.wstrust.WSTrustUtil;
-import org.picketlink.identity.federation.web.util.PostBindingUtil;
-import org.picketlink.identity.federation.web.util.RedirectBindingUtil;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
+import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
+import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
+import org.keycloak.saml.processing.web.util.PostBindingUtil;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -32,7 +31,7 @@ import java.security.Signature;
 import java.security.cert.X509Certificate;
 
 import static org.keycloak.util.HtmlUtils.escapeAttribute;
-import static org.picketlink.common.util.StringUtil.isNotNull;
+import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -125,7 +124,7 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
         }
 
         public String encoded() throws ProcessingException, ConfigurationException, IOException {
-            byte[] responseBytes = org.picketlink.identity.federation.core.saml.v2.util.DocumentUtil.getDocumentAsString(document).getBytes("UTF-8");
+            byte[] responseBytes = DocumentUtil.getDocumentAsString(document).getBytes("UTF-8");
             return PostBindingUtil.base64Encode(new String(responseBytes));
         }
         public Document getDocument() {
@@ -204,7 +203,7 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
             QName encryptedAssertionElementQName = new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
                     JBossSAMLConstants.ENCRYPTED_ASSERTION.get(), samlNSPrefix);
 
-            byte[] secret = WSTrustUtil.createRandomSecret(encryptionKeySize / 8);
+            byte[] secret = SamlProtocolUtils.createRandomSecret(encryptionKeySize / 8);
             SecretKey secretKey = new SecretKeySpec(secret, encryptionAlgorithm);
 
             // encrypt the Assertion element and replace it with a EncryptedAssertion element.
@@ -242,13 +241,13 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
     }
 
     protected void signAssertion(Document samlDocument) throws ProcessingException {
-        Element originalAssertionElement = DocumentUtil.getChildElement(samlDocument.getDocumentElement(), new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get()));
+        Element originalAssertionElement = org.keycloak.saml.common.util.DocumentUtil.getChildElement(samlDocument.getDocumentElement(), new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get()));
         if (originalAssertionElement == null) return;
         Node clonedAssertionElement = originalAssertionElement.cloneNode(true);
         Document temporaryDocument;
 
         try {
-            temporaryDocument = DocumentUtil.createDocument();
+            temporaryDocument = org.keycloak.saml.common.util.DocumentUtil.createDocument();
         } catch (ConfigurationException e) {
             throw new ProcessingException(e);
         }
@@ -277,7 +276,7 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
     }
 
     protected String buildHtmlPostResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
-        byte[] responseBytes = DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
+        byte[] responseBytes = org.keycloak.saml.common.util.DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
         String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes));
 
         return buildHtml(samlResponse, actionUrl, asRequest);
@@ -317,7 +316,7 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
     }
 
     protected String base64Encoded(Document document) throws ConfigurationException, ProcessingException, IOException  {
-        String documentAsString = org.picketlink.identity.federation.core.saml.v2.util.DocumentUtil.getDocumentAsString(document);
+        String documentAsString = DocumentUtil.getDocumentAsString(document);
         logger.debugv("saml docment: {0}", documentAsString);
         byte[] responseBytes = documentAsString.getBytes("UTF-8");
 

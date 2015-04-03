@@ -176,13 +176,20 @@
         <!-- saml -->
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-protocol</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!--
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-federation</artifactId>
         </dependency>
+        -->
 
         <!-- mongo -->
         <dependency>

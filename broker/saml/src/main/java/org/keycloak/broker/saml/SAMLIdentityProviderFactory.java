@@ -19,16 +19,16 @@ package org.keycloak.broker.saml;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.picketlink.common.constants.JBossSAMLURIConstants;
-import org.picketlink.common.exceptions.ParsingException;
-import org.picketlink.common.util.DocumentUtil;
-import org.picketlink.identity.federation.core.parsers.saml.SAMLParser;
-import org.picketlink.identity.federation.saml.v2.metadata.EndpointType;
-import org.picketlink.identity.federation.saml.v2.metadata.EntitiesDescriptorType;
-import org.picketlink.identity.federation.saml.v2.metadata.EntityDescriptorType;
-import org.picketlink.identity.federation.saml.v2.metadata.IDPSSODescriptorType;
-import org.picketlink.identity.federation.saml.v2.metadata.KeyDescriptorType;
-import org.picketlink.identity.federation.saml.v2.metadata.KeyTypes;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
+import org.keycloak.dom.saml.v2.metadata.EndpointType;
+import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
