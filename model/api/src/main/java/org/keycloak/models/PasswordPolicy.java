@@ -1,9 +1,10 @@
 package org.keycloak.models;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -16,7 +17,8 @@ public class PasswordPolicy {
     public static final String INVALID_PASSWORD_MIN_UPPER_CASE_CHARS_MESSAGE = "invalidPasswordMinUpperCaseCharsMessage";
     public static final String INVALID_PASSWORD_MIN_SPECIAL_CHARS_MESSAGE = "invalidPasswordMinSpecialCharsMessage";
     public static final String INVALID_PASSWORD_NOT_USERNAME = "invalidPasswordNotUsernameMessage";
-    
+    public static final String INVALID_PASSWORD_REGEX_PATTERN = "invalidPasswordRegexPatternMessage";
+
     private List<Policy> policies;
     private String policyString;
 
@@ -64,6 +66,11 @@ public class PasswordPolicy {
                 list.add(new NotUsername(args));
             } else if (name.equals(HashIterations.NAME)) {
                 list.add(new HashIterations(args));
+            } else if (name.equals(RegexPatterns.NAME)) {
+                for(String regexPattern : args) {
+                    Pattern.compile(regexPattern);
+                }
+                list.add(new RegexPatterns(args));
             }
         }
         return list;
@@ -74,10 +81,11 @@ public class PasswordPolicy {
      * @return -1 if no hash iterations setting
      */
     public int getHashIterations() {
-        if (policies == null) return -1;
+        if (policies == null)
+            return -1;
         for (Policy p : policies) {
             if (p instanceof HashIterations) {
-                return ((HashIterations)p).iterations;
+                return ((HashIterations) p).iterations;
             }
 
         }
@@ -98,11 +106,11 @@ public class PasswordPolicy {
         public Error validate(String username, String password);
     }
 
-    public static class Error{
+    public static class Error {
         private String message;
         private Object[] parameters;
 
-        private Error(String message, Object ... parameters){
+        private Error(String message, Object... parameters) {
             this.message = message;
             this.parameters = parameters;
         }
@@ -192,7 +200,7 @@ public class PasswordPolicy {
                     count++;
                 }
             }
-            return count < min ? new Error(INVALID_PASSWORD_MIN_LOWER_CASE_CHARS_MESSAGE, min): null;
+            return count < min ? new Error(INVALID_PASSWORD_MIN_LOWER_CASE_CHARS_MESSAGE, min) : null;
         }
     }
 
@@ -233,6 +241,29 @@ public class PasswordPolicy {
                 }
             }
             return count < min ? new Error(INVALID_PASSWORD_MIN_SPECIAL_CHARS_MESSAGE, min) : null;
+        }
+    }
+
+    private static class RegexPatterns implements Policy {
+        private static final String NAME = "regexPatterns";
+        private String regexPatterns[];
+
+        public RegexPatterns(String[] args) {
+            regexPatterns = args;
+        }
+
+        @Override
+        public Error validate(String username, String password) {
+            Pattern pattern = null;
+            Matcher matcher = null;
+            for(String regexPattern : regexPatterns) {
+                pattern = Pattern.compile(regexPattern);
+                matcher = pattern.matcher(password);
+                if (!matcher.matches()) {
+                    return new Error(INVALID_PASSWORD_REGEX_PATTERN, (Object)regexPatterns);
+                }
+            }
+            return null;
         }
     }
 

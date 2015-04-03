@@ -1043,7 +1043,8 @@ module.factory('PasswordPolicy', function() {
         lowerCase:      "Minimal number (integer type) of lowercase characters in password. Default value is 1.",
         upperCase:      "Minimal number (integer type) of uppercase characters in password. Default value is 1.",
         specialChars:   "Minimal number (integer type) of special characters in password. Default value is 1.",
-        notUsername:    "Block passwords that are equal to the username"
+        notUsername:    "Block passwords that are equal to the username",
+        regexPatterns:  "Block passwords that do not match all of the regex patterns (string type)."
     }
 
     p.allPolicies = [
@@ -1053,11 +1054,13 @@ module.factory('PasswordPolicy', function() {
         { name: 'lowerCase', value: 1 },
         { name: 'upperCase', value: 1 },
         { name: 'specialChars', value: 1 },
-        { name: 'notUsername', value: 1 }
+        { name: 'notUsername', value: 1 },
+        { name: 'regexPatterns', value: ''}
     ];
 
     p.parse = function(policyString) {
         var policies = [];
+        var re, policyEntry;
 
         if (!policyString || policyString.length == 0){
             return policies;
@@ -1067,14 +1070,21 @@ module.factory('PasswordPolicy', function() {
 
         for (var i = 0; i < policyArray.length; i ++){
             var policyToken = policyArray[i];
-            var re = /(\w+)\(*(\d*)\)*/;
-
-            var policyEntry = re.exec(policyToken);
-            if (null !== policyEntry) {
-                policies.push({ name: policyEntry[1], value: parseInt(policyEntry[2]) });
+            
+            if(policyToken.indexOf('regexPatterns') === 0) {
+            	re = /(\w+)\((.*)\)/;
+            	policyEntry = re.exec(policyToken);
+                if (null !== policyEntry) {
+                	policies.push({ name: policyEntry[1], value: policyEntry[2] });
+                }
+            } else {
+            	re = /(\w+)\(*(\d*)\)*/;
+            	policyEntry = re.exec(policyToken);
+                if (null !== policyEntry) {
+                	policies.push({ name: policyEntry[1], value: parseInt(policyEntry[2]) });
+                }
             }
         }
-
         return policies;
     };
 
