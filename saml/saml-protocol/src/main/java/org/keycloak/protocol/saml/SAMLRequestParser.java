@@ -1,12 +1,12 @@
 package org.keycloak.protocol.saml;
 
-import org.picketlink.common.PicketLinkLogger;
-import org.picketlink.common.PicketLinkLoggerFactory;
-import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
-import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
-import org.picketlink.identity.federation.core.saml.v2.common.SAMLDocumentHolder;
-import org.picketlink.identity.federation.web.util.PostBindingUtil;
-import org.picketlink.identity.federation.web.util.RedirectBindingUtil;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.web.util.PostBindingUtil;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

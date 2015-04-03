@@ -8,6 +8,7 @@
     </resources>
     <dependencies>
         <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-saml-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
         <module name="org.keycloak.keycloak-events-api"/>
         <module name="org.keycloak.keycloak-account-api"/>
@@ -17,9 +18,6 @@
         <module name="org.keycloak.keycloak-forms-common-freemarker"/>
         <module name="org.apache.httpcomponents" />
         <module name="org.jboss.logging"/>
-        <module name="org.picketlink.common"/>
-        <module name="org.picketlink.federation"/>
-
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.resteasy.resteasy-crypto"/>

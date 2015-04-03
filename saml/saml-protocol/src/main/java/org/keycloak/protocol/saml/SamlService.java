@@ -18,7 +18,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -27,17 +26,15 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.StreamUtil;
-import org.picketlink.common.constants.GeneralConstants;
-import org.picketlink.common.constants.JBossSAMLURIConstants;
-import org.picketlink.identity.federation.core.saml.v2.common.SAMLDocumentHolder;
-import org.picketlink.identity.federation.saml.v2.SAML2Object;
-import org.picketlink.identity.federation.saml.v2.protocol.AuthnRequestType;
-import org.picketlink.identity.federation.saml.v2.protocol.LogoutRequestType;
-import org.picketlink.identity.federation.saml.v2.protocol.NameIDPolicyType;
-import org.picketlink.identity.federation.saml.v2.protocol.RequestAbstractType;
-import org.picketlink.identity.federation.saml.v2.protocol.StatusResponseType;
-import org.picketlink.identity.federation.web.util.PostBindingUtil;
-import org.picketlink.identity.federation.web.util.RedirectBindingUtil;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
+import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
+import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -58,7 +55,6 @@ import javax.ws.rs.ext.Providers;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
-import java.security.Signature;
 
 /**
  * Resource class for the oauth/openid connect token service

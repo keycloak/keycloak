@@ -267,6 +267,9 @@
             <maven-resource group="org.keycloak" artifact="keycloak-picketlink-ldap"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-saml-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-saml-core"/>
+        </module-def>
         <module-def name="org.keycloak.keycloak-saml-protocol">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-protocol"/>
         </module-def>

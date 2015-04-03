@@ -3,16 +3,17 @@ package org.keycloak.protocol.saml;
 import org.keycloak.VerificationException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.util.PemUtils;
-import org.picketlink.common.constants.GeneralConstants;
-import org.picketlink.common.exceptions.ProcessingException;
-import org.picketlink.identity.federation.api.saml.v2.sig.SAML2Signature;
-import org.picketlink.identity.federation.web.util.RedirectBindingUtil;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.cert.Certificate;
 
@@ -21,6 +22,23 @@ import java.security.cert.Certificate;
  * @version $Revision: 1 $
  */
 public class SamlProtocolUtils {
+
+    /**
+     * <p>
+     * Creates a random {@code byte[]} secret of the specified size.
+     * </p>
+     *
+     * @param size the size of the secret to be created, in bytes.
+     *
+     * @return a {@code byte[]} containing the generated secret.
+     */
+    public static byte[] createRandomSecret(final int size) {
+        SecureRandom random = new SecureRandom();
+        byte[] secret = new byte[size];
+        random.nextBytes(secret);
+        return secret;
+    }
+
 
     public static void verifyDocumentSignature(ClientModel client, Document document) throws VerificationException {
         if (!"true".equals(client.getAttribute(SamlProtocol.SAML_CLIENT_SIGNATURE_ATTRIBUTE))) {

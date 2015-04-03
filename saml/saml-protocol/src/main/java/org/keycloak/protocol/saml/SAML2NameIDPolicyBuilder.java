@@ -17,7 +17,7 @@
  */
 package org.keycloak.protocol.saml;
 
-import org.picketlink.identity.federation.saml.v2.protocol.NameIDPolicyType;
+import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
 
 import java.net.URI;
 

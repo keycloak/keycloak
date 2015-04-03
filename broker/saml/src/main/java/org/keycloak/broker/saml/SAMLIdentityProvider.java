@@ -27,7 +27,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.protocol.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.protocol.saml.SAML2NameIDPolicyBuilder;
-import org.picketlink.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -122,6 +122,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         if (getConfig().getSingleLogoutServiceUrl() == null || getConfig().getSingleLogoutServiceUrl().trim().equals("")) return null;
 
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
+                .assertionExpiration(realm.getAccessCodeLifespan())
                 .issuer(getEntityId(uriInfo, realm))
                 .sessionIndex(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX))
                 .userPrincipal(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT), userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEFORMAT))
