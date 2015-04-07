@@ -12,6 +12,8 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
+import org.keycloak.federation.ldap.idm.model.LDAPUser;
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelReadOnlyException;
@@ -21,7 +23,6 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.picketlink.PartitionManagerProvider;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
@@ -35,8 +36,6 @@ import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
-import org.picketlink.idm.PartitionManager;
-import org.picketlink.idm.model.basic.User;
 
 import java.util.Map;
 
@@ -57,19 +56,19 @@ public class FederationProvidersIntegrationTest {
             addUser(manager.getSession(), appRealm, "mary", "mary@test.com", "password-app");
 
             Map<String,String> ldapConfig = ldapRule.getConfig();
-            ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "true");
+            ldapConfig.put(LDAPConstants.SYNC_REGISTRATIONS, "true");
             ldapConfig.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.WRITABLE.toString());
 
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap", -1, -1, 0);
 
             // Delete all LDAP users and add some new for testing
-            PartitionManager partitionManager = getPartitionManager(manager.getSession(), ldapModel);
-            LDAPUtils.removeAllUsers(partitionManager);
+            LDAPIdentityStore ldapStore = getLdapIdentityStore(manager.getSession(), ldapModel);
+            LDAPUtils.removeAllUsers(ldapStore);
 
-            User john = LDAPUtils.addUser(partitionManager, "johnkeycloak", "John", "Doe", "john@email.org");
-            LDAPUtils.updatePassword(partitionManager, john, "Password1");
+            LDAPUser john = LDAPUtils.addUser(ldapStore, "johnkeycloak", "John", "Doe", "john@email.org");
+            LDAPUtils.updatePassword(ldapStore, john, "Password1");
 
-            User existing = LDAPUtils.addUser(partitionManager, "existing", "Existing", "Foo", "existing@email.org");
+            LDAPUser existing = LDAPUtils.addUser(ldapStore, "existing", "Existing", "Foo", "existing@email.org");
         }
     });
 
@@ -339,13 +338,13 @@ public class FederationProvidersIntegrationTest {
     @Test
     public void testSearch() {
         KeycloakSession session = keycloakRule.startSession();
-        PartitionManager partitionManager = getPartitionManager(session, ldapModel);
+        LDAPIdentityStore ldapStore = getLdapIdentityStore(session, ldapModel);
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
-            LDAPUtils.addUser(partitionManager, "username1", "John1", "Doel1", "user1@email.org");
-            LDAPUtils.addUser(partitionManager, "username2", "John2", "Doel2", "user2@email.org");
-            LDAPUtils.addUser(partitionManager, "username3", "John3", "Doel3", "user3@email.org");
-            LDAPUtils.addUser(partitionManager, "username4", "John4", "Doel4", "user4@email.org");
+            LDAPUtils.addUser(ldapStore, "username1", "John1", "Doel1", "user1@email.org");
+            LDAPUtils.addUser(ldapStore, "username2", "John2", "Doel2", "user2@email.org");
+            LDAPUtils.addUser(ldapStore, "username3", "John3", "Doel3", "user3@email.org");
+            LDAPUtils.addUser(ldapStore, "username4", "John4", "Doel4", "user4@email.org");
 
             // Users are not at local store at this moment
             Assert.assertNull(session.userStorage().getUserByUsername("username1", appRealm));
@@ -395,7 +394,7 @@ public class FederationProvidersIntegrationTest {
             Assert.assertTrue(session.users().validCredentials(appRealm, user, cred));
 
             // LDAP password is still unchanged
-            Assert.assertTrue(LDAPUtils.validatePassword(getPartitionManager(session, model), "johnkeycloak", "Password1"));
+            Assert.assertTrue(LDAPUtils.validatePassword(getLdapIdentityStore(session, model), user, "Password1"));
 
             // ATM it's not permitted to delete user in unsynced mode. Should be user deleted just locally instead?
             Assert.assertFalse(session.users().removeUser(appRealm, user));
@@ -412,9 +411,10 @@ public class FederationProvidersIntegrationTest {
         }
     }
 
-    static PartitionManager getPartitionManager(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {
-        PartitionManagerProvider partitionManagerProvider = keycloakSession.getProvider(PartitionManagerProvider.class);
-        return partitionManagerProvider.getPartitionManager(ldapFedModel);
+    static LDAPIdentityStore getLdapIdentityStore(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {
+        LDAPFederationProviderFactory ldapProviderFactory = (LDAPFederationProviderFactory) keycloakSession.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, ldapFedModel.getProviderName());
+        LDAPFederationProvider ldapProvider = ldapProviderFactory.getInstance(keycloakSession, ldapFedModel);
+        return ldapProvider.getLdapIdentityStore();
     }
 
 }

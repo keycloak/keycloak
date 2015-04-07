@@ -114,7 +114,6 @@
         <module>model</module>
         <module>integration</module>
         <module>proxy</module>
-        <module>picketlink</module>
         <module>federation</module>
         <module>services</module>
         <module>saml</module>

@@ -1,16 +1,11 @@
 package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.ModelException;
+import org.keycloak.federation.ldap.idm.model.LDAPUser;
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
-import org.picketlink.idm.IdentityManagementException;
-import org.picketlink.idm.IdentityManager;
-import org.picketlink.idm.credential.Password;
-import org.picketlink.idm.credential.TOTPCredential;
-import org.picketlink.idm.model.basic.BasicModel;
-import org.picketlink.idm.model.basic.User;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -28,52 +23,43 @@ public class WritableLDAPUserModelDelegate extends UserModelDelegate implements 
 
     @Override
     public void setUsername(String username) {
-        IdentityManager identityManager = provider.getIdentityManager();
+        LDAPIdentityStore ldapIdentityStore = provider.getLdapIdentityStore();
 
-        try {
-            User picketlinkUser = BasicModel.getUser(identityManager, delegate.getUsername());
-            if (picketlinkUser == null) {
-                throw new IllegalStateException("User not found in LDAP storage!");
-            }
-            picketlinkUser.setLoginName(username);
-            identityManager.update(picketlinkUser);
-        } catch (IdentityManagementException ie) {
-            throw new ModelException(ie);
+        LDAPUser ldapUser = LDAPUtils.getUser(ldapIdentityStore, delegate.getUsername());
+        if (ldapUser == null) {
+            throw new IllegalStateException("User not found in LDAP storage!");
         }
+        ldapUser.setLoginName(username);
+        ldapIdentityStore.update(ldapUser);
+
         delegate.setUsername(username);
     }
 
     @Override
     public void setLastName(String lastName) {
-        IdentityManager identityManager = provider.getIdentityManager();
+        LDAPIdentityStore ldapIdentityStore = provider.getLdapIdentityStore();
 
-        try {
-            User picketlinkUser = BasicModel.getUser(identityManager, delegate.getUsername());
-            if (picketlinkUser == null) {
-                throw new IllegalStateException("User not found in LDAP storage!");
-            }
-            picketlinkUser.setLastName(lastName);
-            identityManager.update(picketlinkUser);
-        } catch (IdentityManagementException ie) {
-            throw new ModelException(ie);
+        LDAPUser ldapUser = LDAPUtils.getUser(ldapIdentityStore, delegate.getUsername());
+        if (ldapUser == null) {
+            throw new IllegalStateException("User not found in LDAP storage!");
         }
+        ldapUser.setLastName(lastName);
+        ldapIdentityStore.update(ldapUser);
+
         delegate.setLastName(lastName);
     }
 
     @Override
     public void setFirstName(String first) {
-        IdentityManager identityManager = provider.getIdentityManager();
+        LDAPIdentityStore ldapIdentityStore = provider.getLdapIdentityStore();
 
-        try {
-            User picketlinkUser = BasicModel.getUser(identityManager, delegate.getUsername());
-            if (picketlinkUser == null) {
-                throw new IllegalStateException("User not found in LDAP storage!");
-            }
-            picketlinkUser.setFirstName(first);
-            identityManager.update(picketlinkUser);
-        } catch (IdentityManagementException ie) {
-            throw new ModelException(ie);
+        LDAPUser ldapUser = LDAPUtils.getUser(ldapIdentityStore, delegate.getUsername());
+        if (ldapUser == null) {
+            throw new IllegalStateException("User not found in LDAP storage!");
         }
+        ldapUser.setFirstName(first);
+        ldapIdentityStore.update(ldapUser);
+
         delegate.setFirstName(first);
     }
 
@@ -83,41 +69,31 @@ public class WritableLDAPUserModelDelegate extends UserModelDelegate implements 
             delegate.updateCredential(cred);
             return;
         }
-        IdentityManager identityManager = provider.getIdentityManager();
 
-        try {
-            User picketlinkUser = BasicModel.getUser(identityManager, getUsername());
-            if (picketlinkUser == null) {
-                logger.debugf("User '%s' doesn't exists. Skip password update", getUsername());
-                throw new IllegalStateException("User doesn't exist in LDAP storage");
-            }
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                identityManager.updateCredential(picketlinkUser, new Password(cred.getValue().toCharArray()));
-            } else if (cred.getType().equals(UserCredentialModel.TOTP)) {
-                TOTPCredential credential = new TOTPCredential(cred.getValue());
-                credential.setDevice(cred.getDevice());
-                identityManager.updateCredential(picketlinkUser, credential);
-            }
-        } catch (IdentityManagementException ie) {
-            throw new ModelException(ie);
+        LDAPIdentityStore ldapIdentityStore = provider.getLdapIdentityStore();
+        LDAPUser ldapUser = LDAPUtils.getUser(ldapIdentityStore, delegate.getUsername());
+        if (ldapUser == null) {
+            throw new IllegalStateException("User " + delegate.getUsername() + " not found in LDAP storage!");
         }
 
+        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+            LDAPUtils.updatePassword(ldapIdentityStore, delegate, cred.getValue());
+        } else {
+            logger.warnf("Don't know how to update credential of type [%s] for user [%s]", cred.getType(), delegate.getUsername());
+        }
     }
 
     @Override
     public void setEmail(String email) {
-        IdentityManager identityManager = provider.getIdentityManager();
+        LDAPIdentityStore ldapIdentityStore = provider.getLdapIdentityStore();
 
-        try {
-            User picketlinkUser = BasicModel.getUser(identityManager, delegate.getUsername());
-            if (picketlinkUser == null) {
-                throw new IllegalStateException("User not found in LDAP storage!");
-            }
-            picketlinkUser.setEmail(email);
-            identityManager.update(picketlinkUser);
-        } catch (IdentityManagementException ie) {
-            throw new ModelException(ie);
+        LDAPUser ldapUser = LDAPUtils.getUser(ldapIdentityStore, delegate.getUsername());
+        if (ldapUser == null) {
+            throw new IllegalStateException("User not found in LDAP storage!");
         }
+        ldapUser.setEmail(email);
+        ldapIdentityStore.update(ldapUser);
+
         delegate.setEmail(email);
     }
 

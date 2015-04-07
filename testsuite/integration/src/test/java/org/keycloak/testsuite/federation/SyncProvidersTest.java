@@ -7,9 +7,10 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
-import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
+import org.keycloak.federation.ldap.idm.model.LDAPUser;
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
@@ -25,8 +26,6 @@ import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testutils.DummyUserFederationProviderFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.Time;
-import org.picketlink.idm.PartitionManager;
-import org.picketlink.idm.model.basic.User;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,26 +49,20 @@ public class SyncProvidersTest {
             Time.setOffset(0);
 
             Map<String,String> ldapConfig = ldapRule.getConfig();
-            ldapConfig.put(LDAPFederationProvider.SYNC_REGISTRATIONS, "false");
+            ldapConfig.put(LDAPConstants.SYNC_REGISTRATIONS, "false");
             ldapConfig.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.UNSYNCED.toString());
 
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap",
                     -1, -1, 0);
 
             // Delete all LDAP users and add 5 new users for testing
-            PartitionManager partitionManager = FederationProvidersIntegrationTest.getPartitionManager(manager.getSession(), ldapModel);
-            LDAPUtils.removeAllUsers(partitionManager);
+            LDAPIdentityStore ldapStore = FederationProvidersIntegrationTest.getLdapIdentityStore(manager.getSession(), ldapModel);
+            LDAPUtils.removeAllUsers(ldapStore);
 
-            User user1 = LDAPUtils.addUser(partitionManager, "user1", "User1FN", "User1LN", "user1@email.org");
-            LDAPUtils.updatePassword(partitionManager, user1, "Password1");
-            User user2 = LDAPUtils.addUser(partitionManager, "user2", "User2FN", "User2LN", "user2@email.org");
-            LDAPUtils.updatePassword(partitionManager, user2, "Password2");
-            User user3 = LDAPUtils.addUser(partitionManager, "user3", "User3FN", "User3LN", "user3@email.org");
-            LDAPUtils.updatePassword(partitionManager, user3, "Password3");
-            User user4 = LDAPUtils.addUser(partitionManager, "user4", "User4FN", "User4LN", "user4@email.org");
-            LDAPUtils.updatePassword(partitionManager, user4, "Password4");
-            User user5 = LDAPUtils.addUser(partitionManager, "user5", "User5FN", "User5LN", "user5@email.org");
-            LDAPUtils.updatePassword(partitionManager, user5, "Password5");
+            for (int i=1 ; i<6 ; i++) {
+                LDAPUser user = LDAPUtils.addUser(ldapStore, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org");
+                LDAPUtils.updatePassword(ldapStore, user, "Password1");
+            }
 
             // Add dummy provider
             dummyModel = appRealm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, 1, 0);
@@ -122,9 +115,9 @@ public class SyncProvidersTest {
             sleep(1000);
 
             // Add user to LDAP and update 'user5' in LDAP
-            PartitionManager partitionManager = FederationProvidersIntegrationTest.getPartitionManager(session, ldapModel);
-            LDAPUtils.addUser(partitionManager, "user6", "User6FN", "User6LN", "user6@email.org");
-            LDAPUtils.updateUser(partitionManager, "user5", "User5FNUpdated", "User5LNUpdated", "user5Updated@email.org");
+            LDAPIdentityStore ldapStore = FederationProvidersIntegrationTest.getLdapIdentityStore(session, ldapModel);
+            LDAPUtils.addUser(ldapStore, "user6", "User6FN", "User6LN", "user6@email.org");
+            LDAPUtils.updateUser(ldapStore, "user5", "User5FNUpdated", "User5LNUpdated", "user5Updated@email.org");
 
             // Assert still old users in local provider
             assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5@email.org");

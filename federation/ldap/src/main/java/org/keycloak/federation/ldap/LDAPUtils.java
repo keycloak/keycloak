@@ -1,22 +1,21 @@
 package org.keycloak.federation.ldap;
 
+import org.keycloak.federation.ldap.idm.model.Attribute;
+import org.keycloak.federation.ldap.idm.model.LDAPUser;
+import org.keycloak.federation.ldap.idm.query.AttributeParameter;
+import org.keycloak.federation.ldap.idm.query.IdentityQuery;
+import org.keycloak.federation.ldap.idm.query.IdentityQueryBuilder;
+import org.keycloak.federation.ldap.idm.query.QueryParameter;
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
-import org.picketlink.idm.IdentityManagementException;
-import org.picketlink.idm.IdentityManager;
-import org.picketlink.idm.PartitionManager;
-import org.picketlink.idm.credential.Credentials;
-import org.picketlink.idm.credential.Password;
-import org.picketlink.idm.credential.UsernamePasswordCredentials;
-import org.picketlink.idm.model.Attribute;
-import org.picketlink.idm.model.basic.BasicModel;
-import org.picketlink.idm.model.basic.User;
-import org.picketlink.idm.query.AttributeParameter;
-import org.picketlink.idm.query.QueryParameter;
+import org.keycloak.models.UserModel;
 
 import java.util.List;
 
 /**
- * Allow to directly call some operations against Picketlink IDM PartitionManager (hence LDAP).
+ * Allow to directly call some operations against LDAPIdentityStore.
+ * TODO: Is this class still needed?
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -24,99 +23,102 @@ public class LDAPUtils {
 
     public static QueryParameter MODIFY_DATE = new AttributeParameter("modifyDate");
 
-    public static User addUser(PartitionManager partitionManager, String username, String firstName, String lastName, String email) {
-        IdentityManager identityManager = getIdentityManager(partitionManager);
-
-        if (BasicModel.getUser(identityManager, username) != null) {
+    public static LDAPUser addUser(LDAPIdentityStore ldapIdentityStore, String username, String firstName, String lastName, String email) {
+        if (getUser(ldapIdentityStore, username) != null) {
             throw new ModelDuplicateException("User with same username already exists");
         }
-        if (getUserByEmail(identityManager, email) != null) {
+        if (getUserByEmail(ldapIdentityStore, email) != null) {
             throw new ModelDuplicateException("User with same email already exists");
         }
 
-        User picketlinkUser = new User(username);
-        picketlinkUser.setFirstName(firstName);
-        picketlinkUser.setLastName(lastName);
-        picketlinkUser.setEmail(email);
-        picketlinkUser.setAttribute(new Attribute("fullName", getFullName(username, firstName, lastName)));
-        identityManager.add(picketlinkUser);
-        return picketlinkUser;
+        LDAPUser ldapUser = new LDAPUser(username);
+        ldapUser.setFirstName(firstName);
+        ldapUser.setLastName(lastName);
+        ldapUser.setEmail(email);
+        ldapUser.setAttribute(new Attribute<String>("fullName", getFullName(username, firstName, lastName)));
+        ldapIdentityStore.add(ldapUser);
+        return ldapUser;
     }
 
-    public static User updateUser(PartitionManager partitionManager, String username, String firstName, String lastName, String email) {
-        IdentityManager idmManager = getIdentityManager(partitionManager);
-        User picketlinkUser = BasicModel.getUser(idmManager, username);
-        picketlinkUser.setFirstName(firstName);
-        picketlinkUser.setLastName(lastName);
-        picketlinkUser.setEmail(email);
-        idmManager.update(picketlinkUser);
-        return picketlinkUser;
+    public static LDAPUser updateUser(LDAPIdentityStore ldapIdentityStore, String username, String firstName, String lastName, String email) {
+        LDAPUser ldapUser = getUser(ldapIdentityStore, username);
+        ldapUser.setFirstName(firstName);
+        ldapUser.setLastName(lastName);
+        ldapUser.setEmail(email);
+        ldapIdentityStore.update(ldapUser);
+        return ldapUser;
     }
 
-    public static void updatePassword(PartitionManager partitionManager, User picketlinkUser, String password) {
-        IdentityManager idmManager = getIdentityManager(partitionManager);
-        idmManager.updateCredential(picketlinkUser, new Password(password.toCharArray()));
+    public static void updatePassword(LDAPIdentityStore ldapIdentityStore, UserModel user, String password) {
+        LDAPUser ldapUser = convertUserForPasswordUpdate(user);
+
+        ldapIdentityStore.updatePassword(ldapUser, password);
     }
 
-    public static boolean validatePassword(PartitionManager partitionManager, String username, String password) {
-        IdentityManager idmManager = getIdentityManager(partitionManager);
+    public static void updatePassword(LDAPIdentityStore ldapIdentityStore, LDAPUser user, String password) {
+        ldapIdentityStore.updatePassword(user, password);
+    }
 
-        UsernamePasswordCredentials credential = new UsernamePasswordCredentials();
-        credential.setUsername(username);
-        credential.setPassword(new Password(password.toCharArray()));
-        idmManager.validateCredentials(credential);
-        if (credential.getStatus() == Credentials.Status.VALID) {
-            return true;
-        } else {
-            return false;
+    public static boolean validatePassword(LDAPIdentityStore ldapIdentityStore, UserModel user, String password) {
+        LDAPUser ldapUser = convertUserForPasswordUpdate(user);
+
+        return ldapIdentityStore.validatePassword(ldapUser, password);
+    }
+
+    public static boolean validatePassword(LDAPIdentityStore ldapIdentityStore, LDAPUser user, String password) {
+        return ldapIdentityStore.validatePassword(user, password);
+    }
+
+    public static LDAPUser getUser(LDAPIdentityStore ldapIdentityStore, String username) {
+        return ldapIdentityStore.getUser(username);
+    }
+
+    // Put just username and entryDN as these are needed by LDAPIdentityStore for passwordUpdate
+    private static LDAPUser convertUserForPasswordUpdate(UserModel kcUser) {
+        LDAPUser ldapUser = new LDAPUser(kcUser.getUsername());
+        String ldapEntryDN = kcUser.getAttribute(LDAPConstants.LDAP_ENTRY_DN);
+        if (ldapEntryDN != null) {
+            ldapUser.setEntryDN(ldapEntryDN);
         }
-    }
-
-    public static User getUser(PartitionManager partitionManager, String username) {
-        IdentityManager idmManager = getIdentityManager(partitionManager);
-        return BasicModel.getUser(idmManager, username);
+        return ldapUser;
     }
 
 
-    public static User getUserByEmail(IdentityManager idmManager, String email) throws IdentityManagementException {
-        List<User> agents = idmManager.createIdentityQuery(User.class)
-                .setParameter(User.EMAIL, email).getResultList();
+    public static LDAPUser getUserByEmail(LDAPIdentityStore ldapIdentityStore, String email) {
+        IdentityQueryBuilder queryBuilder = ldapIdentityStore.createQueryBuilder();
+        IdentityQuery<LDAPUser> query = queryBuilder.createIdentityQuery(LDAPUser.class)
+                .where(queryBuilder.equal(LDAPUser.EMAIL, email));
+        List<LDAPUser> users = query.getResultList();
 
-        if (agents.isEmpty()) {
+        if (users.isEmpty()) {
             return null;
-        } else if (agents.size() == 1) {
-            return agents.get(0);
+        } else if (users.size() == 1) {
+            return users.get(0);
         } else {
-            throw new IdentityManagementException("Error - multiple users found with same email");
+            throw new ModelDuplicateException("Error - multiple users found with same email " + email);
         }
     }
 
-    public static boolean removeUser(PartitionManager partitionManager, String username) {
-        IdentityManager idmManager = getIdentityManager(partitionManager);
-        User picketlinkUser = BasicModel.getUser(idmManager, username);
-        if (picketlinkUser == null) {
+    public static boolean removeUser(LDAPIdentityStore ldapIdentityStore, String username) {
+        LDAPUser ldapUser = getUser(ldapIdentityStore, username);
+        if (ldapUser == null) {
             return false;
         }
-        idmManager.remove(picketlinkUser);
+        ldapIdentityStore.remove(ldapUser);
         return true;
     }
 
-    public static void removeAllUsers(PartitionManager partitionManager) {
-        IdentityManager idmManager = getIdentityManager(partitionManager);
-        List<User> users = idmManager.createIdentityQuery(User.class).getResultList();
+    public static void removeAllUsers(LDAPIdentityStore ldapIdentityStore) {
+        List<LDAPUser> allUsers = getAllUsers(ldapIdentityStore);
 
-        for (User user : users) {
-            idmManager.remove(user);
+        for (LDAPUser user : allUsers) {
+            ldapIdentityStore.remove(user);
         }
     }
 
-    public static List<User> getAllUsers(PartitionManager partitionManager) {
-        IdentityManager idmManager = getIdentityManager(partitionManager);
-        return idmManager.createIdentityQuery(User.class).getResultList();
-    }
-
-    private static IdentityManager getIdentityManager(PartitionManager partitionManager) {
-        return partitionManager.createIdentityManager();
+    public static List<LDAPUser> getAllUsers(LDAPIdentityStore ldapIdentityStore) {
+        IdentityQuery<LDAPUser> userQuery = ldapIdentityStore.createQueryBuilder().createIdentityQuery(LDAPUser.class);
+        return userQuery.getResultList();
     }
 
     // Needed for ActiveDirectory updates
