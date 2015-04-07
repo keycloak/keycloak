@@ -2,17 +2,17 @@ package org.keycloak.models.cache.entities;
 
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClaimTypeModel;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.RealmCache;
+import org.keycloak.util.MultivaluedHashMap;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -87,6 +87,7 @@ public class CachedRealm {
     private boolean internationalizationEnabled;
     private Set<String> supportedLocales = new HashSet<String>();
     private String defaultLocale;
+    private MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
 
     public CachedRealm() {
     }
@@ -135,11 +136,17 @@ public class CachedRealm {
         requiredCredentials = model.getRequiredCredentials();
         userFederationProviders = model.getUserFederationProviders();
 
-        this.identityProviders = new ArrayList<IdentityProviderModel>();
+        this.identityProviders = new ArrayList<>();
 
         for (IdentityProviderModel identityProviderModel : model.getIdentityProviders()) {
             this.identityProviders.add(new IdentityProviderModel(identityProviderModel));
         }
+
+        for (IdentityProviderMapperModel mapper : model.getIdentityProviderMappers()) {
+            identityProviderMappers.add(mapper.getIdentityProviderAlias(), mapper);
+        }
+
+
 
         smtpConfig.putAll(model.getSmtpConfig());
         browserSecurityHeaders.putAll(model.getBrowserSecurityHeaders());
@@ -377,5 +384,9 @@ public class CachedRealm {
 
     public String getDefaultLocale() {
         return defaultLocale;
+    }
+
+    public MultivaluedHashMap<String, IdentityProviderMapperModel> getIdentityProviderMappers() {
+        return identityProviderMappers;
     }
 }

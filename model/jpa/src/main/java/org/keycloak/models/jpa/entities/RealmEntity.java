@@ -142,6 +142,11 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     protected List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
 
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    Collection<IdentityProviderMapperEntity> identityProviderMappers = new ArrayList<IdentityProviderMapperEntity>();
+
+
+
     @Column(name="INTERNATIONALIZATION_ENABLED")
     protected boolean internationalizationEnabled;
 
@@ -499,6 +504,14 @@ public class RealmEntity {
 
     public void setDefaultLocale(String defaultLocale) {
         this.defaultLocale = defaultLocale;
+    }
+
+    public Collection<IdentityProviderMapperEntity> getIdentityProviderMappers() {
+        return identityProviderMappers;
+    }
+
+    public void setIdentityProviderMappers(Collection<IdentityProviderMapperEntity> identityProviderMappers) {
+        this.identityProviderMappers = identityProviderMappers;
     }
 }
 

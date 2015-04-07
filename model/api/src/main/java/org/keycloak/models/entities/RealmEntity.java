@@ -69,6 +69,8 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean internationalizationEnabled;
     private List<String> supportedLocales = new ArrayList<String>();
     private String defaultLocale;
+    private List<IdentityProviderMapperEntity> identityProviderMappers = new ArrayList<IdentityProviderMapperEntity>();
+
 
     public String getName() {
         return name;
@@ -443,6 +445,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setDefaultLocale(String defaultLocale) {
         this.defaultLocale = defaultLocale;
+    }
+
+    public List<IdentityProviderMapperEntity> getIdentityProviderMappers() {
+        return identityProviderMappers;
+    }
+
+    public void setIdentityProviderMappers(List<IdentityProviderMapperEntity> identityProviderMappers) {
+        this.identityProviderMappers = identityProviderMappers;
     }
 }
 

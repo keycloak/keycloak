@@ -3,18 +3,16 @@ package org.keycloak.models;
 import java.util.Map;
 
 /**
- * Specifies a mapping from user data to a protocol claim assertion.
+ * Specifies a mapping from broker login to user data.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ProtocolMapperModel {
+public class IdentityProviderMapperModel {
     protected String id;
     protected String name;
-    protected String protocol;
-    protected String protocolMapper;
-    protected boolean consentRequired;
-    protected String consentText;
+    protected String identityProviderAlias;
+    protected String identityProviderMapper;
     protected Map<String, String> config;
 
 
@@ -34,36 +32,20 @@ public class ProtocolMapperModel {
         this.name = name;
     }
 
-    public String getProtocol() {
-        return protocol;
+    public String getIdentityProviderAlias() {
+        return identityProviderAlias;
     }
 
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
+    public void setIdentityProviderAlias(String identityProviderAlias) {
+        this.identityProviderAlias = identityProviderAlias;
     }
 
-    public String getProtocolMapper() {
-        return protocolMapper;
+    public String getIdentityProviderMapper() {
+        return identityProviderMapper;
     }
 
-    public void setProtocolMapper(String protocolMapper) {
-        this.protocolMapper = protocolMapper;
-    }
-
-    public boolean isConsentRequired() {
-        return consentRequired;
-    }
-
-    public void setConsentRequired(boolean consentRequired) {
-        this.consentRequired = consentRequired;
-    }
-
-    public String getConsentText() {
-        return consentText;
-    }
-
-    public void setConsentText(String consentText) {
-        this.consentText = consentText;
+    public void setIdentityProviderMapper(String identityProviderMapper) {
+        this.identityProviderMapper = identityProviderMapper;
     }
 
     public Map<String, String> getConfig() {
@@ -79,7 +61,7 @@ public class ProtocolMapperModel {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ProtocolMapperModel that = (ProtocolMapperModel) o;
+        IdentityProviderMapperModel that = (IdentityProviderMapperModel) o;
 
         if (!id.equals(that.id)) return false;
 
