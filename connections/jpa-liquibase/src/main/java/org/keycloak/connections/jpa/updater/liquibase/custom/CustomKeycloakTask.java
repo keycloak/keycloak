@@ -15,13 +15,17 @@ import liquibase.resource.ResourceAccessor;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.SqlStatement;
 import liquibase.structure.core.Table;
+import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class CustomKeycloakTask implements CustomSqlChange {
+
+    private final Logger logger = Logger.getLogger(getClass());
 
     protected KeycloakSession kcSession;
 
@@ -49,8 +53,18 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
     @Override
     public void setUp() throws SetupException {
         this.kcSession = ThreadLocalSessionContext.getCurrentSession();
+
         if (this.kcSession == null) {
-            throw new SetupException("No KeycloakSession provided in ThreadLocal");
+            // Probably running Liquibase from maven plugin. Try to create kcSession programmatically
+            logger.info("No KeycloakSession provided in ThreadLocal. Initializing KeycloakSessionFactory");
+
+            try {
+                DefaultKeycloakSessionFactory factory = new DefaultKeycloakSessionFactory();
+                factory.init();
+                this.kcSession = factory.create();
+            } catch (Exception e) {
+                throw new SetupException("Exception when initializing factory", e);
+            }
         }
     }
 
