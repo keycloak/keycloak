@@ -108,11 +108,22 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected String extractTokenFromResponse(String response, String tokenName) {
+    	  if(response == null)
+    	  	return null;
+    	  
         if (response.startsWith("{")) {
             try {
-                return mapper.readTree(response).get(tokenName).getTextValue();
+            		JsonNode node = mapper.readTree(response);
+            		if(node.has(tokenName)){
+            			String s = node.get(tokenName).getTextValue();
+            			if(s == null || s.trim().isEmpty())
+            				return null;
+                  return s;
+            		} else {
+            			return null;
+            		}
             } catch (IOException e) {
-                throw new IdentityBrokerException("Could not extract token [" + tokenName + "] from response [" + response + "].", e);
+                throw new IdentityBrokerException("Could not extract token [" + tokenName + "] from response [" + response + "] due: " + e.getMessage(), e);
             }
         } else {
             Matcher matcher = Pattern.compile(tokenName + "=([^&]+)").matcher(response);
@@ -129,7 +140,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
 
         if (accessToken == null) {
-            throw new IdentityBrokerException("No access token from server.");
+            throw new IdentityBrokerException("No access token available in OAuth server response: " + response);
         }
 
         return doGetFederatedIdentity(accessToken);
@@ -140,7 +151,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return null;
     }
 
-    ;
 
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
         return UriBuilder.fromUri(getConfig().getAuthorizationUrl())
@@ -151,9 +161,20 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 .queryParam(OAUTH2_PARAMETER_REDIRECT_URI, request.getRedirectUri());
     }
 
+    /**
+     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null. 
+     * 
+     * @param jsonNode to get property from
+     * @param name of property to get
+     * @return string value of the property or null.
+     */
     protected String getJsonProperty(JsonNode jsonNode, String name) {
-        if (jsonNode.has(name)) {
-            return jsonNode.get(name).asText();
+        if (jsonNode.has(name) && !jsonNode.get(name).isNull()) {
+        	  String s = jsonNode.get(name).asText();
+        	  if(s != null && !s.isEmpty())
+        	  		return s;
+        	  else
+      	  			return null;
         }
 
         return null;
