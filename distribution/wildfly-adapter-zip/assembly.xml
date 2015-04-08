@@ -18,6 +18,13 @@
             </excludes>
             <outputDirectory>modules/system/layers/base</outputDirectory>
         </fileSet>
+       <fileSet>
+            <directory>${project.build.directory}/unpacked</directory>
+            <includes>
+                <include>org/picketlink/idm/schema/**</include>
+            </includes>
+            <outputDirectory>modules/system/layers/base</outputDirectory>
+        </fileSet>
     </fileSets>
     <!--
     <dependencySets>
