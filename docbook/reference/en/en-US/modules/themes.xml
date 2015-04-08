@@ -80,7 +80,7 @@
 <programlisting>[<![CDATA[
 "theme": {
     "default": "keycloak",
-    "staticMaxAge": 01,
+    "staticMaxAge": -1,
     "cacheTemplates": false,
     "cacheThemes": false,
     "folder": {
@@ -205,7 +205,7 @@ import=common/keycloak
         </para>
         <para>
             To deploy a theme as a module you need to create an jar (it's basically just a zip with jar extension) with
-            the theme resources and a file <literal>META/keycloak-server.json</literal> that describes the themes contained
+            the theme resources and a file <literal>META/keycloak-themes.json</literal> that describes the themes contained
             in the archive. For example <literal>example-theme.jar</literal> with the contents:
             <itemizedlist>
                 <listitem>META-INF/keycloak-themes.json</listitem>
@@ -213,7 +213,7 @@ import=common/keycloak
                 <listitem>theme/example-theme/login/login.ftl</listitem>
                 <listitem>theme/example-theme/login/resources/css/styles.css</listitem>
             </itemizedlist>
-            The contents of META-INF/keycloak-server.json in this case would be:
+            The contents of META-INF/keycloak-themes.json in this case would be:
 <programlisting>[<![CDATA[
 {
     "themes": [{
