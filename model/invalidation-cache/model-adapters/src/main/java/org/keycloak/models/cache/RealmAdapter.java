@@ -5,6 +5,7 @@ import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -14,6 +15,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.entities.CachedRealm;
+import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.Key;
@@ -934,5 +936,68 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setDefaultLocale(String locale) {
         updated.setDefaultLocale(locale);
+    }
+
+    @Override
+    public Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
+        if (updated != null) return updated.getIdentityProviderMappers();
+        Set<IdentityProviderMapperModel> mappings = new HashSet<>();
+        for (List<IdentityProviderMapperModel> models : cached.getIdentityProviderMappers().values()) {
+            for (IdentityProviderMapperModel model : models) {
+                mappings.add(model);
+            }
+        }
+        return mappings;
+    }
+
+    @Override
+    public Set<IdentityProviderMapperModel> getIdentityProviderMappersByAlias(String brokerAlias) {
+        if (updated != null) return updated.getIdentityProviderMappersByAlias(brokerAlias);
+        Set<IdentityProviderMapperModel> mappings = new HashSet<>();
+        List<IdentityProviderMapperModel> list = cached.getIdentityProviderMappers().getList(brokerAlias);
+        for (IdentityProviderMapperModel entity : list) {
+            mappings.add(entity);
+        }
+        return mappings;
+    }
+
+    @Override
+    public IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model) {
+        getDelegateForUpdate();
+        return updated.addIdentityProviderMapper(model);
+    }
+
+    @Override
+    public void removeIdentityProviderMapper(IdentityProviderMapperModel mapping) {
+        getDelegateForUpdate();
+        updated.removeIdentityProviderMapper(mapping);
+    }
+
+    @Override
+    public void updateIdentityProviderMapper(IdentityProviderMapperModel mapping) {
+        getDelegateForUpdate();
+        updated.updateIdentityProviderMapper(mapping);
+    }
+
+    @Override
+    public IdentityProviderMapperModel getIdentityProviderMapperById(String id) {
+        if (updated != null) return updated.getIdentityProviderMapperById(id);
+        for (List<IdentityProviderMapperModel> models : cached.getIdentityProviderMappers().values()) {
+            for (IdentityProviderMapperModel model : models) {
+                if (model.getId().equals(id)) return model;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public IdentityProviderMapperModel getIdentityProviderMapperByName(String alias, String name) {
+        if (updated != null) return updated.getIdentityProviderMapperByName(alias, name);
+        List<IdentityProviderMapperModel> models = cached.getIdentityProviderMappers().getList(alias);
+        if (models == null) return null;
+        for (IdentityProviderMapperModel model : models) {
+            if (model.getName().equals(name)) return model;
+        }
+        return null;
     }
 }

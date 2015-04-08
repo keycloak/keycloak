@@ -3,16 +3,19 @@ package org.keycloak.models.jpa;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -1277,5 +1280,136 @@ public class RealmAdapter implements RealmModel {
     public void setDefaultLocale(String locale) {
         realm.setDefaultLocale(locale);
         em.flush();
+    }
+
+    @Override
+    public Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
+        Set<IdentityProviderMapperModel> mappings = new HashSet<IdentityProviderMapperModel>();
+        for (IdentityProviderMapperEntity entity : this.realm.getIdentityProviderMappers()) {
+            IdentityProviderMapperModel mapping = new IdentityProviderMapperModel();
+            mapping.setId(entity.getId());
+            mapping.setName(entity.getName());
+            mapping.setIdentityProviderAlias(entity.getIdentityProviderAlias());
+            mapping.setIdentityProviderMapper(entity.getIdentityProviderMapper());
+            Map<String, String> config = new HashMap<String, String>();
+            if (entity.getConfig() != null) {
+                config.putAll(entity.getConfig());
+            }
+            mapping.setConfig(config);
+            mappings.add(mapping);
+        }
+        return mappings;
+    }
+
+    @Override
+    public Set<IdentityProviderMapperModel> getIdentityProviderMappersByAlias(String brokerAlias) {
+        Set<IdentityProviderMapperModel> mappings = new HashSet<IdentityProviderMapperModel>();
+        for (IdentityProviderMapperEntity entity : this.realm.getIdentityProviderMappers()) {
+            if (!entity.getIdentityProviderAlias().equals(brokerAlias)) {
+                continue;
+            }
+            IdentityProviderMapperModel mapping = new IdentityProviderMapperModel();
+            mapping.setId(entity.getId());
+            mapping.setName(entity.getName());
+            mapping.setIdentityProviderAlias(entity.getIdentityProviderAlias());
+            mapping.setIdentityProviderMapper(entity.getIdentityProviderMapper());
+            Map<String, String> config = new HashMap<String, String>();
+            if (entity.getConfig() != null) {
+                config.putAll(entity.getConfig());
+            }
+            mapping.setConfig(config);
+            mappings.add(mapping);
+        }
+        return mappings;
+    }
+
+    @Override
+    public IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model) {
+        if (getIdentityProviderMapperByName(model.getIdentityProviderAlias(), model.getIdentityProviderMapper()) != null) {
+            throw new RuntimeException("protocol mapper name must be unique per protocol");
+        }
+        String id = KeycloakModelUtils.generateId();
+        IdentityProviderMapperEntity entity = new IdentityProviderMapperEntity();
+        entity.setId(id);
+        entity.setName(model.getName());
+        entity.setIdentityProviderAlias(model.getIdentityProviderAlias());
+        entity.setIdentityProviderMapper(model.getIdentityProviderMapper());
+        entity.setRealm(this.realm);
+        entity.setConfig(model.getConfig());
+
+        em.persist(entity);
+        this.realm.getIdentityProviderMappers().add(entity);
+        return entityToModel(entity);
+    }
+
+    protected IdentityProviderMapperEntity getIdentityProviderMapperEntity(String id) {
+        for (IdentityProviderMapperEntity entity : this.realm.getIdentityProviderMappers()) {
+            if (entity.getId().equals(id)) {
+                return entity;
+            }
+        }
+        return null;
+
+    }
+
+    protected IdentityProviderMapperEntity getIdentityProviderMapperEntityByName(String alias, String name) {
+        for (IdentityProviderMapperEntity entity : this.realm.getIdentityProviderMappers()) {
+            if (entity.getIdentityProviderAlias().equals(alias) && entity.getName().equals(name)) {
+                return entity;
+            }
+        }
+        return null;
+
+    }
+
+    @Override
+    public void removeIdentityProviderMapper(IdentityProviderMapperModel mapping) {
+        IdentityProviderMapperEntity toDelete = getIdentityProviderMapperEntity(mapping.getId());
+        if (toDelete != null) {
+            this.realm.getIdentityProviderMappers().remove(toDelete);
+            em.remove(toDelete);
+        }
+
+    }
+
+    @Override
+    public void updateIdentityProviderMapper(IdentityProviderMapperModel mapping) {
+        IdentityProviderMapperEntity entity = getIdentityProviderMapperEntity(mapping.getId());
+        entity.setIdentityProviderAlias(mapping.getIdentityProviderAlias());
+        entity.setIdentityProviderMapper(mapping.getIdentityProviderMapper());
+        if (entity.getConfig() == null) {
+            entity.setConfig(mapping.getConfig());
+        } else {
+            entity.getConfig().clear();
+            entity.getConfig().putAll(mapping.getConfig());
+        }
+        em.flush();
+
+    }
+
+    @Override
+    public IdentityProviderMapperModel getIdentityProviderMapperById(String id) {
+        IdentityProviderMapperEntity entity = getIdentityProviderMapperEntity(id);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    @Override
+    public IdentityProviderMapperModel getIdentityProviderMapperByName(String alias, String name) {
+        IdentityProviderMapperEntity entity = getIdentityProviderMapperEntityByName(alias, name);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    protected IdentityProviderMapperModel entityToModel(IdentityProviderMapperEntity entity) {
+        IdentityProviderMapperModel mapping = new IdentityProviderMapperModel();
+        mapping.setId(entity.getId());
+        mapping.setName(entity.getName());
+        mapping.setIdentityProviderAlias(entity.getIdentityProviderAlias());
+        mapping.setIdentityProviderMapper(entity.getIdentityProviderMapper());
+        Map<String, String> config = new HashMap<String, String>();
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
+        mapping.setConfig(config);
+        return mapping;
     }
 }
