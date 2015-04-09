@@ -27,11 +27,15 @@ import org.keycloak.services.resources.flows.Urls;
 
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class IdentityProviderBean {
 
@@ -45,23 +49,24 @@ public class IdentityProviderBean {
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
 
         if (!identityProviders.isEmpty()) {
-            providers = new LinkedList<IdentityProvider>();
-
+            Set<IdentityProvider> orderedSet = new TreeSet<>(IdentityProviderComparator.INSTANCE);
             for (IdentityProviderModel identityProvider : identityProviders) {
                 if (identityProvider.isEnabled()) {
-                    addIdentityProvider(realm, baseURI, identityProvider);
+                    addIdentityProvider(orderedSet, realm, baseURI, identityProvider);
                 }
             }
 
-            if (!providers.isEmpty()) {
+            if (!orderedSet.isEmpty()) {
+                providers = new LinkedList<IdentityProvider>(orderedSet);
                 displaySocial = true;
             }
         }
     }
 
-    private void addIdentityProvider(RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
+    private void addIdentityProvider(Set<IdentityProvider> orderedSet, RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
         String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getAlias(), realm.getName()).toString();
-        providers.add(new IdentityProvider(identityProvider.getAlias(), identityProvider.getProviderId(), loginUrl));
+        orderedSet.add(new IdentityProvider(identityProvider.getAlias(), identityProvider.getProviderId(), loginUrl,
+                identityProvider.getConfig() != null ? identityProvider.getConfig().get("guiOrder") : null));
     }
 
     public List<IdentityProvider> getProviders() {
@@ -77,12 +82,13 @@ public class IdentityProviderBean {
         private final String alias;
         private final String providerId; // This refer to providerType (facebook, google, etc.)
         private final String loginUrl;
+        private final String guiOrder;
 
-        public IdentityProvider(String alias, String providerId,String loginUrl) {
+        public IdentityProvider(String alias, String providerId, String loginUrl, String guiOrder) {
             this.alias = alias;
             this.providerId = providerId;
-
             this.loginUrl = loginUrl;
+            this.guiOrder = guiOrder;
         }
 
         public String getAlias() {
@@ -96,5 +102,44 @@ public class IdentityProviderBean {
         public String getProviderId() {
             return providerId;
         }
+
+        public String getGuiOrder() {
+            return guiOrder;
+        }
+    }
+
+    public static class IdentityProviderComparator implements Comparator<IdentityProvider> {
+
+        public static IdentityProviderComparator INSTANCE = new IdentityProviderComparator();
+
+        private IdentityProviderComparator() {
+
+        }
+
+        @Override
+        public int compare(IdentityProvider o1, IdentityProvider o2) {
+            
+            int o1order = parseOrder(o1);
+            int o2order = parseOrder(o2);
+
+            if (o1order > o2order)
+                return 1;
+            else if (o1order < o2order)
+                return -1;
+            
+            return 1;
+        }
+
+        private int parseOrder(IdentityProvider ip) {
+            if (ip != null && ip.getGuiOrder() != null) {
+                try {
+                    return Integer.parseInt(ip.getGuiOrder());
+                } catch (NumberFormatException e) {
+                    // ignore it and use defaulr
+                }
+            }
+            return 10000;
+        }
+
     }
 }

@@ -73,6 +73,13 @@
                         </div>
                         <span tooltip-placement="right" tooltip="Indicates if this provider should be tried by default for authentication even before displaying login screen" class="fa fa-info-circle"></span>
                     </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="guiOrder">GUI order</label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="guiOrder" type="text" ng-model="identityProvider.config.guiOrder">
+                        </div>
+                        <span tooltip-placement="right" tooltip="Number defining order of the provider in GUI (eg. on Login page)." class="fa fa-info-circle"></span>
+                    </div>
                 </fieldset>
 
                 <div class="pull-right form-actions">
