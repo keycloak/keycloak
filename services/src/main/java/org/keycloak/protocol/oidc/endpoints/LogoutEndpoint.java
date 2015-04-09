@@ -10,7 +10,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -191,7 +190,7 @@ public class LogoutEndpoint {
     private ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData, EventBuilder event) {
         ClientModel client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formData, event, realm);
 
-        if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
+        if ( (client instanceof ClientModel) && ((ClientModel)client).isBearerOnly()) {
             throw new ErrorResponseException("invalid_client", "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
 

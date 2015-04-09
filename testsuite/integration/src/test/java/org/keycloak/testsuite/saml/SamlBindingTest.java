@@ -6,7 +6,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -259,7 +259,7 @@ public class SamlBindingTest {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ApplicationModel app = appRealm.getApplicationByName("http://localhost:8081/employee/");
+                ClientModel app = appRealm.getClientByClientId("http://localhost:8081/employee/");
                 for (ProtocolMapperModel mapper : app.getProtocolMappers()) {
                     if (mapper.getName().equals("role-list")) {
                         app.removeProtocolMapper(mapper);
@@ -419,7 +419,7 @@ public class SamlBindingTest {
             RealmManager manager = new RealmManager(session);
 
             RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
-            ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);

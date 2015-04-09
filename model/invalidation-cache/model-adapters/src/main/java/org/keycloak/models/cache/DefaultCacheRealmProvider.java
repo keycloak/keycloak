@@ -1,15 +1,13 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.entities.CachedApplication;
 import org.keycloak.models.cache.entities.CachedApplicationRole;
-import org.keycloak.models.cache.entities.CachedOAuthClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRealmRole;
 import org.keycloak.models.cache.entities.CachedRole;
@@ -34,11 +32,8 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     protected Set<String> realmInvalidations = new HashSet<String>();
     protected Set<String> appInvalidations = new HashSet<String>();
     protected Set<String> roleInvalidations = new HashSet<String>();
-    protected Set<String> clientInvalidations = new HashSet<String>();
-    protected Set<String> userInvalidations = new HashSet<String>();
     protected Map<String, RealmModel> managedRealms = new HashMap<String, RealmModel>();
-    protected Map<String, ApplicationModel> managedApplications = new HashMap<String, ApplicationModel>();
-    protected Map<String, OAuthClientModel> managedClients = new HashMap<String, OAuthClientModel>();
+    protected Map<String, ClientModel> managedApplications = new HashMap<String, ClientModel>();
     protected Map<String, RoleModel> managedRoles = new HashMap<String, RoleModel>();
 
     protected boolean clearAll;
@@ -83,16 +78,6 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
         roleInvalidations.add(id);
     }
 
-    @Override
-    public void registerOAuthClientInvalidation(String id) {
-        clientInvalidations.add(id);
-    }
-
-    @Override
-    public void registerUserInvalidation(String id) {
-        userInvalidations.add(id);
-    }
-
     protected void runInvalidations() {
         for (String id : realmInvalidations) {
             cache.invalidateCachedRealmById(id);
@@ -102,9 +87,6 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
         }
         for (String id : appInvalidations) {
             cache.invalidateCachedApplicationById(id);
-        }
-        for (String id : clientInvalidations) {
-            cache.invalidateCachedOAuthClientById(id);
         }
     }
 
@@ -252,8 +234,8 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
             RoleModel model = getDelegate().getRoleById(id, realm);
             if (model == null) return null;
             if (roleInvalidations.contains(id)) return model;
-            if (model.getContainer() instanceof ApplicationModel) {
-                cached = new CachedApplicationRole(((ApplicationModel) model.getContainer()).getId(), model, realm);
+            if (model.getContainer() instanceof ClientModel) {
+                cached = new CachedApplicationRole(((ClientModel) model.getContainer()).getId(), model, realm);
             } else {
                 cached = new CachedRealmRole(model, realm);
             }
@@ -270,50 +252,26 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     }
 
     @Override
-    public ApplicationModel getApplicationById(String id, RealmModel realm) {
-        if (!cache.isEnabled()) return getDelegate().getApplicationById(id, realm);
+    public ClientModel getClientById(String id, RealmModel realm) {
+        if (!cache.isEnabled()) return getDelegate().getClientById(id, realm);
         CachedApplication cached = cache.getApplication(id);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
 
         if (cached == null) {
-            ApplicationModel model = getDelegate().getApplicationById(id, realm);
+            ClientModel model = getDelegate().getClientById(id, realm);
             if (model == null) return null;
             if (appInvalidations.contains(id)) return model;
             cached = new CachedApplication(cache, getDelegate(), realm, model);
             cache.addCachedApplication(cached);
         } else if (appInvalidations.contains(id)) {
-            return getDelegate().getApplicationById(id, realm);
+            return getDelegate().getClientById(id, realm);
         } else if (managedApplications.containsKey(id)) {
             return managedApplications.get(id);
         }
-        ApplicationAdapter adapter = new ApplicationAdapter(realm, cached, this, cache);
+        ClientAdapter adapter = new ClientAdapter(realm, cached, this, cache);
         managedApplications.put(id, adapter);
-        return adapter;
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
-        if (!cache.isEnabled()) return getDelegate().getOAuthClientById(id, realm);
-        CachedOAuthClient cached = cache.getOAuthClient(id);
-        if (cached != null && !cached.getRealm().equals(realm.getId())) {
-            cached = null;
-        }
-
-        if (cached == null) {
-            OAuthClientModel model = getDelegate().getOAuthClientById(id, realm);
-            if (model == null) return null;
-            if (clientInvalidations.contains(id)) return model;
-            cached = new CachedOAuthClient(cache, getDelegate(), realm, model);
-            cache.addCachedOAuthClient(cached);
-        } else if (clientInvalidations.contains(id)) {
-            return getDelegate().getOAuthClientById(id, realm);
-        } else if (managedClients.containsKey(id)) {
-            return managedClients.get(id);
-        }
-        OAuthClientAdapter adapter = new OAuthClientAdapter(realm, cached, this, cache);
-        managedClients.put(id, adapter);
         return adapter;
     }
 

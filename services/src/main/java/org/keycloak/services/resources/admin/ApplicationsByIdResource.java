@@ -1,6 +1,6 @@
 package org.keycloak.services.resources.admin;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 
 /**
@@ -13,13 +13,13 @@ public class ApplicationsByIdResource extends ApplicationsResource {
     }
 
     @Override
-    protected ApplicationModel getApplicationByPathParam(String id) {
-        return realm.getApplicationById(id);
+    protected ClientModel getApplicationByPathParam(String id) {
+        return realm.getClientById(id);
     }
 
     @Override
-    protected String getApplicationPath(ApplicationModel applicationModel) {
-        return applicationModel.getId();
+    protected String getApplicationPath(ClientModel clientModel) {
+        return clientModel.getId();
     }
 
 }

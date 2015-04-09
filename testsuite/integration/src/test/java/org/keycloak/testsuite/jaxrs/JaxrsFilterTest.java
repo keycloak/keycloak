@@ -23,7 +23,7 @@ import org.keycloak.TokenIdGenerator;
 import org.keycloak.adapters.CorsHeaders;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -53,7 +53,7 @@ public class JaxrsFilterTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ApplicationModel app = appRealm.addApplication("jaxrs-app");
+            ClientModel app = appRealm.addClient("jaxrs-app");
             app.setEnabled(true);
             RoleModel role = app.addRole("jaxrs-app-user");
             UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);

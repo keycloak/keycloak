@@ -42,7 +42,7 @@ public class LoginStatusIframeEndpoint {
             throw new BadRequestException("Invalid origin");
         }
 
-        ClientModel client = realm.findClient(client_id);
+        ClientModel client = realm.getClientByClientId(client_id);
         if (client == null) {
             throw new NotFoundException("could not find client");
         }

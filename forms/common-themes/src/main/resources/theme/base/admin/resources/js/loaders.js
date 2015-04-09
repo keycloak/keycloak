@@ -89,17 +89,6 @@ module.factory('ApplicationProtocolMapperLoader', function(Loader, ApplicationPr
     });
 });
 
-module.factory('OAuthClientProtocolMapperLoader', function(Loader, OAuthClientProtocolMapper, $route, $q) {
-    return Loader.get(OAuthClientProtocolMapper, function() {
-        return {
-            realm : $route.current.params.realm,
-            oauth : $route.current.params.oauth,
-            id: $route.current.params.id
-        }
-    });
-});
-
-
 module.factory('UserLoader', function(Loader, User, $route, $q) {
     return Loader.get(User, function() {
         return {
@@ -259,42 +248,6 @@ module.factory('RoleMappingLoader', function(Loader, RoleMapping, $route, $q) {
 			role : $route.current.params.role
 		}
 	});
-});
-
-module.factory('OAuthClientLoader', function(Loader, OAuthClient, $route, $q) {
-    return Loader.get(OAuthClient, function() {
-        return {
-            realm : $route.current.params.realm,
-            oauth : $route.current.params.oauth
-        }
-    });
-});
-
-module.factory('OAuthClientClaimsLoader', function(Loader, OAuthClientClaims, $route, $q) {
-    return Loader.get(OAuthClientClaims, function() {
-        return {
-            realm : $route.current.params.realm,
-            oauth : $route.current.params.oauth
-        }
-    });
-});
-
-
-module.factory('OAuthClientListLoader', function(Loader, OAuthClient, $route, $q) {
-    return Loader.query(OAuthClient, function() {
-        return {
-            realm : $route.current.params.realm
-        }
-    });
-});
-
-module.factory('OAuthClientInstallationLoader', function(Loader, OAuthClientInstallation, $route, $q) {
-    return Loader.get(OAuthClientInstallation, function() {
-        return {
-            realm : $route.current.params.realm,
-            oauth : $route.current.params.oauth
-        }
-    });
 });
 
 module.factory('IdentityProviderLoader', function(Loader, IdentityProvider, $route, $q) {

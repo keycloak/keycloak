@@ -3,7 +3,6 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

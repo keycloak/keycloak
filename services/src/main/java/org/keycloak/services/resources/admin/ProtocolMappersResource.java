@@ -21,7 +21,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -146,7 +145,5 @@ public class ProtocolMappersResource {
         if (model == null) throw new NotFoundException("Model not found");
         client.removeProtocolMapper(model);
     }
-
-
 
 }

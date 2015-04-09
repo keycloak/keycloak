@@ -1,6 +1,6 @@
 package org.keycloak.test.tools.jobs;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -26,7 +26,7 @@ public class CreateUsersJob extends UsersJob {
     }
 
     @Override
-    protected void runIteration(KeycloakSession session, RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter) {
+    protected void runIteration(KeycloakSession session, RealmModel realm, Map<String, ClientModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter) {
         String username = prefix + "-" + counter;
         UserModel user = session.users().addUser(realm, username);
         user.setEnabled(true);

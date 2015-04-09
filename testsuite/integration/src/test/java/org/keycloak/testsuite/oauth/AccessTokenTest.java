@@ -32,7 +32,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -41,7 +40,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
-import org.keycloak.protocol.oidc.mappers.FullNameMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
@@ -471,7 +469,7 @@ public class AccessTokenTest {
             {
                 KeycloakSession session = keycloakRule.startSession();
                 RealmModel realm = session.realms().getRealmByName("test");
-                ApplicationModel clientModel = realm.getApplicationByName("test-app");
+                ClientModel clientModel = realm.getClientByClientId("test-app");
                 clientModel.setBearerOnly(true);
                 session.getTransaction().commit();
                 session.close();
@@ -485,7 +483,7 @@ public class AccessTokenTest {
             {
                 KeycloakSession session = keycloakRule.startSession();
                 RealmModel realm = session.realms().getRealmByName("test");
-                ApplicationModel clientModel = realm.getApplicationByName("test-app");
+                ClientModel clientModel = realm.getClientByClientId("test-app");
                 clientModel.setBearerOnly(false);
                 session.getTransaction().commit();
                 session.close();
@@ -521,7 +519,7 @@ public class AccessTokenTest {
             {
                 KeycloakSession session = keycloakRule.startSession();
                 RealmModel realm = session.realms().getRealmByName("test");
-                ClientModel clientModel = realm.findClient("test-app");
+                ClientModel clientModel = realm.getClientByClientId("test-app");
                 clientModel.setEnabled(false);
                 session.getTransaction().commit();
                 session.close();
@@ -535,7 +533,7 @@ public class AccessTokenTest {
             {
                 KeycloakSession session = keycloakRule.startSession();
                 RealmModel realm = session.realms().getRealmByName("test");
-                ClientModel clientModel = realm.findClient("test-app");
+                ClientModel clientModel = realm.getClientByClientId("test-app");
                 clientModel.setEnabled(true);
                 session.getTransaction().commit();
                 session.close();
@@ -624,7 +622,7 @@ public class AccessTokenTest {
             user.setAttribute("postal_code", "02115");
             user.setAttribute("country", "USA");
             user.setAttribute("phone", "617-777-6666");
-            ApplicationModel app = realm.getApplicationByName("test-app");
+            ClientModel app = realm.getClientByClientId("test-app");
             ProtocolMapperModel mapper = AddressMapper.createAddressMapper(true, true);
             app.addProtocolMapper(mapper);
             app.addProtocolMapper(HardcodedClaim.create("hard", "hard", "coded", "String", false, null, true, true));
@@ -687,7 +685,7 @@ public class AccessTokenTest {
         {
             KeycloakSession session = keycloakRule.startSession();
             RealmModel realm = session.realms().getRealmByName("test");
-            ApplicationModel app = realm.getApplicationByName("test-app");
+            ClientModel app = realm.getClientByClientId("test-app");
             for (ProtocolMapperModel model : app.getProtocolMappers()) {
                 if (model.getName().equals("address")
                         || model.getName().equals("hard")

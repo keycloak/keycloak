@@ -1,22 +1,23 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.entities.ClientIdentityProviderMappingEntity;
 import org.keycloak.models.entities.ProtocolMapperEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,28 +27,29 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMongoAdapter<T> implements ClientModel {
+public class ClientAdapter extends AbstractMongoAdapter<MongoApplicationEntity> implements ClientModel {
 
-    protected final T clientEntity;
+    protected final MongoApplicationEntity applicationEntity;
     private final RealmModel realm;
     protected  KeycloakSession session;
 
-    public ClientAdapter(KeycloakSession session, RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
+    public ClientAdapter(KeycloakSession session, RealmModel realm, MongoApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
-        this.clientEntity = clientEntity;
-        this.realm = realm;
         this.session = session;
+        this.realm = realm;
+        this.applicationEntity = applicationEntity;
     }
 
     @Override
-    public T getMongoEntity() {
-        return clientEntity;
+    public MongoApplicationEntity getMongoEntity() {
+        return applicationEntity;
     }
 
-    // ClientEntity doesn't extend MongoIdentifiableEntity
-    public ClientEntity getMongoEntityAsClient() {
-        return (ClientEntity)getMongoEntity();
+    @Override
+    public void updateApplication() {
+        updateMongoEntity();
     }
+
 
     @Override
     public String getId() {
@@ -56,14 +58,20 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     @Override
     public String getClientId() {
-        return getMongoEntityAsClient().getName();
+        return getMongoEntity().getName();
+    }
+
+    @Override
+    public void setClientId(String clientId) {
+        getMongoEntity().setName(clientId);
+        updateMongoEntity();
     }
 
     @Override
     public Set<String> getWebOrigins() {
         Set<String> result = new HashSet<String>();
-        if (getMongoEntityAsClient().getWebOrigins() != null) {
-            result.addAll(getMongoEntityAsClient().getWebOrigins());
+        if (getMongoEntity().getWebOrigins() != null) {
+            result.addAll(getMongoEntity().getWebOrigins());
         }
         return result;
     }
@@ -72,25 +80,25 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     public void setWebOrigins(Set<String> webOrigins) {
         List<String> result = new ArrayList<String>();
         result.addAll(webOrigins);
-        getMongoEntityAsClient().setWebOrigins(result);
+        getMongoEntity().setWebOrigins(result);
         updateMongoEntity();
     }
 
     @Override
     public void addWebOrigin(String webOrigin) {
-        getMongoStore().pushItemToList(clientEntity, "webOrigins", webOrigin, true, invocationContext);
+        getMongoStore().pushItemToList(applicationEntity, "webOrigins", webOrigin, true, invocationContext);
     }
 
     @Override
     public void removeWebOrigin(String webOrigin) {
-        getMongoStore().pullItemFromList(clientEntity, "webOrigins", webOrigin, invocationContext);
+        getMongoStore().pullItemFromList(applicationEntity, "webOrigins", webOrigin, invocationContext);
     }
 
     @Override
     public Set<String> getRedirectUris() {
         Set<String> result = new HashSet<String>();
-        if (getMongoEntityAsClient().getRedirectUris() != null) {
-            result.addAll(getMongoEntityAsClient().getRedirectUris());
+        if (getMongoEntity().getRedirectUris() != null) {
+            result.addAll(getMongoEntity().getRedirectUris());
         }
         return result;
     }
@@ -99,78 +107,78 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     public void setRedirectUris(Set<String> redirectUris) {
         List<String> result = new ArrayList<String>();
         result.addAll(redirectUris);
-        getMongoEntityAsClient().setRedirectUris(result);
+        getMongoEntity().setRedirectUris(result);
         updateMongoEntity();
     }
 
     @Override
     public void addRedirectUri(String redirectUri) {
-        getMongoStore().pushItemToList(clientEntity, "redirectUris", redirectUri, true, invocationContext);
+        getMongoStore().pushItemToList(applicationEntity, "redirectUris", redirectUri, true, invocationContext);
     }
 
     @Override
     public void removeRedirectUri(String redirectUri) {
-        getMongoStore().pullItemFromList(clientEntity, "redirectUris", redirectUri, invocationContext);
+        getMongoStore().pullItemFromList(applicationEntity, "redirectUris", redirectUri, invocationContext);
     }
 
     @Override
     public boolean isEnabled() {
-        return getMongoEntityAsClient().isEnabled();
+        return getMongoEntity().isEnabled();
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        getMongoEntityAsClient().setEnabled(enabled);
+        getMongoEntity().setEnabled(enabled);
         updateMongoEntity();
     }
 
     @Override
     public boolean validateSecret(String secret) {
-        return secret.equals(getMongoEntityAsClient().getSecret());
+        return secret.equals(getMongoEntity().getSecret());
     }
 
     @Override
     public String getSecret() {
-        return getMongoEntityAsClient().getSecret();
+        return getMongoEntity().getSecret();
     }
 
     @Override
     public void setSecret(String secret) {
-        getMongoEntityAsClient().setSecret(secret);
+        getMongoEntity().setSecret(secret);
         updateMongoEntity();
     }
 
     @Override
     public boolean isPublicClient() {
-        return getMongoEntityAsClient().isPublicClient();
+        return getMongoEntity().isPublicClient();
     }
 
     @Override
     public void setPublicClient(boolean flag) {
-        getMongoEntityAsClient().setPublicClient(flag);
+        getMongoEntity().setPublicClient(flag);
         updateMongoEntity();
     }
 
 
     @Override
     public boolean isFrontchannelLogout() {
-        return getMongoEntityAsClient().isFrontchannelLogout();
+        return getMongoEntity().isFrontchannelLogout();
     }
 
     @Override
     public void setFrontchannelLogout(boolean flag) {
-        getMongoEntityAsClient().setFrontchannelLogout(flag);
+        getMongoEntity().setFrontchannelLogout(flag);
         updateMongoEntity();
     }
 
     @Override
     public boolean isFullScopeAllowed() {
-        return getMongoEntityAsClient().isFullScopeAllowed();
+        return getMongoEntity().isFullScopeAllowed();
     }
 
     @Override
     public void setFullScopeAllowed(boolean value) {
-        getMongoEntityAsClient().setFullScopeAllowed(value);
+        getMongoEntity().setFullScopeAllowed(value);
         updateMongoEntity();
 
     }
@@ -182,12 +190,12 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     @Override
     public int getNotBefore() {
-        return getMongoEntityAsClient().getNotBefore();
+        return getMongoEntity().getNotBefore();
     }
 
     @Override
     public void setNotBefore(int notBefore) {
-        getMongoEntityAsClient().setNotBefore(notBefore);
+        getMongoEntity().setNotBefore(notBefore);
         updateMongoEntity();
     }
 
@@ -224,19 +232,6 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     }
 
     @Override
-    public boolean hasScope(RoleModel role) {
-        if (isFullScopeAllowed()) return true;
-        Set<RoleModel> roles = getScopeMappings();
-        if (roles.contains(role)) return true;
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
-    }
-
-
-    @Override
     public void addScopeMapping(RoleModel role) {
         getMongoStore().pushItemToList(this.getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
     }
@@ -248,45 +243,45 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     @Override
     public String getProtocol() {
-        return getMongoEntityAsClient().getProtocol();
+        return getMongoEntity().getProtocol();
     }
 
     @Override
     public void setProtocol(String protocol) {
-        getMongoEntityAsClient().setProtocol(protocol);
+        getMongoEntity().setProtocol(protocol);
         updateMongoEntity();
 
     }
 
     @Override
     public void setAttribute(String name, String value) {
-        getMongoEntityAsClient().getAttributes().put(name, value);
+        getMongoEntity().getAttributes().put(name, value);
         updateMongoEntity();
 
     }
 
     @Override
     public void removeAttribute(String name) {
-        getMongoEntityAsClient().getAttributes().remove(name);
+        getMongoEntity().getAttributes().remove(name);
         updateMongoEntity();
     }
 
     @Override
     public String getAttribute(String name) {
-        return getMongoEntityAsClient().getAttributes().get(name);
+        return getMongoEntity().getAttributes().get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
         Map<String, String> copy = new HashMap<String, String>();
-        copy.putAll(getMongoEntityAsClient().getAttributes());
+        copy.putAll(getMongoEntity().getAttributes());
         return copy;
     }
 
     @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
         Set<ProtocolMapperModel> result = new HashSet<ProtocolMapperModel>();
-        for (ProtocolMapperEntity entity : getMongoEntityAsClient().getProtocolMappers()) {
+        for (ProtocolMapperEntity entity : getMongoEntity().getProtocolMappers()) {
             ProtocolMapperModel mapping = new ProtocolMapperModel();
             mapping.setId(entity.getId());
             mapping.setName(entity.getName());
@@ -317,16 +312,16 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
         entity.setConfig(model.getConfig());
         entity.setConsentRequired(model.isConsentRequired());
         entity.setConsentText(model.getConsentText());
-        getMongoEntityAsClient().getProtocolMappers().add(entity);
+        getMongoEntity().getProtocolMappers().add(entity);
         updateMongoEntity();
         return entityToModel(entity);
     }
 
     @Override
     public void removeProtocolMapper(ProtocolMapperModel mapping) {
-        for (ProtocolMapperEntity entity : getMongoEntityAsClient().getProtocolMappers()) {
+        for (ProtocolMapperEntity entity : getMongoEntity().getProtocolMappers()) {
             if (entity.getId().equals(mapping.getId())) {
-                getMongoEntityAsClient().getProtocolMappers().remove(entity);
+                getMongoEntity().getProtocolMappers().remove(entity);
                 updateMongoEntity();
                 break;
             }
@@ -335,7 +330,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     }
 
     protected ProtocolMapperEntity getProtocolMapperyEntityById(String id) {
-        for (ProtocolMapperEntity entity : getMongoEntityAsClient().getProtocolMappers()) {
+        for (ProtocolMapperEntity entity : getMongoEntity().getProtocolMappers()) {
             if (entity.getId().equals(id)) {
                 return entity;
             }
@@ -344,7 +339,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     }
     protected ProtocolMapperEntity getProtocolMapperEntityByName(String protocol, String name) {
-        for (ProtocolMapperEntity entity : getMongoEntityAsClient().getProtocolMappers()) {
+        for (ProtocolMapperEntity entity : getMongoEntity().getProtocolMappers()) {
             if (entity.getProtocol().equals(protocol) && entity.getName().equals(name)) {
                 return entity;
             }
@@ -411,7 +406,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
             stored.add(entity);
         }
 
-        getMongoEntityAsClient().setIdentityProviders(stored);
+        getMongoEntity().setIdentityProviders(stored);
         updateMongoEntity();
     }
 
@@ -419,7 +414,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
         List<ClientIdentityProviderMappingModel> models = new ArrayList<ClientIdentityProviderMappingModel>();
 
-        for (ClientIdentityProviderMappingEntity entity : getMongoEntityAsClient().getIdentityProviders()) {
+        for (ClientIdentityProviderMappingEntity entity : getMongoEntity().getIdentityProviders()) {
             ClientIdentityProviderMappingModel model = new ClientIdentityProviderMappingModel();
 
             model.setIdentityProvider(entity.getId());
@@ -433,7 +428,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     @Override
     public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
-        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : getMongoEntityAsClient().getIdentityProviders()) {
+        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : getMongoEntity().getIdentityProviders()) {
             if (identityProviderMappingModel.getId().equals(providerId)) {
                 return identityProviderMappingModel.isRetrieveToken();
             }
@@ -441,5 +436,237 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
         return false;
     }
+
+    @Override
+    public boolean isSurrogateAuthRequired() {
+        return getMongoEntity().isSurrogateAuthRequired();
+    }
+
+    @Override
+    public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
+        getMongoEntity().setSurrogateAuthRequired(surrogateAuthRequired);
+        updateMongoEntity();
+    }
+
+    @Override
+    public String getManagementUrl() {
+        return getMongoEntity().getManagementUrl();
+    }
+
+    @Override
+    public void setManagementUrl(String url) {
+        getMongoEntity().setManagementUrl(url);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void setBaseUrl(String url) {
+        getMongoEntity().setBaseUrl(url);
+        updateMongoEntity();
+    }
+
+    @Override
+    public String getBaseUrl() {
+        return getMongoEntity().getBaseUrl();
+    }
+
+    @Override
+    public boolean isBearerOnly() {
+        return getMongoEntity().isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        getMongoEntity().setBearerOnly(only);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isConsentRequired() {
+        return getMongoEntity().isConsentRequired();
+    }
+
+    @Override
+    public void setConsentRequired(boolean consentRequired) {
+        getMongoEntity().setConsentRequired(consentRequired);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isDirectGrantsOnly() {
+        return getMongoEntity().isDirectGrantsOnly();
+    }
+
+    @Override
+    public void setDirectGrantsOnly(boolean flag) {
+        getMongoEntity().setDirectGrantsOnly(flag);
+        updateMongoEntity();
+    }
+
+    @Override
+    public RoleAdapter getRole(String name) {
+        DBObject query = new QueryBuilder()
+                .and("name").is(name)
+                .and("applicationId").is(getId())
+                .get();
+        MongoRoleEntity role = getMongoStore().loadSingleEntity(MongoRoleEntity.class, query, invocationContext);
+        if (role == null) {
+            return null;
+        } else {
+            return new RoleAdapter(session, getRealm(), role, invocationContext);
+        }
+    }
+
+    @Override
+    public RoleAdapter addRole(String name) {
+        return this.addRole(null, name);
+    }
+
+    @Override
+    public RoleAdapter addRole(String id, String name) {
+        MongoRoleEntity roleEntity = new MongoRoleEntity();
+        roleEntity.setId(id);
+        roleEntity.setName(name);
+        roleEntity.setClientId(getId());
+
+        getMongoStore().insertEntity(roleEntity, invocationContext);
+
+        return new RoleAdapter(session, getRealm(), roleEntity, this, invocationContext);
+    }
+
+    @Override
+    public boolean removeRole(RoleModel role) {
+        session.users().preRemove(getRealm(), role);
+        return getMongoStore().removeEntity(MongoRoleEntity.class, role.getId(), invocationContext);
+    }
+
+    @Override
+    public Set<RoleModel> getRoles() {
+        DBObject query = new QueryBuilder()
+                .and("applicationId").is(getId())
+                .get();
+        List<MongoRoleEntity> roles = getMongoStore().loadEntities(MongoRoleEntity.class, query, invocationContext);
+
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        for (MongoRoleEntity role : roles) {
+            result.add(new RoleAdapter(session, getRealm(), role, this, invocationContext));
+        }
+
+        return result;
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (isFullScopeAllowed()) return true;
+        Set<RoleModel> roles = getScopeMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+
+        roles = getRoles();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
+
+        for (MongoRoleEntity role : roles) {
+            if (getId().equals(role.getClientId())) {
+                result.add(new RoleAdapter(session, getRealm(), role, this, invocationContext));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<String> getDefaultRoles() {
+        return getMongoEntity().getDefaultRoles();
+    }
+
+    @Override
+    public void addDefaultRole(String name) {
+        RoleModel role = getRole(name);
+        if (role == null) {
+            addRole(name);
+        }
+
+        getMongoStore().pushItemToList(getMongoEntity(), "defaultRoles", name, true, invocationContext);
+    }
+
+    @Override
+    public void updateDefaultRoles(String[] defaultRoles) {
+        List<String> roleNames = new ArrayList<String>();
+        for (String roleName : defaultRoles) {
+            RoleModel role = getRole(roleName);
+            if (role == null) {
+                addRole(roleName);
+            }
+
+            roleNames.add(roleName);
+        }
+
+        getMongoEntity().setDefaultRoles(roleNames);
+        updateMongoEntity();
+    }
+
+    @Override
+    public int getNodeReRegistrationTimeout() {
+        return getMongoEntity().getNodeReRegistrationTimeout();
+    }
+
+    @Override
+    public void setNodeReRegistrationTimeout(int timeout) {
+        getMongoEntity().setNodeReRegistrationTimeout(timeout);
+        updateMongoEntity();
+    }
+
+    @Override
+    public Map<String, Integer> getRegisteredNodes() {
+        return getMongoEntity().getRegisteredNodes() == null ? Collections.<String, Integer>emptyMap() : Collections.unmodifiableMap(getMongoEntity().getRegisteredNodes());
+    }
+
+    @Override
+    public void registerNode(String nodeHost, int registrationTime) {
+        MongoApplicationEntity entity = getMongoEntity();
+        if (entity.getRegisteredNodes() == null) {
+            entity.setRegisteredNodes(new HashMap<String, Integer>());
+        }
+
+        entity.getRegisteredNodes().put(nodeHost, registrationTime);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void unregisterNode(String nodeHost) {
+        MongoApplicationEntity entity = getMongoEntity();
+        if (entity.getRegisteredNodes() == null) return;
+
+        entity.getRegisteredNodes().remove(nodeHost);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof ClientModel)) return false;
+
+        ClientModel that = (ClientModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
 
 }

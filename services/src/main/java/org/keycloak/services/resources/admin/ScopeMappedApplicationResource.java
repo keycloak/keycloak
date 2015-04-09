@@ -2,7 +2,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -15,7 +14,6 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +28,9 @@ public class ScopeMappedApplicationResource {
     private RealmAuth auth;
     protected ClientModel client;
     protected KeycloakSession session;
-    protected ApplicationModel app;
+    protected ClientModel app;
 
-    public ScopeMappedApplicationResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, ApplicationModel app) {
+    public ScopeMappedApplicationResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, ClientModel app) {
         this.realm = realm;
         this.auth = auth;
         this.client = client;

@@ -3,7 +3,7 @@ package org.keycloak.testsuite.model;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -58,7 +58,7 @@ public class CompositeRolesModelTest extends AbstractModelTest {
 
         RealmModel realm = realmManager.getRealm("TestComposites");
         UserModel user = realmManager.getSession().users().getUserByUsername(username, realm);
-        ApplicationModel application = realm.getApplicationByName(applicationName);
+        ClientModel application = realm.getClientByClientId(applicationName);
 
         Set<RoleModel> roleMappings = user.getRoleMappings();
         Set<RoleModel> scopeMappings = application.getScopeMappings();
@@ -95,7 +95,7 @@ public class CompositeRolesModelTest extends AbstractModelTest {
         if ("realm".equals(appName)) {
             return realm.getRole(roleName);
         }  else {
-            return realm.getApplicationByName(appName).getRole(roleName);
+            return realm.getClientByClientId(appName).getRole(roleName);
         }
     }
 

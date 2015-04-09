@@ -149,7 +149,7 @@ public class AdminRoot {
             throw new UnauthorizedException("Bearer");
         }
 
-        ClientModel client = realm.findClient(token.getIssuedFor());
+        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
         if (client == null) {
             throw new NotFoundException("Could not find client for authorization");
 

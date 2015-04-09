@@ -4,8 +4,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
 import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -18,20 +20,17 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.protocol.saml.mappers.SAMLRoleListMapper;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.admin.ClientAttributeCertificateResource;
 import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -429,7 +428,7 @@ public class SamlProtocol implements LoginProtocol {
         } else {
             logoutServiceUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
         }
-        if (logoutServiceUrl == null && client instanceof ApplicationModel) logoutServiceUrl = ((ApplicationModel)client).getManagementUrl();
+        if (logoutServiceUrl == null && client instanceof ClientModel) logoutServiceUrl = ((ClientModel)client).getManagementUrl();
         if (logoutServiceUrl == null || logoutServiceUrl.trim().equals("")) return null;
         return ResourceAdminManager.resolveUri(uriInfo.getRequestUri(), logoutServiceUrl);
 
@@ -438,7 +437,7 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public Response frontchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
-        if (!(client instanceof ApplicationModel)) return null;
+        if (!(client instanceof ClientModel)) return null;
         try {
             if (isLogoutPostBindingForClient(clientSession)) {
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
@@ -500,8 +499,6 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
-        if (!(client instanceof ApplicationModel)) return;
-        ApplicationModel app = (ApplicationModel)client;
         String logoutUrl = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
         if (logoutUrl == null) {
             logger.warnv("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: {1}", client.getClientId());

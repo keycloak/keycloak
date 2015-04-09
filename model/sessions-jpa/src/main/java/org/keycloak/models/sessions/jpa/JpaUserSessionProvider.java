@@ -20,7 +20,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

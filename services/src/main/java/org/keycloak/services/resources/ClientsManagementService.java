@@ -1,7 +1,22 @@
 package org.keycloak.services.resources;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.BadRequestException;
+import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.UnauthorizedException;
+import org.keycloak.ClientConnection;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.constants.AdapterConstants;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.services.ForbiddenException;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -14,26 +29,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.UnauthorizedException;
-import org.keycloak.ClientConnection;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.constants.AdapterConstants;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.services.ForbiddenException;
-import org.keycloak.util.Time;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -105,11 +102,11 @@ public class ClientsManagementService {
             throw new UnauthorizedException("Realm not enabled");
         }
 
-        ApplicationModel application = authorizeApplication(authorizationHeader, formData);
+        ClientModel application = authorizeApplication(authorizationHeader, formData);
         String nodeHost = getApplicationClusterHost(formData);
 
         event.client(application).detail(Details.NODE_HOST, nodeHost);
-        logger.debugf("Registering cluster host '%s' for client '%s'", nodeHost, application.getName());
+        logger.debugf("Registering cluster host '%s' for client '%s'", nodeHost, application.getClientId());
 
         application.registerNode(nodeHost, Time.currentTime());
 
@@ -141,11 +138,11 @@ public class ClientsManagementService {
             throw new UnauthorizedException("Realm not enabled");
         }
 
-        ApplicationModel application = authorizeApplication(authorizationHeader, formData);
+        ClientModel application = authorizeApplication(authorizationHeader, formData);
         String nodeHost = getApplicationClusterHost(formData);
 
         event.client(application).detail(Details.NODE_HOST, nodeHost);
-        logger.debugf("Unregistering cluster host '%s' for client '%s'", nodeHost, application.getName());
+        logger.debugf("Unregistering cluster host '%s' for client '%s'", nodeHost, application.getClientId());
 
         application.unregisterNode(nodeHost);
 
@@ -154,7 +151,7 @@ public class ClientsManagementService {
         return Response.noContent().build();
     }
 
-    protected ApplicationModel authorizeApplication(String authorizationHeader, MultivaluedMap<String, String> formData) {
+    protected ClientModel authorizeApplication(String authorizationHeader, MultivaluedMap<String, String> formData) {
         ClientModel client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formData, event, realm);
 
         if (client.isPublicClient()) {
@@ -165,7 +162,7 @@ public class ClientsManagementService {
             throw new BadRequestException("Public clients not allowed", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
-        if (!(client instanceof ApplicationModel)) {
+        if (!(client instanceof ClientModel)) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, "invalid_client");
             error.put(OAuth2Constants.ERROR_DESCRIPTION, "Just applications are allowed");
@@ -173,7 +170,7 @@ public class ClientsManagementService {
             throw new BadRequestException("ust applications are allowed", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
-        return (ApplicationModel)client;
+        return (ClientModel)client;
     }
 
     protected String getApplicationClusterHost(MultivaluedMap<String, String> formData) {

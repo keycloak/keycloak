@@ -1,7 +1,6 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.cache.entities.CachedApplication;
-import org.keycloak.models.cache.entities.CachedOAuthClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 
@@ -30,14 +29,6 @@ public interface RealmCache {
 
     void invalidateCachedApplicationById(String id);
 
-    CachedOAuthClient getOAuthClient(String id);
-
-    void invalidateOAuthClient(CachedOAuthClient client);
-
-    void addCachedOAuthClient(CachedOAuthClient client);
-
-    void invalidateCachedOAuthClientById(String id);
-
     CachedRole getRole(String id);
 
     void invalidateRole(CachedRole role);
@@ -45,7 +36,6 @@ public interface RealmCache {
     void addCachedRole(CachedRole role);
 
     void invalidateCachedRoleById(String id);
-
 
     void invalidateRoleById(String id);
 

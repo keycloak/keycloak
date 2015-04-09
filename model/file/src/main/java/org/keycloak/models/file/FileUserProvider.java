@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import org.keycloak.connections.file.FileConnectionProvider;
 import org.keycloak.connections.file.InMemoryModel;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.entities.FederatedIdentityEntity;
@@ -276,7 +276,7 @@ public class FileUserProvider implements UserProvider {
                 userModel.grantRole(realm.getRole(r));
             }
 
-            for (ApplicationModel application : realm.getApplications()) {
+            for (ClientModel application : realm.getClients()) {
                 for (String r : application.getDefaultRoles()) {
                     userModel.grantRole(application.getRole(r));
                 }

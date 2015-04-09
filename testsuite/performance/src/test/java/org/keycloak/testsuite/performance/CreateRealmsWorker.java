@@ -3,7 +3,7 @@ package org.keycloak.testsuite.performance;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -70,7 +70,7 @@ public class CreateRealmsWorker implements Worker {
 
         // Add applications
         for (int i=1 ; i<=appsPerRealm ; i++) {
-            ApplicationModel application = realm.addApplication(PerfTestUtils.getApplicationName(realmNumber, i));
+            ClientModel application = realm.addClient(PerfTestUtils.getApplicationName(realmNumber, i));
             for (int j=1 ; j<=rolesPerApp ; j++) {
                 application.addRole(PerfTestUtils.getApplicationRoleName(realmNumber, i, j));
             }

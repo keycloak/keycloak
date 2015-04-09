@@ -1,14 +1,11 @@
 package org.keycloak.account.freemarker.model;
 
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.Time;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -63,23 +60,14 @@ public class SessionsBean {
             return Time.toDate(max);
         }
 
-        public Set<String> getApplications() {
-            Set<String> apps = new HashSet<String>();
+        public Set<String> getClients() {
+            Set<String> clients = new HashSet<String>();
             for (ClientSessionModel clientSession : session.getClientSessions()) {
                 ClientModel client = clientSession.getClient();
-                if (client instanceof ApplicationModel) apps.add(client.getClientId());
+                clients.add(client.getClientId());
             }
-            return apps;
+            return clients;
         }
-        public List<String> getClients() {
-            List<String> apps = new ArrayList<String>();
-            for (ClientSessionModel clientSession : session.getClientSessions()) {
-                ClientModel client = clientSession.getClient();
-                if (client instanceof OAuthClientModel) apps.add(client.getClientId());
-            }
-            return apps;
-        }
-
     }
 
 }

@@ -5,7 +5,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.constants.KerberosConstants;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
@@ -81,26 +80,23 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertNotNull(user);
         Assert.assertEquals(0,  session.users().getFederatedIdentities(user, realm).size());
 
-        List<ApplicationModel> resources = realm.getApplications();
-        for (ApplicationModel app : resources) {
-            System.out.println("app: " + app.getName());
-        }
-        Assert.assertEquals(5, resources.size());
+        List<ClientModel> resources = realm.getClients();
+        Assert.assertEquals(6, resources.size());
 
         // Test applications imported
-        ApplicationModel application = realm.getApplicationByName("Application");
-        ApplicationModel otherApp = realm.getApplicationByName("OtherApp");
-        ApplicationModel accountApp = realm.getApplicationByName(Constants.ACCOUNT_MANAGEMENT_APP);
-        ApplicationModel nonExisting = realm.getApplicationByName("NonExisting");
+        ClientModel application = realm.getClientByClientId("Application");
+        ClientModel otherApp = realm.getClientByClientId("OtherApp");
+        ClientModel accountApp = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_APP);
+        ClientModel nonExisting = realm.getClientByClientId("NonExisting");
         Assert.assertNotNull(application);
         Assert.assertNotNull(otherApp);
         Assert.assertNull(nonExisting);
-        Map<String, ApplicationModel> apps = realm.getApplicationNameMap();
-        Assert.assertEquals(5, apps.size());
-        Assert.assertTrue(apps.values().contains(application));
-        Assert.assertTrue(apps.values().contains(otherApp));
-        Assert.assertTrue(apps.values().contains(accountApp));
-        realm.getApplications().containsAll(apps.values());
+        Map<String, ClientModel> clients = realm.getClientNameMap();
+        Assert.assertEquals(6, clients.size());
+        Assert.assertTrue(clients.values().contains(application));
+        Assert.assertTrue(clients.values().contains(otherApp));
+        Assert.assertTrue(clients.values().contains(accountApp));
+        realm.getClients().containsAll(clients.values());
 
         Assert.assertEquals(50, application.getNodeReRegistrationTimeout());
         Map<String, Integer> appRegisteredNodes = application.getRegisteredNodes();
@@ -109,8 +105,8 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(20 == appRegisteredNodes.get("172.10.15.20"));
 
         // Test finding applications by ID
-        Assert.assertNull(realm.getApplicationById("982734"));
-        Assert.assertEquals(application, realm.getApplicationById(application.getId()));
+        Assert.assertNull(realm.getClientById("982734"));
+        Assert.assertEquals(application, realm.getClientById(application.getId()));
 
 
         // Test role mappings
@@ -139,7 +135,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("app-admin", appRoles.iterator().next().getName());
 
         // Test client
-        ClientModel oauthClient = realm.findClient("oauthclient");
+        ClientModel oauthClient = realm.getClientByClientId("oauthclient");
         Assert.assertEquals("clientpassword", oauthClient.getSecret());
         Assert.assertEquals(true, oauthClient.isEnabled());
         Assert.assertNotNull(oauthClient);

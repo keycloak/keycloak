@@ -19,10 +19,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -44,7 +42,7 @@ public class JaxrsBasicAuthTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ApplicationModel app = appRealm.addApplication("jaxrs-app");
+            ClientModel app = appRealm.addClient("jaxrs-app");
             app.setEnabled(true);
             app.setSecret("password");
             app.setFullScopeAllowed(true);

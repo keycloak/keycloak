@@ -10,7 +10,7 @@
         </ol>
         <h2 data-ng-show="create || registered"><span>{{application.name}} Clustering</span></h2>
         <h2 data-ng-hide="create || registered">Cluster node on host <span>{{node.host}}</span> not registered!</h2>
-        <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageApplications" data-ng-show="create || registered">
+        <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageClients" data-ng-show="create || registered">
             <fieldset >
                 <legend><span class="text">Configuration of cluster node</span></legend>
                 <div class="form-group">

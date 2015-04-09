@@ -1,7 +1,6 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderEvent;
 
 import java.util.List;
 
@@ -19,8 +18,7 @@ public interface RealmProvider extends Provider {
     RealmModel getRealmByName(String name);
 
     RoleModel getRoleById(String id, RealmModel realm);
-    ApplicationModel getApplicationById(String id, RealmModel realm);
-    OAuthClientModel getOAuthClientById(String id, RealmModel realm);
+    ClientModel getClientById(String id, RealmModel realm);
     List<RealmModel> getRealms();
     boolean removeRealm(String id);
 

@@ -10,7 +10,7 @@
         </ol>
         <h2><span>{{application.name}}</span> Scope Mappings <span tooltip-placement="right" tooltip="Scope mappings allow you to restrict which user role mappings are included within the access token requested by the application." class="fa fa-info-circle"></span></h2>
         <p class="subtitle"></p>
-        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageApplications">
+        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageClients">
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="fullScopeAllowed">Full Scope Allowed</label>
@@ -22,7 +22,7 @@
             </fieldset>
         </form>
 
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageApplications" data-ng-show="!application.fullScopeAllowed">
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients" data-ng-show="!application.fullScopeAllowed">
             <fieldset>
                 <legend><span class="text">Realm Roles</span>  <span tooltip-placement="right" tooltip="Realm level roles assigned to scope." class="fa fa-info-circle"></span></legend>
                 <div class="form-group col-sm-10">

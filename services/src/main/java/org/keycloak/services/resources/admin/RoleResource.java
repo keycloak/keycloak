@@ -1,7 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -69,7 +69,7 @@ public abstract class RoleResource {
         return composites;
     }
 
-    protected Set<RoleRepresentation> getApplicationRoleComposites(ApplicationModel app, RoleModel role) {
+    protected Set<RoleRepresentation> getApplicationRoleComposites(ClientModel app, RoleModel role) {
         if (!role.isComposite() || role.getComposites().size() == 0) return Collections.emptySet();
 
         Set<RoleRepresentation> composites = new HashSet<RoleRepresentation>(role.getComposites().size());

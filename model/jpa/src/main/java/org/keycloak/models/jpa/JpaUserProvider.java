@@ -1,6 +1,6 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
@@ -61,7 +61,7 @@ public class JpaUserProvider implements UserProvider {
                 userModel.grantRole(realm.getRole(r));
             }
 
-            for (ApplicationModel application : realm.getApplications()) {
+            for (ClientModel application : realm.getClients()) {
                 for (String r : application.getDefaultRoles()) {
                     userModel.grantRole(application.getRole(r));
                 }

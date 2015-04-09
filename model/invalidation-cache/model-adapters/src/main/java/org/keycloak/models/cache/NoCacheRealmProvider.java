@@ -1,8 +1,7 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
@@ -51,10 +50,6 @@ public class NoCacheRealmProvider implements CacheRealmProvider {
     }
 
     @Override
-    public void registerOAuthClientInvalidation(String id) {
-    }
-
-    @Override
     public RealmModel createRealm(String name) {
         return getDelegate().createRealm(name);
     }
@@ -96,17 +91,7 @@ public class NoCacheRealmProvider implements CacheRealmProvider {
     }
 
     @Override
-    public ApplicationModel getApplicationById(String id, RealmModel realm) {
-        return getDelegate().getApplicationById(id, realm);
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
-        return getDelegate().getOAuthClientById(id, realm);
-    }
-
-    @Override
-    public void registerUserInvalidation(String id) {
-        //To change body of implemented methods use File | Settings | File Templates.
+    public ClientModel getClientById(String id, RealmModel realm) {
+        return getDelegate().getClientById(id, realm);
     }
 }

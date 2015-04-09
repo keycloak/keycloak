@@ -51,7 +51,7 @@ public class RoleEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "APPLICATION")
-    private ApplicationEntity application;
+    private ClientEntity application;
 
     // Hack to ensure that either name+application or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
     @Column(name="APP_REALM_CONSTRAINT", length = 36)
@@ -118,11 +118,11 @@ public class RoleEntity {
         this.appRealmConstraint = realm.getId();
     }
 
-    public ApplicationEntity getApplication() {
+    public ClientEntity getApplication() {
         return application;
     }
 
-    public void setApplication(ApplicationEntity application) {
+    public void setApplication(ClientEntity application) {
         this.application = application;
         if (application != null) {
             this.appRealmConstraint = application.getId();

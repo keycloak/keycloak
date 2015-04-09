@@ -4,7 +4,6 @@ import net.iharder.Base64;
 import org.jboss.logging.Logger;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.migration.MigrationProvider;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
@@ -12,7 +11,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -130,7 +128,7 @@ public class RepresentationToModel {
         importIdentityProviders(rep, newRealm);
 
         if (rep.getApplications() != null) {
-            Map<String, ApplicationModel> appMap = createApplications(session, rep, newRealm);
+            Map<String, ClientModel> appMap = createApplications(session, rep, newRealm);
         }
 
         if (rep.getRoles() != null) {
@@ -141,7 +139,7 @@ public class RepresentationToModel {
             }
             if (rep.getRoles().getApplication() != null) {
                 for (Map.Entry<String, List<RoleRepresentation>> entry : rep.getRoles().getApplication().entrySet()) {
-                    ApplicationModel app = newRealm.getApplicationByName(entry.getKey());
+                    ClientModel app = newRealm.getClientByClientId(entry.getKey());
                     if (app == null) {
                         throw new RuntimeException("App doesn't exist in role definitions: " + entry.getKey());
                     }
@@ -161,7 +159,7 @@ public class RepresentationToModel {
             }
             if (rep.getRoles().getApplication() != null) {
                 for (Map.Entry<String, List<RoleRepresentation>> entry : rep.getRoles().getApplication().entrySet()) {
-                    ApplicationModel app = newRealm.getApplicationByName(entry.getKey());
+                    ClientModel app = newRealm.getClientByClientId(entry.getKey());
                     if (app == null) {
                         throw new RuntimeException("App doesn't exist in role definitions: " + entry.getKey());
                     }
@@ -183,7 +181,7 @@ public class RepresentationToModel {
         if (rep.getApplications() != null) {
             for (ApplicationRepresentation resourceRep : rep.getApplications()) {
                 if (resourceRep.getDefaultRoles() != null) {
-                    ApplicationModel appModel = newRealm.getApplicationByName(resourceRep.getName());
+                    ClientModel appModel = newRealm.getClientByClientId(resourceRep.getName());
                     appModel.updateDefaultRoles(resourceRep.getDefaultRoles());
                 }
             }
@@ -196,12 +194,12 @@ public class RepresentationToModel {
 
         // Now that all possible roles and applications are created, create scope mappings
 
-        Map<String, ApplicationModel> appMap = newRealm.getApplicationNameMap();
+        Map<String, ClientModel> appMap = newRealm.getClientNameMap();
 
         if (rep.getApplicationScopeMappings() != null) {
 
             for (Map.Entry<String, List<ScopeMappingRepresentation>> entry : rep.getApplicationScopeMappings().entrySet()) {
-                ApplicationModel app = appMap.get(entry.getKey());
+                ClientModel app = appMap.get(entry.getKey());
                 if (app == null) {
                     throw new RuntimeException("Unable to find application role mappings for app: " + entry.getKey());
                 }
@@ -211,7 +209,7 @@ public class RepresentationToModel {
 
         if (rep.getScopeMappings() != null) {
             for (ScopeMappingRepresentation scope : rep.getScopeMappings()) {
-                ClientModel client = newRealm.findClient(scope.getClient());
+                ClientModel client = newRealm.getClientByClientId(scope.getClient());
                 if (client == null) {
                     throw new RuntimeException("Unknown client specification in realm scope mappings");
                 }
@@ -434,7 +432,7 @@ public class RepresentationToModel {
         }
         if (roleRep.getComposites().getApplication() != null) {
             for (Map.Entry<String, List<String>> entry : roleRep.getComposites().getApplication().entrySet()) {
-                ApplicationModel app = realm.getApplicationByName(entry.getKey());
+                ClientModel app = realm.getClientByClientId(entry.getKey());
                 if (app == null) {
                     throw new RuntimeException("App doesn't exist in role definitions: " + roleRep.getName());
                 }
@@ -452,11 +450,11 @@ public class RepresentationToModel {
 
     // APPLICATIONS
 
-    private static Map<String, ApplicationModel> createApplications(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
-        Map<String, ApplicationModel> appMap = new HashMap<String, ApplicationModel>();
+    private static Map<String, ClientModel> createApplications(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
+        Map<String, ClientModel> appMap = new HashMap<String, ClientModel>();
         for (ApplicationRepresentation resourceRep : rep.getApplications()) {
-            ApplicationModel app = createApplication(session, realm, resourceRep, false);
-            appMap.put(app.getName(), app);
+            ClientModel app = createApplication(session, realm, resourceRep, false);
+            appMap.put(app.getClientId(), app);
         }
         return appMap;
     }
@@ -468,7 +466,7 @@ public class RepresentationToModel {
      * @param resourceRep
      * @return
      */
-    public static ApplicationModel createApplication(KeycloakSession session, RealmModel realm, ApplicationRepresentation resourceRep, boolean addDefaultRoles) {
+    public static ClientModel createApplication(KeycloakSession session, RealmModel realm, ApplicationRepresentation resourceRep, boolean addDefaultRoles) {
         logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
 
         if (resourceRep.getProtocolMappers() == null) {
@@ -478,7 +476,7 @@ public class RepresentationToModel {
             }
         }
 
-        ApplicationModel applicationModel = resourceRep.getId()!=null ? realm.addApplication(resourceRep.getId(), resourceRep.getName()) : realm.addApplication(resourceRep.getName());
+        ClientModel applicationModel = resourceRep.getId()!=null ? realm.addClient(resourceRep.getId(), resourceRep.getName()) : realm.addClient(resourceRep.getName());
         if (resourceRep.isEnabled() != null) applicationModel.setEnabled(resourceRep.isEnabled());
         applicationModel.setManagementUrl(resourceRep.getAdminUrl());
         if (resourceRep.isSurrogateAuthRequired() != null)
@@ -573,10 +571,11 @@ public class RepresentationToModel {
         return applicationModel;
     }
 
-    public static void updateApplication(ApplicationRepresentation rep, ApplicationModel resource) {
-        if (rep.getName() != null) resource.setName(rep.getName());
+    public static void updateApplication(ApplicationRepresentation rep, ClientModel resource) {
+        if (rep.getName() != null) resource.setClientId(rep.getName());
         if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
         if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
+        if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
         if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
         if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
         if (rep.isFrontchannelLogout() != null) resource.setFrontchannelLogout(rep.isFrontchannelLogout());
@@ -684,14 +683,15 @@ public class RepresentationToModel {
         }
     }
 
-    public static OAuthClientModel createOAuthClient(String id, String name, RealmModel realm) {
-        OAuthClientModel model = id!=null ? realm.addOAuthClient(id, name) : realm.addOAuthClient(name);
+    public static ClientModel createOAuthClient(String id, String name, RealmModel realm) {
+        ClientModel model = id!=null ? realm.addClient(id, name) : realm.addClient(name);
+        model.setConsentRequired(true);
         KeycloakModelUtils.generateSecret(model);
         return model;
     }
 
-    public static OAuthClientModel createOAuthClient(KeycloakSession session, OAuthClientRepresentation rep, RealmModel realm) {
-        OAuthClientModel model = createOAuthClient(rep.getId(), rep.getName(), realm);
+    public static ClientModel createOAuthClient(KeycloakSession session, OAuthClientRepresentation rep, RealmModel realm) {
+        ClientModel model = createOAuthClient(rep.getId(), rep.getName(), realm);
 
         model.updateIdentityProviders(toModel(rep.getIdentityProviders(), realm));
 
@@ -699,7 +699,7 @@ public class RepresentationToModel {
         return model;
     }
 
-    public static void updateOAuthClient(KeycloakSession session, OAuthClientRepresentation rep, OAuthClientModel model) {
+    public static void updateOAuthClient(KeycloakSession session, OAuthClientRepresentation rep, ClientModel model) {
         if (rep.getProtocolMappers() == null) {
             List<ProtocolMapperRepresentation> convertedProtocolMappers = convertDeprecatedClaimsMask(session, rep.getClaims());
             if (convertedProtocolMappers != null) {
@@ -753,9 +753,9 @@ public class RepresentationToModel {
 
     // Scope mappings
 
-    public static void createApplicationScopeMappings(RealmModel realm, ApplicationModel applicationModel, List<ScopeMappingRepresentation> mappings) {
+    public static void createApplicationScopeMappings(RealmModel realm, ClientModel applicationModel, List<ScopeMappingRepresentation> mappings) {
         for (ScopeMappingRepresentation mapping : mappings) {
-            ClientModel client = realm.findClient(mapping.getClient());
+            ClientModel client = realm.getClientByClientId(mapping.getClient());
             if (client == null) {
                 throw new RuntimeException("Unknown client specified in application scope mappings");
             }
@@ -771,7 +771,7 @@ public class RepresentationToModel {
 
     // Users
 
-    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ApplicationModel> appMap) {
+    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ClientModel> appMap) {
         convertDeprecatedSocialProviders(userRep);
 
         // Import users just to user storage. Don't federate
@@ -814,7 +814,7 @@ public class RepresentationToModel {
         }
         if (userRep.getApplicationRoles() != null) {
             for (Map.Entry<String, List<String>> entry : userRep.getApplicationRoles().entrySet()) {
-                ApplicationModel app = appMap.get(entry.getKey());
+                ClientModel app = appMap.get(entry.getKey());
                 if (app == null) {
                     throw new RuntimeException("Unable to find application role mappings for app: " + entry.getKey());
                 }
@@ -853,7 +853,7 @@ public class RepresentationToModel {
 
     // Role mappings
 
-    public static void createApplicationRoleMappings(ApplicationModel applicationModel, UserModel user, List<String> roleNames) {
+    public static void createApplicationRoleMappings(ClientModel applicationModel, UserModel user, List<String> roleNames) {
         if (user == null) {
             throw new RuntimeException("User not found");
         }

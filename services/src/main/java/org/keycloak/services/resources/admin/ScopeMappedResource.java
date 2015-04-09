@@ -2,7 +2,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -65,21 +64,21 @@ public class ScopeMappedResource {
             all.setRealmMappings(realmRep);
         }
 
-        List<ApplicationModel> applications = realm.getApplications();
+        List<ClientModel> applications = realm.getClients();
         if (applications.size() > 0) {
             Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
-            for (ApplicationModel app : applications) {
+            for (ClientModel app : applications) {
                 Set<RoleModel> roleMappings = app.getApplicationScopeMappings(client);
                 if (roleMappings.size() > 0) {
                     ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
                     mappings.setApplicationId(app.getId());
-                    mappings.setApplication(app.getName());
+                    mappings.setApplication(app.getClientId());
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
                         roles.add(ModelToRepresentation.toRepresentation(role));
                     }
-                    appMappings.put(app.getName(), mappings);
+                    appMappings.put(app.getClientId(), mappings);
                     all.setApplicationMappings(appMappings);
                 }
             }
@@ -210,7 +209,7 @@ public class ScopeMappedResource {
 
     @Path("applications/{app}")
     public ScopeMappedApplicationResource getApplicationScopeMappings(@PathParam("app") String appName) {
-        ApplicationModel app = realm.getApplicationByName(appName);
+        ClientModel app = realm.getClientByClientId(appName);
 
         if (app == null) {
             throw new NotFoundException("Role not found");
@@ -221,7 +220,7 @@ public class ScopeMappedResource {
 
     @Path("applications-by-id/{appId}")
     public ScopeMappedApplicationResource getApplicationByIdScopeMappings(@PathParam("appId") String appId) {
-        ApplicationModel app = realm.getApplicationById(appId);
+        ClientModel app = realm.getClientById(appId);
 
         if (app == null) {
             throw new NotFoundException("Application not found");

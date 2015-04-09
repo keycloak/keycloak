@@ -29,7 +29,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -41,7 +41,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
@@ -65,7 +64,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -139,7 +137,7 @@ public class AdapterTestStrategy extends ExternalResource {
             RealmManager manager = new RealmManager(session);
 
             RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
-            ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);
@@ -539,7 +537,7 @@ public class AdapterTestStrategy extends ExternalResource {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel demoRealm) {
-                ApplicationModel sessionPortal = demoRealm.getApplicationByName("session-portal");
+                ClientModel sessionPortal = demoRealm.getClientByClientId("session-portal");
                 sessionPortal.setManagementUrl(null);
 
                 origTokenLifespan.set(demoRealm.getAccessTokenLifespan());
@@ -571,7 +569,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel demoRealm) {
-                ApplicationModel sessionPortal = demoRealm.getApplicationByName("session-portal");
+                ClientModel sessionPortal = demoRealm.getClientByClientId("session-portal");
                 sessionPortal.setManagementUrl(APP_SERVER_BASE_URL + "/session-portal");
 
                 demoRealm.setAccessTokenLifespan(origTokenLifespan.get());

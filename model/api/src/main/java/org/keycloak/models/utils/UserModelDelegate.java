@@ -1,6 +1,6 @@
 package org.keycloak.models.utils;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -152,7 +152,7 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ApplicationModel app) {
+    public Set<RoleModel> getApplicationRoleMappings(ClientModel app) {
         return delegate.getApplicationRoleMappings(app);
     }
 

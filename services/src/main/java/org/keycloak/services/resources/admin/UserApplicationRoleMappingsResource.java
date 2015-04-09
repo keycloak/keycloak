@@ -3,14 +3,11 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.ClientConnection;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.Consumes;
@@ -18,10 +15,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -37,9 +31,9 @@ public class UserApplicationRoleMappingsResource {
     protected RealmModel realm;
     protected RealmAuth auth;
     protected UserModel user;
-    protected ApplicationModel application;
+    protected ClientModel application;
 
-    public UserApplicationRoleMappingsResource(RealmModel realm, RealmAuth auth, UserModel user, ApplicationModel application) {
+    public UserApplicationRoleMappingsResource(RealmModel realm, RealmAuth auth, UserModel user, ClientModel application) {
         this.realm = realm;
         this.auth = auth;
         this.user = user;
@@ -155,8 +149,8 @@ public class UserApplicationRoleMappingsResource {
         if (roles == null) {
             Set<RoleModel> roleModels = user.getApplicationRoleMappings(application);
             for (RoleModel roleModel : roleModels) {
-                if (!(roleModel.getContainer() instanceof ApplicationModel)) {
-                    ApplicationModel app = (ApplicationModel) roleModel.getContainer();
+                if (!(roleModel.getContainer() instanceof ClientModel)) {
+                    ClientModel app = (ClientModel) roleModel.getContainer();
                     if (!app.getId().equals(application.getId())) continue;
                 }
                 user.deleteRoleMapping(roleModel);

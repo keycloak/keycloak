@@ -1,13 +1,10 @@
 package org.keycloak.models.utils;
 
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClaimMask;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -17,12 +14,10 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -217,57 +212,54 @@ public class ModelToRepresentation {
         rep.setIpAddress(session.getIpAddress());
         for (ClientSessionModel clientSession : session.getClientSessions()) {
             ClientModel client = clientSession.getClient();
-            if (client instanceof ApplicationModel) {
-                rep.getApplications().put(client.getId(), client.getClientId());
-            } else if (client instanceof OAuthClientModel) {
-                rep.getClients().put(client.getId(), client.getClientId());
-            }
+            rep.getApplications().put(client.getId(), client.getClientId());
         }
         return rep;
     }
 
-    public static ApplicationRepresentation toRepresentation(ApplicationModel applicationModel) {
+    public static ApplicationRepresentation toRepresentation(ClientModel clientModel) {
         ApplicationRepresentation rep = new ApplicationRepresentation();
-        rep.setId(applicationModel.getId());
-        rep.setName(applicationModel.getName());
-        rep.setEnabled(applicationModel.isEnabled());
-        rep.setAdminUrl(applicationModel.getManagementUrl());
-        rep.setPublicClient(applicationModel.isPublicClient());
-        rep.setFrontchannelLogout(applicationModel.isFrontchannelLogout());
-        rep.setProtocol(applicationModel.getProtocol());
-        rep.setAttributes(applicationModel.getAttributes());
-        rep.setFullScopeAllowed(applicationModel.isFullScopeAllowed());
-        rep.setBearerOnly(applicationModel.isBearerOnly());
-        rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
-        rep.setBaseUrl(applicationModel.getBaseUrl());
-        rep.setNotBefore(applicationModel.getNotBefore());
-        rep.setNodeReRegistrationTimeout(applicationModel.getNodeReRegistrationTimeout());
+        rep.setId(clientModel.getId());
+        rep.setName(clientModel.getClientId());
+        rep.setEnabled(clientModel.isEnabled());
+        rep.setAdminUrl(clientModel.getManagementUrl());
+        rep.setPublicClient(clientModel.isPublicClient());
+        rep.setFrontchannelLogout(clientModel.isFrontchannelLogout());
+        rep.setProtocol(clientModel.getProtocol());
+        rep.setAttributes(clientModel.getAttributes());
+        rep.setFullScopeAllowed(clientModel.isFullScopeAllowed());
+        rep.setBearerOnly(clientModel.isBearerOnly());
+        rep.setConsentRequired(clientModel.isConsentRequired());
+        rep.setSurrogateAuthRequired(clientModel.isSurrogateAuthRequired());
+        rep.setBaseUrl(clientModel.getBaseUrl());
+        rep.setNotBefore(clientModel.getNotBefore());
+        rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
 
-        Set<String> redirectUris = applicationModel.getRedirectUris();
+        Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {
             rep.setRedirectUris(new LinkedList<String>(redirectUris));
         }
 
-        Set<String> webOrigins = applicationModel.getWebOrigins();
+        Set<String> webOrigins = clientModel.getWebOrigins();
         if (webOrigins != null) {
             rep.setWebOrigins(new LinkedList<String>(webOrigins));
         }
 
-        if (!applicationModel.getDefaultRoles().isEmpty()) {
-            rep.setDefaultRoles(applicationModel.getDefaultRoles().toArray(new String[0]));
+        if (!clientModel.getDefaultRoles().isEmpty()) {
+            rep.setDefaultRoles(clientModel.getDefaultRoles().toArray(new String[0]));
         }
 
-        if (!applicationModel.getRegisteredNodes().isEmpty()) {
-            rep.setRegisteredNodes(new HashMap<String, Integer>(applicationModel.getRegisteredNodes()));
+        if (!clientModel.getRegisteredNodes().isEmpty()) {
+            rep.setRegisteredNodes(new HashMap<String, Integer>(clientModel.getRegisteredNodes()));
         }
 
-        if (!applicationModel.getIdentityProviders().isEmpty()) {
-            rep.setIdentityProviders(toRepresentation(applicationModel.getIdentityProviders()));
+        if (!clientModel.getIdentityProviders().isEmpty()) {
+            rep.setIdentityProviders(toRepresentation(clientModel.getIdentityProviders()));
         }
 
-        if (!applicationModel.getProtocolMappers().isEmpty()) {
+        if (!clientModel.getProtocolMappers().isEmpty()) {
             List<ProtocolMapperRepresentation> mappings = new LinkedList<ProtocolMapperRepresentation>();
-            for (ProtocolMapperModel model : applicationModel.getProtocolMappers()) {
+            for (ProtocolMapperModel model : clientModel.getProtocolMappers()) {
                 mappings.add(toRepresentation(model));
             }
             rep.setProtocolMappers(mappings);
@@ -289,43 +281,6 @@ public class ModelToRepresentation {
         }
 
         return representations;
-    }
-
-    public static OAuthClientRepresentation toRepresentation(OAuthClientModel model) {
-        OAuthClientRepresentation rep = new OAuthClientRepresentation();
-        rep.setId(model.getId());
-        rep.setName(model.getClientId());
-        rep.setEnabled(model.isEnabled());
-        rep.setPublicClient(model.isPublicClient());
-        rep.setFrontchannelLogout(model.isFrontchannelLogout());
-        rep.setProtocol(model.getProtocol());
-        rep.setAttributes(model.getAttributes());
-        rep.setFullScopeAllowed(model.isFullScopeAllowed());
-        rep.setDirectGrantsOnly(model.isDirectGrantsOnly());
-        Set<String> redirectUris = model.getRedirectUris();
-        if (redirectUris != null) {
-            rep.setRedirectUris(new LinkedList<String>(redirectUris));
-        }
-
-        Set<String> webOrigins = model.getWebOrigins();
-        if (webOrigins != null) {
-            rep.setWebOrigins(new LinkedList<String>(webOrigins));
-        }
-        rep.setNotBefore(model.getNotBefore());
-
-        if (!model.getIdentityProviders().isEmpty()) {
-            rep.setIdentityProviders(toRepresentation(model.getIdentityProviders()));
-        }
-
-        if (!model.getProtocolMappers().isEmpty()) {
-                List<ProtocolMapperRepresentation> mappings = new LinkedList<ProtocolMapperRepresentation>();
-                for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
-                    mappings.add(toRepresentation(mapper));
-                }
-                rep.setProtocolMappers(mappings);
-        }
-
-        return rep;
     }
 
     public static UserFederationProviderRepresentation toRepresentation(UserFederationProviderModel model) {

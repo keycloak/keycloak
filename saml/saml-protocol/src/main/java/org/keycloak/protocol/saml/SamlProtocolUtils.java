@@ -2,11 +2,11 @@ package org.keycloak.protocol.saml;
 
 import org.keycloak.VerificationException;
 import org.keycloak.models.ClientModel;
-import org.keycloak.util.PemUtils;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.util.PemUtils;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.MultivaluedMap;

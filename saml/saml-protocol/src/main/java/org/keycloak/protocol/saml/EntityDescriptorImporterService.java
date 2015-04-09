@@ -2,7 +2,7 @@ package org.keycloak.protocol.saml;
 
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.resources.admin.RealmAuth;
@@ -79,7 +79,7 @@ public class EntityDescriptorImporterService {
         for (Object o : entities.getEntityDescriptor()) {
             EntityDescriptorType entity = (EntityDescriptorType)o;
             String entityId = entity.getEntityID();
-            ApplicationModel app = realm.addApplication(entityId);
+            ClientModel app = realm.addClient(entityId);
             app.setFullScopeAllowed(true);
             app.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
             app.setAttribute(SamlProtocol.SAML_SERVER_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE); // default to true

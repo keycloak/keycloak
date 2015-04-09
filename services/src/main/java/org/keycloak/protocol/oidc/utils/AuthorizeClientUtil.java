@@ -44,7 +44,7 @@ public class AuthorizeClientUtil {
 
         event.client(client_id);
 
-        ClientModel client = realm.findClient(client_id);
+        ClientModel client = realm.getClientByClientId(client_id);
         if (client == null) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, "invalid_client");
