@@ -14,7 +14,6 @@
             <td>${msg("started")}</td>
             <td>${msg("lastAccess")}</td>
             <td>${msg("expires")}</td>
-            <td>${msg("applications")}</td>
             <td>${msg("clients")}</td>
         </tr>
         </thead>
@@ -26,11 +25,6 @@
                 <td>${session.started?datetime}</td>
                 <td>${session.lastAccess?datetime}</td>
                 <td>${session.expires?datetime}</td>
-                <td>
-                    <#list session.applications as app>
-                        ${app}<br/>
-                    </#list>
-                </td>
                 <td>
                     <#list session.clients as client>
                         ${client}<br/>

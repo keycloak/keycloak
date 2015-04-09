@@ -2,7 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -225,7 +225,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        ApplicationModel app = realm.getApplicationByName(appName);
+        ClientModel app = realm.getClientByClientId(appName);
         if (app == null) {
             throw new NotFoundException("Could not find application: " + appName);
 
@@ -253,7 +253,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        ApplicationModel app = realm.getApplicationById(appId);
+        ClientModel app = realm.getClientById(appId);
         if (app == null) {
             throw new NotFoundException("Could not find application: " + appId);
 

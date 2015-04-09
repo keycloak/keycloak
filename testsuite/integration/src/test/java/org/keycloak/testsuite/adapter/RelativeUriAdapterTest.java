@@ -26,7 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -85,7 +85,7 @@ public class RelativeUriAdapterTest {
             deployApplication("customer-db", "/customer-db", CustomerDatabaseServlet.class, url.getPath(), "user");
             url = getClass().getResource("/adapter-test/product-keycloak-relative.json");
             deployApplication("product-portal", "/product-portal", ProductServlet.class, url.getPath(), "user");
-            ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(realm, adminConsole);

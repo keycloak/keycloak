@@ -5,7 +5,7 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
@@ -249,7 +249,7 @@ public class MongoUserProvider implements UserProvider {
                 userModel.grantRole(realm.getRole(r));
             }
 
-            for (ApplicationModel application : realm.getApplications()) {
+            for (ClientModel application : realm.getClients()) {
                 for (String r : application.getDefaultRoles()) {
                     userModel.grantRole(application.getRole(r));
                 }

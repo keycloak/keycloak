@@ -22,6 +22,8 @@ public class ApplicationRepresentation {
     protected ClaimRepresentation claims;
     protected Integer notBefore;
     protected Boolean bearerOnly;
+    protected Boolean consentRequired;
+    protected Boolean directGrantsOnly;
     protected Boolean publicClient;
     protected Boolean frontchannelLogout;
     protected String protocol;
@@ -134,6 +136,22 @@ public class ApplicationRepresentation {
 
     public void setBearerOnly(Boolean bearerOnly) {
         this.bearerOnly = bearerOnly;
+    }
+
+    public Boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public void setConsentRequired(Boolean consentRequired) {
+        this.consentRequired = consentRequired;
+    }
+
+    public Boolean getDirectGrantsOnly() {
+        return directGrantsOnly;
+    }
+
+    public void setDirectGrantsOnly(Boolean directGrantsOnly) {
+        this.directGrantsOnly = directGrantsOnly;
     }
 
     public Boolean isPublicClient() {

@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.file.adapter;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -325,12 +325,12 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ApplicationModel app) {
+    public Set<RoleModel> getApplicationRoleMappings(ClientModel app) {
         Set<RoleModel> result = new HashSet<RoleModel>();
 
         for (RoleModel role : allRoles) {
             RoleEntity roleEntity = ((RoleAdapter)role).getRoleEntity();
-            if (app.getId().equals(roleEntity.getApplicationId())) {
+            if (app.getId().equals(roleEntity.getClientId())) {
                 result.add(new RoleAdapter(realm, roleEntity, app));
             }
         }

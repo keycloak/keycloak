@@ -41,7 +41,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public ClientModel getClient() {
-        return realm.findClientById(entity.getClientId());
+        return realm.getClientById(entity.getClientId());
     }
 
     @Override

@@ -1,7 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.services.ForbiddenException;
 
 
@@ -13,13 +13,13 @@ public class RealmAuth {
     private Resource resource;
 
     public enum Resource {
-        APPLICATION, CLIENT, USER, REALM, EVENTS, IDENTITY_PROVIDER
+        CLIENT, USER, REALM, EVENTS, IDENTITY_PROVIDER
     }
 
     private AdminAuth auth;
-    private ApplicationModel realmAdminApp;
+    private ClientModel realmAdminApp;
 
-    public RealmAuth(AdminAuth auth, ApplicationModel realmAdminApp) {
+    public RealmAuth(AdminAuth auth, ClientModel realmAdminApp) {
         this.auth = auth;
         this.realmAdminApp = realmAdminApp;
     }
@@ -57,8 +57,6 @@ public class RealmAuth {
 
     private String getViewRole(Resource resource) {
         switch (resource) {
-            case APPLICATION:
-                return AdminRoles.VIEW_APPLICATIONS;
             case CLIENT:
                 return AdminRoles.VIEW_CLIENTS;
             case USER:
@@ -76,8 +74,6 @@ public class RealmAuth {
 
     private String getManageRole(Resource resource) {
         switch (resource) {
-            case APPLICATION:
-                return AdminRoles.MANAGE_APPLICATIONS;
             case CLIENT:
                 return AdminRoles.MANAGE_CLIENTS;
             case USER:

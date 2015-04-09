@@ -17,6 +17,11 @@
  */
 package org.keycloak.testsuite.broker;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
@@ -24,7 +29,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -45,7 +49,6 @@ import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testsuite.rule.WebRule.HtmlUnitDriver;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -60,18 +63,17 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static com.thoughtworks.selenium.SeleneseTestBase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author pedroigor
@@ -278,10 +280,10 @@ public abstract class AbstractIdentityProviderTest {
     public void testProviderOnLoginPage() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         RealmModel realm = getRealm();
-        ApplicationModel applicationModel = realm.getApplicationByName("test-app");
+        ClientModel clientModel = realm.getClientByClientId("test-app");
 
         // This client doesn't have any specific identity providers settings
-        ClientModel client2 = realm.findClient("test-app");
+        ClientModel client2 = realm.getClientByClientId("test-app");
         assertEquals(0, client2.getIdentityProviders().size());
 
         // Provider button is available on login page
@@ -295,7 +297,7 @@ public abstract class AbstractIdentityProviderTest {
         mapping.setIdentityProvider(getProviderId());
         mapping.setRetrieveToken(true);
         appIdentityProviders.add(mapping);
-        applicationModel.updateIdentityProviders(appIdentityProviders);
+        clientModel.updateIdentityProviders(appIdentityProviders);
 
         // Provider button still available on login page
         this.driver.navigate().to("http://localhost:8081/test-app/");
@@ -437,7 +439,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(identityModel.getToken());
 
-        configureRetrieveToken(realm.findClient("test-app"), getProviderId(), false);
+        configureRetrieveToken(realm.getClientByClientId("test-app"), getProviderId(), false);
 
         UserSessionStatus userSessionStatus = retrieveSessionStatus();
         String accessToken = userSessionStatus.getAccessTokenString();
@@ -455,7 +457,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
 
-        configureRetrieveToken(getRealm().findClient("test-app"), getProviderId(), true);
+        configureRetrieveToken(getRealm().getClientByClientId("test-app"), getProviderId(), true);
 
         client = ClientBuilder.newBuilder().register(authFilter).build();
         tokenEndpoint = client.target(tokenEndpointUrl);
@@ -505,26 +507,30 @@ public abstract class AbstractIdentityProviderTest {
 
         assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
 
-        ClientModel clientModel = getRealm().findClient("third-party");
+        ClientModel clientModel = getRealm().getClientByClientId("third-party");
         assertEquals(0, clientModel.getIdentityProviders().size());
 
         configureRetrieveToken(clientModel, getProviderId(), true);
 
         AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
-        URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), getRealm().getName());
-        String authHeader = "Bearer " + accessToken.getAccessToken();
-        HtmlUnitDriver htmlUnitDriver = (WebRule.HtmlUnitDriver) this.driver;
 
-        htmlUnitDriver.getWebClient().addRequestHeader(HttpHeaders.AUTHORIZATION, authHeader);
+        doTokenRequest(accessToken.getAccessToken());
+    }
 
-        htmlUnitDriver.navigate().to(tokenEndpointUrl.toString());
+    public void doTokenRequest(String token) {
+        try {
+            HttpClient client = new DefaultHttpClient();
+            HttpGet get = new HttpGet(Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), getRealm().getName()));
 
-        grantPage.assertCurrent();
-        grantPage.accept();
+            get.setHeader("Authorization", "Bearer " + token);
 
-        assertNotNull(driver.getPageSource());
+            HttpResponse response = client.execute(get);
+            assertEquals(200, response.getStatusLine().getStatusCode());
 
-        doAssertTokenRetrieval(driver.getPageSource());
+            assertNotNull(IOUtils.toString(response.getEntity().getContent()));
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
     }
 
     private void configureRetrieveToken(ClientModel clientModel, String providerId, boolean retrieveToken) {

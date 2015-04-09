@@ -6,8 +6,6 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;

@@ -1,22 +1,18 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.enums.SslRequired;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
-import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
@@ -612,61 +608,42 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ClientModel findClient(String clientId) {
-        ClientModel model = getApplicationByName(clientId);
-        if (model != null) return model;
-        return getOAuthClient(clientId);
-    }
-
-    @Override
-    public ClientModel findClientById(String id) {
-        ClientModel model = getApplicationById(id);
-        if (model != null) return model;
-        return getOAuthClientById(id);
-    }
-
-    @Override
-    public Map<String, ApplicationModel> getApplicationNameMap() {
-        Map<String, ApplicationModel> map = new HashMap<String, ApplicationModel>();
-        for (ApplicationModel app : getApplications()) {
-            map.put(app.getName(), app);
+    public Map<String, ClientModel> getClientNameMap() {
+        Map<String, ClientModel> map = new HashMap<String, ClientModel>();
+        for (ClientModel app : getClients()) {
+            map.put(app.getClientId(), app);
         }
         return map;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
-    public List<ApplicationModel> getApplications() {
-        List<ApplicationModel> list = new ArrayList<ApplicationModel>();
+    public List<ClientModel> getClients() {
+        List<ClientModel> list = new ArrayList<ClientModel>();
         if (realm.getApplications() == null) return list;
-        for (ApplicationEntity entity : realm.getApplications()) {
-            list.add(new ApplicationAdapter(this, em, session, entity));
+        for (ClientEntity entity : realm.getApplications()) {
+            list.add(new ClientAdapter(this, em, session, entity));
         }
         return list;
     }
 
     @Override
-    public ApplicationModel addApplication(String name) {
-        return this.addApplication(KeycloakModelUtils.generateId(), name);
+    public ClientModel addClient(String name) {
+        return this.addClient(KeycloakModelUtils.generateId(), name);
     }
 
     @Override
-    public ApplicationModel addApplication(String id, String name) {
-        ApplicationEntity applicationData = new ApplicationEntity();
+    public ClientModel addClient(String id, String clientId) {
+        ClientEntity applicationData = new ClientEntity();
         applicationData.setId(id);
-        applicationData.setName(name);
+        applicationData.setName(clientId);
         applicationData.setEnabled(true);
         applicationData.setRealm(realm);
         realm.getApplications().add(applicationData);
         em.persist(applicationData);
         em.flush();
-        final ApplicationModel resource = new ApplicationAdapter(this, em, session, applicationData);
+        final ClientModel resource = new ClientAdapter(this, em, session, applicationData);
         em.flush();
-        session.getKeycloakSessionFactory().publish(new ApplicationCreationEvent() {
-            @Override
-            public ApplicationModel getCreatedApplication() {
-                return resource;
-            }
-
+        session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
             @Override
             public ClientModel getCreatedClient() {
                 return resource;
@@ -676,115 +653,48 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean removeApplication(String id) {
+    public boolean removeClient(String id) {
         if (id == null) return false;
-        ApplicationModel application = getApplicationById(id);
+        ClientModel application = getClientById(id);
         if (application == null) return false;
 
         for (RoleModel role : application.getRoles()) {
             application.removeRole(role);
         }
 
-        ApplicationEntity applicationEntity = null;
-        Iterator<ApplicationEntity> it = realm.getApplications().iterator();
+        ClientEntity clientEntity = null;
+        Iterator<ClientEntity> it = realm.getApplications().iterator();
         while (it.hasNext()) {
-            ApplicationEntity ae = it.next();
+            ClientEntity ae = it.next();
             if (ae.getId().equals(id)) {
-                applicationEntity = ae;
+                clientEntity = ae;
                 it.remove();
                 break;
             }
         }
-        for (ApplicationEntity a : realm.getApplications()) {
+        for (ClientEntity a : realm.getApplications()) {
             if (a.getId().equals(id)) {
-                applicationEntity = a;
+                clientEntity = a;
             }
         }
         if (application == null) {
             return false;
         }
-        em.remove(applicationEntity);
-        em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", applicationEntity).executeUpdate();
+        em.remove(clientEntity);
+        em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", clientEntity).executeUpdate();
         em.flush();
 
         return true;
     }
 
     @Override
-    public ApplicationModel getApplicationById(String id) {
-        return session.realms().getApplicationById(id, this);
+    public ClientModel getClientById(String id) {
+        return session.realms().getClientById(id, this);
     }
 
     @Override
-    public ApplicationModel getApplicationByName(String name) {
-        return getApplicationNameMap().get(name);
-    }
-
-    @Override
-    public OAuthClientModel addOAuthClient(String name) {
-        return this.addOAuthClient(KeycloakModelUtils.generateId(), name);
-    }
-
-    @Override
-    public OAuthClientModel addOAuthClient(String id, String name) {
-        OAuthClientEntity data = new OAuthClientEntity();
-        data.setId(id);
-        data.setEnabled(true);
-        data.setName(name);
-        data.setRealm(realm);
-        em.persist(data);
-        em.flush();
-        final OAuthClientModel model = new OAuthClientAdapter(this, data, em);
-        em.flush();
-        session.getKeycloakSessionFactory().publish(new OAuthClientCreationEvent() {
-            @Override
-            public OAuthClientModel getCreatedOAuthClient() {
-                return model;
-            }
-
-            @Override
-            public ClientModel getCreatedClient() {
-                return model;
-            }
-        });
-        return model;
-    }
-
-    @Override
-    public boolean removeOAuthClient(String id) {
-        OAuthClientModel oauth = getOAuthClientById(id);
-        if (oauth == null) return false;
-        OAuthClientEntity client = em.getReference(OAuthClientEntity.class, oauth.getId());
-        em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", client).executeUpdate();
-        em.remove(client);
-        return true;
-    }
-
-
-    @Override
-    public OAuthClientModel getOAuthClient(String name) {
-        TypedQuery<OAuthClientEntity> query = em.createNamedQuery("findOAuthClientByName", OAuthClientEntity.class);
-        query.setParameter("name", name);
-        query.setParameter("realm", realm);
-        List<OAuthClientEntity> entities = query.getResultList();
-        if (entities.size() == 0) return null;
-        return new OAuthClientAdapter(this, entities.get(0), em);
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClientById(String id) {
-        return session.realms().getOAuthClientById(id, this);
-    }
-
-
-    @Override
-    public List<OAuthClientModel> getOAuthClients() {
-        TypedQuery<OAuthClientEntity> query = em.createNamedQuery("findOAuthClientByRealm", OAuthClientEntity.class);
-        query.setParameter("realm", realm);
-        List<OAuthClientEntity> entities = query.getResultList();
-        List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
-        for (OAuthClientEntity entity : entities) list.add(new OAuthClientAdapter(this, entity, em));
-        return list;
+    public ClientModel getClientByClientId(String clientId) {
+        return getClientNameMap().get(clientId);
     }
 
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";
@@ -1155,13 +1065,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ApplicationModel getMasterAdminApp() {
-        return new ApplicationAdapter(this, em, session, realm.getMasterAdminApp());
+    public ClientModel getMasterAdminApp() {
+        return new ClientAdapter(this, em, session, realm.getMasterAdminApp());
     }
 
     @Override
-    public void setMasterAdminApp(ApplicationModel app) {
-        ApplicationEntity appEntity = app!=null ? em.getReference(ApplicationEntity.class, app.getId()) : null;
+    public void setMasterAdminApp(ClientModel app) {
+        ClientEntity appEntity = app!=null ? em.getReference(ClientEntity.class, app.getId()) : null;
         realm.setMasterAdminApp(appEntity);
         em.flush();
     }

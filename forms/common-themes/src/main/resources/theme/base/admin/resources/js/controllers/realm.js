@@ -53,10 +53,6 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
             return getAccess('view-realm') || this.manageRealm;
         },
 
-        get viewApplications() {
-            return getAccess('view-applications') || this.manageApplications;
-        },
-
         get viewClients() {
             return getAccess('view-clients') || this.manageClients;
         },
@@ -71,10 +67,6 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
 
         get manageRealm() {
             return getAccess('manage-realm');
-        },
-
-        get manageApplications() {
-            return getAccess('manage-applications');
         },
 
         get manageClients() {

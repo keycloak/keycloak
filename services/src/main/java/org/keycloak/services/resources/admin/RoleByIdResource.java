@@ -3,9 +3,8 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -70,9 +69,7 @@ public class RoleByIdResource extends RoleResource {
         RealmAuth.Resource r = null;
         if (roleModel.getContainer() instanceof RealmModel) {
             r = RealmAuth.Resource.REALM;
-        } else if (roleModel.getContainer() instanceof ApplicationModel) {
-            r = RealmAuth.Resource.APPLICATION;
-        } else if (roleModel.getContainer() instanceof OAuthClientModel) {
+        } else if (roleModel.getContainer() instanceof ClientModel) {
             r = RealmAuth.Resource.CLIENT;
         } else if (roleModel.getContainer() instanceof UserModel) {
             r = RealmAuth.Resource.USER;
@@ -175,7 +172,7 @@ public class RoleByIdResource extends RoleResource {
                                                                 final @PathParam("app") String appName) {
         RoleModel role = getRoleModel(id);
         auth.requireView();
-        ApplicationModel app = realm.getApplicationByName(appName);
+        ClientModel app = realm.getClientByClientId(appName);
         if (app == null) {
             throw new NotFoundException("Could not find application: " + appName);
 
@@ -198,7 +195,7 @@ public class RoleByIdResource extends RoleResource {
                                                                 final @PathParam("appId") String appId) {
         RoleModel role = getRoleModel(id);
         auth.requireView();
-        ApplicationModel app = realm.getApplicationById(appId);
+        ClientModel app = realm.getClientById(appId);
         if (app == null) {
             throw new NotFoundException("Could not find application: " + appId);
 

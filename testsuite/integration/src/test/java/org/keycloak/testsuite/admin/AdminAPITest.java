@@ -25,7 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.Config;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -77,7 +77,7 @@ public class AdminAPITest {
             RealmManager manager = new RealmManager(session);
 
             RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
-            ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);

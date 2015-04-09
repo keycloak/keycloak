@@ -3,7 +3,7 @@ package org.keycloak.services.managers;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.jboss.logging.Logger;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -36,12 +36,12 @@ public class ApplicationManager {
     public ApplicationManager() {
     }
 
-    public ApplicationModel createApplication(RealmModel realm, String name) {
+    public ClientModel createApplication(RealmModel realm, String name) {
         return KeycloakModelUtils.createApplication(realm, name);
     }
 
-    public boolean removeApplication(RealmModel realm, ApplicationModel application) {
-        if (realm.removeApplication(application.getId())) {
+    public boolean removeApplication(RealmModel realm, ClientModel application) {
+        if (realm.removeClient(application.getId())) {
             UserSessionProvider sessions = realmManager.getSession().sessions();
             if (sessions != null) {
                 sessions.onClientRemoved(realm, application);
@@ -52,7 +52,7 @@ public class ApplicationManager {
         }
     }
 
-    public Set<String> validateRegisteredNodes(ApplicationModel application) {
+    public Set<String> validateRegisteredNodes(ClientModel application) {
         Map<String, Integer> registeredNodes = application.getRegisteredNodes();
         if (registeredNodes == null || registeredNodes.isEmpty()) {
             return Collections.emptySet();
@@ -141,22 +141,22 @@ public class ApplicationManager {
     }
 
 
-    public InstallationAdapterConfig toInstallationRepresentation(RealmModel realmModel, ApplicationModel applicationModel, URI baseUri) {
+    public InstallationAdapterConfig toInstallationRepresentation(RealmModel realmModel, ClientModel clientModel, URI baseUri) {
         InstallationAdapterConfig rep = new InstallationAdapterConfig();
         rep.setRealm(realmModel.getName());
         rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslRequired(realmModel.getSslRequired().name().toLowerCase());
 
-        if (applicationModel.isPublicClient() && !applicationModel.isBearerOnly()) rep.setPublicClient(true);
-        if (applicationModel.isBearerOnly()) rep.setBearerOnly(true);
-        if (!applicationModel.isBearerOnly()) rep.setAuthServerUrl(baseUri.toString());
-        if (applicationModel.getRoles().size() > 0) rep.setUseResourceRoleMappings(true);
+        if (clientModel.isPublicClient() && !clientModel.isBearerOnly()) rep.setPublicClient(true);
+        if (clientModel.isBearerOnly()) rep.setBearerOnly(true);
+        if (!clientModel.isBearerOnly()) rep.setAuthServerUrl(baseUri.toString());
+        if (clientModel.getRoles().size() > 0) rep.setUseResourceRoleMappings(true);
 
-        rep.setResource(applicationModel.getName());
+        rep.setResource(clientModel.getClientId());
 
-        if (!applicationModel.isBearerOnly() && !applicationModel.isPublicClient()) {
+        if (!clientModel.isBearerOnly() && !clientModel.isPublicClient()) {
             Map<String, String> creds = new HashMap<String, String>();
-            String cred = applicationModel.getSecret();
+            String cred = clientModel.getSecret();
             creds.put(CredentialRepresentation.SECRET, cred);
             rep.setCredentials(creds);
         }
@@ -164,27 +164,27 @@ public class ApplicationManager {
         return rep;
     }
 
-    public String toJBossSubsystemConfig(RealmModel realmModel, ApplicationModel applicationModel, URI baseUri) {
+    public String toJBossSubsystemConfig(RealmModel realmModel, ClientModel clientModel, URI baseUri) {
         StringBuffer buffer = new StringBuffer();
         buffer.append("<secure-deployment name=\"WAR MODULE NAME.war\">\n");
         buffer.append("    <realm>").append(realmModel.getName()).append("</realm>\n");
         buffer.append("    <realm-public-key>").append(realmModel.getPublicKeyPem()).append("</realm-public-key>\n");
-        if (applicationModel.isBearerOnly()){
+        if (clientModel.isBearerOnly()){
             buffer.append("    <bearer-only>true</bearer-only>\n");
 
         } else {
             buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
-            if (applicationModel.isPublicClient() && !applicationModel.isBearerOnly()) {
+            if (clientModel.isPublicClient() && !clientModel.isBearerOnly()) {
                 buffer.append("    <public-client>true</public-client>\n");
             }
         }
         buffer.append("    <ssl-required>").append(realmModel.getSslRequired().name()).append("</ssl-required>\n");
-        buffer.append("    <resource>").append(applicationModel.getName()).append("</resource>\n");
-        String cred = applicationModel.getSecret();
-        if (!applicationModel.isBearerOnly() && !applicationModel.isPublicClient()) {
+        buffer.append("    <resource>").append(clientModel.getClientId()).append("</resource>\n");
+        String cred = clientModel.getSecret();
+        if (!clientModel.isBearerOnly() && !clientModel.isPublicClient()) {
             buffer.append("    <credential name=\"secret\">").append(cred).append("</credential>\n");
         }
-        if (applicationModel.getRoles().size() > 0) {
+        if (clientModel.getRoles().size() > 0) {
             buffer.append("    <use-resource-role-mappings>true</use-resource-role-mappings>\n");
         }
         buffer.append("</secure-deployment>\n");

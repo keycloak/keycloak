@@ -6,10 +6,8 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -18,9 +16,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
@@ -58,23 +54,13 @@ public class ExportUtils {
         }
 
         // Applications
-        List<ApplicationModel> applications = realm.getApplications();
+        List<ClientModel> applications = realm.getClients();
         List<ApplicationRepresentation> appReps = new ArrayList<ApplicationRepresentation>();
-        for (ApplicationModel app : applications) {
+        for (ClientModel app : applications) {
             ApplicationRepresentation appRep = exportApplication(app);
             appReps.add(appRep);
         }
         rep.setApplications(appReps);
-
-        // OAuth clients
-        List<OAuthClientModel> oauthClients = realm.getOAuthClients();
-        List<OAuthClientRepresentation> oauthClientReps = new ArrayList<OAuthClientRepresentation>();
-        for (OAuthClientModel oauthClient : oauthClients) {
-            OAuthClientRepresentation clientRep = ModelToRepresentation.toRepresentation(oauthClient);
-            clientRep.setSecret(oauthClient.getSecret());
-            oauthClientReps.add(clientRep);
-        }
-        rep.setOauthClients(oauthClientReps);
 
         // Roles
         List<RoleRepresentation> realmRoleReps = null;
@@ -84,10 +70,10 @@ public class ExportUtils {
         if (realmRoles != null && realmRoles.size() > 0) {
             realmRoleReps = exportRoles(realmRoles);
         }
-        for (ApplicationModel app : applications) {
+        for (ClientModel app : applications) {
             Set<RoleModel> currentAppRoles = app.getRoles();
             List<RoleRepresentation> currentAppRoleReps = exportRoles(currentAppRoles);
-            appRolesReps.put(app.getName(), currentAppRoleReps);
+            appRolesReps.put(app.getClientId(), currentAppRoleReps);
         }
 
         RolesRepresentation rolesRep = new RolesRepresentation();
@@ -100,9 +86,8 @@ public class ExportUtils {
         rep.setRoles(rolesRep);
 
         // Scopes
-        List<ClientModel> allClients = new ArrayList<ClientModel>(applications);
-        allClients.addAll(realm.getOAuthClients());
-        Map<String, List<ScopeMappingRepresentation>> appScopeReps = new HashMap<String, List<ScopeMappingRepresentation>>();
+        List<ClientModel> allClients = new ArrayList<>(applications);
+        Map<String, List<ScopeMappingRepresentation>> appScopeReps = new HashMap<>();
 
         for (ClientModel client : allClients) {
             Set<RoleModel> clientScopes = client.getScopeMappings();
@@ -114,11 +99,11 @@ public class ExportUtils {
                     }
                     scopeMappingRep.role(scope.getName());
                 } else {
-                    ApplicationModel app = (ApplicationModel)scope.getContainer();
-                    String appName = app.getName();
+                    ClientModel app = (ClientModel)scope.getContainer();
+                    String appName = app.getClientId();
                     List<ScopeMappingRepresentation> currentAppScopes = appScopeReps.get(appName);
                     if (currentAppScopes == null) {
-                        currentAppScopes = new ArrayList<ScopeMappingRepresentation>();
+                        currentAppScopes = new ArrayList<>();
                         appScopeReps.put(appName, currentAppScopes);
                     }
 
@@ -165,7 +150,7 @@ public class ExportUtils {
      * @param app
      * @return full ApplicationRepresentation
      */
-    public static ApplicationRepresentation exportApplication(ApplicationModel app) {
+    public static ApplicationRepresentation exportApplication(ClientModel app) {
         ApplicationRepresentation appRep = ModelToRepresentation.toRepresentation(app);
 
         appRep.setSecret(app.getSecret());
@@ -216,8 +201,8 @@ public class ExportUtils {
                         compositeAppRoles = new HashMap<String, List<String>>();
                     }
 
-                    ApplicationModel app = (ApplicationModel)crContainer;
-                    String appName = app.getName();
+                    ClientModel app = (ClientModel)crContainer;
+                    String appName = app.getClientId();
                     List<String> currentAppComposites = compositeAppRoles.get(appName);
                     if (currentAppComposites == null) {
                         currentAppComposites = new ArrayList<String>();
@@ -269,8 +254,8 @@ public class ExportUtils {
             if (role.getContainer() instanceof RealmModel) {
                 realmRoleNames.add(role.getName());
             } else {
-                ApplicationModel app = (ApplicationModel)role.getContainer();
-                String appName = app.getName();
+                ClientModel app = (ClientModel)role.getContainer();
+                String appName = app.getClientId();
                 List<String> currentAppRoles = appRoleNames.get(appName);
                 if (currentAppRoles == null) {
                     currentAppRoles = new ArrayList<String>();

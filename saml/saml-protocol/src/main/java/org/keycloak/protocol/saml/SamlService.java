@@ -11,7 +11,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -165,7 +164,7 @@ public class SamlService {
 
             RequestAbstractType requestAbstractType = (RequestAbstractType)samlObject;
             String issuer = requestAbstractType.getIssuer().getValue();
-            ClientModel client = realm.findClient(issuer);
+            ClientModel client = realm.getClientByClientId(issuer);
 
             if (client == null) {
                 event.event(EventType.LOGIN);
@@ -178,7 +177,7 @@ public class SamlService {
                 event.error(Errors.CLIENT_DISABLED);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             }
-            if ((client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
+            if ((client instanceof ClientModel) && ((ClientModel)client).isBearerOnly()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.NOT_ALLOWED);
                 return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.BEARER_ONLY);
@@ -241,8 +240,8 @@ public class SamlService {
                 } else {
                     redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
                 }
-                if (redirect == null && client instanceof ApplicationModel) {
-                    redirect = ((ApplicationModel)client).getManagementUrl();
+                if (redirect == null && client instanceof ClientModel) {
+                    redirect = ((ClientModel)client).getManagementUrl();
                 }
 
             }
@@ -368,8 +367,8 @@ public class SamlService {
 
             String redirectUri = null;
 
-            if (client instanceof ApplicationModel) {
-                redirectUri = ((ApplicationModel)client).getBaseUrl();
+            if (client instanceof ClientModel) {
+                redirectUri = ((ClientModel)client).getBaseUrl();
             }
 
             if (redirectUri != null) {
@@ -403,7 +402,6 @@ public class SamlService {
 
 
     protected class PostBindingProtocol extends BindingProtocol {
-
 
         @Override
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {

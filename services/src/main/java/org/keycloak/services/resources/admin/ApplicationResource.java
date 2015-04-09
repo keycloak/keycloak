@@ -5,7 +5,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -57,7 +57,7 @@ public class ApplicationResource {
     protected static final Logger logger = Logger.getLogger(ApplicationResource.class);
     protected RealmModel realm;
     private RealmAuth auth;
-    protected ApplicationModel application;
+    protected ClientModel application;
     protected KeycloakSession session;
     
     @Context
@@ -70,13 +70,13 @@ public class ApplicationResource {
         return keycloak;
     }
 
-    public ApplicationResource(RealmModel realm, RealmAuth auth, ApplicationModel applicationModel, KeycloakSession session) {
+    public ApplicationResource(RealmModel realm, RealmAuth auth, ClientModel clientModel, KeycloakSession session) {
         this.realm = realm;
         this.auth = auth;
-        this.application = applicationModel;
+        this.application = clientModel;
         this.session = session;
 
-        auth.init(RealmAuth.Resource.APPLICATION);
+        auth.init(RealmAuth.Resource.CLIENT);
     }
 
     @Path("protocol-mappers")

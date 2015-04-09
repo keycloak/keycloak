@@ -31,7 +31,7 @@ import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -75,7 +75,7 @@ public class AccountTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
 
-            ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
+            ClientModel accountApp = appRealm.getClientNameMap().get(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
 
             UserModel user2 = manager.getSession().users().addUser(appRealm, "test-user-no-access@localhost");
             user2.setEnabled(true);
@@ -155,11 +155,6 @@ public class AccountTest {
                 user.updateCredential(cred);
             }
         });
-    }
-
-    //@Test @Ignore
-    public void runit() throws Exception {
-        Thread.sleep(10000000);
     }
 
     @Test

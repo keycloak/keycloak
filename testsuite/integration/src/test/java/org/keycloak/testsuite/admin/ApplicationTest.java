@@ -4,17 +4,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ApplicationResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
@@ -22,7 +17,6 @@ import org.openqa.selenium.WebDriver;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
-import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;

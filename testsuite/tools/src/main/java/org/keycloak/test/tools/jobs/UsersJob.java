@@ -1,6 +1,6 @@
 package org.keycloak.test.tools.jobs;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -61,11 +61,11 @@ public abstract class UsersJob implements Runnable {
             session.getTransaction().begin();
 
             RealmModel realm = new RealmManager(session).getRealmByName(realmName);
-            Map<String, ApplicationModel> apps = realm.getApplicationNameMap();
+            Map<String, ClientModel> apps = realm.getClientNameMap();
 
             Set<RoleModel> realmRoles = realm.getRoles();
             Map<String, Set<RoleModel>> appRoles = new HashMap<String, Set<RoleModel>>();
-            for (Map.Entry<String, ApplicationModel> appEntry : apps.entrySet()) {
+            for (Map.Entry<String, ClientModel> appEntry : apps.entrySet()) {
                 appRoles.put(appEntry.getKey(), appEntry.getValue().getRoles());
             }
 
@@ -86,7 +86,7 @@ public abstract class UsersJob implements Runnable {
 
     protected abstract void before(KeycloakSession keycloakSession);
 
-    protected abstract void runIteration(KeycloakSession session, RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter);
+    protected abstract void runIteration(KeycloakSession session, RealmModel realm, Map<String, ClientModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter);
 
     protected RoleModel findRole(Set<RoleModel> roles, String roleName) {
         for (RoleModel role : roles) {

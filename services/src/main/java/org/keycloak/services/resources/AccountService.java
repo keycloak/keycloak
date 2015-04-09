@@ -131,14 +131,14 @@ public class AccountService {
     private KeycloakSession session;
 
     private final AppAuthManager authManager;
-    private final ApplicationModel application;
+    private final ClientModel application;
     private EventBuilder event;
     private AccountProvider account;
     private Auth auth;
     private EventStoreProvider eventStore;
     private String stateChecker;
 
-    public AccountService(RealmModel realm, ApplicationModel application, EventBuilder event) {
+    public AccountService(RealmModel realm, ClientModel application, EventBuilder event) {
         this.realm = realm;
         this.application = application;
         this.event = event;
@@ -813,7 +813,7 @@ public class AccountService {
 
         String referrerUri = uriInfo.getQueryParameters().getFirst("referrer_uri");
 
-        ApplicationModel application = realm.getApplicationByName(referrer);
+        ClientModel application = realm.getClientByClientId(referrer);
         if (application != null) {
             if (referrerUri != null) {
                 referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, application);
@@ -825,7 +825,7 @@ public class AccountService {
                 return new String[]{referrer, referrerUri};
             }
         } else if (referrerUri != null) {
-            ClientModel client = realm.getOAuthClient(referrer);
+            ClientModel client = realm.getClientByClientId(referrer);
             if (client != null) {
                 referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, application);
 

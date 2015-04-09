@@ -96,7 +96,7 @@ public class AuthorizationCodeTest {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getApplicationNameMap().get("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
+                appRealm.getClientNameMap().get("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
             }
         });
         oauth.redirectUri(Constants.INSTALLED_APP_URN);
@@ -115,7 +115,7 @@ public class AuthorizationCodeTest {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getApplicationNameMap().get("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
+                appRealm.getClientNameMap().get("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
             }
         });
     }
@@ -125,7 +125,7 @@ public class AuthorizationCodeTest {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getApplicationNameMap().get("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
+                appRealm.getClientNameMap().get("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
             }
         });
         oauth.redirectUri(Constants.INSTALLED_APP_URN);
@@ -147,7 +147,7 @@ public class AuthorizationCodeTest {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getApplicationNameMap().get("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
+                appRealm.getClientNameMap().get("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
             }
         });
     }
@@ -157,7 +157,7 @@ public class AuthorizationCodeTest {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getApplicationByName("test-app").addRedirectUri(oauth.getRedirectUri());
+                appRealm.getClientByClientId("test-app").addRedirectUri(oauth.getRedirectUri());
             }
         });
 

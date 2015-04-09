@@ -14,7 +14,7 @@ import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -154,7 +154,7 @@ public class AdminConsole {
     @Produces("application/json")
     @NoCache
     public ApplicationManager.InstallationAdapterConfig config() {
-        ApplicationModel consoleApp = realm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+        ClientModel consoleApp = realm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
         if (consoleApp == null) {
             throw new NotFoundException("Could not find admin console application");
         }
@@ -208,7 +208,7 @@ public class AdminConsole {
 
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         RealmManager realmManager = new RealmManager(session);
-        ApplicationModel realmAdminApp = realm.getApplicationByName(realmManager.getRealmAdminApplicationName(realm));
+        ClientModel realmAdminApp = realm.getClientByClientId(realmManager.getRealmAdminApplicationName(realm));
         Set<RoleModel> roles = realmAdminApp.getRoles();
         for (RoleModel role : roles) {
             if (!user.hasRole(role)) continue;
@@ -223,7 +223,7 @@ public class AdminConsole {
     private void addMasterRealmAccess(RealmModel masterRealm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
-            ApplicationModel realmAdminApp = realm.getMasterAdminApp();
+            ClientModel realmAdminApp = realm.getMasterAdminApp();
             Set<RoleModel> roles = realmAdminApp.getRoles();
             for (RoleModel role : roles) {
                 if (!user.hasRole(role)) continue;

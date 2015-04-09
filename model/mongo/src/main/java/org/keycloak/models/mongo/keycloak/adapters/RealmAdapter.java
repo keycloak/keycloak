@@ -4,12 +4,10 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -21,7 +19,6 @@ import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -579,80 +576,59 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public ClientModel findClient(String clientId) {
-        ClientModel model = getApplicationByName(clientId);
-        if (model != null) return model;
-        return getOAuthClient(clientId);
+    public ClientModel getClientById(String id) {
+        return model.getClientById(id, this);
     }
 
     @Override
-    public ClientModel findClientById(String id) {
-        ClientModel model = getApplicationById(id);
-        if (model != null) return model;
-        return getOAuthClientById(id);
-    }
-
-
-
-    @Override
-    public ApplicationModel getApplicationById(String id) {
-        return model.getApplicationById(id, this);
-    }
-
-    @Override
-    public ApplicationModel getApplicationByName(String name) {
+    public ClientModel getClientByClientId(String clientId) {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
-                .and("name").is(name)
+                .and("name").is(clientId)
                 .get();
         MongoApplicationEntity appEntity = getMongoStore().loadSingleEntity(MongoApplicationEntity.class, query, invocationContext);
-        return appEntity == null ? null : new ApplicationAdapter(session, this, appEntity, invocationContext);
+        return appEntity == null ? null : new ClientAdapter(session, this, appEntity, invocationContext);
     }
 
     @Override
-    public Map<String, ApplicationModel> getApplicationNameMap() {
-        Map<String, ApplicationModel> resourceMap = new HashMap<String, ApplicationModel>();
-        for (ApplicationModel resource : getApplications()) {
-            resourceMap.put(resource.getName(), resource);
+    public Map<String, ClientModel> getClientNameMap() {
+        Map<String, ClientModel> resourceMap = new HashMap<String, ClientModel>();
+        for (ClientModel resource : getClients()) {
+            resourceMap.put(resource.getClientId(), resource);
         }
         return resourceMap;
     }
 
     @Override
-    public List<ApplicationModel> getApplications() {
+    public List<ClientModel> getClients() {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
                 .get();
         List<MongoApplicationEntity> appDatas = getMongoStore().loadEntities(MongoApplicationEntity.class, query, invocationContext);
 
-        List<ApplicationModel> result = new ArrayList<ApplicationModel>();
+        List<ClientModel> result = new ArrayList<ClientModel>();
         for (MongoApplicationEntity appData : appDatas) {
-            result.add(new ApplicationAdapter(session, this, appData, invocationContext));
+            result.add(new ClientAdapter(session, this, appData, invocationContext));
         }
         return result;
     }
 
     @Override
-    public ApplicationModel addApplication(String name) {
-        return this.addApplication(null, name);
+    public ClientModel addClient(String name) {
+        return this.addClient(null, name);
     }
 
     @Override
-    public ApplicationModel addApplication(String id, String name) {
+    public ClientModel addClient(String id, String clientId) {
         MongoApplicationEntity appData = new MongoApplicationEntity();
         appData.setId(id);
-        appData.setName(name);
+        appData.setName(clientId);
         appData.setRealmId(getId());
         appData.setEnabled(true);
         getMongoStore().insertEntity(appData, invocationContext);
 
-        final ApplicationModel model = new ApplicationAdapter(session, this, appData, invocationContext);
-        session.getKeycloakSessionFactory().publish(new ApplicationCreationEvent() {
-            @Override
-            public ApplicationModel getCreatedApplication() {
-                return model;
-            }
-
+        final ClientModel model = new ClientAdapter(session, this, appData, invocationContext);
+        session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
             @Override
             public ClientModel getCreatedClient() {
                 return model;
@@ -662,69 +638,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public boolean removeApplication(String id) {
+    public boolean removeClient(String id) {
         return getMongoStore().removeEntity(MongoApplicationEntity.class, id, invocationContext);
-    }
-
-    @Override
-    public OAuthClientModel addOAuthClient(String name) {
-        return this.addOAuthClient(null, name);
-    }
-
-    @Override
-    public OAuthClientModel addOAuthClient(String id, String name) {
-        MongoOAuthClientEntity oauthClient = new MongoOAuthClientEntity();
-        oauthClient.setId(id);
-        oauthClient.setRealmId(getId());
-        oauthClient.setName(name);
-        getMongoStore().insertEntity(oauthClient, invocationContext);
-
-        final OAuthClientAdapter model = new OAuthClientAdapter(session, this, oauthClient, invocationContext);
-        session.getKeycloakSessionFactory().publish(new OAuthClientCreationEvent() {
-            @Override
-            public OAuthClientModel getCreatedOAuthClient() {
-                return model;
-            }
-
-            @Override
-            public ClientModel getCreatedClient() {
-                return model;
-            }
-        });
-        return model;
-    }
-
-    @Override
-    public boolean removeOAuthClient(String id) {
-        return getMongoStore().removeEntity(MongoOAuthClientEntity.class, id, invocationContext);
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClient(String name) {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(getId())
-                .and("name").is(name)
-                .get();
-        MongoOAuthClientEntity oauthClient = getMongoStore().loadSingleEntity(MongoOAuthClientEntity.class, query, invocationContext);
-        return oauthClient == null ? null : new OAuthClientAdapter(session, this, oauthClient, invocationContext);
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClientById(String id) {
-        return model.getOAuthClientById(id, this);
-    }
-
-    @Override
-    public List<OAuthClientModel> getOAuthClients() {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(getId())
-                .get();
-        List<MongoOAuthClientEntity> results = getMongoStore().loadEntities(MongoOAuthClientEntity.class, query, invocationContext);
-        List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
-        for (MongoOAuthClientEntity data : results) {
-            list.add(new OAuthClientAdapter(session, this, data, invocationContext));
-        }
-        return list;
     }
 
     @Override
@@ -1063,13 +978,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public ApplicationModel getMasterAdminApp() {
+    public ClientModel getMasterAdminApp() {
         MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, realm.getAdminAppId(), invocationContext);
-        return appData != null ? new ApplicationAdapter(session, this, appData, invocationContext) : null;
+        return appData != null ? new ClientAdapter(session, this, appData, invocationContext) : null;
     }
 
     @Override
-    public void setMasterAdminApp(ApplicationModel app) {
+    public void setMasterAdminApp(ClientModel app) {
         String adminAppId = app != null ? app.getId() : null;
         realm.setAdminAppId(adminAppId);
         updateRealm();

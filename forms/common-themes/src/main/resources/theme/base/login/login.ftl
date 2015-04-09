@@ -1,17 +1,9 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayInfo=social.displayInfo; section>
     <#if section = "title">
-        <#if client.application>
-            ${msg("loginTitle",(realm.name!''))}
-        <#elseif client.oauthClient>
-            ${msg("loginOauthTitle",(realm.name!''))}
-        </#if>
+        ${msg("loginTitle",(realm.name!''))}
     <#elseif section = "header">
-        <#if client.application>
-            ${msg("loginTitleHtml",(realm.name!''))}
-        <#elseif client.oauthClient>
-            ${msg("loginOauthTitleHtml",(realm.name!''), (client.clientId!''))}
-        </#if>
+        ${msg("loginTitleHtml",(realm.name!''))}
     <#elseif section = "form">
         <#if realm.password>
             <form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">

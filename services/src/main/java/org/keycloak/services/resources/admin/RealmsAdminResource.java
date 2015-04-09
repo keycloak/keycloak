@@ -4,11 +4,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -85,14 +84,14 @@ public class RealmsAdminResource {
                 addRealmRep(reps, realm, realm.getMasterAdminApp());
             }
         } else {
-            ApplicationModel adminApp = auth.getRealm().getApplicationByName(realmManager.getRealmAdminApplicationName(auth.getRealm()));
+            ClientModel adminApp = auth.getRealm().getClientByClientId(realmManager.getRealmAdminApplicationName(auth.getRealm()));
             addRealmRep(reps, auth.getRealm(), adminApp);
         }
         logger.debug(("getRealms()"));
         return reps;
     }
 
-    protected void addRealmRep(List<RealmRepresentation> reps, RealmModel realm, ApplicationModel realmManagementApplication) {
+    protected void addRealmRep(List<RealmRepresentation> reps, RealmModel realm, ClientModel realmManagementApplication) {
         if (auth.hasAppRole(realmManagementApplication, AdminRoles.MANAGE_REALM)) {
             reps.add(ModelToRepresentation.toRepresentation(realm, false));
         } else if (auth.hasOneOfAppRole(realmManagementApplication, AdminRoles.ALL_REALM_ROLES)) {
@@ -187,7 +186,7 @@ public class RealmsAdminResource {
         }
 
         RealmModel adminRealm = new RealmManager(session).getKeycloakAdminstrationRealm();
-        ApplicationModel realmAdminApp = realm.getMasterAdminApp();
+        ClientModel realmAdminApp = realm.getMasterAdminApp();
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.getRole(r);
             auth.getUser().grantRole(role);
@@ -217,7 +216,7 @@ public class RealmsAdminResource {
         if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
             realmAuth = new RealmAuth(auth, realm.getMasterAdminApp());
         } else {
-            realmAuth = new RealmAuth(auth, realm.getApplicationByName(realmManager.getRealmAdminApplicationName(auth.getRealm())));
+            realmAuth = new RealmAuth(auth, realm.getClientByClientId(realmManager.getRealmAdminApplicationName(auth.getRealm())));
         }
 
         RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager);

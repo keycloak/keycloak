@@ -29,9 +29,6 @@ public interface RealmResource {
     @Path("users")
     public UsersResource users();
 
-    @Path("oauth-clients")
-    public OAuthClientsResource oAuthClients();
-
     @Path("roles")
     public RolesResource roles();
 

@@ -4,7 +4,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -44,7 +44,7 @@ public class ApplicationsResource {
         this.realm = realm;
         this.auth = auth;
         
-        auth.init(RealmAuth.Resource.APPLICATION);
+        auth.init(RealmAuth.Resource.CLIENT);
     }
 
     /**
@@ -59,15 +59,15 @@ public class ApplicationsResource {
         auth.requireAny();
 
         List<ApplicationRepresentation> rep = new ArrayList<ApplicationRepresentation>();
-        List<ApplicationModel> applicationModels = realm.getApplications();
+        List<ClientModel> clientModels = realm.getClients();
 
         boolean view = auth.hasView();
-        for (ApplicationModel applicationModel : applicationModels) {
+        for (ClientModel clientModel : clientModels) {
             if (view) {
-                rep.add(ModelToRepresentation.toRepresentation(applicationModel));
+                rep.add(ModelToRepresentation.toRepresentation(clientModel));
             } else {
                 ApplicationRepresentation app = new ApplicationRepresentation();
-                app.setName(applicationModel.getName());
+                app.setName(clientModel.getClientId());
                 rep.add(app);
             }
         }
@@ -88,15 +88,15 @@ public class ApplicationsResource {
         auth.requireManage();
 
         try {
-            ApplicationModel applicationModel = RepresentationToModel.createApplication(session, realm, rep, true);
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(getApplicationPath(applicationModel)).build()).build();
+            ClientModel clientModel = RepresentationToModel.createApplication(session, realm, rep, true);
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(getApplicationPath(clientModel)).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Application " + rep.getName() + " already exists");
         }
     }
 
-    protected String getApplicationPath(ApplicationModel applicationModel) {
-        return applicationModel.getName();
+    protected String getApplicationPath(ClientModel clientModel) {
+        return clientModel.getClientId();
     }
 
     /**
@@ -107,18 +107,18 @@ public class ApplicationsResource {
      */
     @Path("{app-name}")
     public ApplicationResource getApplication(final @PathParam("app-name") String name) {
-        ApplicationModel applicationModel = getApplicationByPathParam(name);
-        if (applicationModel == null) {
+        ClientModel clientModel = getApplicationByPathParam(name);
+        if (clientModel == null) {
             throw new NotFoundException("Could not find application: " + name);
         }
-        ApplicationResource applicationResource = new ApplicationResource(realm, auth, applicationModel, session);
+        ApplicationResource applicationResource = new ApplicationResource(realm, auth, clientModel, session);
         ResteasyProviderFactory.getInstance().injectProperties(applicationResource);
         //resourceContext.initResource(applicationResource);
         return applicationResource;
     }
 
-    protected ApplicationModel getApplicationByPathParam(String name) {
-        return realm.getApplicationByName(name);
+    protected ClientModel getApplicationByPathParam(String name) {
+        return realm.getClientByClientId(name);
     }
 
 }

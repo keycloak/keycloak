@@ -27,7 +27,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -164,8 +164,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!(clientSession.getClient() instanceof ApplicationModel)) return;
-        ApplicationModel app = (ApplicationModel)clientSession.getClient();
+        if (!(clientSession.getClient() instanceof ClientModel)) return;
+        ClientModel app = (ClientModel)clientSession.getClient();
         ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
 
         try {

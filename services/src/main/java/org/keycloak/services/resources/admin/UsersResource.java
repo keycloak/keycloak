@@ -7,7 +7,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -440,21 +439,21 @@ public class UsersResource {
             all.setRealmMappings(realmRep);
         }
 
-        List<ApplicationModel> applications = realm.getApplications();
+        List<ClientModel> applications = realm.getClients();
         if (applications.size() > 0) {
             Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
-            for (ApplicationModel application : applications) {
+            for (ClientModel application : applications) {
                 Set<RoleModel> roleMappings = user.getApplicationRoleMappings(application);
                 if (roleMappings.size() > 0) {
                     ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
                     mappings.setApplicationId(application.getId());
-                    mappings.setApplication(application.getName());
+                    mappings.setApplication(application.getClientId());
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
                         roles.add(ModelToRepresentation.toRepresentation(role));
                     }
-                    appMappings.put(application.getName(), mappings);
+                    appMappings.put(application.getClientId(), mappings);
                     all.setApplicationMappings(appMappings);
                 }
             }
@@ -609,7 +608,7 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        ApplicationModel application = realm.getApplicationByName(appName);
+        ClientModel application = realm.getClientByClientId(appName);
 
         if (application == null) {
             throw new NotFoundException("Application not found");
@@ -625,7 +624,7 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        ApplicationModel application = realm.getApplicationById(appId);
+        ClientModel application = realm.getClientById(appId);
 
         if (application == null) {
             throw new NotFoundException("Application not found");
@@ -720,7 +719,7 @@ public class UsersResource {
             clientId = Constants.ACCOUNT_MANAGEMENT_APP;
         }
 
-        ClientModel client = realm.findClient(clientId);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null || !client.isEnabled()) {
             return Flows.errors().error(clientId + " not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }

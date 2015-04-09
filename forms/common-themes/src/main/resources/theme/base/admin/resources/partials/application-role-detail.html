@@ -20,7 +20,7 @@
         <h2 data-ng-show="create" class="pull-left"><span>{{application.name}}</span> Add Application Role</h2>
         <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
 
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageApplications">
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
             
             <fieldset class="border-top">
                 <div class="form-group">
@@ -126,11 +126,11 @@
                 </div>
             </fieldset>
 
-            <div class="pull-right form-actions" data-ng-show="create && access.manageApplications">
+            <div class="pull-right form-actions" data-ng-show="create && access.manageClients">
                 <button kc-cancel data-ng-click="cancel()">Cancel</button>
                 <button kc-save data-ng-show="changed">Save</button>
             </div>
-            <div class="pull-right form-actions" data-ng-show="!create && access.manageApplications">
+            <div class="pull-right form-actions" data-ng-show="!create && access.manageClients">
                 <button kc-reset data-ng-show="changed">Clear changes</button>
                 <button kc-save  data-ng-show="changed">Save</button>
                 <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>

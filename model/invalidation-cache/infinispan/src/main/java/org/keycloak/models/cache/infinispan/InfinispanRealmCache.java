@@ -4,7 +4,6 @@ import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.models.cache.RealmCache;
 import org.keycloak.models.cache.entities.CachedApplication;
-import org.keycloak.models.cache.entities.CachedOAuthClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 
@@ -99,31 +98,6 @@ public class InfinispanRealmCache implements RealmCache {
     @Override
     public void invalidateCachedApplicationById(String id) {
         logger.tracev("Removing application {0}", id);
-        cache.remove(id);
-    }
-
-    @Override
-    public CachedOAuthClient getOAuthClient(String id) {
-        if (!enabled) return null;
-        return get(id, CachedOAuthClient.class);
-    }
-
-    @Override
-    public void invalidateOAuthClient(CachedOAuthClient client) {
-        logger.tracev("Removing oauth client {0}", client.getId());
-        cache.remove(client.getId());
-    }
-
-    @Override
-    public void addCachedOAuthClient(CachedOAuthClient client) {
-        if (!enabled) return;
-        logger.tracev("Adding oauth client {0}", client.getId());
-        cache.put(client.getId(), client);
-    }
-
-    @Override
-    public void invalidateCachedOAuthClientById(String id) {
-        logger.tracev("Removing oauth client {0}", id);
         cache.remove(id);
     }
 

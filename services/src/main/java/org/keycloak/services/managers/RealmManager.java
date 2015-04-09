@@ -6,7 +6,7 @@ import org.keycloak.enums.SslRequired;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -25,7 +25,6 @@ import org.keycloak.timer.TimerProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -91,7 +90,7 @@ public class RealmManager {
     }
 
     protected void setupAdminConsole(RealmModel realm) {
-        ApplicationModel adminConsole = realm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+        ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
         if (adminConsole == null) adminConsole = new ApplicationManager(this).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
         String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
         adminConsole.setBaseUrl(baseUrl + "/index.html");
@@ -105,7 +104,7 @@ public class RealmManager {
             adminRole = realm.getRole(AdminRoles.ADMIN);
         } else {
             String realmAdminApplicationName = getRealmAdminApplicationName(realm);
-            ApplicationModel realmAdminApp = realm.getApplicationByName(realmAdminApplicationName);
+            ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationName);
             adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         }
         adminConsole.addScopeMapping(adminRole);
@@ -178,7 +177,7 @@ public class RealmManager {
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
 
         String realmAdminApplicationName = getRealmAdminApplicationName(realm);
-        ApplicationModel realmAdminApp = realm.getApplicationByName(realmAdminApplicationName);
+        ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationName);
         if (realmAdminApp == null) {
             realmAdminApp = applicationManager.createApplication(realm, realmAdminApplicationName);
         }
@@ -196,7 +195,7 @@ public class RealmManager {
 
 
     private void setupAccountManagement(RealmModel realm) {
-        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
+        ClientModel application = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
         if (application == null) {
             application = new ApplicationManager(this).createApplication(realm, Constants.ACCOUNT_MANAGEMENT_APP);
             application.setEnabled(true);

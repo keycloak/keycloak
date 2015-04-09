@@ -7,7 +7,6 @@ import org.jboss.resteasy.client.ClientResponse;
 import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -58,7 +57,7 @@ public class ResourceAdminManager {
 
    }
 
-    public static String getManagementUrl(URI requestUri, ApplicationModel application) {
+    public static String getManagementUrl(URI requestUri, ClientModel application) {
         String mgmtUrl = application.getManagementUrl();
         if (mgmtUrl == null || mgmtUrl.equals("")) {
             return null;
@@ -73,7 +72,7 @@ public class ResourceAdminManager {
 
     // For non-cluster setup, return just single configured managementUrls
     // For cluster setup, return the management Urls corresponding to all registered cluster nodes
-    private List<String> getAllManagementUrls(URI requestUri, ApplicationModel application) {
+    private List<String> getAllManagementUrls(URI requestUri, ClientModel application) {
         String baseMgmtUrl = getManagementUrl(requestUri, application);
         if (baseMgmtUrl == null) {
             return Collections.emptyList();
@@ -106,7 +105,7 @@ public class ResourceAdminManager {
 
         try {
             // Map from "app" to clientSessions for this app
-            MultivaluedHashMap<ApplicationModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ApplicationModel, ClientSessionModel>();
+            MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ClientModel, ClientSessionModel>();
             for (UserSessionModel userSession : userSessions) {
                 putClientSessions(clientSessions, userSession);
             }
@@ -114,7 +113,7 @@ public class ResourceAdminManager {
             logger.debugv("logging out {0} resources ", clientSessions.size());
             //logger.infov("logging out resources: {0}", clientSessions);
 
-            for (Map.Entry<ApplicationModel, List<ClientSessionModel>> entry : clientSessions.entrySet()) {
+            for (Map.Entry<ClientModel, List<ClientSessionModel>> entry : clientSessions.entrySet()) {
                 logoutClientSessions(requestUri, realm, entry.getKey(), entry.getValue(), executor);
             }
         } finally {
@@ -122,23 +121,21 @@ public class ResourceAdminManager {
         }
     }
 
-    private void putClientSessions(MultivaluedHashMap<ApplicationModel, ClientSessionModel> clientSessions, UserSessionModel userSession) {
+    private void putClientSessions(MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions, UserSessionModel userSession) {
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
             ClientModel client = clientSession.getClient();
-            if (client instanceof ApplicationModel) {
-                clientSessions.add((ApplicationModel)client, clientSession);
-            }
+            clientSessions.add(client, clientSession);
         }
     }
 
-    public void logoutUserFromApplication(URI requestUri, RealmModel realm, ApplicationModel resource, UserModel user, KeycloakSession session) {
+    public void logoutUserFromApplication(URI requestUri, RealmModel realm, ClientModel resource, UserModel user, KeycloakSession session) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
             List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
             List<ClientSessionModel> ourAppClientSessions = null;
             if (userSessions != null) {
-                MultivaluedHashMap<ApplicationModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ApplicationModel, ClientSessionModel>();
+                MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ClientModel, ClientSessionModel>();
                 for (UserSessionModel userSession : userSessions) {
                     putClientSessions(clientSessions, userSession);
                 }
@@ -152,11 +149,11 @@ public class ResourceAdminManager {
 
     }
 
-    public boolean logoutClientSession(URI requestUri, RealmModel realm, ApplicationModel resource, ClientSessionModel clientSession, ApacheHttpClient4Executor client) {
+    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, ClientSessionModel clientSession, ApacheHttpClient4Executor client) {
         return logoutClientSessions(requestUri, realm, resource, Arrays.asList(clientSession), client);
     }
 
-    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ApplicationModel resource, List<ClientSessionModel> clientSessions, ApacheHttpClient4Executor client) {
+    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<ClientSessionModel> clientSessions, ApacheHttpClient4Executor client) {
         String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
 
@@ -176,7 +173,7 @@ public class ResourceAdminManager {
             }
 
             if (adapterSessionIds == null || adapterSessionIds.isEmpty()) {
-                logger.debugv("Can't logout {0}: no logged adapter sessions", resource.getName());
+                logger.debugv("Can't logout {0}: no logged adapter sessions", resource.getClientId());
                 return false;
             }
 
@@ -201,7 +198,7 @@ public class ResourceAdminManager {
                 return sendLogoutRequest(realm, resource, allSessionIds, userSessions, client, 0, managementUrl);
             }
         } else {
-            logger.debugv("Can't logout {0}: no management url", resource.getName());
+            logger.debugv("Can't logout {0}: no management url", resource.getClientId());
             return false;
         }
     }
@@ -213,11 +210,11 @@ public class ResourceAdminManager {
 
         try {
             realm.setNotBefore(Time.currentTime());
-            List<ApplicationModel> resources = realm.getApplications();
+            List<ClientModel> resources = realm.getClients();
             logger.debugv("logging out {0} resources ", resources.size());
 
             GlobalRequestResult finalResult = new GlobalRequestResult();
-            for (ApplicationModel resource : resources) {
+            for (ClientModel resource : resources) {
                 GlobalRequestResult currentResult = logoutApplication(requestUri, realm, resource, executor, realm.getNotBefore());
                 finalResult.addAll(currentResult);
             }
@@ -227,7 +224,7 @@ public class ResourceAdminManager {
         }
     }
 
-    public GlobalRequestResult logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource) {
+    public GlobalRequestResult logoutApplication(URI requestUri, RealmModel realm, ClientModel resource) {
         ApacheHttpClient4Executor executor = createExecutor();
         try {
             resource.setNotBefore(Time.currentTime());
@@ -238,10 +235,10 @@ public class ResourceAdminManager {
     }
 
 
-    protected GlobalRequestResult logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, ApacheHttpClient4Executor executor, int notBefore) {
+    protected GlobalRequestResult logoutApplication(URI requestUri, RealmModel realm, ClientModel resource, ApacheHttpClient4Executor executor, int notBefore) {
         List<String> mgmtUrls = getAllManagementUrls(requestUri, resource);
         if (mgmtUrls.isEmpty()) {
-            logger.debug("No management URL or no registered cluster nodes for the application " + resource.getName());
+            logger.debug("No management URL or no registered cluster nodes for the application " + resource.getClientId());
             return new GlobalRequestResult();
         }
 
@@ -259,16 +256,16 @@ public class ResourceAdminManager {
         return result;
     }
 
-    protected boolean sendLogoutRequest(RealmModel realm, ApplicationModel resource, List<String> adapterSessionIds, List<String> userSessions, ApacheHttpClient4Executor client, int notBefore, String managementUrl) {
-        LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), adapterSessionIds, notBefore, userSessions);
+    protected boolean sendLogoutRequest(RealmModel realm, ClientModel resource, List<String> adapterSessionIds, List<String> userSessions, ApacheHttpClient4Executor client, int notBefore, String managementUrl) {
+        LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), adapterSessionIds, notBefore, userSessions);
         String token = new TokenManager().encodeToken(realm, adminAction);
-        if (logger.isDebugEnabled()) logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getName(), managementUrl);
+        if (logger.isDebugEnabled()) logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getClientId(), managementUrl);
         ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());
         ClientResponse response;
         try {
             response = request.body(MediaType.TEXT_PLAIN_TYPE, token).post();
         } catch (Exception e) {
-            logger.warn("Logout for application '" + resource.getName() + "' failed", e);
+            logger.warn("Logout for application '" + resource.getClientId() + "' failed", e);
             return false;
         }
         try {
@@ -285,7 +282,7 @@ public class ResourceAdminManager {
 
         try {
             GlobalRequestResult finalResult = new GlobalRequestResult();
-            for (ApplicationModel application : realm.getApplications()) {
+            for (ClientModel application : realm.getClients()) {
                 GlobalRequestResult currentResult = pushRevocationPolicy(requestUri, realm, application, realm.getNotBefore(), executor);
                 finalResult.addAll(currentResult);
             }
@@ -295,7 +292,7 @@ public class ResourceAdminManager {
         }
     }
 
-    public GlobalRequestResult pushApplicationRevocationPolicy(URI requestUri, RealmModel realm, ApplicationModel application) {
+    public GlobalRequestResult pushApplicationRevocationPolicy(URI requestUri, RealmModel realm, ClientModel application) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
@@ -306,10 +303,10 @@ public class ResourceAdminManager {
     }
 
 
-    protected GlobalRequestResult pushRevocationPolicy(URI requestUri, RealmModel realm, ApplicationModel resource, int notBefore, ApacheHttpClient4Executor executor) {
+    protected GlobalRequestResult pushRevocationPolicy(URI requestUri, RealmModel realm, ClientModel resource, int notBefore, ApacheHttpClient4Executor executor) {
         List<String> mgmtUrls = getAllManagementUrls(requestUri, resource);
         if (mgmtUrls.isEmpty()) {
-            logger.debugf("No management URL or no registered cluster nodes for the application %s", resource.getName());
+            logger.debugf("No management URL or no registered cluster nodes for the application %s", resource.getClientId());
             return new GlobalRequestResult();
         }
 
@@ -327,10 +324,10 @@ public class ResourceAdminManager {
         return result;
     }
 
-    protected boolean sendPushRevocationPolicyRequest(RealmModel realm, ApplicationModel resource, int notBefore, ApacheHttpClient4Executor client, String managementUrl) {
-        PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), notBefore);
+    protected boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, ApacheHttpClient4Executor client, String managementUrl) {
+        PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), notBefore);
         String token = new TokenManager().encodeToken(realm, adminAction);
-        logger.infov("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
+        logger.infov("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);
         ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build().toString());
         ClientResponse response;
         try {
@@ -348,10 +345,10 @@ public class ResourceAdminManager {
         }
     }
 
-    public GlobalRequestResult testNodesAvailability(URI requestUri, RealmModel realm, ApplicationModel application) {
+    public GlobalRequestResult testNodesAvailability(URI requestUri, RealmModel realm, ClientModel application) {
         List<String> mgmtUrls = getAllManagementUrls(requestUri, application);
         if (mgmtUrls.isEmpty()) {
-            logger.debug("No management URL or no registered cluster nodes for the application " + application.getName());
+            logger.debug("No management URL or no registered cluster nodes for the application " + application.getClientId());
             return new GlobalRequestResult();
         }
 
@@ -375,10 +372,10 @@ public class ResourceAdminManager {
         }
     }
 
-    protected boolean sendTestNodeAvailabilityRequest(RealmModel realm, ApplicationModel application, ApacheHttpClient4Executor client, String managementUrl) {
-        TestAvailabilityAction adminAction = new TestAvailabilityAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName());
+    protected boolean sendTestNodeAvailabilityRequest(RealmModel realm, ClientModel application, ApacheHttpClient4Executor client, String managementUrl) {
+        TestAvailabilityAction adminAction = new TestAvailabilityAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getClientId());
         String token = new TokenManager().encodeToken(realm, adminAction);
-        logger.debugv("testNodes availability resource: {0} url: {1}", application.getName(), managementUrl);
+        logger.debugv("testNodes availability resource: {0} url: {1}", application.getClientId(), managementUrl);
         ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_TEST_AVAILABLE).build().toString());
         ClientResponse response;
         try {

@@ -3,7 +3,7 @@ package org.keycloak.testsuite.model;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -17,8 +17,8 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ApplicationModelTest extends AbstractModelTest {
-    private ApplicationModel application;
+public class ClientModelTest extends AbstractModelTest {
+    private ClientModel application;
     private RealmModel realm;
     private ApplicationManager appManager;
 
@@ -29,10 +29,10 @@ public class ApplicationModelTest extends AbstractModelTest {
         appManager = new ApplicationManager(realmManager);
 
         realm = realmManager.createRealm("original");
-        application = realm.addApplication("application");
+        application = realm.addClient("application");
         application.setBaseUrl("http://base");
         application.setManagementUrl("http://management");
-        application.setName("app-name");
+        application.setClientId("app-name");
         application.addRole("role-1");
         application.addRole("role-2");
         application.addRole("role-3");
@@ -55,7 +55,7 @@ public class ApplicationModelTest extends AbstractModelTest {
     public void persist() {
         RealmModel persisted = realmManager.getRealm(realm.getId());
 
-        ApplicationModel actual = persisted.getApplicationNameMap().get("app-name");
+        ClientModel actual = persisted.getClientNameMap().get("app-name");
         assertEquals(application, actual);
     }
 
@@ -65,22 +65,22 @@ public class ApplicationModelTest extends AbstractModelTest {
         representation.setId(null);
 
         RealmModel realm = realmManager.createRealm("copy");
-        ApplicationModel copy = RepresentationToModel.createApplication(session, realm, representation, true);
+        ClientModel copy = RepresentationToModel.createApplication(session, realm, representation, true);
 
         assertEquals(application, copy);
     }
 
     @Test
     public void testAddApplicationWithId() {
-        application = realm.addApplication("app-123", "application2");
+        application = realm.addClient("app-123", "application2");
         commit();
-        application = realmManager.getRealm(realm.getId()).getApplicationById("app-123");
+        application = realmManager.getRealm(realm.getId()).getClientById("app-123");
         Assert.assertNotNull(application);
     }
 
 
-    public static void assertEquals(ApplicationModel expected, ApplicationModel actual) {
-        Assert.assertEquals(expected.getName(), actual.getName());
+    public static void assertEquals(ClientModel expected, ClientModel actual) {
+        Assert.assertEquals(expected.getClientId(), actual.getClientId());
         Assert.assertEquals(expected.getBaseUrl(), actual.getBaseUrl());
         Assert.assertEquals(expected.getManagementUrl(), actual.getManagementUrl());
         Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());

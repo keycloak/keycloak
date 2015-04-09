@@ -111,7 +111,7 @@ public class RoleAdapter implements RoleModel {
         Set<RoleModel> toBeRemoved = new HashSet<RoleModel>();
         for (RoleModel compositeRole : getComposites()) {
             RoleAdapter roleAdapter = (RoleAdapter)compositeRole;
-            if (appId.equals(roleAdapter.getRoleEntity().getApplicationId())) {
+            if (appId.equals(roleAdapter.getRoleEntity().getClientId())) {
                 toBeRemoved.add(compositeRole);
             } else {
                 roleAdapter.removeApplicationComposites(appId);
@@ -143,8 +143,8 @@ public class RoleAdapter implements RoleModel {
             // Compute it
             if (role.getRealmId() != null) {
                 roleContainer = realm;//new RealmAdapter(session, realm);
-            } else if (role.getApplicationId() != null) {
-                roleContainer = realm.getApplicationById(role.getApplicationId());//new ApplicationAdapter(session, realm, appEntity);
+            } else if (role.getClientId() != null) {
+                roleContainer = realm.getClientById(role.getClientId());//new ApplicationAdapter(session, realm, appEntity);
             } else {
                 throw new IllegalStateException("Both realmId and applicationId are null for role: " + this);
             }

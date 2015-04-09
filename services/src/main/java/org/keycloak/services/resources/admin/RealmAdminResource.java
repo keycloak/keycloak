@@ -10,7 +10,7 @@ import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.exportimport.ApplicationImporter;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -46,7 +46,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -120,32 +119,6 @@ public class RealmAdminResource {
         ResteasyProviderFactory.getInstance().injectProperties(applicationsResource);
         //resourceContext.initResource(applicationsResource);
         return applicationsResource;
-    }
-
-    /**
-     * base path for managing oauth clients in this realm uses name of client
-     *
-     * @return
-     */
-    @Path("oauth-clients")
-    public OAuthClientsResource getOAuthClients() {
-        OAuthClientsResource oauth = new OAuthClientsResource(realm, auth, session);
-        ResteasyProviderFactory.getInstance().injectProperties(oauth);
-        //resourceContext.initResource(oauth);
-        return oauth;
-    }
-
-    /**
-     * base path for managing oauth clients in this realm uses ids
-     *
-     * @return
-     */
-    @Path("oauth-clients-by-id")
-    public OAuthClientsByIdResource getOAuthClientsById() {
-        OAuthClientsByIdResource oauth = new OAuthClientsByIdResource(realm, auth, session);
-        ResteasyProviderFactory.getInstance().injectProperties(oauth);
-        //resourceContext.initResource(oauth);
-        return oauth;
     }
 
     /**
@@ -327,10 +300,10 @@ public class RealmAdminResource {
     public Map<String, Integer> getApplicationSessionStats() {
         auth.requireView();
         Map<String, Integer> stats = new HashMap<String, Integer>();
-        for (ApplicationModel application : realm.getApplications()) {
+        for (ClientModel application : realm.getClients()) {
             int size = session.sessions().getActiveUserSessions(application.getRealm(), application);
             if (size == 0) continue;
-            stats.put(application.getName(), size);
+            stats.put(application.getClientId(), size);
         }
         return stats;
     }
@@ -348,12 +321,12 @@ public class RealmAdminResource {
     public List<Map<String, String>> getApplicationByIdSessionStats() {
         auth.requireView();
         List<Map<String, String>> data = new LinkedList<Map<String, String>>();
-        for (ApplicationModel application : realm.getApplications()) {
+        for (ClientModel application : realm.getClients()) {
             int size = session.sessions().getActiveUserSessions(application.getRealm(), application);
             if (size == 0) continue;
             Map<String, String> map = new HashMap<String, String>();
             map.put("id", application.getId());
-            map.put("name", application.getName());
+            map.put("name", application.getClientId());
             map.put("active", size + "");
             data.add(map);
         }

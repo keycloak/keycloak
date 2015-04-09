@@ -115,12 +115,12 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
                     throw new IllegalStateException("Realm with id: " + role.getRealmId() + " doesn't exists");
                 }
                 roleContainer = new RealmAdapter(session, realm, invocationContext);
-            } else if (role.getApplicationId() != null) {
-                MongoApplicationEntity appEntity = getMongoStore().loadEntity(MongoApplicationEntity.class, role.getApplicationId(), invocationContext);
+            } else if (role.getClientId() != null) {
+                MongoApplicationEntity appEntity = getMongoStore().loadEntity(MongoApplicationEntity.class, role.getClientId(), invocationContext);
                 if (appEntity == null) {
-                    throw new IllegalStateException("Application with id: " + role.getApplicationId() + " doesn't exists");
+                    throw new IllegalStateException("Application with id: " + role.getClientId() + " doesn't exists");
                 }
-                roleContainer = new ApplicationAdapter(session, realm, appEntity, invocationContext);
+                roleContainer = new ClientAdapter(session, realm, appEntity, invocationContext);
             } else {
                 throw new IllegalStateException("Both realmId and applicationId are null for role: " + this);
             }

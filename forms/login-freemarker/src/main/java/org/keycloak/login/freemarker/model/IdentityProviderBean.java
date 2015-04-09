@@ -21,10 +21,6 @@
  */
 package org.keycloak.login.freemarker.model;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.flows.Urls;

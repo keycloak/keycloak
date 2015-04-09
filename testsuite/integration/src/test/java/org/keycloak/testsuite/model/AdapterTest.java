@@ -4,10 +4,9 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -16,7 +15,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
@@ -153,15 +151,6 @@ public class AdapterTest extends AbstractModelTest {
     }
 
     @Test
-    public void testOAuthClient() throws Exception {
-        test1CreateRealm();
-
-        RepresentationToModel.createOAuthClient(null, "oauth-client", realmModel);
-        OAuthClientModel oauth = realmModel.getOAuthClient("oauth-client");
-        Assert.assertNotNull(oauth);
-    }
-
-    @Test
     public void testDeleteUser() throws Exception {
         test1CreateRealm();
 
@@ -172,7 +161,7 @@ public class AdapterTest extends AbstractModelTest {
         RoleModel testRole = realmModel.addRole("test");
         user.grantRole(testRole);
 
-        ApplicationModel app = realmModel.addApplication("test-app");
+        ClientModel app = realmModel.addClient("test-app");
         RoleModel appRole = app.addRole("test");
         user.grantRole(appRole);
 
@@ -197,9 +186,9 @@ public class AdapterTest extends AbstractModelTest {
 
         UserModel user = realmManager.getSession().users().addUser(realmModel, "bburke");
 
-        OAuthClientModel client = realmModel.addOAuthClient("client");
+        ClientModel client = realmModel.addClient("client");
 
-        ApplicationModel app = realmModel.addApplication("test-app");
+        ClientModel app = realmModel.addClient("test-app");
 
         RoleModel appRole = app.addRole("test");
         user.grantRole(appRole);
@@ -208,9 +197,9 @@ public class AdapterTest extends AbstractModelTest {
         RoleModel realmRole = realmModel.addRole("test");
         app.addScopeMapping(realmRole);
 
-        Assert.assertTrue(realmModel.removeApplication(app.getId()));
-        Assert.assertFalse(realmModel.removeApplication(app.getId()));
-        assertNull(realmModel.getApplicationById(app.getId()));
+        Assert.assertTrue(realmModel.removeClient(app.getId()));
+        Assert.assertFalse(realmModel.removeClient(app.getId()));
+        assertNull(realmModel.getClientById(app.getId()));
     }
 
 
@@ -225,9 +214,9 @@ public class AdapterTest extends AbstractModelTest {
         cred.setValue("password");
         user.updateCredential(cred);
 
-        OAuthClientModel client = realmModel.addOAuthClient("client");
+        ClientModel client = realmModel.addClient("client");
 
-        ApplicationModel app = realmModel.addApplication("test-app");
+        ClientModel app = realmModel.addClient("test-app");
 
         RoleModel appRole = app.addRole("test");
         user.grantRole(appRole);
@@ -255,9 +244,9 @@ public class AdapterTest extends AbstractModelTest {
 
         UserModel user = realmManager.getSession().users().addUser(realmModel, "bburke");
 
-        OAuthClientModel client = realmModel.addOAuthClient("client");
+        ClientModel client = realmModel.addClient("client");
 
-        ApplicationModel app = realmModel.addApplication("test-app");
+        ClientModel app = realmModel.addClient("test-app");
 
         RoleModel appRole = app.addRole("test");
         user.grantRole(appRole);
@@ -268,7 +257,7 @@ public class AdapterTest extends AbstractModelTest {
 
         commit();
         realmModel = model.getRealm("JUGGLER");
-        app = realmModel.getApplicationByName("test-app");
+        app = realmModel.getClientByClientId("test-app");
 
         Assert.assertTrue(realmModel.removeRoleById(realmRole.getId()));
         Assert.assertFalse(realmModel.removeRoleById(realmRole.getId()));
@@ -458,7 +447,7 @@ public class AdapterTest extends AbstractModelTest {
         assertRolesEquals(found, realmUserRole);
 
         // Test app roles
-        ApplicationModel application = realmModel.addApplication("app1");
+        ClientModel application = realmModel.addClient("app1");
         application.addRole("user");
         application.addRole("bar");
         Set<RoleModel> appRoles = application.getRoles();
@@ -506,23 +495,23 @@ public class AdapterTest extends AbstractModelTest {
         test1CreateRealm();
         RoleModel realmRole = realmModel.addRole("realm");
 
-        ApplicationModel app1 = realmModel.addApplication("app1");
+        ClientModel app1 = realmModel.addClient("app1");
         RoleModel appRole = app1.addRole("app");
 
-        ApplicationModel app2 = realmModel.addApplication("app2");
+        ClientModel app2 = realmModel.addClient("app2");
         app2.addScopeMapping(realmRole);
         app2.addScopeMapping(appRole);
 
-        OAuthClientModel client = realmModel.addOAuthClient("client");
+        ClientModel client = realmModel.addClient("client");
         client.addScopeMapping(realmRole);
         client.addScopeMapping(appRole);
 
         commit();
 
         realmModel = model.getRealmByName("JUGGLER");
-        app1 = realmModel.getApplicationByName("app1");
-        app2 = realmModel.getApplicationByName("app2");
-        client = realmModel.getOAuthClient("client");
+        app1 = realmModel.getClientByClientId("app1");
+        app2 = realmModel.getClientByClientId("app2");
+        client = realmModel.getClientByClientId("client");
 
         Set<RoleModel> scopeMappings = app2.getScopeMappings();
         Assert.assertEquals(2, scopeMappings.size());
@@ -565,14 +554,14 @@ public class AdapterTest extends AbstractModelTest {
 
     @Test
     public void testAppNameCollisions() throws Exception {
-        realmManager.createRealm("JUGGLER1").addApplication("app1");
-        realmManager.createRealm("JUGGLER2").addApplication("app1");
+        realmManager.createRealm("JUGGLER1").addClient("app1");
+        realmManager.createRealm("JUGGLER2").addClient("app1");
 
         commit();
 
         // Try to create app with duplicate name
         try {
-            realmManager.getRealmByName("JUGGLER1").addApplication("app1");
+            realmManager.getRealmByName("JUGGLER1").addClient("app1");
             commit();
             Assert.fail("Expected exception");
         } catch (ModelDuplicateException e) {
@@ -580,10 +569,10 @@ public class AdapterTest extends AbstractModelTest {
         commit(true);
 
         // Ty to rename app to duplicate name
-        realmManager.getRealmByName("JUGGLER1").addApplication("app2");
+        realmManager.getRealmByName("JUGGLER1").addClient("app2");
         commit();
         try {
-            realmManager.getRealmByName("JUGGLER1").getApplicationByName("app2").setName("app1");
+            realmManager.getRealmByName("JUGGLER1").getClientByClientId("app2").setClientId("app1");
             commit();
             Assert.fail("Expected exception");
         } catch (ModelDuplicateException e) {
@@ -594,14 +583,14 @@ public class AdapterTest extends AbstractModelTest {
 
     @Test
     public void testClientNameCollisions() throws Exception {
-        realmManager.createRealm("JUGGLER1").addOAuthClient("client1");
-        realmManager.createRealm("JUGGLER2").addOAuthClient("client1");
+        realmManager.createRealm("JUGGLER1").addClient("client1");
+        realmManager.createRealm("JUGGLER2").addClient("client1");
 
         commit();
 
         // Try to create app with duplicate name
         try {
-            realmManager.getRealmByName("JUGGLER1").addOAuthClient("client1");
+            realmManager.getRealmByName("JUGGLER1").addClient("client1");
             commit();
             Assert.fail("Expected exception");
         } catch (ModelDuplicateException e) {
@@ -609,10 +598,10 @@ public class AdapterTest extends AbstractModelTest {
         commit(true);
 
         // Ty to rename app to duplicate name
-        realmManager.getRealmByName("JUGGLER1").addOAuthClient("client2");
+        realmManager.getRealmByName("JUGGLER1").addClient("client2");
         commit();
         try {
-            realmManager.getRealmByName("JUGGLER1").getOAuthClient("client2").setClientId("client1");
+            realmManager.getRealmByName("JUGGLER1").addClient("client2").setClientId("client1");
             commit();
             Assert.fail("Expected exception");
         } catch (ModelDuplicateException e) {
@@ -691,14 +680,14 @@ public class AdapterTest extends AbstractModelTest {
     @Test
     public void testAppRoleCollisions() throws Exception {
         realmManager.createRealm("JUGGLER1").addRole("role1");
-        realmManager.getRealmByName("JUGGLER1").addApplication("app1").addRole("role1");
-        realmManager.getRealmByName("JUGGLER1").addApplication("app2").addRole("role1");
+        realmManager.getRealmByName("JUGGLER1").addClient("app1").addRole("role1");
+        realmManager.getRealmByName("JUGGLER1").addClient("app2").addRole("role1");
 
         commit();
 
         // Try to add role with same name
         try {
-            realmManager.getRealmByName("JUGGLER1").getApplicationByName("app1").addRole("role1");
+            realmManager.getRealmByName("JUGGLER1").getClientByClientId("app1").addRole("role1");
             commit();
             Assert.fail("Expected exception");
         } catch (ModelDuplicateException e) {
@@ -706,10 +695,10 @@ public class AdapterTest extends AbstractModelTest {
         commit(true);
 
         // Ty to rename role to duplicate name
-        realmManager.getRealmByName("JUGGLER1").getApplicationByName("app1").addRole("role2");
+        realmManager.getRealmByName("JUGGLER1").getClientByClientId("app1").addRole("role2");
         commit();
         try {
-            realmManager.getRealmByName("JUGGLER1").getApplicationByName("app1").getRole("role2").setName("role1");
+            realmManager.getRealmByName("JUGGLER1").getClientByClientId("app1").getRole("role2").setName("role1");
             commit();
             Assert.fail("Expected exception");
         } catch (ModelDuplicateException e) {
@@ -721,8 +710,8 @@ public class AdapterTest extends AbstractModelTest {
     @Test
     public void testRealmRoleCollisions() throws Exception {
         realmManager.createRealm("JUGGLER1").addRole("role1");
-        realmManager.getRealmByName("JUGGLER1").addApplication("app1").addRole("role1");
-        realmManager.getRealmByName("JUGGLER1").addApplication("app2").addRole("role1");
+        realmManager.getRealmByName("JUGGLER1").addClient("app1").addRole("role1");
+        realmManager.getRealmByName("JUGGLER1").addClient("app2").addRole("role1");
 
         commit();
 

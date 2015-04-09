@@ -8,7 +8,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ClientModel {
+public interface ClientModel extends RoleContainerModel {
 
     // COMMON ATTRIBUTES
 
@@ -16,19 +16,21 @@ public interface ClientModel {
     String PUBLIC_KEY = "publicKey";
     String X509CERTIFICATE = "X509Certificate";
 
-    /**
-     * Internal database key
-     *
-     * @return
-     */
+    void updateApplication();
+
     String getId();
 
-    /**
-     * String exposed to outside world
-     *
-     * @return
-     */
     String getClientId();
+
+    void setClientId(String clientId);
+
+    boolean isEnabled();
+
+    void setEnabled(boolean enabled);
+
+    boolean isSurrogateAuthRequired();
+
+    void setSurrogateAuthRequired(boolean surrogateAuthRequired);
 
     Set<String> getWebOrigins();
 
@@ -46,10 +48,28 @@ public interface ClientModel {
 
     void removeRedirectUri(String redirectUri);
 
+    String getManagementUrl();
 
-    boolean isEnabled();
+    void setManagementUrl(String url);
 
-    void setEnabled(boolean enabled);
+    String getBaseUrl();
+
+    void setBaseUrl(String url);
+
+    List<String> getDefaultRoles();
+
+    void addDefaultRole(String name);
+
+    void updateDefaultRoles(String[] defaultRoles);
+
+    Set<RoleModel> getApplicationScopeMappings(ClientModel client);
+
+    boolean isBearerOnly();
+    void setBearerOnly(boolean only);
+
+    int getNodeReRegistrationTimeout();
+
+    void setNodeReRegistrationTimeout(int timeout);
 
     boolean validateSecret(String secret);
     String getSecret();
@@ -76,12 +96,14 @@ public interface ClientModel {
     boolean isDirectGrantsOnly();
     void setDirectGrantsOnly(boolean flag);
 
+    boolean isConsentRequired();
+    void setConsentRequired(boolean consentRequired);
+
     Set<RoleModel> getScopeMappings();
     void addScopeMapping(RoleModel role);
     void deleteScopeMapping(RoleModel role);
     Set<RoleModel> getRealmScopeMappings();
     boolean hasScope(RoleModel role);
-
 
     RealmModel getRealm();
 
@@ -104,4 +126,16 @@ public interface ClientModel {
     void updateProtocolMapper(ProtocolMapperModel mapping);
     public ProtocolMapperModel getProtocolMapperById(String id);
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name);
+
+    Map<String, Integer> getRegisteredNodes();
+
+    /**
+     * Register node or just update the 'lastReRegistration' time if this node is already registered
+     *
+     * @param nodeHost
+     * @param registrationTime
+     */
+    void registerNode(String nodeHost, int registrationTime);
+
+    void unregisterNode(String nodeHost);
 }

@@ -12,7 +12,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AccountRoles;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -54,7 +53,7 @@ public class ProfileTest {
             user.setAttribute("key1", "value1");
             user.setAttribute("key2", "value2");
 
-            ApplicationModel accountApp = appRealm.getApplicationByName(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
+            ClientModel accountApp = appRealm.getClientByClientId(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
 
             UserModel user2 = manager.getSession().users().addUser(appRealm, "test-user-no-access@localhost");
             user2.setEnabled(true);
@@ -66,12 +65,12 @@ public class ProfileTest {
             creds.setValue("password");
             user2.updateCredential(creds);
 
-            ApplicationModel app = appRealm.getApplicationByName("test-app");
+            ClientModel app = appRealm.getClientByClientId("test-app");
             app.addScopeMapping(accountApp.getRole(AccountRoles.VIEW_PROFILE));
             app.addRedirectUri("http://localhost:8081/app/*");
             app.addWebOrigin("http://localtest.me:8081");
 
-            ClientModel thirdParty = appRealm.findClient("third-party");
+            ClientModel thirdParty = appRealm.getClientByClientId("third-party");
             thirdParty.addScopeMapping(accountApp.getRole(AccountRoles.VIEW_PROFILE));
         }
     });
