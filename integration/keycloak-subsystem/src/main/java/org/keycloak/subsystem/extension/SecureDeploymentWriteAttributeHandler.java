@@ -44,7 +44,7 @@ public class SecureDeploymentWriteAttributeHandler extends AbstractWriteAttribut
     @Override
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                            ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<KeycloakAdapterConfigService> hh) throws OperationFailedException {
-        KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.find(context);
+        KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.getInstance();
         hh.setHandback(ckService);
         ckService.updateSecureDeployment(operation, attributeName, resolvedValue);
         return false;

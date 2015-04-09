@@ -43,7 +43,7 @@ public class RealmWriteAttributeHandler extends AbstractWriteAttributeHandler<Ke
     @Override
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                            ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<KeycloakAdapterConfigService> hh) throws OperationFailedException {
-        KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.find(context);
+        KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.getInstance();
         ckService.updateRealm(operation, attributeName, resolvedValue);
 
         hh.setHandback(ckService);

@@ -116,7 +116,7 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
         @Override
         public void validateParameter(String paramName, ModelNode value) throws OperationFailedException {
             String strValue = value.asString();
-            if (KeycloakAdapterConfigService.INSTANCE.isWebContextUsed(strValue)) {
+            if (KeycloakAdapterConfigService.getInstance().isWebContextUsed(strValue)) {
                 throw new OperationFailedException("Can not set web-context to '" + strValue + "'. web-context must be unique among all deployments.");
             }
         }
@@ -124,7 +124,7 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
         @Override
         public void validateResolvedParameter(String paramName, ModelNode value) throws OperationFailedException {
             String strValue = value.asString();
-            if (KeycloakAdapterConfigService.INSTANCE.isWebContextUsed(strValue)) {
+            if (KeycloakAdapterConfigService.getInstance().isWebContextUsed(strValue)) {
                 throw new OperationFailedException("Can not set web-context to '" + strValue + "'. web-context must be unique among all deployments.");
             }
         }

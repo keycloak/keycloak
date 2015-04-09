@@ -83,18 +83,6 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
-        super.performRuntime(context, operation, model, verificationHandler, newControllers);
-
-        ServiceController<KeycloakAdapterConfigService> controller = context.getServiceTarget()
-                .addService(KeycloakAdapterConfigService.SERVICE_NAME, KeycloakAdapterConfigService.INSTANCE)
-                .addListener(verificationHandler)
-                .setInitialMode(ServiceController.Mode.ACTIVE)
-                .install();
-        newControllers.add(controller);
-    }
-
-    @Override
     protected boolean requiresRuntimeVerification() {
         return false;
     }

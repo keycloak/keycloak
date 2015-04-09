@@ -34,7 +34,7 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         String deploymentName = deploymentUnit.getName();
-        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
+        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
         if (!service.isKeycloakServerDeployment(deploymentName)) {
             return;
         }
