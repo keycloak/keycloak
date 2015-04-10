@@ -150,7 +150,6 @@ public class AdapterTestStrategy extends ExternalResource {
         }
     }
 
-    @Test
     public void testSavedPostRequest() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal");
@@ -189,7 +188,6 @@ public class AdapterTestStrategy extends ExternalResource {
     }
 
 
-    @Test
     public void testLoginSSOAndLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -246,7 +244,6 @@ public class AdapterTestStrategy extends ExternalResource {
 
     }
 
-    @Test
     public void testServletRequestLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -288,7 +285,6 @@ public class AdapterTestStrategy extends ExternalResource {
 
     }
 
-    @Test
     public void testLoginSSOIdle() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -322,7 +318,6 @@ public class AdapterTestStrategy extends ExternalResource {
         session.close();
     }
 
-    @Test
     public void testLoginSSOIdleRemoveExpiredUserSessions() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -364,7 +359,6 @@ public class AdapterTestStrategy extends ExternalResource {
         session.close();
     }
 
-    @Test
     public void testLoginSSOMax() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -402,7 +396,6 @@ public class AdapterTestStrategy extends ExternalResource {
      * KEYCLOAK-518
      * @throws Exception
      */
-    @Test
     public void testNullBearerToken() throws Exception {
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(APP_SERVER_BASE_URL + "/customer-db/");
@@ -420,7 +413,6 @@ public class AdapterTestStrategy extends ExternalResource {
      * KEYCLOAK-518
      * @throws Exception
      */
-    @Test
     public void testBadUser() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_URL);
@@ -440,7 +432,6 @@ public class AdapterTestStrategy extends ExternalResource {
 
     }
 
-    @Test
     public void testVersion() throws Exception {
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(AUTH_SERVER_URL).path("version");
@@ -463,7 +454,6 @@ public class AdapterTestStrategy extends ExternalResource {
 
 
 
-    @Test
     public void testAuthenticated() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/secure-portal");
@@ -491,7 +481,6 @@ public class AdapterTestStrategy extends ExternalResource {
      *
      * @throws Throwable
      */
-    @Test
     public void testSingleSessionInvalidated() throws Throwable {
         AdapterTestStrategy browser1 = this;
         AdapterTestStrategy browser2 = new AdapterTestStrategy(AUTH_SERVER_URL, APP_SERVER_BASE_URL, keycloakRule);
@@ -529,7 +518,6 @@ public class AdapterTestStrategy extends ExternalResource {
     /**
      * KEYCLOAK-741
      */
-    @Test
     public void testSessionInvalidatedAfterFailedRefresh() throws Throwable {
         final AtomicInteger origTokenLifespan = new AtomicInteger();
 
@@ -581,7 +569,6 @@ public class AdapterTestStrategy extends ExternalResource {
     /**
      * KEYCLOAK-942
      */
-    @Test
     public void testAdminApplicationLogout() throws Throwable {
         // login as bburke
         loginAndCheckSession(driver, loginPage);
