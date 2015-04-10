@@ -635,7 +635,7 @@ public class RealmAdapter implements RealmModel {
     public ClientModel addClient(String id, String clientId) {
         ClientEntity applicationData = new ClientEntity();
         applicationData.setId(id);
-        applicationData.setName(clientId);
+        applicationData.setClientId(clientId);
         applicationData.setEnabled(true);
         applicationData.setRealm(realm);
         realm.getApplications().add(applicationData);

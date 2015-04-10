@@ -5,7 +5,7 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.entities.ApplicationEntity;
+import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.mongo.keycloak.adapters.ClientAdapter;
 import org.keycloak.models.mongo.keycloak.adapters.UserAdapter;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
@@ -36,7 +36,7 @@ public class MongoModelUtils {
 
     // Get everything including both application and realm scopes
     public static List<MongoRoleEntity> getAllScopesOfClient(ClientModel client, MongoStoreInvocationContext invContext) {
-        ApplicationEntity scopedEntity = ((ClientAdapter)client).getMongoEntity();
+        ClientEntity scopedEntity = ((ClientAdapter)client).getMongoEntity();
         List<String> scopeIds = scopedEntity.getScopeIds();
 
         if (scopeIds == null || scopeIds.isEmpty()) {

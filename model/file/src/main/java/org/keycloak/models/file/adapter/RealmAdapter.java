@@ -29,7 +29,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.entities.ApplicationEntity;
+import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.entities.RealmEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
@@ -626,9 +626,9 @@ public class RealmAdapter implements RealmModel {
             throw new ModelDuplicateException("Application named '" + clientId + "' already exists.");
         }
 
-        ApplicationEntity appEntity = new ApplicationEntity();
+        ClientEntity appEntity = new ClientEntity();
         appEntity.setId(id);
-        appEntity.setName(clientId);
+        appEntity.setClientId(clientId);
         appEntity.setRealmId(getId());
         appEntity.setEnabled(true);
 
