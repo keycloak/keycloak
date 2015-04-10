@@ -35,7 +35,7 @@ public final class RealmRemoveHandler extends AbstractRemoveStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.find(context);
+        KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.getInstance();
         ckService.removeRealm(operation);
     }
 }

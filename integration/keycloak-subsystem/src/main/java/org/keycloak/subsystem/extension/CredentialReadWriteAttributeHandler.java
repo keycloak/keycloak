@@ -33,7 +33,7 @@ public class CredentialReadWriteAttributeHandler extends AbstractWriteAttributeH
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                            ModelNode resolvedValue, ModelNode currentValue, AbstractWriteAttributeHandler.HandbackHolder<KeycloakAdapterConfigService> hh) throws OperationFailedException {
 
-        KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.find(context);
+        KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.getInstance();
         ckService.updateCredential(operation, attributeName, resolvedValue);
 
         hh.setHandback(ckService);

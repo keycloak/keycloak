@@ -17,17 +17,9 @@
 
 package org.keycloak.subsystem.extension;
 
-import org.jboss.as.controller.OperationContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.logging.Logger;
-import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
-import org.jboss.msc.service.StopContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,41 +32,27 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public final class KeycloakAdapterConfigService implements Service<KeycloakAdapterConfigService> {
+public final class KeycloakAdapterConfigService {
     protected Logger log = Logger.getLogger(KeycloakAdapterConfigService.class);
     private static final String CREDENTIALS_JSON_NAME = "credentials";
 
-    // Right now this is used as a service, but I'm not sure it really needs to be implemented that way.
-    // It's also a singleton serving the entire subsystem, but the INSTANCE variable is currently only
-    // used during initialization of the subsystem.
-    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("KeycloakAdapterConfigService");
-    public static final KeycloakAdapterConfigService INSTANCE = new KeycloakAdapterConfigService();
+    private static final KeycloakAdapterConfigService INSTANCE = new KeycloakAdapterConfigService();
 
-    private Map<String, ModelNode> realms = new HashMap<String, ModelNode>();
+    public static KeycloakAdapterConfigService getInstance() {
+        return INSTANCE;
+    }
+
+    private final Map<String, ModelNode> realms = new HashMap<String, ModelNode>();
 
     // keycloak-secured deployments
-    private Map<String, ModelNode> secureDeployments = new HashMap<String, ModelNode>();
+    private final Map<String, ModelNode> secureDeployments = new HashMap<String, ModelNode>();
 
     // key=auth-server deployment name; value=web-context
-    private Map<String, String> webContexts = new HashMap<String, String>();
+    private final Map<String, String> webContexts = new HashMap<String, String>();
+
+
 
     private KeycloakAdapterConfigService() {
-
-    }
-
-    @Override
-    public void start(StartContext sc) throws StartException {
-
-    }
-
-    @Override
-    public void stop(StopContext sc) {
-
-    }
-
-    @Override
-    public KeycloakAdapterConfigService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
     }
 
     public void addServerDeployment(String deploymentName, String webContext) {
@@ -222,18 +200,5 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
 
     public boolean isKeycloakServerDeployment(String deploymentName) {
         return this.webContexts.containsKey(deploymentName);
-    }
-
-    public static KeycloakAdapterConfigService find(ServiceRegistry registry) {
-        ServiceController<?> container = registry.getService(KeycloakAdapterConfigService.SERVICE_NAME);
-        if (container != null) {
-            KeycloakAdapterConfigService service = (KeycloakAdapterConfigService)container.getValue();
-            return service;
-        }
-        return null;
-    }
-
-    public static KeycloakAdapterConfigService find(OperationContext context) {
-        return find(context.getServiceRegistry(true));
     }
 }

@@ -69,7 +69,7 @@ public final class AuthServerAddHandler extends AbstractAddStepHandler {
 
         AuthServerUtil authServerUtil = new AuthServerUtil(operation);
         authServerUtil.addStepToUploadAuthServer(context, enabled);
-        KeycloakAdapterConfigService.INSTANCE.addServerDeployment(authServerUtil.getDeploymentName(), webContext);
+        KeycloakAdapterConfigService.getInstance().addServerDeployment(authServerUtil.getDeploymentName(), webContext);
     }
 
     @Override
