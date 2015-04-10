@@ -172,7 +172,7 @@ public final class KeycloakModelUtils {
         return UUID.randomUUID().toString();
     }
 
-    public static ClientModel createApplication(RealmModel realm, String name) {
+    public static ClientModel createClient(RealmModel realm, String name) {
         ClientModel app = realm.addClient(name);
         generateSecret(app);
         app.setFullScopeAllowed(true);

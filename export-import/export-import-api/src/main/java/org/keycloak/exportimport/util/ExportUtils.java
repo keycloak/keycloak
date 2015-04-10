@@ -16,6 +16,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -53,14 +54,14 @@ public class ExportUtils {
             rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
         }
 
-        // Applications
-        List<ClientModel> applications = realm.getClients();
-        List<ApplicationRepresentation> appReps = new ArrayList<ApplicationRepresentation>();
-        for (ClientModel app : applications) {
-            ApplicationRepresentation appRep = exportApplication(app);
-            appReps.add(appRep);
+        // Clients
+        List<ClientModel> clients = realm.getClients();
+        List<ClientRepresentation> clientReps = new ArrayList<>();
+        for (ClientModel app : clients) {
+            ClientRepresentation clientRep = exportClient(app);
+            clientReps.add(clientRep);
         }
-        rep.setApplications(appReps);
+        rep.setClients(clientReps);
 
         // Roles
         List<RoleRepresentation> realmRoleReps = null;
@@ -70,7 +71,7 @@ public class ExportUtils {
         if (realmRoles != null && realmRoles.size() > 0) {
             realmRoleReps = exportRoles(realmRoles);
         }
-        for (ClientModel app : applications) {
+        for (ClientModel app : clients) {
             Set<RoleModel> currentAppRoles = app.getRoles();
             List<RoleRepresentation> currentAppRoleReps = exportRoles(currentAppRoles);
             appRolesReps.put(app.getClientId(), currentAppRoleReps);
@@ -86,7 +87,7 @@ public class ExportUtils {
         rep.setRoles(rolesRep);
 
         // Scopes
-        List<ClientModel> allClients = new ArrayList<>(applications);
+        List<ClientModel> allClients = new ArrayList<>(clients);
         Map<String, List<ScopeMappingRepresentation>> appScopeReps = new HashMap<>();
 
         for (ClientModel client : allClients) {
@@ -147,14 +148,13 @@ public class ExportUtils {
 
     /**
      * Full export of application including claims and secret
-     * @param app
+     * @param client
      * @return full ApplicationRepresentation
      */
-    public static ApplicationRepresentation exportApplication(ClientModel app) {
-        ApplicationRepresentation appRep = ModelToRepresentation.toRepresentation(app);
-
-        appRep.setSecret(app.getSecret());
-        return appRep;
+    public static ClientRepresentation exportClient(ClientModel client) {
+        ClientRepresentation clientRep = ModelToRepresentation.toRepresentation(client);
+        clientRep.setSecret(client.getSecret());
+        return clientRep;
     }
 
     public static List<RoleRepresentation> exportRoles(Collection<RoleModel> roles) {

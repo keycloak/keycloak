@@ -7,18 +7,18 @@ import org.keycloak.models.RealmModel;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ApplicationsByIdResource extends ApplicationsResource {
-    public ApplicationsByIdResource(RealmModel realm, RealmAuth auth) {
+public class ClientsByIdResource extends ClientsResource {
+    public ClientsByIdResource(RealmModel realm, RealmAuth auth) {
         super(realm, auth);
     }
 
     @Override
-    protected ClientModel getApplicationByPathParam(String id) {
+    protected ClientModel getClientByPathParam(String id) {
         return realm.getClientById(id);
     }
 
     @Override
-    protected String getApplicationPath(ClientModel clientModel) {
+    protected String getClientPath(ClientModel clientModel) {
         return clientModel.getId();
     }
 

@@ -35,7 +35,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -125,19 +125,19 @@ public class AdminAPITest {
         storedRealm = realmTarget.request().get(RealmRepresentation.class);
         checkRealmRep(rep, storedRealm);
 
-        if (rep.getApplications() != null) {
+        if (rep.getClients() != null) {
             WebTarget applicationsTarget = realmTarget.path("applications");
-            for (ApplicationRepresentation appRep : rep.getApplications()) {
-                ApplicationRepresentation newApp = new ApplicationRepresentation();
+            for (ClientRepresentation appRep : rep.getClients()) {
+                ClientRepresentation newApp = new ClientRepresentation();
                 if (appRep.getId() != null) newApp.setId(appRep.getId());
-                newApp.setName(appRep.getName());
+                newApp.setClientId(appRep.getClientId());
                 if (appRep.getSecret() != null) {
                     newApp.setSecret(appRep.getSecret());
                 }
                 Response appCreateResponse = applicationsTarget.request().post(Entity.json(newApp));
                 Assert.assertEquals(201, appCreateResponse.getStatus());
                 appCreateResponse.close();
-                WebTarget appTarget = applicationsTarget.path(appRep.getName());
+                WebTarget appTarget = applicationsTarget.path(appRep.getClientId());
                 CredentialRepresentation cred = appTarget.path("client-secret").request().get(CredentialRepresentation.class);
                 if (appRep.getSecret() != null) Assert.assertEquals(appRep.getSecret(), cred.getValue());
                 CredentialRepresentation newCred = appTarget.path("client-secret").request().post(null, CredentialRepresentation.class);
@@ -148,7 +148,7 @@ public class AdminAPITest {
                 appUpdateResponse.close();
 
 
-                ApplicationRepresentation storedApp = appTarget.request().get(ApplicationRepresentation.class);
+                ClientRepresentation storedApp = appTarget.request().get(ClientRepresentation.class);
 
                 checkAppUpdate(appRep, storedApp);
 
@@ -165,8 +165,8 @@ public class AdminAPITest {
         client.close();
     }
 
-    protected void checkAppUpdate(ApplicationRepresentation appRep, ApplicationRepresentation storedApp) {
-        if (appRep.getName() != null) Assert.assertEquals(appRep.getName(), storedApp.getName());
+    protected void checkAppUpdate(ClientRepresentation appRep, ClientRepresentation storedApp) {
+        if (appRep.getClientId() != null) Assert.assertEquals(appRep.getClientId(), storedApp.getClientId());
         if (appRep.isEnabled() != null) Assert.assertEquals(appRep.isEnabled(), storedApp.isEnabled());
         if (appRep.isBearerOnly() != null) Assert.assertEquals(appRep.isBearerOnly(), storedApp.isBearerOnly());
         if (appRep.isPublicClient() != null) Assert.assertEquals(appRep.isPublicClient(), storedApp.isPublicClient());

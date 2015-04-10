@@ -91,7 +91,7 @@ public class RealmManager {
 
     protected void setupAdminConsole(RealmModel realm) {
         ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
-        if (adminConsole == null) adminConsole = new ApplicationManager(this).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
+        if (adminConsole == null) adminConsole = new ClientManager(this).createClient(realm, Constants.ADMIN_CONSOLE_APPLICATION);
         String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
         adminConsole.setBaseUrl(baseUrl + "/index.html");
         adminConsole.setEnabled(true);
@@ -139,7 +139,7 @@ public class RealmManager {
 
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
-            new ApplicationManager(this).removeApplication(getKeycloakAdminstrationRealm(), realm.getMasterAdminApp());
+            new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), realm.getMasterAdminApp());
 
             UserSessionProvider sessions = session.sessions();
             if (sessions != null) {
@@ -174,12 +174,12 @@ public class RealmManager {
     private void setupRealmAdminManagement(RealmModel realm) {
         if (realm.getName().equals(Config.getAdminRealm())) { return; } // don't need to do this for master realm
 
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
+        ClientManager clientManager = new ClientManager(new RealmManager(session));
 
         String realmAdminApplicationName = getRealmAdminApplicationName(realm);
         ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationName);
         if (realmAdminApp == null) {
-            realmAdminApp = applicationManager.createApplication(realm, realmAdminApplicationName);
+            realmAdminApp = clientManager.createClient(realm, realmAdminApplicationName);
         }
         RoleModel adminRole = realmAdminApp.addRole(AdminRoles.REALM_ADMIN);
         adminRole.setDescription("${role_"+AdminRoles.REALM_ADMIN+"}");
@@ -197,7 +197,7 @@ public class RealmManager {
     private void setupAccountManagement(RealmModel realm) {
         ClientModel application = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
         if (application == null) {
-            application = new ApplicationManager(this).createApplication(realm, Constants.ACCOUNT_MANAGEMENT_APP);
+            application = new ClientManager(this).createClient(realm, Constants.ACCOUNT_MANAGEMENT_APP);
             application.setEnabled(true);
             application.setFullScopeAllowed(false);
             String base = contextPath + "/realms/" + realm.getName() + "/account";

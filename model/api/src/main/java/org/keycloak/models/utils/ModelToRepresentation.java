@@ -15,6 +15,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -217,10 +218,10 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static ApplicationRepresentation toRepresentation(ClientModel clientModel) {
-        ApplicationRepresentation rep = new ApplicationRepresentation();
+    public static ClientRepresentation toRepresentation(ClientModel clientModel) {
+        ClientRepresentation rep = new ClientRepresentation();
         rep.setId(clientModel.getId());
-        rep.setName(clientModel.getClientId());
+        rep.setClientId(clientModel.getClientId());
         rep.setEnabled(clientModel.isEnabled());
         rep.setAdminUrl(clientModel.getManagementUrl());
         rep.setPublicClient(clientModel.isPublicClient());
@@ -237,12 +238,12 @@ public class ModelToRepresentation {
 
         Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {
-            rep.setRedirectUris(new LinkedList<String>(redirectUris));
+            rep.setRedirectUris(new LinkedList<>(redirectUris));
         }
 
         Set<String> webOrigins = clientModel.getWebOrigins();
         if (webOrigins != null) {
-            rep.setWebOrigins(new LinkedList<String>(webOrigins));
+            rep.setWebOrigins(new LinkedList<>(webOrigins));
         }
 
         if (!clientModel.getDefaultRoles().isEmpty()) {
@@ -250,7 +251,7 @@ public class ModelToRepresentation {
         }
 
         if (!clientModel.getRegisteredNodes().isEmpty()) {
-            rep.setRegisteredNodes(new HashMap<String, Integer>(clientModel.getRegisteredNodes()));
+            rep.setRegisteredNodes(new HashMap<>(clientModel.getRegisteredNodes()));
         }
 
         if (!clientModel.getIdentityProviders().isEmpty()) {
@@ -258,7 +259,7 @@ public class ModelToRepresentation {
         }
 
         if (!clientModel.getProtocolMappers().isEmpty()) {
-            List<ProtocolMapperRepresentation> mappings = new LinkedList<ProtocolMapperRepresentation>();
+            List<ProtocolMapperRepresentation> mappings = new LinkedList<>();
             for (ProtocolMapperModel model : clientModel.getProtocolMappers()) {
                 mappings.add(toRepresentation(model));
             }

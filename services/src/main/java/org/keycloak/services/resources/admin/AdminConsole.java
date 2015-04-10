@@ -22,7 +22,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.ApplicationManager;
+import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -153,12 +153,12 @@ public class AdminConsole {
     @GET
     @Produces("application/json")
     @NoCache
-    public ApplicationManager.InstallationAdapterConfig config() {
+    public ClientManager.InstallationAdapterConfig config() {
         ClientModel consoleApp = realm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
         if (consoleApp == null) {
             throw new NotFoundException("Could not find admin console application");
         }
-        return new ApplicationManager().toInstallationRepresentation(realm, consoleApp, keycloak.getBaseUri(uriInfo));
+        return new ClientManager().toInstallationRepresentation(realm, consoleApp, keycloak.getBaseUri(uriInfo));
 
     }
 

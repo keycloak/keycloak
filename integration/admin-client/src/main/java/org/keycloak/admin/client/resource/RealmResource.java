@@ -24,7 +24,7 @@ public interface RealmResource {
     public void update(RealmRepresentation realmRepresentation);
 
     @Path("applications")
-    public ApplicationsResource applications();
+    public ClientsResource clients();
 
     @Path("users")
     public UsersResource users();

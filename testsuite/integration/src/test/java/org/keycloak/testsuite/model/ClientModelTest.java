@@ -8,8 +8,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.services.managers.ApplicationManager;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.managers.ClientManager;
 
 import java.util.Iterator;
 import java.util.List;
@@ -18,37 +18,37 @@ import java.util.List;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ClientModelTest extends AbstractModelTest {
-    private ClientModel application;
+    private ClientModel client;
     private RealmModel realm;
-    private ApplicationManager appManager;
+    private ClientManager appManager;
 
     @Before
     @Override
     public void before() throws Exception {
         super.before();
-        appManager = new ApplicationManager(realmManager);
+        appManager = new ClientManager(realmManager);
 
         realm = realmManager.createRealm("original");
-        application = realm.addClient("application");
-        application.setBaseUrl("http://base");
-        application.setManagementUrl("http://management");
-        application.setClientId("app-name");
-        application.addRole("role-1");
-        application.addRole("role-2");
-        application.addRole("role-3");
-        application.addDefaultRole("role-1");
-        application.addDefaultRole("role-2");
+        client = realm.addClient("application");
+        client.setBaseUrl("http://base");
+        client.setManagementUrl("http://management");
+        client.setClientId("app-name");
+        client.addRole("role-1");
+        client.addRole("role-2");
+        client.addRole("role-3");
+        client.addDefaultRole("role-1");
+        client.addDefaultRole("role-2");
 
-        application.addRedirectUri("redirect-1");
-        application.addRedirectUri("redirect-2");
+        client.addRedirectUri("redirect-1");
+        client.addRedirectUri("redirect-2");
 
-        application.addWebOrigin("origin-1");
-        application.addWebOrigin("origin-2");
+        client.addWebOrigin("origin-1");
+        client.addWebOrigin("origin-2");
 
-        application.registerNode("node1", 10);
-        application.registerNode("10.20.30.40", 50);
+        client.registerNode("node1", 10);
+        client.registerNode("10.20.30.40", 50);
 
-        application.updateApplication();
+        client.updateApplication();
     }
 
     @Test
@@ -56,26 +56,26 @@ public class ClientModelTest extends AbstractModelTest {
         RealmModel persisted = realmManager.getRealm(realm.getId());
 
         ClientModel actual = persisted.getClientNameMap().get("app-name");
-        assertEquals(application, actual);
+        assertEquals(client, actual);
     }
 
     @Test
     public void json() {
-        ApplicationRepresentation representation = ModelToRepresentation.toRepresentation(application);
+        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
         representation.setId(null);
 
         RealmModel realm = realmManager.createRealm("copy");
-        ClientModel copy = RepresentationToModel.createApplication(session, realm, representation, true);
+        ClientModel copy = RepresentationToModel.createClient(session, realm, representation, true);
 
-        assertEquals(application, copy);
+        assertEquals(client, copy);
     }
 
     @Test
     public void testAddApplicationWithId() {
-        application = realm.addClient("app-123", "application2");
+        client = realm.addClient("app-123", "application2");
         commit();
-        application = realmManager.getRealm(realm.getId()).getClientById("app-123");
-        Assert.assertNotNull(application);
+        client = realmManager.getRealm(realm.getId()).getClientById("app-123");
+        Assert.assertNotNull(client);
     }
 
 

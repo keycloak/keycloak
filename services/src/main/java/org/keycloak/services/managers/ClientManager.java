@@ -24,27 +24,27 @@ import java.util.TreeSet;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ApplicationManager {
-    protected Logger logger = Logger.getLogger(ApplicationManager.class);
+public class ClientManager {
+    protected Logger logger = Logger.getLogger(ClientManager.class);
 
     protected RealmManager realmManager;
 
-    public ApplicationManager(RealmManager realmManager) {
+    public ClientManager(RealmManager realmManager) {
         this.realmManager = realmManager;
     }
 
-    public ApplicationManager() {
+    public ClientManager() {
     }
 
-    public ClientModel createApplication(RealmModel realm, String name) {
-        return KeycloakModelUtils.createApplication(realm, name);
+    public ClientModel createClient(RealmModel realm, String name) {
+        return KeycloakModelUtils.createClient(realm, name);
     }
 
-    public boolean removeApplication(RealmModel realm, ClientModel application) {
-        if (realm.removeClient(application.getId())) {
+    public boolean removeClient(RealmModel realm, ClientModel client) {
+        if (realm.removeClient(client.getId())) {
             UserSessionProvider sessions = realmManager.getSession().sessions();
             if (sessions != null) {
-                sessions.onClientRemoved(realm, application);
+                sessions.onClientRemoved(realm, client);
             }
             return true;
         } else {
@@ -52,8 +52,8 @@ public class ApplicationManager {
         }
     }
 
-    public Set<String> validateRegisteredNodes(ClientModel application) {
-        Map<String, Integer> registeredNodes = application.getRegisteredNodes();
+    public Set<String> validateRegisteredNodes(ClientModel client) {
+        Map<String, Integer> registeredNodes = client.getRegisteredNodes();
         if (registeredNodes == null || registeredNodes.isEmpty()) {
             return Collections.emptySet();
         }
@@ -61,11 +61,11 @@ public class ApplicationManager {
         int currentTime = Time.currentTime();
 
         Set<String> validatedNodes = new TreeSet<String>();
-        if (application.getNodeReRegistrationTimeout() > 0) {
+        if (client.getNodeReRegistrationTimeout() > 0) {
             List<String> toRemove = new LinkedList<String>();
             for (Map.Entry<String, Integer> entry : registeredNodes.entrySet()) {
                 Integer lastReRegistration = entry.getValue();
-                if (lastReRegistration + application.getNodeReRegistrationTimeout() < currentTime) {
+                if (lastReRegistration + client.getNodeReRegistrationTimeout() < currentTime) {
                     toRemove.add(entry.getKey());
                 } else {
                     validatedNodes.add(entry.getKey());
@@ -74,7 +74,7 @@ public class ApplicationManager {
 
             // Remove time-outed nodes
             for (String node : toRemove) {
-                application.unregisterNode(node);
+                client.unregisterNode(node);
             }
         } else {
             // Periodic node reRegistration is disabled, so allow all nodes

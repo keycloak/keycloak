@@ -101,11 +101,11 @@ public class RealmAdminResource {
      * @return
      */
     @Path("applications")
-    public ApplicationsResource getApplications() {
-        ApplicationsResource applicationsResource = new ApplicationsResource(realm, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(applicationsResource);
+    public ClientsResource getApplications() {
+        ClientsResource clientsResource = new ClientsResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
         //resourceContext.initResource(applicationsResource);
-        return applicationsResource;
+        return clientsResource;
     }
 
     /**
@@ -114,8 +114,8 @@ public class RealmAdminResource {
      * @return
      */
     @Path("applications-by-id")
-    public ApplicationsByIdResource getApplicationsById() {
-        ApplicationsByIdResource applicationsResource = new ApplicationsByIdResource(realm, auth);
+    public ClientsByIdResource getApplicationsById() {
+        ClientsByIdResource applicationsResource = new ClientsByIdResource(realm, auth);
         ResteasyProviderFactory.getInstance().injectProperties(applicationsResource);
         //resourceContext.initResource(applicationsResource);
         return applicationsResource;
