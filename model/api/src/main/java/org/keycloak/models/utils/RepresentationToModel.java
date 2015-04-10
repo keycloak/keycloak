@@ -22,6 +22,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -50,6 +51,7 @@ public class RepresentationToModel {
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
         convertDeprecatedSocialProviders(rep);
+        convertDeprecatedApplications(session, rep);
 
         newRealm.setName(rep.getRealm());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
@@ -127,8 +129,8 @@ public class RepresentationToModel {
 
         importIdentityProviders(rep, newRealm);
 
-        if (rep.getApplications() != null) {
-            Map<String, ClientModel> appMap = createApplications(session, rep, newRealm);
+        if (rep.getClients() != null) {
+            createClients(session, rep, newRealm);
         }
 
         if (rep.getRoles() != null) {
@@ -177,22 +179,17 @@ public class RepresentationToModel {
                 newRealm.addDefaultRole(roleString.trim());
             }
         }
-        // Setup application default roles
-        if (rep.getApplications() != null) {
-            for (ApplicationRepresentation resourceRep : rep.getApplications()) {
+        // Setup client default roles
+        if (rep.getClients() != null) {
+            for (ClientRepresentation resourceRep : rep.getClients()) {
                 if (resourceRep.getDefaultRoles() != null) {
-                    ClientModel appModel = newRealm.getClientByClientId(resourceRep.getName());
-                    appModel.updateDefaultRoles(resourceRep.getDefaultRoles());
+                    ClientModel clientModel = newRealm.getClientByClientId(resourceRep.getClientId());
+                    clientModel.updateDefaultRoles(resourceRep.getDefaultRoles());
                 }
             }
         }
 
-        if (rep.getOauthClients() != null) {
-            createOAuthClients(session, rep, newRealm);
-        }
-
-
-        // Now that all possible roles and applications are created, create scope mappings
+        // Now that all possible roles and clients are created, create scope mappings
 
         Map<String, ClientModel> appMap = newRealm.getClientNameMap();
 
@@ -201,9 +198,9 @@ public class RepresentationToModel {
             for (Map.Entry<String, List<ScopeMappingRepresentation>> entry : rep.getApplicationScopeMappings().entrySet()) {
                 ClientModel app = appMap.get(entry.getKey());
                 if (app == null) {
-                    throw new RuntimeException("Unable to find application role mappings for app: " + entry.getKey());
+                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
-                createApplicationScopeMappings(newRealm, app, entry.getValue());
+                createClientScopeMappings(newRealm, app, entry.getValue());
             }
         }
 
@@ -312,15 +309,41 @@ public class RepresentationToModel {
         user.setSocialLinks(null);
     }
 
-    private static List<ProtocolMapperRepresentation> convertDeprecatedClaimsMask(KeycloakSession session, ClaimRepresentation claimRep) {
-        if (claimRep == null) {
-            return null;
-        }
+    private static void convertDeprecatedApplications(KeycloakSession session, RealmRepresentation realm) {
+        if (realm.getApplications() != null || realm.getOauthClients() != null) {
+            if (realm.getClients() == null) {
+                realm.setClients(new LinkedList<ClientRepresentation>());
+            }
 
-        logger.warn("Using deprecated 'claims' configuration in JSON representation. It will be removed in future versions");
-        long mask = getClaimsMask(claimRep);
-        MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
-        return migrationProvider.getMappersForClaimMask(mask);
+            List<ApplicationRepresentation> clients = new LinkedList<>();
+            if (realm.getApplications() != null) {
+                clients.addAll(realm.getApplications());
+            }
+            if (realm.getOauthClients() != null) {
+                clients.addAll(realm.getOauthClients());
+            }
+
+            for (ApplicationRepresentation app : clients) {
+                app.setClientId(app.getName());
+                app.setName(null);
+
+                if (app instanceof OAuthClientRepresentation) {
+                    app.setConsentRequired(true);
+                    app.setFullScopeAllowed(false);
+                }
+
+                if (app.getProtocolMappers() == null && app.getClaims() != null) {
+                    long mask = getClaimsMask(app.getClaims());
+                    List<ProtocolMapperRepresentation> convertedProtocolMappers = session.getProvider(MigrationProvider.class).getMappersForClaimMask(mask);
+                    app.setProtocolMappers(convertedProtocolMappers);
+                    app.setClaims(null);
+                }
+
+                realm.getClients().add(app);
+            }
+
+            realm.setApplications(null);
+        }
     }
 
     public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
@@ -450,10 +473,10 @@ public class RepresentationToModel {
 
     // APPLICATIONS
 
-    private static Map<String, ClientModel> createApplications(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
+    private static Map<String, ClientModel> createClients(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
         Map<String, ClientModel> appMap = new HashMap<String, ClientModel>();
-        for (ApplicationRepresentation resourceRep : rep.getApplications()) {
-            ClientModel app = createApplication(session, realm, resourceRep, false);
+        for (ClientRepresentation resourceRep : rep.getClients()) {
+            ClientModel app = createClient(session, realm, resourceRep, false);
             appMap.put(app.getClientId(), app);
         }
         return appMap;
@@ -466,63 +489,57 @@ public class RepresentationToModel {
      * @param resourceRep
      * @return
      */
-    public static ClientModel createApplication(KeycloakSession session, RealmModel realm, ApplicationRepresentation resourceRep, boolean addDefaultRoles) {
-        logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
+    public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation resourceRep, boolean addDefaultRoles) {
+        logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getClientId());
 
-        if (resourceRep.getProtocolMappers() == null) {
-            List<ProtocolMapperRepresentation> convertedProtocolMappers = convertDeprecatedClaimsMask(session, resourceRep.getClaims());
-            if (convertedProtocolMappers != null) {
-                resourceRep.setProtocolMappers(convertedProtocolMappers);
-            }
-        }
-
-        ClientModel applicationModel = resourceRep.getId()!=null ? realm.addClient(resourceRep.getId(), resourceRep.getName()) : realm.addClient(resourceRep.getName());
-        if (resourceRep.isEnabled() != null) applicationModel.setEnabled(resourceRep.isEnabled());
-        applicationModel.setManagementUrl(resourceRep.getAdminUrl());
+        ClientModel client = resourceRep.getId()!=null ? realm.addClient(resourceRep.getId(), resourceRep.getClientId()) : realm.addClient(resourceRep.getClientId());
+        if (resourceRep.isEnabled() != null) client.setEnabled(resourceRep.isEnabled());
+        client.setManagementUrl(resourceRep.getAdminUrl());
         if (resourceRep.isSurrogateAuthRequired() != null)
-            applicationModel.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
-        applicationModel.setBaseUrl(resourceRep.getBaseUrl());
-        if (resourceRep.isBearerOnly() != null) applicationModel.setBearerOnly(resourceRep.isBearerOnly());
-        if (resourceRep.isPublicClient() != null) applicationModel.setPublicClient(resourceRep.isPublicClient());
-        if (resourceRep.isFrontchannelLogout() != null) applicationModel.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
-        if (resourceRep.getProtocol() != null) applicationModel.setProtocol(resourceRep.getProtocol());
+            client.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
+        client.setBaseUrl(resourceRep.getBaseUrl());
+        if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
+        if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
+        if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
+        if (resourceRep.isFrontchannelLogout() != null) client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
+        if (resourceRep.getProtocol() != null) client.setProtocol(resourceRep.getProtocol());
         if (resourceRep.isFullScopeAllowed() != null) {
-            applicationModel.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
+            client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
         } else {
-            applicationModel.setFullScopeAllowed(true);
+            client.setFullScopeAllowed(true);
         }
         if (resourceRep.getNodeReRegistrationTimeout() != null) {
-            applicationModel.setNodeReRegistrationTimeout(resourceRep.getNodeReRegistrationTimeout());
+            client.setNodeReRegistrationTimeout(resourceRep.getNodeReRegistrationTimeout());
         } else {
-            applicationModel.setNodeReRegistrationTimeout(-1);
+            client.setNodeReRegistrationTimeout(-1);
         }
-        applicationModel.updateApplication();
+        client.updateApplication();
 
         if (resourceRep.getNotBefore() != null) {
-            applicationModel.setNotBefore(resourceRep.getNotBefore());
+            client.setNotBefore(resourceRep.getNotBefore());
         }
 
-        applicationModel.setSecret(resourceRep.getSecret());
-        if (applicationModel.getSecret() == null) {
-            KeycloakModelUtils.generateSecret(applicationModel);
+        client.setSecret(resourceRep.getSecret());
+        if (client.getSecret() == null) {
+            KeycloakModelUtils.generateSecret(client);
         }
 
         if (resourceRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
-                applicationModel.setAttribute(entry.getKey(), entry.getValue());
+                client.setAttribute(entry.getKey(), entry.getValue());
             }
         }
 
 
         if (resourceRep.getRedirectUris() != null) {
             for (String redirectUri : resourceRep.getRedirectUris()) {
-                applicationModel.addRedirectUri(redirectUri);
+                client.addRedirectUri(redirectUri);
             }
         }
         if (resourceRep.getWebOrigins() != null) {
             for (String webOrigin : resourceRep.getWebOrigins()) {
-                logger.debugv("Application: {0} webOrigin: {1}", resourceRep.getName(), webOrigin);
-                applicationModel.addWebOrigin(webOrigin);
+                logger.debugv("Application: {0} webOrigin: {1}", resourceRep.getClientId(), webOrigin);
+                client.addWebOrigin(webOrigin);
             }
         } else {
             // add origins from redirect uris
@@ -541,38 +558,38 @@ public class RepresentationToModel {
                     }
                 }
                 if (origins.size() > 0) {
-                    applicationModel.setWebOrigins(origins);
+                    client.setWebOrigins(origins);
                 }
             }
         }
 
         if (resourceRep.getRegisteredNodes() != null) {
             for (Map.Entry<String, Integer> entry : resourceRep.getRegisteredNodes().entrySet()) {
-                applicationModel.registerNode(entry.getKey(), entry.getValue());
+                client.registerNode(entry.getKey(), entry.getValue());
             }
         }
 
         if (addDefaultRoles && resourceRep.getDefaultRoles() != null) {
-            applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
+            client.updateDefaultRoles(resourceRep.getDefaultRoles());
         }
 
         if (resourceRep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
-            Set<ProtocolMapperModel> mappers = applicationModel.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers) applicationModel.removeProtocolMapper(mapper);
+            Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
+            for (ProtocolMapperModel mapper : mappers) client.removeProtocolMapper(mapper);
 
             for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
-                applicationModel.addProtocolMapper(toModel(mapper));
+                client.addProtocolMapper(toModel(mapper));
             }
         }
 
-        applicationModel.updateIdentityProviders(toModel(resourceRep.getIdentityProviders(), realm));
+        client.updateIdentityProviders(toModel(resourceRep.getIdentityProviders(), realm));
 
-        return applicationModel;
+        return client;
     }
 
-    public static void updateApplication(ApplicationRepresentation rep, ClientModel resource) {
-        if (rep.getName() != null) resource.setClientId(rep.getName());
+    public static void updateClient(ClientRepresentation rep, ClientModel resource) {
+        if (rep.getClientId() != null) resource.setClientId(rep.getClientId());
         if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
         if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
         if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
@@ -675,94 +692,18 @@ public class RepresentationToModel {
         return mask;
     }
 
-    // OAuth clients
-
-    private static void createOAuthClients(KeycloakSession session, RealmRepresentation realmRep, RealmModel realm) {
-        for (OAuthClientRepresentation rep : realmRep.getOauthClients()) {
-            createOAuthClient(session, rep, realm);
-        }
-    }
-
-    public static ClientModel createOAuthClient(String id, String name, RealmModel realm) {
-        ClientModel model = id!=null ? realm.addClient(id, name) : realm.addClient(name);
-        model.setConsentRequired(true);
-        KeycloakModelUtils.generateSecret(model);
-        return model;
-    }
-
-    public static ClientModel createOAuthClient(KeycloakSession session, OAuthClientRepresentation rep, RealmModel realm) {
-        ClientModel model = createOAuthClient(rep.getId(), rep.getName(), realm);
-
-        model.updateIdentityProviders(toModel(rep.getIdentityProviders(), realm));
-
-        updateOAuthClient(session, rep, model);
-        return model;
-    }
-
-    public static void updateOAuthClient(KeycloakSession session, OAuthClientRepresentation rep, ClientModel model) {
-        if (rep.getProtocolMappers() == null) {
-            List<ProtocolMapperRepresentation> convertedProtocolMappers = convertDeprecatedClaimsMask(session, rep.getClaims());
-            if (convertedProtocolMappers != null) {
-                rep.setProtocolMappers(convertedProtocolMappers);
-            }
-        }
-
-        if (rep.getName() != null) model.setClientId(rep.getName());
-        if (rep.isEnabled() != null) model.setEnabled(rep.isEnabled());
-        if (rep.isPublicClient() != null) model.setPublicClient(rep.isPublicClient());
-        if (rep.isFrontchannelLogout() != null) model.setFrontchannelLogout(rep.isFrontchannelLogout());
-        if (rep.isFullScopeAllowed() != null) model.setFullScopeAllowed(rep.isFullScopeAllowed());
-        if (rep.isDirectGrantsOnly() != null) model.setDirectGrantsOnly(rep.isDirectGrantsOnly());
-        if (rep.getNotBefore() != null) {
-            model.setNotBefore(rep.getNotBefore());
-        }
-        if (rep.getSecret() != null) model.setSecret(rep.getSecret());
-        List<String> redirectUris = rep.getRedirectUris();
-        if (redirectUris != null) {
-            model.setRedirectUris(new HashSet<String>(redirectUris));
-        }
-
-        List<String> webOrigins = rep.getWebOrigins();
-        if (webOrigins != null) {
-            model.setWebOrigins(new HashSet<String>(webOrigins));
-        }
-
-        if (rep.getNotBefore() != null) {
-            model.setNotBefore(rep.getNotBefore());
-        }
-        if (rep.getProtocol() != null) model.setProtocol(rep.getProtocol());
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
-                model.setAttribute(entry.getKey(), entry.getValue());
-            }
-        }
-
-        updateClientIdentityProviders(rep.getIdentityProviders(), model);
-
-        if (rep.getProtocolMappers() != null) {
-            // first, remove all default/built in mappers
-            Set<ProtocolMapperModel> mappers = model.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers) model.removeProtocolMapper(mapper);
-
-            for (ProtocolMapperRepresentation mapper : rep.getProtocolMappers()) {
-                model.addProtocolMapper(toModel(mapper));
-            }
-        }
-
-    }
-
     // Scope mappings
 
-    public static void createApplicationScopeMappings(RealmModel realm, ClientModel applicationModel, List<ScopeMappingRepresentation> mappings) {
+    public static void createClientScopeMappings(RealmModel realm, ClientModel clientModel, List<ScopeMappingRepresentation> mappings) {
         for (ScopeMappingRepresentation mapping : mappings) {
             ClientModel client = realm.getClientByClientId(mapping.getClient());
             if (client == null) {
                 throw new RuntimeException("Unknown client specified in application scope mappings");
             }
             for (String roleString : mapping.getRoles()) {
-                RoleModel role = applicationModel.getRole(roleString.trim());
+                RoleModel role = clientModel.getRole(roleString.trim());
                 if (role == null) {
-                    role = applicationModel.addRole(roleString.trim());
+                    role = clientModel.addRole(roleString.trim());
                 }
                 client.addScopeMapping(role);
             }
@@ -771,7 +712,7 @@ public class RepresentationToModel {
 
     // Users
 
-    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ClientModel> appMap) {
+    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ClientModel> clientMap) {
         convertDeprecatedSocialProviders(userRep);
 
         // Import users just to user storage. Don't federate
@@ -814,11 +755,11 @@ public class RepresentationToModel {
         }
         if (userRep.getApplicationRoles() != null) {
             for (Map.Entry<String, List<String>> entry : userRep.getApplicationRoles().entrySet()) {
-                ClientModel app = appMap.get(entry.getKey());
-                if (app == null) {
-                    throw new RuntimeException("Unable to find application role mappings for app: " + entry.getKey());
+                ClientModel client = clientMap.get(entry.getKey());
+                if (client == null) {
+                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
-                createApplicationRoleMappings(app, user, entry.getValue());
+                createClientRoleMappings(client, user, entry.getValue());
             }
         }
         return user;
@@ -853,7 +794,7 @@ public class RepresentationToModel {
 
     // Role mappings
 
-    public static void createApplicationRoleMappings(ClientModel applicationModel, UserModel user, List<String> roleNames) {
+    public static void createClientRoleMappings(ClientModel applicationModel, UserModel user, List<String> roleNames) {
         if (user == null) {
             throw new RuntimeException("User not found");
         }

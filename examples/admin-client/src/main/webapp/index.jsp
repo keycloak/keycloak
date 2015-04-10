@@ -1,5 +1,5 @@
 <%@ page import="org.keycloak.admin.client.Keycloak" %>
-<%@ page import="org.keycloak.admin.client.resource.ApplicationsResource" %>
+<%@ page import="org.keycloak.admin.client.resource.ClientsResource" %>
 <%@ page import="org.keycloak.representations.idm.ApplicationRepresentation" %>
 <%@ page import="org.keycloak.util.UriUtils" %>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1" %>
@@ -13,7 +13,7 @@
     String authServer = UriUtils.getOrigin(request.getRequestURL().toString()) + "/auth";
 
     Keycloak keycloak = Keycloak.getInstance(authServer, "example", "examples-admin-client", "password", "examples-admin-client", "password");
-    ApplicationsResource applications = keycloak.realm("example").applications();
+    ClientsResource applications = keycloak.realm("example").applications();
 
     out.println("<h1>Applications</h1>");
     out.println("<ul>");

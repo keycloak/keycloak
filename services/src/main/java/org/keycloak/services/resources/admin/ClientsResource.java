@@ -10,7 +10,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.Consumes;
@@ -32,7 +32,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ApplicationsResource {
+public class ClientsResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
     protected RealmModel realm;
     private RealmAuth auth;
@@ -40,7 +40,7 @@ public class ApplicationsResource {
     @Context
     protected KeycloakSession session;
 
-    public ApplicationsResource(RealmModel realm, RealmAuth auth) {
+    public ClientsResource(RealmModel realm, RealmAuth auth) {
         this.realm = realm;
         this.auth = auth;
         
@@ -55,10 +55,10 @@ public class ApplicationsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ApplicationRepresentation> getApplications() {
+    public List<ClientRepresentation> getClients() {
         auth.requireAny();
 
-        List<ApplicationRepresentation> rep = new ArrayList<ApplicationRepresentation>();
+        List<ClientRepresentation> rep = new ArrayList<>();
         List<ClientModel> clientModels = realm.getClients();
 
         boolean view = auth.hasView();
@@ -66,9 +66,9 @@ public class ApplicationsResource {
             if (view) {
                 rep.add(ModelToRepresentation.toRepresentation(clientModel));
             } else {
-                ApplicationRepresentation app = new ApplicationRepresentation();
-                app.setName(clientModel.getClientId());
-                rep.add(app);
+                ClientRepresentation client = new ClientRepresentation();
+                client.setClientId(clientModel.getClientId());
+                rep.add(client);
             }
         }
 
@@ -76,7 +76,7 @@ public class ApplicationsResource {
     }
 
     /**
-     * Create a new application.  Application name must be unique!
+     * Create a new client.  Client client_id must be unique!
      *
      * @param uriInfo
      * @param rep
@@ -84,18 +84,18 @@ public class ApplicationsResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createApplication(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
+    public Response createClient(final @Context UriInfo uriInfo, final ClientRepresentation rep) {
         auth.requireManage();
 
         try {
-            ClientModel clientModel = RepresentationToModel.createApplication(session, realm, rep, true);
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(getApplicationPath(clientModel)).build()).build();
+            ClientModel clientModel = RepresentationToModel.createClient(session, realm, rep, true);
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(getClientPath(clientModel)).build()).build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Application " + rep.getName() + " already exists");
+            return Flows.errors().exists("Client " + rep.getClientId() + " already exists");
         }
     }
 
-    protected String getApplicationPath(ClientModel clientModel) {
+    protected String getClientPath(ClientModel clientModel) {
         return clientModel.getClientId();
     }
 
@@ -106,18 +106,17 @@ public class ApplicationsResource {
      * @return
      */
     @Path("{app-name}")
-    public ApplicationResource getApplication(final @PathParam("app-name") String name) {
-        ClientModel clientModel = getApplicationByPathParam(name);
+    public ClientResource getClient(final @PathParam("app-name") String name) {
+        ClientModel clientModel = getClientByPathParam(name);
         if (clientModel == null) {
-            throw new NotFoundException("Could not find application: " + name);
+            throw new NotFoundException("Could not find client: " + name);
         }
-        ApplicationResource applicationResource = new ApplicationResource(realm, auth, clientModel, session);
-        ResteasyProviderFactory.getInstance().injectProperties(applicationResource);
-        //resourceContext.initResource(applicationResource);
-        return applicationResource;
+        ClientResource clientResource = new ClientResource(realm, auth, clientModel, session);
+        ResteasyProviderFactory.getInstance().injectProperties(clientResource);
+        return clientResource;
     }
 
-    protected ClientModel getApplicationByPathParam(String name) {
+    protected ClientModel getClientByPathParam(String name) {
         return realm.getClientByClientId(name);
     }
 

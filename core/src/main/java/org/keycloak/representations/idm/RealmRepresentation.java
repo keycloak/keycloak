@@ -56,7 +56,10 @@ public class RealmRepresentation {
     protected List<UserRepresentation> users;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings;
+    protected List<ClientRepresentation> clients;
+    @Deprecated
     protected List<ApplicationRepresentation> applications;
+    @Deprecated
     protected List<OAuthClientRepresentation> oauthClients;
     protected Map<String, String> browserSecurityHeaders;
     protected Map<String, String> smtpServer;
@@ -101,14 +104,6 @@ public class RealmRepresentation {
         return applications;
     }
 
-    public ApplicationRepresentation resource(String name) {
-        ApplicationRepresentation resource = new ApplicationRepresentation();
-        if (applications == null) applications = new ArrayList<ApplicationRepresentation>();
-        applications.add(resource);
-        resource.setName(name);
-        return resource;
-    }
-
     public void setUsers(List<UserRepresentation> users) {
         this.users = users;
     }
@@ -119,6 +114,14 @@ public class RealmRepresentation {
         if (users == null) users = new ArrayList<UserRepresentation>();
         users.add(user);
         return user;
+    }
+
+    public List<ClientRepresentation> getClients() {
+        return clients;
+    }
+
+    public void setClients(List<ClientRepresentation> clients) {
+        this.clients = clients;
     }
 
     public void setApplications(List<ApplicationRepresentation> applications) {

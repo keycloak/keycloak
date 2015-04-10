@@ -1,6 +1,7 @@
 package org.keycloak.admin.client.resource;
 
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -14,14 +15,14 @@ import java.util.List;
 /**
  * @author rodrigo.sasaki@icarros.com.br
  */
-public interface ApplicationsResource {
+public interface ClientsResource {
 
     @Path("{appName}")
-    public ApplicationResource get(@PathParam("appName") String appName);
+    public ClientResource get(@PathParam("appName") String appName);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public void create(ApplicationRepresentation applicationRepresentation);
+    public void create(ClientRepresentation clientRepresentation);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

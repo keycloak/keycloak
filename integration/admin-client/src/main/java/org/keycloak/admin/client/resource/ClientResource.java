@@ -1,6 +1,7 @@
 package org.keycloak.admin.client.resource;
 
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 
@@ -21,18 +22,18 @@ import java.util.Set;
 /**
  * @author rodrigo.sasaki@icarros.com.br
  */
-public interface ApplicationResource {
+public interface ClientResource {
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public ApplicationRepresentation toRepresentation();
+    public ClientRepresentation toRepresentation();
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(ApplicationRepresentation applicationRepresentation);
+    public void update(ClientRepresentation clientRepresentation);
 
     @DELETE
     public void remove();

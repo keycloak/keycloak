@@ -119,7 +119,7 @@ public class ImportUtils {
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
 
-        ClientModel realmAdminApp = KeycloakModelUtils.createApplication(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationName(realm));
+        ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationName(realm));
         realmAdminApp.setBearerOnly(true);
         realm.setMasterAdminApp(realmAdminApp);
 

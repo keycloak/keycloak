@@ -78,7 +78,7 @@ public class ResourceAdminManager {
             return Collections.emptyList();
         }
 
-        Set<String> registeredNodesHosts = new ApplicationManager().validateRegisteredNodes(application);
+        Set<String> registeredNodesHosts = new ClientManager().validateRegisteredNodes(application);
 
         // No-cluster setup
         if (registeredNodesHosts.isEmpty()) {

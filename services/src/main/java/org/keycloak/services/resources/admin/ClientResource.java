@@ -17,9 +17,10 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.services.managers.ApplicationManager;
+import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -53,11 +54,11 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ApplicationResource {
-    protected static final Logger logger = Logger.getLogger(ApplicationResource.class);
+public class ClientResource {
+    protected static final Logger logger = Logger.getLogger(ClientResource.class);
     protected RealmModel realm;
     private RealmAuth auth;
-    protected ClientModel application;
+    protected ClientModel client;
     protected KeycloakSession session;
     
     @Context
@@ -70,10 +71,10 @@ public class ApplicationResource {
         return keycloak;
     }
 
-    public ApplicationResource(RealmModel realm, RealmAuth auth, ClientModel clientModel, KeycloakSession session) {
+    public ClientResource(RealmModel realm, RealmAuth auth, ClientModel clientModel, KeycloakSession session) {
         this.realm = realm;
         this.auth = auth;
-        this.application = clientModel;
+        this.client = clientModel;
         this.session = session;
 
         auth.init(RealmAuth.Resource.CLIENT);
@@ -81,7 +82,7 @@ public class ApplicationResource {
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers() {
-        ProtocolMappersResource mappers = new ProtocolMappersResource(application, auth);
+        ProtocolMappersResource mappers = new ProtocolMappersResource(client, auth);
         ResteasyProviderFactory.getInstance().injectProperties(mappers);
         return mappers;
     }
@@ -93,14 +94,14 @@ public class ApplicationResource {
      */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response update(final ApplicationRepresentation rep) {
+    public Response update(final ClientRepresentation rep) {
         auth.requireManage();
 
         try {
-            RepresentationToModel.updateApplication(rep, application);
+            RepresentationToModel.updateClient(rep, client);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Application " + rep.getName() + " already exists");
+            return Flows.errors().exists("Client " + rep.getClientId() + " already exists");
         }
     }
 
@@ -113,10 +114,10 @@ public class ApplicationResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public ApplicationRepresentation getApplication() {
+    public ClientRepresentation getClient() {
         auth.requireView();
 
-        return ModelToRepresentation.toRepresentation(application);
+        return ModelToRepresentation.toRepresentation(client);
     }
 
     /**
@@ -126,7 +127,7 @@ public class ApplicationResource {
      */
     @Path("certificates/{attr}")
     public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix) {
-        return new ClientAttributeCertificateResource(realm, auth, application, session, attributePrefix);
+        return new ClientAttributeCertificateResource(realm, auth, client, session, attributePrefix);
     }
 
 
@@ -143,8 +144,8 @@ public class ApplicationResource {
     public String getInstallation() throws IOException {
         auth.requireView();
 
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
-        Object rep = applicationManager.toInstallationRepresentation(realm, application, getKeycloakApplication().getBaseUri(uriInfo));
+        ClientManager clientManager = new ClientManager(new RealmManager(session));
+        Object rep = clientManager.toInstallationRepresentation(realm, client, getKeycloakApplication().getBaseUri(uriInfo));
 
         // TODO Temporary solution to pretty-print
         return JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);
@@ -163,8 +164,8 @@ public class ApplicationResource {
     public String getJBossInstallation() throws IOException {
         auth.requireView();
 
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
-        return applicationManager.toJBossSubsystemConfig(realm, application, getKeycloakApplication().getBaseUri(uriInfo));
+        ClientManager clientManager = new ClientManager(new RealmManager(session));
+        return clientManager.toJBossSubsystemConfig(realm, client, getKeycloakApplication().getBaseUri(uriInfo));
     }
 
     /**
@@ -175,7 +176,7 @@ public class ApplicationResource {
     @NoCache
     public void deleteApplication() {
         auth.requireManage();
-        new ApplicationManager(new RealmManager(session)).removeApplication(realm, application);
+        new ClientManager(new RealmManager(session)).removeClient(realm, client);
     }
 
 
@@ -192,7 +193,7 @@ public class ApplicationResource {
         auth.requireManage();
 
         logger.debug("regenerateSecret");
-        UserCredentialModel cred = KeycloakModelUtils.generateSecret(application);
+        UserCredentialModel cred = KeycloakModelUtils.generateSecret(client);
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
         return rep;
     }
@@ -210,7 +211,7 @@ public class ApplicationResource {
         auth.requireView();
 
         logger.debug("getClientSecret");
-        UserCredentialModel model = UserCredentialModel.secret(application.getSecret());
+        UserCredentialModel model = UserCredentialModel.secret(client.getSecret());
         if (model == null) throw new NotFoundException("Application does not have a secret");
         return ModelToRepresentation.toRepresentation(model);
     }
@@ -222,12 +223,12 @@ public class ApplicationResource {
      */
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, auth, application, session);
+        return new ScopeMappedResource(realm, auth, client, session);
     }
 
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(realm, auth, application);
+        return new RoleContainerResource(realm, auth, client);
     }
 
     /**
@@ -244,7 +245,7 @@ public class ApplicationResource {
     {
         auth.requireView();
 
-        return application.getWebOrigins();
+        return client.getWebOrigins();
     }
 
     /**
@@ -260,7 +261,7 @@ public class ApplicationResource {
     {
         auth.requireManage();
 
-        application.setWebOrigins(allowedOrigins);
+        client.setWebOrigins(allowedOrigins);
     }
 
     /**
@@ -277,7 +278,7 @@ public class ApplicationResource {
         auth.requireManage();
 
         for (String origin : allowedOrigins) {
-            application.removeWebOrigin(origin);
+            client.removeWebOrigin(origin);
         }
     }
 
@@ -289,7 +290,7 @@ public class ApplicationResource {
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
-        return new ResourceAdminManager().pushApplicationRevocationPolicy(uriInfo.getRequestUri(), realm, application);
+        return new ResourceAdminManager().pushApplicationRevocationPolicy(uriInfo.getRequestUri(), realm, client);
     }
 
     /**
@@ -308,7 +309,7 @@ public class ApplicationResource {
     public Map<String, Integer> getApplicationSessionCount() {
         auth.requireView();
         Map<String, Integer> map = new HashMap<String, Integer>();
-        map.put("count", session.sessions().getActiveUserSessions(application.getRealm(), application));
+        map.put("count", session.sessions().getActiveUserSessions(client.getRealm(), client));
         return map;
     }
 
@@ -326,7 +327,7 @@ public class ApplicationResource {
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : -1;
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
-        for (UserSessionModel userSession : session.sessions().getUserSessions(application.getRealm(), application, firstResult, maxResults)) {
+        for (UserSessionModel userSession : session.sessions().getUserSessions(client.getRealm(), client, firstResult, maxResults)) {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
             sessions.add(rep);
         }
@@ -341,7 +342,7 @@ public class ApplicationResource {
     @POST
     public GlobalRequestResult logoutAll() {
         auth.requireManage();
-        return new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application);
+        return new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, client);
     }
 
     /**
@@ -356,7 +357,7 @@ public class ApplicationResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        new ResourceAdminManager().logoutUserFromApplication(uriInfo.getRequestUri(), realm, application, user, session);
+        new ResourceAdminManager().logoutUserFromApplication(uriInfo.getRequestUri(), realm, client, user, session);
     }
 
     /**
@@ -375,7 +376,7 @@ public class ApplicationResource {
             throw new BadRequestException("Node not found in params");
         }
         if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
-        application.registerNode(node, Time.currentTime());
+        client.registerNode(node, Time.currentTime());
     }
 
     /**
@@ -390,12 +391,12 @@ public class ApplicationResource {
         auth.requireManage();
         if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
 
-        Integer time = application.getRegisteredNodes().get(node);
+        Integer time = client.getRegisteredNodes().get(node);
         if (time == null) {
             throw new NotFoundException("Application does not have a node " + node);
         }
 
-        application.unregisterNode(node);
+        client.unregisterNode(node);
     }
 
     /**
@@ -410,7 +411,7 @@ public class ApplicationResource {
         auth.requireManage();
         logger.debug("Test availability of cluster nodes");
 
-        return new ResourceAdminManager().testNodesAvailability(uriInfo.getRequestUri(), realm, application);
+        return new ResourceAdminManager().testNodesAvailability(uriInfo.getRequestUri(), realm, client);
     }
 
 }
