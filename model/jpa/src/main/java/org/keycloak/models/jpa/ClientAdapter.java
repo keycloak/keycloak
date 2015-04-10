@@ -475,12 +475,12 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public String getClientId() {
-        return entity.getName();
+        return entity.getClientId();
     }
 
     @Override
     public void setClientId(String clientId) {
-        entity.setName(clientId);
+        entity.setClientId(clientId);
     }
 
     @Override

@@ -42,6 +42,11 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <update tableName="CLIENT">
+            <column name="CONSENT_REQUIRED" valueBoolean="true"/>
+            <where>DTYPE = 'OAuthClientEntity'</where>
+        </update>
         <dropColumn tableName="CLIENT" columnName="DTYPE"/>
+        <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME"/>
     </changeSet>
 </databaseChangeLog>

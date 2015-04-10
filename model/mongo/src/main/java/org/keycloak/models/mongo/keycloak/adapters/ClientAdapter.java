@@ -11,7 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.entities.ClientIdentityProviderMappingEntity;
 import org.keycloak.models.entities.ProtocolMapperEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -27,13 +27,13 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientAdapter extends AbstractMongoAdapter<MongoApplicationEntity> implements ClientModel {
+public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> implements ClientModel {
 
-    protected final MongoApplicationEntity applicationEntity;
+    protected final MongoClientEntity applicationEntity;
     private final RealmModel realm;
     protected  KeycloakSession session;
 
-    public ClientAdapter(KeycloakSession session, RealmModel realm, MongoApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
+    public ClientAdapter(KeycloakSession session, RealmModel realm, MongoClientEntity applicationEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.session = session;
         this.realm = realm;
@@ -41,7 +41,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoApplicationEntity> 
     }
 
     @Override
-    public MongoApplicationEntity getMongoEntity() {
+    public MongoClientEntity getMongoEntity() {
         return applicationEntity;
     }
 
@@ -58,12 +58,12 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoApplicationEntity> 
 
     @Override
     public String getClientId() {
-        return getMongoEntity().getName();
+        return getMongoEntity().getClientId();
     }
 
     @Override
     public void setClientId(String clientId) {
-        getMongoEntity().setName(clientId);
+        getMongoEntity().setClientId(clientId);
         updateMongoEntity();
     }
 
@@ -507,7 +507,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoApplicationEntity> 
     public RoleAdapter getRole(String name) {
         DBObject query = new QueryBuilder()
                 .and("name").is(name)
-                .and("applicationId").is(getId())
+                .and("clientId").is(getId())
                 .get();
         MongoRoleEntity role = getMongoStore().loadSingleEntity(MongoRoleEntity.class, query, invocationContext);
         if (role == null) {
@@ -543,7 +543,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoApplicationEntity> 
     @Override
     public Set<RoleModel> getRoles() {
         DBObject query = new QueryBuilder()
-                .and("applicationId").is(getId())
+                .and("clientId").is(getId())
                 .get();
         List<MongoRoleEntity> roles = getMongoStore().loadEntities(MongoRoleEntity.class, query, invocationContext);
 
@@ -636,7 +636,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoApplicationEntity> 
 
     @Override
     public void registerNode(String nodeHost, int registrationTime) {
-        MongoApplicationEntity entity = getMongoEntity();
+        MongoClientEntity entity = getMongoEntity();
         if (entity.getRegisteredNodes() == null) {
             entity.setRegisteredNodes(new HashMap<String, Integer>());
         }
@@ -647,7 +647,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoApplicationEntity> 
 
     @Override
     public void unregisterNode(String nodeHost) {
-        MongoApplicationEntity entity = getMongoEntity();
+        MongoClientEntity entity = getMongoEntity();
         if (entity.getRegisteredNodes() == null) return;
 
         entity.getRegisteredNodes().remove(nodeHost);

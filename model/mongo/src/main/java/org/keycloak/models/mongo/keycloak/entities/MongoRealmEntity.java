@@ -26,6 +26,6 @@ public class MongoRealmEntity extends RealmEntity implements MongoIdentifiableEn
         context.getMongoStore().removeEntities(MongoRoleEntity.class, query, context);
 
         // Remove all applications of this realm
-        context.getMongoStore().removeEntities(MongoApplicationEntity.class, query, context);
+        context.getMongoStore().removeEntities(MongoClientEntity.class, query, context);
     }
 }

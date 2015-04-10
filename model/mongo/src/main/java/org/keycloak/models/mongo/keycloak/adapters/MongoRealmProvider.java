@@ -10,7 +10,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -111,7 +111,7 @@ public class MongoRealmProvider implements RealmProvider {
 
     @Override
     public ClientModel getClientById(String id, RealmModel realm) {
-        MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, id, invocationContext);
+        MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, id, invocationContext);
 
         // Check if application belongs to this realm
         if (appData == null || !realm.getId().equals(appData.getRealmId())) {

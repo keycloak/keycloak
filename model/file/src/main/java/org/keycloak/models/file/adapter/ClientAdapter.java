@@ -33,7 +33,7 @@ import java.util.Set;
 import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.entities.ApplicationEntity;
+import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.entities.ClientIdentityProviderMappingEntity;
 import org.keycloak.models.entities.ProtocolMapperEntity;
 import org.keycloak.models.entities.RoleEntity;
@@ -48,13 +48,13 @@ public class ClientAdapter implements ClientModel {
 
     private final RealmModel realm;
     private  KeycloakSession session;
-    private final ApplicationEntity entity;
+    private final ClientEntity entity;
     private final InMemoryModel inMemoryModel;
 
     private final Map<String, RoleAdapter> allRoles = new HashMap<String, RoleAdapter>();
     private final Map<String, RoleModel> allScopeMappings = new HashMap<String, RoleModel>();
 
-    public ClientAdapter(KeycloakSession session, RealmModel realm, ApplicationEntity entity, InMemoryModel inMemoryModel) {
+    public ClientAdapter(KeycloakSession session, RealmModel realm, ClientEntity entity, InMemoryModel inMemoryModel) {
         this.realm = realm;
         this.session = session;
         this.entity = entity;
@@ -406,13 +406,13 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public String getClientId() {
-        return entity.getName();
+        return entity.getClientId();
     }
 
     @Override
     public void setClientId(String clientId) {
         if (appNameExists(clientId)) throw new ModelDuplicateException("Application named " + clientId + " already exists.");
-        entity.setName(clientId);
+        entity.setClientId(clientId);
     }
 
     private boolean appNameExists(String name) {

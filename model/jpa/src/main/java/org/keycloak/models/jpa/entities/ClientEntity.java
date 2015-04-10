@@ -26,14 +26,14 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @Entity
-@Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "NAME"})})
+@Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "CLIENT_ID"})})
 public class ClientEntity {
 
     @Id
     @Column(name="ID", length = 36)
     private String id;
-    @Column(name = "NAME")
-    private String name;
+    @Column(name = "CLIENT_ID")
+    private String clientId;
     @Column(name="ENABLED")
     private boolean enabled;
     @Column(name="SECRET")
@@ -133,12 +133,12 @@ public class ClientEntity {
         this.enabled = enabled;
     }
 
-    public String getName() {
-        return name;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     public Set<String> getWebOrigins() {

@@ -18,7 +18,7 @@ import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -584,9 +584,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public ClientModel getClientByClientId(String clientId) {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
-                .and("name").is(clientId)
+                .and("clientId").is(clientId)
                 .get();
-        MongoApplicationEntity appEntity = getMongoStore().loadSingleEntity(MongoApplicationEntity.class, query, invocationContext);
+        MongoClientEntity appEntity = getMongoStore().loadSingleEntity(MongoClientEntity.class, query, invocationContext);
         return appEntity == null ? null : new ClientAdapter(session, this, appEntity, invocationContext);
     }
 
@@ -604,10 +604,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
                 .get();
-        List<MongoApplicationEntity> appDatas = getMongoStore().loadEntities(MongoApplicationEntity.class, query, invocationContext);
+        List<MongoClientEntity> appDatas = getMongoStore().loadEntities(MongoClientEntity.class, query, invocationContext);
 
         List<ClientModel> result = new ArrayList<ClientModel>();
-        for (MongoApplicationEntity appData : appDatas) {
+        for (MongoClientEntity appData : appDatas) {
             result.add(new ClientAdapter(session, this, appData, invocationContext));
         }
         return result;
@@ -620,9 +620,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        MongoApplicationEntity appData = new MongoApplicationEntity();
+        MongoClientEntity appData = new MongoClientEntity();
         appData.setId(id);
-        appData.setName(clientId);
+        appData.setClientId(clientId);
         appData.setRealmId(getId());
         appData.setEnabled(true);
         getMongoStore().insertEntity(appData, invocationContext);
@@ -639,7 +639,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public boolean removeClient(String id) {
-        return getMongoStore().removeEntity(MongoApplicationEntity.class, id, invocationContext);
+        return getMongoStore().removeEntity(MongoClientEntity.class, id, invocationContext);
     }
 
     @Override
@@ -979,7 +979,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ClientModel getMasterAdminApp() {
-        MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, realm.getAdminAppId(), invocationContext);
+        MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, realm.getAdminAppId(), invocationContext);
         return appData != null ? new ClientAdapter(session, this, appData, invocationContext) : null;
     }
 

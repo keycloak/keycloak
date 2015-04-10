@@ -266,4 +266,15 @@ public class Update1_2_0_Beta1 extends Update {
         }
     }
 
+    private String insertApplicationRole(DBCollection roles, String roleName, String applicationId) {
+        BasicDBObject role = new BasicDBObject();
+        String roleId = KeycloakModelUtils.generateId();
+        role.append("_id", roleId);
+        role.append("name", roleName);
+        role.append("applicationId", applicationId);
+        role.append("nameIndex", applicationId + "//" + roleName);
+        roles.insert(role);
+        return roleId;
+    }
+
 }

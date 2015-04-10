@@ -8,9 +8,9 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ApplicationEntity extends AbstractIdentifiableEntity {
+public class ClientEntity extends AbstractIdentifiableEntity {
 
-    private String name;
+    private String clientId;
     private String realmId;
     private boolean enabled;
     private String secret;
@@ -41,12 +41,12 @@ public class ApplicationEntity extends AbstractIdentifiableEntity {
     private List<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
     private List<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 
-    public String getName() {
-        return name;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     public boolean isEnabled() {

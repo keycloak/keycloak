@@ -24,13 +24,13 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
     // TODO This is required as Mongo doesn't support sparse indexes with compound keys (see https://jira.mongodb.org/browse/SERVER-2193)
     public String getNameIndex() {
         String realmId = getRealmId();
-        String applicationId = getClientId();
+        String clientId = getClientId();
         String name = getName();
 
         if (realmId != null) {
             return realmId + "//" + name;
         } else {
-            return applicationId + "//" + name;
+            return clientId + "//" + name;
         }
     }
 
@@ -75,7 +75,7 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
 
         // Remove defaultRoles from application
         if (getClientId() != null) {
-            MongoApplicationEntity appEntity = mongoStore.loadEntity(MongoApplicationEntity.class, getClientId(), invContext);
+            MongoClientEntity appEntity = mongoStore.loadEntity(MongoClientEntity.class, getClientId(), invContext);
 
             // Application might be already removed at this point
             if (appEntity != null) {
