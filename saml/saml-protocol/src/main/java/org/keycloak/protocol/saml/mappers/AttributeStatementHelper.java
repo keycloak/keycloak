@@ -1,8 +1,8 @@
 package org.keycloak.protocol.saml.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -48,18 +48,18 @@ public class AttributeStatementHelper {
         return attribute;
     }
 
-    public static void setConfigProperties(List<ProtocolMapper.ConfigProperty> configProperties) {
-        ProtocolMapper.ConfigProperty property = new ProtocolMapper.ConfigProperty();
+    public static void setConfigProperties(List<ProviderConfigProperty> configProperties) {
+        ProviderConfigProperty property = new ProviderConfigProperty();
         property.setName(AttributeStatementHelper.FRIENDLY_NAME);
         property.setLabel(AttributeStatementHelper.FRIENDLY_NAME_LABEL);
         property.setHelpText(AttributeStatementHelper.FRIENDLY_NAME_HELP_TEXT);
         configProperties.add(property);
-        property = new ProtocolMapper.ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(AttributeStatementHelper.SAML_ATTRIBUTE_NAME);
         property.setLabel("SAML Attribute Name");
         property.setHelpText("SAML Attribute Name");
         configProperties.add(property);
-        property = new ProtocolMapper.ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT);
         property.setLabel("SAML Attribute NameFormat");
         property.setHelpText("SAML Attribute NameFormat.  Can be basic, URI reference, or unspecified.");
@@ -67,7 +67,7 @@ public class AttributeStatementHelper {
         types.add(AttributeStatementHelper.BASIC);
         types.add(AttributeStatementHelper.URI_REFERENCE);
         types.add(AttributeStatementHelper.UNSPECIFIED);
-        property.setType(ProtocolMapper.ConfigProperty.LIST_TYPE);
+        property.setType(ProviderConfigProperty.LIST_TYPE);
         property.setDefaultValue(types);
         configProperties.add(property);
 

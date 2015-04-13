@@ -15,6 +15,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -142,7 +143,7 @@ public class ServerInfoAdminResource {
             rep.setHelpText(mapper.getHelpText());
             rep.setCategory(mapper.getDisplayCategory());
             rep.setProperties(new LinkedList<ProtocolMapperTypeRepresentation.ConfigProperty>());
-            for (ProtocolMapper.ConfigProperty prop : mapper.getConfigProperties()) {
+            for (ProviderConfigProperty prop : mapper.getConfigProperties()) {
                 ProtocolMapperTypeRepresentation.ConfigProperty propRep = new ProtocolMapperTypeRepresentation.ConfigProperty();
                 propRep.setName(prop.getName());
                 propRep.setLabel(prop.getLabel());

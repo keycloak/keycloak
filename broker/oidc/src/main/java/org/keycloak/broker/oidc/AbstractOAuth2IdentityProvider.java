@@ -25,14 +25,18 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 
@@ -87,7 +91,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     @Override
-    public Response handleRequest(AuthenticationRequest request) {
+    public Response performLogin(AuthenticationRequest request) {
         try {
             URI authorizationUrl = createAuthorizationUrl(request).build();
 
@@ -125,7 +129,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return null;
     }
 
-    protected FederatedIdentity getFederatedIdentity(Map<String, String> notes, String response) {
+    protected BrokeredIdentityContext getFederatedIdentity(String response) {
         String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
 
         if (accessToken == null) {
@@ -136,7 +140,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
 
-    protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
+    protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         return null;
     }
 
@@ -204,14 +208,17 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 if (authorizationCode != null) {
                     String response = generateTokenRequest(authorizationCode).asString();
 
-                    HashMap<String, String> userNotes = new HashMap<String, String>();
-                    FederatedIdentity federatedIdentity = getFederatedIdentity(userNotes, response);
+                    BrokeredIdentityContext federatedIdentity = getFederatedIdentity(response);
 
                     if (getConfig().isStoreToken()) {
                         federatedIdentity.setToken(response);
                     }
 
-                    return callback.authenticated(userNotes, getConfig(), federatedIdentity, state);
+                    federatedIdentity.setCode(state);
+                    federatedIdentity.setIdpConfig(getConfig());
+                    federatedIdentity.setIdp(AbstractOAuth2IdentityProvider.this);
+
+                    return callback.authenticated(federatedIdentity);
                 }
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);

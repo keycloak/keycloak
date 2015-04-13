@@ -5,6 +5,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 
@@ -101,15 +102,15 @@ public class OIDCAttributeMapperHelper {
         return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_ACCESS_TOKEN));
     }
 
-    public static void addAttributeConfig(List<ProtocolMapper.ConfigProperty> configProperties) {
-        ProtocolMapper.ConfigProperty property;
-        property = new ProtocolMapper.ConfigProperty();
+    public static void addAttributeConfig(List<ProviderConfigProperty> configProperties) {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
         property.setName(TOKEN_CLAIM_NAME);
         property.setLabel(TOKEN_CLAIM_NAME_LABEL);
-        property.setType(ProtocolMapper.ConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
         configProperties.add(property);
-        property = new ProtocolMapper.ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(JSON_TYPE);
         property.setLabel(JSON_TYPE);
         List<String> types = new ArrayList(3);
@@ -117,21 +118,21 @@ public class OIDCAttributeMapperHelper {
         types.add("long");
         types.add("int");
         types.add("boolean");
-        property.setType(ProtocolMapper.ConfigProperty.LIST_TYPE);
+        property.setType(ProviderConfigProperty.LIST_TYPE);
         property.setDefaultValue(types);
         property.setHelpText("JSON type that should be used to populate the json claim in the token.  long, int, boolean, and String are valid values.");
         configProperties.add(property);
-        property = new ProtocolMapper.ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(INCLUDE_IN_ID_TOKEN);
         property.setLabel(INCLUDE_IN_ID_TOKEN_LABEL);
-        property.setType(ProtocolMapper.ConfigProperty.BOOLEAN_TYPE);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue("true");
         property.setHelpText(INCLUDE_IN_ID_TOKEN_HELP_TEXT);
         configProperties.add(property);
-        property = new ProtocolMapper.ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(INCLUDE_IN_ACCESS_TOKEN);
         property.setLabel(INCLUDE_IN_ACCESS_TOKEN_LABEL);
-        property.setType(ProtocolMapper.ConfigProperty.BOOLEAN_TYPE);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue("true");
         property.setHelpText(INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
         configProperties.add(property);

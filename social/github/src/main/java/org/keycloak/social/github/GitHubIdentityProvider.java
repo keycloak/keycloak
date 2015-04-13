@@ -4,6 +4,7 @@ import org.codehaus.jackson.JsonNode;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.social.SocialIdentityProvider;
@@ -26,15 +27,17 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     }
 
     @Override
-    protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
+    protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
             JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
-            FederatedIdentity user = new FederatedIdentity(getJsonProperty(profile, "id"));
+            BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 
             user.setUsername(getJsonProperty(profile, "login"));
             user.setName(getJsonProperty(profile, "name"));
             user.setEmail(getJsonProperty(profile, "email"));
+            user.setIdpConfig(getConfig());
+            user.setIdp(this);
 
             return user;
         } catch (Exception e) {

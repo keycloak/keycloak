@@ -6,6 +6,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 
 import java.util.ArrayList;
@@ -21,24 +22,24 @@ import java.util.Map;
  */
 public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
 
-    private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     public static final String ROLE_CONFIG = "role";
 
     static {
-        ConfigProperty property;
-        property = new ConfigProperty();
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
         property.setName(ROLE_CONFIG);
         property.setLabel("Role");
         property.setHelpText("Role you want added to the token.  To specify an application role the syntax is appname.approle, i.e. myapp.myrole");
-        property.setType(ConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }
 
     public static final String PROVIDER_ID = "oidc-hardcoded-role-mapper";
 
 
-    public List<ConfigProperty> getConfigProperties() {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 

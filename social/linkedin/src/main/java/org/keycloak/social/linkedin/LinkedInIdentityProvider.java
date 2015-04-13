@@ -26,6 +26,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.social.SocialIdentityProvider;
@@ -52,18 +53,20 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 	}
 
 	@Override
-	protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
+	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		log.debug("doGetFederatedIdentity()");
 		try {
 			JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
-			FederatedIdentity user = new FederatedIdentity(getJsonProperty(profile, "id"));
+            BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 
 			user.setUsername(extractUsernameFromProfileURL(getJsonProperty(profile, "publicProfileUrl")));
 			user.setName(getJsonProperty(profile, "formattedName"));
 			user.setEmail(getJsonProperty(profile, "emailAddress"));
+            user.setIdpConfig(getConfig());
+            user.setIdp(this);
 
-			return user;
+            return user;
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from github.", e);
 		}

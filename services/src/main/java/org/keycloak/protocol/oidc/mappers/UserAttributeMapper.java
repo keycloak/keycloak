@@ -7,6 +7,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 
@@ -23,15 +24,15 @@ import java.util.List;
  */
 public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
 
-    private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ConfigProperty property;
-        property = new ConfigProperty();
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
-        property.setType(ConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
         OIDCAttributeMapperHelper.addAttributeConfig(configProperties);
 
@@ -40,7 +41,7 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
     public static final String PROVIDER_ID = "oidc-usermodel-attribute-mapper";
 
 
-    public List<ConfigProperty> getConfigProperties() {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 

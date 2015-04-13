@@ -3,6 +3,7 @@ package org.keycloak.broker.saml;
 import org.jboss.logging.Logger;
 import org.keycloak.ClientConnection;
 import org.keycloak.VerificationException;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -75,10 +76,14 @@ public class SAMLEndpoint {
     public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
     public static final String SAML_FEDERATED_SUBJECT = "SAML_FEDERATED_SUBJECT";
     public static final String SAML_FEDERATED_SUBJECT_NAMEFORMAT = "SAML_FEDERATED_SUBJECT_NAMEFORMAT";
+    public static final String SAML_LOGIN_RESPONSE = "SAML_LOGIN_RESPONSE";
+    public static final String SAML_ASSERTION = "SAML_ASSERTION";
+    public static final String SAML_AUTHN_STATEMENT = "SAML_AUTHN_STATEMENT";
     protected RealmModel realm;
     protected EventBuilder event;
     protected SAMLIdentityProviderConfig config;
     protected IdentityProvider.AuthenticationCallback callback;
+    protected SAMLIdentityProvider provider;
 
     @Context
     private UriInfo uriInfo;
@@ -93,10 +98,11 @@ public class SAMLEndpoint {
     private HttpHeaders headers;
 
 
-    public SAMLEndpoint(RealmModel realm, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback) {
+    public SAMLEndpoint(RealmModel realm, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback) {
         this.realm = realm;
         this.config = config;
         this.callback = callback;
+        this.provider = provider;
     }
 
     @GET
@@ -265,10 +271,11 @@ public class SAMLEndpoint {
                 SubjectType subject = assertion.getSubject();
                 SubjectType.STSubType subType = subject.getSubType();
                 NameIDType subjectNameID = (NameIDType) subType.getBaseID();
-                Map<String, String> notes = new HashMap<>();
-                notes.put(SAML_FEDERATED_SUBJECT, subjectNameID.getValue());
-                if (subjectNameID.getFormat() != null) notes.put(SAML_FEDERATED_SUBJECT_NAMEFORMAT, subjectNameID.getFormat().toString());
-                FederatedIdentity identity = new FederatedIdentity(subjectNameID.getValue());
+                //Map<String, String> notes = new HashMap<>();
+                BrokeredIdentityContext identity = new BrokeredIdentityContext(subjectNameID.getValue());
+                identity.setCode(relayState);
+                identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
+                identity.getContextData().put(SAML_ASSERTION, assertion);
 
                 identity.setUsername(subjectNameID.getValue());
 
@@ -284,23 +291,27 @@ public class SAMLEndpoint {
                 for (Object statement : assertion.getStatements()) {
                     if (statement instanceof AuthnStatementType) {
                         authn = (AuthnStatementType)statement;
+                        identity.getContextData().put(SAML_AUTHN_STATEMENT, authn);
                         break;
                     }
                 }
                 String brokerUserId = config.getAlias() + "." + subjectNameID.getValue();
                 identity.setBrokerUserId(brokerUserId);
+                identity.setIdpConfig(config);
+                identity.setIdp(provider);
                 if (authn != null && authn.getSessionIndex() != null) {
                     identity.setBrokerSessionId(identity.getBrokerUserId() + "." + authn.getSessionIndex());
-                    notes.put(SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
-                }
-                return callback.authenticated(notes, config, identity, relayState);
+                 }
+
+
+                return callback.authenticated(identity);
 
             } catch (Exception e) {
                 throw new IdentityBrokerException("Could not process response from SAML identity provider.", e);
             }
-
-
         }
+
+
 
         private AssertionType getAssertion(ResponseType responseType) throws ProcessingException {
             List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();

@@ -4,6 +4,7 @@ import org.codehaus.jackson.JsonNode;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.social.SocialIdentityProvider;
@@ -25,13 +26,13 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
         config.setUserInfoUrl(PROFILE_URL);
     }
 
-    protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
+    protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
             JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
             String id = getJsonProperty(profile, "id");
 
-            FederatedIdentity user = new FederatedIdentity(id);
+            BrokeredIdentityContext user = new BrokeredIdentityContext(id);
 
             String email = getJsonProperty(profile, "email");
 
@@ -59,6 +60,8 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
             }
 
             user.setName(firstName + lastName);
+            user.setIdpConfig(getConfig());
+            user.setIdp(this);
 
             return user;
         } catch (Exception e) {

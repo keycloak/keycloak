@@ -8,6 +8,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 
@@ -24,25 +25,25 @@ import java.util.Map;
  */
 public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
 
-    private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     public static final String CLAIM_VALUE = "claim.value";
 
     static {
-        ConfigProperty property;
-        property = new ConfigProperty();
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
         property.setName(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
         property.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_LABEL);
-        property.setType(ConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Claim name you want to hard code into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
         configProperties.add(property);
-        property = new ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(CLAIM_VALUE);
         property.setLabel("Claim value");
-        property.setType(ConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Value of the claim you want to hard code.  'true' and 'false can be used for boolean values.");
         configProperties.add(property);
-        property = new ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(OIDCAttributeMapperHelper.JSON_TYPE);
         property.setLabel(OIDCAttributeMapperHelper.JSON_TYPE);
         List<String> types = new ArrayList(3);
@@ -50,21 +51,21 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
         types.add("long");
         types.add("int");
         types.add("boolean");
-        property.setType(ProtocolMapper.ConfigProperty.LIST_TYPE);
+        property.setType(ProviderConfigProperty.LIST_TYPE);
         property.setDefaultValue(types);
         property.setHelpText("JSON type that should be used for the value of the claim.  long, int, boolean, and String are valid values.");
         configProperties.add(property);
-        property = new ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
         property.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_LABEL);
-        property.setType(ConfigProperty.BOOLEAN_TYPE);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue("true");
         property.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_HELP_TEXT);
         configProperties.add(property);
-        property = new ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
         property.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_LABEL);
-        property.setType(ConfigProperty.BOOLEAN_TYPE);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue("true");
         property.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
         configProperties.add(property);
@@ -74,7 +75,7 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
     public static final String PROVIDER_ID = "oidc-hardcoded-claim-mapper";
 
 
-    public List<ConfigProperty> getConfigProperties() {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 

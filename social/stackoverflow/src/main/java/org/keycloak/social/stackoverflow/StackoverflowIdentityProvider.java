@@ -27,6 +27,7 @@ import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.social.SocialIdentityProvider;
@@ -53,8 +54,10 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 		config.setUserInfoUrl(PROFILE_URL);
 	}
 
+
+
 	@Override
-	protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
+	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		log.debug("doGetFederatedIdentity()");
 		try {
 
@@ -64,14 +67,17 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 			}
 			JsonNode profile = SimpleHttp.doGet(URL).asJson().get("items").get(0);
 
-			FederatedIdentity user = new FederatedIdentity(getJsonProperty(profile, "user_id"));
+            BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
 
 			user.setUsername(extractUsernameFromProfileURL(getJsonProperty(profile, "link")));
 			user.setName(unescapeHtml3(getJsonProperty(profile, "display_name")));
 			// email is not provided
 			// user.setEmail(getJsonProperty(profile, "email"));
+            user.setIdpConfig(getConfig());
+            user.setIdp(this);
 
-			return user;
+
+            return user;
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from Stackoverflow: " + e.getMessage(), e);
 		}
