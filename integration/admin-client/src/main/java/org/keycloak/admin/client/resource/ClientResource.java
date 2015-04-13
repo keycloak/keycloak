@@ -1,6 +1,5 @@
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;

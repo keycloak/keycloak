@@ -466,7 +466,7 @@ public class SamlBindingTest {
         Assert.assertNotNull(is);
         formData.addFormData("file", is, MediaType.APPLICATION_XML_TYPE);
 
-        WebTarget upload = adminRealms.path("demo/application-importers/saml2-entity-descriptor/upload");
+        WebTarget upload = adminRealms.path("demo/client-importers/saml2-entity-descriptor/upload");
         System.out.println(upload.getUri());
         Response response = upload.request().post(Entity.entity(formData, MediaType.MULTIPART_FORM_DATA));
         Assert.assertEquals(204, response.getStatus());

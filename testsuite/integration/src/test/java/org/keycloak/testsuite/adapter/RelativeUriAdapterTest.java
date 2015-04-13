@@ -135,7 +135,7 @@ public class RelativeUriAdapterTest {
         Client client = ClientBuilder.newClient();
         UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
         WebTarget adminTarget = client.target(AdminRoot.realmsUrl(authBase)).path("demo");
-        Map<String, Integer> stats = adminTarget.path("application-session-stats").request()
+        Map<String, Integer> stats = adminTarget.path("client-session-stats").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                 .get(new GenericType<Map<String, Integer>>(){});
 
