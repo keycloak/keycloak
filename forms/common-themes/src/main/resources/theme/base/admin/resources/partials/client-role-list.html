@@ -1,0 +1,65 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+
+    <kc-navigation-client></kc-navigation-client>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+            <li class="active">Roles</li>
+        </ol>
+        <h2><span>{{client.clientId}}</span> Client Roles</h2>
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="3" data-ng-show="access.manageClients">
+                    <div class="pull-right">
+                        <a class="btn btn-primary" href="#/create/role/{{realm.realm}}/clients/{{client.id}}">Add Role</a>
+                        <!-- <button class="remove disabled">Remove</button> -->
+                    </div>
+                </th>
+            </tr>
+            <!--<tr data-ng-show="roles && roles.length > 5">
+                <th class="kc-table-actions" colspan="3">
+                    <div class="search-comp clearfix">
+                        <input type="text" placeholder="Search..." class="search">
+                        <button class="icon-search" tooltip-placement="right"
+                                tooltip="Search by role name.">
+                            Icon: search
+                        </button>
+                    </div>
+                </th>
+            </tr>
+            -->
+            <tr data-ng-hide="!roles || roles.length == 0">
+                <th>Role Name</th>
+                <th>Composite</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <!--<tfoot data-ng-show="roles && roles.length > 5">
+            <tr>
+                <td colspan="3">
+                    <div class="table-nav">
+                        <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
+                        page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
+                                                                                           class="next">Next
+                        page</a><a href="#" class="last">Last page</a>
+                    </div>
+                </td>
+            </tr>
+            </tfoot>
+            -->
+            <tbody>
+            <tr ng-repeat="role in roles">
+                <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles/{{role.id}}">{{role.name}}</a></td>
+                <td>{{role.composite}}</td>
+                <td>{{role.description}}</td>
+            </tr>
+            <tr data-ng-show="!roles || roles.length == 0">
+                <td>No client roles available</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

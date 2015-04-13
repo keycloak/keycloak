@@ -2,29 +2,38 @@ package org.keycloak.models.entities;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientEntity extends AbstractIdentifiableEntity {
 
-    private String name;
+    private String clientId;
+    private String realmId;
     private boolean enabled;
     private String secret;
     private String protocol;
-    private long allowedClaimsMask;
     private int notBefore;
     private boolean publicClient;
     private boolean fullScopeAllowed;
     private boolean frontchannelLogout;
 
-    private String realmId;
-    private Map<String, String> attributes = new HashMap<String, String>();
+    private boolean surrogateAuthRequired;
+    private String managementUrl;
+    private String baseUrl;
+    private boolean bearerOnly;
+    private boolean consentRequired;
+    private boolean directGrantsOnly;
+    private int nodeReRegistrationTimeout;
 
+    // We are using names of defaultRoles (not ids)
+    private List<String> defaultRoles = new ArrayList<String>();
+
+    private Map<String, Integer> registeredNodes;
+
+    private Map<String, String> attributes = new HashMap<String, String>();
 
     private List<String> webOrigins = new ArrayList<String>();
     private List<String> redirectUris = new ArrayList<String>();
@@ -32,12 +41,12 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private List<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
     private List<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 
-    public String getName() {
-        return name;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     public boolean isEnabled() {
@@ -151,4 +160,77 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     public void setProtocolMappers(List<ProtocolMapperEntity> protocolMappers) {
         this.protocolMappers = protocolMappers;
     }
+
+    public boolean isSurrogateAuthRequired() {
+        return surrogateAuthRequired;
+    }
+
+    public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
+        this.surrogateAuthRequired = surrogateAuthRequired;
+    }
+
+    public String getManagementUrl() {
+        return managementUrl;
+    }
+
+    public void setManagementUrl(String managementUrl) {
+        this.managementUrl = managementUrl;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public boolean isBearerOnly() {
+        return bearerOnly;
+    }
+
+    public void setBearerOnly(boolean bearerOnly) {
+        this.bearerOnly = bearerOnly;
+    }
+
+    public boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public void setConsentRequired(boolean consentRequired) {
+        this.consentRequired = consentRequired;
+    }
+
+    public boolean isDirectGrantsOnly() {
+        return directGrantsOnly;
+    }
+
+    public void setDirectGrantsOnly(boolean directGrantsOnly) {
+        this.directGrantsOnly = directGrantsOnly;
+    }
+
+    public List<String> getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(List<String> defaultRoles) {
+        this.defaultRoles = defaultRoles;
+    }
+
+    public int getNodeReRegistrationTimeout() {
+        return nodeReRegistrationTimeout;
+    }
+
+    public void setNodeReRegistrationTimeout(int nodeReRegistrationTimeout) {
+        this.nodeReRegistrationTimeout = nodeReRegistrationTimeout;
+    }
+
+    public Map<String, Integer> getRegisteredNodes() {
+        return registeredNodes;
+    }
+
+    public void setRegisteredNodes(Map<String, Integer> registeredNodes) {
+        this.registeredNodes = registeredNodes;
+    }
 }
+

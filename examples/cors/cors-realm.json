@@ -23,7 +23,7 @@
                   "value" : "password" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "realm-management": [ "realm-admin" ]
             }
         }
@@ -42,7 +42,7 @@
             "roles": ["user"]
         }
     ],
-    "applications": [
+    "clients": [
         {
             "name": "angular-cors-product",
             "enabled": true,
@@ -56,7 +56,7 @@
             ]
         }
     ],
-    "applicationScopeMappings": {
+    "clientScopeMappings": {
         "realm-management": [
             {
                 "client": "angular-cors-product",

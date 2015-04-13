@@ -20,7 +20,7 @@
                     "value" : "user-tenant1" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "multi-tenant": [ "user" ]
             }
         }
@@ -40,7 +40,7 @@
         }
 
     ],
-    "applications": [
+    "clients": [
         {
             "name": "multi-tenant",
             "enabled": true,

@@ -16,21 +16,20 @@
  */
 package org.keycloak.models.file;
 
-import org.keycloak.models.file.adapter.RealmAdapter;
-import java.util.ArrayList;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.connections.file.FileConnectionProvider;
+import org.keycloak.connections.file.InMemoryModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.entities.RealmEntity;
+import org.keycloak.models.file.adapter.RealmAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.util.ArrayList;
 import java.util.List;
-import org.keycloak.connections.file.FileConnectionProvider;
-import org.keycloak.connections.file.InMemoryModel;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.entities.RealmEntity;
 
 /**
  * Realm Provider for JSON persistence.
@@ -100,13 +99,8 @@ public class FileRealmProvider implements RealmProvider {
     }
 
     @Override
-    public ApplicationModel getApplicationById(String id, RealmModel realm) {
-        return realm.getApplicationById(id);
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
-        return realm.getOAuthClientById(id);
+    public ClientModel getClientById(String id, RealmModel realm) {
+        return realm.getClientById(id);
     }
 
 }

@@ -8,9 +8,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -48,7 +47,7 @@ public abstract class AbstractClientTest {
             }
         });
 
-        keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CONSOLE_APPLICATION);
+        keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
         realm = keycloak.realm(REALM_NAME);
     }
 
@@ -97,10 +96,8 @@ public abstract class AbstractClientTest {
     public static String name(Object o1) {
         if (o1 instanceof RealmRepresentation) {
             return ((RealmRepresentation) o1).getRealm();
-        } else if (o1 instanceof ApplicationRepresentation) {
-            return ((ApplicationRepresentation) o1).getName();
-        } else if (o1 instanceof OAuthClientRepresentation) {
-            return ((OAuthClientRepresentation) o1).getName();
+        } else if (o1 instanceof ClientRepresentation) {
+            return ((ClientRepresentation) o1).getClientId();
         } else if (o1 instanceof IdentityProviderRepresentation) {
             return ((IdentityProviderRepresentation) o1).getAlias();
         }

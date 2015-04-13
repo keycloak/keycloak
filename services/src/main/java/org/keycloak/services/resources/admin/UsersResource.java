@@ -7,7 +7,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -26,7 +25,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
@@ -107,7 +106,7 @@ public class UsersResource {
      */
     @Path("{username}")
     @PUT
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response updateUser(final @PathParam("username") String username, final UserRepresentation rep) {
         auth.requireManage();
 
@@ -138,7 +137,7 @@ public class UsersResource {
      * @return
      */
     @POST
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
         auth.requireManage();
 
@@ -210,7 +209,7 @@ public class UsersResource {
     @Path("{username}")
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public UserRepresentation getUser(final @PathParam("username") String username) {
         auth.requireView();
 
@@ -312,7 +311,7 @@ public class UsersResource {
     }
 
     /**
-     * Remove all user sessions associated with this user.  And, for all applications that have an admin URL, tell
+     * Remove all user sessions associated with this user.  And, for all client that have an admin URL, tell
      * them to invalidate the sessions for this particular user.
      *
      * @param username username (not id!)
@@ -369,7 +368,7 @@ public class UsersResource {
      */
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public List<UserRepresentation> getUsers(@QueryParam("search") String search,
                                              @QueryParam("lastName") String last,
                                              @QueryParam("firstName") String first,
@@ -419,7 +418,7 @@ public class UsersResource {
      */
     @Path("{username}/role-mappings")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public MappingsRepresentation getRoleMappings(@PathParam("username") String username) {
         auth.requireView();
@@ -440,22 +439,22 @@ public class UsersResource {
             all.setRealmMappings(realmRep);
         }
 
-        List<ApplicationModel> applications = realm.getApplications();
-        if (applications.size() > 0) {
-            Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
-            for (ApplicationModel application : applications) {
-                Set<RoleModel> roleMappings = user.getApplicationRoleMappings(application);
+        List<ClientModel> clients = realm.getClients();
+        if (clients.size() > 0) {
+            Map<String, ClientMappingsRepresentation> appMappings = new HashMap<String, ClientMappingsRepresentation>();
+            for (ClientModel client : clients) {
+                Set<RoleModel> roleMappings = user.getClientRoleMappings(client);
                 if (roleMappings.size() > 0) {
-                    ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
-                    mappings.setApplicationId(application.getId());
-                    mappings.setApplication(application.getName());
+                    ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
+                    mappings.setId(client.getId());
+                    mappings.setClient(client.getClientId());
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
                         roles.add(ModelToRepresentation.toRepresentation(role));
                     }
-                    appMappings.put(application.getName(), mappings);
-                    all.setApplicationMappings(appMappings);
+                    appMappings.put(client.getClientId(), mappings);
+                    all.setClientMappings(appMappings);
                 }
             }
         }
@@ -470,7 +469,7 @@ public class UsersResource {
      */
     @Path("{username}/role-mappings/realm")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getRealmRoleMappings(@PathParam("username") String username) {
         auth.requireView();
@@ -496,7 +495,7 @@ public class UsersResource {
      */
     @Path("{username}/role-mappings/realm/composite")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getCompositeRealmRoleMappings(@PathParam("username") String username) {
         auth.requireView();
@@ -524,7 +523,7 @@ public class UsersResource {
      */
     @Path("{username}/role-mappings/realm/available")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getAvailableRealmRoleMappings(@PathParam("username") String username) {
         auth.requireView();
@@ -535,7 +534,7 @@ public class UsersResource {
         }
 
         Set<RoleModel> available = realm.getRoles();
-        return UserApplicationRoleMappingsResource.getAvailableRoles(user, available);
+        return UserClientRoleMappingsResource.getAvailableRoles(user, available);
     }
 
     /**
@@ -546,7 +545,7 @@ public class UsersResource {
      */
     @Path("{username}/role-mappings/realm")
     @POST
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void addRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
         auth.requireManage();
 
@@ -575,7 +574,7 @@ public class UsersResource {
      */
     @Path("{username}/role-mappings/realm")
     @DELETE
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void deleteRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
         auth.requireManage();
 
@@ -602,36 +601,36 @@ public class UsersResource {
         }
     }
 
-    @Path("{username}/role-mappings/applications/{app}")
-    public UserApplicationRoleMappingsResource getUserApplicationRoleMappingsResource(@PathParam("username") String username, @PathParam("app") String appName) {
+    @Path("{username}/role-mappings/clients/{clientId}")
+    public UserClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("username") String username, @PathParam("clientId") String clientId) {
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
 
-        ApplicationModel application = realm.getApplicationByName(appName);
+        ClientModel client = realm.getClientByClientId(clientId);
 
-        if (application == null) {
-            throw new NotFoundException("Application not found");
+        if (client == null) {
+            throw new NotFoundException("Client not found");
         }
 
-        return new UserApplicationRoleMappingsResource(realm, auth, user, application);
+        return new UserClientRoleMappingsResource(realm, auth, user, client);
 
     }
-    @Path("{username}/role-mappings/applications-by-id/{appId}")
-    public UserApplicationRoleMappingsResource getUserApplicationRoleMappingsResourceById(@PathParam("username") String username, @PathParam("appId") String appId) {
+    @Path("{username}/role-mappings/clients-by-id/{id}")
+    public UserClientRoleMappingsResource getUserClientRoleMappingsResourceById(@PathParam("username") String username, @PathParam("id") String id) {
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
 
-        ApplicationModel application = realm.getApplicationById(appId);
+        ClientModel client = realm.getClientById(id);
 
-        if (application == null) {
-            throw new NotFoundException("Application not found");
+        if (client == null) {
+            throw new NotFoundException("Client not found");
         }
 
-        return new UserApplicationRoleMappingsResource(realm, auth, user, application);
+        return new UserClientRoleMappingsResource(realm, auth, user, client);
 
     }
     /**
@@ -643,7 +642,7 @@ public class UsersResource {
      */
     @Path("{username}/reset-password")
     @PUT
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void resetPassword(@PathParam("username") String username, CredentialRepresentation pass) {
         auth.requireManage();
 
@@ -671,7 +670,7 @@ public class UsersResource {
      */
     @Path("{username}/remove-totp")
     @PUT
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void removeTotp(@PathParam("username") String username) {
         auth.requireManage();
 
@@ -686,7 +685,7 @@ public class UsersResource {
     /**
      * Send an email to the user with a link they can click to reset their password.
      * The redirectUri and clientId parameters are optional. The default for the
-     * redirect is the account application.
+     * redirect is the account client.
      *
      * @param username username (not id!)
      * @param redirectUri redirect uri
@@ -695,7 +694,7 @@ public class UsersResource {
      */
     @Path("{username}/reset-password-email")
     @PUT
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response resetPasswordEmail(@PathParam("username") String username, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
         auth.requireManage();
 
@@ -717,10 +716,10 @@ public class UsersResource {
         }
 
         if(clientId == null){
-            clientId = Constants.ACCOUNT_MANAGEMENT_APP;
+            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
         }
 
-        ClientModel client = realm.findClient(clientId);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null || !client.isEnabled()) {
             return Flows.errors().error(clientId + " not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }

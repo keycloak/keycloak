@@ -1,13 +1,11 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.ApplicationEntity;
-import org.keycloak.models.jpa.entities.OAuthClientEntity;
+import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -93,12 +91,8 @@ public class JpaRealmProvider implements RealmProvider {
 
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
-        for (ApplicationEntity a : new LinkedList<ApplicationEntity>(realm.getApplications())) {
-            adapter.removeApplication(a.getId());
-        }
-
-        for (OAuthClientModel oauth : adapter.getOAuthClients()) {
-            adapter.removeOAuthClient(oauth.getId());
+        for (ClientEntity a : new LinkedList<>(realm.getApplications())) {
+            adapter.removeClient(a.getId());
         }
 
         em.remove(realm);
@@ -118,21 +112,12 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
-    public ApplicationModel getApplicationById(String id, RealmModel realm) {
-        ApplicationEntity app = em.find(ApplicationEntity.class, id);
+    public ClientModel getClientById(String id, RealmModel realm) {
+        ClientEntity app = em.find(ClientEntity.class, id);
 
         // Check if application belongs to this realm
         if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
-        return new ApplicationAdapter(realm, em, session, app);
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
-        OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
-
-        // Check if client belongs to this realm
-        if (client == null || !realm.getId().equals(client.getRealm().getId())) return null;
-        return new OAuthClientAdapter(realm, client, em);
+        return new ClientAdapter(realm, em, session, app);
     }
 
 }

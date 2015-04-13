@@ -13,7 +13,7 @@ public class RoleEntity extends AbstractIdentifiableEntity {
     private List<String> compositeRoleIds;
 
     private String realmId;
-    private String applicationId;
+    private String clientId;
 
     public String getName() {
         return name;
@@ -47,11 +47,12 @@ public class RoleEntity extends AbstractIdentifiableEntity {
         this.realmId = realmId;
     }
 
-    public String getApplicationId() {
-        return applicationId;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setApplicationId(String applicationId) {
-        this.applicationId = applicationId;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
+
 }

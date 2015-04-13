@@ -10,6 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
@@ -39,18 +40,18 @@ public class AuthorizeClientUtil {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, "invalid_client");
             error.put(OAuth2Constants.ERROR_DESCRIPTION, "Could not find client");
-            throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+            throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 
         event.client(client_id);
 
-        ClientModel client = realm.findClient(client_id);
+        ClientModel client = realm.getClientByClientId(client_id);
         if (client == null) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, "invalid_client");
             error.put(OAuth2Constants.ERROR_DESCRIPTION, "Could not find client");
             event.error(Errors.CLIENT_NOT_FOUND);
-            throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+            throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 
         if (!client.isEnabled()) {
@@ -58,7 +59,7 @@ public class AuthorizeClientUtil {
             error.put(OAuth2Constants.ERROR, "invalid_client");
             error.put(OAuth2Constants.ERROR_DESCRIPTION, "Client is not enabled");
             event.error(Errors.CLIENT_DISABLED);
-            throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+            throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 
         if (!client.isPublicClient()) {
@@ -66,7 +67,7 @@ public class AuthorizeClientUtil {
                 Map<String, String> error = new HashMap<String, String>();
                 error.put(OAuth2Constants.ERROR, "unauthorized_client");
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-                throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+                throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build());
             }
         }
 

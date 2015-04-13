@@ -62,7 +62,7 @@ public class UserModelTest extends AbstractModelTest {
     @Test
     public void webOriginSetTest() {
         RealmModel realm = realmManager.createRealm("original");
-        ClientModel client = realm.addApplication("user");
+        ClientModel client = realm.addClient("user");
 
         Assert.assertTrue(client.getWebOrigins().isEmpty());
 
@@ -78,7 +78,7 @@ public class UserModelTest extends AbstractModelTest {
         client.removeWebOrigin("origin-1");
         Assert.assertTrue(client.getWebOrigins().isEmpty());
 
-        client = realm.addOAuthClient("oauthclient2");
+        client = realm.addClient("oauthclient2");
 
         Assert.assertTrue(client.getWebOrigins().isEmpty());
 

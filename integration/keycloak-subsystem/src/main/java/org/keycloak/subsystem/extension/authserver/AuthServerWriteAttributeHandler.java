@@ -55,8 +55,8 @@ public class AuthServerWriteAttributeHandler extends ModelOnlyWriteAttributeHand
 
         if (attributeName.equals(AuthServerDefinition.WEB_CONTEXT.getName())) {
 
-            KeycloakAdapterConfigService.INSTANCE.removeServerDeployment(deploymentName);
-            KeycloakAdapterConfigService.INSTANCE.addServerDeployment(deploymentName, newValue.asString());
+            KeycloakAdapterConfigService.getInstance().removeServerDeployment(deploymentName);
+            KeycloakAdapterConfigService.getInstance().addServerDeployment(deploymentName, newValue.asString());
             if (isEnabled) {
                 AuthServerUtil.addStepToRedeployAuthServer(context, deploymentName);
             }

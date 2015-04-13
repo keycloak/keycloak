@@ -1,7 +1,7 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -316,12 +316,12 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ApplicationModel app) {
+    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         Set<RoleModel> result = new HashSet<RoleModel>();
         List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(this, invocationContext);
 
         for (MongoRoleEntity role : roles) {
-            if (app.getId().equals(role.getApplicationId())) {
+            if (app.getId().equals(role.getClientId())) {
                 result.add(new RoleAdapter(session, realm, role, app, invocationContext));
             }
         }

@@ -8,7 +8,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -233,8 +232,8 @@ public class TokenManager {
         if (client.isFullScopeAllowed()) return roleMappings;
 
         Set<RoleModel> scopeMappings = client.getScopeMappings();
-        if (client instanceof ApplicationModel) {
-            scopeMappings.addAll(((ApplicationModel) client).getRoles());
+        if (client instanceof ClientModel) {
+            scopeMappings.addAll(((ClientModel) client).getRoles());
         }
 
         for (RoleModel role : roleMappings) {
@@ -261,12 +260,12 @@ public class TokenManager {
             for (Map.Entry<String, AccessToken.Access> entry : token.getResourceAccess().entrySet()) {
                 AccessToken.Access appAccess = newToken.getResourceAccess(entry.getKey());
                 if (appAccess == null && !entry.getValue().getRoles().isEmpty()) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User or application no longer has role permissions for application key: " + entry.getKey());
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User or client no longer has role permissions for client key: " + entry.getKey());
 
                 }
                 for (String roleName : entry.getValue().getRoles()) {
                     if (!appAccess.getRoles().contains(roleName)) {
-                        throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for application role " + roleName);
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for client role " + roleName);
                     }
                 }
             }
@@ -339,10 +338,10 @@ public class TokenManager {
                 return;
 
         } else {
-            ApplicationModel app = (ApplicationModel) role.getContainer();
-            access = token.getResourceAccess(app.getName());
+            ClientModel app = (ClientModel) role.getContainer();
+            access = token.getResourceAccess(app.getClientId());
             if (access == null) {
-                access = token.addAccess(app.getName());
+                access = token.addAccess(app.getClientId());
                 if (app.isSurrogateAuthRequired()) access.verifyCaller(true);
             } else if (access.isUserInRole(role.getName())) return;
 

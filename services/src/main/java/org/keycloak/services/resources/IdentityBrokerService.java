@@ -36,7 +36,6 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -75,7 +74,7 @@ import java.util.Map;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
-import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP;
+import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
 
 /**
@@ -181,7 +180,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             if (authResult != null) {
                 String audience = authResult.getToken().getAudience();
-                ClientModel clientModel = this.realmModel.findClient(audience);
+                ClientModel clientModel = this.realmModel.getClientByClientId(audience);
 
                 if (clientModel == null) {
                     return badRequest("Invalid client.");
@@ -191,7 +190,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     return corsResponse(badRequest("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
                 }
 
-                if (OAuthClientModel.class.isInstance(clientModel) && !forceRetrieval) {
+                if (clientModel.isConsentRequired()) {
                     return corsResponse(Flows.forms(this.session, this.realmModel, clientModel, this.uriInfo, headers)
                             .setClientSessionCode(authManager.extractAuthorizationHeaderToken(this.request.getHttpHeaders()))
                             .setAccessRequest("Your information from " + providerId + " identity provider.")
@@ -323,7 +322,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return redirectToErrorPage(Messages.ACCOUNT_DISABLED);
         }
 
-        if (!authenticatedUser.hasRole(this.realmModel.getApplicationByName(ACCOUNT_MANAGEMENT_APP).getRole(MANAGE_ACCOUNT))) {
+        if (!authenticatedUser.hasRole(this.realmModel.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(MANAGE_ACCOUNT))) {
             fireErrorEvent(Errors.NOT_ALLOWED);
             return redirectToErrorPage(Messages.INSUFFICIENT_PERMISSION);
         }
@@ -379,7 +378,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return clientCode;
         }
 
-        throw new IdentityBrokerException("Invalid code, please login again through your application.");
+        throw new IdentityBrokerException("Invalid code, please login again through your client.");
     }
 
     private AuthenticationRequest createAuthenticationRequest(String providerId, ClientSessionCode clientSessionCode) {

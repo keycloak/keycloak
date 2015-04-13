@@ -17,8 +17,9 @@ public class RoleRepresentation {
 
     public static class Composites {
         protected Set<String> realm;
+        protected Map<String, List<String>> client;
+        @Deprecated
         protected Map<String, List<String>> application;
-
 
         public Set<String> getRealm() {
             return realm;
@@ -28,12 +29,17 @@ public class RoleRepresentation {
             this.realm = realm;
         }
 
-        public Map<String, List<String>> getApplication() {
-            return application;
+        public Map<String, List<String>> getClient() {
+            return client;
         }
 
-        public void setApplication(Map<String, List<String>> application) {
-            this.application = application;
+        public void setClient(Map<String, List<String>> client) {
+            this.client = client;
+        }
+
+        @Deprecated
+        public Map<String, List<String>> getApplication() {
+            return application;
         }
     }
 

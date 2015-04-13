@@ -2,7 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -20,6 +20,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
@@ -43,13 +44,13 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * List all roles for this realm or application
+     * List all roles for this realm or client
      *
      * @return
      */
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public List<RoleRepresentation> getRoles() {
         auth.requireAny();
 
@@ -62,14 +63,14 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * Create a new role for this realm or application
+     * Create a new role for this realm or client
      *
      * @param uriInfo
      * @param rep
      * @return
      */
     @POST
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response createRole(final @Context UriInfo uriInfo, final RoleRepresentation rep) {
         auth.requireManage();
 
@@ -91,7 +92,7 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}")
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public RoleRepresentation getRole(final @PathParam("role-name") String roleName) {
         auth.requireView();
 
@@ -131,7 +132,7 @@ public class RoleContainerResource extends RoleResource {
      */
     @Path("{role-name}")
     @PUT
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response updateRole(final @PathParam("role-name") String roleName, final RoleRepresentation rep) {
         auth.requireManage();
 
@@ -155,7 +156,7 @@ public class RoleContainerResource extends RoleResource {
      */
     @Path("{role-name}/composites")
     @POST
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void addComposites(final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
         auth.requireManage();
 
@@ -175,7 +176,7 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}/composites")
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-name") String roleName) {
         auth.requireManage();
 
@@ -195,7 +196,7 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}/composites/realm")
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-name") String roleName) {
         auth.requireManage();
 
@@ -207,30 +208,30 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * An app-level roles for a specific app for this role's composite
+     * An client-level roles for a specific client for this role's composite
      *
      * @param roleName role's name (not id!)
-     * @param appName
+     * @param clientId
      * @return
      */
-    @Path("{role-name}/composites/application/{app}")
+    @Path("{role-name}/composites/client/{clientId}")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Set<RoleRepresentation> getApplicationRoleComposites(final @PathParam("role-name") String roleName,
-                                                                final @PathParam("app") String appName) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<RoleRepresentation> getClientRoleComposites(final @PathParam("role-name") String roleName,
+                                                           final @PathParam("clientId") String clientId) {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        ApplicationModel app = realm.getApplicationByName(appName);
+        ClientModel app = realm.getClientByClientId(clientId);
         if (app == null) {
-            throw new NotFoundException("Could not find application: " + appName);
+            throw new NotFoundException("Could not find client: " + clientId);
 
         }
-        return getApplicationRoleComposites(app, role);
+        return getClientRoleComposites(app, role);
     }
 
 
@@ -238,27 +239,27 @@ public class RoleContainerResource extends RoleResource {
      * An app-level roles for a specific app for this role's composite
      *
      * @param roleName role's name (not id!)
-     * @param appId
+     * @param id
      * @return
      */
-    @Path("{role-name}/composites/application-by-id/{appId}")
+    @Path("{role-name}/composites/client-by-id/{id}")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Set<RoleRepresentation> getApplicationByIdRoleComposites(final @PathParam("role-name") String roleName,
-                                                                final @PathParam("appId") String appId) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<RoleRepresentation> getClientByIdRoleComposites(final @PathParam("role-name") String roleName,
+                                                                final @PathParam("id") String id) {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        ApplicationModel app = realm.getApplicationById(appId);
-        if (app == null) {
-            throw new NotFoundException("Could not find application: " + appId);
+        ClientModel client = realm.getClientById(id);
+        if (client == null) {
+            throw new NotFoundException("Could not find client: " + id);
 
         }
-        return getApplicationRoleComposites(app, role);
+        return getClientRoleComposites(client, role);
     }
 
 
@@ -270,7 +271,7 @@ public class RoleContainerResource extends RoleResource {
      */
     @Path("{role-name}/composites")
     @DELETE
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void deleteComposites(final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
         auth.requireManage();
 

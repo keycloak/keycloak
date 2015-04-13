@@ -55,6 +55,13 @@
                         </div>
                         <span tooltip-placement="right" tooltip="Indicates if user must update his profile right after the first login." class="fa fa-info-circle"></span>
                     </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="guiOrder">GUI order</label>
+                        <div class="col-sm-4">
+                            <input class="form-control" id="guiOrder" type="text" ng-model="identityProvider.config.guiOrder">
+                        </div>
+                        <span tooltip-placement="right" tooltip="Number defining order of the provider in GUI (eg. on Login page)." class="fa fa-info-circle"></span>
+                    </div>
                 </fieldset>
                 <fieldset>
                     <legend uncollapsed><span class="text">OpenID Connect Config</span> <span tooltip-placement="right" tooltip="OIDC SP and external IDP configuration." class="fa fa-info-circle"></span></legend>
@@ -91,7 +98,7 @@
                         <div class="col-sm-4">
                             <input class="form-control" id="clientId" type="text" ng-model="identityProvider.config.clientId" required>
                         </div>
-                        <span tooltip-placement="right" tooltip="The client or application identifier registered withing the identity provider." class="fa fa-info-circle"></span>
+                        <span tooltip-placement="right" tooltip="The client or client identifier registered withing the identity provider." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="clientSecret">Client Secret <span class="required">*</span></label>
@@ -101,7 +108,7 @@
                             <a href="" ng-click="showPassword(false)" class="link" ng-show="hidePassword">Show Secret</a>
                             <a href="" ng-click="showPassword(true);" ng-show="!hidePassword">Hide Secret</a>
                         </div>
-                        <span tooltip-placement="right" tooltip="The client or application secret registered withing the identity provider." class="fa fa-info-circle"></span>
+                        <span tooltip-placement="right" tooltip="The client or client secret registered withing the identity provider." class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="issuer">Issuer </label>

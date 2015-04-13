@@ -4,7 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -71,7 +71,7 @@ public class ApplianceBootstrap {
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
         adminUser.grantRole(adminRole);
 
-        ApplicationModel accountApp = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
+        ClientModel accountApp = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         for (String r : accountApp.getDefaultRoles()) {
             adminUser.grantRole(accountApp.getRole(r));
         }

@@ -6,7 +6,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -31,7 +31,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ApplicationModel app = appRealm.addApplication("resource-owner");
+            ClientModel app = appRealm.addClient("resource-owner");
             app.setSecret("secret");
             appRealm.setPasswordCredentialGrantAllowed(true);
 

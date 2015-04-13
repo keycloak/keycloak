@@ -3,7 +3,7 @@ package org.keycloak.testsuite.model;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -23,7 +23,7 @@ public class CacheTest {
             // load up cache
             KeycloakSession session = kc.startSession();
             RealmModel realm = session.realms().getRealmByName("test");
-            ApplicationModel testApp = realm.getApplicationByName("test-app");
+            ClientModel testApp = realm.getClientByClientId("test-app");
             Assert.assertNotNull(testApp);
             appId = testApp.getId();
             Assert.assertTrue(testApp.isEnabled());
@@ -35,7 +35,7 @@ public class CacheTest {
             RealmModel realm = session.realms().getRealmByName("test");
             Assert.assertTrue(realm instanceof org.keycloak.models.cache.RealmAdapter);
             realm.setAccessCodeLifespanLogin(200);
-            ApplicationModel testApp = realm.getApplicationByName("test-app");
+            ClientModel testApp = realm.getClientByClientId("test-app");
             Assert.assertNotNull(testApp);
             testApp.setEnabled(false);
             kc.stopSession(session, true);
@@ -44,7 +44,7 @@ public class CacheTest {
         {
             KeycloakSession session = kc.startSession();
             RealmModel realm = session.realms().getRealmByName("test");
-            ApplicationModel testApp = session.realms().getApplicationById(appId, realm);
+            ClientModel testApp = session.realms().getClientById(appId, realm);
             Assert.assertFalse(testApp.isEnabled());
             kc.stopSession(session, true);
 

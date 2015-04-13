@@ -16,20 +16,24 @@
  */
 package org.keycloak.models.file.adapter;
 
+import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.enums.SslRequired;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
+import org.keycloak.models.entities.RealmEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
+import org.keycloak.models.entities.RoleEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -48,14 +52,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.keycloak.connections.file.InMemoryModel;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.entities.ApplicationEntity;
-import org.keycloak.models.entities.ClientEntity;
-import org.keycloak.models.entities.OAuthClientEntity;
-import org.keycloak.models.entities.RealmEntity;
-import org.keycloak.models.entities.RoleEntity;
 
 /**
  * RealmModel for JSON persistence.
@@ -75,10 +71,9 @@ public class RealmAdapter implements RealmModel {
     private volatile transient PasswordPolicy passwordPolicy;
     private volatile transient KeycloakSession session;
 
-    private final Map<String, ApplicationModel> allApps = new HashMap<String, ApplicationModel>();
-    private ApplicationModel masterAdminApp = null;
+    private final Map<String, ClientModel> allApps = new HashMap<String, ClientModel>();
+    private ClientModel masterAdminApp = null;
     private final Map<String, RoleAdapter> allRoles = new HashMap<String, RoleAdapter>();
-    private final Map<String, OAuthClientAdapter> allOAuthClients = new HashMap<String, OAuthClientAdapter>();
     private final Map<String, IdentityProviderModel> allIdProviders = new HashMap<String, IdentityProviderModel>();
 
     public RealmAdapter(KeycloakSession session, RealmEntity realm, InMemoryModel inMemoryModel) {
@@ -516,7 +511,7 @@ public class RealmAdapter implements RealmModel {
         // try realm roles first
         if (allRoles.remove(id) != null) return true;
 
-        for (ApplicationModel app : getApplications()) {
+        for (ClientModel app : getClients()) {
             for (RoleModel appRole : app.getRoles()) {
                 if (id.equals(appRole.getId())) {
                     app.removeRole(appRole);
@@ -538,7 +533,7 @@ public class RealmAdapter implements RealmModel {
         RoleModel found = allRoles.get(id);
         if (found != null) return found;
 
-        for (ApplicationModel app : getApplications()) {
+        for (ClientModel app : getClients()) {
             for (RoleModel appRole : app.getRoles()) {
                 if (appRole.getId().equals(id)) return appRole;
             }
@@ -590,82 +585,55 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ClientModel findClient(String clientId) {
-        ClientModel model = getApplicationByName(clientId);
-        if (model != null) return model;
-        return getOAuthClient(clientId);
-    }
-
-    @Override
-    public ClientModel findClientById(String id) {
-        ClientModel clientModel = getApplicationById(id);
-        if (clientModel != null) return clientModel;
-        return getOAuthClientById(id);
-    }
-
-
-
-    @Override
-    public ApplicationModel getApplicationById(String id) {
+    public ClientModel getClientById(String id) {
         return allApps.get(id);
     }
 
     @Override
-    public ApplicationModel getApplicationByName(String name) {
-        for (ApplicationModel app : getApplications()) {
-            if (app.getName().equals(name)) return app;
+    public ClientModel getClientByClientId(String clientId) {
+        for (ClientModel app : getClients()) {
+            if (app.getClientId().equals(clientId)) return app;
         }
 
         return null;
     }
 
     @Override
-    public Map<String, ApplicationModel> getApplicationNameMap() {
-        Map<String, ApplicationModel> resourceMap = new HashMap<String, ApplicationModel>();
-        for (ApplicationModel resource : getApplications()) {
-            resourceMap.put(resource.getName(), resource);
+    public Map<String, ClientModel> getClientNameMap() {
+        Map<String, ClientModel> resourceMap = new HashMap<String, ClientModel>();
+        for (ClientModel resource : getClients()) {
+            resourceMap.put(resource.getClientId(), resource);
         }
         return resourceMap;
     }
 
     @Override
-    public List<ApplicationModel> getApplications() {
-        return new ArrayList<ApplicationModel>(allApps.values());
+    public List<ClientModel> getClients() {
+        return new ArrayList<ClientModel>(allApps.values());
     }
 
     @Override
-    public ApplicationModel addApplication(String name) {
-        return this.addApplication(KeycloakModelUtils.generateId(), name);
+    public ClientModel addClient(String name) {
+        return this.addClient(KeycloakModelUtils.generateId(), name);
     }
 
     @Override
-    public ApplicationModel addApplication(String id, String name) {
-        if (name == null) throw new NullPointerException("name == null");
+    public ClientModel addClient(String id, String clientId) {
+        if (clientId == null) throw new NullPointerException("name == null");
         if (id == null) throw new NullPointerException("id == null");
 
-        if (getApplicationNameMap().containsKey(name)) {
-            throw new ModelDuplicateException("Application named '" + name + "' already exists.");
+        if (getClientNameMap().containsKey(clientId)) {
+            throw new ModelDuplicateException("Application named '" + clientId + "' already exists.");
         }
 
-        ApplicationEntity appEntity = new ApplicationEntity();
+        ClientEntity appEntity = new ClientEntity();
         appEntity.setId(id);
-        appEntity.setName(name);
+        appEntity.setClientId(clientId);
         appEntity.setRealmId(getId());
         appEntity.setEnabled(true);
 
-        ClientEntity clientEntity = new ClientEntity();
-        clientEntity.setId(id);
-        clientEntity.setName(name);
-        clientEntity.setRealmId(getId());
-        clientEntity.setEnabled(true);
-
-        final ApplicationModel app = new ApplicationAdapter(session, this, appEntity, clientEntity, inMemoryModel);
-        session.getKeycloakSessionFactory().publish(new ApplicationCreationEvent() {
-            @Override
-            public ApplicationModel getCreatedApplication() {
-                return app;
-            }
-
+        final ClientModel app = new ClientAdapter(session, this, appEntity, inMemoryModel);
+        session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
             @Override
             public ClientModel getCreatedClient() {
                 return app;
@@ -678,8 +646,8 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean removeApplication(String id) {
-        ApplicationModel appToBeRemoved = this.getApplicationById(id);
+    public boolean removeClient(String id) {
+        ClientModel appToBeRemoved = this.getClientById(id);
         if (appToBeRemoved == null) return false;
 
         // remove any composite role assignments for this app
@@ -695,43 +663,6 @@ public class RealmAdapter implements RealmModel {
         return (allApps.remove(id) != null);
     }
 
-    @Override
-    public OAuthClientModel addOAuthClient(String name) {
-        return this.addOAuthClient(KeycloakModelUtils.generateId(), name);
-    }
-
-    @Override
-    public OAuthClientModel addOAuthClient(String id, String name) {
-        if (id == null) throw new NullPointerException("id == null");
-        if (name == null) throw new NullPointerException("name == null");
-        if (hasOAuthClientWithName(name)) throw new ModelDuplicateException("OAuth Client with name " + name + " already exists.");
-        OAuthClientEntity oauthClient = new OAuthClientEntity();
-        oauthClient.setId(id);
-        oauthClient.setRealmId(getId());
-        oauthClient.setName(name);
-
-        OAuthClientAdapter oAuthClient = new OAuthClientAdapter(session, this, oauthClient);
-        allOAuthClients.put(id, oAuthClient);
-
-        return oAuthClient;
-    }
-
-    boolean hasOAuthClientWithName(String name) {
-        for (OAuthClientAdapter oaClient : allOAuthClients.values()) {
-            if (oaClient.getName().equals(name)) return true;
-        }
-
-        return false;
-    }
-
-    boolean hasOAuthClientWithClientId(String id) {
-        for (OAuthClientAdapter oaClient : allOAuthClients.values()) {
-            if (oaClient.getClientId().equals(id)) return true;
-        }
-
-        return false;
-    }
-
     boolean hasUserWithEmail(String email) {
         for (UserModel user : inMemoryModel.getUsers(getId())) {
             if (user.getEmail() == null) continue;
@@ -739,34 +670,6 @@ public class RealmAdapter implements RealmModel {
         }
 
         return false;
-    }
-
-    @Override
-    public boolean removeOAuthClient(String id) {
-        return allOAuthClients.remove(id) != null;
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClient(String name) {
-        for (OAuthClientAdapter oAuthClient : allOAuthClients.values()) {
-            if (oAuthClient.getName().equals(name)) return oAuthClient;
-        }
-
-        return null;
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClientById(String id) {
-        for (OAuthClientAdapter oAuthClient : allOAuthClients.values()) {
-            if (oAuthClient.getId().equals(id)) return oAuthClient;
-        }
-
-        return null;
-    }
-
-    @Override
-    public List<OAuthClientModel> getOAuthClients() {
-        return new ArrayList(allOAuthClients.values());
     }
 
     @Override
@@ -1056,22 +959,22 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ApplicationModel getMasterAdminApp() {
+    public ClientModel getMasterAdminClient() {
         return this.masterAdminApp;
     }
 
     @Override
-    public void setMasterAdminApp(ApplicationModel app) {
-        if (app == null) {
+    public void setMasterAdminClient(ClientModel client) {
+        if (client == null) {
             realm.setAdminAppId(null);
             this.masterAdminApp = null;
         } else {
-            String appId = app.getId();
+            String appId = client.getId();
             if (appId == null) {
                 throw new IllegalStateException("Master Admin app not initialized.");
             }
             realm.setAdminAppId(appId);
-            this.masterAdminApp = app;
+            this.masterAdminApp = client;
         }
     }
 

@@ -83,7 +83,7 @@ public class UserSessionProviderTest {
         List<ClientSessionModel> clientSessions = session.sessions().getUserSession(realm, sessions[0].getId()).getClientSessions();
         assertEquals(2, clientSessions.size());
 
-        String client1 = realm.findClient("test-app").getId();
+        String client1 = realm.getClientByClientId("test-app").getId();
 
         ClientSessionModel session1;
 
@@ -94,7 +94,7 @@ public class UserSessionProviderTest {
         }
 
         assertEquals(null, session1.getAction());
-        assertEquals(realm.findClient("test-app").getClientId(), session1.getClient().getClientId());
+        assertEquals(realm.getClientByClientId("test-app").getClientId(), session1.getClient().getClientId());
         assertEquals(sessions[0].getId(), session1.getUserSession().getId());
         assertEquals("http://redirect", session1.getRedirectUri());
         assertEquals("state", session1.getNote(OIDCLoginProtocol.STATE_PARAM));
@@ -220,7 +220,7 @@ public class UserSessionProviderTest {
             }
         }
 
-        session.sessions().onClientRemoved(realm, realm.findClient("third-party"));
+        session.sessions().onClientRemoved(realm, realm.getClientByClientId("third-party"));
         resetSession();
 
         for (String c : clientSessionsRemoved) {
@@ -230,7 +230,7 @@ public class UserSessionProviderTest {
             assertNotNull(session.sessions().getClientSession(realm, c));
         }
 
-        session.sessions().onClientRemoved(realm, realm.findClient("test-app"));
+        session.sessions().onClientRemoved(realm, realm.getClientByClientId("test-app"));
         resetSession();
 
         for (String c : clientSessionsRemoved) {
@@ -244,7 +244,7 @@ public class UserSessionProviderTest {
     @Test
     public void testRemoveUserSessionsByExpired() {
         session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm));
-        ClientModel client = realm.findClient("test-app");
+        ClientModel client = realm.getClientByClientId("test-app");
 
         try {
             Set<String> expired = new HashSet<String>();
@@ -301,7 +301,7 @@ public class UserSessionProviderTest {
             realm.setAccessCodeLifespanLogin(30);
 
             // Login lifespan is largest
-            String clientSessionId = session.sessions().createClientSession(realm, realm.findClient("test-app")).getId();
+            String clientSessionId = session.sessions().createClientSession(realm, realm.getClientByClientId("test-app")).getId();
             resetSession();
 
             Time.setOffset(25);
@@ -320,7 +320,7 @@ public class UserSessionProviderTest {
             realm.setAccessCodeLifespanUserAction(40);
 
             Time.setOffset(0);
-            clientSessionId = session.sessions().createClientSession(realm, realm.findClient("test-app")).getId();
+            clientSessionId = session.sessions().createClientSession(realm, realm.getClientByClientId("test-app")).getId();
             resetSession();
 
             Time.setOffset(35);
@@ -339,7 +339,7 @@ public class UserSessionProviderTest {
             realm.setAccessCodeLifespan(50);
 
             Time.setOffset(0);
-            clientSessionId = session.sessions().createClientSession(realm, realm.findClient("test-app")).getId();
+            clientSessionId = session.sessions().createClientSession(realm, realm.getClientByClientId("test-app")).getId();
             resetSession();
 
             Time.setOffset(45);
@@ -367,8 +367,8 @@ public class UserSessionProviderTest {
     public void testGetByClient() {
         UserSessionModel[] sessions = createSessions();
 
-        assertSessions(session.sessions().getUserSessions(realm, realm.findClient("test-app")), sessions[0], sessions[1], sessions[2]);
-        assertSessions(session.sessions().getUserSessions(realm, realm.findClient("third-party")), sessions[0]);
+        assertSessions(session.sessions().getUserSessions(realm, realm.getClientByClientId("test-app")), sessions[0], sessions[1], sessions[2]);
+        assertSessions(session.sessions().getUserSessions(realm, realm.getClientByClientId("third-party")), sessions[0]);
     }
 
     @Test
@@ -377,7 +377,7 @@ public class UserSessionProviderTest {
             for (int i = 0; i < 25; i++) {
                 Time.setOffset(i);
                 UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0." + i, "form", false, null, null);
-                ClientSessionModel clientSession = session.sessions().createClientSession(realm, realm.findClient("test-app"));
+                ClientSessionModel clientSession = session.sessions().createClientSession(realm, realm.getClientByClientId("test-app"));
                 clientSession.setUserSession(userSession);
                 clientSession.setRedirectUri("http://redirect");
                 clientSession.setRoles(new HashSet<String>());
@@ -390,11 +390,11 @@ public class UserSessionProviderTest {
 
         resetSession();
 
-        assertPaginatedSession(realm, realm.findClient("test-app"), 0, 1, 1);
-        assertPaginatedSession(realm, realm.findClient("test-app"), 0, 10, 10);
-        assertPaginatedSession(realm, realm.findClient("test-app"), 10, 10, 10);
-        assertPaginatedSession(realm, realm.findClient("test-app"), 20, 10, 5);
-        assertPaginatedSession(realm, realm.findClient("test-app"), 30, 10, 0);
+        assertPaginatedSession(realm, realm.getClientByClientId("test-app"), 0, 1, 1);
+        assertPaginatedSession(realm, realm.getClientByClientId("test-app"), 0, 10, 10);
+        assertPaginatedSession(realm, realm.getClientByClientId("test-app"), 10, 10, 10);
+        assertPaginatedSession(realm, realm.getClientByClientId("test-app"), 20, 10, 5);
+        assertPaginatedSession(realm, realm.getClientByClientId("test-app"), 30, 10, 0);
     }
 
     private void assertPaginatedSession(RealmModel realm, ClientModel client, int start, int max, int expectedSize) {
@@ -416,8 +416,8 @@ public class UserSessionProviderTest {
     public void testGetCountByClient() {
         createSessions();
 
-        assertEquals(3, session.sessions().getActiveUserSessions(realm, realm.findClient("test-app")));
-        assertEquals(1, session.sessions().getActiveUserSessions(realm, realm.findClient("third-party")));
+        assertEquals(3, session.sessions().getActiveUserSessions(realm, realm.getClientByClientId("test-app")));
+        assertEquals(1, session.sessions().getActiveUserSessions(realm, realm.getClientByClientId("third-party")));
     }
 
     @Test
@@ -487,14 +487,14 @@ public class UserSessionProviderTest {
         roles.add("one");
         roles.add("two");
 
-        createClientSession(realm.findClient("test-app"), sessions[0], "http://redirect", "state", roles);
-        createClientSession(realm.findClient("third-party"), sessions[0], "http://redirect", "state", new HashSet<String>());
+        createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state", roles);
+        createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state", new HashSet<String>());
 
         sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
-        createClientSession(realm.findClient("test-app"), sessions[1], "http://redirect", "state", new HashSet<String>());
+        createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state", new HashSet<String>());
 
         sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
-        createClientSession(realm.findClient("test-app"), sessions[2], "http://redirect", "state", new HashSet<String>());
+        createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state", new HashSet<String>());
 
         resetSession();
 

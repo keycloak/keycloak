@@ -284,6 +284,15 @@
                             during the authentication process.
                         </entry>
                     </row>
+                    <row>
+                        <entry>
+                            <literal>GUI order</literal>
+                        </entry>
+                        <entry>
+                            Allows you to define order of the provider when shown on login page. 
+                            You can put number into this field, providers with lower numbers are shown first.
+                        </entry>
+                    </row>
                     <!--<row>-->
                         <!--<entry>-->
                             <!--<literal>Store Tokens</literal>-->

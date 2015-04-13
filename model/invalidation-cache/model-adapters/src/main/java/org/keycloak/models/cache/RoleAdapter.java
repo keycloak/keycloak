@@ -107,7 +107,7 @@ public class RoleAdapter implements RoleModel {
             return realm;
         } else {
             CachedApplicationRole appRole = (CachedApplicationRole)cached;
-            return realm.getApplicationById(appRole.getAppId());
+            return realm.getClientById(appRole.getAppId());
         }
     }
 

@@ -45,7 +45,7 @@ public final class AuthServerRemoveHandler extends AbstractRemoveStepHandler {
     @Override
     protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         String deploymentName = AuthServerUtil.getDeploymentName(operation);
-        KeycloakAdapterConfigService.INSTANCE.removeServerDeployment(deploymentName);
+        KeycloakAdapterConfigService.getInstance().removeServerDeployment(deploymentName);
 
         if (requiresRuntime(context)) { // don't do this on a domain controller
             addStepToRemoveAuthServer(context, deploymentName);

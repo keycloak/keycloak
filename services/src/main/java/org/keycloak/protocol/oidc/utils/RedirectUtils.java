@@ -1,10 +1,8 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.flows.Urls;
 
@@ -46,12 +44,7 @@ public class RedirectUtils {
 
     private static Set<String> getValidateRedirectUris(RealmModel realm) {
         Set<String> redirects = new HashSet<String>();
-        for (ApplicationModel client : realm.getApplications()) {
-            for (String redirect : client.getRedirectUris()) {
-                redirects.add(redirect);
-            }
-        }
-        for (OAuthClientModel client : realm.getOAuthClients()) {
+        for (ClientModel client : realm.getClients()) {
             for (String redirect : client.getRedirectUris()) {
                 redirects.add(redirect);
             }

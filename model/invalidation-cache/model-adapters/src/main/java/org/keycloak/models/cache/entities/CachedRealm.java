@@ -1,10 +1,9 @@
 package org.keycloak.models.cache.entities;
 
 import org.keycloak.enums.SslRequired;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -156,7 +155,7 @@ public class CachedRealm {
         eventsListeners.addAll(model.getEventsListeners());
         enabledEventTypes.addAll(model.getEnabledEventTypes());
         defaultRoles.addAll(model.getDefaultRoles());
-        masterAdminApp = model.getMasterAdminApp().getId();
+        masterAdminApp = model.getMasterAdminClient().getId();
 
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());
@@ -164,16 +163,10 @@ public class CachedRealm {
             cache.addCachedRole(cachedRole);
         }
 
-        for (ApplicationModel app : model.getApplications()) {
-            applications.put(app.getName(), app.getId());
+        for (ClientModel app : model.getClients()) {
+            applications.put(app.getClientId(), app.getId());
             CachedApplication cachedApp = new CachedApplication(cache, delegate, model, app);
             cache.addCachedApplication(cachedApp);
-        }
-
-        for (OAuthClientModel client : model.getOAuthClients()) {
-            clients.put(client.getClientId(), client.getId());
-            CachedOAuthClient cachedApp = new CachedOAuthClient(cache, delegate, model, client);
-            cache.addCachedOAuthClient(cachedApp);
         }
 
         internationalizationEnabled = model.isInternationalizationEnabled();

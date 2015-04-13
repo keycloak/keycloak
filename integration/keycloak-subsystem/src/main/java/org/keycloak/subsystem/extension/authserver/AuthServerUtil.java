@@ -46,6 +46,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
+import org.keycloak.subsystem.extension.KeycloakExtension;
 
 /**
  * Utility methods that help assemble and start an auth server.
@@ -104,6 +105,9 @@ public class AuthServerUtil {
         ModelNode op = Util.createOperation(ADD, deploymentAddress);
         op.get(ENABLED).set(isEnabled);
         op.get(PERSISTENT).set(false); // prevents writing this deployment out to standalone.xml
+
+        // Owner attribute is valid starting with WidlFly 9.  Ignored in WildFly 8
+        op.get("owner").set(new ModelNode().add("subsystem", KeycloakExtension.SUBSYSTEM_NAME));
 
         if (authServerUri == null) {
             throw new OperationFailedException("Keycloak Auth Server WAR not found in keycloak-subsystem module");

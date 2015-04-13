@@ -1,12 +1,12 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.entities.CachedClient;
+import org.keycloak.models.cache.entities.CachedApplication;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,80 +18,88 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class ClientAdapter implements ClientModel {
-    protected CachedClient cachedClient;
+public class ClientAdapter implements ClientModel {
     protected CacheRealmProvider cacheSession;
-    protected ClientModel updatedClient;
     protected RealmModel cachedRealm;
     protected RealmCache cache;
 
-    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, RealmCache cache, CacheRealmProvider cacheSession) {
+    protected ClientModel updated;
+    protected CachedApplication cached;
+
+    public ClientAdapter(RealmModel cachedRealm, CachedApplication cached, CacheRealmProvider cacheSession, RealmCache cache) {
         this.cachedRealm = cachedRealm;
         this.cache = cache;
         this.cacheSession = cacheSession;
-        this.cachedClient = cached;
+        this.cached = cached;
     }
 
-    protected abstract void getDelegateForUpdate();
+    private void getDelegateForUpdate() {
+        if (updated == null) {
+            cacheSession.registerApplicationInvalidation(getId());
+            updated = updated = cacheSession.getDelegate().getClientById(getId(), cachedRealm);
+            if (updated == null) throw new IllegalStateException("Not found in database");
+        }
+    }
+
+    @Override
+    public void updateClient() {
+        if (updated != null) updated.updateClient();
+    }
 
     @Override
     public String getId() {
-        if (updatedClient != null) return updatedClient.getId();
-        return cachedClient.getId();
+        if (updated != null) return updated.getId();
+        return cached.getId();
     }
 
-
-    @Override
-    public abstract String getClientId();
-
     public Set<String> getWebOrigins() {
-        if (updatedClient != null) return updatedClient.getWebOrigins();
-        return cachedClient.getWebOrigins();
+        if (updated != null) return updated.getWebOrigins();
+        return cached.getWebOrigins();
     }
 
     public void setWebOrigins(Set<String> webOrigins) {
         getDelegateForUpdate();
-        updatedClient.setWebOrigins(webOrigins);
+        updated.setWebOrigins(webOrigins);
     }
 
     public void addWebOrigin(String webOrigin) {
         getDelegateForUpdate();
-        updatedClient.addWebOrigin(webOrigin);
+        updated.addWebOrigin(webOrigin);
     }
 
     public void removeWebOrigin(String webOrigin) {
         getDelegateForUpdate();
-        updatedClient.removeWebOrigin(webOrigin);
+        updated.removeWebOrigin(webOrigin);
     }
 
     public Set<String> getRedirectUris() {
-        if (updatedClient != null) return updatedClient.getRedirectUris();
-        return cachedClient.getRedirectUris();
+        if (updated != null) return updated.getRedirectUris();
+        return cached.getRedirectUris();
     }
 
     public void setRedirectUris(Set<String> redirectUris) {
         getDelegateForUpdate();
-        updatedClient.setRedirectUris(redirectUris);
+        updated.setRedirectUris(redirectUris);
     }
 
     public void addRedirectUri(String redirectUri) {
         getDelegateForUpdate();
-        updatedClient.addRedirectUri(redirectUri);
+        updated.addRedirectUri(redirectUri);
     }
 
     public void removeRedirectUri(String redirectUri) {
         getDelegateForUpdate();
-        updatedClient.removeRedirectUri(redirectUri);
+        updated.removeRedirectUri(redirectUri);
     }
 
     public boolean isEnabled() {
-        if (updatedClient != null) return updatedClient.isEnabled();
-        return cachedClient.isEnabled();
+        if (updated != null) return updated.isEnabled();
+        return cached.isEnabled();
     }
 
     public void setEnabled(boolean enabled) {
         getDelegateForUpdate();
-        updatedClient.setEnabled(enabled);
+        updated.setEnabled(enabled);
     }
 
     public boolean validateSecret(String secret) {
@@ -99,62 +107,62 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     public String getSecret() {
-        if (updatedClient != null) return updatedClient.getSecret();
-        return cachedClient.getSecret();
+        if (updated != null) return updated.getSecret();
+        return cached.getSecret();
     }
 
     public void setSecret(String secret) {
         getDelegateForUpdate();
-        updatedClient.setSecret(secret);
+        updated.setSecret(secret);
     }
 
     public boolean isPublicClient() {
-        if (updatedClient != null) return updatedClient.isPublicClient();
-        return cachedClient.isPublicClient();
+        if (updated != null) return updated.isPublicClient();
+        return cached.isPublicClient();
     }
 
     public void setPublicClient(boolean flag) {
         getDelegateForUpdate();
-        updatedClient.setPublicClient(flag);
+        updated.setPublicClient(flag);
     }
 
     public boolean isFrontchannelLogout() {
-        if (updatedClient != null) return updatedClient.isPublicClient();
-        return cachedClient.isFrontchannelLogout();
+        if (updated != null) return updated.isPublicClient();
+        return cached.isFrontchannelLogout();
     }
 
     public void setFrontchannelLogout(boolean flag) {
         getDelegateForUpdate();
-        updatedClient.setFrontchannelLogout(flag);
+        updated.setFrontchannelLogout(flag);
     }
 
     @Override
     public boolean isFullScopeAllowed() {
-        if (updatedClient != null) return updatedClient.isFullScopeAllowed();
-        return cachedClient.isFullScopeAllowed();
+        if (updated != null) return updated.isFullScopeAllowed();
+        return cached.isFullScopeAllowed();
     }
 
     @Override
     public void setFullScopeAllowed(boolean value) {
         getDelegateForUpdate();
-        updatedClient.setFullScopeAllowed(value);
+        updated.setFullScopeAllowed(value);
 
     }
 
     public boolean isDirectGrantsOnly() {
-        if (updatedClient != null) return updatedClient.isDirectGrantsOnly();
-        return cachedClient.isDirectGrantsOnly();
+        if (updated != null) return updated.isDirectGrantsOnly();
+        return cached.isDirectGrantsOnly();
     }
 
     public void setDirectGrantsOnly(boolean flag) {
         getDelegateForUpdate();
-        updatedClient.setDirectGrantsOnly(flag);
+        updated.setDirectGrantsOnly(flag);
     }
 
     public Set<RoleModel> getScopeMappings() {
-        if (updatedClient != null) return updatedClient.getScopeMappings();
+        if (updated != null) return updated.getScopeMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cachedClient.getScope()) {
+        for (String id : cached.getScope()) {
             roles.add(cacheSession.getRoleById(id, getRealm()));
 
         }
@@ -163,12 +171,12 @@ public abstract class ClientAdapter implements ClientModel {
 
     public void addScopeMapping(RoleModel role) {
         getDelegateForUpdate();
-        updatedClient.addScopeMapping(role);
+        updated.addScopeMapping(role);
     }
 
     public void deleteScopeMapping(RoleModel role) {
         getDelegateForUpdate();
-        updatedClient.deleteScopeMapping(role);
+        updated.deleteScopeMapping(role);
     }
 
     public Set<RoleModel> getRealmScopeMappings() {
@@ -187,119 +195,107 @@ public abstract class ClientAdapter implements ClientModel {
         return appRoles;
     }
 
-    public boolean hasScope(RoleModel role) {
-        if (updatedClient != null) return updatedClient.hasScope(role);
-        if (cachedClient.isFullScopeAllowed() || cachedClient.getScope().contains(role.getId())) return true;
-
-        Set<RoleModel> roles = getScopeMappings();
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
-    }
-
     public RealmModel getRealm() {
         return cachedRealm;
     }
 
     public int getNotBefore() {
-        if (updatedClient != null) return updatedClient.getNotBefore();
-        return cachedClient.getNotBefore();
+        if (updated != null) return updated.getNotBefore();
+        return cached.getNotBefore();
     }
 
     public void setNotBefore(int notBefore) {
         getDelegateForUpdate();
-        updatedClient.setNotBefore(notBefore);
+        updated.setNotBefore(notBefore);
     }
 
     @Override
     public String getProtocol() {
-        if (updatedClient != null) return updatedClient.getProtocol();
-        return cachedClient.getProtocol();
+        if (updated != null) return updated.getProtocol();
+        return cached.getProtocol();
     }
 
     @Override
     public void setProtocol(String protocol) {
         getDelegateForUpdate();
-        updatedClient.setProtocol(protocol);
+        updated.setProtocol(protocol);
     }
 
     @Override
     public void setAttribute(String name, String value) {
         getDelegateForUpdate();
-        updatedClient.setAttribute(name, value);
+        updated.setAttribute(name, value);
 
     }
 
     @Override
     public void removeAttribute(String name) {
         getDelegateForUpdate();
-        updatedClient.removeAttribute(name);
+        updated.removeAttribute(name);
 
     }
 
     @Override
     public String getAttribute(String name) {
-        if (updatedClient != null) return updatedClient.getAttribute(name);
-        return cachedClient.getAttributes().get(name);
+        if (updated != null) return updated.getAttribute(name);
+        return cached.getAttributes().get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        if (updatedClient != null) return updatedClient.getAttributes();
+        if (updated != null) return updated.getAttributes();
         Map<String, String> copy = new HashMap<String, String>();
-        copy.putAll(cachedClient.getAttributes());
+        copy.putAll(cached.getAttributes());
         return copy;
     }
 
     @Override
     public void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
         getDelegateForUpdate();
-        updatedClient.updateIdentityProviders(identityProviders);
+        updated.updateIdentityProviders(identityProviders);
     }
 
     @Override
     public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
-        if (updatedClient != null) return updatedClient.getIdentityProviders();
-        return cachedClient.getIdentityProviders();
+        if (updated != null) return updated.getIdentityProviders();
+        return cached.getIdentityProviders();
     }
 
     @Override
     public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
-        if (updatedClient != null) return updatedClient.isAllowedRetrieveTokenFromIdentityProvider(providerId);
-        return cachedClient.isAllowedRetrieveTokenFromIdentityProvider(providerId);
+        if (updated != null) return updated.isAllowedRetrieveTokenFromIdentityProvider(providerId);
+        return cached.isAllowedRetrieveTokenFromIdentityProvider(providerId);
     }
 
     @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
-        if (updatedClient != null) return updatedClient.getProtocolMappers();
-        return cachedClient.getProtocolMappers();
+        if (updated != null) return updated.getProtocolMappers();
+        return cached.getProtocolMappers();
     }
 
     @Override
     public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
         getDelegateForUpdate();
-        return updatedClient.addProtocolMapper(model);
+        return updated.addProtocolMapper(model);
     }
 
     @Override
     public void removeProtocolMapper(ProtocolMapperModel mapping) {
         getDelegateForUpdate();
-        updatedClient.removeProtocolMapper(mapping);
+        updated.removeProtocolMapper(mapping);
 
     }
 
     @Override
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
         getDelegateForUpdate();
-        updatedClient.updateProtocolMapper(mapping);
+        updated.updateProtocolMapper(mapping);
 
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        for (ProtocolMapperModel mapping : cachedClient.getProtocolMappers()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
             if (mapping.getId().equals(id)) return mapping;
         }
         return null;
@@ -307,9 +303,228 @@ public abstract class ClientAdapter implements ClientModel {
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        for (ProtocolMapperModel mapping : cachedClient.getProtocolMappers()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
             if (mapping.getProtocol().equals(protocol) && mapping.getName().equals(name)) return mapping;
         }
         return null;
     }
+
+    @Override
+    public String getClientId() {
+        if (updated != null) return updated.getClientId();
+        return cached.getName();
+    }
+
+    @Override
+    public void setClientId(String clientId) {
+        getDelegateForUpdate();
+        updated.setClientId(clientId);
+        cacheSession.registerRealmInvalidation(cachedRealm.getId());
+    }
+
+    @Override
+    public boolean isSurrogateAuthRequired() {
+        if (updated != null) return updated.isSurrogateAuthRequired();
+        return cached.isSurrogateAuthRequired();
+    }
+
+    @Override
+    public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
+        getDelegateForUpdate();
+        updated.setSurrogateAuthRequired(surrogateAuthRequired);
+    }
+
+    @Override
+    public String getManagementUrl() {
+        if (updated != null) return updated.getManagementUrl();
+        return cached.getManagementUrl();
+    }
+
+    @Override
+    public void setManagementUrl(String url) {
+        getDelegateForUpdate();
+        updated.setManagementUrl(url);
+    }
+
+    @Override
+    public String getBaseUrl() {
+        if (updated != null) return updated.getBaseUrl();
+        return cached.getBaseUrl();
+    }
+
+    @Override
+    public void setBaseUrl(String url) {
+        getDelegateForUpdate();
+        updated.setBaseUrl(url);
+    }
+
+    @Override
+    public List<String> getDefaultRoles() {
+        if (updated != null) return updated.getDefaultRoles();
+        return cached.getDefaultRoles();
+    }
+
+    @Override
+    public void addDefaultRole(String name) {
+        getDelegateForUpdate();
+        updated.addDefaultRole(name);
+    }
+
+    @Override
+    public void updateDefaultRoles(String[] defaultRoles) {
+        getDelegateForUpdate();
+        updated.updateDefaultRoles(defaultRoles);
+    }
+
+    @Override
+    public Set<RoleModel> getClientScopeMappings(ClientModel client) {
+        Set<RoleModel> roleMappings = client.getScopeMappings();
+
+        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+            } else {
+                ClientModel app = (ClientModel)container;
+                if (app.getId().equals(getId())) {
+                    appRoles.add(role);
+                }
+            }
+        }
+
+        return appRoles;
+    }
+
+    @Override
+    public boolean isBearerOnly() {
+        if (updated != null) return updated.isBearerOnly();
+        return cached.isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        getDelegateForUpdate();
+        updated.setBearerOnly(only);
+    }
+
+    @Override
+    public boolean isConsentRequired() {
+        if (updated != null) return updated.isConsentRequired();
+        return cached.isConsentRequired();
+    }
+
+    @Override
+    public void setConsentRequired(boolean consentRequired) {
+        getDelegateForUpdate();
+        updated.setConsentRequired(consentRequired);
+    }
+
+    @Override
+    public RoleModel getRole(String name) {
+        if (updated != null) return updated.getRole(name);
+        String id = cached.getRoles().get(name);
+        if (id == null) return null;
+        return cacheSession.getRoleById(id, cachedRealm);
+    }
+
+    @Override
+    public RoleModel addRole(String name) {
+        getDelegateForUpdate();
+        RoleModel role = updated.addRole(name);
+        cacheSession.registerRoleInvalidation(role.getId());
+        return role;
+    }
+
+    @Override
+    public RoleModel addRole(String id, String name) {
+        getDelegateForUpdate();
+        RoleModel role =  updated.addRole(id, name);
+        cacheSession.registerRoleInvalidation(role.getId());
+        return role;
+    }
+
+    @Override
+    public boolean removeRole(RoleModel role) {
+        cacheSession.registerRoleInvalidation(role.getId());
+        getDelegateForUpdate();
+        return updated.removeRole(role);
+    }
+
+    @Override
+    public Set<RoleModel> getRoles() {
+        if (updated != null) return updated.getRoles();
+
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (String id : cached.getRoles().values()) {
+            RoleModel roleById = cacheSession.getRoleById(id, cachedRealm);
+            if (roleById == null) continue;
+            roles.add(roleById);
+        }
+        return roles;
+    }
+
+    @Override
+    public int getNodeReRegistrationTimeout() {
+        if (updated != null) return updated.getNodeReRegistrationTimeout();
+        return cached.getNodeReRegistrationTimeout();
+    }
+
+    @Override
+    public void setNodeReRegistrationTimeout(int timeout) {
+        getDelegateForUpdate();
+        updated.setNodeReRegistrationTimeout(timeout);
+    }
+
+    @Override
+    public Map<String, Integer> getRegisteredNodes() {
+        if (updated != null) return updated.getRegisteredNodes();
+        return cached.getRegisteredNodes();
+    }
+
+    @Override
+    public void registerNode(String nodeHost, int registrationTime) {
+        getDelegateForUpdate();
+        updated.registerNode(nodeHost, registrationTime);
+    }
+
+    @Override
+    public void unregisterNode(String nodeHost) {
+        getDelegateForUpdate();
+        updated.unregisterNode(nodeHost);
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (updated != null) return updated.hasScope(role);
+        if (cached.isFullScopeAllowed() || cached.getScope().contains(role.getId())) return true;
+
+        Set<RoleModel> roles = getScopeMappings();
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+
+        roles = getRoles();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof ClientModel)) return false;
+
+        ClientModel that = (ClientModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
 }

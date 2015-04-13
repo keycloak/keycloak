@@ -12,7 +12,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -111,7 +110,7 @@ public class AuthenticationManager {
 
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
             ClientModel client = clientSession.getClient();
-            if (client instanceof ApplicationModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
+            if (client instanceof ClientModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
@@ -145,7 +144,7 @@ public class AuthenticationManager {
                 redirectClients.add(clientSession);
                 continue;
             }
-            if (client instanceof ApplicationModel && !client.isFrontchannelLogout()) {
+            if (client instanceof ClientModel && !client.isFrontchannelLogout()) {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
@@ -381,13 +380,9 @@ public class AuthenticationManager {
         isEmailVerificationRequired(realm, user);
         ClientModel client = clientSession.getClient();
 
-        boolean isResource = client instanceof ApplicationModel;
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
 
-
-        logger.debugv("processAccessCode: isResource: {0}", isResource);
-        logger.debugv("processAccessCode: go to oauth page?: {0}",
-                !isResource);
+        logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
 
         event.detail(Details.CODE_ID, clientSession.getId());
 
@@ -417,7 +412,7 @@ public class AuthenticationManager {
             }
         }
 
-        if (!isResource) {
+        if (client.isConsentRequired()) {
             accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
 
             List<RoleModel> realmRoles = new LinkedList<RoleModel>();
@@ -426,7 +421,7 @@ public class AuthenticationManager {
                 if (r.getContainer() instanceof RealmModel) {
                     realmRoles.add(r);
                 } else {
-                    resourceRoles.add(((ApplicationModel) r.getContainer()).getName(), r);
+                    resourceRoles.add(((ClientModel) r.getContainer()).getClientId(), r);
                 }
             }
 

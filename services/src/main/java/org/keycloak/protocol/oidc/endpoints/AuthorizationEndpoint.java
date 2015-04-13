@@ -11,7 +11,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -168,13 +167,13 @@ public class AuthorizationEndpoint {
 
         event.client(clientId);
 
-        client = realm.findClient(clientId);
+        client = realm.getClientByClientId(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
             throw new ErrorPageException(session, realm, uriInfo, headers, Messages.CLIENT_NOT_FOUND );
         }
 
-        if ((client instanceof ApplicationModel) && ((ApplicationModel) client).isBearerOnly()) {
+        if ((client instanceof ClientModel) && ((ClientModel) client).isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorPageException(session, realm, uriInfo, headers, Messages.BEARER_ONLY );
         }

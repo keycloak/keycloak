@@ -1,8 +1,6 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -174,8 +172,8 @@ public final class KeycloakModelUtils {
         return UUID.randomUUID().toString();
     }
 
-    public static ApplicationModel createApplication(RealmModel realm, String name) {
-        ApplicationModel app = realm.addApplication(name);
+    public static ClientModel createClient(RealmModel realm, String name) {
+        ClientModel app = realm.addClient(name);
         generateSecret(app);
         app.setFullScopeAllowed(true);
 
@@ -247,7 +245,7 @@ public final class KeycloakModelUtils {
         }
     }
 
-    public static String getMasterRealmAdminApplicationName(RealmModel realm) {
+    public static String getMasterRealmAdminApplicationClientId(RealmModel realm) {
         return realm.getName() + "-realm";
     }
 }

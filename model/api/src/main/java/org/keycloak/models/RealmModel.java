@@ -19,14 +19,9 @@ public interface RealmModel extends RoleContainerModel {
     interface RealmCreationEvent extends ProviderEvent {
         RealmModel getCreatedRealm();
     }
+
     interface ClientCreationEvent extends ProviderEvent {
         ClientModel getCreatedClient();
-    }
-    interface ApplicationCreationEvent extends ClientCreationEvent {
-        ApplicationModel getCreatedApplication();
-    }
-    interface OAuthClientCreationEvent extends ClientCreationEvent {
-        OAuthClientModel getCreatedOAuthClient();
     }
 
     String getId();
@@ -150,32 +145,20 @@ public interface RealmModel extends RoleContainerModel {
 
     void updateDefaultRoles(String[] defaultRoles);
 
-    ClientModel findClient(String clientId);
+    Map<String, ClientModel> getClientNameMap();
 
-    Map<String, ApplicationModel> getApplicationNameMap();
+    List<ClientModel> getClients();
 
-    List<ApplicationModel> getApplications();
+    ClientModel addClient(String name);
 
-    ApplicationModel addApplication(String name);
+    ClientModel addClient(String id, String clientId);
 
-    ApplicationModel addApplication(String id, String name);
+    boolean removeClient(String id);
 
-    boolean removeApplication(String id);
-
-    ApplicationModel getApplicationById(String id);
-    ApplicationModel getApplicationByName(String name);
+    ClientModel getClientById(String id);
+    ClientModel getClientByClientId(String clientId);
 
     void updateRequiredCredentials(Set<String> creds);
-
-    OAuthClientModel addOAuthClient(String name);
-
-    OAuthClientModel addOAuthClient(String id, String name);
-
-    OAuthClientModel getOAuthClient(String name);
-    OAuthClientModel getOAuthClientById(String id);
-    boolean removeOAuthClient(String id);
-
-    List<OAuthClientModel> getOAuthClients();
 
     Map<String, String> getBrowserSecurityHeaders();
     void setBrowserSecurityHeaders(Map<String, String> headers);
@@ -249,11 +232,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setEnabledEventTypes(Set<String> enabledEventTypes);
 
-    ApplicationModel getMasterAdminApp();
+    ClientModel getMasterAdminClient();
 
-    void setMasterAdminApp(ApplicationModel app);
-
-    ClientModel findClientById(String id);
+    void setMasterAdminClient(ClientModel client);
 
     boolean isIdentityFederationEnabled();
 

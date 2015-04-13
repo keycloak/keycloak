@@ -131,16 +131,16 @@ public class AccountService {
     private KeycloakSession session;
 
     private final AppAuthManager authManager;
-    private final ApplicationModel application;
+    private final ClientModel client;
     private EventBuilder event;
     private AccountProvider account;
     private Auth auth;
     private EventStoreProvider eventStore;
     private String stateChecker;
 
-    public AccountService(RealmModel realm, ApplicationModel application, EventBuilder event) {
+    public AccountService(RealmModel realm, ClientModel client, EventBuilder event) {
         this.realm = realm;
-        this.application = application;
+        this.client = client;
         this.event = event;
         this.authManager = new AppAuthManager();
     }
@@ -152,11 +152,11 @@ public class AccountService {
 
         AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
         if (authResult != null) {
-            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, authResult.getSession(), false);
+            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), false);
         } else {
             authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
             if (authResult != null) {
-                auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, authResult.getSession(), true);
+                auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
                 Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
                 if (cookie != null) {
                     stateChecker = cookie.getValue();
@@ -193,14 +193,14 @@ public class AccountService {
             if (userSession != null) {
                 boolean associated = false;
                 for (ClientSessionModel c : userSession.getClientSessions()) {
-                    if (c.getClient().equals(application)) {
+                    if (c.getClient().equals(client)) {
                         auth.setClientSession(c);
                         associated = true;
                         break;
                     }
                 }
                 if (!associated) {
-                    ClientSessionModel clientSession = session.sessions().createClientSession(realm, application);
+                    ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
                     clientSession.setUserSession(userSession);
                     auth.setClientSession(clientSession);
                 }
@@ -737,7 +737,7 @@ public class AccountService {
                 logger.debug("realm not enabled");
                 throw new ForbiddenException();
             }
-            if (!application.isEnabled()) {
+            if (!client.isEnabled()) {
                 logger.debug("account management app not enabled");
                 throw new ForbiddenException();
             }
@@ -766,7 +766,7 @@ public class AccountService {
         String authUrl = OIDCLoginProtocolService.authUrl(uriInfo).build(realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 
-        oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_APP);
+        oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
 
         UriBuilder uriBuilder = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect");
 
@@ -813,21 +813,21 @@ public class AccountService {
 
         String referrerUri = uriInfo.getQueryParameters().getFirst("referrer_uri");
 
-        ApplicationModel application = realm.getApplicationByName(referrer);
-        if (application != null) {
+        ClientModel referrerClient = realm.getClientByClientId(referrer);
+        if (referrerClient != null) {
             if (referrerUri != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, application);
+                referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, referrerClient);
             } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), application.getBaseUrl());
+                referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), referrerClient.getBaseUrl());
             }
 
             if (referrerUri != null) {
                 return new String[]{referrer, referrerUri};
             }
         } else if (referrerUri != null) {
-            ClientModel client = realm.getOAuthClient(referrer);
+            referrerClient = realm.getClientByClientId(referrer);
             if (client != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, application);
+                referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, referrerClient);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};
@@ -843,7 +843,7 @@ public class AccountService {
             throw new ForbiddenException();
         }
 
-        if (!auth.hasAppRole(application, role)) {
+        if (!auth.hasClientRole(client, role)) {
             throw new ForbiddenException();
         }
     }
@@ -853,7 +853,7 @@ public class AccountService {
             throw new ForbiddenException();
         }
 
-        if (!auth.hasOneOfAppRole(application, roles)) {
+        if (!auth.hasOneOfAppRole(client, roles)) {
             throw new ForbiddenException();
         }
     }

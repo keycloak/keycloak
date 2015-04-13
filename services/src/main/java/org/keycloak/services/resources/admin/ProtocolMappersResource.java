@@ -19,9 +19,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -60,7 +60,7 @@ public class ProtocolMappersResource {
     @GET
     @NoCache
     @Path("protocol/{protocol}")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public List<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
         auth.requireView();
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
@@ -78,7 +78,7 @@ public class ProtocolMappersResource {
     @Path("models")
     @POST
     @NoCache
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response createMapper(ProtocolMapperRepresentation rep) {
         auth.requireManage();
         ProtocolMapperModel model = RepresentationToModel.toModel(rep);
@@ -92,7 +92,7 @@ public class ProtocolMappersResource {
     @Path("add-models")
     @POST
     @NoCache
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         auth.requireManage();
         for (ProtocolMapperRepresentation rep : reps) {
@@ -104,7 +104,7 @@ public class ProtocolMappersResource {
     @GET
     @NoCache
     @Path("models")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public List<ProtocolMapperRepresentation> getMappers() {
         auth.requireView();
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
@@ -117,7 +117,7 @@ public class ProtocolMappersResource {
     @GET
     @NoCache
     @Path("models/{id}")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public ProtocolMapperRepresentation getMapperById(@PathParam("id") String id) {
         auth.requireView();
         ProtocolMapperModel model = client.getProtocolMapperById(id);
@@ -128,7 +128,7 @@ public class ProtocolMappersResource {
     @PUT
     @NoCache
     @Path("models/{id}")
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void update(@PathParam("id") String id, ProtocolMapperRepresentation rep) {
         auth.requireManage();
         ProtocolMapperModel model = client.getProtocolMapperById(id);
@@ -146,7 +146,5 @@ public class ProtocolMappersResource {
         if (model == null) throw new NotFoundException("Model not found");
         client.removeProtocolMapper(model);
     }
-
-
 
 }

@@ -4,15 +4,12 @@
     || path[2] == 'login-settings'
     || path[2] == 'theme-settings'
     || path[2] == 'cache-settings'
-    || path[2] == 'keys-settings' || path[2] == 'smtp-settings' || path[2] == 'ldap-settings' || path[2] == 'auth-settings') && path[3] != 'applications') && 'active'">
+    || path[2] == 'keys-settings' || path[2] == 'smtp-settings' || path[2] == 'ldap-settings' || path[2] == 'auth-settings') && path[3] != 'clients') && 'active'">
         <a href="#/realms/{{realm.realm}}">Settings</a>
     </li>
-    <li data-ng-show="access.viewUsers" data-ng-class="(path[2] == 'users' || path[1] == 'user') && 'active'"><a href="#/realms/{{realm.realm}}/users">Users</a>
-    </li>
-    <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'roles' || (path[1] == 'role' && path[3] != 'applications')) && 'active'"><a href="#/realms/{{realm.realm}}/roles">Roles</a>
-    </li>
-    <li data-ng-show="access.viewApplications" data-ng-class="(path[2] == 'applications' || path[1] == 'application' || path[3] == 'applications') && 'active'"><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-    <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'oauth-clients' || path[1] == 'oauth-client') && 'active'"><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>
+    <li data-ng-show="access.viewUsers" data-ng-class="(path[2] == 'users' || path[1] == 'user') && 'active'"><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+    <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'clients' || path[1] == 'client' || path[3] == 'clients') && 'active'"><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+    <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'roles' || (path[1] == 'role' && path[3] != 'clients')) && 'active'"><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
     <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'sessions' || path[2] == 'token-settings') && 'active'"><a href="#/realms/{{realm.realm}}/sessions/realm">Sessions and Tokens</a></li>
     <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'defense') && 'active'"><a href="#/realms/{{realm.realm}}/defense/headers">Security Defenses</a></li>
     <li data-ng-show="access.viewEvents" data-ng-class="(path[2] == 'events' || path[2] == 'events-settings') && 'active'"><a href="#/realms/{{realm.realm}}/events">Events</a></li>

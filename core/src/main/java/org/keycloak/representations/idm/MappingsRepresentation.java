@@ -9,7 +9,7 @@ import java.util.Map;
  */
 public class MappingsRepresentation {
     protected List<RoleRepresentation> realmMappings;
-    protected Map<String, ApplicationMappingsRepresentation> applicationMappings;
+    protected Map<String, ClientMappingsRepresentation> clientMappings;
 
     public List<RoleRepresentation> getRealmMappings() {
         return realmMappings;
@@ -19,11 +19,11 @@ public class MappingsRepresentation {
         this.realmMappings = realmMappings;
     }
 
-    public Map<String, ApplicationMappingsRepresentation> getApplicationMappings() {
-        return applicationMappings;
+    public Map<String, ClientMappingsRepresentation> getClientMappings() {
+        return clientMappings;
     }
 
-    public void setApplicationMappings(Map<String, ApplicationMappingsRepresentation> applicationMappings) {
-        this.applicationMappings = applicationMappings;
+    public void setClientMappings(Map<String, ClientMappingsRepresentation> clientMappings) {
+        this.clientMappings = clientMappings;
     }
 }

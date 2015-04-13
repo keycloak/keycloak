@@ -1,6 +1,6 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -363,14 +363,14 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ApplicationModel app) {
+    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         Set<RoleModel> roleMappings = getRoleMappings();
 
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
-            if (container instanceof ApplicationModel) {
-                ApplicationModel appModel = (ApplicationModel)container;
+            if (container instanceof ClientModel) {
+                ClientModel appModel = (ClientModel)container;
                 if (appModel.getId().equals(app.getId())) {
                    roles.add(role);
                 }

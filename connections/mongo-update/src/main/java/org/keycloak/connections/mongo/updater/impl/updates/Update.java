@@ -53,15 +53,8 @@ public abstract class Update {
         log.debugv("Deleted entries from {0}", collection);
     }
 
-    protected String insertApplicationRole(DBCollection roles, String roleName, String applicationId) {
-        BasicDBObject role = new BasicDBObject();
-        String roleId = KeycloakModelUtils.generateId();
-        role.append("_id", roleId);
-        role.append("name", roleName);
-        role.append("applicationId", applicationId);
-        role.append("nameIndex", applicationId + "//" + roleName);
-        roles.insert(role);
-        return roleId;
+    protected void renameCollection(String collection, String newName) {
+        db.getCollection(collection).rename(newName);
     }
 
     public void setLog(Logger log) {

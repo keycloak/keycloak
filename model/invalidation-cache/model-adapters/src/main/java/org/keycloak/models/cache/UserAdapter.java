@@ -1,6 +1,6 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -219,14 +219,14 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ApplicationModel app) {
-        if (updated != null) return updated.getApplicationRoleMappings(app);
+    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
+        if (updated != null) return updated.getClientRoleMappings(app);
         Set<RoleModel> roleMappings = getRoleMappings();
         Set<RoleModel> appMappings = new HashSet<RoleModel>();
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
-            if (container instanceof ApplicationModel) {
-                if (((ApplicationModel) container).getId().equals(app.getId())) {
+            if (container instanceof ClientModel) {
+                if (((ClientModel) container).getId().equals(app.getId())) {
                     appMappings.add(role);
                 }
             }

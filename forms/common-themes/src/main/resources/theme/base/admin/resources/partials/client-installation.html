@@ -1,0 +1,38 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+
+    <kc-navigation-client></kc-navigation-client>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+            <li class="active">Installation</li>
+        </ol>
+        <h2><span>{{client.clientId}}</span> Adapter Installation <span tooltip-placement="right" tooltip="Helper utility for generating various client adapter configuration formats which you can download or cut and paste to configure your clients." class="fa fa-info-circle"></span></h2>
+        <form class="form-horizontal" name="realmForm" novalidate>
+            <fieldset class="border-top">
+                <div class="form-group input-select">
+                    <label class="col-sm-2 control-label" for="configFormats">Format Option</label>
+                    <div class="col-sm-4">
+                        <div class="input-group">
+                            <div class="select-kc">
+                                <select id="configFormats" name="configFormats" ng-change="changeFormat()" ng-model="configFormat" ng-options="a for a in configFormats">
+                                    <option value="" selected> Select a Format </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" ng-show="installation">
+                    <div class="col-sm-12">
+                        <textarea class="form-control" rows="20" kc-select-action="click">{{installation}}</textarea>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+
+        <div class="pull-right form-actions" ng-show="installation">
+            <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit">Download</a>
+        </div>
+    </div>
+</div>

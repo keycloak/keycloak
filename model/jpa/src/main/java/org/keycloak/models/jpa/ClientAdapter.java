@@ -1,9 +1,8 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -22,8 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,15 +29,18 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class ClientAdapter implements ClientModel {
-    protected ClientEntity entity;
+public class ClientAdapter implements ClientModel {
+
+    protected KeycloakSession session;
     protected RealmModel realm;
     protected EntityManager em;
+    protected ClientEntity entity;
 
-    public ClientAdapter(RealmModel realm, ClientEntity entity, EntityManager em) {
+    public ClientAdapter(RealmModel realm, EntityManager em, KeycloakSession session, ClientEntity entity) {
+        this.session = session;
         this.realm = realm;
-        this.entity = entity;
         this.em = em;
+        this.entity = entity;
     }
 
     public ClientEntity getEntity() {
@@ -55,11 +55,6 @@ public abstract class ClientAdapter implements ClientModel {
     @Override
     public RealmModel getRealm() {
         return realm;
-    }
-
-    @Override
-    public String getClientId() {
-        return entity.getName();
     }
 
     @Override
@@ -177,7 +172,7 @@ public abstract class ClientAdapter implements ClientModel {
     public Set<RoleModel> getRealmScopeMappings() {
         Set<RoleModel> roleMappings = getScopeMappings();
 
-        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        Set<RoleModel> appRoles = new HashSet<>();
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof RealmModel) {
@@ -189,8 +184,6 @@ public abstract class ClientAdapter implements ClientModel {
 
         return appRoles;
     }
-
-
 
     @Override
     public Set<RoleModel> getScopeMappings() {
@@ -237,32 +230,6 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public boolean hasScope(RoleModel role) {
-        if (isFullScopeAllowed()) return true;
-        Set<RoleModel> roles = getScopeMappings();
-        if (roles.contains(role)) return true;
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!this.getClass().equals(o.getClass())) return false;
-
-        ClientAdapter that = (ClientAdapter) o;
-        return that.getId().equals(getId());
-    }
-
-    @Override
-    public int hashCode() {
-        return entity.getId().hashCode();
-    }
-
-    @Override
     public String getProtocol() {
         return entity.getProtocol();
     }
@@ -281,7 +248,7 @@ public abstract class ClientAdapter implements ClientModel {
 
     @Override
     public void removeAttribute(String name) {
-       entity.getAttributes().remove(name);
+        entity.getAttributes().remove(name);
     }
 
     @Override
@@ -291,7 +258,7 @@ public abstract class ClientAdapter implements ClientModel {
 
     @Override
     public Map<String, String> getAttributes() {
-        Map<String, String> copy = new HashMap<String, String>();
+        Map<String, String> copy = new HashMap<>();
         copy.putAll(entity.getAttributes());
         return copy;
     }
@@ -299,8 +266,8 @@ public abstract class ClientAdapter implements ClientModel {
     @Override
     public void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
         Collection<ClientIdentityProviderMappingEntity> entities = entity.getIdentityProviders();
-        Set<String> already = new HashSet<String>();
-        List<ClientIdentityProviderMappingEntity> remove = new ArrayList<ClientIdentityProviderMappingEntity>();
+        Set<String> already = new HashSet<>();
+        List<ClientIdentityProviderMappingEntity> remove = new ArrayList<>();
 
         for (ClientIdentityProviderMappingEntity entity : entities) {
             IdentityProviderEntity identityProvider = entity.getIdentityProvider();
@@ -500,4 +467,282 @@ public abstract class ClientAdapter implements ClientModel {
         mapping.setConfig(config);
         return mapping;
     }
+
+    @Override
+    public void updateClient() {
+        em.flush();
+    }
+
+    @Override
+    public String getClientId() {
+        return entity.getClientId();
+    }
+
+    @Override
+    public void setClientId(String clientId) {
+        entity.setClientId(clientId);
+    }
+
+    @Override
+    public boolean isSurrogateAuthRequired() {
+        return entity.isSurrogateAuthRequired();
+    }
+
+    @Override
+    public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
+        entity.setSurrogateAuthRequired(surrogateAuthRequired);
+    }
+
+    @Override
+    public String getManagementUrl() {
+        return entity.getManagementUrl();
+    }
+
+    @Override
+    public void setManagementUrl(String url) {
+        entity.setManagementUrl(url);
+    }
+
+    @Override
+    public String getBaseUrl() {
+        return entity.getBaseUrl();
+    }
+
+    @Override
+    public void setBaseUrl(String url) {
+        entity.setBaseUrl(url);
+    }
+
+    @Override
+    public boolean isBearerOnly() {
+        return entity.isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        entity.setBearerOnly(only);
+    }
+
+    @Override
+    public boolean isConsentRequired() {
+        return entity.isConsentRequired();
+    }
+
+    @Override
+    public void setConsentRequired(boolean consentRequired) {
+        entity.setConsentRequired(consentRequired);
+    }
+
+    @Override
+    public boolean isDirectGrantsOnly() {
+        return entity.isDirectGrantsOnly();
+    }
+
+    @Override
+    public void setDirectGrantsOnly(boolean flag) {
+        entity.setDirectGrantsOnly(flag);
+    }
+
+    @Override
+    public RoleModel getRole(String name) {
+        TypedQuery<RoleEntity> query = em.createNamedQuery("getAppRoleByName", RoleEntity.class);
+        query.setParameter("name", name);
+        query.setParameter("application", entity);
+        List<RoleEntity> roles = query.getResultList();
+        if (roles.size() == 0) return null;
+        return new RoleAdapter(realm, em, roles.get(0));
+    }
+
+    @Override
+    public RoleModel addRole(String name) {
+        return this.addRole(KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public RoleModel addRole(String id, String name) {
+        RoleEntity roleEntity = new RoleEntity();
+        roleEntity.setId(id);
+        roleEntity.setName(name);
+        roleEntity.setApplication(entity);
+        roleEntity.setApplicationRole(true);
+        roleEntity.setRealmId(realm.getId());
+        em.persist(roleEntity);
+        entity.getRoles().add(roleEntity);
+        em.flush();
+        return new RoleAdapter(realm, em, roleEntity);
+    }
+
+    @Override
+    public boolean removeRole(RoleModel roleModel) {
+        if (roleModel == null) {
+            return false;
+        }
+        if (!roleModel.getContainer().equals(this)) return false;
+
+        session.users().preRemove(getRealm(), roleModel);
+        RoleEntity role = RoleAdapter.toRoleEntity(roleModel, em);
+        if (!role.isApplicationRole()) return false;
+
+        entity.getRoles().remove(role);
+        entity.getDefaultRoles().remove(role);
+        em.createNativeQuery("delete from COMPOSITE_ROLE where CHILD_ROLE = :role").setParameter("role", role).executeUpdate();
+        em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", role).executeUpdate();
+        role.setApplication(null);
+        em.flush();
+        em.remove(role);
+        em.flush();
+
+        return true;
+    }
+
+    @Override
+    public Set<RoleModel> getRoles() {
+        Set<RoleModel> list = new HashSet<RoleModel>();
+        Collection<RoleEntity> roles = entity.getRoles();
+        if (roles == null) return list;
+        for (RoleEntity entity : roles) {
+            list.add(new RoleAdapter(realm, em, entity));
+        }
+        return list;
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (isFullScopeAllowed()) return true;
+        Set<RoleModel> roles = getScopeMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        roles = getRoles();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Set<RoleModel> getClientScopeMappings(ClientModel client) {
+        Set<RoleModel> roleMappings = client.getScopeMappings();
+
+        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+            } else {
+                ClientModel app = (ClientModel)container;
+                if (app.getId().equals(getId())) {
+                    appRoles.add(role);
+                }
+            }
+        }
+
+        return appRoles;
+    }
+
+
+
+
+    @Override
+    public List<String> getDefaultRoles() {
+        Collection<RoleEntity> entities = entity.getDefaultRoles();
+        List<String> roles = new ArrayList<String>();
+        if (entities == null) return roles;
+        for (RoleEntity entity : entities) {
+            roles.add(entity.getName());
+        }
+        return roles;
+    }
+
+    @Override
+    public void addDefaultRole(String name) {
+        RoleModel role = getRole(name);
+        if (role == null) {
+            role = addRole(name);
+        }
+        Collection<RoleEntity> entities = entity.getDefaultRoles();
+        for (RoleEntity entity : entities) {
+            if (entity.getId().equals(role.getId())) {
+                return;
+            }
+        }
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
+        entities.add(roleEntity);
+        em.flush();
+    }
+
+    @Override
+    public void updateDefaultRoles(String[] defaultRoles) {
+        Collection<RoleEntity> entities = entity.getDefaultRoles();
+        Set<String> already = new HashSet<String>();
+        List<RoleEntity> remove = new ArrayList<RoleEntity>();
+        for (RoleEntity rel : entities) {
+            if (!contains(rel.getName(), defaultRoles)) {
+                remove.add(rel);
+            } else {
+                already.add(rel.getName());
+            }
+        }
+        for (RoleEntity entity : remove) {
+            entities.remove(entity);
+        }
+        em.flush();
+        for (String roleName : defaultRoles) {
+            if (!already.contains(roleName)) {
+                addDefaultRole(roleName);
+            }
+        }
+        em.flush();
+    }
+
+    @Override
+    public int getNodeReRegistrationTimeout() {
+        return entity.getNodeReRegistrationTimeout();
+    }
+
+    @Override
+    public void setNodeReRegistrationTimeout(int timeout) {
+        entity.setNodeReRegistrationTimeout(timeout);
+    }
+
+    @Override
+    public Map<String, Integer> getRegisteredNodes() {
+        return entity.getRegisteredNodes();
+    }
+
+    @Override
+    public void registerNode(String nodeHost, int registrationTime) {
+        Map<String, Integer> currentNodes = getRegisteredNodes();
+        currentNodes.put(nodeHost, registrationTime);
+        em.flush();
+    }
+
+    @Override
+    public void unregisterNode(String nodeHost) {
+        Map<String, Integer> currentNodes = getRegisteredNodes();
+        currentNodes.remove(nodeHost);
+        em.flush();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof ClientModel)) return false;
+
+        ClientModel that = (ClientModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
+    public String toString() {
+        return getClientId();
+    }
+
 }

@@ -7,7 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -115,14 +115,14 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
                     throw new IllegalStateException("Realm with id: " + role.getRealmId() + " doesn't exists");
                 }
                 roleContainer = new RealmAdapter(session, realm, invocationContext);
-            } else if (role.getApplicationId() != null) {
-                MongoApplicationEntity appEntity = getMongoStore().loadEntity(MongoApplicationEntity.class, role.getApplicationId(), invocationContext);
+            } else if (role.getClientId() != null) {
+                MongoClientEntity appEntity = getMongoStore().loadEntity(MongoClientEntity.class, role.getClientId(), invocationContext);
                 if (appEntity == null) {
-                    throw new IllegalStateException("Application with id: " + role.getApplicationId() + " doesn't exists");
+                    throw new IllegalStateException("Application with id: " + role.getClientId() + " doesn't exists");
                 }
-                roleContainer = new ApplicationAdapter(session, realm, appEntity, invocationContext);
+                roleContainer = new ClientAdapter(session, realm, appEntity, invocationContext);
             } else {
-                throw new IllegalStateException("Both realmId and applicationId are null for role: " + this);
+                throw new IllegalStateException("Both realmId and clientId are null for role: " + this);
             }
         }
         return roleContainer;

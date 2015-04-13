@@ -10,7 +10,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -20,7 +19,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
@@ -31,7 +29,6 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.flows.Urls;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.core.Context;
@@ -147,7 +144,7 @@ public class TokenEndpoint {
         String authorizationHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formParams, event, realm);
 
-        if ((client instanceof ApplicationModel) && ((ApplicationModel) client).isBearerOnly()) {
+        if ((client instanceof ClientModel) && ((ClientModel) client).isBearerOnly()) {
             throw new ErrorResponseException("invalid_client", "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
     }
@@ -234,15 +231,15 @@ public class TokenEndpoint {
             throw new ErrorResponseException("invalid_grant", "Session not active", Response.Status.BAD_REQUEST);
         }
 
-        String adapterSessionId = formParams.getFirst(AdapterConstants.APPLICATION_SESSION_STATE);
+        String adapterSessionId = formParams.getFirst(AdapterConstants.CLIENT_SESSION_STATE);
         if (adapterSessionId != null) {
-            String adapterSessionHost = formParams.getFirst(AdapterConstants.APPLICATION_SESSION_HOST);
+            String adapterSessionHost = formParams.getFirst(AdapterConstants.CLIENT_SESSION_HOST);
             logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
 
-            event.detail(AdapterConstants.APPLICATION_SESSION_STATE, adapterSessionId);
-            clientSession.setNote(AdapterConstants.APPLICATION_SESSION_STATE, adapterSessionId);
-            event.detail(AdapterConstants.APPLICATION_SESSION_HOST, adapterSessionHost);
-            clientSession.setNote(AdapterConstants.APPLICATION_SESSION_HOST, adapterSessionHost);
+            event.detail(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
+            clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
+            event.detail(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+            clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
         }
 
         AccessToken token = tokenManager.createClientAccessToken(session, accessCode.getRequestedRoles(), realm, client, user, userSession, clientSession);

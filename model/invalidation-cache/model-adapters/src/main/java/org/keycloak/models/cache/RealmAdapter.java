@@ -2,20 +2,15 @@ package org.keycloak.models.cache;
 
 import org.keycloak.Config;
 import org.keycloak.enums.SslRequired;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClaimTypeModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.Key;
@@ -476,39 +471,25 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ClientModel findClient(String clientId) {
-        if (updated != null) return updated.findClient(clientId);
-        String appId = cached.getApplications().get(clientId);
-        if (appId != null) {
-            return cacheSession.getApplicationById(appId, this);
-        }
-        String oauth = cached.getClients().get(clientId);
-        if (oauth != null) {
-            return cacheSession.getOAuthClientById(oauth, this);
-        }
-        return null;
-    }
-
-    @Override
-    public Map<String, ApplicationModel> getApplicationNameMap() {
-        if (updated != null) return updated.getApplicationNameMap();
-        Map<String, ApplicationModel> map = new HashMap<String, ApplicationModel>();
+    public Map<String, ClientModel> getClientNameMap() {
+        if (updated != null) return updated.getClientNameMap();
+        Map<String, ClientModel> map = new HashMap<String, ClientModel>();
         for (String id : cached.getApplications().values()) {
-            ApplicationModel model = cacheSession.getApplicationById(id, this);
+            ClientModel model = cacheSession.getClientById(id, this);
             if (model == null) {
                 throw new IllegalStateException("Cached application not found: " + id);
             }
-            map.put(model.getName(), model);
+            map.put(model.getClientId(), model);
         }
         return map;
     }
 
     @Override
-    public List<ApplicationModel> getApplications() {
-        if (updated != null) return updated.getApplications();
-        List<ApplicationModel> apps = new LinkedList<ApplicationModel>();
+    public List<ClientModel> getClients() {
+        if (updated != null) return updated.getClients();
+        List<ClientModel> apps = new LinkedList<ClientModel>();
         for (String id : cached.getApplications().values()) {
-            ApplicationModel model = cacheSession.getApplicationById(id, this);
+            ClientModel model = cacheSession.getClientById(id, this);
             if (model == null) {
                 throw new IllegalStateException("Cached application not found: " + id);
             }
@@ -519,97 +500,46 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ApplicationModel addApplication(String name) {
+    public ClientModel addClient(String name) {
         getDelegateForUpdate();
-        ApplicationModel app = updated.addApplication(name);
+        ClientModel app = updated.addClient(name);
         cacheSession.registerApplicationInvalidation(app.getId());
         return app;
     }
 
     @Override
-    public ApplicationModel addApplication(String id, String name) {
+    public ClientModel addClient(String id, String clientId) {
         getDelegateForUpdate();
-        ApplicationModel app =  updated.addApplication(id, name);
+        ClientModel app =  updated.addClient(id, clientId);
         cacheSession.registerApplicationInvalidation(app.getId());
         return app;
     }
 
     @Override
-    public boolean removeApplication(String id) {
+    public boolean removeClient(String id) {
         cacheSession.registerApplicationInvalidation(id);
         getDelegateForUpdate();
-        return updated.removeApplication(id);
+        return updated.removeClient(id);
     }
 
     @Override
-    public ApplicationModel getApplicationById(String id) {
-        if (updated != null) return updated.getApplicationById(id);
-        return cacheSession.getApplicationById(id, this);
+    public ClientModel getClientById(String id) {
+        if (updated != null) return updated.getClientById(id);
+        return cacheSession.getClientById(id, this);
     }
 
     @Override
-    public ApplicationModel getApplicationByName(String name) {
-        if (updated != null) return updated.getApplicationByName(name);
-        String id = cached.getApplications().get(name);
+    public ClientModel getClientByClientId(String clientId) {
+        if (updated != null) return updated.getClientByClientId(clientId);
+        String id = cached.getApplications().get(clientId);
         if (id == null) return null;
-        return getApplicationById(id);
+        return getClientById(id);
     }
 
     @Override
     public void updateRequiredCredentials(Set<String> creds) {
         getDelegateForUpdate();
         updated.updateRequiredCredentials(creds);
-    }
-
-    @Override
-    public OAuthClientModel addOAuthClient(String name) {
-        getDelegateForUpdate();
-        OAuthClientModel client = updated.addOAuthClient(name);
-        cacheSession.registerOAuthClientInvalidation(client.getId());
-        return client;
-    }
-
-    @Override
-    public OAuthClientModel addOAuthClient(String id, String name) {
-        getDelegateForUpdate();
-        OAuthClientModel client =  updated.addOAuthClient(id, name);
-        cacheSession.registerOAuthClientInvalidation(client.getId());
-        return client;
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClient(String name) {
-        if (updated != null) return updated.getOAuthClient(name);
-        String id = cached.getClients().get(name);
-        if (id == null) return null;
-        return getOAuthClientById(id);
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClientById(String id) {
-        if (updated != null) return updated.getOAuthClientById(id);
-        return cacheSession.getOAuthClientById(id, this);
-    }
-
-    @Override
-    public boolean removeOAuthClient(String id) {
-        cacheSession.registerOAuthClientInvalidation(id);
-        getDelegateForUpdate();
-        return updated.removeOAuthClient(id);
-    }
-
-    @Override
-    public List<OAuthClientModel> getOAuthClients() {
-        if (updated != null) return updated.getOAuthClients();
-        List<OAuthClientModel> clients = new LinkedList<OAuthClientModel>();
-        for (String id : cached.getClients().values()) {
-            OAuthClientModel model = cacheSession.getOAuthClientById(id, this);
-            if (model == null) {
-                throw new IllegalStateException("Cached oauth client not found: " + id);
-            }
-            clients.add(model);
-        }
-        return clients;
     }
 
     @Override
@@ -821,14 +751,14 @@ public class RealmAdapter implements RealmModel {
     }
     
     @Override
-    public ApplicationModel getMasterAdminApp() {
-        return cacheSession.getRealm(Config.getAdminRealm()).getApplicationById(cached.getMasterAdminApp());
+    public ClientModel getMasterAdminClient() {
+        return cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminApp());
     }
 
     @Override
-    public void setMasterAdminApp(ApplicationModel app) {
+    public void setMasterAdminClient(ClientModel client) {
         getDelegateForUpdate();
-        updated.setMasterAdminApp(app);
+        updated.setMasterAdminClient(client);
     }
 
     @Override
@@ -873,13 +803,6 @@ public class RealmAdapter implements RealmModel {
             roles.add(roleById);
         }
         return roles;
-    }
-
-    @Override
-    public ClientModel findClientById(String id) {
-        ClientModel model = getApplicationById(id);
-        if (model != null) return model;
-        return getOAuthClientById(id);
     }
 
     @Override

@@ -105,7 +105,7 @@ public class RealmEntity {
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="APPLICATION_ID") })
-    Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
+    Collection<ClientEntity> applications = new ArrayList<ClientEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
@@ -137,7 +137,7 @@ public class RealmEntity {
 
     @OneToOne
     @JoinColumn(name="MASTER_ADMIN_APP")
-    protected ApplicationEntity masterAdminApp;
+    protected ClientEntity masterAdminApp;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     protected List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
@@ -318,11 +318,11 @@ public class RealmEntity {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public Collection<ApplicationEntity> getApplications() {
+    public Collection<ClientEntity> getApplications() {
         return applications;
     }
 
-    public void setApplications(Collection<ApplicationEntity> applications) {
+    public void setApplications(Collection<ClientEntity> applications) {
         this.applications = applications;
     }
 
@@ -437,11 +437,11 @@ public class RealmEntity {
         this.enabledEventTypes = enabledEventTypes;
     }
     
-    public ApplicationEntity getMasterAdminApp() {
+    public ClientEntity getMasterAdminApp() {
         return masterAdminApp;
     }
 
-    public void setMasterAdminApp(ApplicationEntity masterAdminApp) {
+    public void setMasterAdminApp(ClientEntity masterAdminApp) {
         this.masterAdminApp = masterAdminApp;
     }
 

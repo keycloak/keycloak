@@ -18,7 +18,7 @@
                   "value" : "password" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "account": ["view-profile", "manage-account"]
             }
         }
@@ -41,7 +41,7 @@
             "roles": ["user"]
         }
     ],
-    "applications": [
+    "clients": [
         {
             "name": "cordova",
             "enabled": true,
@@ -50,7 +50,7 @@
             "webOrigins": ["localhost"]
         }
     ],
-    "applicationScopeMappings": {
+    "clientScopeMappings": {
         "account": [
             {
                 "client": "cordova",

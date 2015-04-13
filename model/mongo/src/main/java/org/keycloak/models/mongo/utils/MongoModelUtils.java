@@ -36,7 +36,7 @@ public class MongoModelUtils {
 
     // Get everything including both application and realm scopes
     public static List<MongoRoleEntity> getAllScopesOfClient(ClientModel client, MongoStoreInvocationContext invContext) {
-        ClientEntity scopedEntity = ((ClientAdapter)client).getMongoEntityAsClient();
+        ClientEntity scopedEntity = ((ClientAdapter)client).getMongoEntity();
         List<String> scopeIds = scopedEntity.getScopeIds();
 
         if (scopeIds == null || scopeIds.isEmpty()) {

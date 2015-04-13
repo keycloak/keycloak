@@ -1,7 +1,6 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.cache.entities.CachedApplication;
-import org.keycloak.models.cache.entities.CachedOAuthClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 
@@ -16,7 +15,6 @@ public class MemoryRealmCache implements RealmCache {
     protected ConcurrentHashMap<String, CachedRealm> realmCache = new ConcurrentHashMap<String, CachedRealm>();
     protected ConcurrentHashMap<String, CachedRealm> realmCacheByName = new ConcurrentHashMap<String, CachedRealm>();
     protected ConcurrentHashMap<String, CachedApplication> applicationCache = new ConcurrentHashMap<String, CachedApplication>();
-    protected ConcurrentHashMap<String, CachedOAuthClient> clientCache = new ConcurrentHashMap<String, CachedOAuthClient>();
     protected ConcurrentHashMap<String, CachedRole> roleCache = new ConcurrentHashMap<String, CachedRole>();
     protected volatile boolean enabled = true;
 
@@ -25,7 +23,6 @@ public class MemoryRealmCache implements RealmCache {
         realmCache.clear();
         realmCacheByName.clear();
         applicationCache.clear();
-        clientCache.clear();
         roleCache.clear();
     }
 
@@ -94,28 +91,6 @@ public class MemoryRealmCache implements RealmCache {
     @Override
     public void invalidateCachedApplicationById(String id) {
         applicationCache.remove(id);
-    }
-
-    @Override
-    public CachedOAuthClient getOAuthClient(String id) {
-        if (!enabled) return null;
-        return clientCache.get(id);
-    }
-
-    @Override
-    public void invalidateOAuthClient(CachedOAuthClient client) {
-        clientCache.remove(client.getId());
-    }
-
-    @Override
-    public void addCachedOAuthClient(CachedOAuthClient client) {
-        if (!enabled) return;
-        clientCache.put(client.getId(), client);
-    }
-
-    @Override
-    public void invalidateCachedOAuthClientById(String id) {
-        clientCache.remove(id);
     }
 
     @Override

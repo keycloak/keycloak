@@ -3,6 +3,10 @@ package org.keycloak.federation.ldap;
 import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
+import org.keycloak.federation.ldap.idm.model.LDAPUser;
+import org.keycloak.federation.ldap.idm.query.IdentityQuery;
+import org.keycloak.federation.ldap.idm.query.IdentityQueryBuilder;
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
@@ -16,12 +20,6 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.constants.KerberosConstants;
-import org.picketlink.idm.IdentityManagementException;
-import org.picketlink.idm.IdentityManager;
-import org.picketlink.idm.PartitionManager;
-import org.picketlink.idm.model.basic.BasicModel;
-import org.picketlink.idm.model.basic.User;
-import org.picketlink.idm.query.IdentityQuery;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,23 +36,21 @@ import java.util.Set;
  */
 public class LDAPFederationProvider implements UserFederationProvider {
     private static final Logger logger = Logger.getLogger(LDAPFederationProvider.class);
-    public static final String LDAP_ID = "LDAP_ID";
-    public static final String SYNC_REGISTRATIONS = "syncRegistrations";
 
     protected LDAPFederationProviderFactory factory;
     protected KeycloakSession session;
     protected UserFederationProviderModel model;
-    protected PartitionManager partitionManager;
+    protected LDAPIdentityStore ldapIdentityStore;
     protected EditMode editMode;
     protected LDAPProviderKerberosConfig kerberosConfig;
 
     protected final Set<String> supportedCredentialTypes = new HashSet<String>();
 
-    public LDAPFederationProvider(LDAPFederationProviderFactory factory, KeycloakSession session, UserFederationProviderModel model, PartitionManager partitionManager) {
+    public LDAPFederationProvider(LDAPFederationProviderFactory factory, KeycloakSession session, UserFederationProviderModel model, LDAPIdentityStore ldapIdentityStore) {
         this.factory = factory;
         this.session = session;
         this.model = model;
-        this.partitionManager = partitionManager;
+        this.ldapIdentityStore = ldapIdentityStore;
         this.kerberosConfig = new LDAPProviderKerberosConfig(model);
         String editModeString = model.getConfig().get(LDAPConstants.EDIT_MODE);
         if (editModeString == null) {
@@ -69,16 +65,6 @@ public class LDAPFederationProvider implements UserFederationProvider {
         }
     }
 
-    private ModelException convertIDMException(IdentityManagementException ie) {
-        Throwable realCause = ie;
-        while (realCause.getCause() != null) {
-            realCause = realCause.getCause();
-        }
-
-        // Use the message from the realCause
-        return new ModelException(realCause.getMessage(), ie);
-    }
-
     public KeycloakSession getSession() {
         return session;
     }
@@ -87,8 +73,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
         return model;
     }
 
-    public PartitionManager getPartitionManager() {
-        return partitionManager;
+    public LDAPIdentityStore getLdapIdentityStore() {
+        return this.ldapIdentityStore;
     }
 
     @Override
@@ -125,22 +111,18 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean synchronizeRegistrations() {
-        return "true".equalsIgnoreCase(model.getConfig().get(SYNC_REGISTRATIONS)) && editMode == EditMode.WRITABLE;
+        return "true".equalsIgnoreCase(model.getConfig().get(LDAPConstants.SYNC_REGISTRATIONS)) && editMode == EditMode.WRITABLE;
     }
 
     @Override
     public UserModel register(RealmModel realm, UserModel user) {
-        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) throw new IllegalStateException("Registration is not supported by this ldap server");;
+        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) throw new IllegalStateException("Registration is not supported by this ldap server");
         if (!synchronizeRegistrations()) throw new IllegalStateException("Registration is not supported by this ldap server");
 
-        try {
-            User picketlinkUser = LDAPUtils.addUser(this.partitionManager, user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmail());
-            user.setAttribute(LDAP_ID, picketlinkUser.getId());
-            return proxy(user);
-        } catch (IdentityManagementException ie) {
-            throw convertIDMException(ie);
-        }
-
+        LDAPUser ldapUser = LDAPUtils.addUser(this.ldapIdentityStore, user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmail());
+        user.setAttribute(LDAPConstants.LDAP_ID, ldapUser.getId());
+        user.setAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapUser.getEntryDN());
+        return proxy(user);
     }
 
     @Override
@@ -150,58 +132,53 @@ public class LDAPFederationProvider implements UserFederationProvider {
             return false;
         }
 
-        try {
-            return LDAPUtils.removeUser(partitionManager, user.getUsername());
-        } catch (IdentityManagementException ie) {
-            throw convertIDMException(ie);
-        }
+        return LDAPUtils.removeUser(this.ldapIdentityStore, user.getUsername());
     }
 
     @Override
     public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
         List<UserModel> searchResults =new LinkedList<UserModel>();
-        try {
-            Map<String, User> plUsers = searchPicketlink(attributes, maxResults);
-            for (User user : plUsers.values()) {
-                if (session.userStorage().getUserByUsername(user.getLoginName(), realm) == null) {
-                    UserModel imported = importUserFromPicketlink(realm, user);
-                    searchResults.add(imported);
-                }
+
+        Map<String, LDAPUser> ldapUsers = searchLDAP(attributes, maxResults);
+        for (LDAPUser ldapUser : ldapUsers.values()) {
+            if (session.userStorage().getUserByUsername(ldapUser.getLoginName(), realm) == null) {
+                UserModel imported = importUserFromLDAP(realm, ldapUser);
+                searchResults.add(imported);
             }
-        } catch (IdentityManagementException ie) {
-            throw convertIDMException(ie);
         }
+
         return searchResults;
     }
 
-    protected Map<String, User> searchPicketlink(Map<String, String> attributes, int maxResults) {
-        IdentityManager identityManager = getIdentityManager();
-        Map<String, User> results = new HashMap<String, User>();
+    protected Map<String, LDAPUser> searchLDAP(Map<String, String> attributes, int maxResults) {
+
+        Map<String, LDAPUser> results = new HashMap<String, LDAPUser>();
         if (attributes.containsKey(USERNAME)) {
-            User user = BasicModel.getUser(identityManager, attributes.get(USERNAME));
+            LDAPUser user = LDAPUtils.getUser(this.ldapIdentityStore, attributes.get(USERNAME));
             if (user != null) {
                 results.put(user.getLoginName(), user);
             }
         }
 
         if (attributes.containsKey(EMAIL)) {
-            User user = queryByEmail(identityManager, attributes.get(EMAIL));
+            LDAPUser user = queryByEmail(attributes.get(EMAIL));
             if (user != null) {
                 results.put(user.getLoginName(), user);
             }
         }
 
         if (attributes.containsKey(FIRST_NAME) || attributes.containsKey(LAST_NAME)) {
-            IdentityQuery<User> query = identityManager.createIdentityQuery(User.class);
+            IdentityQueryBuilder queryBuilder = this.ldapIdentityStore.createQueryBuilder();
+            IdentityQuery<LDAPUser> query = queryBuilder.createIdentityQuery(LDAPUser.class);
             if (attributes.containsKey(FIRST_NAME)) {
-                query.setParameter(User.FIRST_NAME, attributes.get(FIRST_NAME));
+                query.where(queryBuilder.equal(LDAPUser.FIRST_NAME, attributes.get(FIRST_NAME)));
             }
             if (attributes.containsKey(LAST_NAME)) {
-                query.setParameter(User.LAST_NAME, attributes.get(LAST_NAME));
+                query.where(queryBuilder.equal(LDAPUser.LAST_NAME, attributes.get(LAST_NAME)));
             }
             query.setLimit(maxResults);
-            List<User> agents = query.getResultList();
-            for (User user : agents) {
+            List<LDAPUser> users = query.getResultList();
+            for (LDAPUser user : users) {
                 results.put(user.getLoginName(), user);
             }
         }
@@ -211,85 +188,69 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean isValid(UserModel local) {
-        try {
-            User picketlinkUser = LDAPUtils.getUser(partitionManager, local.getUsername());
-            if (picketlinkUser == null) {
-                return false;
-            }
-            return picketlinkUser.getId().equals(local.getAttribute(LDAP_ID));
-        } catch (IdentityManagementException ie) {
-            throw convertIDMException(ie);
+        LDAPUser ldapUser = LDAPUtils.getUser(this.ldapIdentityStore, local.getUsername());
+        if (ldapUser == null) {
+            return false;
         }
+        return ldapUser.getId().equals(local.getAttribute(LDAPConstants.LDAP_ID));
     }
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        try {
-            User picketlinkUser = LDAPUtils.getUser(partitionManager, username);
-            if (picketlinkUser == null) {
-                return null;
-            }
-
-            // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
-            if (!username.equals(picketlinkUser.getLoginName())) {
-                logger.warnf("User found in LDAP but with different username. LDAP username: %s, Searched username: %s", username, picketlinkUser.getLoginName());
-                return null;
-            }
-
-            return importUserFromPicketlink(realm, picketlinkUser);
-        } catch (IdentityManagementException ie) {
-            throw convertIDMException(ie);
-        }
-    }
-
-    public IdentityManager getIdentityManager() {
-        return partitionManager.createIdentityManager();
-    }
-
-    protected UserModel importUserFromPicketlink(RealmModel realm, User picketlinkUser) {
-        String email = (picketlinkUser.getEmail() != null && picketlinkUser.getEmail().trim().length() > 0) ? picketlinkUser.getEmail() : null;
-
-        if (picketlinkUser.getLoginName() == null) {
-            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. ID of user from LDAP: " + picketlinkUser.getId());
+        LDAPUser ldapUser = LDAPUtils.getUser(this.ldapIdentityStore, username);
+        if (ldapUser == null) {
+            return null;
         }
 
-        UserModel imported = session.userStorage().addUser(realm, picketlinkUser.getLoginName());
+        // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
+        if (!username.equals(ldapUser.getLoginName())) {
+            logger.warnf("User found in LDAP but with different username. LDAP username: %s, Searched username: %s", username, ldapUser.getLoginName());
+            return null;
+        }
+
+        return importUserFromLDAP(realm, ldapUser);
+    }
+
+    protected UserModel importUserFromLDAP(RealmModel realm, LDAPUser ldapUser) {
+        String email = (ldapUser.getEmail() != null && ldapUser.getEmail().trim().length() > 0) ? ldapUser.getEmail() : null;
+
+        if (ldapUser.getLoginName() == null) {
+            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. ID of user from LDAP: " + ldapUser.getId());
+        }
+
+        UserModel imported = session.userStorage().addUser(realm, ldapUser.getLoginName());
         imported.setEnabled(true);
         imported.setEmail(email);
-        imported.setFirstName(picketlinkUser.getFirstName());
-        imported.setLastName(picketlinkUser.getLastName());
+        imported.setFirstName(ldapUser.getFirstName());
+        imported.setLastName(ldapUser.getLastName());
         imported.setFederationLink(model.getId());
-        imported.setAttribute(LDAP_ID, picketlinkUser.getId());
+        imported.setAttribute(LDAPConstants.LDAP_ID, ldapUser.getId());
+        imported.setAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapUser.getEntryDN());
 
-        logger.debugf("Added new user from LDAP. Username: " + imported.getUsername() + ", Email: ", imported.getEmail() + ", LDAP_ID: " + picketlinkUser.getId());
+        logger.debugf("Imported new user from LDAP to Keycloak DB. Username: [%s], Email: [%s], LDAP_ID: [%s], LDAP Entry DN: [%s]", imported.getUsername(), imported.getEmail(),
+                ldapUser.getId(), ldapUser.getEntryDN());
         return proxy(imported);
     }
 
-    protected User queryByEmail(IdentityManager identityManager, String email) throws IdentityManagementException {
-        return LDAPUtils.getUserByEmail(identityManager, email);
+    protected LDAPUser queryByEmail(String email) {
+        return LDAPUtils.getUserByEmail(this.ldapIdentityStore, email);
     }
 
 
     @Override
     public UserModel getUserByEmail(RealmModel realm, String email) {
-        IdentityManager identityManager = getIdentityManager();
-
-        try {
-            User picketlinkUser = queryByEmail(identityManager, email);
-            if (picketlinkUser == null) {
-                return null;
-            }
-
-            // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
-            if (!email.equals(picketlinkUser.getEmail())) {
-                logger.warnf("User found in LDAP but with different email. LDAP email: %s, Searched email: %s", email, picketlinkUser.getEmail());
-                return null;
-            }
-
-            return importUserFromPicketlink(realm, picketlinkUser);
-        } catch (IdentityManagementException ie) {
-            throw convertIDMException(ie);
+        LDAPUser ldapUser = queryByEmail(email);
+        if (ldapUser == null) {
+            return null;
         }
+
+        // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
+        if (!email.equals(ldapUser.getEmail())) {
+            logger.warnf("User found in LDAP but with different email. LDAP email: %s, Searched email: %s", email, ldapUser.getEmail());
+            return null;
+        }
+
+        return importUserFromLDAP(realm, ldapUser);
     }
 
     @Override
@@ -302,18 +263,14 @@ public class LDAPFederationProvider implements UserFederationProvider {
         // complete I don't think we have to do anything here
     }
 
-    public boolean validPassword(String username, String password) {
+    public boolean validPassword(UserModel user, String password) {
         if (kerberosConfig.isAllowKerberosAuthentication() && kerberosConfig.isUseKerberosForPasswordAuthentication()) {
             // Use Kerberos JAAS (Krb5LoginModule)
             KerberosUsernamePasswordAuthenticator authenticator = factory.createKerberosUsernamePasswordAuthenticator(kerberosConfig);
-            return authenticator.validUser(username, password);
+            return authenticator.validUser(user.getUsername(), password);
         } else {
             // Use Naming LDAP API
-            try {
-                return LDAPUtils.validatePassword(partitionManager, username, password);
-            } catch (IdentityManagementException ie) {
-                throw convertIDMException(ie);
-            }
+            return LDAPUtils.validatePassword(this.ldapIdentityStore, user, password);
         }
     }
 
@@ -322,7 +279,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
     public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
         for (UserCredentialModel cred : input) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return validPassword(user.getUsername(), cred.getValue());
+                return validPassword(user, cred.getValue());
             } else {
                 return false; // invalid cred type
             }
@@ -353,7 +310,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     UserModel user = findOrCreateAuthenticatedUser(realm, username);
 
                     if (user == null) {
-                        logger.warn("Kerberos/SPNEGO authentication succeeded with username [" + username + "], but couldn't find or create user with federation provider [" + model.getDisplayName() + "]");
+                        logger.warnf("Kerberos/SPNEGO authentication succeeded with username [%s], but couldn't find or create user with federation provider [%s]", username, model.getDisplayName());
                         return CredentialValidationOutput.failed();
                     } else {
                         String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
@@ -375,24 +332,23 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public void close() {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    protected void importPicketlinkUsers(RealmModel realm, List<User> users, UserFederationProviderModel fedModel) {
-        for (User picketlinkUser : users) {
-            String username = picketlinkUser.getLoginName();
+    protected void importLDAPUsers(RealmModel realm, List<LDAPUser> ldapUsers, UserFederationProviderModel fedModel) {
+        for (LDAPUser ldapUser : ldapUsers) {
+            String username = ldapUser.getLoginName();
             UserModel currentUser = session.userStorage().getUserByUsername(username, realm);
 
             if (currentUser == null) {
                 // Add new user to Keycloak
-                importUserFromPicketlink(realm, picketlinkUser);
+                importUserFromLDAP(realm, ldapUser);
             } else {
-                if ((fedModel.getId().equals(currentUser.getFederationLink())) && (picketlinkUser.getId().equals(currentUser.getAttribute(LDAPFederationProvider.LDAP_ID)))) {
+                if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getId().equals(currentUser.getAttribute(LDAPConstants.LDAP_ID)))) {
                     // Update keycloak user
-                    String email = (picketlinkUser.getEmail() != null && picketlinkUser.getEmail().trim().length() > 0) ? picketlinkUser.getEmail() : null;
+                    String email = (ldapUser.getEmail() != null && ldapUser.getEmail().trim().length() > 0) ? ldapUser.getEmail() : null;
                     currentUser.setEmail(email);
-                    currentUser.setFirstName(picketlinkUser.getFirstName());
-                    currentUser.setLastName(picketlinkUser.getLastName());
+                    currentUser.setFirstName(ldapUser.getFirstName());
+                    currentUser.setLastName(ldapUser.getLastName());
                     logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
                 } else {
                     logger.warnf("User '%s' is not updated during sync as he is not linked to federation provider '%s'", username, fedModel.getDisplayName());
@@ -404,29 +360,29 @@ public class LDAPFederationProvider implements UserFederationProvider {
     /**
      * Called after successful kerberos authentication
      *
-     * @param realm
+     * @param realm realm
      * @param username username without realm prefix
-     * @return
+     * @return finded or newly created user
      */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
         UserModel user = session.userStorage().getUserByUsername(username, realm);
         if (user != null) {
-            logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
+            logger.debugf("Kerberos authenticated user [%s] found in Keycloak storage", username);
             if (!model.getId().equals(user.getFederationLink())) {
-                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() + "]");
+                logger.warnf("User with username [%s] already exists, but is not linked to provider [%s]", username, model.getDisplayName());
                 return null;
             } else if (isValid(user)) {
                 return proxy(user);
             } else {
-                logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getDisplayName() +
-                        "] but is not valid. Stale LDAP_ID on local user is: " + user.getAttribute(LDAP_ID));
+                logger.warnf("User with username [%s] aready exists and is linked to provider [%s] but is not valid. Stale LDAP_ID on local user is: %s",
+                        username,  model.getDisplayName(), user.getAttribute(LDAPConstants.LDAP_ID));
                 logger.warn("Will re-create user");
                 session.userStorage().removeUser(realm, user);
             }
         }
 
         // Creating user to local storage
-        logger.debug("Kerberos authenticated user " + username + " not in Keycloak storage. Creating him");
+        logger.debugf("Kerberos authenticated user [%s] not in Keycloak storage. Creating him", username);
         return getUserByUsername(realm, username);
     }
 }

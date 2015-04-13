@@ -4,8 +4,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,6 +27,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class IdentityProviderResource {
 
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public IdentityProviderRepresentation getIdentityProvider() {
         IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(this.identityProviderModel);
 
@@ -65,8 +66,7 @@ public class IdentityProviderResource {
     public Response delete() {
         this.auth.requireManage();
 
-        removeClientIdentityProviders(this.realm.getApplications(), this.identityProviderModel);
-        removeClientIdentityProviders(this.realm.getOAuthClients(), this.identityProviderModel);
+        removeClientIdentityProviders(this.realm.getClients(), this.identityProviderModel);
 
         this.realm.removeIdentityProviderByAlias(this.identityProviderModel.getAlias());
 
@@ -74,7 +74,7 @@ public class IdentityProviderResource {
     }
 
     @PUT
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response update(IdentityProviderRepresentation providerRep) {
         try {
             this.auth.requireManage();
@@ -90,8 +90,7 @@ public class IdentityProviderResource {
                 // Admin changed the ID (alias) of identity provider. We must update all clients and users
                 logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
 
-                updateClientsAfterProviderAliasChange(this.realm.getApplications(), oldProviderId, newProviderId);
-                updateClientsAfterProviderAliasChange(this.realm.getOAuthClients(), oldProviderId, newProviderId);
+                updateClientsAfterProviderAliasChange(this.realm.getClients(), oldProviderId, newProviderId);
                 updateUsersAfterProviderAliasChange(this.session.users().getUsers(this.realm), oldProviderId, newProviderId);
             }
 
@@ -113,7 +112,7 @@ public class IdentityProviderResource {
         return null;
     }
 
-    private void updateClientsAfterProviderAliasChange(List<? extends ClientModel> clients, String oldProviderId, String newProviderId) {
+    private void updateClientsAfterProviderAliasChange(List<ClientModel> clients, String oldProviderId, String newProviderId) {
         for (ClientModel client : clients) {
             List<ClientIdentityProviderMappingModel> clientIdentityProviders = client.getIdentityProviders();
             boolean found = true;
@@ -175,11 +174,11 @@ public class IdentityProviderResource {
     }
 
 
-    private void removeClientIdentityProviders(List<? extends ClientModel> clients, IdentityProviderModel identityProvider) {
+    private void removeClientIdentityProviders(List<ClientModel> clients, IdentityProviderModel identityProvider) {
         for (ClientModel clientModel : clients) {
             List<ClientIdentityProviderMappingModel> identityProviders = clientModel.getIdentityProviders();
 
-            for (ClientIdentityProviderMappingModel providerMappingModel : new ArrayList<ClientIdentityProviderMappingModel>(identityProviders)) {
+            for (ClientIdentityProviderMappingModel providerMappingModel : new ArrayList<>(identityProviders)) {
                 if (providerMappingModel.getIdentityProvider().equals(identityProvider.getAlias())) {
                     identityProviders.remove(providerMappingModel);
                     clientModel.updateIdentityProviders(identityProviders);

@@ -3,8 +3,7 @@ package org.keycloak.testsuite.model;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -66,17 +65,17 @@ public class MultipleRealmsTest extends AbstractModelTest {
         Assert.assertEquals(realm2, model.getRealm("id2"));
         Assert.assertEquals(realm2, model.getRealmByName("realm2"));
 
-        ApplicationModel r1app1 = realm1.getApplicationByName("app1");
-        ApplicationModel r1app2 = realm1.getApplicationByName("app2");
-        ApplicationModel r2app1 = realm2.getApplicationByName("app1");
-        ApplicationModel r2app2 = realm2.getApplicationByName("app2");
+        ClientModel r1app1 = realm1.getClientByClientId("app1");
+        ClientModel r1app2 = realm1.getClientByClientId("app2");
+        ClientModel r2app1 = realm2.getClientByClientId("app1");
+        ClientModel r2app2 = realm2.getClientByClientId("app2");
 
-        Assert.assertEquals(r1app1, realm1.getApplicationById(r1app1.getId()));
-        Assert.assertNull(realm2.getApplicationById(r1app1.getId()));
+        Assert.assertEquals(r1app1, realm1.getClientById(r1app1.getId()));
+        Assert.assertNull(realm2.getClientById(r1app1.getId()));
 
-        OAuthClientModel r2cl1 = realm2.getOAuthClient("cl1");
-        Assert.assertEquals(r2cl1.getId(), realm2.getOAuthClientById(r2cl1.getId()).getId());
-        Assert.assertNull(realm1.getOAuthClientById(r2cl1.getId()));
+        ClientModel r2cl1 = realm2.getClientByClientId("cl1");
+        Assert.assertEquals(r2cl1.getId(), realm2.getClientById(r2cl1.getId()).getId());
+        Assert.assertNull(realm1.getClientByClientId(r2cl1.getId()));
 
         RoleModel r1App1Role = r1app1.getRole("app1Role1");
         Assert.assertEquals(r1App1Role, realm1.getRoleById(r1App1Role.getId()));
@@ -88,8 +87,8 @@ public class MultipleRealmsTest extends AbstractModelTest {
     }
 
     private void createObjects(RealmModel realm) {
-        ApplicationModel app1 = realm.addApplication("app1");
-        realm.addApplication("app2");
+        ClientModel app1 = realm.addClient("app1");
+        realm.addClient("app2");
 
         realmManager.getSession().users().addUser(realm, "user1");
         realmManager.getSession().users().addUser(realm, "user2");
@@ -100,7 +99,7 @@ public class MultipleRealmsTest extends AbstractModelTest {
         app1.addRole("app1Role1");
         app1.addScopeMapping(realm.getRole("role1"));
 
-        realm.addOAuthClient("cl1");
+        realm.addClient("cl1");
     }
 
 }

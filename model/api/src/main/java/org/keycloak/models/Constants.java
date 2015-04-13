@@ -5,9 +5,9 @@ package org.keycloak.models;
  * @version $Revision: 1 $
  */
 public interface Constants {
-    String ADMIN_CONSOLE_APPLICATION = "security-admin-console";
+    String ADMIN_CONSOLE_CLIENT_ID = "security-admin-console";
 
-    String ACCOUNT_MANAGEMENT_APP = "account";
+    String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
 
     String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
     String INSTALLED_APP_URL = "http://localhost";

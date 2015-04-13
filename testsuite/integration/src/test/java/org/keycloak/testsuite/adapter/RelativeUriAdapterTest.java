@@ -26,7 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -85,7 +85,7 @@ public class RelativeUriAdapterTest {
             deployApplication("customer-db", "/customer-db", CustomerDatabaseServlet.class, url.getPath(), "user");
             url = getClass().getResource("/adapter-test/product-keycloak-relative.json");
             deployApplication("product-portal", "/product-portal", ProductServlet.class, url.getPath(), "user");
-            ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(realm, adminConsole);
@@ -135,7 +135,7 @@ public class RelativeUriAdapterTest {
         Client client = ClientBuilder.newClient();
         UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
         WebTarget adminTarget = client.target(AdminRoot.realmsUrl(authBase)).path("demo");
-        Map<String, Integer> stats = adminTarget.path("application-session-stats").request()
+        Map<String, Integer> stats = adminTarget.path("client-session-stats").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                 .get(new GenericType<Map<String, Integer>>(){});
 

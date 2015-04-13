@@ -7,8 +7,6 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
@@ -28,14 +26,14 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "NAME"})})
-public abstract class ClientEntity {
+@Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "CLIENT_ID"})})
+public class ClientEntity {
+
     @Id
     @Column(name="ID", length = 36)
     private String id;
-    @Column(name = "NAME")
-    private String name;
+    @Column(name = "CLIENT_ID")
+    private String clientId;
     @Column(name="ENABLED")
     private boolean enabled;
     @Column(name="SECRET")
@@ -77,6 +75,40 @@ public abstract class ClientEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
     Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 
+    @Column(name="SURROGATE_AUTH_REQUIRED")
+    private boolean surrogateAuthRequired;
+
+    @Column(name="BASE_URL")
+    private String baseUrl;
+
+    @Column(name="MANAGEMENT_URL")
+    private String managementUrl;
+
+    @Column(name="DIRECT_GRANTS_ONLY")
+    protected boolean directGrantsOnly;
+
+    @Column(name="BEARER_ONLY")
+    private boolean bearerOnly;
+
+    @Column(name="CONSENT_REQUIRED")
+    private boolean consentRequired;
+
+    @Column(name="NODE_REREG_TIMEOUT")
+    private int nodeReRegistrationTimeout;
+
+    @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "application")
+    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
+
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="APPLICATION_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="APPLICATION_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
+    Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+
+    @ElementCollection
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE")
+    @CollectionTable(name="APP_NODE_REGISTRATIONS", joinColumns={ @JoinColumn(name="APPLICATION_ID") })
+    Map<String, Integer> registeredNodes = new HashMap<String, Integer>();
+
     public RealmEntity getRealm() {
         return realm;
     }
@@ -101,12 +133,12 @@ public abstract class ClientEntity {
         this.enabled = enabled;
     }
 
-    public String getName() {
-        return name;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     public Set<String> getWebOrigins() {
@@ -195,5 +227,85 @@ public abstract class ClientEntity {
 
     public void setProtocolMappers(Collection<ProtocolMapperEntity> protocolMappers) {
         this.protocolMappers = protocolMappers;
+    }
+
+    public boolean isSurrogateAuthRequired() {
+        return surrogateAuthRequired;
+    }
+
+    public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
+        this.surrogateAuthRequired = surrogateAuthRequired;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public String getManagementUrl() {
+        return managementUrl;
+    }
+
+    public void setManagementUrl(String managementUrl) {
+        this.managementUrl = managementUrl;
+    }
+
+    public Collection<RoleEntity> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Collection<RoleEntity> roles) {
+        this.roles = roles;
+    }
+
+    public Collection<RoleEntity> getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
+        this.defaultRoles = defaultRoles;
+    }
+
+    public boolean isBearerOnly() {
+        return bearerOnly;
+    }
+
+    public void setBearerOnly(boolean bearerOnly) {
+        this.bearerOnly = bearerOnly;
+    }
+
+    public boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public void setConsentRequired(boolean consentRequired) {
+        this.consentRequired = consentRequired;
+    }
+
+    public boolean isDirectGrantsOnly() {
+        return directGrantsOnly;
+    }
+
+    public void setDirectGrantsOnly(boolean directGrantsOnly) {
+        this.directGrantsOnly = directGrantsOnly;
+    }
+
+    public int getNodeReRegistrationTimeout() {
+        return nodeReRegistrationTimeout;
+    }
+
+    public void setNodeReRegistrationTimeout(int nodeReRegistrationTimeout) {
+        this.nodeReRegistrationTimeout = nodeReRegistrationTimeout;
+    }
+
+    public Map<String, Integer> getRegisteredNodes() {
+        return registeredNodes;
+    }
+
+    public void setRegisteredNodes(Map<String, Integer> registeredNodes) {
+        this.registeredNodes = registeredNodes;
     }
 }

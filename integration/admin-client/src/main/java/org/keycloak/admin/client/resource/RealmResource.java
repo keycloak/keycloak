@@ -23,14 +23,11 @@ public interface RealmResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(RealmRepresentation realmRepresentation);
 
-    @Path("applications")
-    public ApplicationsResource applications();
+    @Path("clients")
+    public ClientsResource clients();
 
     @Path("users")
     public UsersResource users();
-
-    @Path("oauth-clients")
-    public OAuthClientsResource oAuthClients();
 
     @Path("roles")
     public RolesResource roles();

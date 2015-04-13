@@ -14,7 +14,7 @@ import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -22,7 +22,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.ApplicationManager;
+import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -151,14 +151,14 @@ public class AdminConsole {
      */
     @Path("config")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public ApplicationManager.InstallationAdapterConfig config() {
-        ApplicationModel consoleApp = realm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+    public ClientManager.InstallationAdapterConfig config() {
+        ClientModel consoleApp = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
         if (consoleApp == null) {
-            throw new NotFoundException("Could not find admin console application");
+            throw new NotFoundException("Could not find admin console client");
         }
-        return new ApplicationManager().toInstallationRepresentation(realm, consoleApp, keycloak.getBaseUri(uriInfo));
+        return new ClientManager().toInstallationRepresentation(realm, consoleApp, keycloak.getBaseUri(uriInfo));
 
     }
 
@@ -170,7 +170,7 @@ public class AdminConsole {
      */
     @Path("whoami")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response whoAmI(final @Context HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
@@ -208,7 +208,7 @@ public class AdminConsole {
 
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         RealmManager realmManager = new RealmManager(session);
-        ApplicationModel realmAdminApp = realm.getApplicationByName(realmManager.getRealmAdminApplicationName(realm));
+        ClientModel realmAdminApp = realm.getClientByClientId(realmManager.getRealmAdminClientId(realm));
         Set<RoleModel> roles = realmAdminApp.getRoles();
         for (RoleModel role : roles) {
             if (!user.hasRole(role)) continue;
@@ -223,7 +223,7 @@ public class AdminConsole {
     private void addMasterRealmAccess(RealmModel masterRealm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
-            ApplicationModel realmAdminApp = realm.getMasterAdminApp();
+            ClientModel realmAdminApp = realm.getMasterAdminClient();
             Set<RoleModel> roles = realmAdminApp.getRoles();
             for (RoleModel role : roles) {
                 if (!user.hasRole(role)) continue;

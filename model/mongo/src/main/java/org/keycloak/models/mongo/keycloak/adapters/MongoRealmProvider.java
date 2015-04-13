@@ -5,14 +5,12 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -107,30 +105,20 @@ public class MongoRealmProvider implements RealmProvider {
         MongoRoleEntity role = getMongoStore().loadEntity(MongoRoleEntity.class, id, invocationContext);
         if (role == null) return null;
         if (role.getRealmId() != null && !role.getRealmId().equals(realm.getId())) return null;
-        if (role.getApplicationId() != null && realm.getApplicationById(role.getApplicationId()) == null) return null;
+        if (role.getClientId() != null && realm.getClientById(role.getClientId()) == null) return null;
         return new RoleAdapter(session, realm, role, null, invocationContext);
     }
 
     @Override
-    public ApplicationModel getApplicationById(String id, RealmModel realm) {
-        MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, id, invocationContext);
+    public ClientModel getClientById(String id, RealmModel realm) {
+        MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, id, invocationContext);
 
         // Check if application belongs to this realm
         if (appData == null || !realm.getId().equals(appData.getRealmId())) {
             return null;
         }
 
-        return new ApplicationAdapter(session, realm, appData, invocationContext);
-    }
-
-    @Override
-    public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
-        MongoOAuthClientEntity clientEntity = getMongoStore().loadEntity(MongoOAuthClientEntity.class, id, invocationContext);
-
-        // Check if client belongs to this realm
-        if (clientEntity == null || !realm.getId().equals(clientEntity.getRealmId())) return null;
-
-        return new OAuthClientAdapter(session, realm, clientEntity, invocationContext);
+        return new ClientAdapter(session, realm, appData, invocationContext);
     }
 
 }

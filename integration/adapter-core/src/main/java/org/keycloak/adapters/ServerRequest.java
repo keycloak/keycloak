@@ -102,8 +102,8 @@ public class ServerRequest {
         formparams.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
         formparams.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
         if (sessionId != null) {
-            formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_SESSION_STATE, sessionId));
-            formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_SESSION_HOST, HostUtils.getHostName()));
+            formparams.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, sessionId));
+            formparams.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, HostUtils.getHostName()));
         }
         HttpResponse response = null;
         HttpPost post = new HttpPost(tokenUrl);
@@ -237,7 +237,7 @@ public class ServerRequest {
         }
 
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
-        formparams.add(new BasicNameValuePair(AdapterConstants.APPLICATION_CLUSTER_HOST, host));
+        formparams.add(new BasicNameValuePair(AdapterConstants.CLIENT_CLUSTER_HOST, host));
 
         HttpPost post = new HttpPost(endpointUrl);
 

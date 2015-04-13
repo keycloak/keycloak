@@ -1,6 +1,5 @@
 package org.keycloak.services.resources.admin;
 
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -43,7 +42,7 @@ public class AdminAuth {
 
 
     public boolean hasRealmRole(String role) {
-        if (client instanceof ApplicationModel) {
+        if (client instanceof ClientModel) {
             RoleModel roleModel = realm.getRole(role);
             return user.hasRole(roleModel) && client.hasScope(roleModel);
         } else {
@@ -61,17 +60,17 @@ public class AdminAuth {
         return false;
     }
 
-    public boolean hasAppRole(ApplicationModel app, String role) {
-        if (client instanceof ApplicationModel) {
+    public boolean hasAppRole(ClientModel app, String role) {
+        if (client instanceof ClientModel) {
             RoleModel roleModel = app.getRole(role);
             return user.hasRole(roleModel) && client.hasScope(roleModel);
         } else {
-            AccessToken.Access access = token.getResourceAccess(app.getName());
+            AccessToken.Access access = token.getResourceAccess(app.getClientId());
             return access != null && access.isUserInRole(role);
         }
     }
 
-    public boolean hasOneOfAppRole(ApplicationModel app, String... roles) {
+    public boolean hasOneOfAppRole(ClientModel app, String... roles) {
         for (String r : roles) {
             if (hasAppRole(app, r)) {
                 return true;

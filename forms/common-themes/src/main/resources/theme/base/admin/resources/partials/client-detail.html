@@ -1,0 +1,272 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <kc-navigation-client></kc-navigation-client>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+            <li class="active">Settings</li>
+        </ol>
+        <ol class="breadcrumb" data-ng-show="create">
+            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+            <li class="active">Add Client</li>
+        </ol>
+        <h2 data-ng-hide="create"><span>{{client.clientId}}</span> Client Settings</h2>
+        <h2 data-ng-show="create" class="pull-left"><span>{{realm.realm}}</span> Add Client</h2>
+        <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
+
+        <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!access.manageClients">
+            <fieldset class="border-top">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="clientId">Client ID <span class="required" data-ng-show="create">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="clientId" name="clientId" data-ng-model="client.clientId" autofocus required>
+                    </div>
+                </div>
+                <div class="form-group clearfix block">
+                    <label class="col-sm-2 control-label" for="enabled">Enabled</label>
+                    <div class="col-sm-6">
+                        <input ng-model="client.enabled" name="enabled" id="enabled" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Disabled clients cannot initiate a login or have obtain access tokens." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block">
+                    <label class="col-sm-2 control-label" for="consentRequired">Consent Required</label>
+                    <div class="col-sm-6">
+                        <input ng-model="client.consentRequired" name="consentRequired" id="consentRequired" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="If enabled users have to consent to client access." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block">
+                    <label class="col-sm-2 control-label" for="directGrantsOnly">Direct Grants Only</label>
+                    <div class="col-sm-6">
+                        <input ng-model="client.directGrantsOnly" name="directGrantsOnly" id="directGrantsOnly" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="When enabled, client can only obtain grants from grant REST API." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="protocol">Client Protocol</label>
+                    <div class="col-sm-6">
+                        <div class="select-kc">
+                            <select id="protocol"
+                                    ng-change="changeProtocol()"
+                                    ng-model="protocol"
+                                    ng-options="aProtocol for aProtocol in protocols">
+                            </select>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="'OpenID connect' allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server.
+                    'SAML' enables web-based authentication and authorization scenarios including cross-domain single sign-on (SSO) and uses security tokens containing assertions to pass information." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                    <label class="col-sm-2 control-label" for="accessType">Access Type</label>
+                    <div class="col-sm-6">
+                        <div class="select-kc">
+                            <select id="accessType"
+                                    ng-change="changeAccessType()"
+                                    ng-model="accessType"
+                                    ng-options="aType for aType in accessTypes">
+                            </select>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="'Confidential' clients require a secret to initiate login protocol.  'Public' clients do not require a secret.  'Bearer-only' clients are web services that never initiate a login." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlServerSignature">Include AuthnStatement</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlAuthnStatement" ng-click="switchChange()" name="samlAuthnStatement" id="samlAuthnStatement" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Should a statement specifying the method and timestamp be included in login responses?" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlServerSignature">Sign Documents</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlServerSignature" ng-click="switchChange()" name="samlServerSignature" id="samlServerSignature" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Should SAML documents be signed by the realm?" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlAssertionSignature">Sign Assertions</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlAssertionSignature" ng-click="switchChange()" name="samlAssertionSignature" id="samlAssertionSignature" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Should assertions inside SAML documents be signed?  This setting isn't needed if document is already being signed." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="(samlAssertionSignature || samlServerSignature) && protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="signatureAlgorithm">Signature Algorithm</label>
+                    <div class="col-sm-6">
+                        <div class="select-kc">
+                            <select id="signatureAlgorithm"
+                                    ng-change="changeAlgorithm()"
+                                    ng-model="signatureAlgorithm"
+                                    ng-options="alg for alg in signatureAlgorithms">
+                            </select>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="The signature algorithm to use to sign documents." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlEncrypt">Encrypt Assertions</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlEncrypt" ng-click="switchChange()" name="samlEncrypt" id="samlEncrypt" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Should SAML assertions be encrypted with client's public key using AES?" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlClientSignature">Client Signature Required</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlClientSignature" ng-click="switchChange()" name="samlClientSignature" id="samlClientSignature" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Will the client sign their saml requests and responses?  And should they be validated?" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlForcePostBinding">Force POST Binding</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlForcePostBinding" ng-click="switchChange()" name="samlForcePostBinding" id="samlForcePostBinding" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Always use POST binding for responses." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="frontchannelLogout">Front Channel Logout</label>
+                    <div class="col-sm-6">
+                        <input ng-model="client.frontchannelLogout" name="frontchannelLogout" id="frontchannelLogout" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="When true, logout requires a browser redirect to client.  When false, server performs a background invocation for logout." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlForceNameIdFormat">Force Name ID Format</label>
+                    <div class="col-sm-6">
+                        <input ng-model="samlForceNameIdFormat" ng-click="switchChange()" name="samlForceNameIdFormat" id="samlForceNameIdFormat" onoffswitch />
+                    </div>
+                    <span tooltip-placement="right" tooltip="Ignore requested NameID subject format and use admin console configured one." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="samlNameIdFormat">Name ID Format</label>
+                    <div class="col-sm-6">
+                        <div class="select-kc">
+                            <select id="samlNameIdFormat"
+                                    ng-change="changeNameIdFormat()"
+                                    ng-model="nameIdFormat"
+                                    ng-options="format for format in nameIdFormats">
+                            </select>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="The name ID format to use for the subject." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="!client.bearerOnly">
+                    <label class="col-sm-2 control-label" for="newRedirectUri">Valid Redirect URIs <span class="required" data-ng-show="create && protocol != 'saml'">*</span></label>
+                    <div class="col-sm-6 multiple" ng-repeat="redirectUri in client.redirectUris">
+                        <div class="input-group kc-item-deletable">
+                            <input class="form-control" type="text" data-ng-class="{'input-below':!$first}"
+                                   name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" type="button" data-ng-click="deleteRedirectUri($index)">
+                                    Delete</button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 multiple">
+                        <div class="input-group">
+                            <input class="form-control" type="text" name="newRedirectUri" id="newRedirectUri"
+                                   placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
+                                   data-ng-class="{'input-below':client.redirectUris.length}" />
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
+                            </span>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Valid URI pattern a browser can redirect to after a successful login or logout.  Simple wildcards are allowed i.e. 'http://example.com/*'.  Relative path can be specified too i.e. /my/relative/path/*.  Relative paths will generate a redirect URI using the request's host and port.  For SAML, you must set valid URI patterns if you are relying on the consumer service URL embedded with the login request." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="!client.bearerOnly && !create">
+                    <label class="col-sm-2 control-label" for="baseUrl">Default Redirect URL</label>
+                    <div class="col-sm-6">
+                        <input class="form-control" type="text" name="baseUrl" id="baseUrl"
+                               data-ng-model="client.baseUrl">
+                    </div>
+                    <span tooltip-placement="right" tooltip="Default URL to use when the auth server needs to redirect back to the client.  This URL will also be used when the auth server needs to link to the client for any reason." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-hide="create || protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="adminUrl">Admin URL</label>
+                    <div class="col-sm-6">
+                        <input class="form-control" type="text" name="adminUrl" id="adminUrl"
+                               data-ng-model="client.adminUrl">
+                    </div>
+                    <span tooltip-placement="right" tooltip="URL to the admin interface of the client.  Set this if the client supports the adapter REST API.  This REST API allows the auth server to push revocation policies and other adminstrative tasks.  Usually this is set to the base URL of the client." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="masterSamlUrl">Master SAML Processing URL</label>
+                    <div class="col-sm-6">
+                        <input class="form-control" type="text" name="masterSamlUrl" id="masterSamlUrl"
+                               data-ng-model="client.adminUrl">
+                    </div>
+                    <span tooltip-placement="right" tooltip="If configured, this URL will be used for every binding to both the SP's Assertion Consumer and Single Logout Services.  This can be individually overiden for each binding and service in the Fine Grain SAML Endpoint Configuration." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group" data-ng-show="!client.bearerOnly && !create && protocol == 'openid-connect'">
+                    <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
+                    <div class="col-sm-6 multiple" ng-repeat="webOrigin in client.webOrigins">
+                        <div class="input-group kc-item-deletable">
+                            <input class="form-control" type="text" data-ng-class="{'input-below':!$first}"
+                                   name="webOrigin" id="webOrigin" data-ng-model="webOrigin" readonly />
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" type="button" data-ng-click="deleteWebOrigin($index)">
+                                    Delete</button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 multiple" >
+                        <div class="input-group">
+                            <input class="form-control" type="text" name="newWebOrigin" id="newWebOrigin"
+                                   placeholder="New Web Origin..." data-ng-model="newWebOrigin"
+                                   data-ng-class="{'input-below':client.webOrigins.length}" />
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" data-ng-click="addWebOrigin()" ng-show="newWebOrigin.length > 0">Add</button>
+                            </span>
+                        </div>
+                    </div>
+                    <span tooltip-placement="right" tooltip="Allowed CORS origins.  Only useful if the client adapter has CORS processing enabled." class="fa fa-info-circle"></span>
+                </div>
+            </fieldset>
+            <fieldset data-ng-show="protocol == 'saml'">
+                <legend collapsed><span class="text">Fine Grain SAML Endpoint Configuration</span>  <span tooltip-placement="right" tooltip="Expand this section to configure exact URLs for Assertion Consumer and Single Logout Service." class="fa fa-info-circle"></span></legend>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="consumerServicePost">Assertion Consumer Service POST Binding URL</label>
+                    <div class="col-sm-6">
+                        <input ng-model="client.attributes.saml_assertion_consumer_url_post" class="form-control" type="text" name="consumerServicePost" id="consumerServicePost" />
+                    </div>
+                    <span tooltip-placement="right" tooltip="SAML POST Binding URL for the client's assertion consumer service (login responses).  You can leave this blank if you do not have a URL for this binding." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="consumerServiceRedirect">Assertion Consumer Service Redirect Binding URL</label>
+                    <div class="col-sm-6">
+                        <input ng-model="client.attributes.saml_assertion_consumer_url_redirect" class="form-control" type="text" name="consumerServiceRedirect" id="consumerServiceRedirect" />
+                    </div>
+                    <span tooltip-placement="right" tooltip="SAML Redirect Binding URL for the client's assertion consumer service (login responses).  You can leave this blank if you do not have a URL for this binding." class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="logoutPostBinding">Logout Service POST Binding URL</label>
+                    <div class="col-sm-6">
+                        <input ng-model="client.attributes.saml_single_logout_service_url_post" class="form-control" type="text" name="logoutPostBinding" id="logoutPostBinding" />
+                    </div>
+                    <span tooltip-placement="right" tooltip="SAML POST Binding URL for the client's single logout service.  You can leave this blank if you are using a different binding" class="fa fa-info-circle"></span>
+                </div>
+                <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                    <label class="col-sm-2 control-label" for="logoutPostBinding">Logout Service Redirect Binding URL</label>
+                    <div class="col-sm-6">
+                        <input ng-model="client.attributes.saml_single_logout_service_url_redirect" class="form-control" type="text" name="logoutRedirectBinding" id="logoutRedirectBinding" />
+                    </div>
+                    <span tooltip-placement="right" tooltip="SAML Redirect Binding URL for the client's single logout service.  You can leave this blank if you are using a different binding." class="fa fa-info-circle"></span>
+                </div>
+            </fieldset>
+
+            <div class="pull-right form-actions" data-ng-show="create && access.manageClients">
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save data-ng-show="changed">Save</button>
+            </div>
+            <div class="pull-right form-actions" data-ng-show="!create && access.manageClients">
+                <button kc-reset data-ng-show="changed">Clear changes</button>
+                <button kc-save  data-ng-show="changed">Save</button>
+                <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete Client</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -68,8 +68,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
 
         String deploymentName = deploymentUnit.getName();
-        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
-        //log.info("********* CHECK KEYCLOAK DEPLOYMENT: " + deploymentName);
+        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
         if (service.isSecureDeployment(deploymentName)) {
             addKeycloakAuthData(phaseContext, deploymentName, service);
         }

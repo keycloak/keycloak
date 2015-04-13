@@ -36,5 +36,17 @@
         <addPrimaryKey columnNames="IDP_MAPPER_ID, NAME" constraintName="CONSTRAINT_IDPMConfig" tableName="IDP_MAPPER_CONFIG"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="IDENTITY_PROVIDER_MAPPER" constraintName="FK_IDPM_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="IDP_MAPPER_ID" baseTableName="IDP_MAPPER_CONFIG" constraintName="FK_IDPMConfig" referencedColumnNames="ID" referencedTableName="IDENTITY_PROVIDER_MAPPER"/>
+
+        <addColumn tableName="CLIENT">
+            <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <update tableName="CLIENT">
+            <column name="CONSENT_REQUIRED" valueBoolean="true"/>
+            <where>DTYPE = 'OAuthClientEntity'</where>
+        </update>
+        <dropColumn tableName="CLIENT" columnName="DTYPE"/>
+        <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME"/>
     </changeSet>
 </databaseChangeLog>

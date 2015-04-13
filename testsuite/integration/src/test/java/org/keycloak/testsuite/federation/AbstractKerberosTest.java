@@ -21,7 +21,7 @@ import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.constants.KerberosConstants;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ProtocolMapperModel;
@@ -183,7 +183,7 @@ public abstract class AbstractKerberosTest {
                         true, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                         true, false);
 
-                ApplicationModel kerberosApp = appRealm.getApplicationByName("kerberos-app");
+                ClientModel kerberosApp = appRealm.getClientByClientId("kerberos-app");
                 kerberosApp.addProtocolMapper(protocolMapper);
             }
 
@@ -202,7 +202,7 @@ public abstract class AbstractKerberosTest {
 
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ApplicationModel kerberosApp = appRealm.getApplicationByName("kerberos-app");
+                ClientModel kerberosApp = appRealm.getClientByClientId("kerberos-app");
                 ProtocolMapperModel toRemove = kerberosApp.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME);
                 kerberosApp.removeProtocolMapper(toRemove);
             }

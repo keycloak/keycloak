@@ -22,14 +22,13 @@
 package org.keycloak.testsuite.adapter;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -41,7 +40,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
@@ -65,7 +63,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -139,7 +136,7 @@ public class AdapterTestStrategy extends ExternalResource {
             RealmManager manager = new RealmManager(session);
 
             RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
-            ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);
@@ -152,7 +149,6 @@ public class AdapterTestStrategy extends ExternalResource {
         }
     }
 
-    @Test
     public void testSavedPostRequest() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal");
@@ -191,7 +187,6 @@ public class AdapterTestStrategy extends ExternalResource {
     }
 
 
-    @Test
     public void testLoginSSOAndLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -217,7 +212,7 @@ public class AdapterTestStrategy extends ExternalResource {
         Client client = ClientBuilder.newClient();
         UriBuilder authBase = UriBuilder.fromUri(AUTH_SERVER_URL);
         WebTarget adminTarget = client.target(AdminRoot.realmsUrl(authBase)).path("demo");
-        Map<String, Integer> stats = adminTarget.path("application-session-stats").request()
+        Map<String, Integer> stats = adminTarget.path("client-session-stats").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                 .get(new GenericType<Map<String, Integer>>() {
                 });
@@ -248,7 +243,6 @@ public class AdapterTestStrategy extends ExternalResource {
 
     }
 
-    @Test
     public void testServletRequestLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -290,7 +284,6 @@ public class AdapterTestStrategy extends ExternalResource {
 
     }
 
-    @Test
     public void testLoginSSOIdle() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -324,7 +317,6 @@ public class AdapterTestStrategy extends ExternalResource {
         session.close();
     }
 
-    @Test
     public void testLoginSSOIdleRemoveExpiredUserSessions() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -366,7 +358,6 @@ public class AdapterTestStrategy extends ExternalResource {
         session.close();
     }
 
-    @Test
     public void testLoginSSOMax() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -404,7 +395,6 @@ public class AdapterTestStrategy extends ExternalResource {
      * KEYCLOAK-518
      * @throws Exception
      */
-    @Test
     public void testNullBearerToken() throws Exception {
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(APP_SERVER_BASE_URL + "/customer-db/");
@@ -422,7 +412,6 @@ public class AdapterTestStrategy extends ExternalResource {
      * KEYCLOAK-518
      * @throws Exception
      */
-    @Test
     public void testBadUser() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_URL);
@@ -442,7 +431,6 @@ public class AdapterTestStrategy extends ExternalResource {
 
     }
 
-    @Test
     public void testVersion() throws Exception {
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(AUTH_SERVER_URL).path("version");
@@ -465,7 +453,6 @@ public class AdapterTestStrategy extends ExternalResource {
 
 
 
-    @Test
     public void testAuthenticated() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/secure-portal");
@@ -493,7 +480,6 @@ public class AdapterTestStrategy extends ExternalResource {
      *
      * @throws Throwable
      */
-    @Test
     public void testSingleSessionInvalidated() throws Throwable {
         AdapterTestStrategy browser1 = this;
         AdapterTestStrategy browser2 = new AdapterTestStrategy(AUTH_SERVER_URL, APP_SERVER_BASE_URL, keycloakRule);
@@ -531,7 +517,6 @@ public class AdapterTestStrategy extends ExternalResource {
     /**
      * KEYCLOAK-741
      */
-    @Test
     public void testSessionInvalidatedAfterFailedRefresh() throws Throwable {
         final AtomicInteger origTokenLifespan = new AtomicInteger();
 
@@ -539,7 +524,7 @@ public class AdapterTestStrategy extends ExternalResource {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel demoRealm) {
-                ApplicationModel sessionPortal = demoRealm.getApplicationByName("session-portal");
+                ClientModel sessionPortal = demoRealm.getClientByClientId("session-portal");
                 sessionPortal.setManagementUrl(null);
 
                 origTokenLifespan.set(demoRealm.getAccessTokenLifespan());
@@ -571,7 +556,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel demoRealm) {
-                ApplicationModel sessionPortal = demoRealm.getApplicationByName("session-portal");
+                ClientModel sessionPortal = demoRealm.getClientByClientId("session-portal");
                 sessionPortal.setManagementUrl(APP_SERVER_BASE_URL + "/session-portal");
 
                 demoRealm.setAccessTokenLifespan(origTokenLifespan.get());
@@ -583,14 +568,13 @@ public class AdapterTestStrategy extends ExternalResource {
     /**
      * KEYCLOAK-942
      */
-    @Test
     public void testAdminApplicationLogout() throws Throwable {
         // login as bburke
         loginAndCheckSession(driver, loginPage);
 
         // logout mposolda with admin client
-        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_APPLICATION);
-        keycloakAdmin.realm("demo").applications().get("session-portal").logoutUser("mposolda");
+        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+        keycloakAdmin.realm("demo").clients().get("session-portal").logoutUser("mposolda");
 
         // bburke should be still logged with original httpSession in our browser window
         driver.navigate().to(APP_SERVER_BASE_URL + "/session-portal");

@@ -1,6 +1,6 @@
 package org.keycloak.protocol.saml.mappers;
 
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -73,9 +73,9 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements SAMLRo
     @Override
     public String mapName(ProtocolMapperModel model, RoleModel roleModel) {
         RoleContainerModel container = roleModel.getContainer();
-        ApplicationModel app = null;
-        if (container instanceof ApplicationModel) {
-            app = ((ApplicationModel) container);
+        ClientModel app = null;
+        if (container instanceof ClientModel) {
+            app = ((ClientModel) container);
         }
         String role = model.getConfig().get(ROLE_CONFIG);
         String newName = model.getConfig().get(NEW_ROLE_NAME);
@@ -84,7 +84,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements SAMLRo
         if (scopeIndex > -1) {
             if (app == null) return null;
             appName = role.substring(0, scopeIndex);
-            if (!app.getName().equals(appName)) return null;
+            if (!app.getClientId().equals(appName)) return null;
             role = role.substring(scopeIndex + 1);
         } else {
             if (app != null) return null;

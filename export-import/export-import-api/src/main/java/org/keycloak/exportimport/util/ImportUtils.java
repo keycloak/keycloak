@@ -8,7 +8,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -54,7 +54,7 @@ public class ImportUtils {
                 if (Config.getAdminRealm().equals(realm.getId())) {
                     // Delete all masterAdmin apps due to foreign key constraints
                     for (RealmModel currRealm : model.getRealms()) {
-                        currRealm.setMasterAdminApp(null);
+                        currRealm.setMasterAdminClient(null);
                     }
                 }
                 // TODO: For migration between versions, it should be possible to delete just realm but keep it's users
@@ -81,9 +81,9 @@ public class ImportUtils {
             // We just imported master realm. All 'masterAdminApps' need to be refreshed
             RealmModel adminRealm = realm;
             for (RealmModel currentRealm : model.getRealms()) {
-                ApplicationModel masterApp = adminRealm.getApplicationByName(KeycloakModelUtils.getMasterRealmAdminApplicationName(currentRealm));
+                ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(currentRealm));
                 if (masterApp != null) {
-                    currentRealm.setMasterAdminApp(masterApp);
+                    currentRealm.setMasterAdminClient(masterApp);
                 }  else {
                     setupMasterAdminManagement(model, currentRealm);
                 }
@@ -91,9 +91,9 @@ public class ImportUtils {
         } else {
             // Need to refresh masterApp for current realm
             RealmModel adminRealm = model.getRealm(adminRealmId);
-            ApplicationModel masterApp = adminRealm.getApplicationByName(KeycloakModelUtils.getMasterRealmAdminApplicationName(realm));
+            ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm));
             if (masterApp != null) {
-                realm.setMasterAdminApp(masterApp);
+                realm.setMasterAdminClient(masterApp);
             }  else {
                 setupMasterAdminManagement(model, realm);
             }
@@ -119,9 +119,9 @@ public class ImportUtils {
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
 
-        ApplicationModel realmAdminApp = KeycloakModelUtils.createApplication(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationName(realm));
+        ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm));
         realmAdminApp.setBearerOnly(true);
-        realm.setMasterAdminApp(realmAdminApp);
+        realm.setMasterAdminClient(realmAdminApp);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.addRole(r);
@@ -220,7 +220,7 @@ public class ImportUtils {
 
     private static void importUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
         RealmModel realm = model.getRealmByName(realmName);
-        Map<String, ApplicationModel> apps = realm.getApplicationNameMap();
+        Map<String, ClientModel> apps = realm.getClientNameMap();
         for (UserRepresentation user : userReps) {
             RepresentationToModel.createUser(session, realm, user, apps);
         }
