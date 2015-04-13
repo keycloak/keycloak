@@ -900,14 +900,15 @@ module.factory('PasswordPolicy', function() {
     var p = {};
 
     p.policyMessages = {
-        hashIterations: "Number of hashing iterations.  Default is 1.  Recommended is 50000.",
-        length:         "Minimal password length (integer type). Default value is 8.",
-        digits:         "Minimal number (integer type) of digits in password. Default value is 1.",
-        lowerCase:      "Minimal number (integer type) of lowercase characters in password. Default value is 1.",
-        upperCase:      "Minimal number (integer type) of uppercase characters in password. Default value is 1.",
-        specialChars:   "Minimal number (integer type) of special characters in password. Default value is 1.",
-        notUsername:    "Block passwords that are equal to the username",
-        regexPatterns:  "Block passwords that do not match all of the regex patterns (string type)."
+        hashIterations: 	"Number of hashing iterations.  Default is 1.  Recommended is 50000.",
+        length:         	"Minimal password length (integer type). Default value is 8.",
+        digits:         	"Minimal number (integer type) of digits in password. Default value is 1.",
+        lowerCase:      	"Minimal number (integer type) of lowercase characters in password. Default value is 1.",
+        upperCase:      	"Minimal number (integer type) of uppercase characters in password. Default value is 1.",
+        specialChars:   	"Minimal number (integer type) of special characters in password. Default value is 1.",
+        notUsername:    	"Block passwords that are equal to the username",
+        regexPatterns:  	"Block passwords that do not match all of the regex patterns (string type).",
+        passwordHistory:  	"Block passwords that are equal to previous passwords. Default value is 3."
     }
 
     p.allPolicies = [
@@ -918,7 +919,8 @@ module.factory('PasswordPolicy', function() {
         { name: 'upperCase', value: 1 },
         { name: 'specialChars', value: 1 },
         { name: 'notUsername', value: 1 },
-        { name: 'regexPatterns', value: ''}
+        { name: 'regexPatterns', value: ''},
+        { name: 'passwordHistory', value: 3 }
     ];
 
     p.parse = function(policyString) {

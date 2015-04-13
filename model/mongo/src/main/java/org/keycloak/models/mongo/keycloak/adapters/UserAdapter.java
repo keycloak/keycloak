@@ -1,5 +1,7 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
+
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -17,6 +19,8 @@ import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +33,7 @@ import java.util.Set;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implements UserModel {
-
+    
     private final MongoUserEntity user;
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -177,31 +181,77 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
     @Override
     public void updateCredential(UserCredentialModel cred) {
+
+        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+            updatePasswordCredential(cred);
+        } else {
+            CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
+
+            if (credentialEntity == null) {
+                credentialEntity = setCredentials(user, cred);
+                credentialEntity.setValue(cred.getValue());
+                user.getCredentials().add(credentialEntity);
+            } else {
+                credentialEntity.setValue(cred.getValue());
+            }
+        }
+        getMongoStore().updateEntity(user, invocationContext);
+    }
+
+    private void updatePasswordCredential(UserCredentialModel cred) {
         CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
 
         if (credentialEntity == null) {
-            credentialEntity = new CredentialEntity();
-            credentialEntity.setType(cred.getType());
-            credentialEntity.setDevice(cred.getDevice());
+            credentialEntity = setCredentials(user, cred);
+            setValue(credentialEntity, cred);
             user.getCredentials().add(credentialEntity);
-        }
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            byte[] salt = Pbkdf2PasswordEncoder.getSalt();
-            int hashIterations = 1;
-            PasswordPolicy policy = realm.getPasswordPolicy();
-            if (policy != null) {
-                hashIterations = policy.getHashIterations();
-                if (hashIterations == -1) hashIterations = 1;
-            }
-            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
-            credentialEntity.setSalt(salt);
-            credentialEntity.setHashIterations(hashIterations);
         } else {
-            credentialEntity.setValue(cred.getValue());
-        }
-        credentialEntity.setDevice(cred.getDevice());
 
-        getMongoStore().updateEntity(user, invocationContext);
+            int expiredPasswordsPolicyValue = -1;
+            PasswordPolicy policy = realm.getPasswordPolicy();
+            if(policy != null) {
+                expiredPasswordsPolicyValue = policy.getExpiredPasswords();
+            }
+            
+            if (expiredPasswordsPolicyValue != -1) {
+                user.getCredentials().remove(credentialEntity);
+                credentialEntity.setType(UserCredentialModel.PASSWORD_HISTORY);
+                user.getCredentials().add(credentialEntity);
+
+                List<CredentialEntity> credentialEntities = getCredentialEntities(user, UserCredentialModel.PASSWORD_HISTORY);
+                if (credentialEntities.size() > expiredPasswordsPolicyValue - 1) {
+                    user.getCredentials().removeAll(credentialEntities.subList(expiredPasswordsPolicyValue - 1, credentialEntities.size()));
+                }
+
+                credentialEntity = setCredentials(user, cred);
+                setValue(credentialEntity, cred);
+                user.getCredentials().add(credentialEntity);
+            } else {
+                setValue(credentialEntity, cred);
+            }
+        }
+    }
+    
+    private CredentialEntity setCredentials(MongoUserEntity user, UserCredentialModel cred) {
+        CredentialEntity credentialEntity = new CredentialEntity();
+        credentialEntity.setType(cred.getType());
+        credentialEntity.setCreatedDate(new Date().getTime());
+        credentialEntity.setDevice(cred.getDevice());
+        return credentialEntity;
+    }
+
+    private void setValue(CredentialEntity credentialEntity, UserCredentialModel cred) {
+        byte[] salt = getSalt();
+        int hashIterations = 1;
+        PasswordPolicy policy = realm.getPasswordPolicy();
+        if (policy != null) {
+            hashIterations = policy.getHashIterations();
+            if (hashIterations == -1)
+                hashIterations = 1;
+        }
+        credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
+        credentialEntity.setSalt(salt);
+        credentialEntity.setHashIterations(hashIterations);
     }
 
     private CredentialEntity getCredentialEntity(MongoUserEntity userEntity, String credType) {
@@ -214,6 +264,30 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         return null;
     }
 
+    private List<CredentialEntity> getCredentialEntities(MongoUserEntity userEntity, String credType) {
+        List<CredentialEntity> credentialEntities = new ArrayList<CredentialEntity>();
+        for (CredentialEntity entity : userEntity.getCredentials()) {
+            if (entity.getType().equals(credType)) {
+                credentialEntities.add(entity);
+            }
+        }
+        
+        // Avoiding direct use of credSecond.getCreatedDate() - credFirst.getCreatedDate() to prevent Integer Overflow
+        // Orders from most recent to least recent
+        Collections.sort(credentialEntities, new Comparator<CredentialEntity>() {
+            public int compare(CredentialEntity credFirst, CredentialEntity credSecond) {
+                if (credFirst.getCreatedDate() > credSecond.getCreatedDate()) {
+                    return -1;
+                } else if (credFirst.getCreatedDate() < credSecond.getCreatedDate()) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        return credentialEntities;
+    }
+
     @Override
     public List<UserCredentialValueModel> getCredentialsDirectly() {
         List<CredentialEntity> credentials = user.getCredentials();
@@ -222,6 +296,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             UserCredentialValueModel credModel = new UserCredentialValueModel();
             credModel.setType(credEntity.getType());
             credModel.setDevice(credEntity.getDevice());
+            credModel.setCreatedDate(credEntity.getCreatedDate());
             credModel.setValue(credEntity.getValue());
             credModel.setSalt(credEntity.getSalt());
             credModel.setHashIterations(credEntity.getHashIterations());
@@ -239,6 +314,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         if (credentialEntity == null) {
             credentialEntity = new CredentialEntity();
             credentialEntity.setType(credModel.getType());
+            credModel.setCreatedDate(credModel.getCreatedDate());
             user.getCredentials().add(credentialEntity);
         }
 

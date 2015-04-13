@@ -8,6 +8,7 @@ import java.util.UUID;
  */
 public class UserCredentialModel {
     public static final String PASSWORD = "password";
+    public static final String PASSWORD_HISTORY = "password-history";
     public static final String PASSWORD_TOKEN = "password-token";
 
     // Secret is same as password but it is not hashed

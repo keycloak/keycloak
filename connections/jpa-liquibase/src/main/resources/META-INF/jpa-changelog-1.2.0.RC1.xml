@@ -32,6 +32,9 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <addColumn tableName="CREDENTIAL">
+            <column name="CREATED_DATE" type="BIGINT"/>
+        </addColumn>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_IDPM" tableName="IDENTITY_PROVIDER_MAPPER"/>
         <addPrimaryKey columnNames="IDP_MAPPER_ID, NAME" constraintName="CONSTRAINT_IDPMConfig" tableName="IDP_MAPPER_CONFIG"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="IDENTITY_PROVIDER_MAPPER" constraintName="FK_IDPM_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>

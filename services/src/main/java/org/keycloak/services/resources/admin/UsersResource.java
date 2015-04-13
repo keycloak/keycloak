@@ -657,6 +657,8 @@ public class UsersResource {
         UserCredentialModel cred = RepresentationToModel.convertCredential(pass);
         try {
             session.users().updateCredential(realm, user, cred);
+        } catch (IllegalStateException ise) {
+            throw new BadRequestException("Resetting to N old passwords is not allowed.");
         } catch (ModelReadOnlyException mre) {
             throw new BadRequestException("Can't reset password as account is read only");
         }
