@@ -24,7 +24,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "account": [ "manage-account" ]
             }
         },
@@ -39,7 +39,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "account": [ "manage-account" ]
             }
         },
@@ -54,7 +54,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "account": [ "manage-account" ]
             }
         },
@@ -69,7 +69,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user","admin" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "realm-management": [ "realm-admin" ]
             }
         }
@@ -92,7 +92,7 @@
             "roles": ["user"]
         }
     ],
-    "applications": [
+    "clients": [
         {
             "name": "customer-portal",
             "enabled": true,
@@ -146,12 +146,11 @@
             "adminUrl": "/database",
             "baseUrl": "/database",
             "bearerOnly": true
-        }
-    ],
-    "oauthClients": [
+        },
         {
             "name": "third-party",
             "enabled": true,
+            "consentRequired": true,
             "redirectUris": [
                 "/oauth-client/*",
                 "/oauth-client-cdi/*"
@@ -162,11 +161,11 @@
             "name": "admin-client",
             "enabled": true,
             "publicClient": true,
-            "directGrantsOnly": true
-
+            "directGrantsOnly": true,
+            "consentRequired": true
         }
     ],
-    "applicationScopeMappings": {
+    "clientScopeMappings": {
         "realm-management": [
             {
                 "client": "admin-client",
