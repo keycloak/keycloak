@@ -100,13 +100,13 @@ public class ClientEntity {
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="APPLICATION_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="APPLICATION_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
+    @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
-    @CollectionTable(name="APP_NODE_REGISTRATIONS", joinColumns={ @JoinColumn(name="APPLICATION_ID") })
+    @CollectionTable(name="CLIENT_NODE_REGISTRATIONS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     Map<String, Integer> registeredNodes = new HashMap<String, Integer>();
 
     public RealmEntity getRealm() {

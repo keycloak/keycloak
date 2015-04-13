@@ -52,5 +52,11 @@
 
         <renameTable oldTableName="REALM_APPLICATION" newTableName="REALM_CLIENT"/>
         <renameColumn tableName="REALM_CLIENT" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
+
+        <renameTable oldTableName="APPLICATION_DEFAULT_ROLES" newTableName="CLIENT_DEFAULT_ROLES"/>
+        <renameColumn tableName="CLIENT_DEFAULT_ROLES" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
+
+        <renameTable oldTableName="APP_NODE_REGISTRATIONS" newTableName="CLIENT_NODE_REGISTRATIONS"/>
+        <renameColumn tableName="CLIENT_NODE_REGISTRATIONS" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
     </changeSet>
 </databaseChangeLog>
