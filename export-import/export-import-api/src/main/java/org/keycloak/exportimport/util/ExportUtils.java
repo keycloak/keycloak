@@ -65,30 +65,30 @@ public class ExportUtils {
 
         // Roles
         List<RoleRepresentation> realmRoleReps = null;
-        Map<String, List<RoleRepresentation>> appRolesReps = new HashMap<String, List<RoleRepresentation>>();
+        Map<String, List<RoleRepresentation>> clientRolesReps = new HashMap<>();
 
         Set<RoleModel> realmRoles = realm.getRoles();
         if (realmRoles != null && realmRoles.size() > 0) {
             realmRoleReps = exportRoles(realmRoles);
         }
-        for (ClientModel app : clients) {
-            Set<RoleModel> currentAppRoles = app.getRoles();
+        for (ClientModel client : clients) {
+            Set<RoleModel> currentAppRoles = client.getRoles();
             List<RoleRepresentation> currentAppRoleReps = exportRoles(currentAppRoles);
-            appRolesReps.put(app.getClientId(), currentAppRoleReps);
+            clientRolesReps.put(client.getClientId(), currentAppRoleReps);
         }
 
         RolesRepresentation rolesRep = new RolesRepresentation();
         if (realmRoleReps != null) {
             rolesRep.setRealm(realmRoleReps);
         }
-        if (appRolesReps.size() > 0) {
-            rolesRep.setApplication(appRolesReps);
+        if (clientRolesReps.size() > 0) {
+            rolesRep.setClient(clientRolesReps);
         }
         rep.setRoles(rolesRep);
 
         // Scopes
         List<ClientModel> allClients = new ArrayList<>(clients);
-        Map<String, List<ScopeMappingRepresentation>> appScopeReps = new HashMap<>();
+        Map<String, List<ScopeMappingRepresentation>> clientScopeReps = new HashMap<>();
 
         for (ClientModel client : allClients) {
             Set<RoleModel> clientScopes = client.getScopeMappings();
@@ -102,10 +102,10 @@ public class ExportUtils {
                 } else {
                     ClientModel app = (ClientModel)scope.getContainer();
                     String appName = app.getClientId();
-                    List<ScopeMappingRepresentation> currentAppScopes = appScopeReps.get(appName);
+                    List<ScopeMappingRepresentation> currentAppScopes = clientScopeReps.get(appName);
                     if (currentAppScopes == null) {
                         currentAppScopes = new ArrayList<>();
-                        appScopeReps.put(appName, currentAppScopes);
+                        clientScopeReps.put(appName, currentAppScopes);
                     }
 
                     ScopeMappingRepresentation currentClientScope = null;
@@ -125,8 +125,8 @@ public class ExportUtils {
             }
         }
 
-        if (appScopeReps.size() > 0) {
-            rep.setApplicationScopeMappings(appScopeReps);
+        if (clientScopeReps.size() > 0) {
+            rep.setClientScopeMappings(clientScopeReps);
         }
 
         // Finally users if needed
@@ -186,27 +186,27 @@ public class ExportUtils {
         Set<RoleModel> composites = role.getComposites();
         if (composites != null && composites.size() > 0) {
             Set<String> compositeRealmRoles = null;
-            Map<String, List<String>> compositeAppRoles = null;
+            Map<String, List<String>> compositeClientRoles = null;
 
             for (RoleModel composite : composites) {
                 RoleContainerModel crContainer = composite.getContainer();
                 if (crContainer instanceof RealmModel) {
 
                     if (compositeRealmRoles == null) {
-                        compositeRealmRoles = new HashSet<String>();
+                        compositeRealmRoles = new HashSet<>();
                     }
                     compositeRealmRoles.add(composite.getName());
                 } else {
-                    if (compositeAppRoles == null) {
-                        compositeAppRoles = new HashMap<String, List<String>>();
+                    if (compositeClientRoles == null) {
+                        compositeClientRoles = new HashMap<>();
                     }
 
                     ClientModel app = (ClientModel)crContainer;
                     String appName = app.getClientId();
-                    List<String> currentAppComposites = compositeAppRoles.get(appName);
+                    List<String> currentAppComposites = compositeClientRoles.get(appName);
                     if (currentAppComposites == null) {
-                        currentAppComposites = new ArrayList<String>();
-                        compositeAppRoles.put(appName, currentAppComposites);
+                        currentAppComposites = new ArrayList<>();
+                        compositeClientRoles.put(appName, currentAppComposites);
                     }
                     currentAppComposites.add(composite.getName());
                 }
@@ -216,8 +216,8 @@ public class ExportUtils {
             if (compositeRealmRoles != null) {
                 compRep.setRealm(compositeRealmRoles);
             }
-            if (compositeAppRoles != null) {
-                compRep.setApplication(compositeAppRoles);
+            if (compositeClientRoles != null) {
+                compRep.setClient(compositeClientRoles);
             }
 
             roleRep.setComposites(compRep);
@@ -248,29 +248,29 @@ public class ExportUtils {
 
         // Role mappings
         Set<RoleModel> roles = user.getRoleMappings();
-        List<String> realmRoleNames = new ArrayList<String>();
-        Map<String, List<String>> appRoleNames = new HashMap<String, List<String>>();
+        List<String> realmRoleNames = new ArrayList<>();
+        Map<String, List<String>> clientRoleNames = new HashMap<>();
         for (RoleModel role : roles) {
             if (role.getContainer() instanceof RealmModel) {
                 realmRoleNames.add(role.getName());
             } else {
-                ClientModel app = (ClientModel)role.getContainer();
-                String appName = app.getClientId();
-                List<String> currentAppRoles = appRoleNames.get(appName);
-                if (currentAppRoles == null) {
-                    currentAppRoles = new ArrayList<String>();
-                    appRoleNames.put(appName, currentAppRoles);
+                ClientModel client = (ClientModel)role.getContainer();
+                String clientId = client.getClientId();
+                List<String> currentClientRoles = clientRoleNames.get(clientId);
+                if (currentClientRoles == null) {
+                    currentClientRoles = new ArrayList<>();
+                    clientRoleNames.put(clientId, currentClientRoles);
                 }
 
-                currentAppRoles.add(role.getName());
+                currentClientRoles.add(role.getName());
             }
         }
 
         if (realmRoleNames.size() > 0) {
             userRep.setRealmRoles(realmRoleNames);
         }
-        if (appRoleNames.size() > 0) {
-            userRep.setApplicationRoles(appRoleNames);
+        if (clientRoleNames.size() > 0) {
+            userRep.setClientRoles(clientRoleNames);
         }
 
         // Credentials

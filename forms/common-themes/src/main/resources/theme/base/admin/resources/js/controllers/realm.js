@@ -476,7 +476,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
     };
 });
 
-module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, applications, roles, Notifications, ApplicationRole, Application) {
+module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clients, roles, Notifications, ClientRole, Client) {
 
     console.log('RealmDefaultRolesCtrl');
 
@@ -486,17 +486,17 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
     $scope.selectedRealmRoles = [];
     $scope.selectedRealmDefRoles = [];
 
-    $scope.applications = angular.copy(applications);
-    for (var i = 0; i < applications.length; i++) {
-        if (applications[i].name == 'account') {
-            $scope.application = $scope.applications[i];
+    $scope.clients = angular.copy(clients);
+    for (var i = 0; i < clients.length; i++) {
+        if (clients[i].name == 'account') {
+            $scope.client = $scope.clients[i];
             break;
         }
     }
 
-    $scope.availableAppRoles = [];
-    $scope.selectedAppRoles = [];
-    $scope.selectedAppDefRoles = [];
+    $scope.availableClientRoles = [];
+    $scope.selectedClientRoles = [];
+    $scope.selectedClientDefRoles = [];
 
     if (!$scope.realm.hasOwnProperty('defaultRoles') || $scope.realm.defaultRoles === null) {
         $scope.realm.defaultRoles = [];
@@ -550,81 +550,81 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
         });
     };
 
-    $scope.changeApplication = function () {
+    $scope.changeClient = function () {
 
-        $scope.selectedAppRoles = [];
-        $scope.selectedAppDefRoles = [];
+        $scope.selectedClientRoles = [];
+        $scope.selectedClientDefRoles = [];
 
-        // Populate available roles for selected application
-        if ($scope.application) {
-            var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.realm, application: $scope.application.id}, function () {
+        // Populate available roles for selected client
+        if ($scope.client) {
+            var appDefaultRoles = ClientRole.query({realm: $scope.realm.realm, client: $scope.client.id}, function () {
 
-                if (!$scope.application.hasOwnProperty('defaultRoles') || $scope.application.defaultRoles === null) {
-                    $scope.application.defaultRoles = [];
+                if (!$scope.client.hasOwnProperty('defaultRoles') || $scope.client.defaultRoles === null) {
+                    $scope.client.defaultRoles = [];
                 }
 
-                $scope.availableAppRoles = [];
+                $scope.availableClientRoles = [];
 
                 for (var i = 0; i < appDefaultRoles.length; i++) {
                     var roleName = appDefaultRoles[i].name;
-                    if ($scope.application.defaultRoles.indexOf(roleName) < 0) {
-                        $scope.availableAppRoles.push(roleName);
+                    if ($scope.client.defaultRoles.indexOf(roleName) < 0) {
+                        $scope.availableClientRoles.push(roleName);
                     }
                 }
             });
         } else {
-            $scope.availableAppRoles = null;
+            $scope.availableClientRoles = null;
         }
     };
 
-    $scope.addAppDefaultRole = function () {
+    $scope.addClientDefaultRole = function () {
 
         // Remove selected roles from the app available roles and add them to app default roles (move from left to right).
-        for (var i = 0; i < $scope.selectedAppRoles.length; i++) {
-            var role = $scope.selectedAppRoles[i];
+        for (var i = 0; i < $scope.selectedClientRoles.length; i++) {
+            var role = $scope.selectedClientRoles[i];
 
-            var idx = $scope.application.defaultRoles.indexOf(role);
+            var idx = $scope.client.defaultRoles.indexOf(role);
             if (idx < 0) {
-                $scope.application.defaultRoles.push(role);
+                $scope.client.defaultRoles.push(role);
             }
 
-            idx = $scope.availableAppRoles.indexOf(role);
+            idx = $scope.availableClientRoles.indexOf(role);
 
             if (idx != -1) {
-                $scope.availableAppRoles.splice(idx, 1);
+                $scope.availableClientRoles.splice(idx, 1);
             }
         }
 
-        // Update/save the selected application with new default roles.
-        Application.update({
+        // Update/save the selected client with new default roles.
+        Client.update({
             realm: $scope.realm.realm,
-            application: $scope.application.id
-        }, $scope.application, function () {
-            Notifications.success("Your changes have been saved to the application.");
+            client: $scope.client.id
+        }, $scope.client, function () {
+            Notifications.success("Your changes have been saved to the client.");
         });
     };
 
-    $scope.rmAppDefaultRole = function () {
+    $scope.rmClientDefaultRole = function () {
 
         // Remove selected roles from the app default roles and add them to app available roles (move from right to left).
-        for (var i = 0; i < $scope.selectedAppDefRoles.length; i++) {
-            var role = $scope.selectedAppDefRoles[i];
-            var idx = $scope.application.defaultRoles.indexOf(role);
+        for (var i = 0; i < $scope.selectedClientDefRoles.length; i++) {
+            var role = $scope.selectedClientDefRoles[i];
+            var idx = $scope.client.defaultRoles.indexOf(role);
             if (idx != -1) {
-                $scope.application.defaultRoles.splice(idx, 1);
+                $scope.client.defaultRoles.splice(idx, 1);
             }
-            idx = $scope.availableAppRoles.indexOf(role);
+            idx = $scope.availableClientRoles.indexOf(role);
             if (idx < 0) {
-                $scope.availableAppRoles.push(role);
+                $scope.availableClientRoles.push(role);
             }
         }
 
-        // Update/save the selected application with new default roles.
-        Application.update({
+        // Update/save the selected client with new default roles.
+        Client.update({
             realm: $scope.realm.realm,
-            application: $scope.application.id
-        }, $scope.application, function () {
-            Notifications.success("Your changes have been saved to the application.");
+            client: $scope.client.id
+        }, $scope.client, function () {
+            Notifications.success("Your changes have been saved to the client.");
         });
     };
 
@@ -848,7 +848,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
                 alias : $scope.identityProvider.alias
             }, function() {
                 $location.url("/realms/" + realm.realm + "/identity-provider-settings");
-                Notifications.success("The application has been deleted.");
+                Notifications.success("The client has been deleted.");
             });
         });
     };
@@ -1008,7 +1008,7 @@ module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $
     };
 });
 
-module.controller('RealmSessionStatsCtrl', function($scope, realm, stats, RealmApplicationSessionStats, RealmLogoutAll, Notifications) {
+module.controller('RealmSessionStatsCtrl', function($scope, realm, stats, RealmClientSessionStats, RealmLogoutAll, Notifications) {
     $scope.realm = realm;
     $scope.stats = stats;
 
@@ -1073,7 +1073,7 @@ module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevoca
                 var msgStart = successCount>0 ? 'Successfully push notBefore to: ' + globalReqResult.successRequests + ' . ' : '';
                 Notifications.error(msgStart + 'Failed to push notBefore to: ' + globalReqResult.failedRequests + '. Verify availability of failed hosts and try again');
             } else {
-                Notifications.success('Successfully push notBefore to all configured applications');
+                Notifications.success('Successfully push notBefore to all configured clients');
             }
         });
     }
@@ -1094,8 +1094,8 @@ module.controller('RoleListCtrl', function($scope, $location, realm, roles) {
 });
 
 
-module.controller('RoleDetailCtrl', function($scope, realm, role, roles, applications,
-                                             Role, ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
+module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients,
+                                             Role, ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
                                              $http, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.role = angular.copy(role);
@@ -1141,8 +1141,8 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, roles, applica
 
 
 
-    roleControl($scope, realm, role, roles, applications,
-        ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
+    roleControl($scope, realm, role, roles, clients,
+        ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
         $http, $location, Notifications, Dialog);
 });
 

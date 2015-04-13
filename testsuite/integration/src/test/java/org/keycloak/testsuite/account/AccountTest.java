@@ -25,7 +25,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
@@ -75,7 +74,7 @@ public class AccountTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
 
-            ClientModel accountApp = appRealm.getClientNameMap().get(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
+            ClientModel accountApp = appRealm.getClientNameMap().get(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
 
             UserModel user2 = manager.getSession().users().addUser(appRealm, "test-user-no-access@localhost");
             user2.setEnabled(true);

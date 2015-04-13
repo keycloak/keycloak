@@ -24,6 +24,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -81,7 +82,7 @@ public class ClientsManagementService {
     }
 
     /**
-     * URL invoked by adapter to register new application cluster node. Each application cluster node will invoke this URL once it joins cluster
+     * URL invoked by adapter to register new client cluster node. Each application cluster node will invoke this URL once it joins cluster
      *
      * @param authorizationHeader
      * @param formData
@@ -89,7 +90,7 @@ public class ClientsManagementService {
      */
     @Path("register-node")
     @POST
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response registerNode(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
         if (!checkSsl()) {
             throw new ForbiddenException("HTTPS required");
@@ -102,13 +103,13 @@ public class ClientsManagementService {
             throw new UnauthorizedException("Realm not enabled");
         }
 
-        ClientModel application = authorizeApplication(authorizationHeader, formData);
-        String nodeHost = getApplicationClusterHost(formData);
+        ClientModel client = authorizeClient(authorizationHeader, formData);
+        String nodeHost = getClientClusterHost(formData);
 
-        event.client(application).detail(Details.NODE_HOST, nodeHost);
-        logger.debugf("Registering cluster host '%s' for client '%s'", nodeHost, application.getClientId());
+        event.client(client).detail(Details.NODE_HOST, nodeHost);
+        logger.debugf("Registering cluster host '%s' for client '%s'", nodeHost, client.getClientId());
 
-        application.registerNode(nodeHost, Time.currentTime());
+        client.registerNode(nodeHost, Time.currentTime());
 
         event.success();
 
@@ -117,7 +118,7 @@ public class ClientsManagementService {
 
 
     /**
-     * URL invoked by adapter to register new application cluster node. Each application cluster node will invoke this URL once it joins cluster
+     * URL invoked by adapter to register new client cluster node. Each application cluster node will invoke this URL once it joins cluster
      *
      * @param authorizationHeader
      * @param formData
@@ -125,7 +126,7 @@ public class ClientsManagementService {
      */
     @Path("unregister-node")
     @POST
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response unregisterNode(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
         if (!checkSsl()) {
             throw new ForbiddenException("HTTPS required");
@@ -138,20 +139,20 @@ public class ClientsManagementService {
             throw new UnauthorizedException("Realm not enabled");
         }
 
-        ClientModel application = authorizeApplication(authorizationHeader, formData);
-        String nodeHost = getApplicationClusterHost(formData);
+        ClientModel client = authorizeClient(authorizationHeader, formData);
+        String nodeHost = getClientClusterHost(formData);
 
-        event.client(application).detail(Details.NODE_HOST, nodeHost);
-        logger.debugf("Unregistering cluster host '%s' for client '%s'", nodeHost, application.getClientId());
+        event.client(client).detail(Details.NODE_HOST, nodeHost);
+        logger.debugf("Unregistering cluster host '%s' for client '%s'", nodeHost, client.getClientId());
 
-        application.unregisterNode(nodeHost);
+        client.unregisterNode(nodeHost);
 
         event.success();
 
         return Response.noContent().build();
     }
 
-    protected ClientModel authorizeApplication(String authorizationHeader, MultivaluedMap<String, String> formData) {
+    protected ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData) {
         ClientModel client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formData, event, realm);
 
         if (client.isPublicClient()) {
@@ -159,31 +160,23 @@ public class ClientsManagementService {
             error.put(OAuth2Constants.ERROR, "invalid_client");
             error.put(OAuth2Constants.ERROR_DESCRIPTION, "Public clients not allowed");
             event.error(Errors.INVALID_CLIENT);
-            throw new BadRequestException("Public clients not allowed", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+            throw new BadRequestException("Public clients not allowed", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 
-        if (!(client instanceof ClientModel)) {
-            Map<String, String> error = new HashMap<String, String>();
-            error.put(OAuth2Constants.ERROR, "invalid_client");
-            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Just applications are allowed");
-            event.error(Errors.INVALID_CLIENT);
-            throw new BadRequestException("ust applications are allowed", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
-        }
-
-        return (ClientModel)client;
+        return client;
     }
 
-    protected String getApplicationClusterHost(MultivaluedMap<String, String> formData) {
-        String applicationClusterHost = formData.getFirst(AdapterConstants.APPLICATION_CLUSTER_HOST);
-        if (applicationClusterHost == null || applicationClusterHost.length() == 0) {
+    protected String getClientClusterHost(MultivaluedMap<String, String> formData) {
+        String clientClusterHost = formData.getFirst(AdapterConstants.CLIENT_CLUSTER_HOST);
+        if (clientClusterHost == null || clientClusterHost.length() == 0) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, "invalid_request");
-            error.put(OAuth2Constants.ERROR_DESCRIPTION, "application cluster host not specified");
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Client cluster host not specified");
             event.error(Errors.INVALID_CODE);
-            throw new BadRequestException("Cluster host not specified", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+            throw new BadRequestException("Cluster host not specified", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 
-        return applicationClusterHost;
+        return clientClusterHost;
     }
 
 

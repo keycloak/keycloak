@@ -71,19 +71,19 @@ module.factory('RealmSessionStatsLoader', function(Loader, RealmSessionStats, $r
     });
 });
 
-module.factory('RealmApplicationSessionStatsLoader', function(Loader, RealmApplicationSessionStats, $route, $q) {
-    return Loader.query(RealmApplicationSessionStats, function() {
+module.factory('RealmClientSessionStatsLoader', function(Loader, RealmClientSessionStats, $route, $q) {
+    return Loader.query(RealmClientSessionStats, function() {
         return {
             realm : $route.current.params.realm
         }
     });
 });
 
-module.factory('ApplicationProtocolMapperLoader', function(Loader, ApplicationProtocolMapper, $route, $q) {
-    return Loader.get(ApplicationProtocolMapper, function() {
+module.factory('ClientProtocolMapperLoader', function(Loader, ClientProtocolMapper, $route, $q) {
+    return Loader.get(ClientProtocolMapper, function() {
         return {
             realm : $route.current.params.realm,
-            application : $route.current.params.application,
+            client : $route.current.params.client,
             id: $route.current.params.id
         }
     });
@@ -164,74 +164,74 @@ module.factory('RoleListLoader', function(Loader, Role, $route, $q) {
     });
 });
 
-module.factory('ApplicationRoleLoader', function(Loader, RoleById, $route, $q) {
+module.factory('ClientRoleLoader', function(Loader, RoleById, $route, $q) {
     return Loader.get(RoleById, function() {
         return {
             realm : $route.current.params.realm,
-            application : $route.current.params.application,
+            client : $route.current.params.client,
             role : $route.current.params.role
         }
     });
 });
 
-module.factory('ApplicationSessionStatsLoader', function(Loader, ApplicationSessionStats, $route, $q) {
-    return Loader.get(ApplicationSessionStats, function() {
+module.factory('ClientSessionStatsLoader', function(Loader, ClientSessionStats, $route, $q) {
+    return Loader.get(ClientSessionStats, function() {
         return {
             realm : $route.current.params.realm,
-            application : $route.current.params.application
+            client : $route.current.params.client
         }
     });
 });
 
-module.factory('ApplicationSessionCountLoader', function(Loader, ApplicationSessionCount, $route, $q) {
-    return Loader.get(ApplicationSessionCount, function() {
+module.factory('ClientSessionCountLoader', function(Loader, ClientSessionCount, $route, $q) {
+    return Loader.get(ClientSessionCount, function() {
         return {
             realm : $route.current.params.realm,
-            application : $route.current.params.application
+            client : $route.current.params.client
         }
     });
 });
 
-module.factory('ApplicationClaimsLoader', function(Loader, ApplicationClaims, $route, $q) {
-    return Loader.get(ApplicationClaims, function() {
+module.factory('ClientClaimsLoader', function(Loader, ClientClaims, $route, $q) {
+    return Loader.get(ClientClaims, function() {
         return {
             realm : $route.current.params.realm,
-            application : $route.current.params.application
+            client : $route.current.params.client
         }
     });
 });
 
-module.factory('ApplicationInstallationLoader', function(Loader, ApplicationInstallation, $route, $q) {
-    return Loader.get(ApplicationInstallation, function() {
+module.factory('ClientInstallationLoader', function(Loader, ClientInstallation, $route, $q) {
+    return Loader.get(ClientInstallation, function() {
         return {
             realm : $route.current.params.realm,
-            application : $route.current.params.application
+            client : $route.current.params.client
         }
     });
 });
 
-module.factory('ApplicationRoleListLoader', function(Loader, ApplicationRole, $route, $q) {
-    return Loader.query(ApplicationRole, function() {
+module.factory('ClientRoleListLoader', function(Loader, ClientRole, $route, $q) {
+    return Loader.query(ClientRole, function() {
         return {
             realm : $route.current.params.realm,
-            application : $route.current.params.application
+            client : $route.current.params.client
         }
     });
 });
 
 
 
-module.factory('ApplicationLoader', function(Loader, Application, $route, $q) {
-    return Loader.get(Application, function() {
+module.factory('ClientLoader', function(Loader, Client, $route, $q) {
+    return Loader.get(Client, function() {
         return {
             realm : $route.current.params.realm,
-            application : $route.current.params.application
+            client : $route.current.params.client
         }
     });
 });
 
-module.factory('ApplicationListLoader', function(Loader, Application, $route, $q) {
-    return Loader.query(Application, function() {
+module.factory('ClientListLoader', function(Loader, Client, $route, $q) {
+    return Loader.query(Client, function() {
         return {
             realm : $route.current.params.realm
         }
@@ -240,7 +240,7 @@ module.factory('ApplicationListLoader', function(Loader, Application, $route, $q
 
 
 module.factory('RoleMappingLoader', function(Loader, RoleMapping, $route, $q) {
-	var realm = $route.current.params.realm || $route.current.params.application;
+	var realm = $route.current.params.realm || $route.current.params.client;
 
 	return Loader.query(RoleMapping, function() {
 		return {

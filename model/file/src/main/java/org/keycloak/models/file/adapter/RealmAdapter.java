@@ -959,22 +959,22 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ClientModel getMasterAdminApp() {
+    public ClientModel getMasterAdminClient() {
         return this.masterAdminApp;
     }
 
     @Override
-    public void setMasterAdminApp(ClientModel app) {
-        if (app == null) {
+    public void setMasterAdminClient(ClientModel client) {
+        if (client == null) {
             realm.setAdminAppId(null);
             this.masterAdminApp = null;
         } else {
-            String appId = app.getId();
+            String appId = client.getId();
             if (appId == null) {
                 throw new IllegalStateException("Master Admin app not initialized.");
             }
             realm.setAdminAppId(appId);
-            this.masterAdminApp = app;
+            this.masterAdminApp = client;
         }
     }
 

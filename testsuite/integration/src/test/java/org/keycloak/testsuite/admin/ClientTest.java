@@ -87,7 +87,7 @@ public class ClientTest extends AbstractClientTest {
 
         List<UserSessionRepresentation> userSessions = app.getUserSessions(0, 100);
         assertEquals(2, userSessions.size());
-        assertEquals(1, userSessions.get(0).getApplications().size());
+        assertEquals(1, userSessions.get(0).getClients().size());
     }
 
     @Test

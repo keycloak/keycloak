@@ -469,7 +469,7 @@ public class AdapterTest extends AbstractModelTest {
         // Role "foo" is default realm role
         Assert.assertTrue(user.hasRole(realmModel.getRole("foo")));
 
-        roles = user.getApplicationRoleMappings(application);
+        roles = user.getClientRoleMappings(application);
         Assert.assertEquals(roles.size(), 2);
         assertRolesContains(application.getRole("user"), roles);
         assertRolesContains(appBarRole, roles);

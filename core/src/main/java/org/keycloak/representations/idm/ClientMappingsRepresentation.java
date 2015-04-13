@@ -6,26 +6,26 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ApplicationMappingsRepresentation {
-    protected String applicationId;
-    protected String application;
+public class ClientMappingsRepresentation {
+    protected String id;
+    protected String client;
 
     protected List<RoleRepresentation> mappings;
 
-    public String getApplicationId() {
-        return applicationId;
+    public String getId() {
+        return id;
     }
 
-    public void setApplicationId(String applicationId) {
-        this.applicationId = applicationId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getApplication() {
-        return application;
+    public String getClient() {
+        return client;
     }
 
-    public void setApplication(String application) {
-        this.application = application;
+    public void setClient(String client) {
+        this.client = client;
     }
 
     public List<RoleRepresentation> getMappings() {

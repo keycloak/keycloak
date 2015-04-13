@@ -419,7 +419,7 @@ public class SamlBindingTest {
             RealmManager manager = new RealmManager(session);
 
             RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
-            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
+            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);
@@ -466,7 +466,7 @@ public class SamlBindingTest {
         Assert.assertNotNull(is);
         formData.addFormData("file", is, MediaType.APPLICATION_XML_TYPE);
 
-        WebTarget upload = adminRealms.path("demo/application-importers/saml2-entity-descriptor/upload");
+        WebTarget upload = adminRealms.path("demo/client-importers/saml2-entity-descriptor/upload");
         System.out.println(upload.getUri());
         Response response = upload.request().post(Entity.entity(formData, MediaType.MULTIPART_FORM_DATA));
         Assert.assertEquals(204, response.getStatus());

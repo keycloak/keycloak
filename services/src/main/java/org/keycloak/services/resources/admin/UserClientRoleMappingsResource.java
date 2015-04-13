@@ -16,6 +16,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,79 +26,73 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserApplicationRoleMappingsResource {
-    protected static final Logger logger = Logger.getLogger(UserApplicationRoleMappingsResource.class);
+public class UserClientRoleMappingsResource {
+    protected static final Logger logger = Logger.getLogger(UserClientRoleMappingsResource.class);
 
     protected RealmModel realm;
     protected RealmAuth auth;
     protected UserModel user;
-    protected ClientModel application;
+    protected ClientModel client;
 
-    public UserApplicationRoleMappingsResource(RealmModel realm, RealmAuth auth, UserModel user, ClientModel application) {
+    public UserClientRoleMappingsResource(RealmModel realm, RealmAuth auth, UserModel user, ClientModel client) {
         this.realm = realm;
         this.auth = auth;
         this.user = user;
-        this.application = application;
+        this.client = client;
     }
 
     /**
-     * Get application-level role mappings for this user for a specific app
+     * Get client-level role mappings for this user for a specific app
      *
      * @return
      */
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getApplicationRoleMappings() {
+    public List<RoleRepresentation> getClientRoleMappings() {
         auth.requireView();
 
-        logger.debug("getApplicationRoleMappings");
-
-        Set<RoleModel> mappings = user.getApplicationRoleMappings(application);
+        Set<RoleModel> mappings = user.getClientRoleMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
             mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
-        logger.debugv("getApplicationRoleMappings.size() = {0}", mapRep.size());
         return mapRep;
     }
 
     /**
-     * Get effective application-level role mappings.  This recurses any composite roles
+     * Get effective client-level role mappings.  This recurses any composite roles
      *
      * @return
      */
     @Path("composite")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getCompositeApplicationRoleMappings() {
+    public List<RoleRepresentation> getCompositeClientRoleMappings() {
         auth.requireView();
 
-        logger.debug("getCompositeApplicationRoleMappings");
-
-        Set<RoleModel> roles = application.getRoles();
+        Set<RoleModel> roles = client.getRoles();
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
             if (user.hasRole(roleModel)) mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
-        logger.debugv("getCompositeApplicationRoleMappings.size() = {0}", mapRep.size());
         return mapRep;
     }
 
     /**
-     * Get available application-level roles that can be mapped to the user
+     * Get available client-level roles that can be mapped to the user
      *
      * @return
      */
     @Path("available")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getAvailableApplicationRoleMappings() {
+    public List<RoleRepresentation> getAvailableClientRoleMappings() {
         auth.requireView();
 
-        Set<RoleModel> available = application.getRoles();
+        Set<RoleModel> available = client.getRoles();
         return getAvailableRoles(user, available);
     }
 
@@ -116,18 +111,17 @@ public class UserApplicationRoleMappingsResource {
     }
 
     /**
-     * Add application-level roles to the user role mapping.
+     * Add client-level roles to the user role mapping.
      *
       * @param roles
      */
     @POST
-    @Consumes("application/json")
-    public void addApplicationRoleMapping(List<RoleRepresentation> roles) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void addClientRoleMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
 
-        logger.debug("addApplicationRoleMapping");
         for (RoleRepresentation role : roles) {
-            RoleModel roleModel = application.getRole(role.getName());
+            RoleModel roleModel = client.getRole(role.getName());
             if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                 throw new NotFoundException("Role not found");
             }
@@ -137,28 +131,28 @@ public class UserApplicationRoleMappingsResource {
     }
 
     /**
-     * Delete application-level roles from user role mapping.
+     * Delete client-level roles from user role mapping.
      *
      * @param roles
      */
     @DELETE
-    @Consumes("application/json")
-    public void deleteApplicationRoleMapping(List<RoleRepresentation> roles) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
 
         if (roles == null) {
-            Set<RoleModel> roleModels = user.getApplicationRoleMappings(application);
+            Set<RoleModel> roleModels = user.getClientRoleMappings(client);
             for (RoleModel roleModel : roleModels) {
                 if (!(roleModel.getContainer() instanceof ClientModel)) {
-                    ClientModel app = (ClientModel) roleModel.getContainer();
-                    if (!app.getId().equals(application.getId())) continue;
+                    ClientModel client = (ClientModel) roleModel.getContainer();
+                    if (!client.getId().equals(this.client.getId())) continue;
                 }
                 user.deleteRoleMapping(roleModel);
             }
 
         } else {
             for (RoleRepresentation role : roles) {
-                RoleModel roleModel = application.getRole(role.getName());
+                RoleModel roleModel = client.getRole(role.getName());
                 if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                     throw new NotFoundException("Role not found");
                 }

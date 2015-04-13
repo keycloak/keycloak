@@ -325,7 +325,7 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ClientModel app) {
+    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         Set<RoleModel> result = new HashSet<RoleModel>();
 
         for (RoleModel role : allRoles) {

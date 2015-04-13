@@ -1,14 +1,14 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
-    <kc-navigation-application></kc-navigation-application>
+    <kc-navigation-client></kc-navigation-client>
     <div id="content">
         <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/saml/keys">SAML Keys</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">SAML Keys</a></li>
             <li class="active">SAML {{keyType}} Key Import</li>
         </ol>
-        <h2><span>{{application.name}}</span> SAML {{keyType}} Key Import <span tooltip-placement="right" tooltip="Upload Key." class="fa fa-info-circle"></span></h2>
+        <h2><span>{{client.clientId}}</span> SAML {{keyType}} Key Import <span tooltip-placement="right" tooltip="Upload Key." class="fa fa-info-circle"></span></h2>
         <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset>
                 <div class="form-group">

@@ -27,6 +27,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class IdentityProviderResource {
 
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public IdentityProviderRepresentation getIdentityProvider() {
         IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(this.identityProviderModel);
 
@@ -73,7 +74,7 @@ public class IdentityProviderResource {
     }
 
     @PUT
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response update(IdentityProviderRepresentation providerRep) {
         try {
             this.auth.requireManage();

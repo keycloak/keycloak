@@ -16,7 +16,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
-import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -49,7 +48,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Base resource class for managing one particular application of a realm.
+ * Base resource class for managing one particular client of a realm.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -88,7 +87,7 @@ public class ClientResource {
     }
 
     /**
-     * Update the application.
+     * Update the client.
      * @param rep
      * @return
      */
@@ -107,7 +106,7 @@ public class ClientResource {
 
 
     /**
-     * Get representation of the application.
+     * Get representation of the client.
      *
      * @return
      */
@@ -132,7 +131,7 @@ public class ClientResource {
 
 
     /**
-     * Return keycloak.json file for this application to be used to configure the adapter of that application.
+     * Return keycloak.json file for this client to be used to configure the adapter of that client.
      *
      * @return
      * @throws IOException
@@ -152,7 +151,7 @@ public class ClientResource {
     }
 
     /**
-     * Return XML that can be included in the JBoss/Wildfly Keycloak subsystem to configure the adapter of that application.
+     * Return XML that can be included in the JBoss/Wildfly Keycloak subsystem to configure the adapter of that client.
      *
      * @return
      * @throws IOException
@@ -169,26 +168,26 @@ public class ClientResource {
     }
 
     /**
-     * Delete this application.
+     * Delete this client.
      *
      */
     @DELETE
     @NoCache
-    public void deleteApplication() {
+    public void deleteClient() {
         auth.requireManage();
         new ClientManager(new RealmManager(session)).removeClient(realm, client);
     }
 
 
     /**
-     * Generates a new secret for this application
+     * Generates a new secret for this client
      *
      * @return
      */
     @Path("client-secret")
     @POST
-    @Produces("application/json")
-    @Consumes("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public CredentialRepresentation regenerateSecret() {
         auth.requireManage();
 
@@ -199,25 +198,25 @@ public class ClientResource {
     }
 
     /**
-     * Get the secret of this application
+     * Get the secret of this client
      *
      * @return
      */
     @Path("client-secret")
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public CredentialRepresentation getClientSecret() {
         auth.requireView();
 
         logger.debug("getClientSecret");
         UserCredentialModel model = UserCredentialModel.secret(client.getSecret());
-        if (model == null) throw new NotFoundException("Application does not have a secret");
+        if (model == null) throw new NotFoundException("Client does not have a secret");
         return ModelToRepresentation.toRepresentation(model);
     }
 
     /**
-     * Base path for managing the scope mappings for this application
+     * Base path for managing the scope mappings for this client
      *
      * @return
      */
@@ -233,14 +232,14 @@ public class ClientResource {
 
     /**
      * Returns set of allowed origin.  This is used for CORS requests.  Access tokens will have
-     * their allowedOrigins claim set to this value for tokens created for this application.
+     * their allowedOrigins claim set to this value for tokens created for this client.
      *
      * @return
      */
     @Path("allowed-origins")
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Set<String> getAllowedOrigins()
     {
         auth.requireView();
@@ -250,13 +249,13 @@ public class ClientResource {
 
     /**
      * Change the set of allowed origins.   This is used for CORS requests.  Access tokens will have
-     * their allowedOrigins claim set to this value for tokens created for this application.
+     * their allowedOrigins claim set to this value for tokens created for this client.
      *
      * @param allowedOrigins
      */
     @Path("allowed-origins")
     @PUT
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void updateAllowedOrigins(Set<String> allowedOrigins)
     {
         auth.requireManage();
@@ -266,13 +265,13 @@ public class ClientResource {
 
     /**
      * Remove set of allowed origins from current allowed origins list.  This is used for CORS requests.  Access tokens will have
-     * their allowedOrigins claim set to this value for tokens created for this application.
+     * their allowedOrigins claim set to this value for tokens created for this client.
      *
      * @param allowedOrigins
      */
     @Path("allowed-origins")
     @DELETE
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void deleteAllowedOrigins(Set<String> allowedOrigins)
     {
         auth.requireManage();
@@ -283,18 +282,18 @@ public class ClientResource {
     }
 
     /**
-     * If the application has an admin URL, push the application's revocation policy to it.
+     * If the client has an admin URL, push the client's revocation policy to it.
      *
      */
     @Path("push-revocation")
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
-        return new ResourceAdminManager().pushApplicationRevocationPolicy(uriInfo.getRequestUri(), realm, client);
+        return new ResourceAdminManager().pushClientRevocationPolicy(uriInfo.getRequestUri(), realm, client);
     }
 
     /**
-     * Number of user sessions associated with this application
+     * Number of user sessions associated with this client
      *
      * {
      *     "count": number
@@ -314,7 +313,7 @@ public class ClientResource {
     }
 
     /**
-     * Return a list of user sessions associated with this application
+     * Return a list of user sessions associated with this client
      *
      * @return
      */
@@ -335,18 +334,18 @@ public class ClientResource {
     }
 
     /**
-     * If the application has an admin URL, invalidate all sessions associated with that application directly.
+     * If the client has an admin URL, invalidate all sessions associated with that client directly.
      *
      */
     @Path("logout-all")
     @POST
     public GlobalRequestResult logoutAll() {
         auth.requireManage();
-        return new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, client);
+        return new ResourceAdminManager().logoutClient(uriInfo.getRequestUri(), realm, client);
     }
 
     /**
-     * If the application has an admin URL, invalidate the sessions for a particular user directly.
+     * If the client has an admin URL, invalidate the sessions for a particular user directly.
      *
      */
     @Path("logout-user/{username}")
@@ -357,18 +356,18 @@ public class ClientResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        new ResourceAdminManager().logoutUserFromApplication(uriInfo.getRequestUri(), realm, client, user, session);
+        new ResourceAdminManager().logoutUserFromClient(uriInfo.getRequestUri(), realm, client, user, session);
     }
 
     /**
-     * Manually register cluster node to this application - usually it's not needed to call this directly as adapter should handle
+     * Manually register cluster node to this client - usually it's not needed to call this directly as adapter should handle
      * by sending registration request to Keycloak
      *
      * @param formParams
      */
     @Path("nodes")
     @POST
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void registerNode(Map<String, String> formParams) {
         auth.requireManage();
         String node = formParams.get("node");
@@ -380,7 +379,7 @@ public class ClientResource {
     }
 
     /**
-     * Unregister cluster node from this application
+     * Unregister cluster node from this client
      *
      * @param node
      */
@@ -393,7 +392,7 @@ public class ClientResource {
 
         Integer time = client.getRegisteredNodes().get(node);
         if (time == null) {
-            throw new NotFoundException("Application does not have a node " + node);
+            throw new NotFoundException("Client does not have a node " + node);
         }
 
         client.unregisterNode(node);

@@ -11,7 +11,6 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.Key;
@@ -752,14 +751,14 @@ public class RealmAdapter implements RealmModel {
     }
     
     @Override
-    public ClientModel getMasterAdminApp() {
+    public ClientModel getMasterAdminClient() {
         return cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminApp());
     }
 
     @Override
-    public void setMasterAdminApp(ClientModel app) {
+    public void setMasterAdminClient(ClientModel client) {
         getDelegateForUpdate();
-        updated.setMasterAdminApp(app);
+        updated.setMasterAdminClient(client);
     }
 
     @Override

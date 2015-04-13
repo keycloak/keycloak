@@ -7,7 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
@@ -18,6 +18,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Base class for managing the scope mappings of a specific client (application or oauth).
+ * Base class for managing the scope mappings of a specific client.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -49,7 +50,7 @@ public class ScopeMappedResource {
      * @return
      */
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public MappingsRepresentation getScopeMappings() {
         auth.requireView();
@@ -64,22 +65,22 @@ public class ScopeMappedResource {
             all.setRealmMappings(realmRep);
         }
 
-        List<ClientModel> applications = realm.getClients();
-        if (applications.size() > 0) {
-            Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
-            for (ClientModel app : applications) {
-                Set<RoleModel> roleMappings = app.getApplicationScopeMappings(client);
+        List<ClientModel> clients = realm.getClients();
+        if (clients.size() > 0) {
+            Map<String, ClientMappingsRepresentation> clientMappings = new HashMap<String, ClientMappingsRepresentation>();
+            for (ClientModel client : clients) {
+                Set<RoleModel> roleMappings = client.getClientScopeMappings(this.client);
                 if (roleMappings.size() > 0) {
-                    ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
-                    mappings.setApplicationId(app.getId());
-                    mappings.setApplication(app.getClientId());
+                    ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
+                    mappings.setId(client.getId());
+                    mappings.setClient(client.getClientId());
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
                         roles.add(ModelToRepresentation.toRepresentation(role));
                     }
-                    appMappings.put(app.getClientId(), mappings);
-                    all.setApplicationMappings(appMappings);
+                    clientMappings.put(client.getClientId(), mappings);
+                    all.setClientMappings(clientMappings);
                 }
             }
         }
@@ -93,7 +94,7 @@ public class ScopeMappedResource {
      */
     @Path("realm")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getRealmScopeMappings() {
         auth.requireView();
@@ -113,7 +114,7 @@ public class ScopeMappedResource {
      */
     @Path("realm/available")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getAvailableRealmScopeMappings() {
         auth.requireView();
@@ -140,7 +141,7 @@ public class ScopeMappedResource {
      */
     @Path("realm/composite")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getCompositeRealmScopeMappings() {
         auth.requireView();
@@ -164,7 +165,7 @@ public class ScopeMappedResource {
      */
     @Path("realm")
     @POST
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void addRealmScopeMappings(List<RoleRepresentation> roles) {
         auth.requireManage();
 
@@ -186,7 +187,7 @@ public class ScopeMappedResource {
      */
     @Path("realm")
     @DELETE
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void deleteRealmScopeMappings(List<RoleRepresentation> roles) {
         auth.requireManage();
 
@@ -200,32 +201,32 @@ public class ScopeMappedResource {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = realm.getRoleById(role.getId());
                 if (roleModel == null) {
-                    throw new NotFoundException("Application not found");
+                    throw new NotFoundException("Client not found");
                 }
                 client.deleteScopeMapping(roleModel);
             }
         }
     }
 
-    @Path("applications/{app}")
-    public ScopeMappedApplicationResource getApplicationScopeMappings(@PathParam("app") String appName) {
-        ClientModel app = realm.getClientByClientId(appName);
+    @Path("clients/{clientId}")
+    public ScopeMappedClientResource getClientScopeMappings(@PathParam("clientId") String clientId) {
+        ClientModel app = realm.getClientByClientId(clientId);
 
         if (app == null) {
             throw new NotFoundException("Role not found");
         }
 
-        return new ScopeMappedApplicationResource(realm, auth, client, session, app);
+        return new ScopeMappedClientResource(realm, auth, client, session, app);
     }
 
-    @Path("applications-by-id/{appId}")
-    public ScopeMappedApplicationResource getApplicationByIdScopeMappings(@PathParam("appId") String appId) {
-        ClientModel app = realm.getClientById(appId);
+    @Path("clients-by-id/{id}")
+    public ScopeMappedClientResource getClientByIdScopeMappings(@PathParam("id") String id) {
+        ClientModel app = realm.getClientById(id);
 
         if (app == null) {
-            throw new NotFoundException("Application not found");
+            throw new NotFoundException("Client not found");
         }
 
-        return new ScopeMappedApplicationResource(realm, auth, client, session, app);
+        return new ScopeMappedClientResource(realm, auth, client, session, app);
     }
 }

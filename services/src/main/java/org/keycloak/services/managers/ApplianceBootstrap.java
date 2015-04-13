@@ -71,7 +71,7 @@ public class ApplianceBootstrap {
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
         adminUser.grantRole(adminRole);
 
-        ClientModel accountApp = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
+        ClientModel accountApp = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         for (String r : accountApp.getDefaultRoles()) {
             adminUser.grantRole(accountApp.getRole(r));
         }

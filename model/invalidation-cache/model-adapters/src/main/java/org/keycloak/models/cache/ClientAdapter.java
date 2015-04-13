@@ -42,8 +42,8 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void updateApplication() {
-        if (updated != null) updated.updateApplication();
+    public void updateClient() {
+        if (updated != null) updated.updateClient();
     }
 
     @Override
@@ -377,7 +377,7 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
+    public Set<RoleModel> getClientScopeMappings(ClientModel client) {
         Set<RoleModel> roleMappings = client.getScopeMappings();
 
         Set<RoleModel> appRoles = new HashSet<RoleModel>();

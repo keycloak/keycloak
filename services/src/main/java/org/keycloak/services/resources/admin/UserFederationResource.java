@@ -28,6 +28,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.LinkedList;
@@ -67,7 +68,7 @@ public class UserFederationResource {
     @GET
     @NoCache
     @Path("providers")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public List<UserFederationProviderFactoryRepresentation> getProviders() {
         auth.requireView();
         List<UserFederationProviderFactoryRepresentation> providers = new LinkedList<UserFederationProviderFactoryRepresentation>();
@@ -88,7 +89,7 @@ public class UserFederationResource {
     @GET
     @NoCache
     @Path("providers/{id}")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public UserFederationProviderFactoryRepresentation getProvider(@PathParam("id") String id) {
         auth.requireView();
         for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(UserFederationProvider.class)) {
@@ -111,7 +112,7 @@ public class UserFederationResource {
      */
     @POST
     @Path("instances")
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response createProviderInstance(UserFederationProviderRepresentation rep) {
         auth.requireManage();
         String displayName = rep.getDisplayName();
@@ -133,7 +134,7 @@ public class UserFederationResource {
      */
     @PUT
     @Path("instances/{id}")
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void updateProviderInstance(@PathParam("id") String id, UserFederationProviderRepresentation rep) {
         auth.requireManage();
         String displayName = rep.getDisplayName();
@@ -155,7 +156,7 @@ public class UserFederationResource {
     @GET
     @NoCache
     @Path("instances/{id}")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public UserFederationProviderRepresentation getProviderInstance(@PathParam("id") String id) {
         auth.requireView();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
@@ -191,7 +192,7 @@ public class UserFederationResource {
      */
     @GET
     @Path("instances")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<UserFederationProviderRepresentation> getUserFederationInstances() {
         auth.requireManage();

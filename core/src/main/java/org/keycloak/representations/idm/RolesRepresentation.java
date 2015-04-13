@@ -9,6 +9,8 @@ import java.util.Map;
  */
 public class RolesRepresentation {
     protected List<RoleRepresentation> realm;
+    protected Map<String, List<RoleRepresentation>> client;
+    @Deprecated
     protected Map<String, List<RoleRepresentation>> application;
 
     public List<RoleRepresentation> getRealm() {
@@ -19,11 +21,16 @@ public class RolesRepresentation {
         this.realm = realm;
     }
 
-    public Map<String, List<RoleRepresentation>> getApplication() {
-        return application;
+    public Map<String, List<RoleRepresentation>> getClient() {
+        return client;
     }
 
-    public void setApplication(Map<String, List<RoleRepresentation>> application) {
-        this.application = application;
+    public void setClient(Map<String, List<RoleRepresentation>> client) {
+        this.client = client;
+    }
+
+    @Deprecated
+    public Map<String, List<RoleRepresentation>> getApplication() {
+        return application;
     }
 }

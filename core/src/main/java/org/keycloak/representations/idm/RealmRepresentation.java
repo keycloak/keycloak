@@ -25,13 +25,6 @@ public class RealmRepresentation {
     protected Boolean verifyEmail;
     protected Boolean resetPasswordAllowed;
 
-    @Deprecated
-    protected Boolean social;
-    @Deprecated
-    protected Boolean updateProfileOnInitialSocialLogin;
-    @Deprecated
-    protected Map<String, String> socialProviders;
-
     protected Boolean userCacheEnabled;
     protected Boolean realmCacheEnabled;
 
@@ -55,12 +48,8 @@ public class RealmRepresentation {
     protected String passwordPolicy;
     protected List<UserRepresentation> users;
     protected List<ScopeMappingRepresentation> scopeMappings;
-    protected Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings;
+    protected Map<String, List<ScopeMappingRepresentation>> clientScopeMappings;
     protected List<ClientRepresentation> clients;
-    @Deprecated
-    protected List<ApplicationRepresentation> applications;
-    @Deprecated
-    protected List<OAuthClientRepresentation> oauthClients;
     protected Map<String, String> browserSecurityHeaders;
     protected Map<String, String> smtpServer;
     protected List<UserFederationProviderRepresentation> userFederationProviders;
@@ -79,6 +68,18 @@ public class RealmRepresentation {
     protected Set<String> supportedLocales;
     protected String defaultLocale;
 
+    @Deprecated
+    protected Boolean social;
+    @Deprecated
+    protected Boolean updateProfileOnInitialSocialLogin;
+    @Deprecated
+    protected Map<String, String> socialProviders;
+    @Deprecated
+    protected Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings;
+    @Deprecated
+    protected List<ApplicationRepresentation> applications;
+    @Deprecated
+    protected List<OAuthClientRepresentation> oauthClients;
 
     public String getId() {
         return id;
@@ -122,10 +123,6 @@ public class RealmRepresentation {
 
     public void setClients(List<ClientRepresentation> clients) {
         this.clients = clients;
-    }
-
-    public void setApplications(List<ApplicationRepresentation> applications) {
-        this.applications = applications;
     }
 
     public Boolean isEnabled() {
@@ -324,20 +321,14 @@ public class RealmRepresentation {
         this.resetPasswordAllowed = resetPassword;
     }
 
+    @Deprecated
     public Boolean isSocial() {
         return social;
     }
 
-    public void setSocial(Boolean social) {
-        this.social = social;
-    }
-
+    @Deprecated
     public Boolean isUpdateProfileOnInitialSocialLogin() {
         return updateProfileOnInitialSocialLogin;
-    }
-
-    public void setUpdateProfileOnInitialSocialLogin(Boolean updateProfileOnInitialSocialLogin) {
-        this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
     }
 
     public Map<String, String> getBrowserSecurityHeaders() {
@@ -348,12 +339,9 @@ public class RealmRepresentation {
         this.browserSecurityHeaders = browserSecurityHeaders;
     }
 
+    @Deprecated
     public Map<String, String> getSocialProviders() {
         return socialProviders;
-    }
-
-    public void setSocialProviders(Map<String, String> socialProviders) {
-        this.socialProviders = socialProviders;
     }
 
     public Map<String, String> getSmtpServer() {
@@ -364,20 +352,22 @@ public class RealmRepresentation {
         this.smtpServer = smtpServer;
     }
 
+    @Deprecated
     public List<OAuthClientRepresentation> getOauthClients() {
         return oauthClients;
     }
 
-    public void setOauthClients(List<OAuthClientRepresentation> oauthClients) {
-        this.oauthClients = oauthClients;
+    public Map<String, List<ScopeMappingRepresentation>> getClientScopeMappings() {
+        return clientScopeMappings;
     }
 
+    public void setClientScopeMappings(Map<String, List<ScopeMappingRepresentation>> clientScopeMappings) {
+        this.clientScopeMappings = clientScopeMappings;
+    }
+
+    @Deprecated
     public Map<String, List<ScopeMappingRepresentation>> getApplicationScopeMappings() {
         return applicationScopeMappings;
-    }
-
-    public void setApplicationScopeMappings(Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings) {
-        this.applicationScopeMappings = applicationScopeMappings;
     }
 
     public RolesRepresentation getRoles() {

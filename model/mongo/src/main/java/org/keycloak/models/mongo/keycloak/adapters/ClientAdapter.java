@@ -46,7 +46,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
-    public void updateApplication() {
+    public void updateClient() {
         updateMongoEntity();
     }
 
@@ -575,7 +575,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
-    public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
+    public Set<RoleModel> getClientScopeMappings(ClientModel client) {
         Set<RoleModel> result = new HashSet<RoleModel>();
         List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
 

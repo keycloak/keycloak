@@ -316,7 +316,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ClientModel app) {
+    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         Set<RoleModel> result = new HashSet<RoleModel>();
         List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(this, invocationContext);
 

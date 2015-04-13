@@ -260,12 +260,12 @@ public class TokenManager {
             for (Map.Entry<String, AccessToken.Access> entry : token.getResourceAccess().entrySet()) {
                 AccessToken.Access appAccess = newToken.getResourceAccess(entry.getKey());
                 if (appAccess == null && !entry.getValue().getRoles().isEmpty()) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User or application no longer has role permissions for application key: " + entry.getKey());
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User or client no longer has role permissions for client key: " + entry.getKey());
 
                 }
                 for (String roleName : entry.getValue().getRoles()) {
                     if (!appAccess.getRoles().contains(roleName)) {
-                        throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for application role " + roleName);
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for client role " + roleName);
                     }
                 }
             }

@@ -66,7 +66,7 @@ public interface UserModel {
     void updateCredentialDirectly(UserCredentialValueModel cred);
 
     Set<RoleModel> getRealmRoleMappings();
-    Set<RoleModel> getApplicationRoleMappings(ClientModel app);
+    Set<RoleModel> getClientRoleMappings(ClientModel app);
     boolean hasRole(RoleModel role);
     void grantRole(RoleModel role);
     Set<RoleModel> getRoleMappings();

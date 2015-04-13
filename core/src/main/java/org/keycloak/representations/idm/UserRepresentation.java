@@ -25,10 +25,13 @@ public class UserRepresentation {
     protected List<CredentialRepresentation> credentials;
     protected List<String> requiredActions;
     protected List<FederatedIdentityRepresentation> federatedIdentities;
+    protected List<String> realmRoles;
+    protected Map<String, List<String>> clientRoles;
+
+    @Deprecated
+    protected Map<String, List<String>> applicationRoles;
     @Deprecated
     protected List<SocialLinkRepresentation> socialLinks;
-    protected List<String> realmRoles;
-    protected Map<String, List<String>> applicationRoles;
 
     public String getSelf() {
         return self;
@@ -165,12 +168,17 @@ public class UserRepresentation {
         this.realmRoles = realmRoles;
     }
 
-    public Map<String, List<String>> getApplicationRoles() {
-        return applicationRoles;
+    public Map<String, List<String>> getClientRoles() {
+        return clientRoles;
     }
 
-    public void setApplicationRoles(Map<String, List<String>> applicationRoles) {
-        this.applicationRoles = applicationRoles;
+    public void setClientRoles(Map<String, List<String>> clientRoles) {
+        this.clientRoles = clientRoles;
+    }
+
+    @Deprecated
+    public Map<String, List<String>> getApplicationRoles() {
+        return applicationRoles;
     }
 
     public String getFederationLink() {

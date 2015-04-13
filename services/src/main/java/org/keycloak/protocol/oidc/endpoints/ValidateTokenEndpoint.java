@@ -88,7 +88,7 @@ public class ValidateTokenEndpoint {
             error.put(OAuth2Constants.ERROR, e.getError());
             if (e.getDescription() != null) error.put(OAuth2Constants.ERROR_DESCRIPTION, e.getDescription());
             event.error(Errors.INVALID_TOKEN);
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+            return Response.status(Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
         event.success();
 

@@ -27,7 +27,7 @@
                   "value" : "password" }
             ],
             "realmRoles": ["user"],
-            "applicationRoles": {
+            "clientRoles": {
                 "test-app": [ "customer-user" ],
                 "account": [ "view-profile", "manage-account" ]
             }
@@ -41,20 +41,10 @@
                     "value" : "password" }
             ],
             "realmRoles": ["user"],
-            "applicationRoles": {
+            "clientRoles": {
                 "test-app": [ "customer-user" ],
                 "account": [ "view-profile", "manage-account" ]
             }
-        }
-    ],
-    "oauthClients" : [
-        {
-            "name" : "third-party",
-            "enabled": true,
-            "redirectUris": [
-                "http://localhost:8081/app/*"
-            ],
-            "secret": "password"
         }
     ],
     "scopeMappings": [
@@ -67,9 +57,9 @@
             "roles": ["user"]
         }
     ],
-    "applications": [
+    "clients": [
         {
-            "name": "test-app",
+            "clientId": "test-app",
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "redirectUris": [
@@ -77,7 +67,17 @@
             ],
             "adminUrl": "http://localhost:8081/app/logout",
             "secret": "password"
-         }
+        },
+        {
+            "clientId" : "third-party",
+            "enabled": true,
+            "consentRequired": true,
+
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
+            "secret": "password"
+        }
     ],
     "roles" : {
         "realm" : [
@@ -90,7 +90,7 @@
                 "description": "Have Administrator privileges"
             }
         ],
-        "application" : {
+        "client" : {
             "test-app" : [
                 {
                     "name": "customer-user",
@@ -105,7 +105,7 @@
 
     },
 
-    "applicationScopeMappings": {
+    "clientScopeMappings": {
         "test-app": [
             {
                 "client": "third-party",

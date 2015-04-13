@@ -151,12 +151,12 @@ public class AdminConsole {
      */
     @Path("config")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public ClientManager.InstallationAdapterConfig config() {
-        ClientModel consoleApp = realm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
+        ClientModel consoleApp = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
         if (consoleApp == null) {
-            throw new NotFoundException("Could not find admin console application");
+            throw new NotFoundException("Could not find admin console client");
         }
         return new ClientManager().toInstallationRepresentation(realm, consoleApp, keycloak.getBaseUri(uriInfo));
 
@@ -170,7 +170,7 @@ public class AdminConsole {
      */
     @Path("whoami")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response whoAmI(final @Context HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
@@ -208,7 +208,7 @@ public class AdminConsole {
 
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         RealmManager realmManager = new RealmManager(session);
-        ClientModel realmAdminApp = realm.getClientByClientId(realmManager.getRealmAdminApplicationName(realm));
+        ClientModel realmAdminApp = realm.getClientByClientId(realmManager.getRealmAdminClientId(realm));
         Set<RoleModel> roles = realmAdminApp.getRoles();
         for (RoleModel role : roles) {
             if (!user.hasRole(role)) continue;
@@ -223,7 +223,7 @@ public class AdminConsole {
     private void addMasterRealmAccess(RealmModel masterRealm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
-            ClientModel realmAdminApp = realm.getMasterAdminApp();
+            ClientModel realmAdminApp = realm.getMasterAdminClient();
             Set<RoleModel> roles = realmAdminApp.getRoles();
             for (RoleModel role : roles) {
                 if (!user.hasRole(role)) continue;

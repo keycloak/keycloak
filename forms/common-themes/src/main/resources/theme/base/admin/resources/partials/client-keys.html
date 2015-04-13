@@ -1,13 +1,13 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
-    <kc-navigation-application></kc-navigation-application>
+    <kc-navigation-client></kc-navigation-client>
     <div id="content">
         <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
             <li class="active">Keys</li>
         </ol>
-        <h2><span>{{application.name}}</span> Key Pair and Certificate <span tooltip-placement="right" tooltip="Application's key pair and certificate.  Used for more confidential interaction between application and auth server." class="fa fa-info-circle"></span></h2>
+        <h2><span>{{client.clientId}}</span> Key Pair and Certificate <span tooltip-placement="right" tooltip="Clients's key pair and certificate.  Used for more confidential interaction between client and auth server." class="fa fa-info-circle"></span></h2>
         <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset>
                 <legend collapsed><span class="text">Import Keys and Cert</span> <span tooltip-placement="right" tooltip="Upload the client's key pair and cert." class="fa fa-info-circle"></span></legend>
@@ -62,7 +62,7 @@
                 </div>
             </fieldset>
             <fieldset class="form-group col-sm-10" data-ng-hide="!keyInfo.privateKey">
-                <legend collapsed><span class="text">Download Keys and Cert</span>  <span tooltip-placement="right" tooltip="Client key pair, cert, and realm certificate will be stuffed into a PKCS12 or Java keystore that you can use in your applications." class="fa fa-info-circle"></span></legend>
+                <legend collapsed><span class="text">Download Keys and Cert</span>  <span tooltip-placement="right" tooltip="Client key pair, cert, and realm certificate will be stuffed into a PKCS12 or Java keystore that you can use in your clients." class="fa fa-info-circle"></span></legend>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="downloadKeyFormat">Archive Format</label>
                     <div class="col-sm-6">

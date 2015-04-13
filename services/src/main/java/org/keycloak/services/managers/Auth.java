@@ -80,7 +80,7 @@ public class Auth {
         return false;
     }
 
-    public boolean hasAppRole(ClientModel app, String role) {
+    public boolean hasClientRole(ClientModel app, String role) {
         if (cookie) {
             return user.hasRole(app.getRole(role));
         } else {
@@ -91,7 +91,7 @@ public class Auth {
 
     public boolean hasOneOfAppRole(ClientModel app, String... roles) {
         for (String r : roles) {
-            if (hasAppRole(app, r)) {
+            if (hasClientRole(app, r)) {
                 return true;
             }
         }

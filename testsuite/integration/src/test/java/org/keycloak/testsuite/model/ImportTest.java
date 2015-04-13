@@ -86,7 +86,7 @@ public class ImportTest extends AbstractModelTest {
         // Test applications imported
         ClientModel application = realm.getClientByClientId("Application");
         ClientModel otherApp = realm.getClientByClientId("OtherApp");
-        ClientModel accountApp = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_APP);
+        ClientModel accountApp = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         ClientModel nonExisting = realm.getClientByClientId("NonExisting");
         Assert.assertNotNull(application);
         Assert.assertNotNull(otherApp);
@@ -130,7 +130,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals(1, realmRoles.size());
         Assert.assertEquals("admin", realmRoles.iterator().next().getName());
 
-        Set<RoleModel> appRoles = admin.getApplicationRoleMappings(application);
+        Set<RoleModel> appRoles = admin.getClientRoleMappings(application);
         Assert.assertEquals(1, appRoles.size());
         Assert.assertEquals("app-admin", appRoles.iterator().next().getName());
 
@@ -149,7 +149,7 @@ public class ImportTest extends AbstractModelTest {
         Set<RoleModel> realmScopes = oauthClient.getRealmScopeMappings();
         Assert.assertTrue(realmScopes.contains(realm.getRole("admin")));
 
-        Set<RoleModel> appScopes = application.getApplicationScopeMappings(oauthClient);
+        Set<RoleModel> appScopes = application.getClientScopeMappings(oauthClient);
         Assert.assertTrue(appScopes.contains(application.getRole("app-user")));
 
 

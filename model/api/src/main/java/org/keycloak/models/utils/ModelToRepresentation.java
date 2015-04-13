@@ -26,6 +26,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.util.Time;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -207,13 +208,13 @@ public class ModelToRepresentation {
     public static UserSessionRepresentation toRepresentation(UserSessionModel session) {
         UserSessionRepresentation rep = new UserSessionRepresentation();
         rep.setId(session.getId());
-        rep.setStart(((long)session.getStarted()) * 1000L);
-        rep.setLastAccess(((long)session.getLastSessionRefresh())* 1000L);
+        rep.setStart(Time.toMillis(session.getStarted()));
+        rep.setLastAccess(Time.toMillis(session.getLastSessionRefresh()));
         rep.setUser(session.getUser().getUsername());
         rep.setIpAddress(session.getIpAddress());
         for (ClientSessionModel clientSession : session.getClientSessions()) {
             ClientModel client = clientSession.getClient();
-            rep.getApplications().put(client.getId(), client.getClientId());
+            rep.getClients().put(client.getId(), client.getClientId());
         }
         return rep;
     }

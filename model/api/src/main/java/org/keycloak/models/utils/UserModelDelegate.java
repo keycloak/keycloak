@@ -152,8 +152,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ClientModel app) {
-        return delegate.getApplicationRoleMappings(app);
+    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
+        return delegate.getClientRoleMappings(app);
     }
 
     @Override

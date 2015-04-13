@@ -157,16 +157,15 @@ public class RealmsResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
 
-        ClientModel application = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
-        if (application == null || !application.isEnabled()) {
+        ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        if (client == null || !client.isEnabled()) {
             logger.debug("account management not enabled");
             throw new NotFoundException("account management not enabled");
         }
 
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AccountService accountService = new AccountService(realm, application, event);
+        AccountService accountService = new AccountService(realm, client, event);
         ResteasyProviderFactory.getInstance().injectProperties(accountService);
-        //resourceContext.initResource(accountService);
         accountService.init();
         return accountService;
     }
@@ -177,7 +176,6 @@ public class RealmsResource {
         RealmModel realm = locateRealm(name, realmManager);
         PublicRealmResource realmResource = new PublicRealmResource(realm);
         ResteasyProviderFactory.getInstance().injectProperties(realmResource);
-        //resourceContext.initResource(realmResource);
         return realmResource;
     }
 
@@ -188,7 +186,6 @@ public class RealmsResource {
 
         IdentityBrokerService brokerService = new IdentityBrokerService(realm);
         ResteasyProviderFactory.getInstance().injectProperties(brokerService);
-        //resourceContext.initResource(brokerService);
 
         brokerService.init();
 

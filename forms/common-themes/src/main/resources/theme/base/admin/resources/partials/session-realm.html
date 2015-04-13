@@ -18,13 +18,13 @@
                 </th>
             </tr>
             <tr>
-                <th>Application</th>
+                <th>Client</th>
                 <th>Active Sessions</th>
             </tr>
             </thead>
             <tbody>
             <tr data-ng-repeat="data in stats">
-                <td><a href="#/realms/{{realm.realm}}/applications/{{data.id}}/sessions">{{data.name}}</a></td>
+                <td><a href="#/realms/{{realm.realm}}/clients/{{data.id}}/sessions">{{data.clientId}}</a></td>
                 <td>{{data.active}}</td>
             </tr>
             </tbody>

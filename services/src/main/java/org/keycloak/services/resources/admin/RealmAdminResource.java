@@ -9,7 +9,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
-import org.keycloak.exportimport.ApplicationImporter;
+import org.keycloak.exportimport.ClientImporter;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -85,40 +85,38 @@ public class RealmAdminResource {
     }
 
     /**
-     * Base path for importing applications under this realm.
+     * Base path for importing clients under this realm.
      *
      * @return
      */
-    @Path("application-importers/{formatId}")
-    public Object getApplicationImporter(@PathParam("formatId") String formatId) {
-        ApplicationImporter importer = session.getProvider(ApplicationImporter.class, formatId);
+    @Path("client-importers/{formatId}")
+    public Object getClientImporter(@PathParam("formatId") String formatId) {
+        ClientImporter importer = session.getProvider(ClientImporter.class, formatId);
         return importer.createJaxrsService(realm, auth);
     }
 
     /**
-     * Base path for managing applications under this realm.
+     * Base path for managing clients under this realm.
      *
      * @return
      */
-    @Path("applications")
-    public ClientsResource getApplications() {
+    @Path("clients")
+    public ClientsResource getClients() {
         ClientsResource clientsResource = new ClientsResource(realm, auth);
         ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
-        //resourceContext.initResource(applicationsResource);
         return clientsResource;
     }
 
     /**
-     * Base path for managing applications under this realm.
+     * Base path for managing clients under this realm.
      *
      * @return
      */
-    @Path("applications-by-id")
-    public ClientsByIdResource getApplicationsById() {
-        ClientsByIdResource applicationsResource = new ClientsByIdResource(realm, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(applicationsResource);
-        //resourceContext.initResource(applicationsResource);
-        return applicationsResource;
+    @Path("clients-by-id")
+    public ClientsByIdResource getClientsById() {
+        ClientsByIdResource clientsResource = new ClientsByIdResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
+        return clientsResource;
     }
 
     /**
@@ -132,14 +130,13 @@ public class RealmAdminResource {
     }
 
     /**
-     * Get the top-level representation of the realm.  It will not include nested information like User, Application, or OAuth
-     * Client representations.
+     * Get the top-level representation of the realm.  It will not include nested information like User and Client representations.
      *
      * @return
      */
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public RealmRepresentation getRealm() {
         if (auth.hasView()) {
             RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, false);
@@ -162,14 +159,14 @@ public class RealmAdminResource {
     }
 
     /**
-     * Update the top-level information of this realm.  Any user, roles, application, or oauth client information in the representation
+     * Update the top-level information of this realm.  Any user, roles or client information in the representation
      * will be ignored.  This will only update top-level attributes of the realm.
      *
      * @param rep
      * @return
      */
     @PUT
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response updateRealm(final RealmRepresentation rep) {
         auth.requireManage();
 
@@ -237,7 +234,7 @@ public class RealmAdminResource {
     }
 
     /**
-     * Path for managing all realm-level or application-level roles defined in this realm by it's id.
+     * Path for managing all realm-level or client-level roles defined in this realm by it's id.
      *
      * @return
      */
@@ -250,7 +247,7 @@ public class RealmAdminResource {
     }
 
     /**
-     * Push the realm's revocation policy to any application that has an admin url associated with it.
+     * Push the realm's revocation policy to any client that has an admin url associated with it.
      *
      */
     @Path("push-revocation")
@@ -261,7 +258,7 @@ public class RealmAdminResource {
     }
 
     /**
-     * Removes all user sessions.  Any application that has an admin url will also be told to invalidate any sessions
+     * Removes all user sessions.  Any client that has an admin url will also be told to invalidate any sessions
      * they have.
      *
      */
@@ -273,7 +270,7 @@ public class RealmAdminResource {
     }
 
     /**
-     * Remove a specific user session. Any application that has an admin url will also be told to invalidate this
+     * Remove a specific user session. Any client that has an admin url will also be told to invalidate this
      * particular session.
      *
      * @param sessionId
@@ -287,46 +284,46 @@ public class RealmAdminResource {
     }
 
     /**
-     * Returns a JSON map.  The key is the application name, the value is the number of sessions that currently are active
-     * with that application.  Only application's that actually have a session associated with them will be in this map.
+     * Returns a JSON map.  The key is the client name, the value is the number of sessions that currently are active
+     * with that client.  Only client's that actually have a session associated with them will be in this map.
      *
      * @return
      */
-    @Path("application-session-stats")
+    @Path("client-session-stats")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Deprecated
-    public Map<String, Integer> getApplicationSessionStats() {
+    public Map<String, Integer> getClientSessionStats() {
         auth.requireView();
         Map<String, Integer> stats = new HashMap<String, Integer>();
-        for (ClientModel application : realm.getClients()) {
-            int size = session.sessions().getActiveUserSessions(application.getRealm(), application);
+        for (ClientModel client : realm.getClients()) {
+            int size = session.sessions().getActiveUserSessions(client.getRealm(), client);
             if (size == 0) continue;
-            stats.put(application.getClientId(), size);
+            stats.put(client.getClientId(), size);
         }
         return stats;
     }
 
     /**
-     * Returns a JSON map.  The key is the application id, the value is the number of sessions that currently are active
-     * with that application.  Only application's that actually have a session associated with them will be in this map.
+     * Returns a JSON map.  The key is the client id, the value is the number of sessions that currently are active
+     * with that client.  Only client's that actually have a session associated with them will be in this map.
      *
      * @return
      */
-    @Path("application-by-id-session-stats")
+    @Path("client-by-id-session-stats")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getApplicationByIdSessionStats() {
+    public List<Map<String, String>> getClientByIdSessionStats() {
         auth.requireView();
         List<Map<String, String>> data = new LinkedList<Map<String, String>>();
-        for (ClientModel application : realm.getClients()) {
-            int size = session.sessions().getActiveUserSessions(application.getRealm(), application);
+        for (ClientModel client : realm.getClients()) {
+            int size = session.sessions().getActiveUserSessions(client.getRealm(), client);
             if (size == 0) continue;
             Map<String, String> map = new HashMap<String, String>();
-            map.put("id", application.getId());
-            map.put("name", application.getClientId());
+            map.put("id", client.getId());
+            map.put("clientId", client.getClientId());
             map.put("active", size + "");
             data.add(map);
         }
@@ -341,7 +338,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Path("events/config")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public RealmEventsConfigRepresentation getRealmEventsConfig() {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
@@ -355,7 +352,7 @@ public class RealmAdminResource {
      */
     @PUT
     @Path("events/config")
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     public void updateRealmEventsConfig(final RealmEventsConfigRepresentation rep) {
         auth.init(RealmAuth.Resource.EVENTS).requireManage();
 

@@ -363,7 +363,7 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ClientModel app) {
+    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         Set<RoleModel> roleMappings = getRoleMappings();
 
         Set<RoleModel> roles = new HashSet<RoleModel>();

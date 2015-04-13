@@ -18,7 +18,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.timer.TimerProvider;
@@ -90,8 +90,8 @@ public class RealmManager {
     }
 
     protected void setupAdminConsole(RealmModel realm) {
-        ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
-        if (adminConsole == null) adminConsole = new ClientManager(this).createClient(realm, Constants.ADMIN_CONSOLE_APPLICATION);
+        ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        if (adminConsole == null) adminConsole = new ClientManager(this).createClient(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
         String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
         adminConsole.setBaseUrl(baseUrl + "/index.html");
         adminConsole.setEnabled(true);
@@ -103,18 +103,18 @@ public class RealmManager {
         if (realm.getName().equals(Config.getAdminRealm())) {
             adminRole = realm.getRole(AdminRoles.ADMIN);
         } else {
-            String realmAdminApplicationName = getRealmAdminApplicationName(realm);
-            ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationName);
+            String realmAdminApplicationClientId = getRealmAdminClientId(realm);
+            ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
             adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         }
         adminConsole.addScopeMapping(adminRole);
     }
 
-    public String getRealmAdminApplicationName(RealmModel realm) {
+    public String getRealmAdminClientId(RealmModel realm) {
         return "realm-management";
     }
 
-    public String getRealmAdminApplicationName(RealmRepresentation realm) {
+    public String getRealmAdminClientId(RealmRepresentation realm) {
         return "realm-management";
     }
 
@@ -139,7 +139,7 @@ public class RealmManager {
 
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
-            new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), realm.getMasterAdminApp());
+            new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), realm.getMasterAdminClient());
 
             UserSessionProvider sessions = session.sessions();
             if (sessions != null) {
@@ -176,18 +176,18 @@ public class RealmManager {
 
         ClientManager clientManager = new ClientManager(new RealmManager(session));
 
-        String realmAdminApplicationName = getRealmAdminApplicationName(realm);
-        ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationName);
-        if (realmAdminApp == null) {
-            realmAdminApp = clientManager.createClient(realm, realmAdminApplicationName);
+        String realmAdminClientId = getRealmAdminClientId(realm);
+        ClientModel realmAdminClient = realm.getClientByClientId(realmAdminClientId);
+        if (realmAdminClient == null) {
+            realmAdminClient = clientManager.createClient(realm, realmAdminClientId);
         }
-        RoleModel adminRole = realmAdminApp.addRole(AdminRoles.REALM_ADMIN);
-        adminRole.setDescription("${role_"+AdminRoles.REALM_ADMIN+"}");
-        realmAdminApp.setBearerOnly(true);
-        realmAdminApp.setFullScopeAllowed(false);
+        RoleModel adminRole = realmAdminClient.addRole(AdminRoles.REALM_ADMIN);
+        adminRole.setDescription("${role_" + AdminRoles.REALM_ADMIN + "}");
+        realmAdminClient.setBearerOnly(true);
+        realmAdminClient.setFullScopeAllowed(false);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
-            RoleModel role = realmAdminApp.addRole(r);
+            RoleModel role = realmAdminClient.addRole(r);
             role.setDescription("${role_"+r+"}");
             adminRole.addCompositeRole(role);
         }
@@ -195,19 +195,19 @@ public class RealmManager {
 
 
     private void setupAccountManagement(RealmModel realm) {
-        ClientModel application = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
-        if (application == null) {
-            application = new ClientManager(this).createClient(realm, Constants.ACCOUNT_MANAGEMENT_APP);
-            application.setEnabled(true);
-            application.setFullScopeAllowed(false);
+        ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        if (client == null) {
+            client = new ClientManager(this).createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            client.setEnabled(true);
+            client.setFullScopeAllowed(false);
             String base = contextPath + "/realms/" + realm.getName() + "/account";
             String redirectUri = base + "/*";
-            application.addRedirectUri(redirectUri);
-            application.setBaseUrl(base);
+            client.addRedirectUri(redirectUri);
+            client.setBaseUrl(base);
 
             for (String role : AccountRoles.ALL) {
-                application.addDefaultRole(role);
-                application.getRole(role).setDescription("${role_"+role+"}");
+                client.addDefaultRole(role);
+                client.getRole(role).setDescription("${role_"+role+"}");
             }
         }
     }
@@ -224,9 +224,9 @@ public class RealmManager {
 
         setupRealmDefaults(realm);
         setupMasterAdminManagement(realm);
-        if (!hasRealmAdminManagementApp(rep)) setupRealmAdminManagement(realm);
-        if (!hasAccountManagementApp(rep)) setupAccountManagement(realm);
-        if (!hasAdminConsoleApp(rep)) setupAdminConsole(realm);
+        if (!hasRealmAdminManagementClient(rep)) setupRealmAdminManagement(realm);
+        if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
+        if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
 
@@ -239,30 +239,30 @@ public class RealmManager {
         return realm;
     }
 
-    private boolean hasRealmAdminManagementApp(RealmRepresentation rep) {
-        if (rep.getApplications() == null) return false;
-        for (ApplicationRepresentation app : rep.getApplications()) {
-            if (app.getName().equals(getRealmAdminApplicationName(rep))) {
+    private boolean hasRealmAdminManagementClient(RealmRepresentation rep) {
+        if (rep.getClients() == null) return false;
+        for (ClientRepresentation clientRep : rep.getClients()) {
+            if (clientRep.getClientId().equals(getRealmAdminClientId(rep))) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean hasAccountManagementApp(RealmRepresentation rep) {
-        if (rep.getApplications() == null) return false;
-        for (ApplicationRepresentation app : rep.getApplications()) {
-            if (app.getName().equals(Constants.ACCOUNT_MANAGEMENT_APP)) {
+    private boolean hasAccountManagementClient(RealmRepresentation rep) {
+        if (rep.getClients() == null) return false;
+        for (ClientRepresentation clientRep : rep.getClients()) {
+            if (clientRep.getClientId().equals(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean hasAdminConsoleApp(RealmRepresentation rep) {
-        if (rep.getApplications() == null) return false;
-        for (ApplicationRepresentation app : rep.getApplications()) {
-            if (app.getName().equals(Constants.ADMIN_CONSOLE_APPLICATION)) {
+    private boolean hasAdminConsoleClient(RealmRepresentation rep) {
+        if (rep.getClients() == null) return false;
+        for (ClientRepresentation clientRep : rep.getClients()) {
+            if (clientRep.getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
                 return true;
             }
         }

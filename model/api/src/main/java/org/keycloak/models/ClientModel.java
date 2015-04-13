@@ -16,7 +16,7 @@ public interface ClientModel extends RoleContainerModel {
     String PUBLIC_KEY = "publicKey";
     String X509CERTIFICATE = "X509Certificate";
 
-    void updateApplication();
+    void updateClient();
 
     String getId();
 
@@ -62,7 +62,7 @@ public interface ClientModel extends RoleContainerModel {
 
     void updateDefaultRoles(String[] defaultRoles);
 
-    Set<RoleModel> getApplicationScopeMappings(ClientModel client);
+    Set<RoleModel> getClientScopeMappings(ClientModel client);
 
     boolean isBearerOnly();
     void setBearerOnly(boolean only);

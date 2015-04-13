@@ -1,13 +1,13 @@
 <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
 <div id="content-area" class="col-md-9" role="main">
-    <kc-navigation-application></kc-navigation-application>
+    <kc-navigation-client></kc-navigation-client>
     <div id="content">
         <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
-            <li class="active">Application Sessions</li>
+            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+            <li class="active">Client Sessions</li>
         </ol>
-        <h2><span>{{application.name}}</span> Active Sessions  <span tooltip-placement="right" tooltip="View active sessions for this application.  Allows you to see which users are active and when they logged in." class="fa fa-info-circle"></span></h2>
+        <h2><span>{{client.clientId}}</span> Active Sessions  <span tooltip-placement="right" tooltip="View active sessions for this client.  Allows you to see which users are active and when they logged in." class="fa fa-info-circle"></span></h2>
         <form class="form-horizontal" name="sessionStats">
             <fieldset class="border-top">
                 <div class="form-group">
@@ -15,7 +15,7 @@
                     <div class="col-sm-4">
                         <input class="form-control" type="text" id="activeSessions" name="activeSessions" data-ng-model="count" ng-disabled="true">
                     </div>
-                    <span tooltip-placement="right" tooltip="Total number of active user sessions for this application." class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Total number of active user sessions for this client." class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
         </form>
