@@ -139,15 +139,15 @@ public class RepresentationToModel {
                     createRole(newRealm, roleRep);
                 }
             }
-            if (rep.getRoles().getApplication() != null) {
-                for (Map.Entry<String, List<RoleRepresentation>> entry : rep.getRoles().getApplication().entrySet()) {
-                    ClientModel app = newRealm.getClientByClientId(entry.getKey());
-                    if (app == null) {
+            if (rep.getRoles().getClient() != null) {
+                for (Map.Entry<String, List<RoleRepresentation>> entry : rep.getRoles().getClient().entrySet()) {
+                    ClientModel client = newRealm.getClientByClientId(entry.getKey());
+                    if (client == null) {
                         throw new RuntimeException("App doesn't exist in role definitions: " + entry.getKey());
                     }
                     for (RoleRepresentation roleRep : entry.getValue()) {
                         // Application role may already exists (for example if it is defaultRole)
-                        RoleModel role = roleRep.getId()!=null ? app.addRole(roleRep.getId(), roleRep.getName()) : app.addRole(roleRep.getName());
+                        RoleModel role = roleRep.getId()!=null ? client.addRole(roleRep.getId(), roleRep.getName()) : client.addRole(roleRep.getName());
                         role.setDescription(roleRep.getDescription());
                     }
                 }
@@ -159,14 +159,14 @@ public class RepresentationToModel {
                     addComposites(role, roleRep, newRealm);
                 }
             }
-            if (rep.getRoles().getApplication() != null) {
-                for (Map.Entry<String, List<RoleRepresentation>> entry : rep.getRoles().getApplication().entrySet()) {
-                    ClientModel app = newRealm.getClientByClientId(entry.getKey());
-                    if (app == null) {
+            if (rep.getRoles().getClient() != null) {
+                for (Map.Entry<String, List<RoleRepresentation>> entry : rep.getRoles().getClient().entrySet()) {
+                    ClientModel client = newRealm.getClientByClientId(entry.getKey());
+                    if (client == null) {
                         throw new RuntimeException("App doesn't exist in role definitions: " + entry.getKey());
                     }
                     for (RoleRepresentation roleRep : entry.getValue()) {
-                        RoleModel role = app.getRole(roleRep.getName());
+                        RoleModel role = client.getRole(roleRep.getName());
                         addComposites(role, roleRep, newRealm);
                     }
                 }
@@ -193,9 +193,9 @@ public class RepresentationToModel {
 
         Map<String, ClientModel> appMap = newRealm.getClientNameMap();
 
-        if (rep.getApplicationScopeMappings() != null) {
+        if (rep.getClientScopeMappings() != null) {
 
-            for (Map.Entry<String, List<ScopeMappingRepresentation>> entry : rep.getApplicationScopeMappings().entrySet()) {
+            for (Map.Entry<String, List<ScopeMappingRepresentation>> entry : rep.getClientScopeMappings().entrySet()) {
                 ClientModel app = appMap.get(entry.getKey());
                 if (app == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
@@ -285,10 +285,6 @@ public class RepresentationToModel {
                 rep.setIdentityProviders(identityProviders);
             }
         }
-
-        rep.setSocial(null);
-        rep.setSocialProviders(null);
-        rep.setUpdateProfileOnInitialSocialLogin(false);
     }
 
     private static void convertDeprecatedSocialProviders(UserRepresentation user) {
@@ -341,8 +337,40 @@ public class RepresentationToModel {
 
                 realm.getClients().add(app);
             }
+        }
 
-            realm.setApplications(null);
+        if (realm.getApplicationScopeMappings() != null && realm.getClientScopeMappings() == null) {
+            realm.setClientScopeMappings(realm.getApplicationScopeMappings());
+        }
+
+        if (realm.getRoles() != null && realm.getRoles().getApplication() != null && realm.getRoles().getClient() == null) {
+            realm.getRoles().setClient(realm.getRoles().getApplication());
+        }
+
+        if (realm.getUsers() != null) {
+            for (UserRepresentation user : realm.getUsers()) {
+                if (user.getApplicationRoles() != null && user.getClientRoles() == null) {
+                    user.setClientRoles(user.getApplicationRoles());
+                }
+            }
+        }
+
+        if (realm.getRoles() != null && realm.getRoles().getRealm() != null) {
+            for (RoleRepresentation role : realm.getRoles().getRealm()) {
+                if (role.getComposites() != null && role.getComposites().getApplication() != null && role.getComposites().getClient() == null) {
+                    role.getComposites().setClient(role.getComposites().getApplication());
+                }
+            }
+        }
+
+        if (realm.getRoles() != null && realm.getRoles().getClient() != null) {
+            for (Map.Entry<String, List<RoleRepresentation>> clientRoles : realm.getRoles().getClient().entrySet()) {
+                for (RoleRepresentation role : clientRoles.getValue()) {
+                    if (role.getComposites() != null && role.getComposites().getApplication() != null && role.getComposites().getClient() == null) {
+                        role.getComposites().setClient(role.getComposites().getApplication());
+                    }
+                }
+            }
         }
     }
 
@@ -453,25 +481,24 @@ public class RepresentationToModel {
                 role.addCompositeRole(realmRole);
             }
         }
-        if (roleRep.getComposites().getApplication() != null) {
-            for (Map.Entry<String, List<String>> entry : roleRep.getComposites().getApplication().entrySet()) {
-                ClientModel app = realm.getClientByClientId(entry.getKey());
-                if (app == null) {
+        if (roleRep.getComposites().getClient() != null) {
+            for (Map.Entry<String, List<String>> entry : roleRep.getComposites().getClient().entrySet()) {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+                if (client == null) {
                     throw new RuntimeException("App doesn't exist in role definitions: " + roleRep.getName());
                 }
                 for (String roleStr : entry.getValue()) {
-                    RoleModel appRole = app.getRole(roleStr);
-                    if (appRole == null) throw new RuntimeException("Unable to find composite app role: " + roleStr);
-                    role.addCompositeRole(appRole);
+                    RoleModel clientRole = client.getRole(roleStr);
+                    if (clientRole == null) throw new RuntimeException("Unable to find composite client role: " + roleStr);
+                    role.addCompositeRole(clientRole);
                 }
-
             }
 
         }
 
     }
 
-    // APPLICATIONS
+    // CLIENTS
 
     private static Map<String, ClientModel> createClients(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
         Map<String, ClientModel> appMap = new HashMap<String, ClientModel>();
@@ -753,8 +780,8 @@ public class RepresentationToModel {
                 user.grantRole(role);
             }
         }
-        if (userRep.getApplicationRoles() != null) {
-            for (Map.Entry<String, List<String>> entry : userRep.getApplicationRoles().entrySet()) {
+        if (userRep.getClientRoles() != null) {
+            for (Map.Entry<String, List<String>> entry : userRep.getClientRoles().entrySet()) {
                 ClientModel client = clientMap.get(entry.getKey());
                 if (client == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());

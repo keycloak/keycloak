@@ -17,6 +17,10 @@ public class Time {
         return new Date(((long) time ) * 1000);
     }
 
+    public static long toMillis(int time) {
+        return ((long) time) * 1000;
+    }
+
     public static void setOffset(int offset) {
         Time.offset = offset;
     }

@@ -27,7 +27,7 @@
                   "value" : "password" }
             ],
             "realmRoles": ["user"],
-            "applicationRoles": {
+            "clientRoles": {
                 "test-app": [ "customer-user" ],
                 "account": [ "view-profile", "manage-account" ]
             }
@@ -41,7 +41,7 @@
                     "value" : "password" }
             ],
             "realmRoles": ["user"],
-            "applicationRoles": {
+            "clientRoles": {
                 "test-app": [ "customer-user" ],
                 "account": [ "view-profile", "manage-account" ]
             }
@@ -67,7 +67,7 @@
             "roles": ["user"]
         }
     ],
-    "applications": [
+    "clients": [
         {
             "name": "test-app",
             "enabled": true,
@@ -90,7 +90,7 @@
                 "description": "Have Administrator privileges"
             }
         ],
-        "application" : {
+        "client" : {
             "test-app" : [
                 {
                     "name": "customer-user",
@@ -105,7 +105,7 @@
 
     },
 
-    "applicationScopeMappings": {
+    "clientScopeMappings": {
         "test-app": [
             {
                 "client": "third-party",

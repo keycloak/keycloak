@@ -25,7 +25,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
@@ -441,20 +441,20 @@ public class UsersResource {
 
         List<ClientModel> applications = realm.getClients();
         if (applications.size() > 0) {
-            Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
+            Map<String, ClientMappingsRepresentation> appMappings = new HashMap<String, ClientMappingsRepresentation>();
             for (ClientModel application : applications) {
                 Set<RoleModel> roleMappings = user.getApplicationRoleMappings(application);
                 if (roleMappings.size() > 0) {
-                    ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
-                    mappings.setApplicationId(application.getId());
-                    mappings.setApplication(application.getClientId());
+                    ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
+                    mappings.setId(application.getId());
+                    mappings.setClient(application.getClientId());
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
                         roles.add(ModelToRepresentation.toRepresentation(role));
                     }
                     appMappings.put(application.getClientId(), mappings);
-                    all.setApplicationMappings(appMappings);
+                    all.setClientMappings(appMappings);
                 }
             }
         }

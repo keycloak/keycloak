@@ -7,7 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
@@ -64,22 +64,22 @@ public class ScopeMappedResource {
             all.setRealmMappings(realmRep);
         }
 
-        List<ClientModel> applications = realm.getClients();
-        if (applications.size() > 0) {
-            Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
-            for (ClientModel app : applications) {
-                Set<RoleModel> roleMappings = app.getApplicationScopeMappings(client);
+        List<ClientModel> clients = realm.getClients();
+        if (clients.size() > 0) {
+            Map<String, ClientMappingsRepresentation> clientMappings = new HashMap<String, ClientMappingsRepresentation>();
+            for (ClientModel client : clients) {
+                Set<RoleModel> roleMappings = client.getApplicationScopeMappings(this.client);
                 if (roleMappings.size() > 0) {
-                    ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
-                    mappings.setApplicationId(app.getId());
-                    mappings.setApplication(app.getClientId());
+                    ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
+                    mappings.setId(client.getId());
+                    mappings.setClient(client.getClientId());
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
                         roles.add(ModelToRepresentation.toRepresentation(role));
                     }
-                    appMappings.put(app.getClientId(), mappings);
-                    all.setApplicationMappings(appMappings);
+                    clientMappings.put(client.getClientId(), mappings);
+                    all.setClientMappings(clientMappings);
                 }
             }
         }
