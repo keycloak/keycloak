@@ -81,7 +81,7 @@ public class ImportUtils {
             // We just imported master realm. All 'masterAdminApps' need to be refreshed
             RealmModel adminRealm = realm;
             for (RealmModel currentRealm : model.getRealms()) {
-                ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationName(currentRealm));
+                ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(currentRealm));
                 if (masterApp != null) {
                     currentRealm.setMasterAdminClient(masterApp);
                 }  else {
@@ -91,7 +91,7 @@ public class ImportUtils {
         } else {
             // Need to refresh masterApp for current realm
             RealmModel adminRealm = model.getRealm(adminRealmId);
-            ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationName(realm));
+            ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm));
             if (masterApp != null) {
                 realm.setMasterAdminClient(masterApp);
             }  else {
@@ -119,7 +119,7 @@ public class ImportUtils {
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
 
-        ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationName(realm));
+        ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm));
         realmAdminApp.setBearerOnly(true);
         realm.setMasterAdminClient(realmAdminApp);
 

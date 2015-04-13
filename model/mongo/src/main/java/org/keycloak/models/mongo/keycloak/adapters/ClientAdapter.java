@@ -46,7 +46,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
-    public void updateApplication() {
+    public void updateClient() {
         updateMongoEntity();
     }
 

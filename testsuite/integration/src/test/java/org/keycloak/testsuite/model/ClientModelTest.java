@@ -48,7 +48,7 @@ public class ClientModelTest extends AbstractModelTest {
         client.registerNode("node1", 10);
         client.registerNode("10.20.30.40", 50);
 
-        client.updateApplication();
+        client.updateClient();
     }
 
     @Test

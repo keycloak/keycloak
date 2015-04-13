@@ -62,7 +62,7 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void updateApplication() {
+    public void updateClient() {
     }
 
     @Override

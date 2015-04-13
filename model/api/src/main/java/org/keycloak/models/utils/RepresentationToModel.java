@@ -517,7 +517,7 @@ public class RepresentationToModel {
      * @return
      */
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation resourceRep, boolean addDefaultRoles) {
-        logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getClientId());
+        logger.debug("Create client: {0}" + resourceRep.getClientId());
 
         ClientModel client = resourceRep.getId()!=null ? realm.addClient(resourceRep.getId(), resourceRep.getClientId()) : realm.addClient(resourceRep.getClientId());
         if (resourceRep.isEnabled() != null) client.setEnabled(resourceRep.isEnabled());
@@ -540,7 +540,7 @@ public class RepresentationToModel {
         } else {
             client.setNodeReRegistrationTimeout(-1);
         }
-        client.updateApplication();
+        client.updateClient();
 
         if (resourceRep.getNotBefore() != null) {
             client.setNotBefore(resourceRep.getNotBefore());
@@ -565,7 +565,7 @@ public class RepresentationToModel {
         }
         if (resourceRep.getWebOrigins() != null) {
             for (String webOrigin : resourceRep.getWebOrigins()) {
-                logger.debugv("Application: {0} webOrigin: {1}", resourceRep.getClientId(), webOrigin);
+                logger.debugv("Client: {0} webOrigin: {1}", resourceRep.getClientId(), webOrigin);
                 client.addWebOrigin(webOrigin);
             }
         } else {
@@ -580,7 +580,7 @@ public class RepresentationToModel {
                         if (uri.getPort() != -1) {
                             origin += ":" + uri.getPort();
                         }
-                        logger.debugv("adding default application origin: {0}" , origin);
+                        logger.debugv("adding default client origin: {0}" , origin);
                         origins.add(origin);
                     }
                 }
@@ -627,7 +627,7 @@ public class RepresentationToModel {
         if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
         if (rep.getNodeReRegistrationTimeout() != null) resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
-        resource.updateApplication();
+        resource.updateClient();
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
         if (rep.getAttributes() != null) {
@@ -725,7 +725,7 @@ public class RepresentationToModel {
         for (ScopeMappingRepresentation mapping : mappings) {
             ClientModel client = realm.getClientByClientId(mapping.getClient());
             if (client == null) {
-                throw new RuntimeException("Unknown client specified in application scope mappings");
+                throw new RuntimeException("Unknown client specified in client scope mappings");
             }
             for (String roleString : mapping.getRoles()) {
                 RoleModel role = clientModel.getRole(roleString.trim());
@@ -821,15 +821,15 @@ public class RepresentationToModel {
 
     // Role mappings
 
-    public static void createClientRoleMappings(ClientModel applicationModel, UserModel user, List<String> roleNames) {
+    public static void createClientRoleMappings(ClientModel clientModel, UserModel user, List<String> roleNames) {
         if (user == null) {
             throw new RuntimeException("User not found");
         }
 
         for (String roleName : roleNames) {
-            RoleModel role = applicationModel.getRole(roleName.trim());
+            RoleModel role = clientModel.getRole(roleName.trim());
             if (role == null) {
-                role = applicationModel.addRole(roleName.trim());
+                role = clientModel.addRole(roleName.trim());
             }
             user.grantRole(role);
 

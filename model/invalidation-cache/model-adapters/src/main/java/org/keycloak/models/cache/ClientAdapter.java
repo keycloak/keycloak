@@ -42,8 +42,8 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void updateApplication() {
-        if (updated != null) updated.updateApplication();
+    public void updateClient() {
+        if (updated != null) updated.updateClient();
     }
 
     @Override

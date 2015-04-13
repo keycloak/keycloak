@@ -16,7 +16,7 @@ public interface ClientModel extends RoleContainerModel {
     String PUBLIC_KEY = "publicKey";
     String X509CERTIFICATE = "X509Certificate";
 
-    void updateApplication();
+    void updateClient();
 
     String getId();
 
