@@ -17,7 +17,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user","admin" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "realm-management": [ "realm-admin" ]
             }
         }
@@ -30,7 +30,7 @@
             }
         ]
     },
-    "applications": [
+    "clients": [
         {
             "name": "google-authentication",
             "enabled": true,

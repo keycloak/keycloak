@@ -24,7 +24,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "account": [ "manage-account" ]
             }
         },
@@ -39,7 +39,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "account": [ "manage-account" ]
             }
         },
@@ -54,7 +54,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "account": [ "manage-account" ]
             }
         },
@@ -69,7 +69,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user","admin" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "realm-management": [ "realm-admin" ]
             }
         },
@@ -84,7 +84,7 @@
                   "value" : "password" }
             ],
             "realmRoles": [ "user", "jmxAdmin" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "account": [ "manage-account" ],
                 "realm-management": [ "realm-admin" ]
             }
@@ -134,7 +134,7 @@
             }
         ]
     },
-    "applications": [
+    "clients": [
         {
             "name": "customer-portal",
             "enabled": true,
@@ -178,14 +178,13 @@
             "adminUrl": "http://localhost:8383/admin-camel-endpoint",
             "baseUrl": "http://localhost:8383/admin-camel-endpoint",
             "bearerOnly": true
-        }
-    ],
-    "oauthClients": [
+        },
         {
             "name": "ssh-jmx-admin-client",
             "enabled": true,
             "publicClient": false,
             "directGrantsOnly": true,
+            "consentRequired": true,
             "secret": "password"
         }
     ],

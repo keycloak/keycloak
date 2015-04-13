@@ -18,7 +18,7 @@
                     "value" : "password" }
             ],
             "realmRoles": [ "user","admin" ],
-            "applicationRoles": {
+            "clientRoles": {
                 "realm-management": [ "realm-admin" ]
             }
         }
@@ -31,7 +31,7 @@
             }
         ]
     },
-    "applications": [
+    "clients": [
         {
             "name": "twitter-authentication",
             "enabled": true,

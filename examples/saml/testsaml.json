@@ -25,9 +25,9 @@
             "realmRoles": ["manager"]
         }
     ],
-    "applications": [
+    "clients": [
         {
-            "name": "http://localhost:8080/sales-post/",
+            "clientId": "http://localhost:8080/sales-post/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -41,7 +41,7 @@
             }
         },
         {
-            "name": "http://localhost:8080/sales-post-sig/",
+            "clientId": "http://localhost:8080/sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -60,7 +60,7 @@
             }
         },
         {
-            "name": "http://localhost:8080/sales-post-enc/",
+            "clientId": "http://localhost:8080/sales-post-enc/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
@@ -82,7 +82,7 @@
             }
         },
         {
-            "name": "http://localhost:8080/employee/",
+            "clientId": "http://localhost:8080/employee/",
             "enabled": true,
             "fullScopeAllowed": true,
             "protocol": "saml",
@@ -96,7 +96,7 @@
             }
         },
         {
-            "name": "http://localhost:8080/employee-sig/",
+            "clientId": "http://localhost:8080/employee-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,

@@ -17,12 +17,12 @@
                     "value": "password"
                 }
             ],
-            "applicationRoles": {
+            "clientRoles": {
                 "realm-management": [ "realm-admin" ]
             }
         }
     ],
-    "applications": [
+    "clients": [
         {
             "name": "examples-admin-client",
             "enabled": true,
