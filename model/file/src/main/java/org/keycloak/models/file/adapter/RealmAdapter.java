@@ -966,14 +966,14 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setMasterAdminClient(ClientModel client) {
         if (client == null) {
-            realm.setAdminAppId(null);
+            realm.setMasterAdminClient(null);
             this.masterAdminApp = null;
         } else {
             String appId = client.getId();
             if (appId == null) {
                 throw new IllegalStateException("Master Admin app not initialized.");
             }
-            realm.setAdminAppId(appId);
+            realm.setMasterAdminClient(appId);
             this.masterAdminApp = client;
         }
     }

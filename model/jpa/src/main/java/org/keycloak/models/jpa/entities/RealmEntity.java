@@ -136,8 +136,8 @@ public class RealmEntity {
     protected Set<String> enabledEventTypes = new HashSet<String>();
 
     @OneToOne
-    @JoinColumn(name="MASTER_ADMIN_APP")
-    protected ClientEntity masterAdminApp;
+    @JoinColumn(name="MASTER_ADMIN_CLIENT")
+    protected ClientEntity masterAdminClient;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     protected List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
@@ -437,12 +437,12 @@ public class RealmEntity {
         this.enabledEventTypes = enabledEventTypes;
     }
     
-    public ClientEntity getMasterAdminApp() {
-        return masterAdminApp;
+    public ClientEntity getMasterAdminClient() {
+        return masterAdminClient;
     }
 
-    public void setMasterAdminApp(ClientEntity masterAdminApp) {
-        this.masterAdminApp = masterAdminApp;
+    public void setMasterAdminClient(ClientEntity masterAdminClient) {
+        this.masterAdminClient = masterAdminClient;
     }
 
     public List<UserFederationProviderEntity> getUserFederationProviders() {

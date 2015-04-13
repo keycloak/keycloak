@@ -19,6 +19,9 @@ public class Update1_2_0_RC1 extends Update {
     public void update(KeycloakSession session) {
         convertApplicationsToClients();
         convertOAuthClientsToClients();
+
+        db.getCollection("realms").update(new BasicDBObject(), new BasicDBObject("$rename", new BasicDBObject("adminAppId", "clientId")), false, true);
+
     }
 
     private void convertApplicationsToClients() {
