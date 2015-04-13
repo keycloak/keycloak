@@ -231,15 +231,15 @@ public class TokenEndpoint {
             throw new ErrorResponseException("invalid_grant", "Session not active", Response.Status.BAD_REQUEST);
         }
 
-        String adapterSessionId = formParams.getFirst(AdapterConstants.APPLICATION_SESSION_STATE);
+        String adapterSessionId = formParams.getFirst(AdapterConstants.CLIENT_SESSION_STATE);
         if (adapterSessionId != null) {
-            String adapterSessionHost = formParams.getFirst(AdapterConstants.APPLICATION_SESSION_HOST);
+            String adapterSessionHost = formParams.getFirst(AdapterConstants.CLIENT_SESSION_HOST);
             logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
 
-            event.detail(AdapterConstants.APPLICATION_SESSION_STATE, adapterSessionId);
-            clientSession.setNote(AdapterConstants.APPLICATION_SESSION_STATE, adapterSessionId);
-            event.detail(AdapterConstants.APPLICATION_SESSION_HOST, adapterSessionHost);
-            clientSession.setNote(AdapterConstants.APPLICATION_SESSION_HOST, adapterSessionHost);
+            event.detail(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
+            clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
+            event.detail(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+            clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
         }
 
         AccessToken token = tokenManager.createClientAccessToken(session, accessCode.getRequestedRoles(), realm, client, user, userSession, clientSession);

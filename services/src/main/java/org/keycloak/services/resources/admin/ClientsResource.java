@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base resource class for managing a realm's applications.
+ * Base resource class for managing a realm's clients.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -48,7 +48,7 @@ public class ClientsResource {
     }
 
     /**
-     * List of applications belonging to this realm.
+     * List of clients belonging to this realm.
      *
      * @return
      */
@@ -100,7 +100,7 @@ public class ClientsResource {
     }
 
     /**
-     * Base path for managing a specific application.
+     * Base path for managing a specific client.
      *
      * @param name
      * @return

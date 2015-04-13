@@ -22,7 +22,6 @@
 package org.keycloak.testsuite.adapter;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
@@ -137,7 +136,7 @@ public class AdapterTestStrategy extends ExternalResource {
             RealmManager manager = new RealmManager(session);
 
             RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
-            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_APPLICATION);
+            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);
@@ -574,7 +573,7 @@ public class AdapterTestStrategy extends ExternalResource {
         loginAndCheckSession(driver, loginPage);
 
         // logout mposolda with admin client
-        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_APPLICATION);
+        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
         keycloakAdmin.realm("demo").clients().get("session-portal").logoutUser("mposolda");
 
         // bburke should be still logged with original httpSession in our browser window

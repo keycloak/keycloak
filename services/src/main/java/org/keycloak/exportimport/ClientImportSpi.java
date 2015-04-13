@@ -7,20 +7,20 @@ import org.keycloak.provider.Spi;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ApplicationImportSpi implements Spi {
+public class ClientImportSpi implements Spi {
 
     @Override
     public String getName() {
-        return "application-import";
+        return "client-import";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return ApplicationImporter.class;
+        return ClientImporter.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return ApplicationImporterFactory.class;
+        return ClientImporterFactory.class;
     }
 }

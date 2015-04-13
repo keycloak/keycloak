@@ -15,6 +15,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -23,33 +24,33 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ScopeMappedApplicationResource {
+public class ScopeMappedClientResource {
     protected RealmModel realm;
     private RealmAuth auth;
     protected ClientModel client;
     protected KeycloakSession session;
-    protected ClientModel app;
+    protected ClientModel scopedClient;
 
-    public ScopeMappedApplicationResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, ClientModel app) {
+    public ScopeMappedClientResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, ClientModel scopedClient) {
         this.realm = realm;
         this.auth = auth;
         this.client = client;
         this.session = session;
-        this.app = app;
+        this.scopedClient = scopedClient;
     }
 
     /**
-     * Get the roles associated with a client's scope for a specific application.
+     * Get the roles associated with a client's scope for a specific client.
      *
      * @return
      */
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getApplicationScopeMappings() {
+    public List<RoleRepresentation> getClientScopeMappings() {
         auth.requireView();
 
-        Set<RoleModel> mappings = app.getApplicationScopeMappings(client);
+        Set<RoleModel> mappings = scopedClient.getClientScopeMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
             mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
@@ -58,49 +59,49 @@ public class ScopeMappedApplicationResource {
     }
 
     /**
-     * The available application-level roles that can be associated with the client's scope
+     * The available client-level roles that can be associated with the client's scope
      *
      * @return
      */
     @Path("available")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getAvailableApplicationScopeMappings() {
+    public List<RoleRepresentation> getAvailableClientScopeMappings() {
         auth.requireView();
 
-        Set<RoleModel> roles = app.getRoles();
+        Set<RoleModel> roles = scopedClient.getRoles();
         return ScopeMappedResource.getAvailable(client, roles);
     }
 
     /**
-     * Get effective application roles that are associated with the client's scope for a specific application.
+     * Get effective client roles that are associated with the client's scope for a specific client.
      *
      * @return
      */
     @Path("composite")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getCompositeApplicationScopeMappings() {
+    public List<RoleRepresentation> getCompositeClientScopeMappings() {
         auth.requireView();
 
-        Set<RoleModel> roles = app.getRoles();
+        Set<RoleModel> roles = scopedClient.getRoles();
         return ScopeMappedResource.getComposite(client, roles);
     }
 
     /**
-     * Add application-level roles to the client's scope
+     * Add client-level roles to the client's scope
      *
      * @param roles
      */
     @POST
-    @Consumes("application/json")
-    public void addApplicationScopeMapping(List<RoleRepresentation> roles) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void addClientScopeMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
 
         for (RoleRepresentation role : roles) {
-            RoleModel roleModel = app.getRole(role.getName());
+            RoleModel roleModel = scopedClient.getRole(role.getName());
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
@@ -110,24 +111,24 @@ public class ScopeMappedApplicationResource {
     }
 
     /**
-     * Remove application-level roles from the client's scope.
+     * Remove client-level roles from the client's scope.
      *
      * @param roles
      */
     @DELETE
-    @Consumes("application/json")
-    public void deleteApplicationScopeMapping(List<RoleRepresentation> roles) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void deleteClientScopeMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
 
         if (roles == null) {
-            Set<RoleModel> roleModels = app.getApplicationScopeMappings(client);
+            Set<RoleModel> roleModels = scopedClient.getClientScopeMappings(client);
             for (RoleModel roleModel : roleModels) {
                 client.deleteScopeMapping(roleModel);
             }
 
         } else {
             for (RoleRepresentation role : roles) {
-                RoleModel roleModel = app.getRole(role.getName());
+                RoleModel roleModel = scopedClient.getRole(role.getName());
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }

@@ -6,6 +6,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class ErrorResponseException extends WebApplicationException {
         if (errorDescription != null) {
             e.put(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
         }
-        return Response.status(status).entity(e).type("application/json").build();
+        return Response.status(status).entity(e).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
 }

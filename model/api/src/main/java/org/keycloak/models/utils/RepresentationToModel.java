@@ -533,7 +533,7 @@ public class RepresentationToModel {
         if (resourceRep.isFullScopeAllowed() != null) {
             client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
         } else {
-            client.setFullScopeAllowed(true);
+            client.setFullScopeAllowed(!client.isConsentRequired());
         }
         if (resourceRep.getNodeReRegistrationTimeout() != null) {
             client.setNodeReRegistrationTimeout(resourceRep.getNodeReRegistrationTimeout());

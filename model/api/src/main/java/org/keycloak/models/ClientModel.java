@@ -62,7 +62,7 @@ public interface ClientModel extends RoleContainerModel {
 
     void updateDefaultRoles(String[] defaultRoles);
 
-    Set<RoleModel> getApplicationScopeMappings(ClientModel client);
+    Set<RoleModel> getClientScopeMappings(ClientModel client);
 
     boolean isBearerOnly();
     void setBearerOnly(boolean only);

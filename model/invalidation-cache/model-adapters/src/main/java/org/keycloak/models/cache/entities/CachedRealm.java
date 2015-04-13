@@ -155,7 +155,7 @@ public class CachedRealm {
         eventsListeners.addAll(model.getEventsListeners());
         enabledEventTypes.addAll(model.getEnabledEventTypes());
         defaultRoles.addAll(model.getDefaultRoles());
-        masterAdminApp = model.getMasterAdminApp().getId();
+        masterAdminApp = model.getMasterAdminClient().getId();
 
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());

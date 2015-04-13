@@ -27,8 +27,7 @@
                 <th>IP Address</th>
                 <th>Started</th>
                 <th>Last Access</th>
-                <th>Applications</th>
-                <th>OAuth Clients</th>
+                <th>Clients</th>
                 <th>Action</th>
             </tr>
             </thead>
@@ -38,15 +37,10 @@
                 <td>{{session.start | date:'medium'}}</td>
                 <td>{{session.lastAccess | date:'medium'}}</td>
                 <td>
-                    <div data-ng-repeat="(id, name) in session.applications">
-                        <a href="#/realms/{{realm.realm}}/applications/{{id}}">{{name}}</a>
+                    <div data-ng-repeat="(id, clientId) in session.clients">
+                        <a href="#/realms/{{realm.realm}}/clients/{{id}}">{{clientId}}</a>
                     </div>
                 </ul>
-                </td>
-                <td>
-                    <div data-ng-repeat="(clientId, clientName) in session.clients">
-                        <a href="#/realms/{{realm.realm}}/oauth-clients/{{clientId}}">{{clientName}}</a>
-                    </div>
                 </td>
                 <td><a href="" ng-click="logoutSession(session.id)">logout</a> </td>
             </tr>

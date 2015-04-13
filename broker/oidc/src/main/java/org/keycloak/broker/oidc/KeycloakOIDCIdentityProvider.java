@@ -4,14 +4,12 @@ import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.PemUtils;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -90,7 +88,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
         @Override
         public SimpleHttp generateTokenRequest(String authorizationCode) {
             return super.generateTokenRequest(authorizationCode)
-                    .param(AdapterConstants.APPLICATION_SESSION_STATE, "n/a");  // hack to get backchannel logout to work
+                    .param(AdapterConstants.CLIENT_SESSION_STATE, "n/a");  // hack to get backchannel logout to work
 
         }
 

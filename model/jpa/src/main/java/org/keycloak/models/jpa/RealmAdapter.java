@@ -1065,13 +1065,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ClientModel getMasterAdminApp() {
+    public ClientModel getMasterAdminClient() {
         return new ClientAdapter(this, em, session, realm.getMasterAdminApp());
     }
 
     @Override
-    public void setMasterAdminApp(ClientModel app) {
-        ClientEntity appEntity = app!=null ? em.getReference(ClientEntity.class, app.getId()) : null;
+    public void setMasterAdminClient(ClientModel client) {
+        ClientEntity appEntity = client !=null ? em.getReference(ClientEntity.class, client.getId()) : null;
         realm.setMasterAdminApp(appEntity);
         em.flush();
     }

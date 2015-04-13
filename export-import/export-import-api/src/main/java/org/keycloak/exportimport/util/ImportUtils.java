@@ -54,7 +54,7 @@ public class ImportUtils {
                 if (Config.getAdminRealm().equals(realm.getId())) {
                     // Delete all masterAdmin apps due to foreign key constraints
                     for (RealmModel currRealm : model.getRealms()) {
-                        currRealm.setMasterAdminApp(null);
+                        currRealm.setMasterAdminClient(null);
                     }
                 }
                 // TODO: For migration between versions, it should be possible to delete just realm but keep it's users
@@ -83,7 +83,7 @@ public class ImportUtils {
             for (RealmModel currentRealm : model.getRealms()) {
                 ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationName(currentRealm));
                 if (masterApp != null) {
-                    currentRealm.setMasterAdminApp(masterApp);
+                    currentRealm.setMasterAdminClient(masterApp);
                 }  else {
                     setupMasterAdminManagement(model, currentRealm);
                 }
@@ -93,7 +93,7 @@ public class ImportUtils {
             RealmModel adminRealm = model.getRealm(adminRealmId);
             ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationName(realm));
             if (masterApp != null) {
-                realm.setMasterAdminApp(masterApp);
+                realm.setMasterAdminClient(masterApp);
             }  else {
                 setupMasterAdminManagement(model, realm);
             }
@@ -121,7 +121,7 @@ public class ImportUtils {
 
         ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationName(realm));
         realmAdminApp.setBearerOnly(true);
-        realm.setMasterAdminApp(realmAdminApp);
+        realm.setMasterAdminClient(realmAdminApp);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.addRole(r);

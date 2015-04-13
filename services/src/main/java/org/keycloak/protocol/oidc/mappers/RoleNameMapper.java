@@ -33,7 +33,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         property = new ConfigProperty();
         property.setName(ROLE_CONFIG);
         property.setLabel("Role");
-        property.setHelpText("Role name you want changed.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setHelpText("Role name you want changed.  To reference an client role the syntax is clientId.clientRole, i.e. myapp.myrole");
         property.setType(ConfigProperty.STRING_TYPE);
         configProperties.add(property);
         property = new ConfigProperty();

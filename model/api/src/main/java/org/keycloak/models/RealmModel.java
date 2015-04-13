@@ -232,9 +232,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setEnabledEventTypes(Set<String> enabledEventTypes);
 
-    ClientModel getMasterAdminApp();
+    ClientModel getMasterAdminClient();
 
-    void setMasterAdminApp(ClientModel app);
+    void setMasterAdminClient(ClientModel client);
 
     boolean isIdentityFederationEnabled();
 

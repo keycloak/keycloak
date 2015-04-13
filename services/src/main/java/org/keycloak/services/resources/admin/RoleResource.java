@@ -69,7 +69,7 @@ public abstract class RoleResource {
         return composites;
     }
 
-    protected Set<RoleRepresentation> getApplicationRoleComposites(ClientModel app, RoleModel role) {
+    protected Set<RoleRepresentation> getClientRoleComposites(ClientModel app, RoleModel role) {
         if (!role.isComposite() || role.getComposites().size() == 0) return Collections.emptySet();
 
         Set<RoleRepresentation> composites = new HashSet<RoleRepresentation>(role.getComposites().size());

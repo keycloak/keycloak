@@ -53,7 +53,7 @@ public class ProfileTest {
             user.setAttribute("key1", "value1");
             user.setAttribute("key2", "value2");
 
-            ClientModel accountApp = appRealm.getClientByClientId(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
+            ClientModel accountApp = appRealm.getClientByClientId(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
 
             UserModel user2 = manager.getSession().users().addUser(appRealm, "test-user-no-access@localhost");
             user2.setEnabled(true);

@@ -565,7 +565,7 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
+    public Set<RoleModel> getClientScopeMappings(ClientModel client) {
         Set<RoleModel> allScopes = client.getScopeMappings();
 
         Set<RoleModel> appRoles = new HashSet<RoleModel>();

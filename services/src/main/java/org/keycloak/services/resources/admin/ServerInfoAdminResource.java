@@ -5,8 +5,8 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
-import org.keycloak.exportimport.ApplicationImporter;
-import org.keycloak.exportimport.ApplicationImporterFactory;
+import org.keycloak.exportimport.ClientImporter;
+import org.keycloak.exportimport.ClientImporterFactory;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
@@ -55,7 +55,7 @@ public class ServerInfoAdminResource {
         setThemes(info);
         setEventListeners(info);
         setProtocols(info);
-        setApplicationImporters(info);
+        setClientImporters(info);
         setProviders(info);
         setProtocolMapperTypes(info);
         setBuiltinProtocolMappers(info);
@@ -167,14 +167,14 @@ public class ServerInfoAdminResource {
         }
     }
 
-    private void setApplicationImporters(ServerInfoRepresentation info) {
-        info.applicationImporters = new LinkedList<Map<String, String>>();
-        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ApplicationImporter.class)) {
-            ApplicationImporterFactory factory = (ApplicationImporterFactory)p;
+    private void setClientImporters(ServerInfoRepresentation info) {
+        info.clientImporters = new LinkedList<Map<String, String>>();
+        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ClientImporter.class)) {
+            ClientImporterFactory factory = (ClientImporterFactory)p;
             Map<String, String> data = new HashMap<String, String>();
             data.put("id", factory.getId());
             data.put("name", factory.getDisplayName());
-            info.applicationImporters.add(data);
+            info.clientImporters.add(data);
         }
     }
 
@@ -198,7 +198,7 @@ public class ServerInfoAdminResource {
         private List<Map<String, String>> socialProviders;
         public List<Map<String, String>> identityProviders;
         private List<String> protocols;
-        private List<Map<String, String>> applicationImporters;
+        private List<Map<String, String>> clientImporters;
 
         private Map<String, Set<String>> providers;
 
@@ -239,8 +239,8 @@ public class ServerInfoAdminResource {
             return protocols;
         }
 
-        public List<Map<String, String>> getApplicationImporters() {
-            return applicationImporters;
+        public List<Map<String, String>> getClientImporters() {
+            return clientImporters;
         }
 
         public Map<String, Set<String>> getProviders() {

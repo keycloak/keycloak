@@ -47,16 +47,6 @@
             }
         }
     ],
-    "oauthClients" : [
-        {
-            "name" : "third-party",
-            "enabled": true,
-            "redirectUris": [
-                "http://localhost:8081/app/*"
-            ],
-            "secret": "password"
-        }
-    ],
     "scopeMappings": [
         {
             "client": "third-party",
@@ -69,7 +59,7 @@
     ],
     "clients": [
         {
-            "name": "test-app",
+            "clientId": "test-app",
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "redirectUris": [
@@ -77,7 +67,17 @@
             ],
             "adminUrl": "http://localhost:8081/app/logout",
             "secret": "password"
-         }
+        },
+        {
+            "clientId" : "third-party",
+            "enabled": true,
+            "consentRequired": true,
+
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
+            "secret": "password"
+        }
     ],
     "roles" : {
         "realm" : [

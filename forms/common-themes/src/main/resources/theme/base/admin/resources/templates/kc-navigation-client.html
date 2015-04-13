@@ -1,0 +1,13 @@
+<ul class="nav nav-tabs nav-tabs-pf"  data-ng-hide="create && !path[4]">
+    <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">Settings</a></li>
+    <li ng-class="{active: path[4] == 'credentials'}" data-ng-show="!client.publicClient && client.protocol != 'saml'"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/credentials">Credentials</a></li>
+    <li ng-class="{active: path[4] == 'saml'}" data-ng-show="client.protocol == 'saml' && (client.attributes['saml.client.signature'] == 'true' || client.attributes['saml.encrypt'] == 'true')"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">SAML Keys</a></li>
+    <li ng-class="{active: path[4] == 'roles'}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">Roles</a></li>
+    <li ng-class="{active: path[4] == 'mappers'}" data-ng-show="!client.bearerOnly"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers">Mappers</a></li>
+    <li ng-class="{active: path[4] == 'scope-mappings'}" data-ng-show="!client.bearerOnly"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/scope-mappings">Scope</a></li>
+    <li ng-class="{active: path[4] == 'revocation'}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/revocation">Revocation</a></li>
+<!--    <li ng-class="{active: path[4] == 'identity-provider'}" data-ng-show="realm.identityFederationEnabled"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/identity-provider">Identity Provider</a></li> -->
+    <li ng-class="{active: path[4] == 'sessions'}" data-ng-show="!client.bearerOnly"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/sessions">Sessions</a></li>
+    <li ng-class="{active: path[4] == 'clustering'}" data-ng-show="!client.publicClient"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering">Clustering</a></li>
+    <li ng-class="{active: path[4] == 'installation'}" data-ng-show="client.protocol != 'saml'"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/installation">Installation</a></li>
+</ul>

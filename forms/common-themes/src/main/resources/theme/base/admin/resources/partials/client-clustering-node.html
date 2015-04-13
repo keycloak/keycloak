@@ -1,14 +1,14 @@
 <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
 <div id="content-area" class="col-md-9" role="main">
-    <kc-navigation-application></kc-navigation-application>
+    <kc-navigation-client></kc-navigation-client>
     <div id="content">
         <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/clustering">Clustering</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering">Clustering</a></li>
             <li class="active">{{node.host}}</li>
         </ol>
-        <h2 data-ng-show="create || registered"><span>{{application.name}} Clustering</span></h2>
+        <h2 data-ng-show="create || registered"><span>{{client.clientId}} Clustering</span></h2>
         <h2 data-ng-hide="create || registered">Cluster node on host <span>{{node.host}}</span> not registered!</h2>
         <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageClients" data-ng-show="create || registered">
             <fieldset >

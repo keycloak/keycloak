@@ -73,7 +73,7 @@ import java.util.Map;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
-import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP;
+import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
 
 /**
@@ -327,7 +327,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return redirectToErrorPage(Messages.ACCOUNT_DISABLED);
         }
 
-        if (!authenticatedUser.hasRole(this.realmModel.getClientByClientId(ACCOUNT_MANAGEMENT_APP).getRole(MANAGE_ACCOUNT))) {
+        if (!authenticatedUser.hasRole(this.realmModel.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(MANAGE_ACCOUNT))) {
             fireErrorEvent(Errors.NOT_ALLOWED);
             return redirectToErrorPage(Messages.INSUFFICIENT_PERMISSION);
         }
@@ -382,7 +382,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return clientCode;
         }
 
-        throw new IdentityBrokerException("Invalid code, please login again through your application.");
+        throw new IdentityBrokerException("Invalid code, please login again through your client.");
     }
 
     private AuthenticationRequest createAuthenticationRequest(String providerId, ClientSessionCode clientSessionCode) {

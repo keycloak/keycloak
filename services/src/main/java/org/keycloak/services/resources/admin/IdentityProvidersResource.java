@@ -57,7 +57,7 @@ public class IdentityProvidersResource {
     @Path("/providers/{provider_id}")
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getIdentityProviders(@PathParam("provider_id") String providerId) {
         this.auth.requireView();
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
@@ -108,7 +108,7 @@ public class IdentityProvidersResource {
     @GET
     @Path("instances")
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public List<IdentityProviderRepresentation> getIdentityProviders() {
         this.auth.requireView();
 

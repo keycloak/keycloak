@@ -219,8 +219,8 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(ClientModel app) {
-        if (updated != null) return updated.getApplicationRoleMappings(app);
+    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
+        if (updated != null) return updated.getClientRoleMappings(app);
         Set<RoleModel> roleMappings = getRoleMappings();
         Set<RoleModel> appMappings = new HashSet<RoleModel>();
         for (RoleModel role : roleMappings) {

@@ -4,14 +4,10 @@ Array.prototype.remove = function(from, to) {
     return this.push.apply(this, rest);
 };
 
-module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, application, roles) {
+module.controller('ClientRoleListCtrl', function($scope, $location, realm, client, roles) {
     $scope.realm = realm;
     $scope.roles = roles;
-    $scope.application = application;
-
-    for (var i = 0; i < roles.length; i++) {
-        console.log("role.id: " + roles[i].id + " role.name: " + roles[i].name);
-    }
+    $scope.client = client;
 
     $scope.$watch(function() {
         return $location.path();
@@ -20,17 +16,17 @@ module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, 
     });
 });
 
-module.controller('ApplicationCredentialsCtrl', function($scope, $location, realm, application, ApplicationCredentials, Notifications) {
+module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, ClientCredentials, Notifications) {
     $scope.realm = realm;
-    $scope.application = application;
-    var secret = ApplicationCredentials.get({ realm : realm.realm, application : application.id },
+    $scope.client = client;
+    var secret = ClientCredentials.get({ realm : realm.realm, client : client.id },
         function() {
             $scope.secret = secret.value;
         }
     );
 
     $scope.changePassword = function() {
-        var secret = ApplicationCredentials.update({ realm : realm.realm, application : application.id },
+        var secret = ClientCredentials.update({ realm : realm.realm, client : client.id },
             function() {
                 Notifications.success('The secret has been changed.');
                 $scope.secret = secret.value;
@@ -49,107 +45,107 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
-module.controller('ApplicationIdentityProviderCtrl', function($scope, $location, $route, realm, application, Application, $location, Notifications) {
+module.controller('ClientIdentityProviderCtrl', function($scope, $location, $route, realm, client, Client, $location, Notifications) {
     $scope.realm = realm;
-    $scope.application = angular.copy(application);
+    $scope.client = angular.copy(client);
     var length = 0;
 
-    if ($scope.application.identityProviders) {
-        length = $scope.application.identityProviders.length;
+    if ($scope.client.identityProviders) {
+        length = $scope.client.identityProviders.length;
 
-        for (i = 0; i < $scope.application.identityProviders.length; i++) {
-            var applicationProvider = $scope.application.identityProviders[i];
-            if (applicationProvider.retrieveToken) {
-                applicationProvider.retrieveToken = applicationProvider.retrieveToken.toString();
+        for (i = 0; i < $scope.client.identityProviders.length; i++) {
+            var clientProvider = $scope.client.identityProviders[i];
+            if (clientProvider.retrieveToken) {
+                clientProvider.retrieveToken = clientProvider.retrieveToken.toString();
             }
         }
 
     } else {
-        $scope.application.identityProviders = [];
+        $scope.client.identityProviders = [];
     }
 
     $scope.identityProviders = [];
-    var providersMissingInApp = [];
+    var providersMissingInClient = [];
 
     for (j = 0; j < realm.identityProviders.length; j++) {
         var identityProvider = realm.identityProviders[j];
-        var applicationProvider = null;
+        var clientProvider = null;
 
-        for (i = 0; i < $scope.application.identityProviders.length; i++) {
-            applicationProvider = $scope.application.identityProviders[i];
+        for (i = 0; i < $scope.client.identityProviders.length; i++) {
+            clientProvider = $scope.client.identityProviders[i];
 
-            if (applicationProvider) {
+            if (clientProvider) {
 
-                if (applicationProvider.id == identityProvider.id) {
+                if (clientProvider.id == identityProvider.id) {
                     $scope.identityProviders[i] = {};
                     $scope.identityProviders[i].identityProvider = identityProvider;
-                    $scope.identityProviders[i].retrieveToken = applicationProvider.retrieveToken;
+                    $scope.identityProviders[i].retrieveToken = clientProvider.retrieveToken;
                     break;
                 }
 
-                applicationProvider = null;
+                clientProvider = null;
             }
         }
 
-        if (applicationProvider == null) {
-            providersMissingInApp.push(identityProvider);
+        if (clientProvider == null) {
+            providersMissingInClient.push(identityProvider);
         }
     }
 
-    for (j = 0; j < providersMissingInApp.length; j++) {
-        var identityProvider = providersMissingInApp[j];
+    for (j = 0; j < providersMissingInClient.length; j++) {
+        var identityProvider = providersMissingInClient[j];
 
         var currentProvider = {};
         currentProvider.identityProvider = identityProvider;
         currentProvider.retrieveToken = "false";
         $scope.identityProviders.push(currentProvider);
 
-        var currentAppProvider = {};
-        currentAppProvider.id = identityProvider.id;
-        currentAppProvider.retrieveToken = "false";
-        $scope.application.identityProviders.push(currentAppProvider);
+        var currentClientProvider = {};
+        currentClientProvider.id = identityProvider.id;
+        currentClientProvider.retrieveToken = "false";
+        $scope.client.identityProviders.push(currentClientProvider);
     }
 
-    var oldCopy = angular.copy($scope.application);
+    var oldCopy = angular.copy($scope.client);
 
     $scope.save = function() {
 
-        Application.update({
+        Client.update({
             realm : realm.realm,
-            application : application.id
-        }, $scope.application, function() {
+            client : client.id
+        }, $scope.client, function() {
             $scope.changed = false;
             $route.reload();
-            Notifications.success("Your changes have been saved to the application.");
+            Notifications.success("Your changes have been saved to the client.");
         });
     };
 
     $scope.reset = function() {
-        $scope.application = angular.copy(oldCopy);
+        $scope.client = angular.copy(oldCopy);
         $scope.changed = false;
     };
 
-    $scope.$watch('application', function() {
-        if (!angular.equals($scope.application, oldCopy)) {
+    $scope.$watch('client', function() {
+        if (!angular.equals($scope.client, oldCopy)) {
             $scope.changed = true;
         }
     }, true);
 });
 
-module.controller('ApplicationSamlKeyCtrl', function($scope, $location, $http, $upload, realm, application,
-                                                         ApplicationCertificate, ApplicationCertificateGenerate,
-                                                         ApplicationCertificateDownload, Notifications) {
+module.controller('ClientSamlKeyCtrl', function($scope, $location, $http, $upload, realm, client,
+                                                         ClientCertificate, ClientCertificateGenerate,
+                                                         ClientCertificateDownload, Notifications) {
     $scope.realm = realm;
-    $scope.application = application;
+    $scope.client = client;
 
-    var signingKeyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id, attribute: 'saml.signing' },
+    var signingKeyInfo = ClientCertificate.get({ realm : realm.realm, client : client.id, attribute: 'saml.signing' },
         function() {
             $scope.signingKeyInfo = signingKeyInfo;
         }
     );
 
     $scope.generateSigningKey = function() {
-        var keyInfo = ApplicationCertificateGenerate.generate({ realm : realm.realm, application : application.id, attribute: 'saml.signing' },
+        var keyInfo = ClientCertificateGenerate.generate({ realm : realm.realm, client : client.id, attribute: 'saml.signing' },
             function() {
                 Notifications.success('Signing key has been regenerated.');
                 $scope.signingKeyInfo = keyInfo;
@@ -161,21 +157,21 @@ module.controller('ApplicationSamlKeyCtrl', function($scope, $location, $http, $
     };
 
     $scope.importSigningKey = function() {
-        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Signing/import/saml.signing");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/saml/Signing/import/saml.signing");
     };
 
     $scope.exportSigningKey = function() {
-        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Signing/export/saml.signing");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/saml/Signing/export/saml.signing");
     };
 
-    var encryptionKeyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id, attribute: 'saml.encryption' },
+    var encryptionKeyInfo = ClientCertificate.get({ realm : realm.realm, client : client.id, attribute: 'saml.encryption' },
         function() {
             $scope.encryptionKeyInfo = encryptionKeyInfo;
         }
     );
 
     $scope.generateEncryptionKey = function() {
-        var keyInfo = ApplicationCertificateGenerate.generate({ realm : realm.realm, application : application.id, attribute: 'saml.encryption' },
+        var keyInfo = ClientCertificateGenerate.generate({ realm : realm.realm, client : client.id, attribute: 'saml.encryption' },
             function() {
                 Notifications.success('Encryption key has been regenerated.');
                 $scope.encryptionKeyInfo = keyInfo;
@@ -187,11 +183,11 @@ module.controller('ApplicationSamlKeyCtrl', function($scope, $location, $http, $
     };
 
     $scope.importEncryptionKey = function() {
-        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Encryption/import/saml.encryption");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/saml/Encryption/import/saml.encryption");
     };
 
     $scope.exportEncryptionKey = function() {
-        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/Encryption/export/saml.encryption");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/saml/Encryption/export/saml.encryption");
     };
 
 
@@ -202,14 +198,14 @@ module.controller('ApplicationSamlKeyCtrl', function($scope, $location, $http, $
     });
 });
 
-module.controller('ApplicationCertificateImportCtrl', function($scope, $location, $http, $upload, realm, application, $routeParams,
-                                                         ApplicationCertificate, ApplicationCertificateGenerate,
-                                                         ApplicationCertificateDownload, Notifications) {
+module.controller('ClientCertificateImportCtrl', function($scope, $location, $http, $upload, realm, client, $routeParams,
+                                                         ClientCertificate, ClientCertificateGenerate,
+                                                         ClientCertificateDownload, Notifications) {
 
     var keyType = $routeParams.keyType;
     var attribute = $routeParams.attribute;
     $scope.realm = realm;
-    $scope.application = application;
+    $scope.client = client;
     $scope.keyType = keyType;
 
     $scope.files = [];
@@ -234,7 +230,7 @@ module.controller('ApplicationCertificateImportCtrl', function($scope, $location
         for (var i = 0; i < $scope.files.length; i++) {
             var $file = $scope.files[i];
             $scope.upload = $upload.upload({
-                url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/' + attribute + '/upload',
+                url: authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id + '/certificates/' + attribute + '/upload',
                 // method: POST or PUT,
                 // headers: {'headerKey': 'headerValue'}, withCredential: true,
                 data: {keystoreFormat: $scope.uploadKeyFormat,
@@ -247,11 +243,9 @@ module.controller('ApplicationCertificateImportCtrl', function($scope, $location
                 //fileFormDataName: myFile,
                 /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
                 //formDataAppender: function(formData, key, val){}
-            }).progress(function(evt) {
-                console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
             }).success(function(data, status, headers) {
                 Notifications.success("Keystore uploaded successfully.");
-                $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/saml/keys");
+                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/saml/keys");
             })
                 .error(function() {
                     Notifications.error("The key store can not be uploaded. Please verify the file.");
@@ -268,16 +262,16 @@ module.controller('ApplicationCertificateImportCtrl', function($scope, $location
     });
 });
 
-module.controller('ApplicationCertificateExportCtrl', function($scope, $location, $http, $upload, realm, application, $routeParams,
-                                                         ApplicationCertificate, ApplicationCertificateGenerate,
-                                                         ApplicationCertificateDownload, Notifications) {
+module.controller('ClientCertificateExportCtrl', function($scope, $location, $http, $upload, realm, client, $routeParams,
+                                                         ClientCertificate, ClientCertificateGenerate,
+                                                         ClientCertificateDownload, Notifications) {
     var keyType = $routeParams.keyType;
     var attribute = $routeParams.attribute;
     $scope.realm = realm;
-    $scope.application = application;
+    $scope.client = client;
     $scope.keyType = keyType;
     var jks = {
-        keyAlias: application.name,
+        keyAlias: client.clientId,
         realmAlias: realm.realm
     };
 
@@ -286,7 +280,7 @@ module.controller('ApplicationCertificateExportCtrl', function($scope, $location
         "PKCS12"
     ];
 
-    var keyInfo = ApplicationCertificate.get({ realm : realm.realm, application : application.id, attribute: attribute },
+    var keyInfo = ClientCertificate.get({ realm : realm.realm, client : client.id, attribute: attribute },
         function() {
             $scope.keyInfo = keyInfo;
         }
@@ -296,17 +290,17 @@ module.controller('ApplicationCertificateExportCtrl', function($scope, $location
 
     $scope.download = function() {
         $http({
-            url: authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/certificates/' + attribute + '/download',
+            url: authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id + '/certificates/' + attribute + '/download',
             method: 'POST',
             responseType: 'arraybuffer',
             data: $scope.jks,
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/octet-stream'
+                'Accept': 'client/octet-stream'
             }
         }).success(function(data){
             var blob = new Blob([data], {
-                type: 'application/octet-stream'
+                type: 'client/octet-stream'
             });
             var ext = ".jks";
             if ($scope.jks.format == 'PKCS12') ext = ".p12";
@@ -323,18 +317,18 @@ module.controller('ApplicationCertificateExportCtrl', function($scope, $location
     });
 });
 
-module.controller('ApplicationSessionsCtrl', function($scope, realm, sessionCount, application,
-                                                      ApplicationUserSessions) {
+module.controller('ClientSessionsCtrl', function($scope, realm, sessionCount, client,
+                                                      ClientUserSessions) {
     $scope.realm = realm;
     $scope.count = sessionCount.count;
     $scope.sessions = [];
-    $scope.application = application;
+    $scope.client = client;
 
     $scope.page = 0;
 
     $scope.query = {
         realm : realm.realm,
-        application: $scope.application.id,
+        client: $scope.client.id,
         max : 5,
         first : 0
     }
@@ -365,17 +359,17 @@ module.controller('ApplicationSessionsCtrl', function($scope, realm, sessionCoun
     };
 
     $scope.loadUsers = function() {
-        ApplicationUserSessions.query($scope.query, function(updated) {
+        ClientUserSessions.query($scope.query, function(updated) {
             $scope.sessions = updated;
         })
     };
 });
 
-module.controller('ApplicationRoleDetailCtrl', function($scope, realm, application, role, roles, applications,
-                                                        Role, ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
+module.controller('ClientRoleDetailCtrl', function($scope, realm, client, role, roles, clients,
+                                                        Role, ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
                                                         $http, $location, Dialog, Notifications) {
     $scope.realm = realm;
-    $scope.application = application;
+    $scope.client = client;
     $scope.role = angular.copy(role);
     $scope.create = !role.name;
 
@@ -383,16 +377,16 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
 
     $scope.save = function() {
         if ($scope.create) {
-            ApplicationRole.save({
+            ClientRole.save({
                 realm: realm.realm,
-                application : application.id
+                client : client.id
             }, $scope.role, function (data, headers) {
                 $scope.changed = false;
                 role = angular.copy($scope.role);
 
-                ApplicationRole.get({ realm: realm.realm, application : application.id, role: role.name }, function(role) {
+                ClientRole.get({ realm: realm.realm, client : client.id, role: role.name }, function(role) {
                     var id = role.id;
-                    $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/roles/" + id);
+                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/roles/" + id);
                     Notifications.success("The role has been created.");
                 });
             });
@@ -405,30 +399,30 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
         Dialog.confirmDelete($scope.role.name, 'role', function() {
             $scope.role.$remove({
                 realm : realm.realm,
-                application : application.id,
+                client : client.id,
                 role : $scope.role.id
             }, function() {
-                $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/roles");
+                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/roles");
                 Notifications.success("The role has been deleted.");
             });
         });
     };
 
     $scope.cancel = function () {
-        $location.url("/realms/" + realm.realm + "/applications/" + application.id + "/roles");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/roles");
     };
 
 
-    roleControl($scope, realm, role, roles, applications,
-        ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
+    roleControl($scope, realm, role, roles, clients,
+        ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
         $http, $location, Notifications, Dialog);
 
 });
 
-module.controller('ApplicationImportCtrl', function($scope, $location, $upload, realm, serverInfo, Notifications) {
+module.controller('ClientImportCtrl', function($scope, $location, $upload, realm, serverInfo, Notifications) {
 
     $scope.realm = realm;
-    $scope.configFormats = serverInfo.applicationImporters;
+    $scope.configFormats = serverInfo.clientImporters;
     $scope.configFormat = null;
 
     $scope.files = [];
@@ -446,7 +440,7 @@ module.controller('ApplicationImportCtrl', function($scope, $location, $upload, 
         for (var i = 0; i < $scope.files.length; i++) {
             var $file = $scope.files[i];
             $scope.upload = $upload.upload({
-                url: authUrl + '/admin/realms/' + realm.realm + '/application-importers/' + $scope.configFormat.id + '/upload',
+                url: authUrl + '/admin/realms/' + realm.realm + '/client-importers/' + $scope.configFormat.id + '/upload',
                 // method: POST or PUT,
                 // headers: {'headerKey': 'headerValue'}, withCredential: true,
                 data: {myObj: ""},
@@ -455,11 +449,9 @@ module.controller('ApplicationImportCtrl', function($scope, $location, $upload, 
                 //fileFormDataName: myFile,
                 /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
                 //formDataAppender: function(formData, key, val){}
-            }).progress(function(evt) {
-                console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
             }).success(function(data, status, headers) {
                 Notifications.success("Uploaded successfully.");
-                $location.url("/realms/" + realm.realm + "/applications");
+                $location.url("/realms/" + realm.realm + "/clients");
             })
                 .error(function() {
                     Notifications.error("The file can not be uploaded. Please verify the file.");
@@ -477,10 +469,10 @@ module.controller('ApplicationImportCtrl', function($scope, $location, $upload, 
 });
 
 
-module.controller('ApplicationListCtrl', function($scope, realm, applications, Application, serverInfo, $location) {
+module.controller('ClientListCtrl', function($scope, realm, clients, Client, serverInfo, $location) {
     $scope.realm = realm;
-    $scope.applications = applications;
-    $scope.importButton = serverInfo.applicationImporters.length > 0;
+    $scope.clients = clients;
+    $scope.importButton = serverInfo.clientImporters.length > 0;
     $scope.$watch(function() {
         return $location.path();
     }, function() {
@@ -488,10 +480,9 @@ module.controller('ApplicationListCtrl', function($scope, realm, applications, A
     });
 });
 
-module.controller('ApplicationInstallationCtrl', function($scope, realm, application, ApplicationInstallation,ApplicationInstallationJBoss, $http, $routeParams) {
-    console.log('ApplicationInstallationCtrl');
+module.controller('ClientInstallationCtrl', function($scope, realm, client, ClientInstallation,ClientInstallationJBoss, $http, $routeParams) {
     $scope.realm = realm;
-    $scope.application = application;
+    $scope.client = client;
     $scope.installation = null;
     $scope.download = null;
     $scope.configFormat = null;
@@ -503,14 +494,14 @@ module.controller('ApplicationInstallationCtrl', function($scope, realm, applica
 
     $scope.changeFormat = function() {
         if ($scope.configFormat == "keycloak.json") {
-            var url = ApplicationInstallation.url({ realm: $routeParams.realm, application: $routeParams.application });
+            var url = ClientInstallation.url({ realm: $routeParams.realm, client: $routeParams.client });
             $http.get(url).success(function(data) {
                 var tmp = angular.fromJson(data);
                 $scope.installation = angular.toJson(tmp, true);
                 $scope.type = 'application/json';
             })
         } else if ($scope.configFormat == "Wildfly/JBoss Subsystem XML") {
-            var url = ApplicationInstallationJBoss.url({ realm: $routeParams.realm, application: $routeParams.application });
+            var url = ClientInstallationJBoss.url({ realm: $routeParams.realm, client: $routeParams.client });
             $http.get(url).success(function(data) {
                 $scope.installation = data;
                 $scope.type = 'text/xml';
@@ -523,9 +514,7 @@ module.controller('ApplicationInstallationCtrl', function($scope, realm, applica
     }
 });
 
-module.controller('ApplicationDetailCtrl', function($scope, realm, application, serverInfo, Application, $location, Dialog, Notifications) {
-    console.log('ApplicationDetailCtrl');
-
+module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo, Client, $location, Dialog, Notifications) {
     $scope.accessTypes = [
         "confidential",
         "public",
@@ -548,7 +537,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     ];
 
     $scope.realm = realm;
-    $scope.create = !application.name;
+    $scope.create = !client.clientId;
     $scope.samlAuthnStatement = false;
     $scope.samlMultiValuedRoles = false;
     $scope.samlServerSignature = false;
@@ -558,43 +547,43 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     $scope.samlForcePostBinding = false;
     $scope.samlForceNameIdFormat = false;
     if (!$scope.create) {
-        if (!application.attributes) {
-            application.attributes = {};
+        if (!client.attributes) {
+            client.attributes = {};
         }
-        $scope.application= angular.copy(application);
+        $scope.client= angular.copy(client);
         $scope.accessType = $scope.accessTypes[0];
-        if (application.bearerOnly) {
+        if (client.bearerOnly) {
             $scope.accessType = $scope.accessTypes[2];
-        } else if (application.publicClient) {
+        } else if (client.publicClient) {
             $scope.accessType = $scope.accessTypes[1];
         }
-        if (application.protocol) {
-            $scope.protocol = $scope.protocols[$scope.protocols.indexOf(application.protocol)];
+        if (client.protocol) {
+            $scope.protocol = $scope.protocols[$scope.protocols.indexOf(client.protocol)];
         } else {
             $scope.protocol = $scope.protocols[0];
         }
-        if (application.attributes['saml.signature.algorithm'] == 'RSA_SHA1') {
+        if (client.attributes['saml.signature.algorithm'] == 'RSA_SHA1') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[0];
-        } else if (application.attributes['saml.signature.algorithm'] == 'RSA_SHA256') {
+        } else if (client.attributes['saml.signature.algorithm'] == 'RSA_SHA256') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
-        } else if (application.attributes['saml.signature.algorithm'] == 'RSA_SHA512') {
+        } else if (client.attributes['saml.signature.algorithm'] == 'RSA_SHA512') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[2];
-        } else if (application.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
+        } else if (client.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[3];
         }
-        if (application.attributes['saml_name_id_format'] == 'unspecified') {
+        if (client.attributes['saml_name_id_format'] == 'unspecified') {
             $scope.nameIdFormat = $scope.nameIdFormats[0];
-        } else if (application.attributes['saml_name_id_format'] == 'email') {
+        } else if (client.attributes['saml_name_id_format'] == 'email') {
             $scope.nameIdFormat = $scope.nameIdFormats[1];
-        } else if (application.attributes['saml_name_id_format'] == 'transient') {
+        } else if (client.attributes['saml_name_id_format'] == 'transient') {
             $scope.nameIdFormat = $scope.nameIdFormats[2];
-        } else if (application.attributes['saml_name_id_format'] == 'persistent') {
+        } else if (client.attributes['saml_name_id_format'] == 'persistent') {
             $scope.nameIdFormat = $scope.nameIdFormats[3];
         }
 
     } else {
-        $scope.application = { enabled: true, attributes: {}};
-        $scope.application.redirectUris = [];
+        $scope.client = { enabled: true, attributes: {}};
+        $scope.client.redirectUris = [];
         $scope.accessType = $scope.accessTypes[0];
         $scope.protocol = $scope.protocols[0];
         $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
@@ -603,58 +592,58 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         $scope.samlForceNameIdFormat = false;
     }
 
-    if ($scope.application.attributes["saml.server.signature"]) {
-        if ($scope.application.attributes["saml.server.signature"] == "true") {
+    if ($scope.client.attributes["saml.server.signature"]) {
+        if ($scope.client.attributes["saml.server.signature"] == "true") {
             $scope.samlServerSignature = true;
         } else {
             $scope.samlServerSignature = false;
 
         }
     }
-    if ($scope.application.attributes["saml.assertion.signature"]) {
-        if ($scope.application.attributes["saml.assertion.signature"] == "true") {
+    if ($scope.client.attributes["saml.assertion.signature"]) {
+        if ($scope.client.attributes["saml.assertion.signature"] == "true") {
             $scope.samlAssertionSignature = true;
         } else {
             $scope.samlAssertionSignature = false;
         }
     }
-    if ($scope.application.attributes["saml.client.signature"]) {
-        if ($scope.application.attributes["saml.client.signature"] == "true") {
+    if ($scope.client.attributes["saml.client.signature"]) {
+        if ($scope.client.attributes["saml.client.signature"] == "true") {
             $scope.samlClientSignature = true;
         } else {
             $scope.samlClientSignature = false;
         }
     }
-    if ($scope.application.attributes["saml.encrypt"]) {
-        if ($scope.application.attributes["saml.encrypt"] == "true") {
+    if ($scope.client.attributes["saml.encrypt"]) {
+        if ($scope.client.attributes["saml.encrypt"] == "true") {
             $scope.samlEncrypt = true;
         } else {
             $scope.samlEncrypt = false;
         }
     }
-    if ($scope.application.attributes["saml.authnstatement"]) {
-        if ($scope.application.attributes["saml.authnstatement"] == "true") {
+    if ($scope.client.attributes["saml.authnstatement"]) {
+        if ($scope.client.attributes["saml.authnstatement"] == "true") {
             $scope.samlAuthnStatement = true;
         } else {
             $scope.samlAuthnStatement = false;
         }
     }
-    if ($scope.application.attributes["saml_force_name_id_format"]) {
-        if ($scope.application.attributes["saml_force_name_id_format"] == "true") {
+    if ($scope.client.attributes["saml_force_name_id_format"]) {
+        if ($scope.client.attributes["saml_force_name_id_format"] == "true") {
             $scope.samlForceNameIdFormat = true;
         } else {
             $scope.samlForceNameIdFormat = false;
         }
     }
-    if ($scope.application.attributes["saml.multivalued.roles"]) {
-        if ($scope.application.attributes["saml.multivalued.roles"] == "true") {
+    if ($scope.client.attributes["saml.multivalued.roles"]) {
+        if ($scope.client.attributes["saml.multivalued.roles"] == "true") {
             $scope.samlMultiValuedRoles = true;
         } else {
             $scope.samlMultiValuedRoles = false;
         }
     }
-    if ($scope.application.attributes["saml.force.post.binding"]) {
-        if ($scope.application.attributes["saml.force.post.binding"] == "true") {
+    if ($scope.client.attributes["saml.force.post.binding"]) {
+        if ($scope.client.attributes["saml.force.post.binding"] == "true") {
             $scope.samlForcePostBinding = true;
         } else {
             $scope.samlForcePostBinding = false;
@@ -667,31 +656,31 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
 
     $scope.changeAccessType = function() {
         if ($scope.accessType == "confidential") {
-            $scope.application.bearerOnly = false;
-            $scope.application.publicClient = false;
+            $scope.client.bearerOnly = false;
+            $scope.client.publicClient = false;
         } else if ($scope.accessType == "public") {
-            $scope.application.bearerOnly = false;
-            $scope.application.publicClient = true;
+            $scope.client.bearerOnly = false;
+            $scope.client.publicClient = true;
         } else if ($scope.accessType == "bearer-only") {
-            $scope.application.bearerOnly = true;
-            $scope.application.publicClient = false;
+            $scope.client.bearerOnly = true;
+            $scope.client.publicClient = false;
         }
     };
 
     $scope.changeProtocol = function() {
         if ($scope.protocol == "openid-connect") {
-            $scope.application.protocol = "openid-connect";
+            $scope.client.protocol = "openid-connect";
         } else if ($scope.accessType == "saml") {
-            $scope.application.protocol = "saml";
+            $scope.client.protocol = "saml";
         }
     };
 
     $scope.changeAlgorithm = function() {
-        $scope.application.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
+        $scope.client.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
     };
 
     $scope.changeNameIdFormat = function() {
-        $scope.application.attributes['saml_name_id_format'] = $scope.nameIdFormat;
+        $scope.client.attributes['saml_name_id_format'] = $scope.nameIdFormat;
     };
 
     $scope.$watch(function() {
@@ -700,125 +689,125 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         $scope.path = $location.path().substring(1).split("/");
     });
 
-    $scope.$watch('application', function() {
-        if (!angular.equals($scope.application, application)) {
+    $scope.$watch('client', function() {
+        if (!angular.equals($scope.client, client)) {
             $scope.changed = true;
         }
     }, true);
 
     $scope.deleteWebOrigin = function(index) {
-        $scope.application.webOrigins.splice(index, 1);
+        $scope.client.webOrigins.splice(index, 1);
     }
     $scope.addWebOrigin = function() {
-        $scope.application.webOrigins.push($scope.newWebOrigin);
+        $scope.client.webOrigins.push($scope.newWebOrigin);
         $scope.newWebOrigin = "";
     }
     $scope.deleteRedirectUri = function(index) {
-        $scope.application.redirectUris.splice(index, 1);
+        $scope.client.redirectUris.splice(index, 1);
     }
     $scope.addRedirectUri = function() {
-        $scope.application.redirectUris.push($scope.newRedirectUri);
+        $scope.client.redirectUris.push($scope.newRedirectUri);
         $scope.newRedirectUri = "";
     }
 
     $scope.save = function() {
         if ($scope.samlServerSignature == true) {
-            $scope.application.attributes["saml.server.signature"] = "true";
+            $scope.client.attributes["saml.server.signature"] = "true";
         } else {
-            $scope.application.attributes["saml.server.signature"] = "false";
+            $scope.client.attributes["saml.server.signature"] = "false";
 
         }
         if ($scope.samlAssertionSignature == true) {
-            $scope.application.attributes["saml.assertion.signature"] = "true";
+            $scope.client.attributes["saml.assertion.signature"] = "true";
         } else {
-            $scope.application.attributes["saml.assertion.signature"] = "false";
+            $scope.client.attributes["saml.assertion.signature"] = "false";
         }
         if ($scope.samlClientSignature == true) {
-            $scope.application.attributes["saml.client.signature"] = "true";
+            $scope.client.attributes["saml.client.signature"] = "true";
         } else {
-            $scope.application.attributes["saml.client.signature"] = "false";
+            $scope.client.attributes["saml.client.signature"] = "false";
 
         }
         if ($scope.samlEncrypt == true) {
-            $scope.application.attributes["saml.encrypt"] = "true";
+            $scope.client.attributes["saml.encrypt"] = "true";
         } else {
-            $scope.application.attributes["saml.encrypt"] = "false";
+            $scope.client.attributes["saml.encrypt"] = "false";
 
         }
         if ($scope.samlAuthnStatement == true) {
-            $scope.application.attributes["saml.authnstatement"] = "true";
+            $scope.client.attributes["saml.authnstatement"] = "true";
         } else {
-            $scope.application.attributes["saml.authnstatement"] = "false";
+            $scope.client.attributes["saml.authnstatement"] = "false";
 
         }
         if ($scope.samlForceNameIdFormat == true) {
-            $scope.application.attributes["saml_force_name_id_format"] = "true";
+            $scope.client.attributes["saml_force_name_id_format"] = "true";
         } else {
-            $scope.application.attributes["saml_force_name_id_format"] = "false";
+            $scope.client.attributes["saml_force_name_id_format"] = "false";
 
         }
         if ($scope.samlMultiValuedRoles == true) {
-            $scope.application.attributes["saml.multivalued.roles"] = "true";
+            $scope.client.attributes["saml.multivalued.roles"] = "true";
         } else {
-            $scope.application.attributes["saml.multivalued.roles"] = "false";
+            $scope.client.attributes["saml.multivalued.roles"] = "false";
 
         }
         if ($scope.samlForcePostBinding == true) {
-            $scope.application.attributes["saml.force.post.binding"] = "true";
+            $scope.client.attributes["saml.force.post.binding"] = "true";
         } else {
-            $scope.application.attributes["saml.force.post.binding"] = "false";
+            $scope.client.attributes["saml.force.post.binding"] = "false";
 
         }
 
-        $scope.application.protocol = $scope.protocol;
-        $scope.application.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
-        $scope.application.attributes['saml_name_id_format'] = $scope.nameIdFormat;
+        $scope.client.protocol = $scope.protocol;
+        $scope.client.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
+        $scope.client.attributes['saml_name_id_format'] = $scope.nameIdFormat;
 
-        if ($scope.application.protocol != 'saml' && !$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
+        if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {
-                Application.save({
+                Client.save({
                     realm: realm.realm,
-                    application: ''
-                }, $scope.application, function (data, headers) {
+                    client: ''
+                }, $scope.client, function (data, headers) {
                     $scope.changed = false;
                     var l = headers().location;
                     var id = l.substring(l.lastIndexOf("/") + 1);
-                    $location.url("/realms/" + realm.realm + "/applications/" + id);
-                    Notifications.success("The application has been created.");
+                    $location.url("/realms/" + realm.realm + "/clients/" + id);
+                    Notifications.success("The client has been created.");
                 });
             } else {
-                Application.update({
+                Client.update({
                     realm : realm.realm,
-                    application : application.id
-                }, $scope.application, function() {
+                    client : client.id
+                }, $scope.client, function() {
                     $scope.changed = false;
-                    application = angular.copy($scope.application);
-                    $location.url("/realms/" + realm.realm + "/applications/" + application.id);
-                    Notifications.success("Your changes have been saved to the application.");
+                    client = angular.copy($scope.client);
+                    $location.url("/realms/" + realm.realm + "/clients/" + client.id);
+                    Notifications.success("Your changes have been saved to the client.");
                 });
             }
         }
     };
 
     $scope.reset = function() {
-        $scope.application = angular.copy(application);
+        $scope.client = angular.copy(client);
         $scope.changed = false;
     };
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/applications");
+        $location.url("/realms/" + realm.realm + "/clients");
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.application.name, 'application', function() {
-            $scope.application.$remove({
+        Dialog.confirmDelete($scope.client.clientId, 'client', function() {
+            $scope.client.$remove({
                 realm : realm.realm,
-                application : $scope.application.id
+                client : $scope.client.id
             }, function() {
-                $location.url("/realms/" + realm.realm + "/applications");
-                Notifications.success("The application has been deleted.");
+                $location.url("/realms/" + realm.realm + "/clients");
+                Notifications.success("The client has been deleted.");
             });
         });
     };
@@ -826,33 +815,32 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
 
 });
 
-module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, application, applications, Notifications,
-                                                          Application,
-                                                          ApplicationRealmScopeMapping, ApplicationApplicationScopeMapping, ApplicationRole,
-                                                          ApplicationAvailableRealmScopeMapping, ApplicationAvailableApplicationScopeMapping,
-                                                          ApplicationCompositeRealmScopeMapping, ApplicationCompositeApplicationScopeMapping) {
+module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, client, clients, Notifications,
+                                                          Client,
+                                                          ClientRealmScopeMapping, ClientClientScopeMapping, ClientRole,
+                                                          ClientAvailableRealmScopeMapping, ClientAvailableClientScopeMapping,
+                                                          ClientCompositeRealmScopeMapping, ClientCompositeClientScopeMapping) {
     $scope.realm = realm;
-    $scope.application = angular.copy(application);
+    $scope.client = angular.copy(client);
     $scope.selectedRealmRoles = [];
     $scope.selectedRealmMappings = [];
     $scope.realmMappings = [];
-    $scope.applications = applications;
-    $scope.applicationRoles = [];
-    $scope.applicationComposite = [];
-    $scope.selectedApplicationRoles = [];
-    $scope.selectedApplicationMappings = [];
-    $scope.applicationMappings = [];
+    $scope.clients = clients;
+    $scope.clientRoles = [];
+    $scope.clientComposite = [];
+    $scope.selectedClientRoles = [];
+    $scope.selectedClientMappings = [];
+    $scope.clientMappings = [];
     $scope.dummymodel = [];
 
 
     $scope.changeFullScopeAllowed = function() {
-        console.log('change full scope');
-        Application.update({
+        Client.update({
             realm : realm.realm,
-            application : application.id
-        }, $scope.application, function() {
+            client : client.id
+        }, $scope.client, function() {
             $scope.changed = false;
-            application = angular.copy($scope.application);
+            client = angular.copy($scope.client);
             updateRealmRoles();
             Notifications.success("Scope mappings updated.");
         });
@@ -861,30 +849,29 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
 
 
     function updateRealmRoles() {
-        $scope.realmRoles = ApplicationAvailableRealmScopeMapping.query({realm : realm.realm, application : application.id});
-        $scope.realmMappings = ApplicationRealmScopeMapping.query({realm : realm.realm, application : application.id});
-        $scope.realmComposite = ApplicationCompositeRealmScopeMapping.query({realm : realm.realm, application : application.id});
+        $scope.realmRoles = ClientAvailableRealmScopeMapping.query({realm : realm.realm, client : client.id});
+        $scope.realmMappings = ClientRealmScopeMapping.query({realm : realm.realm, client : client.id});
+        $scope.realmComposite = ClientCompositeRealmScopeMapping.query({realm : realm.realm, client : client.id});
     }
 
-    function updateAppRoles() {
-        if ($scope.targetApp) {
-            console.debug($scope.targetApp.name);
-            $scope.applicationRoles = ApplicationAvailableApplicationScopeMapping.query({realm : realm.realm, application : application.id, targetApp : $scope.targetApp.id});
-            $scope.applicationMappings = ApplicationApplicationScopeMapping.query({realm : realm.realm, application : application.id, targetApp : $scope.targetApp.id});
-            $scope.applicationComposite = ApplicationCompositeApplicationScopeMapping.query({realm : realm.realm, application : application.id, targetApp : $scope.targetApp.id});
+    function updateClientRoles() {
+        if ($scope.targetClient) {
+            $scope.clientRoles = ClientAvailableClientScopeMapping.query({realm : realm.realm, client : client.id, targetClient : $scope.targetClient.id});
+            $scope.clientMappings = ClientClientScopeMapping.query({realm : realm.realm, client : client.id, targetClient : $scope.targetClient.id});
+            $scope.clientComposite = ClientCompositeClientScopeMapping.query({realm : realm.realm, client : client.id, targetClient : $scope.targetClient.id});
         } else {
-            $scope.applicationRoles = null;
-            $scope.applicationMappings = null;
-            $scope.applicationComposite = null;
+            $scope.clientRoles = null;
+            $scope.clientMappings = null;
+            $scope.clientComposite = null;
         }
     }
 
-    $scope.changeApplication = function() {
-        updateAppRoles();
+    $scope.changeClient = function() {
+        updateClientRoles();
     };
 
     $scope.addRealmRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/scope-mappings/realm',
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id + '/scope-mappings/realm',
                 $scope.selectedRealmRoles).success(function() {
                 updateRealmRoles();
                 Notifications.success("Scope mappings updated.");
@@ -892,25 +879,25 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteRealmRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id +  '/scope-mappings/realm',
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id +  '/scope-mappings/realm',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function () {
                 updateRealmRoles();
                 Notifications.success("Scope mappings updated.");
             });
     };
 
-    $scope.addApplicationRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id +  '/scope-mappings/applications-by-id/' + $scope.targetApp.id,
-                $scope.selectedApplicationRoles).success(function () {
-                updateAppRoles();
+    $scope.addClientRole = function() {
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id +  '/scope-mappings/clients-by-id/' + $scope.targetClient.id,
+                $scope.selectedClientRoles).success(function () {
+                updateClientRoles();
                 Notifications.success("Scope mappings updated.");
             });
     };
 
-    $scope.deleteApplicationRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id +  '/scope-mappings/applications-by-id/' + $scope.targetApp.id,
-            {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function () {
-                updateAppRoles();
+    $scope.deleteClientRole = function() {
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id +  '/scope-mappings/clients-by-id/' + $scope.targetClient.id,
+            {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).success(function () {
+                updateClientRoles();
                 Notifications.success("Scope mappings updated.");
             });
     };
@@ -918,45 +905,45 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     updateRealmRoles();
 });
 
-module.controller('ApplicationRevocationCtrl', function($scope, realm, application, Application, ApplicationPushRevocation, $location, Dialog, Notifications) {
+module.controller('ClientRevocationCtrl', function($scope, realm, client, Client, ClientPushRevocation, $location, Dialog, Notifications) {
     $scope.realm = realm;
-    $scope.application = application;
+    $scope.client = client;
 
     var setNotBefore = function() {
-        if ($scope.application.notBefore == 0) {
+        if ($scope.client.notBefore == 0) {
             $scope.notBefore = "None";
         } else {
-            $scope.notBefore = new Date($scope.application.notBefore * 1000);
+            $scope.notBefore = new Date($scope.client.notBefore * 1000);
         }
     };
 
     setNotBefore();
 
     var refresh = function() {
-        Application.get({ realm : realm.realm, application: $scope.application.id }, function(updated) {
-            $scope.application = updated;
+        Client.get({ realm : realm.realm, client: $scope.client.id }, function(updated) {
+            $scope.client = updated;
             setNotBefore();
         })
 
     };
 
     $scope.clear = function() {
-        $scope.application.notBefore = 0;
-        Application.update({ realm : realm.realm, application: application.id}, $scope.application, function () {
+        $scope.client.notBefore = 0;
+        Client.update({ realm : realm.realm, client: client.id}, $scope.client, function () {
             $scope.notBefore = "None";
-            Notifications.success('Not Before cleared for application.');
+            Notifications.success('Not Before cleared for client.');
             refresh();
         });
     }
     $scope.setNotBeforeNow = function() {
-        $scope.application.notBefore = new Date().getTime()/1000;
-        Application.update({ realm : realm.realm, application: $scope.application.id}, $scope.application, function () {
-            Notifications.success('Not Before set for application.');
+        $scope.client.notBefore = new Date().getTime()/1000;
+        Client.update({ realm : realm.realm, client: $scope.client.id}, $scope.client, function () {
+            Notifications.success('Not Before set for client.');
             refresh();
         });
     }
     $scope.pushRevocation = function() {
-        ApplicationPushRevocation.save({realm : realm.realm, application: $scope.application.id}, function (globalReqResult) {
+        ClientPushRevocation.save({realm : realm.realm, client: $scope.client.id}, function (globalReqResult) {
             var successCount = globalReqResult.successRequests ? globalReqResult.successRequests.length : 0;
             var failedCount  = globalReqResult.failedRequests ? globalReqResult.failedRequests.length : 0;
 
@@ -973,32 +960,32 @@ module.controller('ApplicationRevocationCtrl', function($scope, realm, applicati
 
 });
 
-module.controller('ApplicationClusteringCtrl', function($scope, application, Application, ApplicationTestNodesAvailable, realm, $location, $route, Notifications, TimeUnit) {
-    $scope.application = application;
+module.controller('ClientClusteringCtrl', function($scope, client, Client, ClientTestNodesAvailable, realm, $location, $route, Notifications, TimeUnit) {
+    $scope.client = client;
     $scope.realm = realm;
 
-    var oldCopy = angular.copy($scope.application);
+    var oldCopy = angular.copy($scope.client);
     $scope.changed = false;
 
-    $scope.$watch('application', function() {
-        if (!angular.equals($scope.application, oldCopy)) {
+    $scope.$watch('client', function() {
+        if (!angular.equals($scope.client, oldCopy)) {
             $scope.changed = true;
         }
     }, true);
 
-    $scope.application.nodeReRegistrationTimeoutUnit = TimeUnit.autoUnit(application.nodeReRegistrationTimeout);
-    $scope.application.nodeReRegistrationTimeout = TimeUnit.toUnit(application.nodeReRegistrationTimeout, $scope.application.nodeReRegistrationTimeoutUnit);
-    $scope.$watch('application.nodeReRegistrationTimeoutUnit', function(to, from) {
-        $scope.application.nodeReRegistrationTimeout = TimeUnit.convert($scope.application.nodeReRegistrationTimeout, from, to);
+    $scope.client.nodeReRegistrationTimeoutUnit = TimeUnit.autoUnit(client.nodeReRegistrationTimeout);
+    $scope.client.nodeReRegistrationTimeout = TimeUnit.toUnit(client.nodeReRegistrationTimeout, $scope.client.nodeReRegistrationTimeoutUnit);
+    $scope.$watch('client.nodeReRegistrationTimeoutUnit', function(to, from) {
+        $scope.client.nodeReRegistrationTimeout = TimeUnit.convert($scope.client.nodeReRegistrationTimeout, from, to);
     });
 
     $scope.save = function() {
-        var appCopy = angular.copy($scope.application);
-        delete appCopy['nodeReRegistrationTimeoutUnit'];
-        appCopy.nodeReRegistrationTimeout = TimeUnit.toSeconds($scope.application.nodeReRegistrationTimeout, $scope.application.nodeReRegistrationTimeoutUnit)
-        Application.update({ realm : realm.realm, application : application.id }, appCopy, function () {
+        var clientCopy = angular.copy($scope.client);
+        delete clientCopy['nodeReRegistrationTimeoutUnit'];
+        clientCopy.nodeReRegistrationTimeout = TimeUnit.toSeconds($scope.client.nodeReRegistrationTimeout, $scope.client.nodeReRegistrationTimeoutUnit)
+        Client.update({ realm : realm.realm, client : client.id }, clientCopy, function () {
             $route.reload();
-            Notifications.success('Your changes have been saved to the application.');
+            Notifications.success('Your changes have been saved to the client.');
         });
     };
 
@@ -1007,8 +994,7 @@ module.controller('ApplicationClusteringCtrl', function($scope, application, App
     };
 
     $scope.testNodesAvailable = function() {
-        console.log('testNodesAvailable');
-        ApplicationTestNodesAvailable.get({ realm : realm.realm, application : application.id }, function(globalReqResult) {
+        ClientTestNodesAvailable.get({ realm : realm.realm, client : client.id }, function(globalReqResult) {
             $route.reload();
 
             var successCount = globalReqResult.successRequests ? globalReqResult.successRequests.length : 0;
@@ -1025,12 +1011,12 @@ module.controller('ApplicationClusteringCtrl', function($scope, application, App
         });
     };
 
-    if (application.registeredNodes) {
+    if (client.registeredNodes) {
         var nodeRegistrations = [];
-        for (node in application.registeredNodes) {
+        for (node in client.registeredNodes) {
             reg = {
                 host: node,
-                lastRegistration: new Date(application.registeredNodes[node] * 1000)
+                lastRegistration: new Date(client.registeredNodes[node] * 1000)
             }
             nodeRegistrations.push(reg);
         }
@@ -1039,24 +1025,22 @@ module.controller('ApplicationClusteringCtrl', function($scope, application, App
     };
 });
 
-module.controller('ApplicationClusteringNodeCtrl', function($scope, application, Application, ApplicationClusterNode, realm, $location, $routeParams, Notifications) {
-    $scope.application = application;
+module.controller('ClientClusteringNodeCtrl', function($scope, client, Client, ClientClusterNode, realm, $location, $routeParams, Notifications) {
+    $scope.client = client;
     $scope.realm = realm;
     $scope.create = !$routeParams.node;
 
     $scope.save = function() {
-        console.log('registerNode: ' + $scope.node.host);
-        ApplicationClusterNode.save({ realm : realm.realm, application : application.id , node: $scope.node.host }, function() {
+        ClientClusterNode.save({ realm : realm.realm, client : client.id , node: $scope.node.host }, function() {
             Notifications.success('Node ' + $scope.node.host + ' registered successfully.');
-            $location.url('/realms/' + realm.realm + '/applications/' + application.id +  '/clustering');
+            $location.url('/realms/' + realm.realm + '/clients/' + client.id +  '/clustering');
         });
     }
 
     $scope.unregisterNode = function() {
-        console.log('unregisterNode: ' + $scope.node.host);
-        ApplicationClusterNode.remove({ realm : realm.realm, application : application.id , node: $scope.node.host }, function() {
+        ClientClusterNode.remove({ realm : realm.realm, client : client.id , node: $scope.node.host }, function() {
             Notifications.success('Node ' + $scope.node.host + ' unregistered successfully.');
-            $location.url('/realms/' + realm.realm + '/applications/' + application.id +  '/clustering');
+            $location.url('/realms/' + realm.realm + '/clients/' + client.id +  '/clustering');
         });
     }
 
@@ -1064,7 +1048,7 @@ module.controller('ApplicationClusteringNodeCtrl', function($scope, application,
         $scope.node = {}
         $scope.registered = false;
     } else {
-        var lastRegTime = application.registeredNodes[$routeParams.node];
+        var lastRegTime = client.registeredNodes[$routeParams.node];
 
         if (lastRegTime) {
             $scope.registered = true;
@@ -1082,16 +1066,16 @@ module.controller('ApplicationClusteringNodeCtrl', function($scope, application,
     }
 });
 
-module.controller('ApplicationProtocolMapperListCtrl', function($scope, realm, application, serverInfo,
-                                                    ApplicationProtocolMappersByProtocol,
+module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client, serverInfo,
+                                                    ClientProtocolMappersByProtocol,
                                                     $http, $location, Dialog, Notifications) {
     $scope.realm = realm;
-    $scope.application = application;
-    if (application.protocol == null) {
-        application.protocol = 'openid-connect';
+    $scope.client = client;
+    if (client.protocol == null) {
+        client.protocol = 'openid-connect';
     }
 
-    var protocolMappers = serverInfo.protocolMapperTypes[application.protocol];
+    var protocolMappers = serverInfo.protocolMapperTypes[client.protocol];
     var mapperTypes = {};
     for (var i = 0; i < protocolMappers.length; i++) {
         mapperTypes[protocolMappers[i].id] = protocolMappers[i];
@@ -1100,22 +1084,22 @@ module.controller('ApplicationProtocolMapperListCtrl', function($scope, realm, a
 
 
     var updateMappers = function() {
-        $scope.mappers = ApplicationProtocolMappersByProtocol.query({realm : realm.realm, application : application.id, protocol : application.protocol});
+        $scope.mappers = ClientProtocolMappersByProtocol.query({realm : realm.realm, client : client.id, protocol : client.protocol});
     };
 
     updateMappers();
 });
 
-module.controller('AddBuiltinProtocolMapperCtrl', function($scope, realm, application, serverInfo,
-                                                            ApplicationProtocolMappersByProtocol,
+module.controller('AddBuiltinProtocolMapperCtrl', function($scope, realm, client, serverInfo,
+                                                            ClientProtocolMappersByProtocol,
                                                             $http, $location, Dialog, Notifications) {
     $scope.realm = realm;
-    $scope.application = application;
-    if (application.protocol == null) {
-        application.protocol = 'openid-connect';
+    $scope.client = client;
+    if (client.protocol == null) {
+        client.protocol = 'openid-connect';
     }
 
-    var protocolMappers = serverInfo.protocolMapperTypes[application.protocol];
+    var protocolMappers = serverInfo.protocolMapperTypes[client.protocol];
     var mapperTypes = {};
     for (var i = 0; i < protocolMappers.length; i++) {
         mapperTypes[protocolMappers[i].id] = protocolMappers[i];
@@ -1126,20 +1110,16 @@ module.controller('AddBuiltinProtocolMapperCtrl', function($scope, realm, applic
 
 
     var updateMappers = function() {
-        var appMappers = ApplicationProtocolMappersByProtocol.query({realm : realm.realm, application : application.id, protocol : application.protocol}, function() {
-            var builtinMappers = serverInfo.builtinProtocolMappers[application.protocol];
-            for (var i = 0; i < appMappers.length; i++) {
+        var clientMappers = ClientProtocolMappersByProtocol.query({realm : realm.realm, client : client.id, protocol : client.protocol}, function() {
+            var builtinMappers = serverInfo.builtinProtocolMappers[client.protocol];
+            for (var i = 0; i < clientMappers.length; i++) {
                 for (var j = 0; j < builtinMappers.length; j++) {
-                    if (builtinMappers[j].name == appMappers[i].name
-                        && builtinMappers[j].protocolMapper == appMappers[i].protocolMapper) {
-                        console.log('removing: ' + builtinMappers[j].name);
+                    if (builtinMappers[j].name == clientMappers[i].name
+                        && builtinMappers[j].protocolMapper == clientMappers[i].protocolMapper) {
                         builtinMappers.splice(j, 1);
                         break;
                     }
                 }
-            }
-            for (var j = 0; j < builtinMappers.length; j++) {
-                console.log('builtin left: ' + builtinMappers[j].name);
             }
             $scope.mappers = builtinMappers;
             for (var i = 0; i < $scope.mappers.length; i++) {
@@ -1160,32 +1140,32 @@ module.controller('AddBuiltinProtocolMapperCtrl', function($scope, realm, applic
                 toAdd.push($scope.mappers[i]);
             }
         }
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications-by-id/' + application.id + '/protocol-mappers/add-models',
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id + '/protocol-mappers/add-models',
                    toAdd).success(function() {
                 Notifications.success("Mappers added");
-                $location.url('/realms/' + realm.realm + '/applications/' + application.id +  '/mappers');
+                $location.url('/realms/' + realm.realm + '/clients/' + client.id +  '/mappers');
             }).error(function() {
                 Notifications.error("Error adding mappers");
-                $location.url('/realms/' + realm.realm + '/applications/' + application.id +  '/mappers');
+                $location.url('/realms/' + realm.realm + '/clients/' + client.id +  '/mappers');
             });
     };
 
 });
 
-module.controller('ApplicationProtocolMapperCtrl', function($scope, realm, serverInfo, application, mapper, ApplicationProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo, client, mapper, ClientProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
-    $scope.application = application;
+    $scope.client = client;
     $scope.create = false;
-    if (application.protocol == null) {
-        application.protocol = 'openid-connect';
+    if (client.protocol == null) {
+        client.protocol = 'openid-connect';
     }
-    $scope.protocol = application.protocol;
+    $scope.protocol = client.protocol;
     $scope.mapper = angular.copy(mapper);
     $scope.changed = false;
     $scope.boolval = true;
     $scope.boolvalId = 'boolval';
 
-    var protocolMappers = serverInfo.protocolMapperTypes[application.protocol];
+    var protocolMappers = serverInfo.protocolMapperTypes[client.protocol];
     for (var i = 0; i < protocolMappers.length; i++) {
         if (protocolMappers[i].id == mapper.protocolMapper) {
             $scope.mapperType = protocolMappers[i];
@@ -1204,14 +1184,14 @@ module.controller('ApplicationProtocolMapperCtrl', function($scope, realm, serve
     }, true);
 
     $scope.save = function() {
-        ApplicationProtocolMapper.update({
+        ClientProtocolMapper.update({
             realm : realm.realm,
-            application: application.id,
+            client: client.id,
             id : mapper.id
         }, $scope.mapper, function() {
             $scope.changed = false;
             mapper = angular.copy($scope.mapper);
-            $location.url("/realms/" + realm.realm + '/applications/' + application.id + "/mappers/" + mapper.id);
+            $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers/" + mapper.id);
             Notifications.success("Your changes have been saved.");
         });
     };
@@ -1228,25 +1208,25 @@ module.controller('ApplicationProtocolMapperCtrl', function($scope, realm, serve
 
     $scope.remove = function() {
         Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
-            ApplicationProtocolMapper.remove({ realm: realm.realm, application: application.id, id : $scope.mapper.id }, function() {
+            ClientProtocolMapper.remove({ realm: realm.realm, client: client.id, id : $scope.mapper.id }, function() {
                 Notifications.success("The mapper has been deleted.");
-                $location.url("/realms/" + realm.realm + '/applications/' + application.id + "/mappers");
+                $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers");
             });
         });
     };
 
 });
 
-module.controller('ApplicationProtocolMapperCreateCtrl', function($scope, realm, serverInfo, application, ApplicationProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serverInfo, client, ClientProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
-    $scope.application = application;
+    $scope.client = client;
     $scope.create = true;
-    if (application.protocol == null) {
-        application.protocol = 'openid-connect';
+    if (client.protocol == null) {
+        client.protocol = 'openid-connect';
     }
-    var protocol = application.protocol;
+    var protocol = client.protocol;
     $scope.protocol = protocol;
-    $scope.mapper = { protocol :  application.protocol, config: {}};
+    $scope.mapper = { protocol :  client.protocol, config: {}};
     $scope.mapperTypes = serverInfo.protocolMapperTypes[protocol];
 
     $scope.$watch(function() {
@@ -1257,12 +1237,12 @@ module.controller('ApplicationProtocolMapperCreateCtrl', function($scope, realm,
 
     $scope.save = function() {
         $scope.mapper.protocolMapper = $scope.mapperType.id;
-        ApplicationProtocolMapper.save({
-            realm : realm.realm, application: application.id
+        ClientProtocolMapper.save({
+            realm : realm.realm, client: client.id
         }, $scope.mapper, function(data, headers) {
             var l = headers().location;
             var id = l.substring(l.lastIndexOf("/") + 1);
-            $location.url("/realms/" + realm.realm + '/applications/' + application.id + "/mappers/" + id);
+            $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers/" + id);
             Notifications.success("Mapper has been created.");
         });
     };
