@@ -104,8 +104,8 @@ public class RealmEntity {
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="APPLICATION_ID") })
-    Collection<ClientEntity> applications = new ArrayList<ClientEntity>();
+    @JoinTable(name="REALM_CLIENT", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_ID") })
+    Collection<ClientEntity> clients = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
@@ -318,12 +318,12 @@ public class RealmEntity {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public Collection<ClientEntity> getApplications() {
-        return applications;
+    public Collection<ClientEntity> getClients() {
+        return clients;
     }
 
-    public void setApplications(Collection<ClientEntity> applications) {
-        this.applications = applications;
+    public void setClients(Collection<ClientEntity> clients) {
+        this.clients = clients;
     }
 
     public Collection<RoleEntity> getRoles() {

@@ -619,8 +619,8 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<ClientModel> getClients() {
         List<ClientModel> list = new ArrayList<ClientModel>();
-        if (realm.getApplications() == null) return list;
-        for (ClientEntity entity : realm.getApplications()) {
+        if (realm.getClients() == null) return list;
+        for (ClientEntity entity : realm.getClients()) {
             list.add(new ClientAdapter(this, em, session, entity));
         }
         return list;
@@ -633,15 +633,15 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        ClientEntity applicationData = new ClientEntity();
-        applicationData.setId(id);
-        applicationData.setClientId(clientId);
-        applicationData.setEnabled(true);
-        applicationData.setRealm(realm);
-        realm.getApplications().add(applicationData);
-        em.persist(applicationData);
+        ClientEntity entity = new ClientEntity();
+        entity.setId(id);
+        entity.setClientId(clientId);
+        entity.setEnabled(true);
+        entity.setRealm(realm);
+        realm.getClients().add(entity);
+        em.persist(entity);
         em.flush();
-        final ClientModel resource = new ClientAdapter(this, em, session, applicationData);
+        final ClientModel resource = new ClientAdapter(this, em, session, entity);
         em.flush();
         session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
             @Override
@@ -655,15 +655,15 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean removeClient(String id) {
         if (id == null) return false;
-        ClientModel application = getClientById(id);
-        if (application == null) return false;
+        ClientModel client = getClientById(id);
+        if (client == null) return false;
 
-        for (RoleModel role : application.getRoles()) {
-            application.removeRole(role);
+        for (RoleModel role : client.getRoles()) {
+            client.removeRole(role);
         }
 
         ClientEntity clientEntity = null;
-        Iterator<ClientEntity> it = realm.getApplications().iterator();
+        Iterator<ClientEntity> it = realm.getClients().iterator();
         while (it.hasNext()) {
             ClientEntity ae = it.next();
             if (ae.getId().equals(id)) {
@@ -672,12 +672,12 @@ public class RealmAdapter implements RealmModel {
                 break;
             }
         }
-        for (ClientEntity a : realm.getApplications()) {
+        for (ClientEntity a : realm.getClients()) {
             if (a.getId().equals(id)) {
                 clientEntity = a;
             }
         }
-        if (application == null) {
+        if (client == null) {
             return false;
         }
         em.remove(clientEntity);

@@ -49,5 +49,8 @@
         <dropColumn tableName="CLIENT" columnName="DTYPE"/>
         <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME"/>
         <renameColumn tableName="REALM" newColumnName="MASTER_ADMIN_CLIENT" oldColumnName="MASTER_ADMIN_APP"/>
+
+        <renameTable oldTableName="REALM_APPLICATION" newTableName="REALM_CLIENT"/>
+        <renameColumn tableName="REALM_CLIENT" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
     </changeSet>
 </databaseChangeLog>
