@@ -24,6 +24,7 @@ public abstract class AbstractKeyCloakTest<P extends AbstractPage> extends Abstr
 	@Before
 	public void before() {
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
+		driver.manage().window().maximize();
 		loginAsAdmin();
 		menuPage.switchRealm("master");
 	}
