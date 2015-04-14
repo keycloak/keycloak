@@ -51,7 +51,19 @@ To stop the server press `Ctrl + C`.
 Contributing
 ------------
 
-* [Hacking on Keycloak](misc/HackingOnKeycloak.md)
+* See [Hacking on Keycloak](misc/HackingOnKeycloak.md)
+
+
+Documentation
+-------------
+
+* [User Guide, Admin REST API and Javadocs](http://keycloak.jboss.org/docs)
+* Developer documentation
+    * [Hacking on Keycloak](misc/HackingOnKeycloak.md) - how to become a Keycloak contributor
+    * [Testsuite](misc/Testsuite.md) - details about testsuite, but also how to quickly run Keycloak during development and a few test tools (OTP generation, LDAP server, Mail server)
+    * [Database Testing](misc/DatabaseTesting.md) - how to do testing of Keycloak on different databases
+    * [Updating Database](misc/UpdatingDatabaseSchema.md) - how to change the Keycloak database
+    * [Release Process](misc/ReleaseProcess.md) - how to release Keycloak
 
 
 License
