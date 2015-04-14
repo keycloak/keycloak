@@ -1,5 +1,9 @@
 package org.keycloak.models;
 
+import static org.junit.Assert.fail;
+
+import java.util.regex.PatternSyntaxException;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -78,6 +82,48 @@ public class PasswordPolicyTest {
         PasswordPolicy policy = new PasswordPolicy("notUsername");
         Assert.assertEquals("invalidPasswordNotUsernameMessage", policy.validate("jdoe", "jdoe").getMessage());
         Assert.assertNull(policy.validate("jdoe", "ab&d1234"));
+    }
+    
+    @Test
+    public void testRegexPatterns() {
+        PasswordPolicy policy = null;
+        try {
+            policy = new PasswordPolicy("regexPatterns");
+            fail("Expected NullPointerEXception: Regex Pattern cannot be null.");
+        } catch (NullPointerException e) {
+            // Expected NPE as regex pattern is null.
+        }
+        
+        try {
+            policy = new PasswordPolicy("regexPatterns(*)");
+            fail("Expected PatternSyntaxException: Regex Pattern cannot be null.");
+        } catch (PatternSyntaxException e) {
+            // Expected PSE as regex pattern(or any of its token) is not quantifiable.
+        }
+        
+        try {
+            policy = new PasswordPolicy("regexPatterns(*,**)");
+            fail("Expected PatternSyntaxException: Regex Pattern cannot be null.");
+        } catch (PatternSyntaxException e) {
+            // Expected PSE as regex pattern(or any of its token) is not quantifiable.
+        }
+        
+        //Fails to match one of the regex pattern
+        policy = new PasswordPolicy("regexPatterns(jdoe,j*d)");
+        Assert.assertEquals("invalidPasswordRegexPatternMessage", policy.validate("jdoe", "jdoe").getMessage());
+        
+        ////Fails to match all of the regex patterns
+        policy = new PasswordPolicy("regexPatterns(j*p,j*d,adoe)");
+        Assert.assertEquals("invalidPasswordRegexPatternMessage", policy.validate("jdoe", "jdoe").getMessage());
+        
+        policy = new PasswordPolicy("regexPatterns([a-z][a-z][a-z][a-z][0-9])");
+        Assert.assertEquals("invalidPasswordRegexPatternMessage", policy.validate("jdoe", "jdoe").getMessage());
+        
+        policy = new PasswordPolicy("regexPatterns(jdoe)");
+        Assert.assertNull(policy.validate("jdoe", "jdoe"));
+        
+        policy = new PasswordPolicy("regexPatterns([a-z][a-z][a-z][a-z][0-9])");
+        Assert.assertNull(policy.validate("jdoe", "jdoe0"));
     }
 
     @Test
