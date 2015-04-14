@@ -17,8 +17,10 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
+import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
+import java.net.URI;
 
 import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 
@@ -155,6 +157,11 @@ public class SAML2LoginResponseBuilder {
         responseType = saml2Response.createResponseType(id, sp, idp, issuerHolder);
 
         AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
+
+        //Add request issuer as the audience restriction
+        AudienceRestrictionType audience = new AudienceRestrictionType();
+        audience.addAudience(URI.create(requestIssuer));
+        assertion.getConditions().addCondition(audience);
 
         //Update Conditions NotOnOrAfter
         if(assertionExpiration > 0) {
