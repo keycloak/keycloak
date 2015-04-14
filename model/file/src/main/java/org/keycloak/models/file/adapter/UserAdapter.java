@@ -259,6 +259,10 @@ public class UserAdapter implements UserModel, Comparable {
                 setValue(credentialEntity, cred);
                 user.getCredentials().add(credentialEntity);
             } else {
+                List<CredentialEntity> credentialEntities = getCredentialEntities(user, UserCredentialModel.PASSWORD_HISTORY);
+                if (credentialEntities != null && credentialEntities.size() > 0) {
+                    user.getCredentials().removeAll(credentialEntities);
+                }
                 setValue(credentialEntity, cred);
             }
         }
