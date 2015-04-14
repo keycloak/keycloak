@@ -94,7 +94,7 @@
     ],
     "clients": [
         {
-            "name": "customer-portal",
+            "clientId": "customer-portal",
             "enabled": true,
             "adminUrl": "/customer-portal",
             "baseUrl": "/customer-portal",
@@ -104,7 +104,7 @@
             "secret": "password"
         },
         {
-            "name": "customer-portal-js",
+            "clientId": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
             "baseUrl": "/customer-portal-js",
@@ -113,7 +113,7 @@
             ]
         },
         {
-            "name": "angular-product",
+            "clientId": "angular-product",
             "enabled": true,
             "publicClient": true,
             "baseUrl": "/angular-product/index.html",
@@ -122,7 +122,7 @@
             ]
         },
         {
-            "name": "customer-portal-cli",
+            "clientId": "customer-portal-cli",
             "enabled": true,
             "publicClient": true,
             "redirectUris": [
@@ -131,7 +131,7 @@
             ]
         },
         {
-            "name": "product-portal",
+            "clientId": "product-portal",
             "enabled": true,
             "adminUrl": "/product-portal",
             "baseUrl": "/product-portal",
@@ -141,14 +141,14 @@
             "secret": "password"
         },
         {
-            "name": "database-service",
+            "clientId": "database-service",
             "enabled": true,
             "adminUrl": "/database",
             "baseUrl": "/database",
             "bearerOnly": true
         },
         {
-            "name": "third-party",
+            "clientId": "third-party",
             "enabled": true,
             "consentRequired": true,
             "redirectUris": [
@@ -158,7 +158,7 @@
             "secret": "password"
         },
         {
-            "name": "admin-client",
+            "clientId": "admin-client",
             "enabled": true,
             "publicClient": true,
             "directGrantsOnly": true,

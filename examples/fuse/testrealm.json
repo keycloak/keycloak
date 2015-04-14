@@ -136,7 +136,7 @@
     },
     "clients": [
         {
-            "name": "customer-portal",
+            "clientId": "customer-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8181/customer-portal",
             "baseUrl": "http://localhost:8181/customer-portal",
@@ -146,7 +146,7 @@
             "secret": "password"
         },
         {
-            "name": "product-portal",
+            "clientId": "product-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8181/product-portal",
             "baseUrl": "http://localhost:8181/product-portal",
@@ -156,7 +156,7 @@
             "secret": "password"
         },
         {
-            "name": "builtin-cxf-app",
+            "clientId": "builtin-cxf-app",
             "enabled": true,
             "adminUrl": "http://localhost:8181/cxf",
             "baseUrl": "http://localhost:8181/cxf",
@@ -166,21 +166,21 @@
             "secret": "password"
         },
         {
-            "name": "custom-cxf-endpoint",
+            "clientId": "custom-cxf-endpoint",
             "enabled": true,
             "adminUrl": "http://localhost:8282/PersonServiceCF",
             "baseUrl": "http://localhost:8282/PersonServiceCF",
             "bearerOnly": true
         },
         {
-            "name": "admin-camel-endpoint",
+            "clientId": "admin-camel-endpoint",
             "enabled": true,
             "adminUrl": "http://localhost:8383/admin-camel-endpoint",
             "baseUrl": "http://localhost:8383/admin-camel-endpoint",
             "bearerOnly": true
         },
         {
-            "name": "ssh-jmx-admin-client",
+            "clientId": "ssh-jmx-admin-client",
             "enabled": true,
             "publicClient": false,
             "directGrantsOnly": true,

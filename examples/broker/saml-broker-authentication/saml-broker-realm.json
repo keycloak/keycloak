@@ -28,7 +28,7 @@
     },
     "clients": [
         {
-            "name": "http://localhost:8080/auth/realms/saml-broker-authentication-realm",
+            "clientId": "http://localhost:8080/auth/realms/saml-broker-authentication-realm",
             "protocol": "saml",
             "enabled": true,
             "redirectUris": [

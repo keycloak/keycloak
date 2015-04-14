@@ -33,7 +33,7 @@
     },
     "clients": [
         {
-            "name": "twitter-authentication",
+            "clientId": "twitter-authentication",
             "enabled": true,
             "publicClient" : true,
             "adminUrl": "/twitter-authentication",
@@ -52,7 +52,7 @@
             ]
         },
         {
-          "name": "admin-client",
+          "clientId": "admin-client",
           "enabled": true,
           "fullScopeAllowed": true,
           "baseUrl": "/admin-client",

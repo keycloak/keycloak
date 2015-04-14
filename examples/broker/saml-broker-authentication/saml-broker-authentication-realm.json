@@ -32,7 +32,7 @@
     },
     "clients": [
         {
-            "name": "saml-broker-authentication",
+            "clientId": "saml-broker-authentication",
             "enabled": true,
             "publicClient" : true,
             "adminUrl": "/saml-broker-authentication",
