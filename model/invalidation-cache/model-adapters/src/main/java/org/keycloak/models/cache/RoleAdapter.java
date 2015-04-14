@@ -3,7 +3,7 @@ package org.keycloak.models.cache;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.entities.CachedApplicationRole;
+import org.keycloak.models.cache.entities.CachedClientRole;
 import org.keycloak.models.cache.entities.CachedRealmRole;
 import org.keycloak.models.cache.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -106,8 +106,8 @@ public class RoleAdapter implements RoleModel {
         if (cached instanceof CachedRealmRole) {
             return realm;
         } else {
-            CachedApplicationRole appRole = (CachedApplicationRole)cached;
-            return realm.getClientById(appRole.getAppId());
+            CachedClientRole appRole = (CachedClientRole)cached;
+            return realm.getClientById(appRole.getIdClient());
         }
     }
 

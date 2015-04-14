@@ -545,9 +545,9 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public RoleModel getRole(String name) {
-        TypedQuery<RoleEntity> query = em.createNamedQuery("getAppRoleByName", RoleEntity.class);
+        TypedQuery<RoleEntity> query = em.createNamedQuery("getClientRoleByName", RoleEntity.class);
         query.setParameter("name", name);
-        query.setParameter("application", entity);
+        query.setParameter("client", entity);
         List<RoleEntity> roles = query.getResultList();
         if (roles.size() == 0) return null;
         return new RoleAdapter(realm, em, roles.get(0));
@@ -563,8 +563,8 @@ public class ClientAdapter implements ClientModel {
         RoleEntity roleEntity = new RoleEntity();
         roleEntity.setId(id);
         roleEntity.setName(name);
-        roleEntity.setApplication(entity);
-        roleEntity.setApplicationRole(true);
+        roleEntity.setClient(entity);
+        roleEntity.setClientRole(true);
         roleEntity.setRealmId(realm.getId());
         em.persist(roleEntity);
         entity.getRoles().add(roleEntity);
@@ -581,13 +581,13 @@ public class ClientAdapter implements ClientModel {
 
         session.users().preRemove(getRealm(), roleModel);
         RoleEntity role = RoleAdapter.toRoleEntity(roleModel, em);
-        if (!role.isApplicationRole()) return false;
+        if (!role.isClientRole()) return false;
 
         entity.getRoles().remove(role);
         entity.getDefaultRoles().remove(role);
         em.createNativeQuery("delete from COMPOSITE_ROLE where CHILD_ROLE = :role").setParameter("role", role).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", role).executeUpdate();
-        role.setApplication(null);
+        role.setClient(null);
         em.flush();
         em.remove(role);
         em.flush();

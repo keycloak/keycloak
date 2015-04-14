@@ -21,7 +21,7 @@ import java.util.TreeMap;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedApplication {
+public class CachedClient {
     private String id;
     private String name;
     private String realm;
@@ -49,7 +49,7 @@ public class CachedApplication {
     private int nodeReRegistrationTimeout;
     private Map<String, Integer> registeredNodes;
 
-    public CachedApplication(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
+    public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
         secret = model.getSecret();
         name = model.getClientId();
@@ -79,7 +79,7 @@ public class CachedApplication {
         consentRequired = model.isConsentRequired();
         for (RoleModel role : model.getRoles()) {
             roles.put(role.getName(), role.getId());
-            cache.addCachedRole(new CachedApplicationRole(id, role, realm));
+            cache.addCachedRole(new CachedClientRole(id, role, realm));
         }
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();

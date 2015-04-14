@@ -66,7 +66,7 @@ public class CachedRealm {
     private String accountTheme;
     private String adminTheme;
     private String emailTheme;
-    private String masterAdminApp;
+    private String masterAdminClient;
 
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
@@ -81,7 +81,6 @@ public class CachedRealm {
     private Set<String> enabledEventTypes = new HashSet<String>();
     private List<String> defaultRoles = new LinkedList<String>();
     private Map<String, String> realmRoles = new HashMap<String, String>();
-    private Map<String, String> applications = new HashMap<String, String>();
     private Map<String, String> clients = new HashMap<String, String>();
     private boolean internationalizationEnabled;
     private Set<String> supportedLocales = new HashSet<String>();
@@ -155,7 +154,7 @@ public class CachedRealm {
         eventsListeners.addAll(model.getEventsListeners());
         enabledEventTypes.addAll(model.getEnabledEventTypes());
         defaultRoles.addAll(model.getDefaultRoles());
-        masterAdminApp = model.getMasterAdminClient().getId();
+        masterAdminClient = model.getMasterAdminClient().getId();
 
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());
@@ -163,10 +162,10 @@ public class CachedRealm {
             cache.addCachedRole(cachedRole);
         }
 
-        for (ClientModel app : model.getClients()) {
-            applications.put(app.getClientId(), app.getId());
-            CachedApplication cachedApp = new CachedApplication(cache, delegate, model, app);
-            cache.addCachedApplication(cachedApp);
+        for (ClientModel client : model.getClients()) {
+            clients.put(client.getClientId(), client.getId());
+            CachedClient cachedClient = new CachedClient(cache, delegate, model, client);
+            cache.addCachedClient(cachedClient);
         }
 
         internationalizationEnabled = model.isInternationalizationEnabled();
@@ -180,8 +179,8 @@ public class CachedRealm {
         return id;
     }
 
-    public String getMasterAdminApp() {
-        return masterAdminApp;
+    public String getMasterAdminClient() {
+        return masterAdminClient;
     }
 
     public String getName() {
@@ -194,10 +193,6 @@ public class CachedRealm {
 
     public Map<String, String> getRealmRoles() {
         return realmRoles;
-    }
-
-    public Map<String, String> getApplications() {
-        return applications;
     }
 
     public Map<String, String> getClients() {

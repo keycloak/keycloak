@@ -37,6 +37,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -253,8 +254,6 @@ public class ResetPasswordTest {
 
         assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
-        Thread.sleep(1000);
-
         assertEquals(0, greenMail.getReceivedMessages().length);
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user((String) null).session((String) null).detail(Details.USERNAME, "invalid").removeDetail(Details.EMAIL).removeDetail(Details.CODE_ID).error("user_not_found").assertEvent();
@@ -318,8 +317,6 @@ public class ResetPasswordTest {
 
             assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
-            Thread.sleep(1000);
-
             assertEquals(0, greenMail.getReceivedMessages().length);
 
             events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("user_disabled").assertEvent();
@@ -358,8 +355,6 @@ public class ResetPasswordTest {
 
             assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
-            Thread.sleep(1000);
-
             assertEquals(0, greenMail.getReceivedMessages().length);
 
             events.expectRequiredAction(EventType.SEND_RESET_PASSWORD_ERROR).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("invalid_email").assertEvent();
@@ -395,8 +390,6 @@ public class ResetPasswordTest {
             errorPage.assertCurrent();
 
             assertEquals("Failed to send email, please try again later.", errorPage.getError());
-
-            Thread.sleep(1000);
 
             assertEquals(0, greenMail.getReceivedMessages().length);
 

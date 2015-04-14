@@ -126,11 +126,6 @@ public class SamlBindingTest {
     @WebResource
     protected LoginPage loginPage;
 
-    //@Test
-    public void runit() throws Exception {
-        Thread.sleep(10000000);
-    }
-
     protected void checkLoggedOut(String mainUrl) {
         String pageSource = driver.getPageSource();
         System.out.println("*** logout pagesouce ***");

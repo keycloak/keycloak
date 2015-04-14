@@ -7,16 +7,16 @@ import org.keycloak.models.RoleModel;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedApplicationRole extends CachedRole {
-    private final String appId;
+public class CachedClientRole extends CachedRole {
+    private final String idClient;
 
-    public CachedApplicationRole(String appId, RoleModel model, RealmModel realm) {
+    public CachedClientRole(String idClient, RoleModel model, RealmModel realm) {
         super(model, realm);
-        this.appId = appId;
+        this.idClient = idClient;
 
     }
 
-    public String getAppId() {
-        return appId;
+    public String getIdClient() {
+        return idClient;
     }
 }

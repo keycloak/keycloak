@@ -21,11 +21,11 @@ import java.util.Collection;
  */
 @Entity
 @Table(name="KEYCLOAK_ROLE", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "NAME", "APP_REALM_CONSTRAINT" })
+        @UniqueConstraint(columnNames = { "NAME", "CLIENT_REALM_CONSTRAINT" })
 })
 @NamedQueries({
-        @NamedQuery(name="getAppRoleByName", query="select role from RoleEntity role where role.name = :name and role.application = :application"),
-        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.applicationRole = false and role.name = :name and role.realm = :realm")
+        @NamedQuery(name="getClientRoleByName", query="select role from RoleEntity role where role.name = :name and role.client = :client"),
+        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.clientRole = false and role.name = :name and role.realm = :realm")
 })
 
 public class RoleEntity {
@@ -46,16 +46,16 @@ public class RoleEntity {
     @JoinColumn(name = "REALM")
     private RealmEntity realm;
 
-    @Column(name="APPLICATION_ROLE")
-    private boolean applicationRole;
+    @Column(name="CLIENT_ROLE")
+    private boolean clientRole;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "APPLICATION")
-    private ClientEntity application;
+    @JoinColumn(name = "CLIENT")
+    private ClientEntity client;
 
-    // Hack to ensure that either name+application or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
-    @Column(name="APP_REALM_CONSTRAINT", length = 36)
-    private String appRealmConstraint;
+    // Hack to ensure that either name+client or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
+    @Column(name="CLIENT_REALM_CONSTRAINT", length = 36)
+    private String clientRealmConstraint;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
@@ -101,12 +101,12 @@ public class RoleEntity {
         this.compositeRoles = compositeRoles;
     }
 
-    public boolean isApplicationRole() {
-        return applicationRole;
+    public boolean isClientRole() {
+        return clientRole;
     }
 
-    public void setApplicationRole(boolean applicationRole) {
-        this.applicationRole = applicationRole;
+    public void setClientRole(boolean clientRole) {
+        this.clientRole = clientRole;
     }
 
     public RealmEntity getRealm() {
@@ -115,26 +115,26 @@ public class RoleEntity {
 
     public void setRealm(RealmEntity realm) {
         this.realm = realm;
-        this.appRealmConstraint = realm.getId();
+        this.clientRealmConstraint = realm.getId();
     }
 
-    public ClientEntity getApplication() {
-        return application;
+    public ClientEntity getClient() {
+        return client;
     }
 
-    public void setApplication(ClientEntity application) {
-        this.application = application;
-        if (application != null) {
-            this.appRealmConstraint = application.getId();
+    public void setClient(ClientEntity client) {
+        this.client = client;
+        if (client != null) {
+            this.clientRealmConstraint = client.getId();
         }
     }
 
-    public String getAppRealmConstraint() {
-        return appRealmConstraint;
+    public String getClientRealmConstraint() {
+        return clientRealmConstraint;
     }
 
-    public void setAppRealmConstraint(String appRealmConstraint) {
-        this.appRealmConstraint = appRealmConstraint;
+    public void setClientRealmConstraint(String clientRealmConstraint) {
+        this.clientRealmConstraint = clientRealmConstraint;
     }
 
     @Override
