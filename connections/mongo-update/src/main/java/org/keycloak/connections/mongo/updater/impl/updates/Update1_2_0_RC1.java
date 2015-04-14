@@ -34,6 +34,10 @@ public class Update1_2_0_RC1 extends Update {
         DBCollection roles = db.getCollection("roles");
         roles.update(new BasicDBObject(), new BasicDBObject("$rename", new BasicDBObject("applicationId", "clientId")), false, true);
         log.debugv("Renamed roles.applicationId to roles.clientId");
+
+        db.getCollection("clients").dropIndex("realmId_1_name_1");
+        ensureIndex("clients", new String[]{"realmId", "clientId"}, true, false);
+
     }
 
     private void convertOAuthClientsToClients() {
