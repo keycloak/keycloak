@@ -58,5 +58,13 @@
 
         <renameTable oldTableName="APP_NODE_REGISTRATIONS" newTableName="CLIENT_NODE_REGISTRATIONS"/>
         <renameColumn tableName="CLIENT_NODE_REGISTRATIONS" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
+
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT" oldColumnName="APPLICATION"/>
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_ROLE" oldColumnName="APPLICATION_ROLE"/>
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_REALM_CONSTRAINT" oldColumnName="APP_REALM_CONSTRAINT"/>
+
+        <dropUniqueConstraint tableName="KEYCLOAK_ROLE" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2"/>
+        <addUniqueConstraint columnNames="NAME,CLIENT_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
+
     </changeSet>
 </databaseChangeLog>
