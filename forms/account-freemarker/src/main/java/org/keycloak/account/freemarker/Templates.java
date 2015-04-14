@@ -21,6 +21,8 @@ public class Templates {
                 return "log.ftl";
             case SESSIONS:
                 return "sessions.ftl";
+            case ACCESS:
+                return "access.ftl";
             default:
                 throw new IllegalArgumentException();
         }

@@ -32,6 +32,7 @@ import org.keycloak.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -66,6 +67,7 @@ import java.util.concurrent.TimeUnit;
     private Response.Status status;
     private List<RoleModel> realmRolesRequested;
     private MultivaluedMap<String, RoleModel> resourceRolesRequested;
+    private List<ProtocolMapperModel> protocolMappersRequested;
     private MultivaluedMap<String, String> queryParams;
     private Map<String, String> httpResponseHeaders = new HashMap<String, String>();
     private String accessRequestMessage;
@@ -243,7 +245,7 @@ import java.util.concurrent.TimeUnit;
                 attributes.put("register", new RegisterBean(formData));
                 break;
             case OAUTH_GRANT:
-                attributes.put("oauth", new OAuthGrantBean(accessCode, clientSession, client, realmRolesRequested, resourceRolesRequested, this.accessRequestMessage));
+                attributes.put("oauth", new OAuthGrantBean(accessCode, clientSession, client, realmRolesRequested, resourceRolesRequested, protocolMappersRequested, this.accessRequestMessage));
                 attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;
             case CODE:
@@ -366,9 +368,10 @@ import java.util.concurrent.TimeUnit;
     }
 
     @Override
-    public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
+    public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested, List<ProtocolMapperModel> protocolMappersRequested) {
         this.realmRolesRequested = realmRolesRequested;
         this.resourceRolesRequested = resourceRolesRequested;
+        this.protocolMappersRequested = protocolMappersRequested;
         return this;
     }
 

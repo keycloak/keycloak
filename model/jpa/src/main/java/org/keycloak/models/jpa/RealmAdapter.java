@@ -658,6 +658,8 @@ public class RealmAdapter implements RealmModel {
         ClientModel client = getClientById(id);
         if (client == null) return false;
 
+        session.users().preRemove(this, client);
+
         for (RoleModel role : client.getRoles()) {
             client.removeRole(role);
         }

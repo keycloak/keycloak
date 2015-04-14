@@ -1,18 +1,25 @@
 package org.keycloak.testsuite.broker;
 
+import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.Constants;
+import org.keycloak.testsuite.pages.AccountAccessPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
+import org.openqa.selenium.NoSuchElementException;
 
 import java.io.IOException;
+
+import javax.ws.rs.core.UriBuilder;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -22,12 +29,14 @@ import static org.junit.Assert.fail;
  */
 public class OIDCKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderTest {
 
+    private static final int PORT = 8082;
+
     @ClassRule
     public static AbstractKeycloakRule samlServerRule = new AbstractKeycloakRule() {
 
         @Override
         protected void configureServer(KeycloakServer server) {
-            server.getConfig().setPort(8082);
+            server.getConfig().setPort(PORT);
         }
 
         @Override
@@ -43,6 +52,25 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
 
     @WebResource
     private OAuthGrantPage grantPage;
+
+    @WebResource
+    protected AccountAccessPage accountAccessPage;
+
+    @Override
+    protected void revokeGrant() {
+        String currentUrl = driver.getCurrentUrl();
+
+        String accountAccessPath = Urls.accountAccessPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).port(PORT).build(), "realm-with-oidc-identity-provider").toString();
+        accountAccessPage.setPath(accountAccessPath);
+        accountAccessPage.open();
+        try {
+            accountAccessPage.revokeGrant("broker-app");
+        } catch (NoSuchElementException e) {
+            System.err.println("Couldn't revoke broker-app application, maybe because it wasn't granted or user not logged");
+        }
+
+        driver.navigate().to(currentUrl);
+    }
 
     @Override
     protected void doAfterProviderAuthentication() {

@@ -320,6 +320,16 @@ public class UserFederationManager implements UserProvider {
         session.userStorage().preRemove(realm, role);
     }
 
+    @Override
+    public void preRemove(RealmModel realm, ClientModel client) {
+        session.userStorage().preRemove(realm, client);
+    }
+
+    @Override
+    public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
+        session.userStorage().preRemove(client, protocolMapper);
+    }
+
     public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {
         if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
             if (realm.getPasswordPolicy() != null) {

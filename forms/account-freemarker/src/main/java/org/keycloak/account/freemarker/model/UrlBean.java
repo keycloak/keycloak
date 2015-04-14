@@ -59,6 +59,10 @@ public class UrlBean {
         return Urls.accountSessionsLogoutPage(baseQueryURI, realm, stateChecker).toString();
     }
 
+    public String getRevokeClientUrl() {
+        return Urls.accountRevokeClientPage(baseQueryURI, realm).toString();
+    }
+
     public String getTotpRemoveUrl() {
         return Urls.accountTotpRemove(baseQueryURI, realm, stateChecker).toString();
     }

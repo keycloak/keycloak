@@ -14,7 +14,9 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.GrantedConsentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -418,9 +420,17 @@ public class AuthenticationManager {
         if (client.isConsentRequired()) {
             accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
 
+            GrantedConsentModel grantedConsent = user.getGrantedConsentByClient(client.getId());
+
             List<RoleModel> realmRoles = new LinkedList<RoleModel>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
             for (RoleModel r : accessCode.getRequestedRoles()) {
+
+                // Consent already granted by user
+                if (grantedConsent != null && grantedConsent.getGrantedRoles().contains(r.getId())) {
+                    continue;
+                }
+
                 if (r.getContainer() instanceof RealmModel) {
                     realmRoles.add(r);
                 } else {
@@ -428,10 +438,22 @@ public class AuthenticationManager {
                 }
             }
 
-            return session.getProvider(LoginFormsProvider.class)
-                    .setClientSessionCode(accessCode.getCode())
-                    .setAccessRequest(realmRoles, resourceRoles)
-                    .createOAuthGrant(clientSession);
+            List<ProtocolMapperModel> protocolMappers = new LinkedList<ProtocolMapperModel>();
+            for (ProtocolMapperModel model : client.getProtocolMappers()) {
+                if (model.isConsentRequired() && model.getProtocol().equals(clientSession.getAuthMethod()) && model.getConsentText() != null) {
+                    if (grantedConsent == null || !grantedConsent.getGrantedProtocolMappers().contains(model.getId())) {
+                        protocolMappers.add(model);
+                    }
+                }
+            }
+
+            // Skip grant screen if everything was already approved by this user
+            if (realmRoles.size() > 0 || resourceRoles.size() > 0 || protocolMappers.size() > 0) {
+                return session.getProvider(LoginFormsProvider.class)
+                        .setClientSessionCode(accessCode.getCode())
+                        .setAccessRequest(realmRoles, resourceRoles, protocolMappers)
+                        .createOAuthGrant(clientSession);
+            }
         }
 
         event.success();

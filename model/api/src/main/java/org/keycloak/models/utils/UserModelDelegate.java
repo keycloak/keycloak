@@ -1,6 +1,7 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GrantedConsentModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -184,5 +185,30 @@ public class UserModelDelegate implements UserModel {
     @Override
     public void setFederationLink(String link) {
         delegate.setFederationLink(link);
+    }
+
+    @Override
+    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+        return delegate.addGrantedConsent(consent);
+    }
+
+    @Override
+    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+        return delegate.getGrantedConsentByClient(clientId);
+    }
+
+    @Override
+    public List<GrantedConsentModel> getGrantedConsents() {
+        return delegate.getGrantedConsents();
+    }
+
+    @Override
+    public void updateGrantedConsent(GrantedConsentModel consent) {
+        delegate.updateGrantedConsent(consent);
+    }
+
+    @Override
+    public boolean revokeGrantedConsentForClient(String clientId) {
+        return delegate.revokeGrantedConsentForClient(clientId);
     }
 }

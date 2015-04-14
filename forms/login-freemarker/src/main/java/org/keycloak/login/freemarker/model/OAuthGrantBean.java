@@ -42,20 +42,18 @@ public class OAuthGrantBean {
     private ClientModel client;
     private List<String> claimsRequested;
 
-    public OAuthGrantBean(String code, ClientSessionModel clientSession, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested, String accessRequestMessage) {
+    public OAuthGrantBean(String code, ClientSessionModel clientSession, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested,
+                          List<ProtocolMapperModel> protocolMappersRequested, String accessRequestMessage) {
         this.code = code;
         this.client = client;
         this.realmRolesRequested = realmRolesRequested;
         this.resourceRolesRequested = resourceRolesRequested;
         this.accessRequestMessage = accessRequestMessage;
 
-        // todo support locale
         List<String> claims = new LinkedList<String>();
-        if (clientSession != null) {
-            for (ProtocolMapperModel model : client.getProtocolMappers()) {
-                if (model.isConsentRequired() && model.getProtocol().equals(clientSession.getAuthMethod()) && model.getConsentText() != null) {
-                    claims.add(model.getConsentText());
-                }
+        if (protocolMappersRequested != null) {
+            for (ProtocolMapperModel model : protocolMappersRequested) {
+                claims.add(model.getConsentText());
             }
         }
         if (claims.size() > 0) this.claimsRequested = claims;
