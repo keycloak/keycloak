@@ -51,6 +51,7 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -303,7 +304,7 @@ public class AdapterTestStrategy extends ExternalResource {
         session.getTransaction().commit();
         session.close();
 
-        Thread.sleep(2000);
+        Time.setOffset(2);
 
 
         // test SSO
@@ -315,6 +316,8 @@ public class AdapterTestStrategy extends ExternalResource {
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();
+
+        Time.setOffset(0);
     }
 
     public void testLoginSSOIdleRemoveExpiredUserSessions() throws Exception {
@@ -336,7 +339,7 @@ public class AdapterTestStrategy extends ExternalResource {
         session.getTransaction().commit();
         session.close();
 
-        Thread.sleep(2000);
+        Time.setOffset(2);
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
@@ -356,6 +359,8 @@ public class AdapterTestStrategy extends ExternalResource {
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();
+
+        Time.setOffset(0);
     }
 
     public void testLoginSSOMax() throws Exception {
@@ -377,7 +382,7 @@ public class AdapterTestStrategy extends ExternalResource {
         session.getTransaction().commit();
         session.close();
 
-        Thread.sleep(2000);
+        Time.setOffset(2);
 
 
         // test SSO
@@ -389,6 +394,8 @@ public class AdapterTestStrategy extends ExternalResource {
         realm.setSsoSessionMaxLifespan(original);
         session.getTransaction().commit();
         session.close();
+
+        Time.setOffset(0);
     }
 
     /**
@@ -541,7 +548,7 @@ public class AdapterTestStrategy extends ExternalResource {
         driver.navigate().to(logoutUri);
 
         // Wait until accessToken is expired
-        Thread.sleep(2000);
+        Time.setOffset(2);
 
         // Assert that http session was invalidated
         driver.navigate().to(APP_SERVER_BASE_URL + "/session-portal");
@@ -563,6 +570,8 @@ public class AdapterTestStrategy extends ExternalResource {
             }
 
         }, "demo");
+
+        Time.setOffset(0);
     }
 
     /**

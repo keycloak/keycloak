@@ -55,6 +55,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -211,10 +212,7 @@ public class AccessTokenTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-        }
+        Time.setOffset(2);
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(400, response.getStatusCode());
@@ -231,6 +229,8 @@ public class AccessTokenTest {
                 appRealm.setAccessCodeLifespan(60);
             }
         });
+
+        Time.setOffset(0);
     }
 
     @Test
