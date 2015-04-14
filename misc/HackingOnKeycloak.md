@@ -1,9 +1,70 @@
-So you are a developer who wants to start hacking on Keycloak?  Here is the short list of things you need to know:
+Hacking on Keycloak
+===================
 
-1. You'll get a good feel for the Keycloak server and adapters if you try out the demo apps.  Instructions for setting that up are at [https://github.com/keycloak/keycloak/tree/master/examples/demo-template](https://github.com/keycloak/keycloak/tree/master/examples/demo-template).
-2. The build has three Maven roots.  There is the obvious one at the root of the project, which builds all the core stuff.  The second one is in /distribution.  That assembles the appliance, the adapters, and a few other things.  The third is in /docbook.  That one creates the documentation.
-3. We track everything in [Jira](https://issues.jboss.org/browse/KEYCLOAK).  Make sure you create an issue for any changes you propose.
-4. We work with GitHub in much the same way as the WildFly project.  You can look at [Hacking on Wildfly](https://developer.jboss.org/wiki/HackingOnWildFly) to get some tips on that.
-5. If you have other questions, ask on the [Developer Mailing List](https://lists.jboss.org/mailman/listinfo/keycloak-dev).  We don't use IRC much, so that's the best place to ask.
-6. For a more productive development, please consider using org.keycloak.testutils.KeycloakServer. This class is a Java Application that starts a KC server without requiring you to deploy a WAR file in a specific container.
-  
+GitHub Repository
+-----------------
+
+### Create a GitHub account if you don't already have one
+
+[Join GitHub](https://github.com/join)
+
+### Fork Keycloak repository into your account
+
+[https://github.com/keycloak/keycloak](https://github.com/keycloak/keycloak)
+
+### Clone your newly forked copy onto your local workspace
+
+    git clone https://github.com/<your username>/keycloak.git
+    cd keycloak
+    
+### Add a remote ref to upstream for pulling future updates
+    
+    git remote add upstream https://github.com/keycloak/keycloak.git
+    
+### Pull later updates from upstream
+
+    git fetch upstream
+    git rebase upstream/master
+    
+    
+Discuss changes
+---------------
+
+Before starting work on a new feature or anything besides a minor bug fix join the [Keycloak Dev mailing list](https://lists.jboss.org/mailman/listinfo/keycloak-dev) 
+and send a mail about your proposed changes. This is vital as otherwise you may waste days implementing a feature that is later rejected.
+
+Once you have received feedback from the mailing list if there's not one already create a (JIRA issue)[https://issues.jboss.org/browse/KEYCLOAK].
+ 
+
+Implement changes
+-----------------
+
+We don't currently enforce a code style in Keycloak, but a good reference is the code style used by WildFly. This can be
+retrieved from (https://github.com/wildfly/wildfly-core/tree/master/ide-configs)[https://github.com/wildfly/wildfly-core/tree/master/ide-configs].
+
+If your changes requires updates to the database read [Updating Database Schema](UpdatingDatabaseSchema.md).
+
+To try your changes out manually you can quickly start Keycloak from within your IDEA or Maven, to find out how to do this
+read [Testsuite](Testsuite.md). It's also important that you add tests to the testsuite for your changes.  
+ 
+
+Get your changes merged into upstream
+-------------------------------------
+
+Here's a quick check list for a good pull request (PR):
+
+* Discussed and agreed on Keycloak Dev mailing list
+* One commit per PR
+* One feature/change per PR
+* No changes to code not directly related to your change (e.g. no formatting changes or refactoring to existing code, if you want to refactor/improve existing code that's a separate discussion to mailing list and JIRA issue)
+* A JIRA associated with your PR (include the JIRA issue number in commit comment)
+* All tests in testsuite pass
+* Do a rebase on upstream master
+
+Once you're happy with your changes go to GitHub and create a PR.
+
+
+Release Keycloak
+----------------
+
+* [Release Process](ReleaseProcess.md)
