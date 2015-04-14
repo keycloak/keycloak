@@ -7,10 +7,16 @@ Keycloak is an SSO Service for web apps and REST services. For more information 
 Building
 --------
 
-Ensure you have JDK 7 (or newer) and Maven 3.2.1 (or newer) installed
+Ensure you have JDK 7 (or newer), Maven 3.2.1 (or newer) and Git installed
 
     java -version
     mvn -version
+    git --version
+    
+First clone the Keycloak repository:
+    
+    git clone https://github.com/keycloak/keycloak.git
+    cd keycloak
     
 To build Keycloak run:
 
@@ -45,7 +51,7 @@ To stop the server press `Ctrl + C`.
 Contributing
 ------------
 
-* [Hacking On Keycloak](https://github.com/keycloak/keycloak/blob/master/misc/HackingOnKeycloak.md)
+* [Hacking on Keycloak](misc/HackingOnKeycloak.md)
 
 
 License

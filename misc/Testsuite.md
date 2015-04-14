@@ -8,14 +8,10 @@ The testsuite uses Sellenium. By default it uses the HtmlUnit WebDriver, but can
 
 To run the tests with Firefox add `-Dbrowser=firefox` or for Chrome add `-Dbrowser=chrome`
 
-Mongo
------
+Database
+--------
 
-The testsuite is executed with JPA model implementation with data saved in H2 database by default. To run testsuite with Mongo model, just add property `-Dkeycloak.realm.provider=mongo` when executing it.
-This single property will cause that mongo will be used for realm-model, user-model and audit.
-
-Note that this will automatically run embedded Mongo database on localhost/27018 and it will stop it after whole testsuite is finished.
-So you don't need to have Mongo installed on your laptop to run mongo execution tests.
+By default the testsuite uses an embedded H2 database to test with other databases see (Database Testing)[DatabaseTesting.md].
 
 Test utils
 ==========
