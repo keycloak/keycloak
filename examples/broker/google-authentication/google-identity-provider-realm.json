@@ -32,7 +32,7 @@
     },
     "clients": [
         {
-            "name": "google-authentication",
+            "clientId": "google-authentication",
             "enabled": true,
             "publicClient" : true,
             "adminUrl": "/google-authentication",

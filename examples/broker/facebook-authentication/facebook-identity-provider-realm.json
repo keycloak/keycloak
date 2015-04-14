@@ -32,7 +32,7 @@
     },
     "clients": [
         {
-            "name": "facebook-authentication",
+            "clientId": "facebook-authentication",
             "enabled": true,
             "publicClient" : true,
             "adminUrl": "/facebook-authentication",

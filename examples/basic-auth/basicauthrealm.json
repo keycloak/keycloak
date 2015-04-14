@@ -43,7 +43,7 @@
     },
     "clients": [
         {
-            "name": "basic-auth-service",
+            "clientId": "basic-auth-service",
             "enabled": true,
             "adminUrl": "/basicauth",
             "baseUrl": "/basicauth",
