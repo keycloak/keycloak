@@ -6,8 +6,8 @@ import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.entities.CachedApplication;
-import org.keycloak.models.cache.entities.CachedApplicationRole;
+import org.keycloak.models.cache.entities.CachedClient;
+import org.keycloak.models.cache.entities.CachedClientRole;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRealmRole;
 import org.keycloak.models.cache.entities.CachedRole;
@@ -235,7 +235,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             if (roleInvalidations.contains(id)) return model;
             if (model.getContainer() instanceof ClientModel) {
-                cached = new CachedApplicationRole(((ClientModel) model.getContainer()).getId(), model, realm);
+                cached = new CachedClientRole(((ClientModel) model.getContainer()).getId(), model, realm);
             } else {
                 cached = new CachedRealmRole(model, realm);
             }
@@ -254,7 +254,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     @Override
     public ClientModel getClientById(String id, RealmModel realm) {
         if (!cache.isEnabled()) return getDelegate().getClientById(id, realm);
-        CachedApplication cached = cache.getApplication(id);
+        CachedClient cached = cache.getApplication(id);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
@@ -263,8 +263,8 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
             ClientModel model = getDelegate().getClientById(id, realm);
             if (model == null) return null;
             if (appInvalidations.contains(id)) return model;
-            cached = new CachedApplication(cache, getDelegate(), realm, model);
-            cache.addCachedApplication(cached);
+            cached = new CachedClient(cache, getDelegate(), realm, model);
+            cache.addCachedClient(cached);
         } else if (appInvalidations.contains(id)) {
             return getDelegate().getClientById(id, realm);
         } else if (managedApplications.containsKey(id)) {

@@ -91,7 +91,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public SslRequired getSslRequired() {
-        return SslRequired.valueOf(realm.getSslRequired());
+        return realm.getSslRequired() != null ? SslRequired.valueOf(realm.getSslRequired()) : null;
     }
 
     @Override

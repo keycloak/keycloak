@@ -474,7 +474,7 @@ public class RealmAdapter implements RealmModel {
     public Map<String, ClientModel> getClientNameMap() {
         if (updated != null) return updated.getClientNameMap();
         Map<String, ClientModel> map = new HashMap<String, ClientModel>();
-        for (String id : cached.getApplications().values()) {
+        for (String id : cached.getClients().values()) {
             ClientModel model = cacheSession.getClientById(id, this);
             if (model == null) {
                 throw new IllegalStateException("Cached application not found: " + id);
@@ -488,7 +488,7 @@ public class RealmAdapter implements RealmModel {
     public List<ClientModel> getClients() {
         if (updated != null) return updated.getClients();
         List<ClientModel> apps = new LinkedList<ClientModel>();
-        for (String id : cached.getApplications().values()) {
+        for (String id : cached.getClients().values()) {
             ClientModel model = cacheSession.getClientById(id, this);
             if (model == null) {
                 throw new IllegalStateException("Cached application not found: " + id);
@@ -531,7 +531,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ClientModel getClientByClientId(String clientId) {
         if (updated != null) return updated.getClientByClientId(clientId);
-        String id = cached.getApplications().get(clientId);
+        String id = cached.getClients().get(clientId);
         if (id == null) return null;
         return getClientById(id);
     }
@@ -752,7 +752,7 @@ public class RealmAdapter implements RealmModel {
     
     @Override
     public ClientModel getMasterAdminClient() {
-        return cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminApp());
+        return cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
     }
 
     @Override

@@ -1,6 +1,6 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.cache.entities.CachedApplication;
+import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 
@@ -21,11 +21,11 @@ public interface RealmCache {
 
     void invalidateCachedRealmById(String id);
 
-    CachedApplication getApplication(String id);
+    CachedClient getApplication(String id);
 
-    void invalidateApplication(CachedApplication app);
+    void invalidateApplication(CachedClient app);
 
-    void addCachedApplication(CachedApplication app);
+    void addCachedClient(CachedClient app);
 
     void invalidateCachedApplicationById(String id);
 

@@ -6,7 +6,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.entities.CachedApplication;
+import org.keycloak.models.cache.entities.CachedClient;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,9 +24,9 @@ public class ClientAdapter implements ClientModel {
     protected RealmCache cache;
 
     protected ClientModel updated;
-    protected CachedApplication cached;
+    protected CachedClient cached;
 
-    public ClientAdapter(RealmModel cachedRealm, CachedApplication cached, CacheRealmProvider cacheSession, RealmCache cache) {
+    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, CacheRealmProvider cacheSession, RealmCache cache) {
         this.cachedRealm = cachedRealm;
         this.cache = cache;
         this.cacheSession = cacheSession;

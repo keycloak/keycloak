@@ -1,6 +1,6 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.cache.entities.CachedApplication;
+import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 
@@ -14,7 +14,7 @@ public class MemoryRealmCache implements RealmCache {
 
     protected ConcurrentHashMap<String, CachedRealm> realmCache = new ConcurrentHashMap<String, CachedRealm>();
     protected ConcurrentHashMap<String, CachedRealm> realmCacheByName = new ConcurrentHashMap<String, CachedRealm>();
-    protected ConcurrentHashMap<String, CachedApplication> applicationCache = new ConcurrentHashMap<String, CachedApplication>();
+    protected ConcurrentHashMap<String, CachedClient> applicationCache = new ConcurrentHashMap<String, CachedClient>();
     protected ConcurrentHashMap<String, CachedRole> roleCache = new ConcurrentHashMap<String, CachedRole>();
     protected volatile boolean enabled = true;
 
@@ -72,18 +72,18 @@ public class MemoryRealmCache implements RealmCache {
     }
 
     @Override
-    public CachedApplication getApplication(String id) {
+    public CachedClient getApplication(String id) {
         if (!enabled) return null;
         return applicationCache.get(id);
     }
 
     @Override
-    public void invalidateApplication(CachedApplication app) {
+    public void invalidateApplication(CachedClient app) {
         applicationCache.remove(app.getId());
     }
 
     @Override
-    public void addCachedApplication(CachedApplication app) {
+    public void addCachedClient(CachedClient app) {
         if (!enabled) return;
         applicationCache.put(app.getId(), app);
     }
