@@ -24,7 +24,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorPage;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -92,7 +92,7 @@ public class LogoutEndpoint {
                 event.event(EventType.LOGOUT);
                 event.detail(Details.REDIRECT_URI, redirect);
                 event.error(Errors.INVALID_REDIRECT_URI);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REDIRECT_URI);
+                return ErrorPage.error(session, Messages.INVALID_REDIRECT_URI);
             }
             redirect = validatedUri;
         }
@@ -112,7 +112,7 @@ public class LogoutEndpoint {
             if (error) {
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_TOKEN);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE);
+                return ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);
             }
         }
 

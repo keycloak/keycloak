@@ -7,6 +7,13 @@
         "provider": "${keycloak.eventStore.provider:jpa}"
     },
 
+    "eventsListener": {
+        "jboss-logging" : {
+            "success-level": "debug",
+            "error-level": "warn"
+        }
+    },
+
     "realm": {
         "provider": "${keycloak.realm.provider:jpa}"
     },

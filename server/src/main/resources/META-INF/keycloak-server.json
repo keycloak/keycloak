@@ -14,6 +14,13 @@
         }
     },
 
+    "eventsListener": {
+        "jboss-logging" : {
+            "success-level": "debug",
+            "error-level": "warn"
+        }
+    },
+
     "realm": {
         "provider": "jpa"
     },

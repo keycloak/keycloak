@@ -24,7 +24,9 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.AbstractOAuthClient;
 import org.keycloak.ClientConnection;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
 import org.keycloak.events.Details;
@@ -32,6 +34,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -47,9 +50,7 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.services.resources.flows.OAuthRedirect;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
@@ -66,6 +67,7 @@ import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -230,7 +232,7 @@ public class AccountService {
             try {
                 require(AccountRoles.MANAGE_ACCOUNT);
             } catch (ForbiddenException e) {
-                return Flows.forms(session, realm, null, uriInfo, headers).setError(Messages.NO_ACCESS).createErrorPage();
+                return session.getProvider(LoginFormsProvider.class).setError(Messages.NO_ACCESS).createErrorPage();
             }
 
             setReferrerOnPage();
@@ -871,6 +873,44 @@ public class AccountService {
                 return null;
             }
         }
+    }
+
+    class OAuthRedirect extends AbstractOAuthClient {
+
+        /**
+         * closes client
+         */
+        public void stop() {
+        }
+
+        public Response redirect(UriInfo uriInfo, String redirectUri) {
+            String state = getStateCode();
+
+            UriBuilder uriBuilder = UriBuilder.fromUri(authUrl)
+                    .queryParam(OAuth2Constants.CLIENT_ID, clientId)
+                    .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                    .queryParam(OAuth2Constants.STATE, state)
+                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE);
+            if (scope != null) {
+                uriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
+            }
+
+            URI url = uriBuilder.build();
+
+            // todo httpOnly!
+            NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure);
+            logger.debug("NewCookie: " + cookie.toString());
+            logger.debug("Oauth Redirect to: " + url);
+            return Response.status(302)
+                    .location(url)
+                    .cookie(cookie).build();
+        }
+
+        private String getStateCookiePath(UriInfo uriInfo) {
+            if (stateCookiePath != null) return stateCookiePath;
+            return uriInfo.getBaseUri().getRawPath();
+        }
+
     }
 
 }

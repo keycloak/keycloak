@@ -1,14 +1,10 @@
 package org.keycloak.services;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
 

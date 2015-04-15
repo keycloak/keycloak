@@ -44,6 +44,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>event-listener-sysout-example</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
         </dependency>

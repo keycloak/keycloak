@@ -9,7 +9,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorResponse;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -79,7 +79,7 @@ public class RoleContainerResource extends RoleResource {
             role.setDescription(rep.getDescription());
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Role with name " + rep.getName() + " already exists");
+            return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
     }
 
@@ -144,7 +144,7 @@ public class RoleContainerResource extends RoleResource {
             updateRole(rep, role);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Role with name " + rep.getName() + " already exists");
+            return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
     }
 

@@ -24,7 +24,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -39,17 +38,6 @@ public class RealmsResource {
     protected static Logger logger = Logger.getLogger(RealmsResource.class);
 
     @Context
-    protected UriInfo uriInfo;
-
-    @Context
-    protected HttpHeaders headers;
-
-    /*
-    @Context
-    protected ResourceContext resourceContext;
-    */
-
-    @Context
     protected KeycloakSession session;
 
     @Context
@@ -62,16 +50,8 @@ public class RealmsResource {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
     }
 
-    public static UriBuilder realmBaseUrl(UriBuilder base) {
-        return base.path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
-    }
-
     public static UriBuilder accountUrl(UriBuilder base) {
         return base.path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
-    }
-
-    public static UriBuilder protocolUrl(UriBuilder base) {
-        return base.path(RealmsResource.class).path(RealmsResource.class, "getProtocol");
     }
 
     public static UriBuilder protocolUrl(UriInfo uriInfo) {
@@ -87,9 +67,8 @@ public class RealmsResource {
     public Object getLoginStatusIframe(final @PathParam("realm") String name,
                                        @QueryParam("client_id") String client_id,
                                        @QueryParam("origin") String origin) {
-        // backward compatibility
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = locateRealm(name, realmManager);
+        RealmModel realm = init(name);
+
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
         AuthenticationManager authManager = new AuthenticationManager(protector);
 
@@ -104,8 +83,8 @@ public class RealmsResource {
     @Path("{realm}/protocol/{protocol}")
     public Object getProtocol(final @PathParam("realm") String name,
                                             final @PathParam("protocol") String protocol) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = locateRealm(name, realmManager);
+        RealmModel realm = init(name);
+
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
         AuthenticationManager authManager = new AuthenticationManager(protector);
 
@@ -125,8 +104,7 @@ public class RealmsResource {
 
     @Path("{realm}/login-actions")
     public LoginActionsService getLoginActionsService(final @PathParam("realm") String name) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = locateRealm(name, realmManager);
+        RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
         AuthenticationManager authManager = new AuthenticationManager(protector);
         LoginActionsService service = new LoginActionsService(realm, authManager, event);
@@ -136,26 +114,26 @@ public class RealmsResource {
 
     @Path("{realm}/clients-managements")
     public ClientsManagementService getClientsManagementService(final @PathParam("realm") String name) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = locateRealm(name, realmManager);
+        RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
         ClientsManagementService service = new ClientsManagementService(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }
 
-    protected RealmModel locateRealm(String name, RealmManager realmManager) {
-        RealmModel realm = realmManager.getRealmByName(name);
+    private RealmModel init(String realmName) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealmByName(realmName);
         if (realm == null) {
             throw new NotFoundException("Realm does not exist");
         }
+        session.getContext().setRealm(realm);
         return realm;
     }
 
     @Path("{realm}/account")
     public AccountService getAccountService(final @PathParam("realm") String name) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = locateRealm(name, realmManager);
+        RealmModel realm = init(name);
 
         ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (client == null || !client.isEnabled()) {
@@ -172,8 +150,7 @@ public class RealmsResource {
 
     @Path("{realm}")
     public PublicRealmResource getRealmResource(final @PathParam("realm") String name) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = locateRealm(name, realmManager);
+        RealmModel realm = init(name);
         PublicRealmResource realmResource = new PublicRealmResource(realm);
         ResteasyProviderFactory.getInstance().injectProperties(realmResource);
         return realmResource;
@@ -181,8 +158,7 @@ public class RealmsResource {
 
     @Path("{realm}/broker")
     public IdentityBrokerService getBrokerService(final @PathParam("realm") String name) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = locateRealm(name, realmManager);
+        RealmModel realm = init(name);
 
         IdentityBrokerService brokerService = new IdentityBrokerService(realm);
         ResteasyProviderFactory.getInstance().injectProperties(brokerService);
@@ -195,12 +171,12 @@ public class RealmsResource {
     @GET
     @Path("{realm}/.well-known/{provider}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getWellKnown(final @PathParam("realm") String realmName,
+    public Response getWellKnown(final @PathParam("realm") String name,
                               final @PathParam("provider") String providerName) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = locateRealm(realmName, realmManager);
+        init(name);
+
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
-        return Response.ok(wellKnown.getConfig(realm, uriInfo)).build();
+        return Response.ok(wellKnown.getConfig()).build();
     }
 
 }

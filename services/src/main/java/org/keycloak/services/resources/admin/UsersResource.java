@@ -36,8 +36,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UserManager;
-import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -123,9 +123,9 @@ public class UsersResource {
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("User exists with same username or email");
+            return ErrorResponse.exists("User exists with same username or email");
         } catch (ModelReadOnlyException re) {
-            return Flows.errors().exists("User is read only!");
+            return ErrorResponse.exists("User is read only!");
         }
     }
 
@@ -143,10 +143,10 @@ public class UsersResource {
 
         // Double-check duplicated username and email here due to federation
         if (session.users().getUserByUsername(rep.getUsername(), realm) != null) {
-            return Flows.errors().exists("User exists with same username");
+            return ErrorResponse.exists("User exists with same username");
         }
         if (rep.getEmail() != null && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
-            return Flows.errors().exists("User exists with same email");
+            return ErrorResponse.exists("User exists with same email");
         }
 
         try {
@@ -162,7 +162,7 @@ public class UsersResource {
             if (session.getTransaction().isActive()) {
                 session.getTransaction().setRollbackOnly();
             }
-            return Flows.errors().exists("User exists with same username or email");
+            return ErrorResponse.exists("User exists with same username or email");
         }
     }
 
@@ -287,7 +287,7 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
         if (session.users().getFederatedIdentity(user, provider, realm) != null) {
-            return Flows.errors().exists("User is already linked with provider");
+            return ErrorResponse.exists("User is already linked with provider");
         }
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
@@ -352,7 +352,7 @@ public class UsersResource {
         if (removed) {
             return Response.noContent().build();
         } else {
-            return Flows.errors().error("User couldn't be deleted", Response.Status.BAD_REQUEST);
+            return ErrorResponse.error("User couldn't be deleted", Response.Status.BAD_REQUEST);
         }
     }
 
@@ -702,19 +702,19 @@ public class UsersResource {
 
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
-            return Flows.errors().error("User not found", Response.Status.NOT_FOUND);
+            return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
         }
 
         if (!user.isEnabled()) {
-            return Flows.errors().error("User is disabled", Response.Status.BAD_REQUEST);
+            return ErrorResponse.error("User is disabled", Response.Status.BAD_REQUEST);
         }
 
         if (user.getEmail() == null) {
-            return Flows.errors().error("User email missing", Response.Status.BAD_REQUEST);
+            return ErrorResponse.error("User email missing", Response.Status.BAD_REQUEST);
         }
 
         if(redirectUri != null && clientId == null){
-            return Flows.errors().error("Client id missing", Response.Status.BAD_REQUEST);
+            return ErrorResponse.error("Client id missing", Response.Status.BAD_REQUEST);
         }
 
         if(clientId == null){
@@ -723,14 +723,14 @@ public class UsersResource {
 
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null || !client.isEnabled()) {
-            return Flows.errors().error(clientId + " not enabled", Response.Status.INTERNAL_SERVER_ERROR);
+            return ErrorResponse.error(clientId + " not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         String redirect;
         if(redirectUri != null){
             redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
             if(redirect == null){
-                return Flows.errors().error("Invalid redirect uri.", Response.Status.BAD_REQUEST);
+                return ErrorResponse.error("Invalid redirect uri.", Response.Status.BAD_REQUEST);
             }
         }else{
             redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
@@ -760,7 +760,7 @@ public class UsersResource {
             return Response.ok().build();
         } catch (EmailException e) {
             logger.error("Failed to send password reset email", e);
-            return Flows.errors().error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
+            return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 

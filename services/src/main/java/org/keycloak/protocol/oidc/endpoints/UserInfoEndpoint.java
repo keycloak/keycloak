@@ -36,7 +36,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.resources.Cors;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;

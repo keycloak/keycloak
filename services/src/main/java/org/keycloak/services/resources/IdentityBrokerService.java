@@ -30,6 +30,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -45,8 +46,9 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorPage;
+import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
 import org.keycloak.util.ObjectUtil;
@@ -185,15 +187,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     return badRequest("Invalid client.");
                 }
 
+                session.getContext().setClient(clientModel);
+
                 if (!clientModel.isAllowedRetrieveTokenFromIdentityProvider(providerId)) {
                     return corsResponse(badRequest("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
                 }
 
                 if (clientModel.isConsentRequired()) {
-                    return corsResponse(Flows.forms(this.session, this.realmModel, clientModel, this.uriInfo, headers)
+                    return corsResponse(session.getProvider(LoginFormsProvider.class)
                             .setClientSessionCode(authManager.extractAuthorizationHeaderToken(this.request.getHttpHeaders()))
                             .setAccessRequest("Your information from " + providerId + " identity provider.")
-                            .setClient(clientModel)
                             .setActionUri(this.uriInfo.getRequestUri())
                             .createOAuthGrant(null), clientModel);
                 }
@@ -411,7 +414,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         fireErrorEvent(message, throwable);
-        return Flows.forwardToSecurityFailurePage(this.session, this.realmModel, this.uriInfo, headers, message, parameters);
+        return ErrorPage.error(this.session, message, parameters);
     }
 
     private Response redirectToLoginPage(Throwable t, ClientSessionCode clientCode) {
@@ -422,7 +425,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         fireErrorEvent(message);
-        return Flows.forms(this.session, this.realmModel, clientCode.getClientSession().getClient(), this.uriInfo, headers)
+        return session.getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(clientCode.getCode())
                 .setError(message)
                 .createLogin();
@@ -430,7 +433,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private Response badRequest(String message) {
         fireErrorEvent(message);
-        return Flows.errors().error(message, Status.BAD_REQUEST);
+        return ErrorResponse.error(message, Status.BAD_REQUEST);
     }
 
     public static IdentityProvider getIdentityProvider(KeycloakSession session, RealmModel realm, String alias) {

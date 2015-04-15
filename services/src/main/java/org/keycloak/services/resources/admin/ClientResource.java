@@ -23,7 +23,7 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Time;
 
@@ -100,7 +100,7 @@ public class ClientResource {
             RepresentationToModel.updateClient(rep, client);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Client " + rep.getClientId() + " already exists");
+            return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         }
     }
 

@@ -1,5 +1,8 @@
 package org.keycloak.services;
 
+import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
@@ -12,6 +15,7 @@ import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
+import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -32,11 +36,18 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserProvider userModel;
     private UserSessionProvider sessionProvider;
     private UserFederationManager federationManager;
+    private KeycloakContext context;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
         this.transactionManager = new DefaultKeycloakTransactionManager();
         federationManager = new UserFederationManager(this);
+        context = new DefaultKeycloakContext();
+    }
+
+    @Override
+    public KeycloakContext getContext() {
+        return context;
     }
 
     private RealmProvider getRealmProvider() {
