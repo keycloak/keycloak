@@ -277,6 +277,36 @@ public class ResetPasswordTest {
         events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
     }
 
+    private void resetPasswordInvalidPassword(String username, String password, String error) throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword(username);
+
+        resetPasswordPage.assertCurrent();
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId)
+                .detail(Details.USERNAME, username).detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
+
+        assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+
+        String body = (String) message.getContent();
+        String changePasswordUrl = MailUtil.getLink(body);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword(password, password);
+
+        assertTrue(updatePasswordPage.isCurrent());
+        assertEquals(error, updatePasswordPage.getError());
+    }
+
     @Test
     public void resetPasswordWrongEmail() throws IOException, MessagingException, InterruptedException {
         loginPage.open();
@@ -508,53 +538,19 @@ public class ResetPasswordTest {
             }
         });
         
-        // try-catch blocks have been commented out to reduce execution time for this test case(30s->15s).
-        // TODO : Comment out any other piece of code, if applicable, in order to reduce execution time.
-
         resetPassword("login-test", "password1");
-        /*try {
-            resetPassword("login-test", "password1");
-            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
-        } catch (Exception e) {
-            // Expected NPE as "password1" matches with password history
-        }*/
-        
-        resetPassword("login-test", "password2");
-        /*try {
-            resetPassword("login-test", "password1");
-            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
-        } catch (Exception e) {
-            // Expected NPE as "password1" matches with password history
-        }
-        try {
-            resetPassword("login-test", "password2");
-            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
-        } catch (Exception e) {
-            // Expected NPE as "password2" matches with password history
-        }*/
-        
-        resetPassword("login-test", "password3");
-        try {
-            resetPassword("login-test", "password1");
-            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
-        } catch (Exception e) {
-            // Expected NPE as "password1" matches with password history
-        }
-        try {
-            resetPassword("login-test", "password2");
-            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
-        } catch (Exception e) {
-            // Expected NPE as "password2" matches with password history
-        }
-        try {
-            resetPassword("login-test", "password3");
-            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
-        } catch (Exception e) {
-            // Expected NPE as "password3" matches with password history
-        }
-        
-        resetPassword("login-test", "password");
+        resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
 
+        resetPassword("login-test", "password2");
+        resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
+        resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
+
+        resetPassword("login-test", "password3");
+        resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
+        resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
+        resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
+
+        resetPassword("login-test", "password");
     }
 
     @Test

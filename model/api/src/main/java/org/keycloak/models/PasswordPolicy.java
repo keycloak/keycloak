@@ -365,7 +365,7 @@ public class PasswordPolicy {
                 UserCredentialValueModel cred = getCredentialValueModel(user, UserCredentialModel.PASSWORD);
                 if (cred != null) {
                     if(new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue(), cred.getHashIterations())) {
-                        return new Error(INVALID_PASSWORD_HISTORY, password);
+                        return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
                     }
                 }
 
@@ -373,7 +373,7 @@ public class PasswordPolicy {
                         UserCredentialModel.PASSWORD_HISTORY);
                 for (UserCredentialValueModel credential : passwordExpiredCredentials) {
                     if (new Pbkdf2PasswordEncoder(credential.getSalt()).verify(password, credential.getValue(), credential.getHashIterations())) {
-                        return new Error(INVALID_PASSWORD_HISTORY, password);
+                        return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
                     }
                 }
             }
