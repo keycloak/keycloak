@@ -21,12 +21,6 @@ import org.keycloak.provider.Provider;
  */
 public interface LoginFormsProvider extends Provider {
 
-    public LoginFormsProvider setRealm(RealmModel realm);
-
-    public LoginFormsProvider setUriInfo(UriInfo uriInfo);
-
-    public LoginFormsProvider setHttpHeaders(HttpHeaders httpHeaders);
-
     public Response createResponse(UserModel.RequiredAction action);
 
     public Response createLogin();
@@ -67,13 +61,7 @@ public interface LoginFormsProvider extends Provider {
 
     public LoginFormsProvider setSuccess(String message, Object ... parameters);
 
-    public LoginFormsProvider setWarning(String message, Object ... parameters);
-
     public LoginFormsProvider setUser(UserModel user);
-
-    public LoginFormsProvider setClient(ClientModel client);
-
-    public LoginFormsProvider setQueryParams(MultivaluedMap<String, String> queryParams);
 
     public LoginFormsProvider setResponseHeader(String headerName, String headerValue);
 

@@ -30,8 +30,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.Time;
@@ -401,7 +400,7 @@ public class AuthenticationManager {
             if (action != null) {
                 accessCode.setRequiredAction(action);
 
-                LoginFormsProvider loginFormsProvider = Flows.forms(session, realm, client, uriInfo, request.getHttpHeaders()).setClientSessionCode(accessCode.getCode())
+                LoginFormsProvider loginFormsProvider = session.getProvider(LoginFormsProvider.class).setClientSessionCode(accessCode.getCode())
                         .setUser(user);
                 if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL)) {
                     event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
@@ -425,10 +424,9 @@ public class AuthenticationManager {
                 }
             }
 
-            return Flows.forms(session, realm, client, uriInfo, request.getHttpHeaders())
+            return session.getProvider(LoginFormsProvider.class)
                     .setClientSessionCode(accessCode.getCode())
                     .setAccessRequest(realmRoles, resourceRoles)
-                    .setClient(client)
                     .createOAuthGrant(clientSession);
         }
 

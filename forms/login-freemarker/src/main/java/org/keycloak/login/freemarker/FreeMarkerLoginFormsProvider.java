@@ -37,9 +37,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -79,39 +78,20 @@ import java.util.concurrent.TimeUnit;
 
     private KeycloakSession session;
     private FreeMarkerUtil freeMarker;
-    private RealmModel realm;
 
     private UserModel user;
 
-    private ClientModel client;
     private ClientSessionModel clientSession;
-
-    private UriInfo uriInfo;
-
-    private HttpHeaders httpHeaders;
 
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
     }
 
-    public LoginFormsProvider setRealm(RealmModel realm) {
-        this.realm = realm;
-        return this;
-    }
-
-    public LoginFormsProvider setUriInfo(UriInfo uriInfo) {
-        this.uriInfo = uriInfo;
-        return this;
-    }
-
-    @Override
-    public LoginFormsProvider setHttpHeaders(HttpHeaders httpHeaders) {
-        this.httpHeaders = httpHeaders;
-        return this;
-    }
-
     public Response createResponse(UserModel.RequiredAction action) {
+        RealmModel realm = session.getContext().getRealm();
+        UriInfo uriInfo = session.getContext().getUri();
+
         String actionMessage;
         LoginFormsPages page;
 
@@ -150,13 +130,17 @@ import java.util.concurrent.TimeUnit;
         }
 
         if (messages == null) {
-            setWarning(actionMessage);
+            setMessage(MessageType.WARNING, actionMessage);
         }
 
         return createResponse(page);
     }
 
     private Response createResponse(LoginFormsPages page) {
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel client = session.getContext().getClient();
+        UriInfo uriInfo = session.getContext().getUri();
+
         MultivaluedMap<String, String> queryParameterMap = queryParams != null ? queryParams : new MultivaluedMapImpl<String, String>();
 
         String requestURI = uriInfo.getBaseUri().getPath();
@@ -191,7 +175,7 @@ import java.util.concurrent.TimeUnit;
         }
 
         Properties messagesBundle;
-        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, httpHeaders);
+        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, session.getContext().getRequestHeaders());
         try {
             messagesBundle = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
@@ -222,7 +206,7 @@ import java.util.concurrent.TimeUnit;
 
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
-            attributes.put("social", new IdentityProviderBean(realm, baseUri, this.uriInfo));
+            attributes.put("social", new IdentityProviderBean(realm, baseUri, uriInfo));
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
 
             if (realm.isInternationalizationEnabled()) {
@@ -365,19 +349,8 @@ import java.util.concurrent.TimeUnit;
         return this;
     }
 
-    @Override
-    public FreeMarkerLoginFormsProvider setWarning(String message, Object ... parameters) {
-        setMessage(MessageType.WARNING, message, parameters);
-        return this;
-    }
-
     public FreeMarkerLoginFormsProvider setUser(UserModel user) {
         this.user = user;
-        return this;
-    }
-
-    public FreeMarkerLoginFormsProvider setClient(ClientModel client) {
-        this.client = client;
         return this;
     }
 
@@ -408,12 +381,6 @@ import java.util.concurrent.TimeUnit;
     @Override
     public LoginFormsProvider setStatus(Response.Status status) {
         this.status = status;
-        return this;
-    }
-
-    @Override
-    public LoginFormsProvider setQueryParams(MultivaluedMap<String, String> queryParams) {
-        this.queryParams = queryParams;
         return this;
     }
 

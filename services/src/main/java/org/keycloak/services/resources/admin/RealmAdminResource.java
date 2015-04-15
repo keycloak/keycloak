@@ -29,7 +29,7 @@ import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UsersSyncManager;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.timer.TimerProvider;
 
 import javax.ws.rs.Consumes;
@@ -191,11 +191,11 @@ public class RealmAdminResource {
 
             return Response.noContent().build();
         } catch (PatternSyntaxException e) {
-            return Flows.errors().exists("Specified regex pattern(s) is invalid.");
+            return ErrorResponse.exists("Specified regex pattern(s) is invalid.");
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Realm " + rep.getRealm() + " already exists.");
+            return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists.");
         }  catch (Exception e) {
-            return Flows.errors().exists("Failed to update " + rep.getRealm() + " Realm.");
+            return ErrorResponse.exists("Failed to update " + rep.getRealm() + " Realm.");
         }
     }
 
@@ -442,7 +442,7 @@ public class RealmAdminResource {
         auth.init(RealmAuth.Resource.REALM).requireManage();
 
         boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential);
-        return result ? Response.noContent().build() : Flows.errors().error("LDAP test error", Response.Status.BAD_REQUEST);
+        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 
     @Path("identity-provider")

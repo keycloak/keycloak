@@ -23,7 +23,7 @@ package org.keycloak.login.freemarker.model;
 
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;

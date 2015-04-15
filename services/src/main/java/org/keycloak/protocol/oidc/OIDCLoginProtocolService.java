@@ -18,7 +18,6 @@ import org.keycloak.protocol.oidc.endpoints.ValidateTokenEndpoint;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -204,7 +203,7 @@ public class OIDCLoginProtocolService {
     @Path("oauth/oob")
     @GET
     public Response installedAppUrnCallback(final @QueryParam("code") String code, final @QueryParam("error") String error, final @QueryParam("error_description") String errorDescription) {
-        LoginFormsProvider forms = Flows.forms(session, realm, null, uriInfo, headers);
+        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
         if (code != null) {
             return forms.setClientSessionCode(code).createCode();
         } else {

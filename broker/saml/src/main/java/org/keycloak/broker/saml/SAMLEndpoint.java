@@ -19,7 +19,7 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -130,18 +130,18 @@ public class SAMLEndpoint {
             if (!checkSsl()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.SSL_REQUIRED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.HTTPS_REQUIRED);
+                return ErrorPage.error(session, Messages.HTTPS_REQUIRED);
             }
             if (!realm.isEnabled()) {
                 event.event(EventType.LOGIN_ERROR);
                 event.error(Errors.REALM_DISABLED);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.REALM_NOT_ENABLED);
+                return ErrorPage.error(session, Messages.REALM_NOT_ENABLED);
             }
 
             if (samlRequest == null && samlResponse == null) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_REQUEST);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST );
+                return ErrorPage.error(session, Messages.INVALID_REQUEST);
 
             }
             return null;
@@ -177,7 +177,7 @@ public class SAMLEndpoint {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.error(Errors.INVALID_SAML_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
+                return ErrorPage.error(session, Messages.INVALID_REQUEST);
             }
             if (config.isValidateSignature()) {
                 try {
@@ -186,7 +186,7 @@ public class SAMLEndpoint {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUESTER);
+                    return ErrorPage.error(session, Messages.INVALID_REQUESTER);
                 }
             }
 
@@ -199,7 +199,7 @@ public class SAMLEndpoint {
             } else {
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_TOKEN);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_REQUEST);
+                return ErrorPage.error(session, Messages.INVALID_REQUEST);
             }
         }
 
@@ -327,7 +327,7 @@ public class SAMLEndpoint {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.error(Errors.INVALID_SAML_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                return ErrorPage.error(session, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
             }
             if (config.isValidateSignature()) {
                 try {
@@ -336,7 +336,7 @@ public class SAMLEndpoint {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                    return ErrorPage.error(session, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
                 }
             }
             if (statusResponse instanceof ResponseType) {
@@ -355,20 +355,20 @@ public class SAMLEndpoint {
                 logger.error("no valid user session");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             UserSessionModel userSession = session.sessions().getUserSession(realm, relayState);
             if (userSession == null) {
                 logger.error("no valid user session");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.error("usersession in different state");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE);
+                return ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);
             }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
         }

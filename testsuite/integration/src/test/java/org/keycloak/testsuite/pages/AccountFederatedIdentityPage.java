@@ -2,7 +2,7 @@ package org.keycloak.testsuite.pages;
 
 import javax.ws.rs.core.UriBuilder;
 
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.By;
 

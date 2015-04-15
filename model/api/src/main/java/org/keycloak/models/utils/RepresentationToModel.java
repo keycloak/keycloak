@@ -64,7 +64,7 @@ public class RepresentationToModel {
         if (rep.getFailureFactor() != null) newRealm.setFailureFactor(rep.getFailureFactor());
         if (rep.isEventsEnabled() != null) newRealm.setEventsEnabled(rep.isEventsEnabled());
         if (rep.getEventsExpiration() != null) newRealm.setEventsExpiration(rep.getEventsExpiration());
-        if (rep.getEventsListeners() != null) newRealm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
+        if (rep.getEventsListeners() != null) newRealm.setEventsListeners(new HashSet<>(rep.getEventsListeners()));
 
         if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 
@@ -409,8 +409,8 @@ public class RepresentationToModel {
         if (rep.getEmailTheme() != null) realm.setEmailTheme(rep.getEmailTheme());
         if (rep.isEventsEnabled() != null) realm.setEventsEnabled(rep.isEventsEnabled());
         if (rep.getEventsExpiration() != null) realm.setEventsExpiration(rep.getEventsExpiration());
-        if (rep.getEventsListeners() != null) realm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
-        if (rep.getEnabledEventTypes() != null) realm.setEnabledEventTypes(new HashSet<String>(rep.getEnabledEventTypes()));
+        if (rep.getEventsListeners() != null) realm.setEventsListeners(new HashSet<>(rep.getEventsListeners()));
+        if (rep.getEnabledEventTypes() != null) realm.setEnabledEventTypes(new HashSet<>(rep.getEnabledEventTypes()));
 
         if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 

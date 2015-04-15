@@ -19,35 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.services.resources.flows;
+package org.keycloak.services;
 
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class Flows {
+public class ErrorPage {
 
-    private Flows() {
-    }
-
-    public static LoginFormsProvider forms(KeycloakSession session, RealmModel realm, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
-        return session.getProvider(LoginFormsProvider.class).setRealm(realm).setUriInfo(uriInfo).setClient(client).setHttpHeaders(headers);
-    }
-
-    public static ErrorFlows errors() {
-        return new ErrorFlows();
-    }
-
-    public static Response forwardToSecurityFailurePage(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String message, Object ... parameters) {
-        return Flows.forms(session, realm, null, uriInfo, headers).setError(message,parameters).createErrorPage();
+    public static Response error(KeycloakSession session, String message, Object... parameters) {
+        return session.getProvider(LoginFormsProvider.class).setError(message, parameters).createErrorPage();
     }
 
 

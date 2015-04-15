@@ -25,7 +25,7 @@ import org.keycloak.constants.KerberosConstants;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorPage;
 
 /**
  * Handle HTTP authentication types requiring complex handshakes with multiple HTTP request/responses
@@ -114,7 +114,7 @@ public class HttpAuthenticationManager {
         Response response;
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
-            response = Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.ACCOUNT_DISABLED);
+            response = ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
         } else {
             UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), authMethod, false, null, null);
 
