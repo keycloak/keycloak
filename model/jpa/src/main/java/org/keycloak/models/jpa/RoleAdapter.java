@@ -104,8 +104,8 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public RoleContainerModel getContainer() {
-        if (role.isApplicationRole()) {
-            return realm.getClientById(role.getApplication().getId());
+        if (role.isClientRole()) {
+            return realm.getClientById(role.getClient().getId());
 
         } else {
             return realm;

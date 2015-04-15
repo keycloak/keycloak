@@ -3,7 +3,7 @@ package org.keycloak.models.cache.infinispan;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.models.cache.RealmCache;
-import org.keycloak.models.cache.entities.CachedApplication;
+import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 
@@ -77,19 +77,19 @@ public class InfinispanRealmCache implements RealmCache {
     }
 
     @Override
-    public CachedApplication getApplication(String id) {
+    public CachedClient getApplication(String id) {
         if (!enabled) return null;
-        return get(id, CachedApplication.class);
+        return get(id, CachedClient.class);
     }
 
     @Override
-    public void invalidateApplication(CachedApplication app) {
+    public void invalidateApplication(CachedClient app) {
         logger.tracev("Removing application {0}", app.getId());
         cache.remove(app.getId());
     }
 
     @Override
-    public void addCachedApplication(CachedApplication app) {
+    public void addCachedClient(CachedClient app) {
         if (!enabled) return;
         logger.tracev("Adding application {0}", app.getId());
         cache.put(app.getId(), app);

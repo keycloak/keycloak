@@ -104,8 +104,8 @@ public class RealmEntity {
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_APPLICATION", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="APPLICATION_ID") })
-    Collection<ClientEntity> applications = new ArrayList<ClientEntity>();
+    @JoinTable(name="REALM_CLIENT", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_ID") })
+    Collection<ClientEntity> clients = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
@@ -136,8 +136,8 @@ public class RealmEntity {
     protected Set<String> enabledEventTypes = new HashSet<String>();
 
     @OneToOne
-    @JoinColumn(name="MASTER_ADMIN_APP")
-    protected ClientEntity masterAdminApp;
+    @JoinColumn(name="MASTER_ADMIN_CLIENT")
+    protected ClientEntity masterAdminClient;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     protected List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
@@ -318,12 +318,12 @@ public class RealmEntity {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public Collection<ClientEntity> getApplications() {
-        return applications;
+    public Collection<ClientEntity> getClients() {
+        return clients;
     }
 
-    public void setApplications(Collection<ClientEntity> applications) {
-        this.applications = applications;
+    public void setClients(Collection<ClientEntity> clients) {
+        this.clients = clients;
     }
 
     public Collection<RoleEntity> getRoles() {
@@ -437,12 +437,12 @@ public class RealmEntity {
         this.enabledEventTypes = enabledEventTypes;
     }
     
-    public ClientEntity getMasterAdminApp() {
-        return masterAdminApp;
+    public ClientEntity getMasterAdminClient() {
+        return masterAdminClient;
     }
 
-    public void setMasterAdminApp(ClientEntity masterAdminApp) {
-        this.masterAdminApp = masterAdminApp;
+    public void setMasterAdminClient(ClientEntity masterAdminClient) {
+        this.masterAdminClient = masterAdminClient;
     }
 
     public List<UserFederationProviderEntity> getUserFederationProviders() {

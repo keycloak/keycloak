@@ -38,7 +38,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.IDToken;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;

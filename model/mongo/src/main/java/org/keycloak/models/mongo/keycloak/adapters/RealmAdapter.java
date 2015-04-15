@@ -91,7 +91,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public SslRequired getSslRequired() {
-        return SslRequired.valueOf(realm.getSslRequired());
+        return realm.getSslRequired() != null ? SslRequired.valueOf(realm.getSslRequired()) : null;
     }
 
     @Override
@@ -604,11 +604,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
                 .get();
-        List<MongoClientEntity> appDatas = getMongoStore().loadEntities(MongoClientEntity.class, query, invocationContext);
+        List<MongoClientEntity> clientEntities = getMongoStore().loadEntities(MongoClientEntity.class, query, invocationContext);
 
         List<ClientModel> result = new ArrayList<ClientModel>();
-        for (MongoClientEntity appData : appDatas) {
-            result.add(new ClientAdapter(session, this, appData, invocationContext));
+        for (MongoClientEntity clientEntity : clientEntities) {
+            result.add(new ClientAdapter(session, this, clientEntity, invocationContext));
         }
         return result;
     }
@@ -620,14 +620,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        MongoClientEntity appData = new MongoClientEntity();
-        appData.setId(id);
-        appData.setClientId(clientId);
-        appData.setRealmId(getId());
-        appData.setEnabled(true);
-        getMongoStore().insertEntity(appData, invocationContext);
+        MongoClientEntity clientEntity = new MongoClientEntity();
+        clientEntity.setId(id);
+        clientEntity.setClientId(clientId);
+        clientEntity.setRealmId(getId());
+        clientEntity.setEnabled(true);
+        getMongoStore().insertEntity(clientEntity, invocationContext);
 
-        final ClientModel model = new ClientAdapter(session, this, appData, invocationContext);
+        final ClientModel model = new ClientAdapter(session, this, clientEntity, invocationContext);
         session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
             @Override
             public ClientModel getCreatedClient() {
@@ -979,14 +979,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ClientModel getMasterAdminClient() {
-        MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, realm.getAdminAppId(), invocationContext);
+        MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, realm.getMasterAdminClient(), invocationContext);
         return appData != null ? new ClientAdapter(session, this, appData, invocationContext) : null;
     }
 
     @Override
     public void setMasterAdminClient(ClientModel client) {
         String adminAppId = client != null ? client.getId() : null;
-        realm.setAdminAppId(adminAppId);
+        realm.setMasterAdminClient(adminAppId);
         updateRealm();
     }
 

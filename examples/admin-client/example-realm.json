@@ -24,7 +24,7 @@
     ],
     "clients": [
         {
-            "name": "examples-admin-client",
+            "clientId": "examples-admin-client",
             "enabled": true,
             "fullScopeAllowed": true,
             "baseUrl": "/examples-admin-client",

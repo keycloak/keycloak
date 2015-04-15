@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.services.resources.flows;
+package org.keycloak.services;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;

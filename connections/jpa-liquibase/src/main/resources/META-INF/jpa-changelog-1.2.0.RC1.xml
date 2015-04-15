@@ -32,6 +32,9 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <addColumn tableName="CREDENTIAL">
+            <column name="CREATED_DATE" type="BIGINT"/>
+        </addColumn>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_IDPM" tableName="IDENTITY_PROVIDER_MAPPER"/>
         <addPrimaryKey columnNames="IDP_MAPPER_ID, NAME" constraintName="CONSTRAINT_IDPMConfig" tableName="IDP_MAPPER_CONFIG"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="IDENTITY_PROVIDER_MAPPER" constraintName="FK_IDPM_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
@@ -48,5 +51,23 @@
         </update>
         <dropColumn tableName="CLIENT" columnName="DTYPE"/>
         <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME"/>
+        <renameColumn tableName="REALM" newColumnName="MASTER_ADMIN_CLIENT" oldColumnName="MASTER_ADMIN_APP"/>
+
+        <renameTable oldTableName="REALM_APPLICATION" newTableName="REALM_CLIENT"/>
+        <renameColumn tableName="REALM_CLIENT" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
+
+        <renameTable oldTableName="APPLICATION_DEFAULT_ROLES" newTableName="CLIENT_DEFAULT_ROLES"/>
+        <renameColumn tableName="CLIENT_DEFAULT_ROLES" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
+
+        <renameTable oldTableName="APP_NODE_REGISTRATIONS" newTableName="CLIENT_NODE_REGISTRATIONS"/>
+        <renameColumn tableName="CLIENT_NODE_REGISTRATIONS" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
+
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT" oldColumnName="APPLICATION"/>
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_ROLE" oldColumnName="APPLICATION_ROLE"/>
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_REALM_CONSTRAINT" oldColumnName="APP_REALM_CONSTRAINT"/>
+
+        <dropUniqueConstraint tableName="KEYCLOAK_ROLE" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2"/>
+        <addUniqueConstraint columnNames="NAME,CLIENT_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
+
     </changeSet>
 </databaseChangeLog>

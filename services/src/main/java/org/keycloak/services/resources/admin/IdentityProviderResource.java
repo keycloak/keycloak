@@ -25,8 +25,8 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.social.SocialIdentityProvider;
 
 import javax.ws.rs.Consumes;
@@ -113,7 +113,7 @@ public class IdentityProviderResource {
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Identity Provider " + providerRep.getAlias() + " already exists");
+            return ErrorResponse.exists("Identity Provider " + providerRep.getAlias() + " already exists");
         }
     }
 
@@ -187,7 +187,7 @@ public class IdentityProviderResource {
             IdentityProviderFactory factory = getIdentityProviderFactory();
             return factory.create(identityProviderModel).export(uriInfo, realm, format);
         } catch (Exception e) {
-            return Flows.errors().error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
+            return ErrorResponse.error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
         }
     }
 

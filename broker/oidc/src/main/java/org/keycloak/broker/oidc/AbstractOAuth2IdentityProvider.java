@@ -33,8 +33,8 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -215,7 +215,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
                 event.event(EventType.LOGIN);
                 event.error(error);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
 
             try {
@@ -240,7 +240,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             }
             event.event(EventType.LOGIN);
             event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+            return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {

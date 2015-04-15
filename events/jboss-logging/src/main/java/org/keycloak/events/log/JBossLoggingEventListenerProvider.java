@@ -3,23 +3,35 @@ package org.keycloak.events.log;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
 
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.UriInfo;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JBossLoggingEventListenerProvider implements EventListenerProvider {
 
+    private final KeycloakSession session;
     private final Logger logger;
+    private final Logger.Level successLevel;
+    private final Logger.Level errorLevel;
 
-    public JBossLoggingEventListenerProvider(Logger logger) {
+    public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel) {
+        this.session = session;
         this.logger = logger;
+        this.successLevel = successLevel;
+        this.errorLevel = errorLevel;
     }
 
     @Override
     public void onEvent(Event event) {
-        Logger.Level level = event.getError() != null ? Logger.Level.WARN : Logger.Level.INFO;
+        Logger.Level level = event.getError() != null ? errorLevel : successLevel;
 
         if (logger.isEnabled(level)) {
             StringBuilder sb = new StringBuilder();
@@ -55,7 +67,31 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
                 }
             }
 
-            logger.log(level, sb.toString());
+            if (logger.isTraceEnabled()) {
+                KeycloakContext context = session.getContext();
+                UriInfo uriInfo = context.getUri();
+                HttpHeaders headers = context.getRequestHeaders();
+                if (uriInfo != null) {
+                    sb.append(", requestUri=");
+                    sb.append(uriInfo.getRequestUri().toString());
+                }
+
+                if (headers != null) {
+                    sb.append(", cookies=[");
+                    boolean f = true;
+                    for (Map.Entry<String, Cookie> e : headers.getCookies().entrySet()) {
+                        if (f) {
+                            f = false;
+                        } else {
+                            sb.append(", ");
+                        }
+                        sb.append(e.getValue().toString());
+                    }
+                    sb.append("]");
+                }
+            }
+
+            logger.log(logger.isTraceEnabled() ? Logger.Level.TRACE : level, sb.toString());
         }
     }
 

@@ -4,7 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;

@@ -91,7 +91,7 @@ public class JpaRealmProvider implements RealmProvider {
 
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
-        for (ClientEntity a : new LinkedList<>(realm.getApplications())) {
+        for (ClientEntity a : new LinkedList<>(realm.getClients())) {
             adapter.removeClient(a.getId());
         }
 

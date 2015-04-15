@@ -30,16 +30,15 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.PemUtils;
 
@@ -120,14 +119,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 EventBuilder event = new EventBuilder(realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.error("usersession in different state");
                 EventBuilder event = new EventBuilder(realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.SESSION_NOT_ACTIVE);
+                return ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);
             }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
         }

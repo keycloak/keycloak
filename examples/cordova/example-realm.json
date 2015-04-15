@@ -43,7 +43,7 @@
     ],
     "clients": [
         {
-            "name": "cordova",
+            "clientId": "cordova",
             "enabled": true,
             "publicClient": true,
             "redirectUris": ["http://localhost"],

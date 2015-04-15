@@ -37,7 +37,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.social.SocialIdentityProvider;
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
@@ -159,7 +159,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             EventBuilder event = new EventBuilder(realm, session, clientConnection);
             event.event(EventType.LOGIN);
             event.error("twitter_login_failed");
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
+            return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
         }
 
         private ClientSessionCode parseClientSessionCode(String code) {

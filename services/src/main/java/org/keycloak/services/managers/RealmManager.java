@@ -132,6 +132,8 @@ public class RealmManager {
         realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
         realm.setFailureFactor(30);
         realm.setSslRequired(SslRequired.EXTERNAL);
+
+        realm.setEventsListeners(Collections.singleton("jboss-logging"));
     }
 
     public boolean removeRealm(RealmModel realm) {

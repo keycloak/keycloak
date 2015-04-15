@@ -26,7 +26,7 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

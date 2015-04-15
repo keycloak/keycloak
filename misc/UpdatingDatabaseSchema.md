@@ -76,4 +76,4 @@ It should be added last to the `DefaultMongoUpdaterProvider#updates` array.
 Testing database migration
 --------------------------
 
-Get the database from an old version of Keycloak that includes the demo applications. Start the server with this and test it. 
+Get the database from an old version of Keycloak that includes the demo applications. Start the server with this and test it.

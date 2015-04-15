@@ -11,7 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorResponse;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -91,7 +91,7 @@ public class ClientsResource {
             ClientModel clientModel = RepresentationToModel.createClient(session, realm, rep, true);
             return Response.created(uriInfo.getAbsolutePathBuilder().path(getClientPath(clientModel)).build()).build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Client " + rep.getClientId() + " already exists");
+            return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         }
     }
 

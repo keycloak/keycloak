@@ -30,7 +30,7 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.admin.ClientAttributeCertificateResource;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorPage;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -152,7 +152,7 @@ public class SamlProtocol implements LoginProtocol {
               return builder.redirectBinding().response();
           }
         } catch (Exception e) {
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.FAILED_TO_PROCESS_RESPONSE );
+            return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
         }
     }
 
@@ -309,7 +309,7 @@ public class SamlProtocol implements LoginProtocol {
             samlDocument = builder.buildDocument(samlModel);
         } catch (Exception e) {
             logger.error("failed", e);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo,headers, Messages.FAILED_TO_PROCESS_RESPONSE);
+            return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
         }
 
         SAML2BindingBuilder2 bindingBuilder = new SAML2BindingBuilder2();
@@ -331,7 +331,7 @@ public class SamlProtocol implements LoginProtocol {
                 publicKey = SamlProtocolUtils.getEncryptionValidationKey(client);
             } catch (Exception e) {
                 logger.error("failed", e);
-                return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.FAILED_TO_PROCESS_RESPONSE);
+                return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
             }
             bindingBuilder.encrypt(publicKey);
         }
@@ -343,7 +343,7 @@ public class SamlProtocol implements LoginProtocol {
             }
         } catch (Exception e) {
             logger.error("failed", e);
-            return Flows.forwardToSecurityFailurePage(session, realm, uriInfo, headers, Messages.FAILED_TO_PROCESS_RESPONSE );
+            return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
         }
     }
 

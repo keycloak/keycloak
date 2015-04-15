@@ -10,6 +10,8 @@ import java.util.Set;
  */
 public interface KeycloakSession {
 
+    KeycloakContext getContext();
+
     KeycloakTransactionManager getTransaction();
 
     <T extends Provider> T getProvider(Class<T> clazz);

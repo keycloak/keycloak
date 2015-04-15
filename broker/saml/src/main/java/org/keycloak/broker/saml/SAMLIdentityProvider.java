@@ -30,7 +30,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.protocol.saml.SAML2LogoutRequestBuilder;

@@ -229,7 +229,7 @@ public class AccountTest {
     }
 
     @Test
-    public void changePasswordWithPasswordPolicy() {
+    public void changePasswordWithLengthPasswordPolicy() {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
@@ -253,6 +253,55 @@ public class AccountTest {
             Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
 
             events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+        } finally {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                }
+            });
+        }
+    }
+    
+    @Test
+    public void changePasswordWithPasswordHistoryPolicy() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setPasswordPolicy(new PasswordPolicy("passwordHistory(2)"));
+            }
+        });
+
+        try {
+            changePasswordPage.open();
+            loginPage.login("test-user@localhost", "password");
+
+            events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+            changePasswordPage.changePassword("password", "password", "password");
+
+            Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
+
+            changePasswordPage.changePassword("password", "password1", "password1");
+
+            Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+            
+            events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+            
+            changePasswordPage.changePassword("password1", "password", "password");
+
+            Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
+
+            changePasswordPage.changePassword("password1", "password1", "password1");
+
+            Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
+            
+            changePasswordPage.changePassword("password1", "password2", "password2");
+
+            Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+
+            events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+            
         } finally {
             keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override

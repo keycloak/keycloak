@@ -11,16 +11,13 @@ import org.keycloak.wellknown.WellKnownProviderFactory;
  */
 public class OIDCWellKnownProviderFactory implements WellKnownProviderFactory {
 
-    private WellKnownProvider provider;
-
     @Override
     public WellKnownProvider create(KeycloakSession session) {
-        return provider;
+        return new OIDCWellKnownProvider(session);
     }
 
     @Override
     public void init(Config.Scope config) {
-        provider = new OIDCWellKnownProvider();
     }
 
     @Override
@@ -29,7 +26,6 @@ public class OIDCWellKnownProviderFactory implements WellKnownProviderFactory {
 
     @Override
     public void close() {
-        provider = null;
     }
 
     @Override

@@ -17,7 +17,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.social.SocialIdentityProvider;
 
 import javax.ws.rs.Consumes;
@@ -132,7 +132,7 @@ public class IdentityProvidersResource {
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Identity Provider " + representation.getAlias() + " already exists");
+            return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }
     }
 

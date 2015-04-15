@@ -18,7 +18,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
@@ -131,7 +131,7 @@ public class RealmsAdminResource {
 
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
-            return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
+            return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists");
         }
     }
 
@@ -166,7 +166,7 @@ public class RealmsAdminResource {
             try {
                 realm = realmManager.importRealm(rep);
             } catch (ModelDuplicateException e) {
-                return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
+                return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists");
             }
 
             grantPermissionsToRealmCreator(realm);

@@ -1,18 +1,17 @@
 package org.keycloak.protocol.oidc;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.Urls;
 import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -29,8 +28,17 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     public static final List<String> DEFAULT_RESPONSE_MODES_SUPPORTED = list("query");
 
+    private KeycloakSession session;
+
+    public OIDCWellKnownProvider(KeycloakSession session) {
+        this.session = session;
+    }
+
     @Override
-    public Object getConfig(RealmModel realm, UriInfo uriInfo) {
+    public Object getConfig() {
+        UriInfo uriInfo = session.getContext().getUri();
+        RealmModel realm = session.getContext().getRealm();
+
         UriBuilder uriBuilder = RealmsResource.protocolUrl(uriInfo);
 
         OIDCConfigurationRepresentation config = new OIDCConfigurationRepresentation();

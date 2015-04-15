@@ -43,7 +43,7 @@
     ],
     "clients": [
         {
-            "name": "js-console",
+            "clientId": "js-console",
             "enabled": true,
             "publicClient": true,
             "baseUrl": "/js-console",

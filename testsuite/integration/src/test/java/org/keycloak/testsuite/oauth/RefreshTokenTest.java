@@ -143,7 +143,7 @@ public class RefreshTokenTest {
 
         Assert.assertEquals(sessionId, refreshToken.getSessionState());
 
-        Thread.sleep(2000);
+        Time.setOffset(2);
 
         AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
@@ -157,8 +157,8 @@ public class RefreshTokenTest {
         Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         Assert.assertThat(refreshedToken.getExpiration() - Time.currentTime(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
 
-        Assert.assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(5)));
-        Assert.assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(5)));
+        Assert.assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
+        Assert.assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
 
         Assert.assertNotEquals(token.getId(), refreshedToken.getId());
         Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
@@ -177,6 +177,8 @@ public class RefreshTokenTest {
         Event refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
+
+        Time.setOffset(0);
     }
 
     PrivateKey privateKey;
@@ -277,7 +279,7 @@ public class RefreshTokenTest {
         session.getTransaction().commit();
         session.close();
 
-        Thread.sleep(2000);
+        Time.setOffset(2);
 
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
@@ -302,7 +304,7 @@ public class RefreshTokenTest {
         session.getTransaction().commit();
         session.close();
 
-        Thread.sleep(2000);
+        Time.setOffset(4);
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
         session = keycloakRule.startSession();
@@ -323,7 +325,7 @@ public class RefreshTokenTest {
         session.close();
 
         events.clear();
-        Thread.sleep(2000);
+        Time.setOffset(6);
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
         // test idle timeout
@@ -341,6 +343,8 @@ public class RefreshTokenTest {
         session.close();
 
         events.clear();
+
+        Time.setOffset(0);
     }
 
     @Test
@@ -365,7 +369,7 @@ public class RefreshTokenTest {
         session.getTransaction().commit();
         session.close();
 
-        Thread.sleep(1000);
+        Time.setOffset(1);
 
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
@@ -383,6 +387,8 @@ public class RefreshTokenTest {
         events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
 
         events.clear();
+
+        Time.setOffset(0);
     }
 
     @Test

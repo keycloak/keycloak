@@ -1,10 +1,14 @@
 package org.keycloak.models;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -18,6 +22,7 @@ public class PasswordPolicy {
     public static final String INVALID_PASSWORD_MIN_SPECIAL_CHARS_MESSAGE = "invalidPasswordMinSpecialCharsMessage";
     public static final String INVALID_PASSWORD_NOT_USERNAME = "invalidPasswordNotUsernameMessage";
     public static final String INVALID_PASSWORD_REGEX_PATTERN = "invalidPasswordRegexPatternMessage";
+    public static final String INVALID_PASSWORD_HISTORY = "invalidPasswordHistoryMessage";
 
     private List<Policy> policies;
     private String policyString;
@@ -67,10 +72,12 @@ public class PasswordPolicy {
             } else if (name.equals(HashIterations.NAME)) {
                 list.add(new HashIterations(args));
             } else if (name.equals(RegexPatterns.NAME)) {
-                for(String regexPattern : args) {
+                for (String regexPattern : args) {
                     Pattern.compile(regexPattern);
                 }
                 list.add(new RegexPatterns(args));
+            } else if (name.equals(PasswordHistory.NAME)) {
+                list.add(new PasswordHistory(args));
             }
         }
         return list;
@@ -92,9 +99,35 @@ public class PasswordPolicy {
         return -1;
     }
 
-    public Error validate(String username, String password) {
+    /**
+     *
+     * @return -1 if no expired passwords setting
+     */
+    public int getExpiredPasswords() {
+        if (policies == null)
+            return -1;
         for (Policy p : policies) {
-            Error error = p.validate(username, password);
+            if (p instanceof PasswordHistory) {
+                return ((PasswordHistory) p).passwordHistoryPolicyValue;
+            }
+
+        }
+        return -1;
+    }
+
+    public Error validate(UserModel user, String password) {
+        for (Policy p : policies) {
+            Error error = p.validate(user, password);
+            if (error != null) {
+                return error;
+            }
+        }
+        return null;
+    }
+    
+    public Error validate(String user, String password) {
+        for (Policy p : policies) {
+            Error error = p.validate(user, password);
             if (error != null) {
                 return error;
             }
@@ -103,7 +136,8 @@ public class PasswordPolicy {
     }
 
     private static interface Policy {
-        public Error validate(String username, String password);
+        public Error validate(UserModel user, String password);
+        public Error validate(String user, String password);
     }
 
     public static class Error {
@@ -131,9 +165,15 @@ public class PasswordPolicy {
         public HashIterations(String[] args) {
             iterations = intArg(NAME, 1, args);
         }
+        
 
         @Override
-        public Error validate(String username, String password) {
+        public Error validate(String user, String password) {
+            return null;
+        }
+        
+        @Override
+        public Error validate(UserModel user, String password) {
             return null;
         }
     }
@@ -148,6 +188,11 @@ public class PasswordPolicy {
         public Error validate(String username, String password) {
             return username.equals(password) ? new Error(INVALID_PASSWORD_NOT_USERNAME) : null;
         }
+        
+        @Override
+        public Error validate(UserModel user, String password) {
+            return validate(user.getUsername(), password);
+        }
     }
 
     private static class Length implements Policy {
@@ -157,10 +202,16 @@ public class PasswordPolicy {
         public Length(String[] args) {
             min = intArg(NAME, 8, args);
         }
+        
 
         @Override
         public Error validate(String username, String password) {
             return password.length() < min ? new Error(INVALID_PASSWORD_MIN_LENGTH_MESSAGE, min) : null;
+        }
+        
+        @Override
+        public Error validate(UserModel user, String password) {
+            return validate(user.getUsername(), password);
         }
     }
 
@@ -171,6 +222,7 @@ public class PasswordPolicy {
         public Digits(String[] args) {
             min = intArg(NAME, 1, args);
         }
+        
 
         @Override
         public Error validate(String username, String password) {
@@ -182,6 +234,11 @@ public class PasswordPolicy {
             }
             return count < min ? new Error(INVALID_PASSWORD_MIN_DIGITS_MESSAGE, min) : null;
         }
+        
+        @Override
+        public Error validate(UserModel user, String password) {
+            return validate(user.getUsername(), password);
+        }
     }
 
     private static class LowerCase implements Policy {
@@ -191,7 +248,7 @@ public class PasswordPolicy {
         public LowerCase(String[] args) {
             min = intArg(NAME, 1, args);
         }
-
+        
         @Override
         public Error validate(String username, String password) {
             int count = 0;
@@ -201,6 +258,11 @@ public class PasswordPolicy {
                 }
             }
             return count < min ? new Error(INVALID_PASSWORD_MIN_LOWER_CASE_CHARS_MESSAGE, min) : null;
+        }
+        
+        @Override
+        public Error validate(UserModel user, String password) {
+            return validate(user.getUsername(), password);
         }
     }
 
@@ -222,6 +284,11 @@ public class PasswordPolicy {
             }
             return count < min ? new Error(INVALID_PASSWORD_MIN_UPPER_CASE_CHARS_MESSAGE, min) : null;
         }
+        
+        @Override
+        public Error validate(UserModel user, String password) {
+            return validate(user.getUsername(), password);
+        }
     }
 
     private static class SpecialChars implements Policy {
@@ -231,7 +298,7 @@ public class PasswordPolicy {
         public SpecialChars(String[] args) {
             min = intArg(NAME, 1, args);
         }
-
+        
         @Override
         public Error validate(String username, String password) {
             int count = 0;
@@ -241,6 +308,11 @@ public class PasswordPolicy {
                 }
             }
             return count < min ? new Error(INVALID_PASSWORD_MIN_SPECIAL_CHARS_MESSAGE, min) : null;
+        }
+        
+        @Override
+        public Error validate(UserModel user, String password) {
+            return validate(user.getUsername(), password);
         }
     }
 
@@ -256,17 +328,96 @@ public class PasswordPolicy {
         public Error validate(String username, String password) {
             Pattern pattern = null;
             Matcher matcher = null;
-            for(String regexPattern : regexPatterns) {
+            for (String regexPattern : regexPatterns) {
                 pattern = Pattern.compile(regexPattern);
                 matcher = pattern.matcher(password);
                 if (!matcher.matches()) {
-                    return new Error(INVALID_PASSWORD_REGEX_PATTERN, (Object)regexPatterns);
+                    return new Error(INVALID_PASSWORD_REGEX_PATTERN, (Object) regexPatterns);
                 }
             }
             return null;
         }
+
+        @Override
+        public Error validate(UserModel user, String password) {
+            return validate(user.getUsername(), password);
+        }
     }
 
+    private static class PasswordHistory implements Policy {
+        private static final String NAME = "passwordHistory";
+        private int passwordHistoryPolicyValue;
+
+        public PasswordHistory(String[] args) {
+            passwordHistoryPolicyValue = intArg(NAME, 3, args);
+        }
+        
+        @Override
+        public Error validate(String user, String password) {
+            return null;
+        }
+
+        @Override
+        public Error validate(UserModel user, String password) {
+            
+            if (passwordHistoryPolicyValue != -1) {
+            
+                UserCredentialValueModel cred = getCredentialValueModel(user, UserCredentialModel.PASSWORD);
+                if (cred != null) {
+                    if(new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue(), cred.getHashIterations())) {
+                        return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
+                    }
+                }
+
+                List<UserCredentialValueModel> passwordExpiredCredentials = getCredentialValueModels(user, passwordHistoryPolicyValue - 1,
+                        UserCredentialModel.PASSWORD_HISTORY);
+                for (UserCredentialValueModel credential : passwordExpiredCredentials) {
+                    if (new Pbkdf2PasswordEncoder(credential.getSalt()).verify(password, credential.getValue(), credential.getHashIterations())) {
+                        return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
+                    }
+                }
+            }
+            return null;
+        }
+
+        private UserCredentialValueModel getCredentialValueModel(UserModel user, String credType) {
+            for (UserCredentialValueModel model : user.getCredentialsDirectly()) {
+                if (model.getType().equals(credType)) {
+                    return model;
+                }
+            }
+
+            return null;
+        }
+
+        private List<UserCredentialValueModel> getCredentialValueModels(UserModel user, int expiredPasswordsPolicyValue,
+                String credType) {
+            List<UserCredentialValueModel> credentialModels = new ArrayList<UserCredentialValueModel>();
+            for (UserCredentialValueModel model : user.getCredentialsDirectly()) {
+                if (model.getType().equals(credType)) {
+                    credentialModels.add(model);
+                }
+            }
+
+            Collections.sort(credentialModels, new Comparator<UserCredentialValueModel>() {
+                public int compare(UserCredentialValueModel credFirst, UserCredentialValueModel credSecond) {
+                    if (credFirst.getCreatedDate() > credSecond.getCreatedDate()) {
+                        return -1;
+                    } else if (credFirst.getCreatedDate() < credSecond.getCreatedDate()) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                }
+            });
+
+            if (credentialModels.size() > expiredPasswordsPolicyValue) {
+                return credentialModels.subList(0, expiredPasswordsPolicyValue);
+            }
+            return credentialModels;
+        }
+    }
+    
     private static int intArg(String policy, int defaultValue, String... args) {
         if (args == null || args.length == 0) {
             return defaultValue;

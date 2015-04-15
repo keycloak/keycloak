@@ -18,6 +18,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.UUID;
@@ -238,10 +239,12 @@ public class AuthenticationManagerTest extends AbstractModelTest {
             String passwordToken = new JWSBuilder().jsonContent(new PasswordToken(realm.getName(), "invalid")).rsa256(realm.getPrivateKey());
             formData.add(CredentialRepresentation.PASSWORD_TOKEN, passwordToken);
 
-            Thread.sleep(2000);
+            Time.setOffset(2);
 
             AuthenticationStatus status = am.authenticateForm(session, dummyConnection, realm, formData);
             Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
+
+            Time.setOffset(0);
         } finally {
             realm.setAccessCodeLifespanUserAction(lifespan);
         }

@@ -42,7 +42,7 @@
     ],
     "clients": [
         {
-            "name": "multi-tenant",
+            "clientId": "multi-tenant",
             "enabled": true,
             "adminUrl": "/multitenant/tenant1",
             "baseUrl": "/multitenant/tenant1",

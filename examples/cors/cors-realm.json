@@ -44,7 +44,7 @@
     ],
     "clients": [
         {
-            "name": "angular-cors-product",
+            "clientId": "angular-cors-product",
             "enabled": true,
             "publicClient": true,
             "baseUrl": "http://localhost:8080/angular-cors-product/index.html",

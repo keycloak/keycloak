@@ -15,7 +15,7 @@
     ],
     "clients": [
         {
-            "name": "kerberos-app",
+            "clientId": "kerberos-app",
             "enabled": true,
             "baseUrl": "/kerberos-portal",
             "redirectUris": [

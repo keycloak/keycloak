@@ -64,7 +64,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private List<String> eventsListeners = new ArrayList<String>();
     private List<String> enabledEventTypes = new ArrayList<String>();
 
-    private String adminAppId;
+    private String masterAdminClient;
 
     private boolean internationalizationEnabled;
     private List<String> supportedLocales = new ArrayList<String>();
@@ -391,12 +391,12 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.enabledEventTypes = enabledEventTypes;
     }
     
-    public String getAdminAppId() {
-        return adminAppId;
+    public String getMasterAdminClient() {
+        return masterAdminClient;
     }
 
-    public void setAdminAppId(String adminAppId) {
-        this.adminAppId = adminAppId;
+    public void setMasterAdminClient(String masterAdminClient) {
+        this.masterAdminClient = masterAdminClient;
     }
 
     public List<UserFederationProviderEntity> getUserFederationProviders() {

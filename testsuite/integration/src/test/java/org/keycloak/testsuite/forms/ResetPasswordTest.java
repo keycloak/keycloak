@@ -56,8 +56,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -240,6 +239,74 @@ public class ResetPasswordTest {
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
+    private void resetPassword(String username, String password) throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword(username);
+
+        resetPasswordPage.assertCurrent();
+
+        String sessionId = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId)
+                .detail(Details.USERNAME, username).detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
+
+        assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+
+        String body = (String) message.getContent();
+        String changePasswordUrl = MailUtil.getLink(body);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword(password, password);
+
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).session(sessionId)
+                .detail(Details.USERNAME, username).assertEvent();
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, username).session(sessionId).assertEvent();
+
+        oauth.openLogout();
+
+        events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+    }
+
+    private void resetPasswordInvalidPassword(String username, String password, String error) throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword(username);
+
+        resetPasswordPage.assertCurrent();
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId)
+                .detail(Details.USERNAME, username).detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
+
+        assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+
+        String body = (String) message.getContent();
+        String changePasswordUrl = MailUtil.getLink(body);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword(password, password);
+
+        assertTrue(updatePasswordPage.isCurrent());
+        assertEquals(error, updatePasswordPage.getError());
+    }
+
     @Test
     public void resetPasswordWrongEmail() throws IOException, MessagingException, InterruptedException {
         loginPage.open();
@@ -252,8 +319,6 @@ public class ResetPasswordTest {
         resetPasswordPage.assertCurrent();
 
         assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
-
-        Thread.sleep(1000);
 
         assertEquals(0, greenMail.getReceivedMessages().length);
 
@@ -318,8 +383,6 @@ public class ResetPasswordTest {
 
             assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
-            Thread.sleep(1000);
-
             assertEquals(0, greenMail.getReceivedMessages().length);
 
             events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("user_disabled").assertEvent();
@@ -358,8 +421,6 @@ public class ResetPasswordTest {
 
             assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
-            Thread.sleep(1000);
-
             assertEquals(0, greenMail.getReceivedMessages().length);
 
             events.expectRequiredAction(EventType.SEND_RESET_PASSWORD_ERROR).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("invalid_email").assertEvent();
@@ -396,8 +457,6 @@ public class ResetPasswordTest {
 
             assertEquals("Failed to send email, please try again later.", errorPage.getError());
 
-            Thread.sleep(1000);
-
             assertEquals(0, greenMail.getReceivedMessages().length);
 
             events.expectRequiredAction(EventType.SEND_RESET_PASSWORD_ERROR).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error(Errors.EMAIL_SEND_FAILED).assertEvent();
@@ -412,7 +471,7 @@ public class ResetPasswordTest {
     }
 
     @Test
-    public void resetPasswordWithPasswordPolicy() throws IOException, MessagingException {
+    public void resetPasswordWithLengthPasswordPolicy() throws IOException, MessagingException {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
@@ -467,6 +526,31 @@ public class ResetPasswordTest {
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+    }
+
+    @Test
+    public void resetPasswordWithPasswordHisoryPolicy() throws IOException, MessagingException {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                //Block passwords that are equal to previous passwords. Default value is 3.
+                appRealm.setPasswordPolicy(new PasswordPolicy("passwordHistory"));
+            }
+        });
+        
+        resetPassword("login-test", "password1");
+        resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
+
+        resetPassword("login-test", "password2");
+        resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
+        resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
+
+        resetPassword("login-test", "password3");
+        resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
+        resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
+        resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
+
+        resetPassword("login-test", "password");
     }
 
     @Test

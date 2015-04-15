@@ -103,11 +103,6 @@ public class LoginPage extends AbstractPage {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
-    public String getWarning() {
-        return loginWarningMessage != null ? loginWarningMessage.getText() : null;
-    }
-
-
     public boolean isCurrent() {
         return driver.getTitle().equals("Log in to test") || driver.getTitle().equals("Anmeldung bei test");
     }
