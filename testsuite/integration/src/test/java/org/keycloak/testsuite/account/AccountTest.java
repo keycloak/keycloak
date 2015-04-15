@@ -280,7 +280,7 @@ public class AccountTest {
 
             changePasswordPage.changePassword("password", "password", "password");
 
-            Assert.assertEquals("Invalid password password: must not be equal to any of last password history.", profilePage.getError());
+            Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
 
             changePasswordPage.changePassword("password", "password1", "password1");
 
@@ -290,11 +290,11 @@ public class AccountTest {
             
             changePasswordPage.changePassword("password1", "password", "password");
 
-            Assert.assertEquals("Invalid password password: must not be equal to any of last password history.", profilePage.getError());
-            
+            Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
+
             changePasswordPage.changePassword("password1", "password1", "password1");
 
-            Assert.assertEquals("Invalid password password1: must not be equal to any of last password history.", profilePage.getError());
+            Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
             
             changePasswordPage.changePassword("password1", "password2", "password2");
 

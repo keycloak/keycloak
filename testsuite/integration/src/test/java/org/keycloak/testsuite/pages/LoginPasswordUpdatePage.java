@@ -38,6 +38,9 @@ public class LoginPasswordUpdatePage extends AbstractPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
+    @FindBy(className = "feedback-error")
+    private WebElement loginErrorMessage;
+
     public void changePassword(String newPassword, String passwordConfirm) {
         newPasswordInput.sendKeys(newPassword);
         passwordConfirmInput.sendKeys(passwordConfirm);
@@ -51,6 +54,10 @@ public class LoginPasswordUpdatePage extends AbstractPage {
 
     public void open() {
         throw new UnsupportedOperationException();
+    }
+
+    public String getError() {
+        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
 }
