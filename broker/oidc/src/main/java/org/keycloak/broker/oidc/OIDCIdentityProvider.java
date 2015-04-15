@@ -19,11 +19,9 @@ package org.keycloak.broker.oidc;
 
 import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
-import org.keycloak.RSATokenVerifier;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -36,6 +34,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -53,7 +52,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.security.PublicKey;
-import java.util.Map;
 
 /**
  * @author Pedro Igor
@@ -178,14 +176,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
 
 
-        IDToken idToken = validateIdToken(key, encodedIdToken);
+        JsonWebToken idToken = validateIdToken(key, encodedIdToken);
 
         try {
             String id = idToken.getSubject();
             BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
-            String name = idToken.getName();
-            String preferredUsername = idToken.getPreferredUsername();
-            String email = idToken.getEmail();
+            String name = (String)idToken.getOtherClaims().get(IDToken.NAME);
+            String preferredUsername = (String)idToken.getOtherClaims().get(IDToken.PREFERRED_USERNAME);
+            String email = (String)idToken.getOtherClaims().get(IDToken.EMAIL);
 
             if (getConfig().getUserInfoUrl() != null && (id == null || name == null || preferredUsername == null || email == null) ) {
                 JsonNode userInfo = SimpleHttp.doGet(getConfig().getUserInfoUrl())
@@ -239,7 +237,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return accessToken;
     }
 
-   private IDToken validateIdToken(PublicKey key, String encodedToken) {
+   private JsonWebToken validateIdToken(PublicKey key, String encodedToken) {
         if (encodedToken == null) {
             throw new IdentityBrokerException("No id_token from server.");
         }
@@ -249,7 +247,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (!verify(jws, key)) {
                 throw new IdentityBrokerException("IDToken signature validation failed");
             }
-            IDToken idToken = jws.readJsonContent(IDToken.class);
+            JsonWebToken idToken = jws.readJsonContent(JsonWebToken.class);
 
             String aud = idToken.getAudience();
             String iss = idToken.getIssuer();
@@ -282,16 +280,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         AccessTokenResponse tokenResponse = (AccessTokenResponse)context.getContextData().get(FEDERATED_ACCESS_TOKEN_RESPONSE);
         userSession.setNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
         userSession.setNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
-    }
-
-    @Override
-    public void importNewUser(UserModel user, BrokeredIdentityContext context) {
-
-    }
-
-    @Override
-    public void updateBrokeredUser(UserModel user, BrokeredIdentityContext context) {
-
     }
 
     @Override

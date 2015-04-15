@@ -1,10 +1,14 @@
 package org.keycloak.representations;
 
+import org.codehaus.jackson.annotate.JsonAnyGetter;
+import org.codehaus.jackson.annotate.JsonAnySetter;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.keycloak.util.Time;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -29,6 +33,7 @@ public class JsonWebToken implements Serializable {
     protected String type;
     @JsonProperty("azp")
     public String issuedFor;
+    protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getId() {
         return id;
@@ -152,5 +157,20 @@ public class JsonWebToken implements Serializable {
     public JsonWebToken issuedFor(String issuedFor) {
         this.issuedFor = issuedFor;
         return this;
+    }
+
+    /**
+     * This is a map of any other claims and data that might be in the IDToken.  Could be custom claims set up by the auth server
+     *
+     * @return
+     */
+    @JsonAnyGetter
+    public Map<String, Object> getOtherClaims() {
+        return otherClaims;
+    }
+
+    @JsonAnySetter
+    public void setOtherClaims(String name, Object value) {
+        otherClaims.put(name, value);
     }
 }

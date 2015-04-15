@@ -17,7 +17,6 @@
  */
 package org.keycloak.broker.oidc;
 
-import org.codehaus.jackson.annotate.JsonProperty;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.jose.jwk.JWK;
@@ -27,7 +26,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.PemUtils;
 
 import java.io.IOException;
 import java.io.InputStream;

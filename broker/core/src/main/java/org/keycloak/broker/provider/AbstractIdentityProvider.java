@@ -20,6 +20,7 @@ package org.keycloak.broker.provider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -68,12 +69,12 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     @Override
-    public void importNewUser(UserModel user, BrokeredIdentityContext context) {
+    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
 
     }
 
     @Override
-    public void updateBrokeredUser(UserModel user, BrokeredIdentityContext context) {
+    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
 
     }
 }

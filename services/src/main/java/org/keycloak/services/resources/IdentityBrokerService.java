@@ -23,10 +23,10 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.FederatedIdentity;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -34,11 +34,14 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.managers.AppAuthManager;
@@ -71,6 +74,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
@@ -347,7 +351,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 LOGGER.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, updatedIdentity.getIdpConfig().getAlias());
             }
         }
-        updatedIdentity.getIdp().updateBrokeredUser(federatedUser, updatedIdentity);
+        updatedIdentity.getIdp().updateBrokeredUser(session, realmModel, federatedUser, updatedIdentity);
+        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(updatedIdentity.getIdpConfig().getAlias());
+        if (mappers != null) {
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            for (IdentityProviderMapperModel mapper : mappers) {
+                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                target.updateBrokeredUser(session, realmModel, federatedUser, mapper, updatedIdentity);
+            }
+        }
+
     }
 
     private ClientSessionCode parseClientSessionCode(String code) {
@@ -520,7 +533,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         this.session.users().addFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
 
-        updatedIdentity.getIdp().importNewUser(federatedUser, updatedIdentity);
+        updatedIdentity.getIdp().importNewUser(session, realmModel, federatedUser, updatedIdentity);
+        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(updatedIdentity.getIdpConfig().getAlias());
+        if (mappers != null) {
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            for (IdentityProviderMapperModel mapper : mappers) {
+                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                target.importNewUser(session, realmModel, federatedUser, mapper, updatedIdentity);
+            }
+        }
+
 
         this.event.clone().user(federatedUser).event(EventType.REGISTER)
                 .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())

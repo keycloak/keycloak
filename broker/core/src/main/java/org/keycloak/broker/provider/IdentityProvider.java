@@ -21,6 +21,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -28,7 +29,6 @@ import org.keycloak.provider.Provider;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.Map;
 
 /**
  * @author Pedro Igor
@@ -46,15 +46,9 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
         public Response authenticated(BrokeredIdentityContext context);
     }
 
-    /**
-     *
-     * @param userSession
-     * @param clientSession
-     * @param context
-     */
     void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context);
-    void importNewUser(UserModel user, BrokeredIdentityContext context);
-    void updateBrokeredUser(UserModel user, BrokeredIdentityContext context);
+    void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
+    void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
 
     /**
      * JAXRS callback endpoint for when the remote IDP wants to callback to keycloak.
@@ -66,12 +60,6 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
     /**
      * <p>Initiates the authentication process by sending an authentication request to an identity provider. This method is called
      * only once during the authentication.</p>
-     *
-     * <p>Depending on how the authentication is performed, this method may redirect the user to the identity provider for authentication.
-     * In this case, the response would contain a {@link javax.ws.rs.core.Response} that will be used to redirect the user.</p>
-     *
-     * <p>However, if the authentication flow does not require a redirect to the identity provider (eg.: simple challenge/response mechanism), this method may return a response containing
-     * a {@link FederatedIdentity} representing the identity information for an user. In this case, the authentication flow stops.</p>
      *
      * @param request The initial authentication request. Contains all the contextual information in order to build an authentication request to the
  *                    identity provider.

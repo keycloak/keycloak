@@ -13,75 +13,95 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class IDToken extends JsonWebToken {
+    public static final String NONCE = "nonce";
+    public static final String SESSION_STATE = "session_state";
+    public static final String NAME = "name";
+    public static final String GIVEN_NAME = "given_name";
+    public static final String FAMILY_NAME = "family_name";
+    public static final String MIDDLE_NAME = "middle_name";
+    public static final String NICKNAME = "nickname";
+    public static final String PREFERRED_USERNAME = "preferred_username";
+    public static final String PROFILE = "profile";
+    public static final String PICTURE = "picture";
+    public static final String WEBSITE = "website";
+    public static final String EMAIL = "email";
+    public static final String EMAIL_VERIFIED = "email_verified";
+    public static final String GENDER = "gender";
+    public static final String BIRTHDATE = "birthdate";
+    public static final String ZONEINFO = "zoneinfo";
+    public static final String LOCALE = "locale";
+    public static final String PHONE_NUMBER = "phone_number";
+    public static final String PHONE_NUMBER_VERIFIED = "phone_number_verified";
+    public static final String ADDRESS = "address";
+    public static final String UPDATED_AT = "updated_at";
+    public static final String CLAIMS_LOCALES = "claims_locales";
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
-    @JsonProperty("nonce")
+    @JsonProperty(NONCE)
     protected String nonce;
 
-    @JsonProperty("session_state")
+    @JsonProperty(SESSION_STATE)
     protected String sessionState;
 
-    @JsonProperty("name")
+    @JsonProperty(NAME)
     protected String name;
 
-    @JsonProperty("given_name")
+    @JsonProperty(GIVEN_NAME)
     protected String givenName;
 
-    @JsonProperty("family_name")
+    @JsonProperty(FAMILY_NAME)
     protected String familyName;
 
-    @JsonProperty("middle_name")
+    @JsonProperty(MIDDLE_NAME)
     protected String middleName;
 
-    @JsonProperty("nickname")
+    @JsonProperty(NICKNAME)
     protected String nickName;
 
-    @JsonProperty("preferred_username")
+    @JsonProperty(PREFERRED_USERNAME)
     protected String preferredUsername;
 
-    @JsonProperty("profile")
+    @JsonProperty(PROFILE)
     protected String profile;
 
-    @JsonProperty("picture")
+    @JsonProperty(PICTURE)
     protected String picture;
 
-    @JsonProperty("website")
+    @JsonProperty(WEBSITE)
     protected String website;
 
-    @JsonProperty("email")
+    @JsonProperty(EMAIL)
     protected String email;
 
-    @JsonProperty("email_verified")
+    @JsonProperty(EMAIL_VERIFIED)
     protected Boolean emailVerified;
 
-    @JsonProperty("gender")
+    @JsonProperty(GENDER)
     protected String gender;
 
-    @JsonProperty("birthdate")
+    @JsonProperty(BIRTHDATE)
     protected String birthdate;
 
-    @JsonProperty("zoneinfo")
+    @JsonProperty(ZONEINFO)
     protected String zoneinfo;
 
-    @JsonProperty("locale")
+    @JsonProperty(LOCALE)
     protected String locale;
 
-    @JsonProperty("phone_number")
+    @JsonProperty(PHONE_NUMBER)
     protected String phoneNumber;
 
-    @JsonProperty("phone_number_verified")
+    @JsonProperty(PHONE_NUMBER_VERIFIED)
     protected Boolean phoneNumberVerified;
 
-    @JsonProperty("address")
+    @JsonProperty(ADDRESS)
     protected AddressClaimSet address;
 
-    @JsonProperty("updated_at")
+    @JsonProperty(UPDATED_AT)
     protected Long updatedAt;
 
-    @JsonProperty("claims_locales")
+    @JsonProperty(CLAIMS_LOCALES)
     protected String claimsLocales;
-
-    protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getNonce() {
         return nonce;
@@ -259,18 +279,4 @@ public class IDToken extends JsonWebToken {
         this.claimsLocales = claimsLocales;
     }
 
-    /**
-     * This is a map of any other claims and data that might be in the IDToken.  Could be custom claims set up by the auth server
-     *
-     * @return
-     */
-    @JsonAnyGetter
-    public Map<String, Object> getOtherClaims() {
-        return otherClaims;
-    }
-
-    @JsonAnySetter
-    public void setOtherClaims(String name, Object value) {
-        otherClaims.put(name, value);
-    }
 }

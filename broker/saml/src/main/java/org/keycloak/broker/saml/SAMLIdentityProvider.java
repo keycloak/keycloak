@@ -137,16 +137,6 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     }
 
     @Override
-    public void importNewUser(UserModel user, BrokeredIdentityContext context) {
-
-    }
-
-    @Override
-    public void updateBrokeredUser(UserModel user, BrokeredIdentityContext context) {
-
-    }
-
-    @Override
     public Response retrieveToken(FederatedIdentityModel identity) {
         return Response.ok(identity.getToken()).build();
     }
