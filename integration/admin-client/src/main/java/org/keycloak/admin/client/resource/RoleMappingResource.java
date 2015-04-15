@@ -22,7 +22,7 @@ public interface RoleMappingResource {
     @Path("realm")
     public RoleScopeResource realmLevel();
 
-    @Path("applications/{appName}")
-    public RoleScopeResource applicationLevel(@PathParam("appName") String appName);
+    @Path("clients/{clientId}")
+    public RoleScopeResource clientLevel(@PathParam("clientId") String clientId);
 
 }
