@@ -66,8 +66,7 @@ public class TokenManager {
 
         Form form = new Form()
                 .param("grant_type", "refresh_token")
-                .param("username", config.getUsername())
-                .param("password", config.getPassword());
+                .param("refresh_token", currentToken.getRefreshToken());
 
         if(config.isPublicClient()){
             form.param("client_id", config.getClientId());

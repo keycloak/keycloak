@@ -26,7 +26,7 @@ public class Keycloak {
 
         target = client.target(config.getServerUrl());
 
-        target.register(new BearerAuthFilter(tokenManager.getAccessTokenString()));
+        target.register(new BearerAuthFilter(tokenManager));
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret){
