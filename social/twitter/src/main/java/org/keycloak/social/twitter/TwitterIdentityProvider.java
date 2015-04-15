@@ -26,7 +26,7 @@ import org.keycloak.ClientConnection;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -52,7 +52,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.util.HashMap;
 
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
 
@@ -73,7 +72,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     @Override
-    public Response handleRequest(AuthenticationRequest request) {
+    public Response performLogin(AuthenticationRequest request) {
         try {
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
@@ -135,7 +134,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 AccessToken oAuthAccessToken = twitter.getOAuthAccessToken(requestToken, verifier);
                 twitter4j.User twitterUser = twitter.verifyCredentials();
 
-                FederatedIdentity identity = new FederatedIdentity(Long.toString(twitterUser.getId()));
+                BrokeredIdentityContext identity = new BrokeredIdentityContext(Long.toString(twitterUser.getId()));
 
                 identity.setUsername(twitterUser.getScreenName());
                 identity.setName(twitterUser.getName());
@@ -150,8 +149,10 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 tokenBuilder.append("}");
 
                 identity.setToken(tokenBuilder.toString());
+                identity.setCode(state);
+                identity.setIdpConfig(getConfig());
 
-                return callback.authenticated(new HashMap<String, String>(), getConfig(), identity, state);
+                return callback.authenticated(identity);
             } catch (Exception e) {
                 logger.error("Could get user profile from twitter.", e);
             }

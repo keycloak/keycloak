@@ -4,6 +4,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -18,6 +19,7 @@ import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentat
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -324,6 +326,18 @@ public class ModelToRepresentation {
         rep.setProtocolMapper(model.getProtocolMapper());
         rep.setConsentText(model.getConsentText());
         rep.setConsentRequired(model.isConsentRequired());
+        return rep;
+    }
+
+    public static IdentityProviderMapperRepresentation toRepresentation(IdentityProviderMapperModel model) {
+        IdentityProviderMapperRepresentation rep = new IdentityProviderMapperRepresentation();
+        rep.setId(model.getId());
+        rep.setIdentityProviderMapper(model.getIdentityProviderMapper());
+        rep.setIdentityProviderAlias(model.getIdentityProviderAlias());
+        Map<String, String> config = new HashMap<String, String>();
+        config.putAll(model.getConfig());
+        rep.setConfig(config);
+        rep.setName(model.getName());
         return rep;
     }
 

@@ -18,15 +18,17 @@
 package org.keycloak.broker.provider;
 
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.Map;
 
 /**
  * @author Pedro Igor
@@ -38,14 +40,15 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
          * This method should be called by provider after the JAXRS callback endpoint has finished authentication
          * with the remote IDP
          *
-         * @param userNotes notes to add to the UserSessionModel
-         * @param identityProviderConfig provider config
-         * @param federatedIdentity federated identity
-         * @param code relayState or state parameter used to identity the client session
+         * @param context
          * @return
          */
-        public Response authenticated(Map<String, String> userNotes, IdentityProviderModel identityProviderConfig, FederatedIdentity federatedIdentity, String code);
+        public Response authenticated(BrokeredIdentityContext context);
     }
+
+    void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context);
+    void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
+    void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
 
     /**
      * JAXRS callback endpoint for when the remote IDP wants to callback to keycloak.
@@ -58,17 +61,11 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      * <p>Initiates the authentication process by sending an authentication request to an identity provider. This method is called
      * only once during the authentication.</p>
      *
-     * <p>Depending on how the authentication is performed, this method may redirect the user to the identity provider for authentication.
-     * In this case, the response would contain a {@link javax.ws.rs.core.Response} that will be used to redirect the user.</p>
-     *
-     * <p>However, if the authentication flow does not require a redirect to the identity provider (eg.: simple challenge/response mechanism), this method may return a response containing
-     * a {@link FederatedIdentity} representing the identity information for an user. In this case, the authentication flow stops.</p>
-     *
      * @param request The initial authentication request. Contains all the contextual information in order to build an authentication request to the
  *                    identity provider.
      * @return
      */
-    Response handleRequest(AuthenticationRequest request);
+    Response performLogin(AuthenticationRequest request);
 
     /**
      * <p>Returns a {@link javax.ws.rs.core.Response} containing the token previously stored during the authentication process for a

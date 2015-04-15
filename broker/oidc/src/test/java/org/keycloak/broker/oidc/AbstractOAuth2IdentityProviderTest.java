@@ -5,16 +5,16 @@
  */
 package org.keycloak.broker.oidc;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.codehaus.jackson.JsonNode;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderModel;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Unit test for {@link AbstractOAuth2IdentityProvider}
@@ -58,45 +58,41 @@ public class AbstractOAuth2IdentityProviderTest {
 	@Test(expected = IdentityBrokerException.class)
 	public void getFederatedIdentity_responseUrlLine_tokenNotFound() {
 		TestProvider tested = getTested();
-		Map<String, String> notes = new HashMap<>();
-		tested.getFederatedIdentity(notes, "cosi=sss");
+		tested.getFederatedIdentity("cosi=sss");
 	}
 
 	@Test(expected = IdentityBrokerException.class)
 	public void getFederatedIdentity_responseJSON_tokenNotFound() {
 		TestProvider tested = getTested();
 		Map<String, String> notes = new HashMap<>();
-		tested.getFederatedIdentity(notes, "{\"cosi\":\"sss\"}");
+		tested.getFederatedIdentity("{\"cosi\":\"sss\"}");
 	}
 
 	@Test(expected = IdentityBrokerException.class)
 	public void getFederatedIdentity_responseJSON_invalidFormat() {
 		TestProvider tested = getTested();
 		Map<String, String> notes = new HashMap<>();
-		tested.getFederatedIdentity(notes, "{\"cosi\":\"sss\"");
+		tested.getFederatedIdentity("{\"cosi\":\"sss\"");
 	}
 
 	@Test(expected = IdentityBrokerException.class)
 	public void getFederatedIdentity_responseJSON_emptyTokenField() {
 		TestProvider tested = getTested();
-		Map<String, String> notes = new HashMap<>();
-		tested.getFederatedIdentity(notes, "{\""
+		tested.getFederatedIdentity("{\""
 				+ AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_ACCESS_TOKEN + "\" : \"\"}");
 	}
 
 	@Test(expected = IdentityBrokerException.class)
 	public void getFederatedIdentity_responseJSON_nullTokenField() {
 		TestProvider tested = getTested();
-		Map<String, String> notes = new HashMap<>();
-		tested.getFederatedIdentity(notes, "{\""
+		tested.getFederatedIdentity("{\""
 				+ AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_ACCESS_TOKEN + "\" : null}");
 	}
 
 	@Test
 	public void getFederatedIdentity_responseJSON() {
 		TestProvider tested = getTested();
-		Map<String, String> notes = new HashMap<>();
-		FederatedIdentity fi = tested.getFederatedIdentity(notes, "{\""
+		BrokeredIdentityContext fi = tested.getFederatedIdentity("{\""
 				+ AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_ACCESS_TOKEN + "\" : \"458rt\"}");
 		Assert.assertNotNull(fi);
 		Assert.assertEquals("458rt", fi.getId());
@@ -105,8 +101,7 @@ public class AbstractOAuth2IdentityProviderTest {
 	@Test
 	public void getFederatedIdentity_responseUrlLine() {
 		TestProvider tested = getTested();
-		Map<String, String> notes = new HashMap<>();
-		FederatedIdentity fi = tested.getFederatedIdentity(notes, "cosi=sss&"
+        BrokeredIdentityContext fi = tested.getFederatedIdentity("cosi=sss&"
 				+ AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_ACCESS_TOKEN + "=458rtf&kdesi=ss}");
 		Assert.assertNotNull(fi);
 		Assert.assertEquals("458rtf", fi.getId());
@@ -129,8 +124,8 @@ public class AbstractOAuth2IdentityProviderTest {
 			return "default";
 		}
 
-		protected FederatedIdentity doGetFederatedIdentity(String accessToken) {
-			return new FederatedIdentity(accessToken);
+		protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
+			return new BrokeredIdentityContext(accessToken);
 		};
 
 	};

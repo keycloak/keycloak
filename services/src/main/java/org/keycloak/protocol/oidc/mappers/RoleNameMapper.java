@@ -7,6 +7,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 
@@ -23,31 +24,31 @@ import java.util.Map;
  */
 public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
 
-    private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     public static final String ROLE_CONFIG = "role";
     public static String NEW_ROLE_NAME = "new.role.name";
 
     static {
-        ConfigProperty property;
-        property = new ConfigProperty();
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
         property.setName(ROLE_CONFIG);
         property.setLabel("Role");
-        property.setHelpText("Role name you want changed.  To reference an client role the syntax is clientId.clientRole, i.e. myapp.myrole");
-        property.setType(ConfigProperty.STRING_TYPE);
+        property.setHelpText("Role name you want changed.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
-        property = new ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(NEW_ROLE_NAME);
         property.setLabel("New Role Name");
         property.setHelpText("The new role name.  The new name format corresponds to where in the access token the role will be mapped to.  So, a new name of 'myapp.newname' will map the role to that position in the access token.  A new name of 'newname' will map the role to the realm roles in the token.");
-        property.setType(ConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }
 
     public static final String PROVIDER_ID = "oidc-role-name-mapper";
 
 
-    public List<ConfigProperty> getConfigProperties() {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 

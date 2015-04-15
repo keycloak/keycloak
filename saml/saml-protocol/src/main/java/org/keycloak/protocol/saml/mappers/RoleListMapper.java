@@ -7,6 +7,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -25,22 +26,22 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
     public static final String PROVIDER_ID = "saml-role-list-mapper";
     public static final String SINGLE_ROLE_ATTRIBUTE = "single";
 
-    private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ConfigProperty property;
-        property = new ConfigProperty();
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
         property.setName(AttributeStatementHelper.SAML_ATTRIBUTE_NAME);
         property.setLabel("Role attribute name");
         property.setDefaultValue("Role");
         property.setHelpText("Name of the SAML attribute you want to put your roles into.  i.e. 'Role', 'memberOf'.");
         configProperties.add(property);
-        property = new ProtocolMapper.ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(AttributeStatementHelper.FRIENDLY_NAME);
         property.setLabel(AttributeStatementHelper.FRIENDLY_NAME_LABEL);
         property.setHelpText(AttributeStatementHelper.FRIENDLY_NAME_HELP_TEXT);
         configProperties.add(property);
-        property = new ProtocolMapper.ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT);
         property.setLabel("SAML Attribute NameFormat");
         property.setHelpText("SAML Attribute NameFormat.  Can be basic, URI reference, or unspecified.");
@@ -48,13 +49,13 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
         types.add(AttributeStatementHelper.BASIC);
         types.add(AttributeStatementHelper.URI_REFERENCE);
         types.add(AttributeStatementHelper.UNSPECIFIED);
-        property.setType(ProtocolMapper.ConfigProperty.LIST_TYPE);
+        property.setType(ProviderConfigProperty.LIST_TYPE);
         property.setDefaultValue(types);
         configProperties.add(property);
-        property = new ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(SINGLE_ROLE_ATTRIBUTE);
         property.setLabel("Single Role Attribute");
-        property.setType(ConfigProperty.BOOLEAN_TYPE);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue("true");
         property.setHelpText("If true, all roles will be stored under one attribute with multiple attribute values.");
         configProperties.add(property);
@@ -78,7 +79,7 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
     }
 
     @Override
-    public List<ConfigProperty> getConfigProperties() {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 

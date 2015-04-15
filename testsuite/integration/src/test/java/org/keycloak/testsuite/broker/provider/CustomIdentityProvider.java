@@ -34,7 +34,7 @@ public class CustomIdentityProvider extends AbstractIdentityProvider<IdentityPro
     }
 
     @Override
-    public Response handleRequest(AuthenticationRequest request) {
+    public Response performLogin(AuthenticationRequest request) {
         return null;
     }
 

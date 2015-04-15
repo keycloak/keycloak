@@ -21,22 +21,24 @@ import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.ErrorPage;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.PemUtils;
 
@@ -49,7 +51,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.security.PublicKey;
-import java.util.Map;
 
 /**
  * @author Pedro Igor
@@ -60,6 +61,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String OAUTH2_PARAMETER_PROMPT = "prompt";
     public static final String SCOPE_OPENID = "openid";
     public static final String FEDERATED_ID_TOKEN = "FEDERATED_ID_TOKEN";
+    public static final String USER_INFO = "UserInfo";
+    public static final String FEDERATED_ACCESS_TOKEN_RESPONSE = "FEDERATED_ACCESS_TOKEN_RESPONSE";
+    public static final String VALIDATED_ID_TOKEN = "VALIDATED_ID_TOKEN";
 
     public OIDCIdentityProvider(OIDCIdentityProviderConfig config) {
         super(config);
@@ -157,7 +161,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    protected FederatedIdentity getFederatedIdentity(Map<String, String> notes, String response) {
+    protected BrokeredIdentityContext getFederatedIdentity(String response) {
         AccessTokenResponse tokenResponse = null;
         try {
             tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
@@ -169,21 +173,18 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         String encodedIdToken = tokenResponse.getIdToken();
 
-        notes.put(FEDERATED_ACCESS_TOKEN, accessToken);
-        notes.put(FEDERATED_ID_TOKEN, encodedIdToken);
-        notes.put(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
-        notes.put(FEDERATED_TOKEN_EXPIRATION, Long.toString(tokenResponse.getExpiresIn()));
 
 
-        IDToken idToken = validateIdToken(key, encodedIdToken);
+        JsonWebToken idToken = validateIdToken(key, encodedIdToken);
 
         try {
             String id = idToken.getSubject();
-            String name = idToken.getName();
-            String preferredUsername = idToken.getPreferredUsername();
-            String email = idToken.getEmail();
+            BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
+            String name = (String)idToken.getOtherClaims().get(IDToken.NAME);
+            String preferredUsername = (String)idToken.getOtherClaims().get(IDToken.PREFERRED_USERNAME);
+            String email = (String)idToken.getOtherClaims().get(IDToken.EMAIL);
 
-            if (id == null || name == null || preferredUsername == null || email == null && getConfig().getUserInfoUrl() != null) {
+            if (getConfig().getUserInfoUrl() != null && (id == null || name == null || preferredUsername == null || email == null) ) {
                 JsonNode userInfo = SimpleHttp.doGet(getConfig().getUserInfoUrl())
                         .header("Authorization", "Bearer " + accessToken)
                         .asJson();
@@ -192,9 +193,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 name = getJsonProperty(userInfo, "name");
                 preferredUsername = getJsonProperty(userInfo, "preferred_username");
                 email = getJsonProperty(userInfo, "email");
+                identity.getContextData().put(USER_INFO, userInfo);
             }
-
-            FederatedIdentity identity = new FederatedIdentity(id);
+            identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
+            identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
 
             identity.setId(id);
             identity.setName(name);
@@ -234,7 +236,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return accessToken;
     }
 
-   private IDToken validateIdToken(PublicKey key, String encodedToken) {
+   private JsonWebToken validateIdToken(PublicKey key, String encodedToken) {
         if (encodedToken == null) {
             throw new IdentityBrokerException("No id_token from server.");
         }
@@ -244,7 +246,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (!verify(jws, key)) {
                 throw new IdentityBrokerException("IDToken signature validation failed");
             }
-            IDToken idToken = jws.readJsonContent(IDToken.class);
+            JsonWebToken idToken = jws.readJsonContent(JsonWebToken.class);
 
             String aud = idToken.getAudience();
             String iss = idToken.getIssuer();
@@ -270,6 +272,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         } catch (IOException e) {
             throw new IdentityBrokerException("Could not decode id token.", e);
         }
+    }
+
+    @Override
+    public void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context) {
+        AccessTokenResponse tokenResponse = (AccessTokenResponse)context.getContextData().get(FEDERATED_ACCESS_TOKEN_RESPONSE);
+        userSession.setNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
+        userSession.setNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
     }
 
     @Override

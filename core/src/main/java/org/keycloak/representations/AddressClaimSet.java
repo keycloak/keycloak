@@ -7,22 +7,29 @@ import org.codehaus.jackson.annotate.JsonProperty;
 * @version $Revision: 1 $
 */
 public class AddressClaimSet {
-    @JsonProperty("formatted")
+    public static final String FORMATTED = "formatted";
+    public static final String STREET_ADDRESS = "street_address";
+    public static final String LOCALITY = "locality";
+    public static final String REGION = "region";
+    public static final String POSTAL_CODE = "postal_code";
+    public static final String COUNTRY = "country";
+
+    @JsonProperty(FORMATTED)
     protected String formattedAddress;
 
-    @JsonProperty("street_address")
+    @JsonProperty(STREET_ADDRESS)
     protected String streetAddress;
 
-    @JsonProperty("locality")
+    @JsonProperty(LOCALITY)
     protected String locality;
 
-    @JsonProperty("region")
+    @JsonProperty(REGION)
     protected String region;
 
-    @JsonProperty("postal_code")
+    @JsonProperty(POSTAL_CODE)
     protected String postalCode;
 
-    @JsonProperty("country")
+    @JsonProperty(COUNTRY)
     protected String country;
 
     public String getFormattedAddress() {

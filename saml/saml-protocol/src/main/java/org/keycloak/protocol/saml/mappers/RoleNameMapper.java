@@ -4,6 +4,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
 
@@ -20,31 +21,31 @@ import java.util.Map;
  */
 public class RoleNameMapper extends AbstractOIDCProtocolMapper implements SAMLRoleNameMapper {
 
-    private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     public static final String ROLE_CONFIG = "role";
     public static String NEW_ROLE_NAME = "new.role.name";
 
     static {
-        ConfigProperty property;
-        property = new ConfigProperty();
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
         property.setName(ROLE_CONFIG);
         property.setLabel("Role");
         property.setHelpText("Role name you want changed.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
-        property.setType(ConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
-        property = new ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(NEW_ROLE_NAME);
         property.setLabel("New Role Name");
         property.setHelpText("The new role name.");
-        property.setType(ConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }
 
     public static final String PROVIDER_ID = "saml-role-name-mapper";
 
 
-    public List<ConfigProperty> getConfigProperties() {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 

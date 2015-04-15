@@ -19,8 +19,15 @@ package org.keycloak.broker.saml;
 
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -47,11 +54,11 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new SAMLEndpoint(realm, getConfig(), callback);
+        return new SAMLEndpoint(realm, this, getConfig(), callback);
     }
 
     @Override
-    public Response handleRequest(AuthenticationRequest request) {
+    public Response performLogin(AuthenticationRequest request) {
         try {
             UriInfo uriInfo = request.getUriInfo();
             RealmModel realm = request.getRealm();
@@ -110,6 +117,22 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     private String getEntityId(UriInfo uriInfo, RealmModel realm) {
         return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
+    }
+
+    @Override
+    public void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context) {
+        ResponseType responseType = (ResponseType)context.getContextData().get(SAMLEndpoint.SAML_LOGIN_RESPONSE);
+        AssertionType assertion = (AssertionType)context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
+        SubjectType subject = assertion.getSubject();
+        SubjectType.STSubType subType = subject.getSubType();
+        NameIDType subjectNameID = (NameIDType) subType.getBaseID();
+        userSession.setNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT, subjectNameID.getValue());
+        if (subjectNameID.getFormat() != null) userSession.setNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEFORMAT, subjectNameID.getFormat().toString());
+        AuthnStatementType authn =  (AuthnStatementType)context.getContextData().get(SAMLEndpoint.SAML_AUTHN_STATEMENT);
+        if (authn != null && authn.getSessionIndex() != null) {
+            userSession.setNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
+
+        }
     }
 
     @Override

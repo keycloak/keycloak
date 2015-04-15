@@ -35,7 +35,7 @@ public class CustomSocialProvider extends AbstractIdentityProvider<IdentityProvi
     }
 
     @Override
-    public Response handleRequest(AuthenticationRequest request) {
+    public Response performLogin(AuthenticationRequest request) {
         return null;
     }
 

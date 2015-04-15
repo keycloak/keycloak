@@ -22,10 +22,11 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
 import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.FederatedIdentity;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -34,11 +35,14 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.managers.AppAuthManager;
@@ -72,6 +76,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
@@ -131,7 +136,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         try {
             ClientSessionCode clientSessionCode = parseClientSessionCode(code);
             IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
-            Response response = identityProvider.handleRequest(createAuthenticationRequest(providerId, clientSessionCode));
+            Response response = identityProvider.performLogin(createAuthenticationRequest(providerId, clientSessionCode));
 
             if (response != null) {
                 this.event.success();
@@ -239,10 +244,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         return getToken(providerId, true);
     }
 
-    public Response authenticated(Map<String, String> userNotes, IdentityProviderModel identityProviderConfig, FederatedIdentity federatedIdentity, String code) {
+    public Response authenticated(BrokeredIdentityContext context) {
         ClientSessionCode clientCode = null;
+        IdentityProviderModel identityProviderConfig = context.getIdpConfig();
         try {
-            clientCode = parseClientSessionCode(code);
+            clientCode = parseClientSessionCode(context.getCode());
         } catch (Exception e) {
             return redirectToErrorPage(Messages.IDENTITY_PROVIDER_AUTHENTICATION_FAILED, e, identityProviderConfig.getProviderId());
 
@@ -252,32 +258,27 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             if (isDebugEnabled()) {
                 LOGGER.debugf("Token will not be stored for identity provider [%s].", providerId);
             }
-            federatedIdentity.setToken(null);
+            context.setToken(null);
         }
 
-        federatedIdentity.setIdentityProviderId(providerId);
         ClientSessionModel clientSession = clientCode.getClientSession();
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, federatedIdentity.getId(),
-                federatedIdentity.getUsername(), federatedIdentity.getToken());
+        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
+                context.getUsername(), context.getToken());
 
         this.event.event(EventType.IDENTITY_PROVIDER_LOGIN)
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, federatedIdentity.getUsername());
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 
         UserModel federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
 
         // Check if federatedUser is already authenticated (this means linking social into existing federatedUser account)
         if (clientSession.getUserSession() != null) {
-            UserSessionModel userSession = clientSession.getUserSession();
-            for (Map.Entry<String, String> entry : userNotes.entrySet()) {
-                userSession.setNote(entry.getKey(), entry.getValue());
-            }
-            return performAccountLinking(clientSession, providerId, federatedIdentityModel, federatedUser);
+            return performAccountLinking(clientSession, context, federatedIdentityModel, federatedUser);
         }
 
         if (federatedUser == null) {
             try {
-                federatedUser = createUser(federatedIdentity);
+                federatedUser = createUser(context);
 
                 if (identityProviderConfig.isUpdateProfileFirstLogin()) {
                     if (isDebugEnabled()) {
@@ -290,18 +291,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
         }
 
-        updateFederatedIdentity(federatedIdentity, federatedUser);
+        updateFederatedIdentity(context, federatedUser);
 
         UserSessionModel userSession = this.session.sessions()
-                .createUserSession(this.realmModel, federatedUser, federatedUser.getUsername(), this.clientConnection.getRemoteAddr(), "broker", false, federatedIdentity.getBrokerSessionId(), federatedIdentity.getBrokerUserId());
+                .createUserSession(this.realmModel, federatedUser, federatedUser.getUsername(), this.clientConnection.getRemoteAddr(), "broker", false, context.getBrokerSessionId(), context.getBrokerUserId());
 
         this.event.user(federatedUser);
         this.event.session(userSession);
 
         TokenManager.attachClientSession(userSession, clientSession);
-        for (Map.Entry<String, String> entry : userNotes.entrySet()) {
-            userSession.setNote(entry.getKey(), entry.getValue());
-        }
+        context.getIdp().attachUserSession(userSession, clientSession, context);
         userSession.setNote(BROKER_PROVIDER_ID, providerId);
 
         if (isDebugEnabled()) {
@@ -312,17 +311,17 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 this.uriInfo, event);
     }
 
-    private Response performAccountLinking(ClientSessionModel clientSession, String providerId, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
+    private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
         this.event.event(EventType.IDENTITY_PROVIDER_ACCCOUNT_LINKING);
 
         if (federatedUser != null) {
-            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_ALREADY_LINKED, providerId);
+            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
         }
 
         UserModel authenticatedUser = clientSession.getUserSession().getUser();
 
         if (isDebugEnabled()) {
-            LOGGER.debugf("Linking account [%s] from identity provider [%s] to user [%s].", federatedIdentityModel, providerId, authenticatedUser);
+            LOGGER.debugf("Linking account [%s] from identity provider [%s] to user [%s].", federatedIdentityModel, context.getIdpConfig().getAlias(), authenticatedUser);
         }
 
         if (!authenticatedUser.isEnabled()) {
@@ -336,14 +335,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, federatedIdentityModel);
+        context.getIdp().attachUserSession(clientSession.getUserSession(), clientSession, context);
 
         this.event.success();
-
         return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
 
-    private void updateFederatedIdentity(FederatedIdentity updatedIdentity, UserModel federatedUser) {
-        FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, updatedIdentity.getIdentityProviderId(), this.realmModel);
+    private void updateFederatedIdentity(BrokeredIdentityContext updatedIdentity, UserModel federatedUser) {
+        FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, updatedIdentity.getIdpConfig().getAlias(), this.realmModel);
 
         // Skip DB write if tokens are null or equal
         if (!ObjectUtil.isEqualOrNull(updatedIdentity.getToken(), federatedIdentityModel.getToken())) {
@@ -352,9 +351,19 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
 
             if (isDebugEnabled()) {
-                LOGGER.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, updatedIdentity.getIdentityProviderId());
+                LOGGER.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, updatedIdentity.getIdpConfig().getAlias());
             }
         }
+        updatedIdentity.getIdp().updateBrokeredUser(session, realmModel, federatedUser, updatedIdentity);
+        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(updatedIdentity.getIdpConfig().getAlias());
+        if (mappers != null) {
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            for (IdentityProviderMapperModel mapper : mappers) {
+                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                target.updateBrokeredUser(session, realmModel, federatedUser, mapper, updatedIdentity);
+            }
+        }
+
     }
 
     private ClientSessionCode parseClientSessionCode(String code) {
@@ -476,8 +485,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         throw new IdentityBrokerException("Configuration for identity provider [" + providerId + "] not found.");
     }
 
-    private UserModel createUser(FederatedIdentity updatedIdentity) {
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(updatedIdentity.getIdentityProviderId(), updatedIdentity.getId(),
+    private UserModel createUser(BrokeredIdentityContext updatedIdentity) {
+        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(updatedIdentity.getIdpConfig().getAlias(), updatedIdentity.getId(),
                 updatedIdentity.getUsername(), updatedIdentity.getToken());
         // Check if no user already exists with this username or email
         UserModel existingUser = null;
@@ -495,9 +504,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(updatedIdentity.getEmail())) {
             username = updatedIdentity.getEmail();
         } else if (username == null) {
-            username = updatedIdentity.getIdentityProviderId() + "." + updatedIdentity.getId();
+            username = updatedIdentity.getIdpConfig().getAlias() + "." + updatedIdentity.getId();
         } else {
-            username = updatedIdentity.getIdentityProviderId() + "." + updatedIdentity.getUsername();
+            username = updatedIdentity.getIdpConfig().getAlias() + "." + updatedIdentity.getUsername();
         }
         if (username != null) {
             username = username.trim();
@@ -521,11 +530,22 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         federatedUser.setEnabled(true);
+        federatedUser.setEmail(updatedIdentity.getEmail());
         federatedUser.setFirstName(updatedIdentity.getFirstName());
         federatedUser.setLastName(updatedIdentity.getLastName());
-        federatedUser.setEmail(updatedIdentity.getEmail());
 
         this.session.users().addFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
+
+        updatedIdentity.getIdp().importNewUser(session, realmModel, federatedUser, updatedIdentity);
+        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(updatedIdentity.getIdpConfig().getAlias());
+        if (mappers != null) {
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            for (IdentityProviderMapperModel mapper : mappers) {
+                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                target.importNewUser(session, realmModel, federatedUser, mapper, updatedIdentity);
+            }
+        }
+
 
         this.event.clone().user(federatedUser).event(EventType.REGISTER)
                 .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())

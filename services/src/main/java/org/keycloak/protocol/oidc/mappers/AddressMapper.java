@@ -6,6 +6,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AddressClaimSet;
 import org.keycloak.representations.IDToken;
@@ -23,21 +24,21 @@ import java.util.Map;
  */
 public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
 
-    private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ConfigProperty property;
-        property = new ConfigProperty();
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
         property.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
         property.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_LABEL);
-        property.setType(ConfigProperty.BOOLEAN_TYPE);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue("true");
         property.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_HELP_TEXT);
         configProperties.add(property);
-        property = new ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
         property.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_LABEL);
-        property.setType(ConfigProperty.BOOLEAN_TYPE);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue("true");
         property.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
         configProperties.add(property);
@@ -75,7 +76,7 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
     }
 
 
-    public List<ConfigProperty> getConfigProperties() {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 

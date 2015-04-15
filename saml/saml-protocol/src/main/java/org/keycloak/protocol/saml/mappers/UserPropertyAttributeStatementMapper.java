@@ -7,6 +7,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
+import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,11 +19,11 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMapper implements SAMLAttributeStatementMapper {
-    private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ConfigProperty property;
-        property = new ConfigProperty();
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_PROPERTY_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_PROPERTY_HELP_TEXT);
@@ -34,7 +35,7 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
     public static final String PROVIDER_ID = "saml-user-property-mapper";
 
 
-    public List<ConfigProperty> getConfigProperties() {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
     @Override

@@ -5,6 +5,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
+import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,15 +19,15 @@ import java.util.List;
 public class HardcodedAttributeMapper extends AbstractSAMLProtocolMapper implements SAMLAttributeStatementMapper {
     public static final String PROVIDER_ID = "saml-hardcode-attribute-mapper";
     public static final String ATTRIBUTE_VALUE = "attribute.value";
-    private static final List<ConfigProperty> configProperties = new ArrayList<ConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ConfigProperty property;
+        ProviderConfigProperty property;
         AttributeStatementHelper.setConfigProperties(configProperties);
-        property = new ConfigProperty();
+        property = new ProviderConfigProperty();
         property.setName(ATTRIBUTE_VALUE);
         property.setLabel("Attribute value");
-        property.setType(ConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Value of the attribute you want to hard code.");
         configProperties.add(property);
 
@@ -34,7 +35,7 @@ public class HardcodedAttributeMapper extends AbstractSAMLProtocolMapper impleme
 
 
 
-    public List<ConfigProperty> getConfigProperties() {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
     @Override
