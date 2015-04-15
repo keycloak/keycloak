@@ -5,11 +5,23 @@ package org.keycloak.models.entities;
  */
 public class CredentialEntity {
 
+    private String id;
     private String type;
     private String value;
     private String device;
     private byte[] salt;
     private int hashIterations;
+    private long createdDate;
+    private UserEntity user;
+    
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getType() {
         return type;
@@ -50,4 +62,21 @@ public class CredentialEntity {
     public void setHashIterations(int hashIterations) {
         this.hashIterations = hashIterations;
     }
+
+    public long getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(long createdDate) {
+        this.createdDate = createdDate;
+    }
+    
+    public UserEntity getUser() {
+        return user;
+    }
+
+    public void setUser(UserEntity user) {
+        this.user = user;
+    }
+    
 }

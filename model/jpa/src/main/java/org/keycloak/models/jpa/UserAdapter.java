@@ -18,7 +18,11 @@ import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -160,7 +164,6 @@ public class UserAdapter implements UserModel {
         }
     }
 
-
     @Override
     public String getFirstName() {
         return user.getFirstName();
@@ -208,33 +211,86 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void updateCredential(UserCredentialModel cred) {
+
+        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+            updatePasswordCredential(cred);
+        } else {
+            CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
+
+            if (credentialEntity == null) {
+                credentialEntity = setCredentials(user, cred);
+                credentialEntity.setValue(cred.getValue());
+                em.persist(credentialEntity);
+                user.getCredentials().add(credentialEntity);
+            } else {
+                credentialEntity.setValue(cred.getValue());
+            }
+        }
+        em.flush();
+    }
+
+    private void updatePasswordCredential(UserCredentialModel cred) {
         CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
 
         if (credentialEntity == null) {
-            credentialEntity = new CredentialEntity();
-            credentialEntity.setId(KeycloakModelUtils.generateId());
-            credentialEntity.setType(cred.getType());
-            credentialEntity.setDevice(cred.getDevice());
-            credentialEntity.setUser(user);
+            credentialEntity = setCredentials(user, cred);
+            setValue(credentialEntity, cred);
             em.persist(credentialEntity);
             user.getCredentials().add(credentialEntity);
-        }
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            byte[] salt = getSalt();
-            int hashIterations = 1;
-            PasswordPolicy policy = realm.getPasswordPolicy();
-            if (policy != null) {
-                hashIterations = policy.getHashIterations();
-                if (hashIterations == -1) hashIterations = 1;
-            }
-            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
-            credentialEntity.setSalt(salt);
-            credentialEntity.setHashIterations(hashIterations);
         } else {
-            credentialEntity.setValue(cred.getValue());
+            
+            int expiredPasswordsPolicyValue = -1;
+            PasswordPolicy policy = realm.getPasswordPolicy();
+            if(policy != null) {
+                expiredPasswordsPolicyValue = policy.getExpiredPasswords();
+            }
+
+            if (expiredPasswordsPolicyValue != -1) {
+                user.getCredentials().remove(credentialEntity);
+                credentialEntity.setType(UserCredentialModel.PASSWORD_HISTORY);
+                user.getCredentials().add(credentialEntity);
+
+                List<CredentialEntity> credentialEntities = getCredentialEntities(user, UserCredentialModel.PASSWORD_HISTORY);
+                if (credentialEntities.size() > expiredPasswordsPolicyValue - 1) {
+                    user.getCredentials().removeAll(credentialEntities.subList(expiredPasswordsPolicyValue - 1, credentialEntities.size()));
+                }
+
+                credentialEntity = setCredentials(user, cred);
+                setValue(credentialEntity, cred);
+                em.persist(credentialEntity);
+                user.getCredentials().add(credentialEntity);
+            } else {
+                List<CredentialEntity> credentialEntities = getCredentialEntities(user, UserCredentialModel.PASSWORD_HISTORY);
+                if (credentialEntities != null && credentialEntities.size() > 0) {
+                    user.getCredentials().removeAll(credentialEntities);
+                }
+                setValue(credentialEntity, cred);
+            }
         }
+    }
+    
+    private CredentialEntity setCredentials(UserEntity user, UserCredentialModel cred) {
+        CredentialEntity credentialEntity = new CredentialEntity();
+        credentialEntity.setId(KeycloakModelUtils.generateId());
+        credentialEntity.setType(cred.getType());
+        credentialEntity.setCreatedDate(new Date().getTime());
         credentialEntity.setDevice(cred.getDevice());
-        em.flush();
+        credentialEntity.setUser(user);
+        return credentialEntity;
+    }
+
+    private void setValue(CredentialEntity credentialEntity, UserCredentialModel cred) {
+        byte[] salt = getSalt();
+        int hashIterations = 1;
+        PasswordPolicy policy = realm.getPasswordPolicy();
+        if (policy != null) {
+            hashIterations = policy.getHashIterations();
+            if (hashIterations == -1)
+                hashIterations = 1;
+        }
+        credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
+        credentialEntity.setSalt(salt);
+        credentialEntity.setHashIterations(hashIterations);
     }
 
     private CredentialEntity getCredentialEntity(UserEntity userEntity, String credType) {
@@ -245,6 +301,30 @@ public class UserAdapter implements UserModel {
         }
 
         return null;
+    }
+
+    private List<CredentialEntity> getCredentialEntities(UserEntity userEntity, String credType) {
+        List<CredentialEntity> credentialEntities = new ArrayList<CredentialEntity>();
+        for (CredentialEntity entity : userEntity.getCredentials()) {
+            if (entity.getType().equals(credType)) {
+                credentialEntities.add(entity);
+            }
+        }
+
+        // Avoiding direct use of credSecond.getCreatedDate() - credFirst.getCreatedDate() to prevent Integer Overflow
+        // Orders from most recent to least recent
+        Collections.sort(credentialEntities, new Comparator<CredentialEntity>() {
+            public int compare(CredentialEntity credFirst, CredentialEntity credSecond) {
+                if (credFirst.getCreatedDate() > credSecond.getCreatedDate()) {
+                    return -1;
+                } else if (credFirst.getCreatedDate() < credSecond.getCreatedDate()) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        return credentialEntities;
     }
 
     @Override
@@ -258,6 +338,7 @@ public class UserAdapter implements UserModel {
                 credModel.setType(credEntity.getType());
                 credModel.setDevice(credEntity.getDevice());
                 credModel.setValue(credEntity.getValue());
+                credModel.setCreatedDate(credEntity.getCreatedDate());
                 credModel.setSalt(credEntity.getSalt());
                 credModel.setHashIterations(credEntity.getHashIterations());
 
@@ -276,6 +357,7 @@ public class UserAdapter implements UserModel {
             credentialEntity = new CredentialEntity();
             credentialEntity.setId(KeycloakModelUtils.generateId());
             credentialEntity.setType(credModel.getType());
+            credentialEntity.setCreatedDate(credModel.getCreatedDate());
             credentialEntity.setUser(user);
             em.persist(credentialEntity);
             user.getCredentials().add(credentialEntity);

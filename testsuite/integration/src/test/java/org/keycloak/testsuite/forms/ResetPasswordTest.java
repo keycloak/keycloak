@@ -37,7 +37,6 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -57,8 +56,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -241,6 +239,44 @@ public class ResetPasswordTest {
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
+    private void resetPassword(String username, String password) throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword(username);
+
+        resetPasswordPage.assertCurrent();
+
+        String sessionId = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId)
+                .detail(Details.USERNAME, username).detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
+
+        assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+
+        String body = (String) message.getContent();
+        String changePasswordUrl = MailUtil.getLink(body);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword(password, password);
+
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).session(sessionId)
+                .detail(Details.USERNAME, username).assertEvent();
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, username).session(sessionId).assertEvent();
+
+        oauth.openLogout();
+
+        events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+    }
+
     @Test
     public void resetPasswordWrongEmail() throws IOException, MessagingException, InterruptedException {
         loginPage.open();
@@ -405,7 +441,7 @@ public class ResetPasswordTest {
     }
 
     @Test
-    public void resetPasswordWithPasswordPolicy() throws IOException, MessagingException {
+    public void resetPasswordWithLengthPasswordPolicy() throws IOException, MessagingException {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
@@ -460,6 +496,65 @@ public class ResetPasswordTest {
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+    }
+
+    @Test
+    public void resetPasswordWithPasswordHisoryPolicy() throws IOException, MessagingException {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                //Block passwords that are equal to previous passwords. Default value is 3.
+                appRealm.setPasswordPolicy(new PasswordPolicy("passwordHistory"));
+            }
+        });
+        
+        // try-catch blocks have been commented out to reduce execution time for this test case(30s->15s).
+        // TODO : Comment out any other piece of code, if applicable, in order to reduce execution time.
+
+        resetPassword("login-test", "password1");
+        /*try {
+            resetPassword("login-test", "password1");
+            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
+        } catch (Exception e) {
+            // Expected NPE as "password1" matches with password history
+        }*/
+        
+        resetPassword("login-test", "password2");
+        /*try {
+            resetPassword("login-test", "password1");
+            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
+        } catch (Exception e) {
+            // Expected NPE as "password1" matches with password history
+        }
+        try {
+            resetPassword("login-test", "password2");
+            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
+        } catch (Exception e) {
+            // Expected NPE as "password2" matches with password history
+        }*/
+        
+        resetPassword("login-test", "password3");
+        try {
+            resetPassword("login-test", "password1");
+            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
+        } catch (Exception e) {
+            // Expected NPE as "password1" matches with password history
+        }
+        try {
+            resetPassword("login-test", "password2");
+            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
+        } catch (Exception e) {
+            // Expected NPE as "password2" matches with password history
+        }
+        try {
+            resetPassword("login-test", "password3");
+            fail("Expected NullPointerException: Block passwords that are equal to previous passwords.");
+        } catch (Exception e) {
+            // Expected NPE as "password3" matches with password history
+        }
+        
+        resetPassword("login-test", "password");
+
     }
 
     @Test
