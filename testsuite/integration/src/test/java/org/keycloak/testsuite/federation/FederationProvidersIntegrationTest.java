@@ -203,6 +203,14 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
+    public void loginLdapWithoutPassword() {
+        loginPage.open();
+        loginPage.login("john@email.org", "");
+
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+    }
+
+    @Test
     public void passwordChangeLdap() throws Exception {
         changePasswordPage.open();
         loginPage.login("johnkeycloak", "Password1");

@@ -551,7 +551,7 @@ public class AuthenticationManager {
                 credentials.add(UserCredentialModel.totp(totp));
             }
 
-            if (password == null && passwordToken == null) {
+            if ((password == null || password.isEmpty()) && (passwordToken == null || passwordToken.isEmpty())) {
                 logger.debug("Password not provided");
                 return AuthenticationStatus.MISSING_PASSWORD;
             }
