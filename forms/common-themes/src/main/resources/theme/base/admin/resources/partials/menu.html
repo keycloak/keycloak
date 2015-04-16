@@ -29,7 +29,7 @@
 		            <li class="dropdown context" data-ng-show="showNav()">
 		                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
 		                    {{current.realm.realm}}
-		                    <b class="caret"></b>
+		                    <b class="caret" data-ng-show="current.realms.length > 1"></b>
 		                </a>
 		                <ul class="dropdown-menu" data-ng-show="current.realms.length > 1">
 		                    <li data-ng-repeat="realm in current.realms" data-ng-if="realm.realm != current.realm.realm">
