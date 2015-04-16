@@ -826,4 +826,36 @@ All configuration options are optional. Default value for directory is <literal>
             <link linkend='themes'>Themes</link> sections for more information on how to do this.
         </para>
     </section>
+    
+    <section>
+        <title>Installing Keycloak Server as Root Context</title>
+        <para>
+            The Keycloak server can be installed as the default web application.  This way, instead of referencing
+            the server as <literal>http://mydomain.com/auth</literal>, it would be 
+            <literal>http://mydomain.com/</literal>.
+        </para>
+        <para>
+            To do this, you need to add a <literal>default-web-module</literal> attribute in the Undertow subystem in standalone.xml.
+            <programlisting><![CDATA[
+<subsystem xmlns="urn:jboss:domain:undertow:1.2">
+            <server name="default-server">
+                <host name="default-host" alias="localhost" default-web-module="main-auth-server.war">
+                    <location name="/" handler="welcome-content"/>
+                </host>
+]]></programlisting>
+        </para>
+        <para>
+            <literal>main-auth-server</literal> is the name of the Keycloak server as defined in the Keycloak subsystem.
+        </para>
+        <para>
+             <note>
+                 If you have already run your server before changing to the root context then your database
+                 will contain references to the old /auth context.  And, your clients may also have incorrect
+                 references.  To fix this on the server side, you will need to <link linkend="export-import">export 
+                 your database to json, make corrections, and then import.</link>  Client-side keycloak.json 
+                 files will need to be updated manually as well.
+             </note>
+        </para>
+        
+    </section>
 </chapter>
