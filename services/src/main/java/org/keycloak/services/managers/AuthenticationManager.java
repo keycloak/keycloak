@@ -19,6 +19,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
@@ -41,12 +42,14 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Stateless object that manages authentication
@@ -375,6 +378,7 @@ public class AuthenticationManager {
                                                   HttpRequest request, UriInfo uriInfo, EventBuilder event) {
         RealmModel realm = clientSession.getRealm();
         UserModel user = userSession.getUser();
+        isForcePasswordUpdateRequired(realm, user);
         isTotpConfigurationRequired(realm, user);
         isEmailVerificationRequired(realm, user);
         ClientModel client = clientSession.getClient();
@@ -433,6 +437,30 @@ public class AuthenticationManager {
         event.success();
         return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection);
 
+    }
+    
+    private static void isForcePasswordUpdateRequired(RealmModel realm, UserModel user) {
+        int daysToExpirePassword = realm.getPasswordPolicy().getDaysToExpirePassword();
+        if(daysToExpirePassword != -1) {
+            for (UserCredentialValueModel entity : user.getCredentialsDirectly()) {
+                if (entity.getType().equals(UserCredentialModel.PASSWORD)) {
+                    
+                    if(entity.getCreatedDate() == null) {
+                        user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                        logger.debug("User is required to update password");
+                    } else {
+                        long timeElapsed = Time.toMillis(Time.currentTime()) - entity.getCreatedDate();
+                        long timeToExpire = TimeUnit.DAYS.toMillis(daysToExpirePassword);
+                    
+                        if(timeElapsed > timeToExpire) {
+                            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                            logger.debug("User is required to update password");
+                        }
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     protected static void isTotpConfigurationRequired(RealmModel realm, UserModel user) {

@@ -38,7 +38,7 @@ public class CredentialEntity {
     @Column(name="HASH_ITERATIONS")
     protected int hashIterations;
     @Column(name="CREATED_DATE")
-    protected long createdDate;
+    protected Long createdDate;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="USER_ID")
@@ -100,11 +100,11 @@ public class CredentialEntity {
         this.hashIterations = hashIterations;
     }
 
-    public long getCreatedDate() {
+    public Long getCreatedDate() {
         return createdDate;
     }
 
-    public void setCreatedDate(long createdDate) {
+    public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
     

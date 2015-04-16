@@ -12,7 +12,7 @@ public class UserCredentialValueModel {
     private String device;
     private byte[] salt;
     private int hashIterations;
-    private long createdDate;
+    private Long createdDate;
 
     public String getType() {
         return type;
@@ -54,11 +54,11 @@ public class UserCredentialValueModel {
         this.hashIterations = iterations;
     }
 
-    public long getCreatedDate() {
+    public Long getCreatedDate() {
         return createdDate;
     }
 
-    public void setCreatedDate(long createdDate) {
+    public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
     
