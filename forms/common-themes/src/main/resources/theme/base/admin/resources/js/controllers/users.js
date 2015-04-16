@@ -547,6 +547,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
         { "id": "ad", "name": "Active Directory" },
         { "id": "rhds", "name": "Red Hat Directory Server" },
         { "id": "tivoli", "name": "Tivoli" },
+        { "id": "edirectory", "name": "Novell eDirectory" },
         { "id": "other", "name": "Other" }
     ];
 
