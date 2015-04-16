@@ -121,12 +121,8 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
 
     $scope.changeRealm = function(selectedRealm) {
         $location.url("/realms/" + selectedRealm);
-    };
-
-    $scope.showNav = function() {
-        var show = Current.realms.length > 0;
-        return Auth.loggedIn && show;
     }
+
     $scope.refresh = function() {
          Current.refresh();
     }

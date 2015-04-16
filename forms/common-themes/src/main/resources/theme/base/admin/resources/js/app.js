@@ -908,8 +908,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ProtocolListCtrl'
         })
-
-
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html'
         })
@@ -917,8 +915,14 @@ module.config([ '$routeProvider', function($routeProvider) {
             templateUrl : resourceUrl + '/partials/home.html',
             controller : 'LogoutCtrl'
         })
-        .otherwise({
+        .when('/notfound', {
             templateUrl : resourceUrl + '/partials/notfound.html'
+        })
+        .when('/forbidden', {
+            templateUrl : resourceUrl + '/partials/forbidden.html'
+        })
+        .otherwise({
+            templateUrl : resourceUrl + '/partials/pagenotfound.html'
         });
 } ]);
 
@@ -940,29 +944,6 @@ module.config(function($httpProvider) {
     $httpProvider.responseInterceptors.push('spinnerInterceptor');
     $httpProvider.interceptors.push('authInterceptor');
 
-});
-
-module.factory('errorInterceptor', function($q, $window, $rootScope, $location, Notifications, Auth) {
-    return function(promise) {
-        return promise.then(function(response) {
-            return response;
-        }, function(response) {
-            if (response.status == 401) {
-                Auth.authz.logout();
-             } else if (response.status == 403) {
-                Notifications.error("Forbidden");
-            } else if (response.status == 404) {
-                Notifications.error("Not found");
-            } else if (response.status) {
-                if (response.data && response.data.errorMessage) {
-                    Notifications.error(response.data.errorMessage);
-                } else {
-                    Notifications.error("An unexpected server error has occurred");
-                }
-            }
-            return $q.reject(response);
-        });
-    };
 });
 
 module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location) {
@@ -987,6 +968,29 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
                 $('#loading').hide();
             }
 
+            return $q.reject(response);
+        });
+    };
+});
+
+module.factory('errorInterceptor', function($q, $window, $rootScope, $location, Notifications, Auth) {
+    return function(promise) {
+        return promise.then(function(response) {
+            return response;
+        }, function(response) {
+            if (response.status == 401) {
+                Auth.authz.logout();
+            } else if (response.status == 403) {
+                $location.path('/forbidden');
+            } else if (response.status == 404) {
+                $location.path('/notfound');
+            } else if (response.status) {
+                if (response.data && response.data.errorMessage) {
+                    Notifications.error(response.data.errorMessage);
+                } else {
+                    Notifications.error("An unexpected server error has occurred");
+                }
+            }
             return $q.reject(response);
         });
     };

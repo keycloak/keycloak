@@ -64,7 +64,7 @@
     <div data-ng-include data-src="resourceUrl + '/partials/menu.html'"></div>
 </header>
 
-<div class="container" data-ng-show="auth.hasAnyAccess">
+<div class="container">
     <div data-ng-view id="view"></div>
     <div id="loading" class="loading-backdrop">
         <div class="loading">
