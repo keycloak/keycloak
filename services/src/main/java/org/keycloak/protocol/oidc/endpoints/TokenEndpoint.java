@@ -87,6 +87,14 @@ public class TokenEndpoint {
 
     @POST
     public Response build() {
+        formParams = request.getDecodedFormParameters();
+        grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
+
+        checkSsl();
+        checkRealm();
+        checkGrantType();
+        checkClient();
+
         switch (action) {
             case AUTHORIZATION_CODE:
                 return buildAuthorizationCodeAccessTokenResponse();
@@ -113,18 +121,6 @@ public class TokenEndpoint {
     public TokenEndpoint legacy(String legacyGrantType) {
         logger.warnv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
         this.legacyGrantType = legacyGrantType;
-        return this;
-    }
-
-    public TokenEndpoint init() {
-        formParams = request.getDecodedFormParameters();
-        grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
-
-        checkSsl();
-        checkRealm();
-        checkGrantType();
-        checkClient();
-
         return this;
     }
 

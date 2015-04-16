@@ -91,6 +91,25 @@ public class AuthorizationEndpoint {
 
     @GET
     public Response build() {
+        MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+
+        clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        responseType = params.getFirst(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        redirectUriParam = params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
+        state = params.getFirst(OIDCLoginProtocol.STATE_PARAM);
+        scope = params.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
+        loginHint = params.getFirst(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        prompt = params.getFirst(OIDCLoginProtocol.PROMPT_PARAM);
+        idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
+
+        checkSsl();
+        checkRealm();
+        checkClient();
+        checkResponseType();
+        checkRedirectUri();
+
+        createClientSession();
+
         switch (action) {
             case REGISTER:
                 return buildRegister();
@@ -117,29 +136,6 @@ public class AuthorizationEndpoint {
         if (!realm.isRegistrationAllowed()) {
             throw new ErrorPageException(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
-
-        return this;
-    }
-
-    public AuthorizationEndpoint init() {
-        MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
-
-        clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
-        responseType = params.getFirst(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
-        redirectUriParam = params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
-        state = params.getFirst(OIDCLoginProtocol.STATE_PARAM);
-        scope = params.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
-        loginHint = params.getFirst(OIDCLoginProtocol.LOGIN_HINT_PARAM);
-        prompt = params.getFirst(OIDCLoginProtocol.PROMPT_PARAM);
-        idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
-
-        checkSsl();
-        checkRealm();
-        checkClient();
-        checkResponseType();
-        checkRedirectUri();
-
-        createClientSession();
 
         return this;
     }
@@ -172,7 +168,7 @@ public class AuthorizationEndpoint {
             throw new ErrorPageException(session, Messages.CLIENT_NOT_FOUND );
         }
 
-        if ((client instanceof ClientModel) && ((ClientModel) client).isBearerOnly()) {
+        if (client.isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorPageException(session, Messages.BEARER_ONLY );
         }
@@ -198,7 +194,9 @@ public class AuthorizationEndpoint {
         event.detail(Details.RESPONSE_TYPE, responseType);
 
         if (responseType.equals(OAuth2Constants.CODE)) {
-            action = Action.CODE;
+            if (action == null) {
+                action = Action.CODE;
+            }
         } else {
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM );
