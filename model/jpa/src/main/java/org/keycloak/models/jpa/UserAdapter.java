@@ -273,7 +273,6 @@ public class UserAdapter implements UserModel {
         CredentialEntity credentialEntity = new CredentialEntity();
         credentialEntity.setId(KeycloakModelUtils.generateId());
         credentialEntity.setType(cred.getType());
-        credentialEntity.setCreatedDate(new Date().getTime());
         credentialEntity.setDevice(cred.getDevice());
         credentialEntity.setUser(user);
         return credentialEntity;
@@ -288,6 +287,7 @@ public class UserAdapter implements UserModel {
             if (hashIterations == -1)
                 hashIterations = 1;
         }
+        credentialEntity.setCreatedDate(new Date().getTime());
         credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
         credentialEntity.setSalt(salt);
         credentialEntity.setHashIterations(hashIterations);

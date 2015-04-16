@@ -28,7 +28,9 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -39,6 +41,7 @@ import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -48,8 +51,10 @@ import org.openqa.selenium.WebDriver;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
+
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -93,6 +98,9 @@ public class LoginTest {
 
     @WebResource
     protected LoginPage loginPage;
+    
+    @WebResource
+    protected LoginPasswordUpdatePage updatePasswordPage;
 
     private static String userId;
 
@@ -219,7 +227,86 @@ public class LoginTest {
 
         events.expectLogin().user(userId).removeDetail(Details.USERNAME).detail(Details.AUTH_METHOD, "sso").assertEvent();
     }
+    
+    @Test
+    public void loginWithForcePasswordChangePolicy() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setPasswordPolicy(new PasswordPolicy("forceExpiredPasswordChange(1)"));
+            }
+        });
+        
+        try {
+            // Setting offset to more than one day to force password update
+            // elapsedTime > timeToExpire
+            Time.setOffset(86405);
+            
+            loginPage.open();
 
+            loginPage.login("login-test", "password");
+            
+            updatePasswordPage.assertCurrent();
+            
+            updatePasswordPage.changePassword("updatePassword", "updatePassword");
+
+            events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            
+            events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            
+        } finally {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                    
+                    UserModel user = manager.getSession().users().getUserByUsername("login-test", appRealm);
+                    UserCredentialModel cred = new UserCredentialModel();
+                    cred.setType(CredentialRepresentation.PASSWORD);
+                    cred.setValue("password");
+                    user.updateCredential(cred);
+                }
+            });
+            Time.setOffset(0);
+        }
+    }
+    
+    @Test
+    public void loginWithoutForcePasswordChangePolicy() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setPasswordPolicy(new PasswordPolicy("forceExpiredPasswordChange(1)"));
+            }
+        });
+        
+        try {
+            // Setting offset to less than one day to avoid forced password update
+            // elapsedTime < timeToExpire
+            Time.setOffset(86205);
+            
+            loginPage.open();
+
+            loginPage.login("login-test", "password");
+            
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+            events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            
+        } finally {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                }
+            });
+            Time.setOffset(0);
+        }
+    }
+    
     @Test
     public void loginNoTimeoutWithLongWait() {
         try {
