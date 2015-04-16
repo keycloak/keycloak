@@ -178,12 +178,11 @@
                     <span tooltip-placement="right" tooltip="Valid URI pattern a browser can redirect to after a successful login or logout.  Simple wildcards are allowed i.e. 'http://example.com/*'.  Relative path can be specified too i.e. /my/relative/path/*.  Relative paths will generate a redirect URI using the request's host and port.  For SAML, you must set valid URI patterns if you are relying on the consumer service URL embedded with the login request." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-show="!client.bearerOnly && !create">
-                    <label class="col-sm-2 control-label" for="baseUrl">Default Redirect URL</label>
+                    <label class="col-sm-2 control-label" for="baseUrl">Base URL</label>
                     <div class="col-sm-6">
-                        <input class="form-control" type="text" name="baseUrl" id="baseUrl"
-                               data-ng-model="client.baseUrl">
+                        <input class="form-control" type="text" name="baseUrl" id="baseUrl" data-ng-model="client.baseUrl">
                     </div>
-                    <span tooltip-placement="right" tooltip="Default URL to use when the auth server needs to redirect back to the client.  This URL will also be used when the auth server needs to link to the client for any reason." class="fa fa-info-circle"></span>
+                    <span tooltip-placement="right" tooltip="Default URL to use when the auth server needs to redirect or link back to the client." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group" data-ng-hide="create || protocol == 'saml'">
                     <label class="col-sm-2 control-label" for="adminUrl">Admin URL</label>

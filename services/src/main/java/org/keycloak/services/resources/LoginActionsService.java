@@ -195,7 +195,7 @@ public class LoginActionsService {
             clientCode = ClientSessionCode.parse(code, session, realm);
             if (clientCode == null) {
                 event.error(Errors.INVALID_CODE);
-                response = ErrorPage.error(session, Messages.UNKNOWN_CODE);
+                response = ErrorPage.error(session, Messages.INVALID_CODE);
                 return false;
             }
             session.getContext().setClient(clientCode.getClientSession().getClient());
@@ -288,7 +288,7 @@ public class LoginActionsService {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
         if (clientCode == null) {
             event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.UNKNOWN_CODE);
+            return ErrorPage.error(session, Messages.INVALID_CODE);
         }
 
         ClientSessionModel clientSession = clientCode.getClientSession();
@@ -428,7 +428,7 @@ public class LoginActionsService {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
         if (clientCode == null) {
             event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.UNKNOWN_CODE);
+            return ErrorPage.error(session, Messages.INVALID_CODE);
         }
         if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
             event.error(Errors.INVALID_CODE);
@@ -865,7 +865,7 @@ public class LoginActionsService {
         ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
         if (accessCode == null) {
             event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.UNKNOWN_CODE);
+            return ErrorPage.error(session, Messages.INVALID_CODE);
         }
         ClientSessionModel clientSession = accessCode.getClientSession();
 

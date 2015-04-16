@@ -155,7 +155,7 @@ public class ResetPasswordTest {
         events.expect(EventType.RESET_PASSWORD_ERROR).client((String) null).user((String) null).error("invalid_code").clearDetails().assertEvent();
 
         assertTrue(errorPage.isCurrent());
-        assertEquals("Unknown code, please login again through your application.", errorPage.getError());
+        assertEquals("An error occurred, please login again through your application.", errorPage.getError());
     }
 
     @Test
@@ -354,7 +354,7 @@ public class ResetPasswordTest {
 
             errorPage.assertCurrent();
 
-            assertEquals("Invalid code, please login again through your application.", errorPage.getError());
+            assertEquals("An error occurred, please login again through your application.", errorPage.getError());
 
             events.expectRequiredAction(EventType.RESET_PASSWORD).error("invalid_code").client((String) null).user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {
