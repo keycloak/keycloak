@@ -18,7 +18,8 @@ public class UriUtils {
 
     public static String getOrigin(String uri) {
         String u = uri.toString();
-        return u.substring(0, u.indexOf('/', 8));
+        int e = u.indexOf('/', 8);
+        return e != -1 ? u.substring(0, u.indexOf('/', 8)) : u;
     }
 
     public static boolean isOrigin(String url) {

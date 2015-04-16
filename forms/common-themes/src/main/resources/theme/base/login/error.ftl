@@ -7,6 +7,9 @@
     <#elseif section = "form">
         <div id="kc-error-message">
             <p class="instruction">${message.summary}</p>
+            <#if client?? && client.baseUrl?has_content>
+                <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+            </#if>
         </div>
     </#if>
 </@layout.registrationLayout>
