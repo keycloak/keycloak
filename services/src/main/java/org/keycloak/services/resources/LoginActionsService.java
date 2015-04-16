@@ -39,6 +39,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
@@ -57,6 +58,7 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -72,6 +74,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -338,7 +342,13 @@ public class LoginActionsService {
                     .setUriInfo(uriInfo);
             return protocol.cancelLogin(clientSession);
         }
-
+        
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+        if (user != null) {
+            event.user(user);
+            isForcePasswordUpdateRequired(realm, user);
+        }
+        
         AuthenticationManager.AuthenticationStatus status = authManager.authenticateForm(session, clientConnection, realm, formData);
 
         if (remember) {
@@ -346,12 +356,7 @@ public class LoginActionsService {
         } else {
             authManager.expireRememberMeCookie(realm, uriInfo, clientConnection);
         }
-
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
-        if (user != null) {
-            event.user(user);
-        }
-
+        
         switch (status) {
             case SUCCESS:
             case ACTIONS_REQUIRED:
@@ -945,7 +950,25 @@ public class LoginActionsService {
     public static void createActionCookie(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, String sessionId) {
         CookieHelper.addCookie(ACTION_COOKIE, sessionId, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, realm.getSslRequired().isRequired(clientConnection), true);
     }
-
+    
+    private static void isForcePasswordUpdateRequired(RealmModel realm, UserModel user) {
+        int daysToExpirePassword = realm.getPasswordPolicy().getDaysToExpirePassword();
+        if(daysToExpirePassword != -1) {
+            for (UserCredentialValueModel entity : user.getCredentialsDirectly()) {
+                if (entity.getType().equals(UserCredentialModel.PASSWORD)) {
+                    
+                    long timeElapsed = Time.toMillis(Time.currentTime()) - entity.getCreatedDate();
+                    long timeToExpire = TimeUnit.DAYS.toMillis(daysToExpirePassword);
+                    
+                    if(timeElapsed > timeToExpire) {
+                        user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    
     private Response redirectOauth(UserModel user, ClientSessionCode accessCode, ClientSessionModel clientSession, UserSessionModel userSession) {
         return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }

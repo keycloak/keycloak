@@ -271,7 +271,6 @@ public class UserAdapter implements UserModel, Comparable {
     private CredentialEntity setCredentials(UserEntity user, UserCredentialModel cred) {
         CredentialEntity credentialEntity = new CredentialEntity();
         credentialEntity.setType(cred.getType());
-        credentialEntity.setCreatedDate(new Date().getTime());
         credentialEntity.setDevice(cred.getDevice());
         return credentialEntity;
     }
@@ -285,6 +284,7 @@ public class UserAdapter implements UserModel, Comparable {
             if (hashIterations == -1)
                 hashIterations = 1;
         }
+        credentialEntity.setCreatedDate(new Date().getTime());
         credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
         credentialEntity.setSalt(salt);
         credentialEntity.setHashIterations(hashIterations);
