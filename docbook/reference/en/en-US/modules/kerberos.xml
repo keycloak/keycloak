@@ -215,10 +215,11 @@ ktadd -k /tmp/http.keytab HTTP/www.mydomain.org@MYDOMAIN.ORG
             The scenario is supported by Keycloak, but there is tricky thing that SPNEGO authentication is done by Keycloak server but
             GSS credential will need to be used by your application. So you need to enable built-in <literal>gss delegation credential</literal> protocol mapper
             in admin console for your application. This will cause that Keycloak will deserialize GSS credential and transmit it to the application
-            in access token. Application will need to deserialize it and use it for further GSS calls against other services.
+            in access token. Application will need to deserialize it and use it for further GSS calls against other services. We have an example, which is showing it in details. It's in <literal>examples/kerberos</literal>
+            in the Keycloak appliance distribution or WAR distribution download. You can also check the example sources directly <ulink url="https://github.com/keycloak/keycloak/blob/master/examples/kerberos">here</ulink> .
         </para>
         <para>
-            GSSContext will need to
+            Once you deserialize the credential from the access token to the GSSCredential object, then GSSContext will need to
             be created with this credential passed to the method <literal>GSSManager.createContext</literal> for example like this:
             <programlisting><![CDATA[
 GSSContext context = gssManager.createContext(serviceName, krb5Oid,
@@ -227,7 +228,7 @@ GSSContext context = gssManager.createContext(serviceName, krb5Oid,
         </para>
         <para>
             Note that you also need to configure <literal>forwardable</literal> kerberos tickets in <literal>krb5.conf</literal> file
-            and add support for delegated credentials to your browser. See the kerberos example from Keycloak example set for details.
+            and add support for delegated credentials to your browser. For details, see the kerberos example from Keycloak examples set as mentioned above.
         </para>
         <warning>
             <para>
