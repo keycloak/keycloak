@@ -34,8 +34,10 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.GrantedConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
@@ -195,7 +197,7 @@ public class LoginActionsService {
             clientCode = ClientSessionCode.parse(code, session, realm);
             if (clientCode == null) {
                 event.error(Errors.INVALID_CODE);
-                response = ErrorPage.error(session, Messages.UNKNOWN_CODE);
+                response = ErrorPage.error(session, Messages.INVALID_CODE);
                 return false;
             }
             session.getContext().setClient(clientCode.getClientSession().getClient());
@@ -288,7 +290,7 @@ public class LoginActionsService {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
         if (clientCode == null) {
             event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.UNKNOWN_CODE);
+            return ErrorPage.error(session, Messages.INVALID_CODE);
         }
 
         ClientSessionModel clientSession = clientCode.getClientSession();
@@ -428,7 +430,7 @@ public class LoginActionsService {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
         if (clientCode == null) {
             event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.UNKNOWN_CODE);
+            return ErrorPage.error(session, Messages.INVALID_CODE);
         }
         if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
             event.error(Errors.INVALID_CODE);
@@ -576,19 +578,19 @@ public class LoginActionsService {
         event.detail(Details.CODE_ID, clientSession.getId());
 
         String redirect = clientSession.getRedirectUri();
+        UserSessionModel userSession = clientSession.getUserSession();
+        UserModel user = userSession.getUser();
+        ClientModel client = clientSession.getClient();
 
-        event.client(clientSession.getClient())
-                .user(clientSession.getUserSession().getUser())
+        event.client(client)
+                .user(user)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.REDIRECT_URI, redirect);
 
-        UserSessionModel userSession = clientSession.getUserSession();
-        if (userSession != null) {
-            event.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
-            event.detail(Details.USERNAME, userSession.getLoginUsername());
-            if (userSession.isRememberMe()) {
-                event.detail(Details.REMEMBER_ME, "true");
-            }
+        event.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
+        event.detail(Details.USERNAME, userSession.getLoginUsername());
+        if (userSession.isRememberMe()) {
+            event.detail(Details.REMEMBER_ME, "true");
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
@@ -606,6 +608,21 @@ public class LoginActionsService {
             event.error(Errors.REJECTED_BY_USER);
             return protocol.consentDenied(clientSession);
         }
+
+        GrantedConsentModel grantedConsent = user.getGrantedConsentByClient(client.getId());
+        if (grantedConsent == null) {
+            grantedConsent = user.addGrantedConsent(new GrantedConsentModel(client.getId()));
+        }
+        for (String roleId : clientSession.getRoles()) {
+            grantedConsent.addGrantedRole(roleId);
+        }
+        // TODO: It's not 100% sure that approved protocolMappers are same like the protocolMappers retrieved here from the client. Maybe clientSession.setProtocolMappers/getProtocolMappers should be added...
+        for (ProtocolMapperModel protocolMapper : client.getProtocolMappers()) {
+            if (protocolMapper.isConsentRequired() && protocolMapper.getProtocol().equals(clientSession.getAuthMethod()) && protocolMapper.getConsentText() != null) {
+                grantedConsent.addGrantedProtocolMapper(protocolMapper.getId());
+            }
+        }
+        user.updateGrantedConsent(grantedConsent);
 
         event.success();
 
@@ -865,7 +882,7 @@ public class LoginActionsService {
         ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
         if (accessCode == null) {
             event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.UNKNOWN_CODE);
+            return ErrorPage.error(session, Messages.INVALID_CODE);
         }
         ClientSessionModel clientSession = accessCode.getClientSession();
 

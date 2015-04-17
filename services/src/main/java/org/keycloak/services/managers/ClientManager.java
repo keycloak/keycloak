@@ -143,13 +143,13 @@ public class ClientManager {
 
     public InstallationAdapterConfig toInstallationRepresentation(RealmModel realmModel, ClientModel clientModel, URI baseUri) {
         InstallationAdapterConfig rep = new InstallationAdapterConfig();
+        rep.setAuthServerUrl(baseUri.toString());
         rep.setRealm(realmModel.getName());
         rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslRequired(realmModel.getSslRequired().name().toLowerCase());
 
         if (clientModel.isPublicClient() && !clientModel.isBearerOnly()) rep.setPublicClient(true);
         if (clientModel.isBearerOnly()) rep.setBearerOnly(true);
-        if (!clientModel.isBearerOnly()) rep.setAuthServerUrl(baseUri.toString());
         if (clientModel.getRoles().size() > 0) rep.setUseResourceRoleMappings(true);
 
         rep.setResource(clientModel.getClientId());
@@ -169,14 +169,12 @@ public class ClientManager {
         buffer.append("<secure-deployment name=\"WAR MODULE NAME.war\">\n");
         buffer.append("    <realm>").append(realmModel.getName()).append("</realm>\n");
         buffer.append("    <realm-public-key>").append(realmModel.getPublicKeyPem()).append("</realm-public-key>\n");
+        buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
         if (clientModel.isBearerOnly()){
             buffer.append("    <bearer-only>true</bearer-only>\n");
 
-        } else {
-            buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
-            if (clientModel.isPublicClient() && !clientModel.isBearerOnly()) {
-                buffer.append("    <public-client>true</public-client>\n");
-            }
+        } else if (clientModel.isPublicClient()) {
+            buffer.append("    <public-client>true</public-client>\n");
         }
         buffer.append("    <ssl-required>").append(realmModel.getSslRequired().name()).append("</ssl-required>\n");
         buffer.append("    <resource>").append(clientModel.getClientId()).append("</resource>\n");

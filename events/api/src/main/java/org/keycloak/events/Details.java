@@ -23,5 +23,6 @@ public interface Details {
     String UPDATED_REFRESH_TOKEN_ID = "updated_refresh_token_id";
     String NODE_HOST = "node_host";
     String REASON = "reason";
+    String REVOKED_CLIENT = "revoked_client";
 
 }

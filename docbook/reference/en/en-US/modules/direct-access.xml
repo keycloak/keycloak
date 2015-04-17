@@ -80,14 +80,14 @@ HttpClient client = new HttpClientBuilder()
 try {
    HttpPost post = new HttpPost(
            KeycloakUriBuilder.fromUri("http://localhost:8080/auth")
-           .path(ServiceUrlConstants.TOKEN_SERVICE_DIRECT_GRANT_PATH).build("demo"));
+           .path(ServiceUrlConstants.TOKEN_PATH).build("demo"));
    List <NameValuePair> formparams = new ArrayList <NameValuePair>();
+   formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "password"));
    formparams.add(new BasicNameValuePair("username", "bburke"));
    formparams.add(new BasicNameValuePair("password", "password"));
 
    if (isPublic()) { // if client is public access type
        formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "customer-portal"));
-       formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "password"));
    } else {
        String authorization = BasicAuthHelper.createHeader("customer-portal", "secret-secret-secret");
        post.setHeader("Authorization", authorization);

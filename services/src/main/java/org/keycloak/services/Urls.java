@@ -118,6 +118,11 @@ public class Urls {
                 .build(realmId);
     }
 
+    public static URI accountRevokeClientPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "processRevokeGrant")
+                .build(realmId);
+    }
+
     public static URI accountLogout(URI baseUri, URI redirectUri, String realmId) {
         return realmLogout(baseUri).queryParam("redirect_uri", redirectUri).build(realmId);
     }

@@ -92,6 +92,9 @@ public class LDAPIdentityStoreRegistry {
                 case LDAPConstants.VENDOR_TIVOLI:
                     uniqueIdentifierAttributeName = "uniqueidentifier";
                     break;
+                case LDAPConstants.VENDOR_NOVELL_EDIRECTORY:
+                    uniqueIdentifierAttributeName = "guid";
+                    break;
                 case LDAPConstants.VENDOR_ACTIVE_DIRECTORY:
                     uniqueIdentifierAttributeName = LDAPConstants.OBJECT_GUID;
             }

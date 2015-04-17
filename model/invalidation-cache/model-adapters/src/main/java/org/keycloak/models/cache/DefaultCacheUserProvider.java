@@ -1,8 +1,10 @@
 package org.keycloak.models.cache;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -309,5 +311,15 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     public void preRemove(RealmModel realm, UserFederationProviderModel link) {
         realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, link);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, ClientModel client) {
+        getDelegate().preRemove(realm, client);
+    }
+
+    @Override
+    public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
+        getDelegate().preRemove(client, protocolMapper);
     }
 }

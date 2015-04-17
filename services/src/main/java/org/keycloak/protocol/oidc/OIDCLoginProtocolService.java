@@ -107,7 +107,7 @@ public class OIDCLoginProtocolService {
     public Object auth() {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.init();
+        return endpoint;
     }
 
     /**
@@ -117,7 +117,7 @@ public class OIDCLoginProtocolService {
     public Object registerPage() {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.init().register();
+        return endpoint.register();
     }
 
     /**
@@ -127,7 +127,7 @@ public class OIDCLoginProtocolService {
     public Object token() {
         TokenEndpoint endpoint = new TokenEndpoint(tokenManager, authManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.init();
+        return endpoint;
     }
 
     @Path("login")
@@ -135,7 +135,7 @@ public class OIDCLoginProtocolService {
     public Object loginPage() {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.legacy(OIDCLoginProtocol.CODE_PARAM).init();
+        return endpoint.legacy(OIDCLoginProtocol.CODE_PARAM);
     }
 
     @Path("login-status-iframe.html")
@@ -150,7 +150,7 @@ public class OIDCLoginProtocolService {
     public Object grantAccessToken() {
         TokenEndpoint endpoint = new TokenEndpoint(tokenManager, authManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.legacy(OAuth2Constants.PASSWORD).init();
+        return endpoint.legacy(OAuth2Constants.PASSWORD);
     }
 
     @Path("refresh")
@@ -158,7 +158,7 @@ public class OIDCLoginProtocolService {
     public Object refreshAccessToken() {
         TokenEndpoint endpoint = new TokenEndpoint(tokenManager, authManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.legacy(OAuth2Constants.REFRESH_TOKEN).init();
+        return endpoint.legacy(OAuth2Constants.REFRESH_TOKEN);
     }
 
     @Path("access/codes")
@@ -166,7 +166,7 @@ public class OIDCLoginProtocolService {
     public Object accessCodeToToken() {
         TokenEndpoint endpoint = new TokenEndpoint(tokenManager, authManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.legacy(OAuth2Constants.AUTHORIZATION_CODE).init();
+        return endpoint.legacy(OAuth2Constants.AUTHORIZATION_CODE);
     }
 
     @Path("validate")

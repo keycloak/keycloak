@@ -121,12 +121,8 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
 
     $scope.changeRealm = function(selectedRealm) {
         $location.url("/realms/" + selectedRealm);
-    };
-
-    $scope.showNav = function() {
-        var show = Current.realms.length > 0;
-        return Auth.loggedIn && show;
     }
+
     $scope.refresh = function() {
          Current.refresh();
     }
@@ -399,7 +395,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     $scope.supportedLocalesOptions = {
         'multiple' : true,
         'simple_tags' : true,
-        'tags' : ['en', 'de', 'pt-BR']
+        'tags' : ['en', 'de', 'pt-BR', 'it']
     };
 
     $scope.$watch('realm.supportedLocales', function(oldVal, newVal) {

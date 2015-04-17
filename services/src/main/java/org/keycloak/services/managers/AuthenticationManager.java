@@ -14,11 +14,14 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.GrantedConsentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
@@ -41,12 +44,14 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Stateless object that manages authentication
@@ -375,6 +380,7 @@ public class AuthenticationManager {
                                                   HttpRequest request, UriInfo uriInfo, EventBuilder event) {
         RealmModel realm = clientSession.getRealm();
         UserModel user = userSession.getUser();
+        isForcePasswordUpdateRequired(realm, user);
         isTotpConfigurationRequired(realm, user);
         isEmailVerificationRequired(realm, user);
         ClientModel client = clientSession.getClient();
@@ -414,9 +420,17 @@ public class AuthenticationManager {
         if (client.isConsentRequired()) {
             accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
 
+            GrantedConsentModel grantedConsent = user.getGrantedConsentByClient(client.getId());
+
             List<RoleModel> realmRoles = new LinkedList<RoleModel>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
             for (RoleModel r : accessCode.getRequestedRoles()) {
+
+                // Consent already granted by user
+                if (grantedConsent != null && grantedConsent.getGrantedRoles().contains(r.getId())) {
+                    continue;
+                }
+
                 if (r.getContainer() instanceof RealmModel) {
                     realmRoles.add(r);
                 } else {
@@ -424,15 +438,51 @@ public class AuthenticationManager {
                 }
             }
 
-            return session.getProvider(LoginFormsProvider.class)
-                    .setClientSessionCode(accessCode.getCode())
-                    .setAccessRequest(realmRoles, resourceRoles)
-                    .createOAuthGrant(clientSession);
+            List<ProtocolMapperModel> protocolMappers = new LinkedList<ProtocolMapperModel>();
+            for (ProtocolMapperModel model : client.getProtocolMappers()) {
+                if (model.isConsentRequired() && model.getProtocol().equals(clientSession.getAuthMethod()) && model.getConsentText() != null) {
+                    if (grantedConsent == null || !grantedConsent.getGrantedProtocolMappers().contains(model.getId())) {
+                        protocolMappers.add(model);
+                    }
+                }
+            }
+
+            // Skip grant screen if everything was already approved by this user
+            if (realmRoles.size() > 0 || resourceRoles.size() > 0 || protocolMappers.size() > 0) {
+                return session.getProvider(LoginFormsProvider.class)
+                        .setClientSessionCode(accessCode.getCode())
+                        .setAccessRequest(realmRoles, resourceRoles, protocolMappers)
+                        .createOAuthGrant(clientSession);
+            }
         }
 
         event.success();
         return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection);
 
+    }
+    
+    private static void isForcePasswordUpdateRequired(RealmModel realm, UserModel user) {
+        int daysToExpirePassword = realm.getPasswordPolicy().getDaysToExpirePassword();
+        if(daysToExpirePassword != -1) {
+            for (UserCredentialValueModel entity : user.getCredentialsDirectly()) {
+                if (entity.getType().equals(UserCredentialModel.PASSWORD)) {
+                    
+                    if(entity.getCreatedDate() == null) {
+                        user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                        logger.debug("User is required to update password");
+                    } else {
+                        long timeElapsed = Time.toMillis(Time.currentTime()) - entity.getCreatedDate();
+                        long timeToExpire = TimeUnit.DAYS.toMillis(daysToExpirePassword);
+                    
+                        if(timeElapsed > timeToExpire) {
+                            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                            logger.debug("User is required to update password");
+                        }
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     protected static void isTotpConfigurationRequired(RealmModel realm, UserModel user) {

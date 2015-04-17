@@ -17,8 +17,10 @@
 package org.keycloak.models.file.adapter;
 
 import org.keycloak.models.ClientModel;
+
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
+import org.keycloak.models.GrantedConsentModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -31,7 +33,6 @@ import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +44,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.entities.FederatedIdentityEntity;
 import org.keycloak.models.entities.RoleEntity;
 import org.keycloak.models.entities.UserEntity;
+import org.keycloak.util.Time;
 
 /**
  * UserModel for JSON persistence.
@@ -271,7 +273,6 @@ public class UserAdapter implements UserModel, Comparable {
     private CredentialEntity setCredentials(UserEntity user, UserCredentialModel cred) {
         CredentialEntity credentialEntity = new CredentialEntity();
         credentialEntity.setType(cred.getType());
-        credentialEntity.setCreatedDate(new Date().getTime());
         credentialEntity.setDevice(cred.getDevice());
         return credentialEntity;
     }
@@ -285,6 +286,7 @@ public class UserAdapter implements UserModel, Comparable {
             if (hashIterations == -1)
                 hashIterations = 1;
         }
+        credentialEntity.setCreatedDate(Time.toMillis(Time.currentTime()));
         credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
         credentialEntity.setSalt(salt);
         credentialEntity.setHashIterations(hashIterations);
@@ -427,6 +429,35 @@ public class UserAdapter implements UserModel, Comparable {
     @Override
     public void setFederationLink(String link) {
         user.setFederationLink(link);
+    }
+
+    @Override
+    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public List<GrantedConsentModel> getGrantedConsents() {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public void updateGrantedConsent(GrantedConsentModel consent) {
+        // TODO
+    }
+
+    @Override
+    public boolean revokeGrantedConsentForClient(String clientId) {
+        // TODO
+        return false;
     }
 
     @Override

@@ -155,7 +155,7 @@ public class ResetPasswordTest {
         events.expect(EventType.RESET_PASSWORD_ERROR).client((String) null).user((String) null).error("invalid_code").clearDetails().assertEvent();
 
         assertTrue(errorPage.isCurrent());
-        assertEquals("Unknown code, please login again through your application.", errorPage.getError());
+        assertEquals("An error occurred, please login again through your application.", errorPage.getError());
     }
 
     @Test
@@ -354,7 +354,7 @@ public class ResetPasswordTest {
 
             errorPage.assertCurrent();
 
-            assertEquals("Invalid code, please login again through your application.", errorPage.getError());
+            assertEquals("An error occurred, please login again through your application.", errorPage.getError());
 
             events.expectRequiredAction(EventType.RESET_PASSWORD).error("invalid_code").client((String) null).user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {
@@ -538,19 +538,35 @@ public class ResetPasswordTest {
             }
         });
         
-        resetPassword("login-test", "password1");
-        resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
+        try {
+            Time.setOffset(2000000);
+            resetPassword("login-test", "password1");
+            
+            resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
 
-        resetPassword("login-test", "password2");
-        resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
-        resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
+            Time.setOffset(4000000);
+            resetPassword("login-test", "password2");
+            
+            resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
+            resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
+        
+            Time.setOffset(8000000);
+            resetPassword("login-test", "password3");
+            
+            resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
+            resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
+            resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
 
-        resetPassword("login-test", "password3");
-        resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
-        resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
-        resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
-
-        resetPassword("login-test", "password");
+            resetPassword("login-test", "password");
+        } finally {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                }
+            });
+            Time.setOffset(0);
+        }
     }
 
     @Test

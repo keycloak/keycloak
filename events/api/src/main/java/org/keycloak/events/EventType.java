@@ -39,6 +39,8 @@ public enum EventType {
     REMOVE_TOTP(true),
     REMOVE_TOTP_ERROR(true),
 
+    REVOKE_GRANT(true),
+
     SEND_VERIFY_EMAIL(true),
     SEND_VERIFY_EMAIL_ERROR(true),
     SEND_RESET_PASSWORD(true),

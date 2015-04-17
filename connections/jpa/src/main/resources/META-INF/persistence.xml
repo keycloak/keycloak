@@ -20,6 +20,9 @@
         <class>org.keycloak.models.jpa.entities.IdentityProviderMapperEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientIdentityProviderMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ProtocolMapperEntity</class>
+        <class>org.keycloak.models.jpa.entities.GrantedConsentEntity</class>
+        <class>org.keycloak.models.jpa.entities.GrantedConsentRoleEntity</class>
+        <class>org.keycloak.models.jpa.entities.GrantedConsentProtocolMapperEntity</class>
 
         <!-- JpaUserSessionProvider -->
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionEntity</class>

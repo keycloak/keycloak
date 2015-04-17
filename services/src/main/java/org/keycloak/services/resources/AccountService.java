@@ -41,6 +41,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -75,6 +76,7 @@ import javax.ws.rs.core.Variant;
 
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -348,6 +350,12 @@ public class AccountService {
         return forwardToPage("sessions", AccountPages.SESSIONS);
     }
 
+    @Path("access")
+    @GET
+    public Response accessPage() {
+        return forwardToPage("access", AccountPages.ACCESS);
+    }
+
     /**
      * Check to see if form post has sessionId hidden field and match it against the session id.
      *
@@ -481,6 +489,46 @@ public class AccountService {
         }
         URI location = builder.build(realm.getName());
         return Response.seeOther(location).build();
+    }
+
+    @Path("revoke-grant")
+    @POST
+    public Response processRevokeGrant(final MultivaluedMap<String, String> formData) {
+        if (auth == null) {
+            return login("access");
+        }
+
+        require(AccountRoles.MANAGE_ACCOUNT);
+        csrfCheck(formData);
+
+        String clientId = formData.getFirst("clientId");
+        if (clientId == null) {
+            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.ACCESS);
+        }
+        ClientModel client = realm.getClientById(clientId);
+        if (client == null) {
+            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.ACCESS);
+        }
+
+        // Revoke grant in UserModel
+        UserModel user = auth.getUser();
+        user.revokeGrantedConsentForClient(client.getId());
+
+        // Logout clientSessions for this user and client
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
+        for (UserSessionModel userSession : userSessions) {
+            List<ClientSessionModel> clientSessions = userSession.getClientSessions();
+            for (ClientSessionModel clientSession : clientSessions) {
+                if (clientSession.getClient().getId().equals(clientId)) {
+                    TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
+                }
+            }
+        }
+
+        event.event(EventType.REVOKE_GRANT).client(auth.getClient()).user(auth.getUser()).detail(Details.REVOKED_CLIENT, client.getClientId()).success();
+        setReferrerOnPage();
+
+        return account.setSuccess(Messages.SUCCESS_GRANT_REVOKED).createResponse(AccountPages.ACCESS);
     }
 
     /**

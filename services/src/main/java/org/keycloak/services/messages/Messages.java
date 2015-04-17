@@ -134,8 +134,6 @@ public class Messages {
 
     public static final String SESSION_NOT_ACTIVE = "sessionNotActiveMessage";
 
-    public static final String UNKNOWN_CODE = "unknownCodeMessage";
-
     public static final String INVALID_CODE = "invalidCodeMessage";
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
@@ -153,6 +151,8 @@ public class Messages {
     public static final String SUCCESS_TOTP_REMOVED = "successTotpRemovedMessage";
 
     public static final String SUCCESS_TOTP = "successTotpMessage";
+
+    public static final String SUCCESS_GRANT_REVOKED = "successGrantRevokedMessage";
 
     public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProviderMessage";
 

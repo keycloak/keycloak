@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.util.UriUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -526,7 +527,7 @@ public class RepresentationToModel {
         client.setManagementUrl(resourceRep.getAdminUrl());
         if (resourceRep.isSurrogateAuthRequired() != null)
             client.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
-        client.setBaseUrl(resourceRep.getBaseUrl());
+        if (resourceRep.getBaseUrl() != null) client.setBaseUrl(resourceRep.getBaseUrl());
         if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
         if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
         if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
@@ -576,12 +577,8 @@ public class RepresentationToModel {
                 Set<String> origins = new HashSet<String>();
                 for (String redirectUri : resourceRep.getRedirectUris()) {
                     logger.debugv("add redirect-uri to origin: {0}", redirectUri);
-                    if (redirectUri.startsWith("http:")) {
-                        URI uri = URI.create(redirectUri);
-                        String origin = uri.getScheme() + "://" + uri.getHost();
-                        if (uri.getPort() != -1) {
-                            origin += ":" + uri.getPort();
-                        }
+                    if (redirectUri.startsWith("http")) {
+                        String origin = UriUtils.getOrigin(redirectUri);
                         logger.debugv("adding default client origin: {0}" , origin);
                         origins.add(origin);
                     }

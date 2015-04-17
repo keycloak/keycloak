@@ -89,7 +89,7 @@ public abstract class AbstractIdentityProviderTest {
     public WebRule webRule = new WebRule(this);
 
     @WebResource
-    private WebDriver driver;
+    protected WebDriver driver;
 
     @WebResource
     private LoginPage loginPage;
@@ -122,6 +122,7 @@ public abstract class AbstractIdentityProviderTest {
 
     @After
     public void onAfter() {
+        revokeGrant();
         brokerServerRule.stopSession(this.session, true);
     }
 
@@ -387,6 +388,9 @@ public abstract class AbstractIdentityProviderTest {
         assertTrue(accountFederatedIdentityPage.isCurrent());
         assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getAlias() + "\""));
 
+        // Revoke grant in account mgmt
+        revokeGrant();
+
         // Logout from account management
         accountFederatedIdentityPage.logout();
         assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
@@ -400,6 +404,9 @@ public abstract class AbstractIdentityProviderTest {
         // Unlink my "test-user"
         accountFederatedIdentityPage.clickRemoveProvider(identityProviderModel.getAlias());
         assertTrue(driver.getPageSource().contains("id=\"add-" + identityProviderModel.getAlias() + "\""));
+
+        // Revoke grant in account mgmt
+        revokeGrant();
 
         // Logout from account management
         accountFederatedIdentityPage.logout();
@@ -634,6 +641,10 @@ public abstract class AbstractIdentityProviderTest {
     }
 
     protected void doAfterProviderAuthentication() {
+
+    }
+
+    protected void revokeGrant() {
 
     }
 

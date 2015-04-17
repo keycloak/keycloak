@@ -1,6 +1,9 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -9,12 +12,16 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.CredentialEntity;
+import org.keycloak.models.jpa.entities.GrantedConsentEntity;
+import org.keycloak.models.jpa.entities.GrantedConsentProtocolMapperEntity;
+import org.keycloak.models.jpa.entities.GrantedConsentRoleEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
+import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -23,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -273,7 +281,6 @@ public class UserAdapter implements UserModel {
         CredentialEntity credentialEntity = new CredentialEntity();
         credentialEntity.setId(KeycloakModelUtils.generateId());
         credentialEntity.setType(cred.getType());
-        credentialEntity.setCreatedDate(new Date().getTime());
         credentialEntity.setDevice(cred.getDevice());
         credentialEntity.setUser(user);
         return credentialEntity;
@@ -288,6 +295,7 @@ public class UserAdapter implements UserModel {
             if (hashIterations == -1)
                 hashIterations = 1;
         }
+        credentialEntity.setCreatedDate(Time.toMillis(Time.currentTime()));
         credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
         credentialEntity.setSalt(salt);
         credentialEntity.setHashIterations(hashIterations);
@@ -469,6 +477,164 @@ public class UserAdapter implements UserModel {
     @Override
     public void setFederationLink(String link) {
         user.setFederationLink(link);
+    }
+
+    @Override
+    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+        String clientId = consent.getClientId();
+        if (clientId == null) {
+            throw new ModelException("clientId needs to be filled for newly added consent!");
+        }
+
+        GrantedConsentEntity consentEntity = getGrantedConsentEntity(clientId);
+        if (consentEntity != null) {
+            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + user.getId() + "]");
+        }
+
+        consentEntity = new GrantedConsentEntity();
+        consentEntity.setId(KeycloakModelUtils.generateId());
+        consentEntity.setUser(user);
+        consentEntity.setClientId(clientId);
+        em.persist(consentEntity);
+        em.flush();
+
+        updateGrantedConsentEntity(consentEntity, consent);
+
+        return consent;
+    }
+
+    @Override
+    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+        GrantedConsentEntity entity = getGrantedConsentEntity(clientId);
+        return toConsentModel(entity);
+    }
+
+    @Override
+    public List<GrantedConsentModel> getGrantedConsents() {
+        TypedQuery<GrantedConsentEntity> query = em.createNamedQuery("grantedConsentsByUser", GrantedConsentEntity.class);
+        query.setParameter("userId", getId());
+        List<GrantedConsentEntity> results = query.getResultList();
+
+        List<GrantedConsentModel> consents = new ArrayList<GrantedConsentModel>();
+        for (GrantedConsentEntity entity : results) {
+            GrantedConsentModel model = toConsentModel(entity);
+            consents.add(model);
+        }
+        return consents;
+    }
+
+    @Override
+    public void updateGrantedConsent(GrantedConsentModel consent) {
+        String clientId = consent.getClientId();
+        if (clientId == null) {
+            throw new ModelException("clientId needs to be for newly added consent!");
+        }
+
+        GrantedConsentEntity consentEntity = getGrantedConsentEntity(clientId);
+        if (consentEntity == null) {
+            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + user.getId() + "]");
+        }
+
+        updateGrantedConsentEntity(consentEntity, consent);
+    }
+
+    @Override
+    public boolean revokeGrantedConsentForClient(String clientId) {
+        GrantedConsentEntity consentEntity = getGrantedConsentEntity(clientId);
+        if (consentEntity == null) return false;
+
+        em.remove(consentEntity);
+        em.flush();
+        return true;
+    }
+
+
+    private GrantedConsentEntity getGrantedConsentEntity(String clientId) {
+        TypedQuery<GrantedConsentEntity> query = em.createNamedQuery("grantedConsentByUserAndClient", GrantedConsentEntity.class);
+        query.setParameter("userId", getId());
+        query.setParameter("clientId", clientId);
+        List<GrantedConsentEntity> results = query.getResultList();
+        if (results.size() > 1) {
+            throw new ModelException("More results found for user [" + getUsername() + "] and client [" + clientId + "]");
+        } else if (results.size() == 1) {
+            return results.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    private GrantedConsentModel toConsentModel(GrantedConsentEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        GrantedConsentModel model = new GrantedConsentModel(entity.getClientId());
+
+        Collection<GrantedConsentRoleEntity> grantedRoleEntities = entity.getGrantedRoles();
+        if (grantedRoleEntities != null) {
+            for (GrantedConsentRoleEntity grantedRole : grantedRoleEntities) {
+                model.addGrantedRole(grantedRole.getRoleId());
+            }
+        }
+
+        Collection<GrantedConsentProtocolMapperEntity> grantedProtocolMapperEntities = entity.getGrantedProtocolMappers();
+        if (grantedProtocolMapperEntities != null) {
+            for (GrantedConsentProtocolMapperEntity grantedProtMapper : grantedProtocolMapperEntities) {
+                model.addGrantedProtocolMapper(grantedProtMapper.getProtocolMapperId());
+            }
+        }
+
+        return model;
+    }
+
+    // Update roles and protocolMappers to given consentEntity from the consentModel
+    private void updateGrantedConsentEntity(GrantedConsentEntity consentEntity, GrantedConsentModel consentModel) {
+        Collection<GrantedConsentProtocolMapperEntity> grantedProtocolMapperEntities = consentEntity.getGrantedProtocolMappers();
+        Collection<GrantedConsentProtocolMapperEntity> mappersToRemove = new HashSet<GrantedConsentProtocolMapperEntity>(grantedProtocolMapperEntities);
+
+        for (String protocolMapperId : consentModel.getGrantedProtocolMappers()) {
+            GrantedConsentProtocolMapperEntity grantedProtocolMapperEntity = new GrantedConsentProtocolMapperEntity();
+            grantedProtocolMapperEntity.setGrantedConsent(consentEntity);
+            grantedProtocolMapperEntity.setProtocolMapperId(protocolMapperId);
+
+            // Check if it's already there
+            if (!grantedProtocolMapperEntities.contains(grantedProtocolMapperEntity)) {
+                em.persist(grantedProtocolMapperEntity);
+                em.flush();
+                grantedProtocolMapperEntities.add(grantedProtocolMapperEntity);
+            } else {
+                mappersToRemove.remove(grantedProtocolMapperEntity);
+            }
+        }
+        // Those mappers were no longer on consentModel and will be removed
+        for (GrantedConsentProtocolMapperEntity toRemove : mappersToRemove) {
+            grantedProtocolMapperEntities.remove(toRemove);
+            em.remove(toRemove);
+        }
+
+        Collection<GrantedConsentRoleEntity> grantedRoleEntities = consentEntity.getGrantedRoles();
+        Set<GrantedConsentRoleEntity> rolesToRemove = new HashSet<GrantedConsentRoleEntity>(grantedRoleEntities);
+        for (String roleId : consentModel.getGrantedRoles()) {
+            GrantedConsentRoleEntity consentRoleEntity = new GrantedConsentRoleEntity();
+            consentRoleEntity.setGrantedConsent(consentEntity);
+            consentRoleEntity.setRoleId(roleId);
+
+            // Check if it's already there
+            if (!grantedRoleEntities.contains(consentRoleEntity)) {
+                em.persist(consentRoleEntity);
+                em.flush();
+                grantedRoleEntities.add(consentRoleEntity);
+            } else {
+                rolesToRemove.remove(consentRoleEntity);
+            }
+        }
+        // Those roles were no longer on consentModel and will be removed
+        for (GrantedConsentRoleEntity toRemove : rolesToRemove) {
+            grantedRoleEntities.remove(toRemove);
+            em.remove(toRemove);
+        }
+
+        em.flush();
     }
 
     @Override

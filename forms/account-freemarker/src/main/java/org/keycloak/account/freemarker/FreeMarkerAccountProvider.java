@@ -20,6 +20,7 @@ import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
+import org.keycloak.account.freemarker.model.AccessBean;
 import org.keycloak.account.freemarker.model.AccountBean;
 import org.keycloak.account.freemarker.model.AccountFederatedIdentityBean;
 import org.keycloak.account.freemarker.model.FeaturesBean;
@@ -37,6 +38,7 @@ import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.freemarker.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.freemarker.beans.LocaleBean;
 import org.keycloak.freemarker.beans.MessageBean;
 import org.keycloak.freemarker.beans.MessageFormatterMethod;
@@ -182,6 +184,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                 break;
             case SESSIONS:
                 attributes.put("sessions", new SessionsBean(realm, sessions));
+                break;
+            case ACCESS:
+                attributes.put("access", new AccessBean(realm, user, uriInfo.getBaseUri(), stateChecker));
+                attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;
             case PASSWORD:
                 attributes.put("password", new PasswordBean(passwordSet));

@@ -4,6 +4,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -87,6 +88,9 @@ public class JpaUserProvider implements UserProvider {
     private void removeUser(UserEntity user) {
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteFederatedIdentityByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteGrantedConsentRolesByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteGrantedConsentProtMappersByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteGrantedConsentsByUser").setParameter("user", user).executeUpdate();
         em.remove(user);
     }
 
@@ -130,7 +134,13 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm) {
-        int num = em.createNamedQuery("deleteUserRoleMappingsByRealm")
+        int num = em.createNamedQuery("deleteGrantedConsentRolesByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteGrantedConsentProtMappersByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteGrantedConsentsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteUserRoleMappingsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserRequiredActionsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -174,7 +184,22 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
+        em.createNamedQuery("deleteGrantedConsentRolesByRole").setParameter("roleId", role.getId()).executeUpdate();
         em.createNamedQuery("deleteUserRoleMappingsByRole").setParameter("roleId", role.getId()).executeUpdate();
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, ClientModel client) {
+        em.createNamedQuery("deleteGrantedConsentProtMappersByClient").setParameter("clientId", client.getId()).executeUpdate();
+        em.createNamedQuery("deleteGrantedConsentRolesByClient").setParameter("clientId", client.getId()).executeUpdate();
+        em.createNamedQuery("deleteGrantedConsentsByClient").setParameter("clientId", client.getId()).executeUpdate();
+    }
+
+    @Override
+    public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
+        em.createNamedQuery("deleteGrantedConsentProtMappersByProtocolMapper")
+                .setParameter("protocolMapperId", protocolMapper.getId())
+                .executeUpdate();
     }
 
     @Override
