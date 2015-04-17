@@ -908,7 +908,8 @@ module.factory('PasswordPolicy', function() {
         specialChars:   	"Minimal number (integer type) of special characters in password. Default value is 1.",
         notUsername:    	"Block passwords that are equal to the username",
         regexPatterns:  	"Block passwords that do not match all of the regex patterns (string type).",
-        passwordHistory:  	"Block passwords that are equal to previous passwords. Default value is 3."
+        passwordHistory:  	"Block passwords that are equal to previous passwords. Default value is 3.",
+        forceExpiredPasswordChange:  	"Force password change when password credential is expired. Default value is 365 days."
     }
 
     p.allPolicies = [
@@ -920,7 +921,8 @@ module.factory('PasswordPolicy', function() {
         { name: 'specialChars', value: 1 },
         { name: 'notUsername', value: 1 },
         { name: 'regexPatterns', value: ''},
-        { name: 'passwordHistory', value: 3 }
+        { name: 'passwordHistory', value: 3 },
+        { name: 'forceExpiredPasswordChange', value: 365 }
     ];
 
     p.parse = function(policyString) {

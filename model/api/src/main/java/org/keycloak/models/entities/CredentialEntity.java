@@ -11,7 +11,7 @@ public class CredentialEntity {
     private String device;
     private byte[] salt;
     private int hashIterations;
-    private long createdDate;
+    private Long createdDate;
     private UserEntity user;
     
 
@@ -63,11 +63,11 @@ public class CredentialEntity {
         this.hashIterations = hashIterations;
     }
 
-    public long getCreatedDate() {
+    public Long getCreatedDate() {
         return createdDate;
     }
 
-    public void setCreatedDate(long createdDate) {
+    public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
     

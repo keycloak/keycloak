@@ -78,6 +78,8 @@ public class PasswordPolicy {
                 list.add(new RegexPatterns(args));
             } else if (name.equals(PasswordHistory.NAME)) {
                 list.add(new PasswordHistory(args));
+            } else if (name.equals(ForceExpiredPasswordChange.NAME)) {
+                list.add(new ForceExpiredPasswordChange(args));
             }
         }
         return list;
@@ -114,6 +116,22 @@ public class PasswordPolicy {
         }
         return -1;
     }
+    
+    /**
+    *
+    * @return -1 if no force expired password change setting
+    */
+   public int getDaysToExpirePassword() {
+       if (policies == null)
+           return -1;
+       for (Policy p : policies) {
+           if (p instanceof ForceExpiredPasswordChange) {
+               return ((ForceExpiredPasswordChange) p).daysToExpirePassword;
+           }
+
+       }
+       return -1;
+   }
 
     public Error validate(UserModel user, String password) {
         for (Policy p : policies) {
@@ -415,6 +433,25 @@ public class PasswordPolicy {
                 return credentialModels.subList(0, expiredPasswordsPolicyValue);
             }
             return credentialModels;
+        }
+    }
+    
+    private static class ForceExpiredPasswordChange implements Policy {
+        private static final String NAME = "forceExpiredPasswordChange";
+        private int daysToExpirePassword;
+
+        public ForceExpiredPasswordChange(String[] args) {
+            daysToExpirePassword = intArg(NAME, 365, args);
+        }
+
+        @Override
+        public Error validate(String username, String password) {
+            return null;
+        }
+
+        @Override
+        public Error validate(UserModel user, String password) {
+            return null;
         }
     }
     
