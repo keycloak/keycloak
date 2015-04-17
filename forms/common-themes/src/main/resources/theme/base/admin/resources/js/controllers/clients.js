@@ -1066,30 +1066,6 @@ module.controller('ClientClusteringNodeCtrl', function($scope, client, Client, C
     }
 });
 
-module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client, serverInfo,
-                                                    ClientProtocolMappersByProtocol,
-                                                    $http, $location, Dialog, Notifications) {
-    $scope.realm = realm;
-    $scope.client = client;
-    if (client.protocol == null) {
-        client.protocol = 'openid-connect';
-    }
-
-    var protocolMappers = serverInfo.protocolMapperTypes[client.protocol];
-    var mapperTypes = {};
-    for (var i = 0; i < protocolMappers.length; i++) {
-        mapperTypes[protocolMappers[i].id] = protocolMappers[i];
-    }
-    $scope.mapperTypes = mapperTypes;
-
-
-    var updateMappers = function() {
-        $scope.mappers = ClientProtocolMappersByProtocol.query({realm : realm.realm, client : client.id, protocol : client.protocol});
-    };
-
-    updateMappers();
-});
-
 module.controller('AddBuiltinProtocolMapperCtrl', function($scope, realm, client, serverInfo,
                                                             ClientProtocolMappersByProtocol,
                                                             $http, $location, Dialog, Notifications) {
@@ -1150,6 +1126,30 @@ module.controller('AddBuiltinProtocolMapperCtrl', function($scope, realm, client
             });
     };
 
+});
+
+module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client, serverInfo,
+                                                           ClientProtocolMappersByProtocol,
+                                                           $http, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.client = client;
+    if (client.protocol == null) {
+        client.protocol = 'openid-connect';
+    }
+
+    var protocolMappers = serverInfo.protocolMapperTypes[client.protocol];
+    var mapperTypes = {};
+    for (var i = 0; i < protocolMappers.length; i++) {
+        mapperTypes[protocolMappers[i].id] = protocolMappers[i];
+    }
+    $scope.mapperTypes = mapperTypes;
+
+
+    var updateMappers = function() {
+        $scope.mappers = ClientProtocolMappersByProtocol.query({realm : realm.realm, client : client.id, protocol : client.protocol});
+    };
+
+    updateMappers();
 });
 
 module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo, client, mapper, ClientProtocolMapper, Notifications, Dialog, $location) {

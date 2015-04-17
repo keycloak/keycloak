@@ -803,7 +803,6 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             });
     };
     $scope.$watch('fromUrl.data', function(newVal, oldVal){
-        console.log('watch fromUrl: ' + newVal + " " + oldVal);
         if ($scope.fromUrl.data && $scope.fromUrl.data.length > 0) {
             $scope.importUrl = true;
         } else{
@@ -1406,5 +1405,101 @@ module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $
         $scope.changed = false;
     };
 });
+
+
+module.controller('IdentityProviderMapperListCtrl', function($scope, realm, identityProvider, mapperTypes, mappers) {
+    $scope.realm = realm;
+    $scope.identityProvider = identityProvider;
+    $scope.mapperTypes = mapperTypes;
+    $scope.mappers = mappers;
+});
+
+module.controller('IdentityProviderMapperCtrl', function($scope, realm,  identityProvider, mapperTypes, mapper, IdentityProviderMapper, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+    $scope.identityProvider = identityProvider;
+    $scope.create = false;
+    $scope.mapper = angular.copy(mapper);
+    $scope.changed = false;
+    $scope.mapperType = mapperTypes[mapper.identityProviderMapper];
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.$watch('mapper', function() {
+        if (!angular.equals($scope.mapper, mapper)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        IdentityProviderMapper.update({
+            realm : realm.realm,
+            client: client.id,
+            mapperId : mapper.id
+        }, $scope.mapper, function() {
+            $scope.changed = false;
+            mapper = angular.copy($scope.mapper);
+            $location.url("/realms/" + realm.realm + '/identity-provider-mappers/' + identityProvider.alias + "/mappers/" + mapper.id);
+            Notifications.success("Your changes have been saved.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.mapper = angular.copy(mapper);
+        $scope.changed = false;
+    };
+
+    $scope.cancel = function() {
+        //$location.url("/realms");
+        window.history.back();
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
+            IdentityProviderMapper.remove({ realm: realm.realm, alias: mapper.identityProviderAlias, mapperId : $scope.mapper.id }, function() {
+                Notifications.success("The mapper has been deleted.");
+                $location.url("/realms/" + realm.realm + '/identity-provider-mappers/' + identityProvider.alias + "/mappers");
+            });
+        });
+    };
+
+});
+
+module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, identityProvider, mapperTypes, IdentityProviderMapper, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+    $scope.identityProvider = identityProvider;
+    $scope.create = true;
+    $scope.mapper = { identityProviderAlias: identityProvider.alias, config: {}};
+    $scope.mapperTypes = mapperTypes;
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.save = function() {
+        $scope.mapper.identityProviderMapper = $scope.mapperType.id;
+        IdentityProviderMapper.save({
+            realm : realm.realm, alias: identityProvider.alias
+        }, $scope.mapper, function(data, headers) {
+            var l = headers().location;
+            var id = l.substring(l.lastIndexOf("/") + 1);
+            $location.url("/realms/" + realm.realm + '/identity-provider-mappers/' + identityProvider.alias + "/mappers/" + id);
+            Notifications.success("Mapper has been created.");
+        });
+    };
+
+    $scope.cancel = function() {
+        //$location.url("/realms");
+        window.history.back();
+    };
+
+
+});
+
+
 
 

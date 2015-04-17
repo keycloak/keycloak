@@ -24,6 +24,7 @@ package org.keycloak.testsuite.account;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -154,6 +155,11 @@ public class AccountTest {
                 user.updateCredential(cred);
             }
         });
+    }
+
+    //@Test
+    public void ideTesting() throws Exception {
+        Thread.sleep(100000000);
     }
 
     @Test

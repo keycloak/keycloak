@@ -1,5 +1,6 @@
 package org.keycloak.representations.idm;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -12,7 +13,7 @@ public class IdentityProviderMapperTypeRepresentation {
     protected String category;
     protected String helpText;
 
-    protected List<ConfigPropertyRepresentation> properties;
+    protected List<ConfigPropertyRepresentation> properties = new LinkedList<>();
 
     public String getId() {
         return id;

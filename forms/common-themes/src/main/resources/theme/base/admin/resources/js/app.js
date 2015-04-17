@@ -206,6 +206,58 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmIdentityProviderExportCtrl'
         })
+        .when('/realms/:realm/identity-provider-mappers/:alias/mappers', {
+            templateUrl : function(params){ return resourceUrl + '/partials/identity-provider-mappers.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                identityProvider : function(IdentityProviderLoader) {
+                    return IdentityProviderLoader();
+                },
+                mapperTypes : function(IdentityProviderMapperTypesLoader) {
+                    return IdentityProviderMapperTypesLoader();
+                },
+                mappers : function(IdentityProviderMappersLoader) {
+                    return IdentityProviderMappersLoader();
+                }
+            },
+            controller : 'IdentityProviderMapperListCtrl'
+        })
+        .when('/realms/:realm/identity-provider-mappers/:alias/mappers/:mapperId', {
+            templateUrl : function(params){ return resourceUrl + '/partials/identity-provider-mapper-detail.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                identityProvider : function(IdentityProviderLoader) {
+                    return IdentityProviderLoader();
+                },
+                mapperTypes : function(IdentityProviderMapperTypesLoader) {
+                    return IdentityProviderMapperTypesLoader();
+                },
+                mapper : function(IdentityProviderMapperLoader) {
+                    return IdentityProviderMapperLoader();
+                }
+            },
+            controller : 'IdentityProviderMapperCtrl'
+        })
+        .when('/create/identity-provider-mappers/:realm/:alias', {
+            templateUrl : function(params){ return resourceUrl + '/partials/identity-provider-mapper-detail.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                identityProvider : function(IdentityProviderLoader) {
+                    return IdentityProviderLoader();
+                },
+                mapperTypes : function(IdentityProviderMapperTypesLoader) {
+                    return IdentityProviderMapperTypesLoader();
+                }
+            },
+            controller : 'IdentityProviderMapperCreateCtrl'
+        })
+
         .when('/realms/:realm/default-roles', {
             templateUrl : resourceUrl + '/partials/realm-default-roles.html',
             resolve : {
