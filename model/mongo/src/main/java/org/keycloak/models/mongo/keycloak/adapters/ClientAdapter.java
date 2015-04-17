@@ -321,6 +321,8 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     public void removeProtocolMapper(ProtocolMapperModel mapping) {
         for (ProtocolMapperEntity entity : getMongoEntity().getProtocolMappers()) {
             if (entity.getId().equals(mapping.getId())) {
+                session.users().preRemove(this, mapping);
+
                 getMongoEntity().getProtocolMappers().remove(entity);
                 updateMongoEntity();
                 break;

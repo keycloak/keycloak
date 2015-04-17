@@ -1,4 +1,3 @@
-<#-- TODO: Only a placeholder, implementation needed -->
 <#import "template.ftl" as layout>
 <@layout.registrationLayout bodyClass="oauth"; section>
     <#if section = "title">

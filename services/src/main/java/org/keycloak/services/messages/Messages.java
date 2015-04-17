@@ -152,6 +152,8 @@ public class Messages {
 
     public static final String SUCCESS_TOTP = "successTotpMessage";
 
+    public static final String SUCCESS_GRANT_REVOKED = "successGrantRevokedMessage";
+
     public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProviderMessage";
 
     public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityActionMessage";

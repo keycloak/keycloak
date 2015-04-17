@@ -9,6 +9,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -349,6 +350,16 @@ public class MongoUserProvider implements UserProvider {
                 .get();
         getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);
 
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, ClientModel client) {
+        // TODO
+    }
+
+    @Override
+    public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
+        // TODO
     }
 
     @Override

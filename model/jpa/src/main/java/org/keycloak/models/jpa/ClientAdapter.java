@@ -418,6 +418,8 @@ public class ClientAdapter implements ClientModel {
     public void removeProtocolMapper(ProtocolMapperModel mapping) {
         ProtocolMapperEntity toDelete = getProtocolMapperEntity(mapping.getId());
         if (toDelete != null) {
+            session.users().preRemove(this, mapping);
+
             this.entity.getProtocolMappers().remove(toDelete);
             em.remove(toDelete);
         }

@@ -19,6 +19,8 @@ package org.keycloak.models.file;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.file.adapter.UserAdapter;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
@@ -382,6 +384,16 @@ public class FileUserProvider implements UserProvider {
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         // todo not sure what to do for this
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, ClientModel client) {
+        // TODO
+    }
+
+    @Override
+    public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
+        // TODO
     }
 
     @Override

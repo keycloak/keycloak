@@ -10,6 +10,7 @@ import javax.ws.rs.core.UriInfo;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -41,7 +42,7 @@ public interface LoginFormsProvider extends Provider {
 
     public LoginFormsProvider setClientSessionCode(String accessCode);
 
-    public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested);
+    public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested, List<ProtocolMapperModel> protocolMappers);
     public LoginFormsProvider setAccessRequest(String message);
 
     /**

@@ -4,6 +4,7 @@ import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GrantedConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -418,6 +419,35 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     public void setFederationLink(String link) {
         user.setFederationLink(link);
         updateUser();
+    }
+
+    @Override
+    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public List<GrantedConsentModel> getGrantedConsents() {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public void updateGrantedConsent(GrantedConsentModel consent) {
+        // TODO
+    }
+
+    @Override
+    public boolean revokeGrantedConsentForClient(String clientId) {
+        // TODO
+        return false;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GrantedConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -273,5 +274,37 @@ public class UserAdapter implements UserModel {
     public void deleteRoleMapping(RoleModel role) {
         getDelegateForUpdate();
         updated.deleteRoleMapping(role);
+    }
+
+    @Override
+    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+        getDelegateForUpdate();
+        return updated.addGrantedConsent(consent);
+    }
+
+    @Override
+    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+        // TODO: caching?
+        getDelegateForUpdate();
+        return updated.getGrantedConsentByClient(clientId);
+    }
+
+    @Override
+    public List<GrantedConsentModel> getGrantedConsents() {
+        // TODO: caching?
+        getDelegateForUpdate();
+        return updated.getGrantedConsents();
+    }
+
+    @Override
+    public void updateGrantedConsent(GrantedConsentModel consent) {
+        getDelegateForUpdate();
+        updated.updateGrantedConsent(consent);
+    }
+
+    @Override
+    public boolean revokeGrantedConsentForClient(String clientId) {
+        getDelegateForUpdate();
+        return updated.revokeGrantedConsentForClient(clientId);
     }
 }

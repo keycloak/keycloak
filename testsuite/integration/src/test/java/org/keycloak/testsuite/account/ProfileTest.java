@@ -21,6 +21,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AccountAccessPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -86,6 +87,9 @@ public class ProfileTest {
 
     @WebResource
     protected AccountUpdateProfilePage profilePage;
+
+    @WebResource
+    protected AccountAccessPage accountAccessPage;
 
     @WebResource
     protected LoginPage loginPage;
@@ -186,6 +190,9 @@ public class ProfileTest {
         JSONObject profile = new JSONObject(IOUtils.toString(response.getEntity().getContent()));
 
         assertEquals("test-user@localhost", profile.getString("username"));
+
+        accountAccessPage.open();
+        accountAccessPage.revokeGrant("third-party");
     }
 
     @Test

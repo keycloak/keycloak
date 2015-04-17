@@ -20,6 +20,7 @@ import org.keycloak.models.ClientModel;
 
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
+import org.keycloak.models.GrantedConsentModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -428,6 +429,35 @@ public class UserAdapter implements UserModel, Comparable {
     @Override
     public void setFederationLink(String link) {
         user.setFederationLink(link);
+    }
+
+    @Override
+    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public List<GrantedConsentModel> getGrantedConsents() {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public void updateGrantedConsent(GrantedConsentModel consent) {
+        // TODO
+    }
+
+    @Override
+    public boolean revokeGrantedConsentForClient(String clientId) {
+        // TODO
+        return false;
     }
 
     @Override
