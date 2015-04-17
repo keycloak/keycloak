@@ -267,3 +267,32 @@ module.factory('IdentityProviderFactoryLoader', function(Loader, IdentityProvide
         }
     });
 });
+
+module.factory('IdentityProviderMapperTypesLoader', function(Loader, IdentityProviderMapperTypes, $route, $q) {
+    return Loader.get(IdentityProviderMapperTypes, function () {
+        return {
+            realm: $route.current.params.realm,
+            alias: $route.current.params.alias
+        }
+    });
+});
+
+module.factory('IdentityProviderMappersLoader', function(Loader, IdentityProviderMappers, $route, $q) {
+    return Loader.query(IdentityProviderMappers, function () {
+        return {
+            realm: $route.current.params.realm,
+            alias: $route.current.params.alias
+        }
+    });
+});
+
+module.factory('IdentityProviderMapperLoader', function(Loader, IdentityProviderMapper, $route, $q) {
+    return Loader.get(IdentityProviderMapper, function () {
+        return {
+            realm: $route.current.params.realm,
+            alias: $route.current.params.alias,
+            mapperId: $route.current.params.mapperId
+        }
+    });
+});
+

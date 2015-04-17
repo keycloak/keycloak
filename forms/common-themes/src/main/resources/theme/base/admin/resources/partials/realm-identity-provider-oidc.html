@@ -185,6 +185,7 @@
                 </fieldset>
 
                 <div class="pull-right form-actions">
+                    <a data-ng-show="!newIdentityProvider" class="btn btn-lg btn-primary" href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Mappers</a>
                     <button kc-save data-ng-show="changed">Save</button>
                     <button type="submit" data-ng-click="cancel()" data-ng-show="changed" class="btn btn-lg btn-default">Cancel</button>
                     <button kc-delete data-ng-click="remove()" data-ng-show="!newIdentityProvider">Delete</button>

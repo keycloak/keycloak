@@ -1,11 +1,14 @@
 package org.keycloak.broker.oidc;
 
 import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -23,6 +26,8 @@ import java.security.PublicKey;
  */
 public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
 
+    public static final String VALIDATED_ACCESS_TOKEN = "VALIDATED_ACCESS_TOKEN";
+
     public KeycloakOIDCIdentityProvider(OIDCIdentityProviderConfig config) {
         super(config);
     }
@@ -30,6 +35,12 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
         return new KeycloakEndpoint(callback, realm, event);
+    }
+
+    @Override
+    protected void processAccessTokenResponse(BrokeredIdentityContext context, PublicKey idpKey, AccessTokenResponse response) {
+        JsonWebToken access = validateToken(idpKey, response.getToken());
+        context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
     }
 
     protected class KeycloakEndpoint extends OIDCEndpoint {

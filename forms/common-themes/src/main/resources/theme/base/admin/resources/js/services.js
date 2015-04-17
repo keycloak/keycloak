@@ -1003,3 +1003,26 @@ module.factory('IdentityProviderFactory', function($resource) {
         provider_id : '@provider_id'
     });
 });
+
+module.factory('IdentityProviderMapperTypes', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/identity-provider/instances/:alias/mapper-types', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
+module.factory('IdentityProviderMappers', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/identity-provider/instances/:alias/mappers', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
+module.factory('IdentityProviderMapper', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/identity-provider/instances/:alias/mappers/:mapperId', {
+        realm : '@realm',
+        alias : '@alias',
+        mapperId: '@mapperId'
+    });
+});
+

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.codehaus.jackson.annotate.JsonAnyGetter;
 import org.codehaus.jackson.annotate.JsonAnySetter;
@@ -12,6 +13,7 @@ import org.codehaus.jackson.annotate.JsonUnwrapped;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.JsonSerialization;
 
@@ -19,6 +21,32 @@ import org.keycloak.util.JsonSerialization;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JsonParserTest {
+
+    @Test
+    public void regex() throws Exception {
+        Pattern p = Pattern.compile(".*(?!\\.pdf)");
+        if (p.matcher("foo.pdf").matches()) {
+            System.out.println(".pdf no match");
+        }
+        if (p.matcher("foo.txt").matches()) {
+            System.out.println("foo.txt matches");
+
+        }
+
+    }
+
+    @Test
+    public void testOtherClaims() throws Exception {
+        String json = "{ \"floatData\" : 555.5," +
+                "\"boolData\": true, " +
+                "\"intData\": 1234," +
+                "\"array\": [ \"val\", \"val2\"] }";
+        JsonWebToken token = JsonSerialization.readValue(json, JsonWebToken.class);
+        System.out.println(token.getOtherClaims().get("floatData").getClass().getName());
+        System.out.println(token.getOtherClaims().get("boolData").getClass().getName());
+        System.out.println(token.getOtherClaims().get("intData").getClass().getName());
+        System.out.println(token.getOtherClaims().get("array").getClass().getName());
+    }
 
     @Test
     public void testUnwrap() throws Exception {

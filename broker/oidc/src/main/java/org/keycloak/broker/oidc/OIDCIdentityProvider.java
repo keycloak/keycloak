@@ -95,13 +95,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     }
 
-    protected boolean verify(JWSInput jws, PublicKey key) {
-        if (key == null) return true;
-        if (!getConfig().isValidateSignature()) return true;
-        return RSAProvider.verify(jws, key);
-
-    }
-
     protected class OIDCEndpoint extends Endpoint {
         public OIDCEndpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event) {
             super(callback, realm, event);
@@ -160,6 +153,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return authorizationUrl;
     }
 
+    protected void processAccessTokenResponse(BrokeredIdentityContext context, PublicKey idpKey, AccessTokenResponse response) {
+
+    }
+
     @Override
     protected BrokeredIdentityContext getFederatedIdentity(String response) {
         AccessTokenResponse tokenResponse = null;
@@ -175,7 +172,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
 
 
-        JsonWebToken idToken = validateIdToken(key, encodedIdToken);
+        JsonWebToken idToken = validateToken(key, encodedIdToken);
 
         try {
             String id = idToken.getSubject();
@@ -197,6 +194,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
             identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
             identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
+            processAccessTokenResponse(identity, key, tokenResponse);
 
             identity.setId(id);
             identity.setName(name);
@@ -236,23 +234,34 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return accessToken;
     }
 
-   private JsonWebToken validateIdToken(PublicKey key, String encodedToken) {
+    protected boolean verify(JWSInput jws, PublicKey key) {
+        if (key == null) return true;
+        if (!getConfig().isValidateSignature()) return true;
+        return RSAProvider.verify(jws, key);
+
+    }
+
+    protected JsonWebToken validateToken(PublicKey key, String encodedToken) {
         if (encodedToken == null) {
-            throw new IdentityBrokerException("No id_token from server.");
+            throw new IdentityBrokerException("No token from server.");
         }
 
         try {
             JWSInput jws = new JWSInput(encodedToken);
             if (!verify(jws, key)) {
-                throw new IdentityBrokerException("IDToken signature validation failed");
+                throw new IdentityBrokerException("token signature validation failed");
             }
-            JsonWebToken idToken = jws.readJsonContent(JsonWebToken.class);
+            JsonWebToken token = jws.readJsonContent(JsonWebToken.class);
 
-            String aud = idToken.getAudience();
-            String iss = idToken.getIssuer();
+            String aud = token.getAudience();
+            String iss = token.getIssuer();
 
             if (aud != null && !aud.equals(getConfig().getClientId())) {
-                throw new IdentityBrokerException("Wrong audience from id_token..");
+                throw new IdentityBrokerException("Wrong audience from token.");
+            }
+
+            if (!token.isActive()) {
+                throw new IdentityBrokerException("Token is no longer valid");
             }
 
             String trustedIssuers = getConfig().getIssuer();
@@ -262,15 +271,15 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
                 for (String trustedIssuer : issuers) {
                     if (iss != null && iss.equals(trustedIssuer.trim())) {
-                        return idToken;
+                        return token;
                     }
                 }
 
-                throw new IdentityBrokerException("Wrong issuer from id_token. Got: " + iss + " expected: " + getConfig().getIssuer());
+                throw new IdentityBrokerException("Wrong issuer from token. Got: " + iss + " expected: " + getConfig().getIssuer());
             }
-            return idToken;
+            return token;
         } catch (IOException e) {
-            throw new IdentityBrokerException("Could not decode id token.", e);
+            throw new IdentityBrokerException("Could not decode token.", e);
         }
     }
 

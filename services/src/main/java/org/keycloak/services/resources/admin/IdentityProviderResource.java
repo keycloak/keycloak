@@ -43,8 +43,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Pedro Igor
@@ -194,10 +196,10 @@ public class IdentityProviderResource {
     @GET
     @Path("mapper-types")
     @NoCache
-    public List<IdentityProviderMapperTypeRepresentation> getMapperTypes() {
+    public Map<String, IdentityProviderMapperTypeRepresentation> getMapperTypes() {
         this.auth.requireView();
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        List<IdentityProviderMapperTypeRepresentation> types = new LinkedList<>();
+        Map<String, IdentityProviderMapperTypeRepresentation> types = new HashMap<>();
         List<ProviderFactory> factories = sessionFactory.getProviderFactories(IdentityProviderMapper.class);
         for (ProviderFactory factory : factories) {
             IdentityProviderMapper mapper = (IdentityProviderMapper)factory;
@@ -218,7 +220,7 @@ public class IdentityProviderResource {
                         propRep.setHelpText(prop.getHelpText());
                         rep.getProperties().add(propRep);
                     }
-                    types.add(rep);
+                    types.put(rep.getId(), rep);
 
                 }
             }
