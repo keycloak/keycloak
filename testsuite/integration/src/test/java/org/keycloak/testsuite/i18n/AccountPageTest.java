@@ -77,7 +77,7 @@ public class AccountPageTest {
         accountUpdateProfilePage.openLanguage("German");
         Assert.assertEquals("Deutsch", accountUpdateProfilePage.getLanguageDropdownText());
 
-        accountUpdateProfilePage.openLanguage("Englisch");
+        accountUpdateProfilePage.openLanguage("English");
         Assert.assertEquals("English", accountUpdateProfilePage.getLanguageDropdownText());
         accountUpdateProfilePage.logout();
     }
