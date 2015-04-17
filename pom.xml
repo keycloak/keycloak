@@ -588,7 +588,7 @@
                     <version>2.16</version>
                     <configuration>
                         <forkMode>once</forkMode>
-                        <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=256m</argLine>
+                        <argLine>-Xms512m -Xmx1024m -XX:MaxPermSize=512m</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
