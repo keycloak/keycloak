@@ -1,1 +1,2 @@
 org.keycloak.broker.oidc.mappers.RoleMapper
+org.keycloak.broker.oidc.mappers.UserAttributeMapper

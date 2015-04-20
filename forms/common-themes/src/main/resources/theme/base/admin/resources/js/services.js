@@ -1025,6 +1025,10 @@ module.factory('IdentityProviderMapper', function($resource) {
         realm : '@realm',
         alias : '@alias',
         mapperId: '@mapperId'
+    }, {
+        update: {
+            method : 'PUT'
+        }
     });
 });
 
