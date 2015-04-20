@@ -131,6 +131,7 @@ public class RepresentationToModel {
         if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
         importIdentityProviders(rep, newRealm);
+        importIdentityProviderMappers(rep, newRealm);
 
         if (rep.getClients() != null) {
             createClients(session, rep, newRealm);
@@ -839,6 +840,13 @@ public class RepresentationToModel {
         if (rep.getIdentityProviders() != null) {
             for (IdentityProviderRepresentation representation : rep.getIdentityProviders()) {
                 newRealm.addIdentityProvider(toModel(representation));
+            }
+        }
+    }
+    private static void importIdentityProviderMappers(RealmRepresentation rep, RealmModel newRealm) {
+        if (rep.getIdentityProviderMappers() != null) {
+            for (IdentityProviderMapperRepresentation representation : rep.getIdentityProviderMappers()) {
+                newRealm.addIdentityProviderMapper(toModel(representation));
             }
         }
     }

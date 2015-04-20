@@ -25,7 +25,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
-    public static final String USER_ATTRIBUTE = "user.attribute.name";
+    public static final String USER_ATTRIBUTE = "user.attribute";
 
     static {
         ProviderConfigProperty property;

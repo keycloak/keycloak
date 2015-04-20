@@ -63,6 +63,7 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
         UserModel user = userSession.getUser();
         String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
         String attributeValue = user.getAttribute(attributeName);
+        if (attributeValue == null) return;
         AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, attributeValue);
 
     }

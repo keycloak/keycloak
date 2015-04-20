@@ -24,6 +24,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -130,7 +131,8 @@ public abstract class AbstractIdentityProviderTest {
     public void testSuccessfulAuthentication() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
 
-        assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com");
+        UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com");
+        Assert.assertEquals("617-666-7777", user.getAttribute("mobile"));
     }
 
     @Test
