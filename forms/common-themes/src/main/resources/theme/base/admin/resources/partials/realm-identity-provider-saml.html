@@ -163,6 +163,7 @@
                 </fieldset>
 
                 <div class="pull-right form-actions">
+                    <a data-ng-show="!newIdentityProvider" class="btn btn-lg btn-primary" href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Mappers</a>
                     <a class="btn btn-lg btn-primary" href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}/export" data-ng-show="!importFile && !newIdentityProvider">Export</a>
                     <button kc-save data-ng-show="changed">Save</button>
                     <button type="submit" data-ng-click="cancel()" data-ng-show="changed" class="btn btn-lg btn-default">Cancel</button>
