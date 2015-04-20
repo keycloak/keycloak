@@ -7,6 +7,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
+import com.mongodb.WriteResult;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoEntity;
@@ -127,7 +128,7 @@ public class MongoStoreImpl implements MongoStore {
             throw convertException(e);
         }
 
-        // Treat object as created in this transaction (It is already submited to transaction)
+        // Treat object as created in this transaction (It is already submitted to transaction)
         context.addCreatedEntity(entity);
     }
 
@@ -170,6 +171,16 @@ public class MongoStoreImpl implements MongoStore {
         context.addUpdateTask(entity, fullUpdateTask);
     }
 
+    @Override
+    public <T extends MongoIdentifiableEntity> int updateEntities(Class<T> type, DBObject query, DBObject update, MongoStoreInvocationContext context) {
+        context.beforeDBBulkUpdateOrRemove(type);
+
+        DBCollection collection = getDBCollectionForType(type);
+        WriteResult wr = collection.update(query, update, false, true);
+
+        logger.debugf("Updated %d collections of type %s", wr.getN(), type);
+        return wr.getN();
+    }
 
     @Override
     public <T extends MongoIdentifiableEntity> T loadEntity(Class<T> type, String id, MongoStoreInvocationContext context) {
@@ -275,19 +286,32 @@ public class MongoStoreImpl implements MongoStore {
 
 
     @Override
-    public boolean removeEntities(Class<? extends MongoIdentifiableEntity> type, DBObject query, MongoStoreInvocationContext context) {
-        List<? extends MongoIdentifiableEntity> foundObjects = loadEntities(type, query, context);
-        if (foundObjects.size() == 0) {
-            return false;
-        } else {
-            DBCollection dbCollection = getDBCollectionForType(type);
-            dbCollection.remove(query);
-            //logger.debug("Removed %d" + foundObjects.size() + " entities of type: " + type + ", query: " + query);
+    public int removeEntities(Class<? extends MongoIdentifiableEntity> type, DBObject query, boolean callback, MongoStoreInvocationContext context) {
+        if (callback) {
+            List<? extends MongoIdentifiableEntity> foundObjects = loadEntities(type, query, context);
+            if (foundObjects.size() == 0) {
+                return 0;
+            } else {
+                DBCollection dbCollection = getDBCollectionForType(type);
+                dbCollection.remove(query);
 
-            for (MongoIdentifiableEntity found : foundObjects) {
-                context.addRemovedEntity(found);;
+                logger.debugf("Removed %d entities of type: %s, query: %s", foundObjects.size(), type, query);
+
+                for (MongoIdentifiableEntity found : foundObjects) {
+                    context.addRemovedEntity(found);;
+                }
+                return foundObjects.size();
             }
-            return true;
+        } else {
+
+            context.beforeDBBulkUpdateOrRemove(type);
+
+            DBCollection dbCollection = getDBCollectionForType(type);
+            WriteResult writeResult = dbCollection.remove(query);
+            int removedCount = writeResult.getN();
+
+            logger.debugf("Removed directly %d entities of type: %s, query: %s", removedCount, type, query);
+            return removedCount;
         }
     }
 

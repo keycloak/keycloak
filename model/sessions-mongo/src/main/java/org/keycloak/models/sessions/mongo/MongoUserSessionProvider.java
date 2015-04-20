@@ -194,18 +194,14 @@ public class MongoUserSessionProvider implements UserSessionProvider {
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
         DBObject query = new BasicDBObject("user", user.getId());
-        mongoStore.removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        mongoStore.removeEntities(MongoUserSessionEntity.class, query, true, invocationContext);
     }
 
     @Override
     public void removeUserSessions(RealmModel realm) {
         DBObject query = new BasicDBObject("realmId", realm.getId());
-        mongoStore.removeEntities(MongoUserSessionEntity.class, query, invocationContext);
-        query = new QueryBuilder()
-                .and("realmId").is(realm.getId())
-                .get();
-
-        mongoStore.removeEntities(MongoClientSessionEntity.class, query, invocationContext);
+        mongoStore.removeEntities(MongoUserSessionEntity.class, query, false, invocationContext);
+        mongoStore.removeEntities(MongoClientSessionEntity.class, query, false, invocationContext);
     }
 
     @Override
@@ -216,20 +212,20 @@ public class MongoUserSessionProvider implements UserSessionProvider {
                 .and("started").lessThan(currentTime - realm.getSsoSessionMaxLifespan())
                 .get();
 
-        mongoStore.removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        mongoStore.removeEntities(MongoUserSessionEntity.class, query, true, invocationContext);
         query = new QueryBuilder()
                 .and("realmId").is(realm.getId())
                 .and("lastSessionRefresh").lessThan(currentTime - realm.getSsoSessionIdleTimeout())
                 .get();
 
-        mongoStore.removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        mongoStore.removeEntities(MongoUserSessionEntity.class, query, true, invocationContext);
         query = new QueryBuilder()
                 .and("sessionId").is(null)
                 .and("realmId").is(realm.getId())
                 .and("timestamp").lessThan(currentTime - RealmInfoUtil.getDettachedClientSessionLifespan(realm))
                 .get();
 
-        mongoStore.removeEntities(MongoClientSessionEntity.class, query, invocationContext);
+        mongoStore.removeEntities(MongoClientSessionEntity.class, query, false, invocationContext);
     }
 
     @Override
@@ -291,7 +287,7 @@ public class MongoUserSessionProvider implements UserSessionProvider {
                 .or(new BasicDBObject("username", user.getUsername()), new BasicDBObject("username", user.getEmail()))
                 .and("realmId").is(realm.getId())
                 .get();
-        mongoStore.removeEntities(MongoUsernameLoginFailureEntity.class, query, invocationContext);
+        mongoStore.removeEntities(MongoUsernameLoginFailureEntity.class, query, true, invocationContext);
     }
 
     @Override

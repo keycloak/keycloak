@@ -50,10 +50,6 @@ public class TransactionMongoStoreInvocationContext implements MongoStoreInvocat
 
     @Override
     public void addUpdateTask(MongoIdentifiableEntity entityToUpdate, MongoTask task) {
-        if (!loadedObjects.containsValue(entityToUpdate)) {
-            throw new IllegalStateException("Entity " + entityToUpdate + " not found in loaded objects");
-        }
-
         Set<MongoTask> currentObjectTasks = pendingUpdateTasks.get(entityToUpdate);
         if (currentObjectTasks == null) {
             currentObjectTasks = new LinkedHashSet<MongoTask>();
@@ -103,6 +99,24 @@ public class TransactionMongoStoreInvocationContext implements MongoStoreInvocat
         // Now remove all done tasks
         for (MongoIdentifiableEntity entity : toRemove) {
             pendingUpdateTasks.remove(entity);
+        }
+    }
+
+    @Override
+    public void beforeDBBulkUpdateOrRemove(Class<? extends MongoIdentifiableEntity> entityType) {
+        beforeDBSearch(entityType);
+        Set<String> toRemove = new HashSet<String>();
+
+        for (Map.Entry<String, MongoIdentifiableEntity> entry : loadedObjects.entrySet()) {
+            MongoIdentifiableEntity entity =  entry.getValue();
+            if (entity.getClass().equals(entityType)) {
+                toRemove.add(entry.getKey());
+            }
+        }
+
+        // Now remove all loadedObjects
+        for (String objectId : toRemove) {
+            loadedObjects.remove(objectId);
         }
     }
 

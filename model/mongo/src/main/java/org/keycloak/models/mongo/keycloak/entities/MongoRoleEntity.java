@@ -41,26 +41,15 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
     public void afterRemove(MongoStoreInvocationContext invContext) {
         MongoStore mongoStore = invContext.getMongoStore();
 
-        // Remove this role from all users, which has it
+        // Remove this scope from all clients, which has it
         DBObject query = new QueryBuilder()
-                .and("roleIds").is(getId())
-                .get();
-
-        List<MongoUserEntity> users = mongoStore.loadEntities(MongoUserEntity.class, query, invContext);
-        for (MongoUserEntity user : users) {
-            //logger.info("Removing role " + getName() + " from user " + user.getUsername());
-            mongoStore.pullItemFromList(user, "roleIds", getId(), invContext);
-        }
-
-        // Remove this scope from all users, which has it
-        query = new QueryBuilder()
                 .and("scopeIds").is(getId())
                 .get();
 
-        users = mongoStore.loadEntities(MongoUserEntity.class, query, invContext);
-        for (MongoUserEntity user : users) {
+        List<MongoClientEntity> clients = mongoStore.loadEntities(MongoClientEntity.class, query, invContext);
+        for (MongoClientEntity client : clients) {
             //logger.info("Removing scope " + getName() + " from user " + user.getUsername());
-            mongoStore.pullItemFromList(user, "scopeIds", getId(), invContext);
+            mongoStore.pullItemFromList(client, "scopeIds", getId(), invContext);
         }
 
         // Remove defaultRoles from realm

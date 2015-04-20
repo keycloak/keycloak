@@ -258,6 +258,7 @@ public class AdapterTest extends AbstractModelTest {
         commit();
         realmModel = model.getRealm("JUGGLER");
         app = realmModel.getClientByClientId("test-app");
+        user = realmManager.getSession().users().getUserByUsername("bburke", realmModel);
 
         Assert.assertTrue(realmModel.removeRoleById(realmRole.getId()));
         Assert.assertFalse(realmModel.removeRoleById(realmRole.getId()));
@@ -266,6 +267,9 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertTrue(realmModel.removeRoleById(appRole.getId()));
         Assert.assertFalse(realmModel.removeRoleById(appRole.getId()));
         assertNull(app.getRole(appRole.getName()));
+
+        user = realmManager.getSession().users().getUserByUsername("bburke", realmModel);
+
     }
 
     @Test

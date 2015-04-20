@@ -34,7 +34,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -609,9 +609,10 @@ public class LoginActionsService {
             return protocol.consentDenied(clientSession);
         }
 
-        GrantedConsentModel grantedConsent = user.getGrantedConsentByClient(client.getId());
+        UserConsentModel grantedConsent = user.getGrantedConsentByClient(client.getId());
         if (grantedConsent == null) {
-            grantedConsent = user.addGrantedConsent(new GrantedConsentModel(client.getId()));
+            grantedConsent = new UserConsentModel(realm, client.getId());
+            user.addGrantedConsent(grantedConsent);
         }
         for (String roleId : clientSession.getRoles()) {
             grantedConsent.addGrantedRole(roleId);

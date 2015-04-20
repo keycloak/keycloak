@@ -20,7 +20,7 @@ import org.keycloak.models.ClientModel;
 
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
-import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -432,25 +432,24 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+    public void addGrantedConsent(UserConsentModel consent) {
+        // TODO
+    }
+
+    @Override
+    public UserConsentModel getGrantedConsentByClient(String clientId) {
         // TODO
         return null;
     }
 
     @Override
-    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+    public List<UserConsentModel> getGrantedConsents() {
         // TODO
         return null;
     }
 
     @Override
-    public List<GrantedConsentModel> getGrantedConsents() {
-        // TODO
-        return null;
-    }
-
-    @Override
-    public void updateGrantedConsent(GrantedConsentModel consent) {
+    public void updateGrantedConsent(UserConsentModel consent) {
         // TODO
     }
 

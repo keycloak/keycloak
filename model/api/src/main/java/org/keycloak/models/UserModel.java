@@ -75,10 +75,10 @@ public interface UserModel {
     String getFederationLink();
     void setFederationLink(String link);
 
-    GrantedConsentModel addGrantedConsent(GrantedConsentModel consent);
-    GrantedConsentModel getGrantedConsentByClient(String clientId);
-    List<GrantedConsentModel> getGrantedConsents();
-    void updateGrantedConsent(GrantedConsentModel consent);
+    void addGrantedConsent(UserConsentModel consent);
+    UserConsentModel getGrantedConsentByClient(String clientId);
+    List<UserConsentModel> getGrantedConsents();
+    void updateGrantedConsent(UserConsentModel consent);
     boolean revokeGrantedConsentForClient(String clientId);
 
     public static enum RequiredAction {

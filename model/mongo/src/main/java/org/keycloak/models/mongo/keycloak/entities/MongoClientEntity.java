@@ -19,6 +19,6 @@ public class MongoClientEntity extends ClientEntity implements MongoIdentifiable
         DBObject query = new QueryBuilder()
                 .and("clientId").is(getId())
                 .get();
-        context.getMongoStore().removeEntities(MongoRoleEntity.class, query, context);
+        context.getMongoStore().removeEntities(MongoRoleEntity.class, query, true, context);
     }
 }

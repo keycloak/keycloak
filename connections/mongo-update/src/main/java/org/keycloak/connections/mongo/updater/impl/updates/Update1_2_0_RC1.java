@@ -22,6 +22,7 @@ public class Update1_2_0_RC1 extends Update {
 
         db.getCollection("realms").update(new BasicDBObject(), new BasicDBObject("$rename", new BasicDBObject("adminAppId", "clientId")), false, true);
 
+        ensureIndex("userConsents", new String[]{"clientId", "userId"}, true, false);
     }
 
     private void convertApplicationsToClients() {
