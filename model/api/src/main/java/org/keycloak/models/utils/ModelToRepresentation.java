@@ -166,6 +166,10 @@ public class ModelToRepresentation {
             rep.addIdentityProvider(toRepresentation(provider));
         }
 
+        for (IdentityProviderMapperModel mapper : realm.getIdentityProviderMappers()) {
+            rep.addIdentityProviderMapper(toRepresentation(mapper));
+        }
+
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
         rep.getSupportedLocales().addAll(realm.getSupportedLocales());
         rep.setDefaultLocale(realm.getDefaultLocale());

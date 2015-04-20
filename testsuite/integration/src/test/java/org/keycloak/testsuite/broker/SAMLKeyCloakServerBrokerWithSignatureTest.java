@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.broker;
 
 import org.junit.ClassRule;
+import org.junit.Test;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -85,4 +86,11 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
             fail("Could not parse token.");
         }
     }
+
+    @Override
+    @Test
+    public void testSuccessfulAuthentication() {
+        super.testSuccessfulAuthentication();
+    }
+
 }

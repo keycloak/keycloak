@@ -99,4 +99,10 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
     public void testTokenStorageAndRetrievalByOAuthClient() {
         super.testTokenStorageAndRetrievalByOAuthClient();
     }
+
+    @Override
+    @Test
+    public void testSuccessfulAuthentication() {
+        super.testSuccessfulAuthentication();
+    }
 }

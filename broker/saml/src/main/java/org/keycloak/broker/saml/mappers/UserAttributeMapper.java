@@ -31,7 +31,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
 
     public static final String ATTRIBUTE_NAME = "attribute.name";
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
-    public static final String USER_ATTRIBUTE = "user.attribute.name";
+    public static final String USER_ATTRIBUTE = "user.attribute";
 
     static {
         ProviderConfigProperty property;
@@ -102,7 +102,10 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
                 AttributeType attr = choice.getAttribute();
                 if (name != null && !name.equals(attr.getName())) continue;
                 if (friendly != null && !name.equals(attr.getFriendlyName())) continue;
-                return attr.getAttributeValue().get(0).toString();
+
+                List<Object> attributeValue = attr.getAttributeValue();
+                if (attributeValue == null || attributeValue.isEmpty()) return null;
+                return attributeValue.get(0).toString();
             }
         }
         return null;
