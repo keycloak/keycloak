@@ -1436,7 +1436,7 @@ module.controller('IdentityProviderMapperCtrl', function($scope, realm,  identit
     $scope.save = function() {
         IdentityProviderMapper.update({
             realm : realm.realm,
-            client: client.id,
+            alias: identityProvider.alias,
             mapperId : mapper.id
         }, $scope.mapper, function() {
             $scope.changed = false;
