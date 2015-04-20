@@ -39,8 +39,7 @@ Once you have received feedback from the mailing list if there's not one already
 Implement changes
 -----------------
 
-We don't currently enforce a code style in Keycloak, but a good reference is the code style used by WildFly. This can be
-retrieved from (https://github.com/wildfly/wildfly-core/tree/master/ide-configs)[https://github.com/wildfly/wildfly-core/tree/master/ide-configs].
+We don't currently enforce a code style in Keycloak, but a good reference is the code style used by WildFly. This can be retrieved from [Wildfly ide-configs](https://github.com/wildfly/wildfly-core/tree/master/ide-configs).To import formatting rules, see following [instructions](http://community.jboss.org/wiki/ImportFormattingRules)
 
 If your changes requires updates to the database read [Updating Database Schema](UpdatingDatabaseSchema.md).
 
