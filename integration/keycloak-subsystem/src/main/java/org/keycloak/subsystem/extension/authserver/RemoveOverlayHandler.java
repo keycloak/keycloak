@@ -17,6 +17,8 @@
 
 package org.keycloak.subsystem.extension.authserver;
 
+import static org.keycloak.subsystem.extension.authserver.AbstractAddOverlayHandler.REDEPLOY_SERVER;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -41,12 +43,11 @@ public class RemoveOverlayHandler implements OperationStepHandler {
             new SimpleAttributeDefinitionBuilder("overlay-file-path", ModelType.STRING, false)
             .setAllowExpression(true)
             .setAllowNull(false)
-            .setDefaultValue(new ModelNode().set("/WEB-INF/lib/myprovider.jar"))
             .build();
 
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(REMOVE_OVERLAY_OPERATION, AuthServerDefinition.rscDescriptionResolver)
             .addParameter(OVERLAY_FILE_PATH)
-            .addParameter(AbstractAddOverlayHandler.REDEPLOY_SERVER)
+            .addParameter(REDEPLOY_SERVER)
             .build();
 
     static final OperationStepHandler INSTANCE = new RemoveOverlayHandler();
@@ -55,9 +56,12 @@ public class RemoveOverlayHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        final ModelNode model = new ModelNode();
+        OVERLAY_FILE_PATH.validateAndSet(operation, model);
+        REDEPLOY_SERVER.validateAndSet(operation, model);
         String overlayName = AuthServerUtil.getOverlayName(operation);
         boolean isOverlayExists = AuthServerUtil.isOverlayExists(context, overlayName, PathAddress.EMPTY_ADDRESS);
-        String overlayPath = operation.get(OVERLAY_FILE_PATH.getName()).asString();
+        String overlayPath = OVERLAY_FILE_PATH.resolveModelAttribute(context, model).asString();
         if (isOverlayExists) {
             PathAddress overlayAddress = AuthServerUtil.getOverlayAddress(overlayName);
             AbstractAddOverlayHandler.removeContent(context, overlayAddress, overlayPath);
@@ -70,7 +74,5 @@ public class RemoveOverlayHandler implements OperationStepHandler {
         String deploymentName = AuthServerUtil.getDeploymentName(operation);
         if (isRedeploy) AuthServerUtil.addStepToRedeployAuthServer(context, deploymentName);
         if (!isRedeploy) context.restartRequired();
-
-        context.stepCompleted();
     }
 }

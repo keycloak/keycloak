@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class RealmWriteAttributeHandler extends AbstractWriteAttributeHandler<KeycloakAdapterConfigService> {
+class RealmWriteAttributeHandler extends AbstractWriteAttributeHandler<KeycloakAdapterConfigService> {
 
     public RealmWriteAttributeHandler(List<AttributeDefinition> definitions) {
         this(definitions.toArray(new AttributeDefinition[definitions.size()]));

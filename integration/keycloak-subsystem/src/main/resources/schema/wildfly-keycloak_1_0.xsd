@@ -67,7 +67,7 @@
             <xs:element name="auth-server-url" type="xs:string" minOccurs="1" maxOccurs="1"/>
             <xs:element name="realm" type="xs:string" minOccurs="1" maxOccurs="1"/>
             <xs:element name="disable-trust-manager" type="xs:boolean" minOccurs="0" maxOccurs="1" />
-            <xs:element name="cors-allowed-methods" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="cors-allowed-methods" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="bearer-only" type="xs:boolean" minOccurs="0" maxOccurs="1" />
             <xs:element name="cors-allowed-headers" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="resource" type="xs:string" minOccurs="0" maxOccurs="1" />

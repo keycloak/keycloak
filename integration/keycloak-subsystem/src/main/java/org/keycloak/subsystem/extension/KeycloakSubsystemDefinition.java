@@ -17,10 +17,8 @@
 
 package org.keycloak.subsystem.extension;
 
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
@@ -31,7 +29,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
  */
 public class KeycloakSubsystemDefinition extends SimpleResourceDefinition {
     protected KeycloakSubsystemDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, KeycloakExtension.SUBSYSTEM_NAME),
+        super(KeycloakExtension.SUBSYSTEM_PATH,
                 KeycloakExtension.getResourceDescriptionResolver("subsystem"),
                 KeycloakSubsystemAdd.INSTANCE,
                 ReloadRequiredRemoveStepHandler.INSTANCE

@@ -36,7 +36,6 @@ public class CredentialDefinition extends SimpleResourceDefinition {
 
     protected static final AttributeDefinition VALUE =
             new SimpleAttributeDefinitionBuilder("value", ModelType.STRING, false)
-            .setXmlName("value")
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .build();

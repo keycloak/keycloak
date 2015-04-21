@@ -31,7 +31,7 @@ import java.util.List;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class SharedAttributeDefinitons {
+class SharedAttributeDefinitons {
 
     protected static final SimpleAttributeDefinition REALM_PUBLIC_KEY =
             new SimpleAttributeDefinitionBuilder("realm-public-key", ModelType.STRING, true)
@@ -120,7 +120,6 @@ public class SharedAttributeDefinitons {
             .build();
     protected static final SimpleAttributeDefinition CORS_ALLOWED_METHODS =
             new SimpleAttributeDefinitionBuilder("cors-allowed-methods", ModelType.STRING, true)
-            .setXmlName("cors-allowed-methods")
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .build();
@@ -210,7 +209,7 @@ public class SharedAttributeDefinitons {
         if (isSet(attributes, SSL_REQUIRED) && attributes.get(SSL_REQUIRED.getName()).asString().equals("none")) {
             return true;
         }
-
+        //TODO, look into alternatives & requires properties on AttributeDefinition
         return isSet(attributes, TRUSTSTORE) && isSet(attributes, TRUSTSTORE_PASSWORD);
     }
 

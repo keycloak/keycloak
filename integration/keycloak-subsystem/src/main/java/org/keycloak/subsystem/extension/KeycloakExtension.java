@@ -16,6 +16,7 @@
  */
 package org.keycloak.subsystem.extension;
 
+import org.jboss.as.controller.ModelVersion;
 import org.keycloak.subsystem.extension.authserver.AuthServerDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
@@ -42,10 +43,8 @@ public class KeycloakExtension implements Extension {
     private static final KeycloakSubsystemParser PARSER = new KeycloakSubsystemParser();
     static final PathElement PATH_SUBSYSTEM = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     private static final String RESOURCE_NAME = KeycloakExtension.class.getPackage().getName() + ".LocalDescriptions";
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 1;
-    private static final int MANAGEMENT_API_MINOR_VERSION = 0;
-    private static final int MANAGEMENT_API_MICRO_VERSION = 0;
-    protected static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
+    private static final ModelVersion MGMT_API_VERSION = ModelVersion.create(1,0,0);
+    static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     private static final ResourceDefinition KEYCLOAK_SUBSYSTEM_RESOURCE = new KeycloakSubsystemDefinition();
     static final AuthServerDefinition AUTH_SERVER_DEFINITION = new AuthServerDefinition();
     static final RealmDefinition REALM_DEFINITION = new RealmDefinition();
@@ -74,8 +73,7 @@ public class KeycloakExtension implements Extension {
     @Override
     public void initialize(final ExtensionContext context) {
         KeycloakLogger.ROOT_LOGGER.debug("Activating Keycloak Extension");
-        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, MANAGEMENT_API_MAJOR_VERSION,
-                MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, MGMT_API_VERSION);
 
         ManagementResourceRegistration registration = subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
         registration.registerSubModel(AUTH_SERVER_DEFINITION);
