@@ -64,8 +64,6 @@ public class ListOverlaysHandler implements OperationStepHandler {
                 result.add(key);
             }
         }
-
-        context.stepCompleted();
     }
 
     private Set<String> getOverlayNames(OperationContext context, String overlayName) {

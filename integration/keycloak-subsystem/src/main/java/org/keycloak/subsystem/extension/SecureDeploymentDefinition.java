@@ -37,7 +37,7 @@ import java.util.Map;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class SecureDeploymentDefinition extends SimpleResourceDefinition {
+class SecureDeploymentDefinition extends SimpleResourceDefinition {
 
     public static final String TAG_NAME = "secure-deployment";
 

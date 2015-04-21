@@ -16,59 +16,62 @@
  */
 package org.keycloak.subsystem.extension.authserver;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.keycloak.subsystem.extension.authserver.AuthServerUtil.getHandler;
+
 import java.util.Set;
+
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import static org.keycloak.subsystem.extension.authserver.AuthServerUtil.getHandler;
 
 /**
  * Base class for operations that create overlays for an auth server.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public abstract class AbstractAddOverlayHandler implements OperationStepHandler {
+public abstract class AbstractAddOverlayHandler extends AbstractAddStepHandler{
 
     protected static final String UPLOADED_FILE_OP_NAME = "uploaded-file-name";
-
-    protected static final SimpleAttributeDefinition BYTES_TO_UPLOAD
-            = new SimpleAttributeDefinitionBuilder("bytes-to-upload", ModelType.BYTES, false)
+    protected static final SimpleAttributeDefinition UPLOADED_FILE_NAME =new SimpleAttributeDefinitionBuilder(UPLOADED_FILE_OP_NAME, ModelType.STRING, false)
             .setAllowExpression(false)
             .setAllowNull(false)
             .build();
 
+    protected static final SimpleAttributeDefinition BYTES_TO_UPLOAD= new SimpleAttributeDefinitionBuilder("bytes-to-upload", ModelType.BYTES, false)
+            .setAllowExpression(false)
+            .build();
+
     static final SimpleAttributeDefinition REDEPLOY_SERVER =
         new SimpleAttributeDefinitionBuilder("redeploy", ModelType.BOOLEAN, true)
-        .setXmlName("redeploy")
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(false))
         .build();
 
     protected static final SimpleAttributeDefinition OVERWRITE =
         new SimpleAttributeDefinitionBuilder("overwrite", ModelType.BOOLEAN, true)
-        .setXmlName("overwrite")
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(false))
         .build();
 
-    @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-        //System.out.println("*** execute operation ***");
-        //System.out.println(scrub(operation));
+    public AbstractAddOverlayHandler() {
+        super(AddProviderHandler.DEFINITION.getParameters());
+    }
 
-        String uploadFileName = operation.get(UPLOADED_FILE_OP_NAME).asString();
-        boolean isRedeploy = isRedeploy(context, operation);
-        boolean isOverwrite = getBooleanFromOperation(operation, OVERWRITE);
+    @Override
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        final String uploadFileName = UPLOADED_FILE_NAME.resolveModelAttribute(context, model).asString();
+        final boolean isRedeploy =  isRedeploy(context, operation);
+        final boolean isOverwrite = OVERWRITE.resolveModelAttribute(context, model).asBoolean();
 
         String overlayPath = getOverlayPath(uploadFileName);
         String overlayName = AuthServerUtil.getOverlayName(operation);
@@ -95,10 +98,10 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
             }
         }
 
-        addContent(context, overlayAddress, operation.get(BYTES_TO_UPLOAD.getName()).asBytes(), overlayPath);
+        addContent(context, overlayAddress, BYTES_TO_UPLOAD.resolveModelAttribute(context, model).asBytes(), overlayPath);
 
-        if (isRedeploy) AuthServerUtil.addStepToRedeployAuthServer(context, deploymentName);
-        if (!isRedeploy) context.restartRequired();
+        if (isRedeploy) { AuthServerUtil.addStepToRedeployAuthServer(context, deploymentName); }
+        if (!isRedeploy) { context.restartRequired(); }
         context.completeStep(OperationContext.ResultHandler.NOOP_RESULT_HANDLER);
     }
 
@@ -108,8 +111,8 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
         context.addStep(operation, getHandler(context, contentAddress, REMOVE), OperationContext.Stage.MODEL);
     }
 
-    static boolean isRedeploy(OperationContext context, ModelNode operation) {
-        return isAuthServerEnabled(context) && getBooleanFromOperation(operation, REDEPLOY_SERVER);
+    static boolean isRedeploy(OperationContext context, ModelNode model) throws OperationFailedException {
+        return isAuthServerEnabled(context) && REDEPLOY_SERVER.resolveModelAttribute(context, model).asBoolean();
     }
 
     private boolean isHostController(OperationContext context) {
@@ -141,7 +144,7 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
 
     // only call this if context.getProcessType() == ProcessType.HOST_CONTROLLER
     private void addOverlayToServerGroups(OperationContext context, PathAddress overlayAddress, ModelNode operation, String overlayName) {
-        String myProfile = findMyProfile(operation);
+        String myProfile = context.getCurrentAddressValue();
         for (String serverGroup : getServerGroupNames(context)) {
             PathAddress address = PathAddress.pathAddress("server-group", serverGroup);
             ModelNode serverGroupModel = context.readResourceFromRoot(address).getModel();
@@ -154,12 +157,6 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
                 }
             }
         }
-    }
-
-    // only call this if context.getProcessType() == ProcessType.HOST_CONTROLLER
-    private String findMyProfile(ModelNode operation) {
-        PathAddress address = PathAddress.pathAddress(operation.get("address"));
-        return address.getElement(0).getValue();
     }
 
     private Set<String> getServerGroupNames(OperationContext context) {
@@ -183,21 +180,9 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
         context.addStep(operation, getHandler(context, address, ADD), OperationContext.Stage.MODEL);
     }
 
-    private static boolean isAuthServerEnabled(OperationContext context) {
-        boolean defaultValue = AuthServerDefinition.ENABLED.getDefaultValue().asBoolean();
+    private static boolean isAuthServerEnabled(OperationContext context) throws OperationFailedException {
         ModelNode authServerModel = context.readResource(PathAddress.EMPTY_ADDRESS).getModel().clone();
-        String attrName = AuthServerDefinition.ENABLED.getName();
-        if (!authServerModel.get(attrName).isDefined()) return defaultValue;
-        return authServerModel.get(attrName).asBoolean();
-    }
-
-    private static boolean getBooleanFromOperation(ModelNode operation, SimpleAttributeDefinition definition) {
-        boolean defaultValue = definition.getDefaultValue().asBoolean();
-        if (!operation.get(definition.getName()).isDefined()) {
-            return defaultValue;
-        } else {
-            return operation.get(definition.getName()).asBoolean();
-        }
+        return AuthServerDefinition.ENABLED.resolveModelAttribute(context, authServerModel).asBoolean();
     }
 
     // used for debugging
@@ -215,7 +200,7 @@ public abstract class AbstractAddOverlayHandler implements OperationStepHandler 
     /**
      * Get the WAR path where the overlay will live.
      *
-     * @param file The name of the file being uploaded.
+     * @param fileName The name of the file being uploaded.
      * @return The overlay path as a String.
      */
     abstract String getOverlayPath(String fileName);

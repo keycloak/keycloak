@@ -48,7 +48,6 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
 
     protected static final SimpleAttributeDefinition ENABLED =
             new SimpleAttributeDefinitionBuilder("enabled", ModelType.BOOLEAN, true)
-            .setXmlName("enabled")
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
             .setRestartAllServices()
@@ -56,7 +55,6 @@ public class AuthServerDefinition extends SimpleResourceDefinition {
 
     protected static final SimpleAttributeDefinition WEB_CONTEXT =
             new SimpleAttributeDefinitionBuilder("web-context", ModelType.STRING, true)
-            .setXmlName("web-context")
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode("auth"))
             .setValidator(new WebContextValidator())

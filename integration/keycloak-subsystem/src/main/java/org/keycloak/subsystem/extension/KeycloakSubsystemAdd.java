@@ -19,16 +19,11 @@ package org.keycloak.subsystem.extension;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
-import java.util.List;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.keycloak.subsystem.extension.authserver.KeycloakServerDeploymentProcessor;
 
@@ -42,14 +37,7 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
     static final KeycloakSubsystemAdd INSTANCE = new KeycloakSubsystemAdd();
 
     @Override
-    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        resource.getModel().setEmptyObject();
-
-
-    }
-
-    @Override
-    protected void performBoottime(final OperationContext context, ModelNode operation, final ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) {
+    protected void performBoottime(final OperationContext context, ModelNode operation, final ModelNode model) {
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(DeploymentProcessorTarget processorTarget) {
@@ -67,23 +55,10 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
     }
 
     private DeploymentUnitProcessor chooseDependencyProcessor() {
-        if (Environment.isWildFly()) {
-            return new KeycloakDependencyProcessorWildFly();
-        } else {
-            return new KeycloakDependencyProcessorEAP6();
-        }
+        return new KeycloakDependencyProcessorWildFly();
     }
 
     private DeploymentUnitProcessor chooseConfigDeploymentProcessor() {
-        if (Environment.isWildFly()) {
-            return new KeycloakAdapterConfigDeploymentProcessor();
-        } else {
-            return new KeycloakAdapterConfigDeploymentProcessorEAP6();
-        }
-    }
-
-    @Override
-    protected boolean requiresRuntimeVerification() {
-        return false;
+        return new KeycloakAdapterConfigDeploymentProcessor();
     }
 }

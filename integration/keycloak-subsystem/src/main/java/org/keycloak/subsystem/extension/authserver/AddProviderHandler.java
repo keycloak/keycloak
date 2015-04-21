@@ -18,11 +18,7 @@
 package org.keycloak.subsystem.extension.authserver;
 
 import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 
 /**
  * Operation to add a provider jar to WEB-INF/lib.
@@ -33,21 +29,14 @@ public class AddProviderHandler extends AbstractAddOverlayHandler {
 
     public static final String OP = "add-provider";
 
-    public static final AddProviderHandler INSTANCE = new AddProviderHandler();
-
-    protected static final SimpleAttributeDefinition UPLOADED_FILE_NAME =
-            new SimpleAttributeDefinitionBuilder(UPLOADED_FILE_OP_NAME, ModelType.STRING, false)
-            .setAllowExpression(false)
-            .setAllowNull(false)
-            .setDefaultValue(new ModelNode().set("myprovider.jar"))
-            .build();
-
     public static OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OP, AuthServerDefinition.rscDescriptionResolver)
             .addParameter(BYTES_TO_UPLOAD)
             .addParameter(UPLOADED_FILE_NAME)
             .addParameter(REDEPLOY_SERVER)
             .addParameter(OVERWRITE)
             .build();
+
+    public static final AddProviderHandler INSTANCE = new AddProviderHandler();
 
     private AddProviderHandler() {}
     

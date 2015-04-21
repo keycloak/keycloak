@@ -21,14 +21,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-
-import java.util.List;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 
 /**
  * Add a new realm.
@@ -43,11 +36,6 @@ public final class RealmAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        // TODO: localize exception. get id number
-        if (!operation.get(OP).asString().equals(ADD)) {
-            throw new OperationFailedException("Unexpected operation for add realm. operation=" + operation.toString());
-        }
-
         for (AttributeDefinition attrib : RealmDefinition.ALL_ATTRIBUTES) {
             attrib.validateAndSet(operation, model);
         }
@@ -59,7 +47,7 @@ public final class RealmAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.getInstance();
         ckService.addRealm(operation, context.resolveExpressions(model));
     }

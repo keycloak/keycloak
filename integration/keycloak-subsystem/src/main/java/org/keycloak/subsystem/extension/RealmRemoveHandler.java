@@ -27,7 +27,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public final class RealmRemoveHandler extends AbstractRemoveStepHandler {
+final class RealmRemoveHandler extends AbstractRemoveStepHandler {
 
     public static RealmRemoveHandler INSTANCE = new RealmRemoveHandler();
 
