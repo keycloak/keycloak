@@ -50,7 +50,7 @@ public class AuthServerWriteAttributeHandler extends ModelOnlyWriteAttributeHand
             return;
         }
 
-        boolean isEnabled = isEnabled(model); // is server currently enabled?
+        boolean isEnabled = AuthServerDefinition.ENABLED.resolveModelAttribute(context, model.getModel()).asBoolean();
         String deploymentName = AuthServerUtil.getDeploymentName(operation);
 
         if (attributeName.equals(AuthServerDefinition.WEB_CONTEXT.getName())) {
@@ -71,14 +71,6 @@ public class AuthServerWriteAttributeHandler extends ModelOnlyWriteAttributeHand
         }
 
         super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
-    }
-
-    // Is auth server currently enabled?
-    private boolean isEnabled(Resource model) {
-        ModelNode authServer = model.getModel();
-        ModelNode isEnabled = authServer.get(AuthServerDefinition.ENABLED.getName());
-        if (!isEnabled.isDefined()) isEnabled = AuthServerDefinition.ENABLED.getDefaultValue();
-        return isEnabled.asBoolean();
     }
 
     private boolean attribNotChanging(String attributeName, ModelNode newValue, ModelNode oldValue) {

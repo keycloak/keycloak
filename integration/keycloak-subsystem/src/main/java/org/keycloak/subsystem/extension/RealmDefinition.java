@@ -33,7 +33,7 @@ import java.util.Map;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class RealmDefinition extends SimpleResourceDefinition {
+class RealmDefinition extends SimpleResourceDefinition {
 
     public static final String TAG_NAME = "realm";
 

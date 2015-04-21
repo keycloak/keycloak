@@ -21,11 +21,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-
-import java.util.List;
 
 /**
  * Add a credential to a deployment.
@@ -39,7 +35,7 @@ public class CredentialAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.getInstance();
         ckService.addCredential(operation, context.resolveExpressions(model));
     }
