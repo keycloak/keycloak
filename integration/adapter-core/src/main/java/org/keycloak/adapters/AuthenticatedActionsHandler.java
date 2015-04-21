@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.util.UriUtils;
 
 import java.io.IOException;
 import java.util.Set;
@@ -78,8 +79,9 @@ public class AuthenticatedActionsHandler {
         if (!deployment.isCors()) return false;
         KeycloakSecurityContext securityContext = facade.getSecurityContext();
         String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
+        String requestOrigin = UriUtils.getOrigin(facade.getRequest().getURI());
         log.debugv("Origin: {0} uri: {1}", origin, facade.getRequest().getURI());
-        if (securityContext != null && origin != null) {
+        if (securityContext != null && origin != null && !origin.equals(requestOrigin)) {
             AccessToken token = securityContext.getToken();
             Set<String> allowedOrigins = token.getAllowedOrigins();
             if (log.isDebugEnabled()) {
