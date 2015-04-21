@@ -107,16 +107,10 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        
-        <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-web</artifactId>
-            <version>7.1.1.Final</version>
-        </dependency>
-        
-        <dependency>
+
+      <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-as7-adapter</artifactId>
+            <artifactId>keycloak-wildfly-adapter</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

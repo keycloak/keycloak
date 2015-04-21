@@ -25,7 +25,6 @@
         <module>wildfly-adapter</module>
         <module>wildfly-extensions</module>
         <module>keycloak-subsystem</module>
-        <module>keycloak-as7-subsystem</module>
         <module>js</module>
         <module>installed</module>
         <module>admin-client</module>

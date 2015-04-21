@@ -42,9 +42,10 @@
         <xml-apis.version>1.4.01</xml-apis.version>
         <mysql.version>5.1.25</mysql.version>
         <slf4j.version>1.5.10</slf4j.version>
-        <jboss.version>7.1.1.Final</jboss.version>
-        <wildfly.version>8.2.0.Final</wildfly.version>
-        <wildfly.core.version>1.0.0.Alpha12</wildfly.core.version>
+        <!--this is EAP 6.4 alpha, publicily avalible-->
+        <jboss.version>7.5.0.Final-redhat-15</jboss.version>
+        <wildfly.version>9.0.0.Beta2</wildfly.version>
+        <wildfly.core.version>1.0.0.Beta3</wildfly.core.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <google.zxing.version>2.2</google.zxing.version>
         <google.client.version>1.14.1-beta</google.client.version>
@@ -320,7 +321,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.11</version>
+                <version>4.12</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -791,6 +792,37 @@
 
     </build>
     <profiles>
+        <!-- Configure the JBoss Early Access Maven repository -->
+        <profile>
+            <id>jboss-earlyaccess-repository</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <repositories>
+                <repository>
+                    <id>jboss-earlyaccess-repository</id>
+                    <url>http://maven.repository.redhat.com/earlyaccess/all/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>jboss-earlyaccess-plugin-repository</id>
+                    <url>http://maven.repository.redhat.com/earlyaccess/all/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
         <profile>
             <id>distribution</id>
             <modules>
