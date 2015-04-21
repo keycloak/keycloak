@@ -64,7 +64,6 @@ public class BearerTokenRequestAuthenticator {
     
     protected AuthOutcome authenticateToken(HttpFacade exchange, String tokenString) {
         try {
-            this.tokenString = tokenString;
             token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
         } catch (VerificationException e) {
             log.error("Failed to verify token", e);
