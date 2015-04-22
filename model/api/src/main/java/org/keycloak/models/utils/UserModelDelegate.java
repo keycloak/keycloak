@@ -188,27 +188,27 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public void addGrantedConsent(UserConsentModel consent) {
-        delegate.addGrantedConsent(consent);
+    public void addConsent(UserConsentModel consent) {
+        delegate.addConsent(consent);
     }
 
     @Override
-    public UserConsentModel getGrantedConsentByClient(String clientId) {
-        return delegate.getGrantedConsentByClient(clientId);
+    public UserConsentModel getConsentByClient(String clientId) {
+        return delegate.getConsentByClient(clientId);
     }
 
     @Override
-    public List<UserConsentModel> getGrantedConsents() {
-        return delegate.getGrantedConsents();
+    public List<UserConsentModel> getConsents() {
+        return delegate.getConsents();
     }
 
     @Override
-    public void updateGrantedConsent(UserConsentModel consent) {
-        delegate.updateGrantedConsent(consent);
+    public void updateConsent(UserConsentModel consent) {
+        delegate.updateConsent(consent);
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
-        return delegate.revokeGrantedConsentForClient(clientId);
+    public boolean revokeConsentForClient(String clientId) {
+        return delegate.revokeConsentForClient(clientId);
     }
 }

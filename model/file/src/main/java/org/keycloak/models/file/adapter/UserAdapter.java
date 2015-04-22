@@ -432,29 +432,29 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public void addGrantedConsent(UserConsentModel consent) {
+    public void addConsent(UserConsentModel consent) {
         // TODO
     }
 
     @Override
-    public UserConsentModel getGrantedConsentByClient(String clientId) {
-        // TODO
-        return null;
-    }
-
-    @Override
-    public List<UserConsentModel> getGrantedConsents() {
+    public UserConsentModel getConsentByClient(String clientId) {
         // TODO
         return null;
     }
 
     @Override
-    public void updateGrantedConsent(UserConsentModel consent) {
+    public List<UserConsentModel> getConsents() {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public void updateConsent(UserConsentModel consent) {
         // TODO
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
+    public boolean revokeConsentForClient(String clientId) {
         // TODO
         return false;
     }

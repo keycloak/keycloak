@@ -378,7 +378,7 @@ public class ClientAdapter implements ClientModel {
         if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
             throw new RuntimeException("protocol mapper name must be unique per protocol");
         }
-        String id = KeycloakModelUtils.generateId();
+        String id = model.getId() != null ? model.getId() : KeycloakModelUtils.generateId();
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
         entity.setId(id);
         entity.setName(model.getName());

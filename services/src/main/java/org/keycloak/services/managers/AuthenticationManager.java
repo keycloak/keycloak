@@ -420,7 +420,7 @@ public class AuthenticationManager {
         if (client.isConsentRequired()) {
             accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
 
-            UserConsentModel grantedConsent = user.getGrantedConsentByClient(client.getId());
+            UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
 
             List<RoleModel> realmRoles = new LinkedList<RoleModel>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();

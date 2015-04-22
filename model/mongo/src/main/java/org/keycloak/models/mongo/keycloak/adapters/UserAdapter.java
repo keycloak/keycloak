@@ -417,7 +417,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public void addGrantedConsent(UserConsentModel consent) {
+    public void addConsent(UserConsentModel consent) {
         String clientId = consent.getClient().getId();
         if (getConsentEntityByClientId(clientId) != null) {
             throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + user.getId() + "]");
@@ -431,13 +431,13 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public UserConsentModel getGrantedConsentByClient(String clientId) {
+    public UserConsentModel getConsentByClient(String clientId) {
         UserConsentEntity consentEntity = getConsentEntityByClientId(clientId);
         return consentEntity!=null ? toConsentModel(consentEntity) : null;
     }
 
     @Override
-    public List<UserConsentModel> getGrantedConsents() {
+    public List<UserConsentModel> getConsents() {
         List<UserConsentModel> result = new ArrayList<UserConsentModel>();
 
         DBObject query = new QueryBuilder()
@@ -488,7 +488,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public void updateGrantedConsent(UserConsentModel consent) {
+    public void updateConsent(UserConsentModel consent) {
         String clientId = consent.getClient().getId();
         MongoUserConsentEntity consentEntity = getConsentEntityByClientId(clientId);
         if (consentEntity == null) {
@@ -500,7 +500,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
+    public boolean revokeConsentForClient(String clientId) {
         MongoUserConsentEntity entity = getConsentEntityByClientId(clientId);
         if (entity == null) {
             return false;

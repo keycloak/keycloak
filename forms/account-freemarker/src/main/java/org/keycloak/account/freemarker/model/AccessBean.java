@@ -20,7 +20,7 @@ public class AccessBean {
     private List<ClientGrantBean> clientGrants = new LinkedList<ClientGrantBean>();
 
     public AccessBean(RealmModel realm, UserModel user, URI baseUri, String stateChecker) {
-        List<UserConsentModel> grantedConsents = user.getGrantedConsents();
+        List<UserConsentModel> grantedConsents = user.getConsents();
         for (UserConsentModel consent : grantedConsents) {
             ClientModel client = consent.getClient();
 

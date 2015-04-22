@@ -277,34 +277,34 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public void addGrantedConsent(UserConsentModel consent) {
+    public void addConsent(UserConsentModel consent) {
         getDelegateForUpdate();
-        updated.addGrantedConsent(consent);
+        updated.addConsent(consent);
     }
 
     @Override
-    public UserConsentModel getGrantedConsentByClient(String clientId) {
+    public UserConsentModel getConsentByClient(String clientId) {
         // TODO: caching?
         getDelegateForUpdate();
-        return updated.getGrantedConsentByClient(clientId);
+        return updated.getConsentByClient(clientId);
     }
 
     @Override
-    public List<UserConsentModel> getGrantedConsents() {
+    public List<UserConsentModel> getConsents() {
         // TODO: caching?
         getDelegateForUpdate();
-        return updated.getGrantedConsents();
+        return updated.getConsents();
     }
 
     @Override
-    public void updateGrantedConsent(UserConsentModel consent) {
+    public void updateConsent(UserConsentModel consent) {
         getDelegateForUpdate();
-        updated.updateGrantedConsent(consent);
+        updated.updateConsent(consent);
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
+    public boolean revokeConsentForClient(String clientId) {
         getDelegateForUpdate();
-        return updated.revokeGrantedConsentForClient(clientId);
+        return updated.revokeConsentForClient(clientId);
     }
 }

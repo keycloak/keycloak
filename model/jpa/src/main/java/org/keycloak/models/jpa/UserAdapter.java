@@ -480,7 +480,7 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public void addGrantedConsent(UserConsentModel consent) {
+    public void addConsent(UserConsentModel consent) {
         String clientId = consent.getClient().getId();
 
         UserConsentEntity consentEntity = getGrantedConsentEntity(clientId);
@@ -499,13 +499,13 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public UserConsentModel getGrantedConsentByClient(String clientId) {
+    public UserConsentModel getConsentByClient(String clientId) {
         UserConsentEntity entity = getGrantedConsentEntity(clientId);
         return toConsentModel(entity);
     }
 
     @Override
-    public List<UserConsentModel> getGrantedConsents() {
+    public List<UserConsentModel> getConsents() {
         TypedQuery<UserConsentEntity> query = em.createNamedQuery("userConsentsByUser", UserConsentEntity.class);
         query.setParameter("userId", getId());
         List<UserConsentEntity> results = query.getResultList();
@@ -519,7 +519,7 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public void updateGrantedConsent(UserConsentModel consent) {
+    public void updateConsent(UserConsentModel consent) {
         String clientId = consent.getClient().getId();
 
         UserConsentEntity consentEntity = getGrantedConsentEntity(clientId);
@@ -531,7 +531,7 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
+    public boolean revokeConsentForClient(String clientId) {
         UserConsentEntity consentEntity = getGrantedConsentEntity(clientId);
         if (consentEntity == null) return false;
 

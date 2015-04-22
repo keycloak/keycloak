@@ -609,10 +609,10 @@ public class LoginActionsService {
             return protocol.consentDenied(clientSession);
         }
 
-        UserConsentModel grantedConsent = user.getGrantedConsentByClient(client.getId());
+        UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
         if (grantedConsent == null) {
             grantedConsent = new UserConsentModel(realm, client.getId());
-            user.addGrantedConsent(grantedConsent);
+            user.addConsent(grantedConsent);
         }
         for (String roleId : clientSession.getRoles()) {
             grantedConsent.addGrantedRole(roleId);
@@ -623,7 +623,7 @@ public class LoginActionsService {
                 grantedConsent.addGrantedProtocolMapper(protocolMapper.getId());
             }
         }
-        user.updateGrantedConsent(grantedConsent);
+        user.updateConsent(grantedConsent);
 
         event.success();
 
