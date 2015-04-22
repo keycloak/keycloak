@@ -462,12 +462,22 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     private UserConsentModel toConsentModel(UserConsentEntity entity) {
-        UserConsentModel model = new UserConsentModel(realm, entity.getClientId());
-        for (String roleId : entity.getGrantedRoles()) {
-            model.addGrantedRole(roleId);
+        ClientModel client = realm.getClientById(entity.getClientId());
+        if (client == null) {
+            throw new ModelException("Client with id " + entity.getClientId() + " is not available");
         }
+        UserConsentModel model = new UserConsentModel(client);
+
+        for (String roleId : entity.getGrantedRoles()) {
+            RoleModel roleModel = realm.getRoleById(roleId);
+            if (roleModel != null) {
+                model.addGrantedRole(roleModel);
+            }
+        }
+
         for (String protMapperId : entity.getGrantedProtocolMappers()) {
-            model.addGrantedProtocolMapper(protMapperId);
+            ProtocolMapperModel protocolMapper = client.getProtocolMapperById(protMapperId);
+            model.addGrantedProtocolMapper(protocolMapper);
         }
         return model;
     }

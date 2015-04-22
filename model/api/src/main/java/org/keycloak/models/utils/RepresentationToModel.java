@@ -792,23 +792,25 @@ public class RepresentationToModel {
                     throw new RuntimeException("Unable to find client consent mappings for client: " + entry.getKey());
                 }
 
-                UserConsentModel consentModel = new UserConsentModel(newRealm, client.getId());
+                UserConsentModel consentModel = new UserConsentModel(client);
 
                 UserConsentRepresentation consentRep = entry.getValue();
                 if (consentRep.getGrantedRoles() != null) {
                     for (String roleId : consentRep.getGrantedRoles()) {
-                        if (newRealm.getRoleById(roleId) == null) {
+                        RoleModel role = newRealm.getRoleById(roleId);
+                        if (role == null) {
                             throw new RuntimeException("Unable to find realm role referenced in consent mappings of user " + user.getUsername() + ". Role ID: " + roleId);
                         }
-                        consentModel.addGrantedRole(roleId);
+                        consentModel.addGrantedRole(role);
                     }
                 }
                 if (consentRep.getGrantedProtocolMappers() != null) {
                     for (String mapperId : consentRep.getGrantedProtocolMappers()) {
-                        if (client.getProtocolMapperById(mapperId) == null) {
+                        ProtocolMapperModel protocolMapper = client.getProtocolMapperById(mapperId);
+                        if (protocolMapper == null) {
                             throw new RuntimeException("Unable to find protocol mapper referenced in consent mappings of user " + user.getUsername() + ". Protocol mapper ID: " + mapperId);
                         }
-                        consentModel.addGrantedProtocolMapper(mapperId);;
+                        consentModel.addGrantedProtocolMapper(protocolMapper);
                     }
                 }
                 user.addConsent(consentModel);

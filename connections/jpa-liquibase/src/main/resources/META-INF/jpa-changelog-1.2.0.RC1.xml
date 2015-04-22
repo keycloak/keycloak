@@ -62,16 +62,26 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <createTable tableName="CLIENT_SESSION_PROT_MAPPER">
+            <column name="PROTOCOL_MAPPER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_SESSION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_IDPM" tableName="IDENTITY_PROVIDER_MAPPER"/>
         <addPrimaryKey columnNames="IDP_MAPPER_ID, NAME" constraintName="CONSTRAINT_IDPMConfig" tableName="IDP_MAPPER_CONFIG"/>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_GRNTCSNT_PM" tableName="USER_CONSENT"/>
         <addPrimaryKey columnNames="USER_CONSENT_ID, ROLE_ID" constraintName="CONSTRAINT_GRNTCSNT_ROLE_PM" tableName="USER_CONSENT_ROLE"/>
         <addPrimaryKey columnNames="USER_CONSENT_ID, PROTOCOL_MAPPER_ID" constraintName="CONSTRAINT_GRNTCSNT_PRM_PM" tableName="USER_CONSENT_PROT_MAPPER"/>
+        <addPrimaryKey columnNames="CLIENT_SESSION, PROTOCOL_MAPPER_ID" constraintName="CONSTRAINT_CS_PMP_PK" tableName="CLIENT_SESSION_PROT_MAPPER"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="IDENTITY_PROVIDER_MAPPER" constraintName="FK_IDPM_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="IDP_MAPPER_ID" baseTableName="IDP_MAPPER_CONFIG" constraintName="FK_IDPMConfig" referencedColumnNames="ID" referencedTableName="IDENTITY_PROVIDER_MAPPER"/>
         <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_CONSENT" constraintName="FK_GRNTCSNT_USER" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
         <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="USER_CONSENT_ROLE" constraintName="FK_GRNTCSNT_ROLE_GR" referencedColumnNames="ID" referencedTableName="USER_CONSENT"/>
         <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="USER_CONSENT_PROT_MAPPER" constraintName="FK_GRNTCSNT_PRM_GR" referencedColumnNames="ID" referencedTableName="USER_CONSENT"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_SESSION_PROT_MAPPER" constraintName="FK_33A8SGQW18I532811V7O2DK89" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
 
         <addColumn tableName="CLIENT">
             <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">

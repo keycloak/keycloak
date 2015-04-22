@@ -282,9 +282,8 @@ public class SamlProtocol implements LoginProtocol {
         List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> loginResponseMappers = new LinkedList<>();
         ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper = null;
 
-        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
+        Set<ProtocolMapperModel> mappings = accessCode.getRequestedProtocolMappers();
         for (ProtocolMapperModel mapping : mappings) {
-            if (!mapping.getProtocol().equals(SamlProtocol.LOGIN_PROTOCOL)) continue;
 
             ProtocolMapper mapper = (ProtocolMapper)session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
             if (mapper == null) continue;

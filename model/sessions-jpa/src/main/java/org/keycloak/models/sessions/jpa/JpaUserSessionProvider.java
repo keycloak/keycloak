@@ -214,6 +214,10 @@ public class JpaUserSessionProvider implements UserSessionProvider {
                 .setParameter("realmId", realm.getId())
                 .setParameter("userId", user.getId())
                 .executeUpdate();
+        em.createNamedQuery("removeClientSessionProtMapperByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .executeUpdate();
         em.createNamedQuery("removeClientSessionByUser")
                 .setParameter("realmId", realm.getId())
                 .setParameter("userId", user.getId())
@@ -238,6 +242,10 @@ public class JpaUserSessionProvider implements UserSessionProvider {
                 .setParameter("realmId", realm.getId())
                 .setParameter("maxTime", dettachedClientSessionExpired)
                 .executeUpdate();
+        em.createNamedQuery("removeDetachedClientSessionProtMapperByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", dettachedClientSessionExpired)
+                .executeUpdate();
         em.createNamedQuery("removeDetachedClientSessionNoteByExpired")
                 .setParameter("realmId", realm.getId())
                 .setParameter("maxTime", dettachedClientSessionExpired)
@@ -247,6 +255,11 @@ public class JpaUserSessionProvider implements UserSessionProvider {
                 .setParameter("maxTime", dettachedClientSessionExpired)
                 .executeUpdate();
         em.createNamedQuery("removeClientSessionRoleByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", maxTime)
+                .setParameter("idleTime", idleTime)
+                .executeUpdate();
+        em.createNamedQuery("removeClientSessionProtMapperByExpired")
                 .setParameter("realmId", realm.getId())
                 .setParameter("maxTime", maxTime)
                 .setParameter("idleTime", idleTime)
@@ -277,6 +290,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     public void removeUserSessions(RealmModel realm) {
         em.createNamedQuery("removeClientSessionNoteByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionRoleByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("removeClientSessionProtMapperByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeUserSessionNoteByRealm").setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("removeUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
@@ -292,6 +306,7 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     public void onClientRemoved(RealmModel realm, ClientModel client) {
         em.createNamedQuery("removeClientSessionNoteByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionRoleByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getId()).executeUpdate();
+        em.createNamedQuery("removeClientSessionProtMapperByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getId()).executeUpdate();
         em.createNamedQuery("removeClientSessionByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getId()).executeUpdate();
     }
 

@@ -27,6 +27,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -122,10 +123,11 @@ public class UserInfoEndpoint {
         }
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
+        ClientSessionModel clientSession = session.sessions().getClientSession(token.getClientSession());
         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
         UserModel userModel = userSession.getUser();
         AccessToken userInfo = new AccessToken();
-        tokenManager.transformAccessToken(session, userInfo, realm, clientModel, userModel, userSession, null);
+        tokenManager.transformAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);
 
         event
             .detail(Details.USERNAME, userModel.getUsername())

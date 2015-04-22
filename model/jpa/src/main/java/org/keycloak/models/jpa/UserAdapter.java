@@ -561,19 +561,27 @@ public class UserAdapter implements UserModel {
             return null;
         }
 
-        UserConsentModel model = new UserConsentModel(realm, entity.getClientId());
+        ClientModel client = realm.getClientById(entity.getClientId());
+        if (client == null) {
+            throw new ModelException("Client with id " + entity.getClientId() + " is not available");
+        }
+        UserConsentModel model = new UserConsentModel(client);
 
         Collection<UserConsentRoleEntity> grantedRoleEntities = entity.getGrantedRoles();
         if (grantedRoleEntities != null) {
             for (UserConsentRoleEntity grantedRole : grantedRoleEntities) {
-                model.addGrantedRole(grantedRole.getRoleId());
+                RoleModel grantedRoleModel = realm.getRoleById(grantedRole.getRoleId());
+                if (grantedRoleModel != null) {
+                    model.addGrantedRole(grantedRoleModel);
+                }
             }
         }
 
         Collection<UserConsentProtocolMapperEntity> grantedProtocolMapperEntities = entity.getGrantedProtocolMappers();
         if (grantedProtocolMapperEntities != null) {
             for (UserConsentProtocolMapperEntity grantedProtMapper : grantedProtocolMapperEntities) {
-                model.addGrantedProtocolMapper(grantedProtMapper.getProtocolMapperId());
+                ProtocolMapperModel protocolMapper = client.getProtocolMapperById(grantedProtMapper.getProtocolMapperId());
+                model.addGrantedProtocolMapper(protocolMapper );
             }
         }
 
