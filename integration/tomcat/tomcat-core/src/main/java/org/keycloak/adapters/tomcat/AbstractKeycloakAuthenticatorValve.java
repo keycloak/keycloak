@@ -151,7 +151,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
                 try {
                     is = new FileInputStream(path);
                 } catch (FileNotFoundException e) {
-                	log.severe("NOT FOUND /WEB-INF/keycloak.json");
+                    log.log(Level.SEVERE, "NOT FOUND {0}", path);
                     throw new RuntimeException(e);
                 }
             }
