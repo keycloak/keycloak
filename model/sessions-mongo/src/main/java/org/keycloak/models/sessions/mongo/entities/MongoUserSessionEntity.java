@@ -121,7 +121,7 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
         DBObject query = new QueryBuilder()
                 .and("sessionId").is(getId())
                 .get();
-        context.getMongoStore().removeEntities(MongoClientSessionEntity.class, query, context);
+        context.getMongoStore().removeEntities(MongoClientSessionEntity.class, query, true, context);
     }
 
     public Map<String, String> getNotes() {

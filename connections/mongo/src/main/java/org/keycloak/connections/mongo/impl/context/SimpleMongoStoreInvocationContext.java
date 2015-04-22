@@ -46,6 +46,10 @@ public class SimpleMongoStoreInvocationContext implements MongoStoreInvocationCo
     }
 
     @Override
+    public void beforeDBBulkUpdateOrRemove(Class<? extends MongoIdentifiableEntity> entityType) {
+    }
+
+    @Override
     public void begin() {
     }
 

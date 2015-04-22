@@ -22,6 +22,8 @@ public interface MongoStoreInvocationContext {
 
     void beforeDBSearch(Class<? extends MongoIdentifiableEntity> entityType);
 
+    void beforeDBBulkUpdateOrRemove(Class<? extends MongoIdentifiableEntity> entityType);
+
     void begin();
 
     void commit();

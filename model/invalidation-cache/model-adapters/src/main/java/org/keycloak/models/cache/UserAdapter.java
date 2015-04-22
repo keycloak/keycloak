@@ -1,7 +1,7 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -277,34 +277,34 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+    public void addConsent(UserConsentModel consent) {
         getDelegateForUpdate();
-        return updated.addGrantedConsent(consent);
+        updated.addConsent(consent);
     }
 
     @Override
-    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+    public UserConsentModel getConsentByClient(String clientId) {
         // TODO: caching?
         getDelegateForUpdate();
-        return updated.getGrantedConsentByClient(clientId);
+        return updated.getConsentByClient(clientId);
     }
 
     @Override
-    public List<GrantedConsentModel> getGrantedConsents() {
+    public List<UserConsentModel> getConsents() {
         // TODO: caching?
         getDelegateForUpdate();
-        return updated.getGrantedConsents();
+        return updated.getConsents();
     }
 
     @Override
-    public void updateGrantedConsent(GrantedConsentModel consent) {
+    public void updateConsent(UserConsentModel consent) {
         getDelegateForUpdate();
-        updated.updateGrantedConsent(consent);
+        updated.updateConsent(consent);
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
+    public boolean revokeConsentForClient(String clientId) {
         getDelegateForUpdate();
-        return updated.revokeGrantedConsentForClient(clientId);
+        return updated.revokeConsentForClient(clientId);
     }
 }

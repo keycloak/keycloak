@@ -14,7 +14,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -420,14 +420,14 @@ public class AuthenticationManager {
         if (client.isConsentRequired()) {
             accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
 
-            GrantedConsentModel grantedConsent = user.getGrantedConsentByClient(client.getId());
+            UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
 
             List<RoleModel> realmRoles = new LinkedList<RoleModel>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
             for (RoleModel r : accessCode.getRequestedRoles()) {
 
                 // Consent already granted by user
-                if (grantedConsent != null && grantedConsent.getGrantedRoles().contains(r.getId())) {
+                if (grantedConsent != null && grantedConsent.isRoleGranted(r)) {
                     continue;
                 }
 
@@ -439,10 +439,10 @@ public class AuthenticationManager {
             }
 
             List<ProtocolMapperModel> protocolMappers = new LinkedList<ProtocolMapperModel>();
-            for (ProtocolMapperModel model : client.getProtocolMappers()) {
-                if (model.isConsentRequired() && model.getProtocol().equals(clientSession.getAuthMethod()) && model.getConsentText() != null) {
-                    if (grantedConsent == null || !grantedConsent.getGrantedProtocolMappers().contains(model.getId())) {
-                        protocolMappers.add(model);
+            for (ProtocolMapperModel protocolMapper : client.getProtocolMappers()) {
+                if (protocolMapper.isConsentRequired() && protocolMapper.getProtocol().equals(clientSession.getAuthMethod()) && protocolMapper.getConsentText() != null) {
+                    if (grantedConsent == null || !grantedConsent.isProtocolMapperGranted(protocolMapper)) {
+                        protocolMappers.add(protocolMapper);
                     }
                 }
             }

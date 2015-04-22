@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -20,14 +20,13 @@ public class AccessBean {
     private List<ClientGrantBean> clientGrants = new LinkedList<ClientGrantBean>();
 
     public AccessBean(RealmModel realm, UserModel user, URI baseUri, String stateChecker) {
-        List<GrantedConsentModel> grantedConsents = user.getGrantedConsents();
-        for (GrantedConsentModel consent : grantedConsents) {
-            ClientModel client = realm.getClientById(consent.getClientId());
+        List<UserConsentModel> grantedConsents = user.getConsents();
+        for (UserConsentModel consent : grantedConsents) {
+            ClientModel client = consent.getClient();
 
             List<RoleModel> realmRolesGranted = new LinkedList<RoleModel>();
             MultivaluedHashMap<String, RoleModel> resourceRolesGranted = new MultivaluedHashMap<String, RoleModel>();
-            for (String roleId : consent.getGrantedRoles()) {
-                RoleModel role = realm.getRoleById(roleId);
+            for (RoleModel role : consent.getGrantedRoles()) {
                 if (role.getContainer() instanceof RealmModel) {
                     realmRolesGranted.add(role);
                 } else {
@@ -36,8 +35,7 @@ public class AccessBean {
             }
 
             List<String> claimsGranted = new LinkedList<String>();
-            for (String protocolMapperId : consent.getGrantedProtocolMappers()) {
-                ProtocolMapperModel protocolMapper = client.getProtocolMapperById(protocolMapperId);
+            for (ProtocolMapperModel protocolMapper : consent.getGrantedProtocolMappers()) {
                 claimsGranted.add(protocolMapper.getConsentText());
             }
 

@@ -17,6 +17,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.entities.FederatedIdentityEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.CredentialValidation;
 
@@ -43,7 +44,6 @@ public class MongoUserProvider implements UserProvider {
 
     @Override
     public void close() {
-        // TODO
     }
 
     @Override
@@ -274,11 +274,7 @@ public class MongoUserProvider implements UserProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        DBObject query = new QueryBuilder()
-                .and("_id").is(user.getId())
-                .and("realmId").is(realm.getId())
-                .get();
-        return getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);
+        return getMongoStore().removeEntity(MongoUserEntity.class, user.getId(), invocationContext);
     }
 
 
@@ -339,32 +335,60 @@ public class MongoUserProvider implements UserProvider {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(realm.getId())
                 .get();
-        getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);
+        getMongoStore().removeEntities(MongoUserEntity.class, query, true, invocationContext);
     }
 
     @Override
     public void preRemove(RealmModel realm, UserFederationProviderModel link) {
+        // Remove all users linked with federationProvider and their consents
         DBObject query = new QueryBuilder()
                 .and("realmId").is(realm.getId())
                 .and("federationLink").is(link.getId())
                 .get();
-        getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);
+        getMongoStore().removeEntities(MongoUserEntity.class, query, true, invocationContext);
 
     }
 
     @Override
     public void preRemove(RealmModel realm, ClientModel client) {
-        // TODO
+        // Remove all role mappings and consents mapped to all roles of this client
+        for (RoleModel role : client.getRoles()) {
+            preRemove(realm, role);
+        }
+
+        // Finally remove all consents of this client
+        DBObject query = new QueryBuilder()
+                .and("clientId").is(client.getId())
+                .get();
+        getMongoStore().removeEntities(MongoUserConsentEntity.class, query, false, invocationContext);
     }
 
     @Override
     public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
-        // TODO
+        // Remove this protocol mapper from all consents, which has it
+        DBObject query = new QueryBuilder()
+                .and("grantedProtocolMappers").is(protocolMapper.getId())
+                .get();
+        DBObject pull = new BasicDBObject("$pull", query);
+        getMongoStore().updateEntities(MongoUserEntity.class, query, pull, invocationContext);
     }
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-        // todo not sure what to do for this
+        // Remove this role from all users, which has it
+        DBObject query = new QueryBuilder()
+                .and("roleIds").is(role.getId())
+                .get();
+
+        DBObject pull = new BasicDBObject("$pull", query);
+        getMongoStore().updateEntities(MongoUserEntity.class, query, pull, invocationContext);
+
+        // Remove this role from all consents, which has it
+        query = new QueryBuilder()
+                .and("grantedRoles").is(role.getId())
+                .get();
+        pull = new BasicDBObject("$pull", query);
+        getMongoStore().updateEntities(MongoUserConsentEntity.class, query, pull, invocationContext);
     }
 
     @Override
