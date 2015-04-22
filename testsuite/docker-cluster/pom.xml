@@ -42,28 +42,24 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-war-deployment</artifactId>
-                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-wildfly-adapter-dist</artifactId>
-                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/wildfly-adapter</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-as7-adapter-dist</artifactId>
-                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/as7-adapter</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-eap6-adapter-dist</artifactId>
-                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/eap63-adapter</outputDirectory>
                                 </artifactItem>
