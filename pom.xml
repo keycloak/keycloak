@@ -1042,22 +1042,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <minmemory>128m</minmemory>
-                    <maxmemory>1024m</maxmemory>
-                    <quiet>false</quiet>
-                    <aggregate>true</aggregate>
-                    <excludePackageNames>
-                        se.unlogic.*:com.restfully.*:org.jboss.resteasy.examples.*:org.jboss.resteasy.tests.*
-                    </excludePackageNames>
-                </configuration>
-            </plugin>
-        </plugins>
     </build>
 
     <profiles>
@@ -1067,6 +1051,31 @@
                 <module>docbook</module>
                 <module>distribution</module>
             </modules>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>aggregate</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>aggregate</goal>
+                                </goals>
+                                <configuration>
+                                    <minmemory>128m</minmemory>
+                                    <maxmemory>1024m</maxmemory>
+                                    <aggregate>true</aggregate>
+                                    <excludePackageNames>
+                                        se.unlogic.*:com.restfully.*:org.jboss.resteasy.examples.*:org.jboss.resteasy.tests.*
+                                    </excludePackageNames>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>          
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

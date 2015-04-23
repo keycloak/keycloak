@@ -57,7 +57,7 @@
             <outputDirectory>docs/javadocs</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../../services/target/site/apidocs</directory>
+            <directory>../../services/target/apidocs</directory>
             <outputDirectory>docs/rest-api</outputDirectory>
         </fileSet>
         <fileSet>

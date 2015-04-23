@@ -183,35 +183,26 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>generate-service-docs</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <subpackages>org.keycloak.services.resources.admin:org.keycloak.protocol.oidc</subpackages>
-                            <doclet>com.lunatech.doclets.jax.jaxrs.JAXRSDoclet</doclet>
-                            <docletArtifacts>
-                                <docletArtifact>
-                                    <groupId>com.lunatech.jax-doclets</groupId>
-                                    <artifactId>doclets</artifactId>
-                                    <version>0.10.2</version>
-                                </docletArtifact>
-                            </docletArtifacts>
-                            <detectOfflineLinks>false</detectOfflineLinks>
-                            <offlineLinks>
-                                <offlineLink>
-                                    <url>../javadocs</url>
-                                    <location>${project.basedir}/../target/site/apidocs</location>
-                                </offlineLink>
-                            </offlineLinks>
-                            <additionalparam>-disablejavascriptexample</additionalparam>
-                            <additionalparam>-pathexcludefilter '/admin/.*index.*' -pathexcludefilter '/admin' -pathexcludefilter '/admin/\\{realm\\}/console.*'</additionalparam>
-                        </configuration>
-                        <goals>
-                            <goal>javadoc</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <configuration>
+                    <subpackages>org.keycloak.services.resources.admin:org.keycloak.protocol.oidc</subpackages>
+                    <doclet>com.lunatech.doclets.jax.jaxrs.JAXRSDoclet</doclet>
+                    <docletArtifacts>
+                        <docletArtifact>
+                            <groupId>com.lunatech.jax-doclets</groupId>
+                            <artifactId>doclets</artifactId>
+                            <version>0.10.2</version>
+                        </docletArtifact>
+                    </docletArtifacts>
+                    <detectOfflineLinks>false</detectOfflineLinks>
+                    <offlineLinks>
+                        <offlineLink>
+                            <url>../javadocs</url>
+                            <location>${project.basedir}/../target/site/apidocs</location>
+                        </offlineLink>
+                    </offlineLinks>
+                    <additionalparam>-disablejavascriptexample</additionalparam>
+                    <additionalparam>-pathexcludefilter '/admin/.*index.*' -pathexcludefilter '/admin' -pathexcludefilter '/admin/\\{realm\\}/console.*'</additionalparam>
+                </configuration>
             </plugin>
         </plugins>
     </build>
