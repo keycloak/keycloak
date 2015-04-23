@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
@@ -13,7 +12,7 @@ import org.keycloak.testsuite.pages.AccountAccessPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testutils.KeycloakServer;
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.NoSuchElementException;
 

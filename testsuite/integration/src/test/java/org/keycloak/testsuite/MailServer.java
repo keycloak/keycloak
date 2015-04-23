@@ -1,4 +1,4 @@
-package org.keycloak.testutils;
+package org.keycloak.testsuite;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;

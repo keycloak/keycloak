@@ -1,4 +1,4 @@
-package org.keycloak.testutils.ldap;
+package org.keycloak.testsuite.ldap;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +34,7 @@ public class KerberosKeytabCreator {
             System.out.println("-------------------------");
             System.out.println("Arguments missing or invalid. Required arguments are: <principalName> <passPhrase> <outputKeytabFile>");
             System.out.println("Example of usage:");
-            System.out.println("mvn exec:java -Dexec.mainClass=\"org.keycloak.testutils.ldap.KerberosKeytabCreator\" -Dexec.args=\"HTTP/localhost@KEYCLOAK.ORG httppwd src/main/resources/kerberos/http.keytab\"");
+            System.out.println("mvn exec:java -Dexec.mainClass=\"org.keycloak.testsuite.ldap.KerberosKeytabCreator\" -Dexec.args=\"HTTP/localhost@KEYCLOAK.ORG httppwd src/main/resources/kerberos/http.keytab\"");
         } else {
             final File keytabFile = new File(args[2]);
             createKeytab(args[0], args[1], keytabFile);

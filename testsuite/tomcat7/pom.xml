@@ -264,7 +264,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.KeycloakServer</mainClass>
+                            <mainClass>org.keycloak.testsuite.KeycloakServer</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -278,7 +278,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.MailServer</mainClass>
+                            <mainClass>org.keycloak.testsuite.MailServer</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -292,7 +292,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.TotpGenerator</mainClass>
+                            <mainClass>org.keycloak.testsuite.TotpGenerator</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>

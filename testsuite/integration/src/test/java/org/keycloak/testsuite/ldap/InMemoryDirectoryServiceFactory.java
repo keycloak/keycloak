@@ -1,4 +1,4 @@
-package org.keycloak.testutils.ldap;
+package org.keycloak.testsuite.ldap;
 
 import java.io.File;
 import java.io.IOException;
