@@ -267,6 +267,7 @@
         </module-def>
 
         <!-- file -->
+
         <module-def name="org.keycloak.keycloak-model-file">
             <maven-resource group="org.keycloak" artifact="keycloak-model-file"/>
         </module-def>
@@ -306,22 +307,9 @@
             <maven-resource group="org.liquibase" artifact="liquibase-core"/>
         </module-def>
 
-
-
-
-
-
         <!-- subsystems -->
 
         <module-def name="org.keycloak.keycloak-server"></module-def>
-
-        <module-def name="org.jboss.aesh">
-            <maven-resource group="org.jboss.aesh" artifact="aesh"/>
-        </module-def>
-
-        <module-def name="org.jboss.as.cli">
-            <maven-resource group="org.wildfly.core" artifact="wildfly-cli"/>
-        </module-def>
 
         <module-def name="org.keycloak.keycloak-adapter-core">
             <maven-resource group="org.keycloak" artifact="keycloak-adapter-core"/>
@@ -349,39 +337,6 @@
         </module-def>
         <module-def name="org.keycloak.keycloak-as7-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-as7-subsystem"/>
-        </module-def>
-        <module-def name="org.picketlink">
-        </module-def>
-        <module-def name="org.picketlink.common">
-            <maven-resource group="org.picketlink" artifact="picketlink-common"/>
-        </module-def>
-        <module-def name="org.picketlink.config">
-            <maven-resource group="org.picketlink" artifact="picketlink-config"/>
-        </module-def>
-        <module-def name="org.picketlink.core">
-            <maven-resource group="org.picketlink" artifact="picketlink-impl"/>
-        </module-def>
-        <module-def name="org.picketlink.core.api">
-            <maven-resource group="org.picketlink" artifact="picketlink-api"/>
-        </module-def>
-        <module-def name="org.picketlink.federation">
-            <maven-resource group="org.picketlink" artifact="picketlink-federation"/>
-        </module-def>
-        <module-def name="org.picketlink.federation.bindings">
-            <maven-resource group="org.picketlink" artifact="picketlink-wildfly-common"/>
-            <maven-resource group="org.picketlink" artifact="picketlink-tomcat-common"/>
-            <maven-resource group="org.picketlink" artifact="picketlink-tomcat5-single"/>
-            <maven-resource group="org.picketlink" artifact="picketlink-jbas-common"/>
-            <maven-resource group="org.picketlink" artifact="picketlink-jbas7-single"/>
-        </module-def>
-        <module-def name="org.picketlink.idm">
-            <maven-resource group="org.picketlink" artifact="picketlink-idm-impl"/>
-        </module-def>
-        <module-def name="org.picketlink.idm.api">
-            <maven-resource group="org.picketlink" artifact="picketlink-idm-api"/>
-        </module-def>
-        <module-def name="org.picketlink.idm.schema">
-            <maven-resource group="org.picketlink" artifact="picketlink-idm-simple-schema"/>
         </module-def>
     </target>
 

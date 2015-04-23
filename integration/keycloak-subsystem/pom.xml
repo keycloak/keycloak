@@ -125,7 +125,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-as7-adapter</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>
