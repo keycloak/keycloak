@@ -55,6 +55,7 @@
             <module name="org.bouncycastle"/>
 
             <module name="org.jboss.resteasy.resteasy-jackson-provider" services="import"/>
+            <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         </dependencies>
         <exclusions>
             <module name="org.jboss.resteasy.resteasy-jackson2-provider"/>

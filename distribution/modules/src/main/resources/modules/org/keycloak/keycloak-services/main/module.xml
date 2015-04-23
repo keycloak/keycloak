@@ -65,7 +65,6 @@
 
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
-        <module name="org.jboss.resteasy.resteasy-crypto"/>
         <module name="org.jboss.resteasy.resteasy-multipart-provider"/>
         <module name="javax.servlet.api"/>
         <module name="org.codehaus.jackson.jackson-core-asl"/>
