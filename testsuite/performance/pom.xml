@@ -18,32 +18,26 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core-jaxrs</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-services</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-api</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-jpa</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-mongo</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
@@ -145,23 +139,19 @@
                             <dependency>
                                 <groupId>org.keycloak</groupId>
                                 <artifactId>keycloak-testsuite-performance</artifactId>
-                                <version>${project.version}</version>
                                 <type>test-jar</type>
                             </dependency>
                             <dependency>
                                 <groupId>org.keycloak</groupId>
                                 <artifactId>keycloak-services</artifactId>
-                                <version>${project.version}</version>
                             </dependency>
                             <dependency>
                                 <groupId>org.jboss.resteasy</groupId>
                                 <artifactId>jaxrs-api</artifactId>
-                                <version>${resteasy.version}</version>
                             </dependency>
                             <dependency>
                                 <groupId>org.jboss.resteasy</groupId>
                                 <artifactId>resteasy-jaxrs</artifactId>
-                                <version>${resteasy.version}</version>
                                 <exclusions>
                                     <exclusion>
                                         <groupId>log4j</groupId>
@@ -193,33 +183,14 @@
                             </dependency>
                             <dependency>
                                 <groupId>org.bouncycastle</groupId>
-                                <artifactId>>bcprov-jdk15on</artifactId>
-                                <version>${bouncycastle.crypto.version}</version>
+                                <artifactId>bcprov-jdk15on</artifactId>
                             </dependency>
-                            <!--
-                            <dependency>
-                                <groupId>org.picketlink</groupId>
-                                <artifactId>picketlink-idm-idm</artifactId>
-                                <version>${picketlink.version}</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>org.picketlink</groupId>
-                                <artifactId>picketlink-idm-simple-schema</artifactId>
-                                <version>${picketlink.version}</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>org.picketlink</groupId>
-                                <artifactId>picketlink-config</artifactId>
-                                <version>${picketlink.version}</version>
-                            </dependency>
-                            -->
                             <dependency>
                                 <groupId>org.mongodb</groupId>
                                 <artifactId>mongo-java-driver</artifactId>
                                 <version>${mongo.driver.version}</version>
                             </dependency>
 
-                            <!-- Needed for picketlink -->
                             <dependency>
                                 <groupId>org.hibernate.javax.persistence</groupId>
                                 <artifactId>hibernate-jpa-2.0-api</artifactId>
@@ -246,7 +217,6 @@
                                 <version>${slf4j.version}</version>
                             </dependency>
 
-                            <!-- Needed just for picketlink perf test -->
                             <dependency>
                                 <groupId>mysql</groupId>
                                 <artifactId>mysql-connector-java</artifactId>

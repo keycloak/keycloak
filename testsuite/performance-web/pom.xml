@@ -17,7 +17,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-testsuite-integration</artifactId>
-            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.jboss.spec.javax.servlet</groupId>
@@ -28,7 +27,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-testsuite-tools</artifactId>
-            <version>${project.version}</version>
             <classifier>classes</classifier>
         </dependency>
 
@@ -43,12 +41,10 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
-            <version>${resteasy.version.latest}</version>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -67,27 +63,18 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
-            <version>${resteasy.version.latest}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-crypto</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-multipart-provider</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson-provider</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-undertow</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.jmeter</groupId>

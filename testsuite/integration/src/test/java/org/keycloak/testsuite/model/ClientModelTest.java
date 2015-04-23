@@ -9,6 +9,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.managers.ClientManager;
 
 import java.util.Iterator;
@@ -63,6 +64,9 @@ public class ClientModelTest extends AbstractModelTest {
     public void json() {
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
         representation.setId(null);
+        for (ProtocolMapperRepresentation protocolMapper : representation.getProtocolMappers()) {
+            protocolMapper.setId(null);
+        }
 
         RealmModel realm = realmManager.createRealm("copy");
         ClientModel copy = RepresentationToModel.createClient(session, realm, representation, true);

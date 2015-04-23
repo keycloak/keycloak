@@ -1,0 +1,47 @@
+<assembly>
+    <id>server-dist</id>
+
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
+            <outputDirectory></outputDirectory>
+            <excludes>
+                <exclude>**/*.sh</exclude>
+                <exclude>welcome-content/**</exclude>
+                <exclude>docs/**</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>**/*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/welcome-content</directory>
+            <outputDirectory>welcome-content</outputDirectory>
+            <includes>
+                <include>*.*</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+
+    <dependencySets>
+        <dependencySet>
+            <includes>
+                <include>org.keycloak:keycloak-server-overlay:zip</include>
+            </includes>
+            <outputDirectory></outputDirectory>
+            <unpack>true</unpack>
+        </dependencySet>
+    </dependencySets>
+</assembly>

@@ -9,7 +9,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.jboss.resteasy.security.PemUtils;
 import org.json.JSONObject;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
@@ -20,6 +19,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.PemUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.UriBuilder;

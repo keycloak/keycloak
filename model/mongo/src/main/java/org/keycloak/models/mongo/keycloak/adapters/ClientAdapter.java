@@ -303,7 +303,8 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
             throw new RuntimeException("protocol mapper name must be unique per protocol");
         }
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        String id = model.getId() != null ? model.getId() : KeycloakModelUtils.generateId();
+        entity.setId(id);
         entity.setProtocol(model.getProtocol());
         entity.setName(model.getName());
         entity.setProtocolMapper(model.getProtocolMapper());

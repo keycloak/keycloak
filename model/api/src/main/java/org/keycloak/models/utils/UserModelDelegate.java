@@ -1,7 +1,7 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -188,27 +188,27 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
-        return delegate.addGrantedConsent(consent);
+    public void addConsent(UserConsentModel consent) {
+        delegate.addConsent(consent);
     }
 
     @Override
-    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
-        return delegate.getGrantedConsentByClient(clientId);
+    public UserConsentModel getConsentByClient(String clientId) {
+        return delegate.getConsentByClient(clientId);
     }
 
     @Override
-    public List<GrantedConsentModel> getGrantedConsents() {
-        return delegate.getGrantedConsents();
+    public List<UserConsentModel> getConsents() {
+        return delegate.getConsents();
     }
 
     @Override
-    public void updateGrantedConsent(GrantedConsentModel consent) {
-        delegate.updateGrantedConsent(consent);
+    public void updateConsent(UserConsentModel consent) {
+        delegate.updateConsent(consent);
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
-        return delegate.revokeGrantedConsentForClient(clientId);
+    public boolean revokeConsentForClient(String clientId) {
+        return delegate.revokeConsentForClient(clientId);
     }
 }

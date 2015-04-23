@@ -76,7 +76,6 @@ import javax.ws.rs.core.Variant;
 
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -512,7 +511,7 @@ public class AccountService {
 
         // Revoke grant in UserModel
         UserModel user = auth.getUser();
-        user.revokeGrantedConsentForClient(client.getId());
+        user.revokeConsentForClient(client.getId());
 
         // Logout clientSessions for this user and client
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);

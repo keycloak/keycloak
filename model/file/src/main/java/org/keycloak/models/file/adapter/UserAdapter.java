@@ -18,8 +18,11 @@ package org.keycloak.models.file.adapter;
 
 import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.GrantedConsentModel;
+
+import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
+
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -430,30 +433,29 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+    public void addConsent(UserConsentModel consent) {
+        // TODO
+    }
+
+    @Override
+    public UserConsentModel getConsentByClient(String clientId) {
         // TODO
         return null;
     }
 
     @Override
-    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+    public List<UserConsentModel> getConsents() {
         // TODO
         return null;
     }
 
     @Override
-    public List<GrantedConsentModel> getGrantedConsents() {
-        // TODO
-        return null;
-    }
-
-    @Override
-    public void updateGrantedConsent(GrantedConsentModel consent) {
+    public void updateConsent(UserConsentModel consent) {
         // TODO
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
+    public boolean revokeConsentForClient(String clientId) {
         // TODO
         return false;
     }

@@ -53,6 +53,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
             String[] parts=userpw.split(":");
             
             atr = getToken(parts[0], parts[1]);
+            tokenString = atr.getToken();
         } catch (Exception e) {
             log.debug("Failed to obtain token", e);
             challenge = challengeResponse(exchange, "no_token", e.getMessage());

@@ -15,6 +15,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProviderModel;
@@ -32,6 +33,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
+import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.UriUtils;
@@ -781,6 +783,35 @@ public class RepresentationToModel {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
                 createClientRoleMappings(client, user, entry.getValue());
+            }
+        }
+        if (userRep.getClientConsents() != null) {
+            for (Map.Entry<String, UserConsentRepresentation> entry : userRep.getClientConsents().entrySet()) {
+                ClientModel client = clientMap.get(entry.getKey());
+                if (client == null) {
+                    throw new RuntimeException("Unable to find client consent mappings for client: " + entry.getKey());
+                }
+
+                UserConsentModel consentModel = new UserConsentModel(newRealm, client.getId());
+
+                UserConsentRepresentation consentRep = entry.getValue();
+                if (consentRep.getGrantedRoles() != null) {
+                    for (String roleId : consentRep.getGrantedRoles()) {
+                        if (newRealm.getRoleById(roleId) == null) {
+                            throw new RuntimeException("Unable to find realm role referenced in consent mappings of user " + user.getUsername() + ". Role ID: " + roleId);
+                        }
+                        consentModel.addGrantedRole(roleId);
+                    }
+                }
+                if (consentRep.getGrantedProtocolMappers() != null) {
+                    for (String mapperId : consentRep.getGrantedProtocolMappers()) {
+                        if (client.getProtocolMapperById(mapperId) == null) {
+                            throw new RuntimeException("Unable to find protocol mapper referenced in consent mappings of user " + user.getUsername() + ". Protocol mapper ID: " + mapperId);
+                        }
+                        consentModel.addGrantedProtocolMapper(mapperId);;
+                    }
+                }
+                user.addConsent(consentModel);
             }
         }
         return user;

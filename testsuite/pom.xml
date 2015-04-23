@@ -41,8 +41,6 @@
         <module>jetty/jetty92</module>
         <module>jetty/jetty91</module>
         <module>performance</module>
-        <module>tools</module>
-        <module>performance-web</module>
         <!--<module>docker-cluster</module>-->
     </modules>
 

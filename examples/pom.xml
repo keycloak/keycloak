@@ -4,13 +4,13 @@
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.2.0.RC1-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
+
     <name>Examples</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>examples-pom</artifactId>
+    <artifactId>keycloak-examples-parent</artifactId>
     <packaging>pom</packaging>
 
     <build>
@@ -20,6 +20,13 @@
                 <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
             </plugin>
         </plugins>

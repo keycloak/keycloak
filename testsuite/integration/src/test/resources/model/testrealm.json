@@ -74,6 +74,15 @@
             "applicationRoles": {
                 "Application": [ "app-admin" ],
                 "OtherApp": [  "otherapp-admin" ]
+            },
+            "clientConsents": {
+                "Application": {
+                    "grantedRoles": [ "456", "789" ]
+                },
+                "OtherApp": {
+                    "grantedProtocolMappers": [ "123" ],
+                    "grantedRoles": [ "456" ]
+                }
             }
         },
         {
@@ -113,6 +122,7 @@
             "enabled": true,
             "protocolMappers" : [
                 {
+                    "id": "123",
                     "name" : "gss delegation credential",
                     "protocol" : "openid-connect",
                     "protocolMapper" : "oidc-usersessionmodel-note-mapper",
@@ -138,12 +148,14 @@
     "roles" : {
         "realm" : [
             {
+                "id":   "456",
                 "name": "admin"
             }
         ],
         "application" : {
             "Application" : [
                 {
+                    "id":   "789",
                     "name": "app-admin"
                 },
                 {

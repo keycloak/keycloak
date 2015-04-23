@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>keycloak-examples-providers-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.2.0.RC1-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
     </parent>
+
     <name>Event Store In-Mem Example</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
@@ -17,32 +17,18 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-api</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-events-api</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
     <build>
         <finalName>event-store-mem-example</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
     </build>
-    <modules>
-    </modules>
 </project>

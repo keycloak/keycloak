@@ -13,16 +13,6 @@
     <name>Keycloak Integration TestSuite</name>
     <description />
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-as7-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -35,18 +25,11 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-dependencies-server-all</artifactId>
-            <version>${project.version}</version>
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>event-listener-sysout-example</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -59,7 +42,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
@@ -68,12 +50,14 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
-            <version>${resteasy.version.latest}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>async-http-servlet-3.0</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
-            <version>${resteasy.version.latest}</version>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -92,27 +76,18 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
-            <version>${resteasy.version.latest}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-crypto</artifactId>
-            <version>${resteasy.version.latest}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-multipart-provider</artifactId>
-            <version>${resteasy.version.latest}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jackson-provider</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-undertow</artifactId>
-            <version>${resteasy.version.latest}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jackson-provider</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
@@ -121,32 +96,26 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${keycloak.apache.httpcomponents.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-ldap-federation</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-kerberos-federation</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-undertow-adapter</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-jaxrs-oauth-client</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>federation-properties-example</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -265,7 +234,6 @@
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-undertow</artifactId>
-            <version>${wildfly.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -331,7 +299,8 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.KeycloakServer</mainClass>
+                            <mainClass>org.keycloak.testsuite.KeycloakServer</mainClass>
+                            <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -345,7 +314,8 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.MailServer</mainClass>
+                            <mainClass>org.keycloak.testsuite.MailServer</mainClass>
+                            <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -359,7 +329,8 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.TotpGenerator</mainClass>
+                            <mainClass>org.keycloak.testsuite.TotpGenerator</mainClass>
+                            <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -373,7 +344,8 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.ldap.LDAPEmbeddedServer</mainClass>
+                            <mainClass>org.keycloak.testsuite.ldap.LDAPEmbeddedServer</mainClass>
+                            <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -387,7 +359,8 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.ldap.KerberosEmbeddedServer</mainClass>
+                            <mainClass>org.keycloak.testsuite.ldap.KerberosEmbeddedServer</mainClass>
+                            <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -554,7 +527,6 @@
                 <dependency>
                     <groupId>mysql</groupId>
                     <artifactId>mysql-connector-java</artifactId>
-                    <version>${mysql.version}</version>
                 </dependency>
             </dependencies>
         </profile>

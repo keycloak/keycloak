@@ -41,7 +41,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.keycloak.testutils.KeycloakServer;
+import org.keycloak.testsuite.KeycloakServer;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;

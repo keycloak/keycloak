@@ -23,7 +23,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
-import org.keycloak.testutils.DummyUserFederationProviderFactory;
+import org.keycloak.testsuite.DummyUserFederationProviderFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.Time;
 
