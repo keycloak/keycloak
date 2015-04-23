@@ -20,7 +20,6 @@
         <module name="org.jboss.logging"/>
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
-        <module name="org.jboss.resteasy.resteasy-crypto"/>
         <module name="org.jboss.resteasy.resteasy-multipart-provider"/>
 
         <module name="javax.api"/>

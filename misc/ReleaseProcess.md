@@ -14,22 +14,12 @@ $ git@github.com:keycloak/keycloak.git
 * Build everything to make sure its kosher.
 ```
 $ cd keycloak
-$ mvn install
-```
-
-* Build javadoc and jaxrs-doc
-```
-$ mvn javadoc:javadoc
-# This is for jaxrs-docs
-$ cd services
-$ mvn package
-# back to root keycloak dir
-$ cd ..
+$ mvn -Pjboss-release install
 ```
 
 * Upload to Nexus (from project root)
 ```
-$ mvn -Pdistribution deploy
+$ mvn -Pjboss-release deploy
 ```
 
 * Login to Nexus and release the maven repository uploads in the staging area.

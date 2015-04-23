@@ -8,21 +8,21 @@
         <itemizedlist>
 
             <listitem>
-                keycloak-appliance-dist-all-&project.version;.zip
+                keycloak-&project.version;.zip
             </listitem>
 
             <listitem>
-                keycloak-war-dist-all-&project.version;.zip
+                keycloak-overlay-&project.version;.zip
             </listitem>
 
         </itemizedlist>
 
     </para>
-    <section id="Appliance_install">
-        <title>Appliance Install</title>
+    <section id="server_install">
+        <title>Server Install</title>
         <para>
             The
-            <literal>keycloak-appliance-dist-all-&project.version;.zip</literal>
+            <literal>keycloak-&project.version;.zip</literal>
             is quite large, but contains a complete server (backed by Wildfly)
             that runs out of the box. The only thing you'll have to enable and configure is SSL. Unzipping it, the
             directory layout looks
@@ -31,15 +31,13 @@
 
         <para>
 <programlisting>
-keycloak-appliance-dist-all-&project.version;/
-    keycloak/
-        bin/
-            standalone.sh
-            standalone.bat
-            standalone/configuration/
-                keycloak-server.json
-                themes/
-    examples/
+keycloak-&project.version;/
+    bin/
+        standalone.sh
+        standalone.bat
+        standalone/configuration/
+            keycloak-server.json
+            themes/
     docs/
 </programlisting>
         </para>
@@ -58,60 +56,38 @@ keycloak-appliance-dist-all-&project.version;/
         </para>
     </section>
     <section id="WAR_distribution_installation">
-        <title>WAR Distribution Installation</title>
+        <title>Server Overlay Installation</title>
         <para>
             The
-            <literal>keycloak-war-dist-all-&project.version;.zip</literal>
+            <literal>keycloak-overlay-&project.version;.zip</literal>
             contains
-            just the bits you need to install keycloak on your favorite web container. We currently only support
-            installing it on top of an existing Wildfly 8 or JBoss EAP 6.x distribution. We may in the
-            future provide directions on how to install it on another web container like Tomcat or Jetty. If anybody
-            in the community is interested in pulling this together, please contact us. Its mostly Maven pom work.
+            just the bits you need to install keycloak on an existing WildFly 8.2.0.Final installation.
         </para>
         <para>
             The directory structure of this distro looks like this:
         </para>
         <para>
 <programlisting>
-keycloak-war-dist-all-&project.version;/
-    deployments/
-        auth-server.war/
-        keycloak-ds.xml
-    configuration/
-        keycloak-server.json
-        themes/
-    examples/
+   standalone/
+        configuration/
+            keycloak-server.json
+            themes/
+            providers/
+    modules
     docs/
 </programlisting>
         </para>
         <para>
-            After unzipping this file, copy everything in <literal>deployments</literal> directory into the
-            <literal>standalone/deployments</literal> of your JBoss or Wildfly distro. Also, copy everything in
-            <literal>configuration</literal> directory into the <literal>standalone/configuration</literal> directory.
+            Unzip this archive into the root of your WildFly installation.
         </para>
         <para>
-<programlisting>
-    $ cd keycloak-war-dist-all-&project.version;
-    $ cp -r deployments $JBOSS_HOME/standalone/deployments
-    $ cp -r configuration $JBOSS_HOME/standalone/configuration
-</programlisting>
-        </para>
-        <para>
-            After these steps you MUST then <link linkend='jboss-adapter-installation'>download and install the client adapter</link>
-            as this may contain modules the server needs (like Bouncycastle).  You will also need to install the adapter
-            to run the examples on the same server.
-        </para>
-        <para>
-            After booting up the JBoss or Wildfly distro, you can then make sure it is installed properly
+            After booting up the Wildfly distro, you can then make sure it is installed properly
             by logging into the admin console at<ulink
                 url="http://localhost:8080/auth/admin/index.html">
             http://localhost:8080/auth/admin/index.html</ulink>.
             Username: <emphasis>admin</emphasis>
             Password: <emphasis>admin</emphasis>. Keycloak will then prompt you to
             enter in a new password.
-        </para>
-        <para>
-            You can no longer run Keycloak on JBoss AS 7.1.1.  You must run on EAP 6.x or Wildfly.
         </para>
     </section>
     <section>
@@ -137,56 +113,12 @@ keycloak-war-dist-all-&project.version;/
         <section>
             <title>Relational Database Configuration</title>
             <para>
-                By default, Keycloak uses a relational database to store Keycloak data.  This datasource is the <literal>standalone/deployments/keycloak-ds.xml</literal>
-                file of your Keycloak Server installation if you used <xref linkend="WAR_distribution_installation" /> or in <literal>standalone/configuration/standalone.xml</literal>
-                if you used <xref linkend="Appliance_install" />. File <literal>keycloak-ds.xml</literal> is used in WAR
-                distribution, so that you have datasource available out of the box and you don't need to edit <literal>standalone.xml</literal> file.
-                However a good thing is to always delete the file  <literal>keycloak-ds.xml</literal> and move its configuration text
-                into the centrally managed <literal>standalone.xml</literal> file.
-                This will allow you to manage the database connection pool from the Wildfly/JBoss administration console.  Here's what
-                <literal>standalone/configuration/standalone.xml</literal> should look like after you've done this:
+                You might want to use a better relational database for Keycloak like PostgreSQL or MySQL.  You might also
+                want to tweak the configuration settings of the datasource.  Please see the <ulink url="https://docs.jboss.org/author/display/WFLY8/DataSource+configuration">Wildfly</ulink>
+                documentation on how to do this.
             </para>
             <para>
-<programlisting><![CDATA[
-<subsystem xmlns="urn:jboss:domain:datasources:2.0">
-   <datasources>
-      <datasource jndi-name="java:jboss/datasources/ExampleDS"
-                  pool-name="ExampleDS" enabled="true" use-java-context="true">
-         <connection-url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</connection-url>
-         <driver>h2</driver>
-         <security>
-            <user-name>sa</user-name>
-            <password>sa</password>
-         </security>
-      </datasource>
-      <datasource jndi-name="java:jboss/datasources/KeycloakDS"
-                  pool-name="KeycloakDS" enabled="true" use-java-context="true">
-         <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
-         <driver>h2</driver>
-         <security>
-            <user-name>sa</user-name>
-            <password>sa</password>
-        </security>
-      </datasource>
-      <drivers>
-         <driver name="h2" module="com.h2database.h2">
-            <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
-         </driver>
-      </drivers>
-   </datasources>
-</subsystem>
-]]>
-</programlisting>
-            </para>
-            <para>
-                Besides moving the database config into the central <literal>standalone.xml</literal> configuration file
-                you might want to use a better relational database for Keycloak like PostgreSQL or MySQL.  You might also
-                want to tweak the configuration settings of the datasource.  Please see the <ulink url="https://docs.jboss.org/author/display/WFLY8/DataSource+configuration">Wildfly</ulink>,
-                <ulink url="https://docs.jboss.org/author/display/AS71/DataSource+configuration">JBoss AS7</ulink>,
-                or <ulink url="https://docs.jboss.org/author/display/AS71/DataSource+configuration">JBoss EAP 6.x</ulink> documentation on how to do this.
-            </para>
-            <para>
-                Keycloak also runs on a Hibernate/JPA backend which is configured in the
+                Keycloak runs on a Hibernate/JPA backend which is configured in the
                 <literal>standalone/configuration/keycloak-server.json</literal>.
                 By default the setting is like this:
                 <programlisting><![CDATA[
@@ -463,29 +395,6 @@ All configuration options are optional. Default value for directory is <literal>
             </para>
         </section>
 
-        <section>
-                <title>EAP6.x Logging</title>
-                <para>
-                    Accessing the admin console will get these annoying log messages:
-                </para>
-<programlisting>
-    WARN  [org.jboss.resteasy.core.ResourceLocator] (http-/127.0.0.1:8080-3)
-                Field providers of subresource xxx will not be injected according to spec
-
-</programlisting>
-
-                <para>
-                    These can be ignored by editing standalone.xml of your jboss installation:
-                </para>
-<programlisting>
-<![CDATA[
-    <logger category="org.jboss.resteasy.core.ResourceLocator">
-        <level name="ERROR"/>
-    </logger>
-]]>
-</programlisting>
-        </section>
-
         <section id="ssl_modes">
             <title>SSL/HTTPS Requirement/Modes</title>
             <warning>
@@ -553,7 +462,7 @@ All configuration options are optional. Default value for directory is <literal>
                         </listitem>
 
                         <listitem>
-                            Enable JBoss or Wildfly to use this certificate and turn on SSL/HTTPS.
+                            Enable Wildfly to use this certificate and turn on SSL/HTTPS.
                         </listitem>
                     </itemizedlist>
                 </para>
@@ -674,29 +583,6 @@ All configuration options are optional. Default value for directory is <literal>
                         Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">Wildfly Undertow</ulink> documentation for more information on fine tuning the socket connections.
                     </para>
                 </section>
-                <section>
-                    <title>Installing the keystore to JBoss EAP6</title>
-                    <para>
-                        Now that you have a Java keystore with the appropriate certificates, you need to configure your
-                        JBoss EAP6 installation to use it.  First step is to move the keystore file to a directory
-                        you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
-                        Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
-                    </para>
-                    <para>
-<programlisting><![CDATA[<subsystem xmlns="urn:jboss:domain:web:1.1" default-virtual-server="default-host" native="false">
-   <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"  redirect-port="443" />
-   <connector name="https" scheme="https" protocol="HTTP/1.1" socket-binding="https"
-              enable-lookups="false" secure="true">
-       <ssl name="localhost-ssl" password="secret" protocol="TLSv1"
-            key-alias="localhost" certificate-key-file="${jboss.server.config.dir}/keycloak.jks" />
-   </connector>
-        ...
-</subsystem>]]></programlisting>
-                    </para>
-                    <para>
-                        Check the <ulink url="https://docs.jboss.org/author/display/AS71/SSL+setup+guide">JBoss</ulink> documentation for more information on fine tuning the socket connections.
-                    </para>
-                </section>
             </section>
 
             <section>
@@ -710,7 +596,7 @@ All configuration options are optional. Default value for directory is <literal>
                 </para>
 
                 <section>
-                    <title>WildFly</title>
+                    <title>Configure WildFly</title>
 
                     <para>
                         Open <literal>standalone/configuration/standalone.xml</literal> in your favorite editor.
@@ -742,39 +628,6 @@ All configuration options are optional. Default value for directory is <literal>
                         Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">WildFly</ulink> documentation for more information.
                     </para>
                 </section>
-
-                <section>
-                    <title>EAP</title>
-
-                    <para>
-                        Open <literal>standalone/configuration/standalone.xml</literal> in your favorite editor.
-                    </para>
-
-                    <para>
-                        You need to add <literal>redirect-port</literal> to http <literal>connector</literal> element and
-                        add the <literal>RemoteIpValve</literal> valve:
-<programlisting><![CDATA[
-<subsystem xmlns="urn:jboss:domain:web:1.5"
-    default-virtual-server="default-host" native="false">
-    <connector name="http" protocol="HTTP/1.1" scheme="http"
-        socket-binding="http"
-        redirect-port="443"/>
-    <virtual-server name="default-host" enable-welcome-root="true">
-        <alias name="localhost"/>
-        <alias name="example.com"/>
-    </virtual-server>
-    <valve name="remoteipvalve" module="org.jboss.as.web"
-        class-name="org.apache.catalina.valves.RemoteIpValve">
-        <param param-name="protocolHeader" param-value="x-forwarded-proto"/>
-    </valve>
-</subsystem>
-]]></programlisting>
-                    </para>
-
-
-
-                </section>
-
             </section>
 
         </section>
