@@ -1,5 +1,7 @@
 package org.keycloak.models;
 
+import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -7,8 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

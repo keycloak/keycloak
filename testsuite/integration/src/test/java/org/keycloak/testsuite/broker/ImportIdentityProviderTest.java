@@ -118,32 +118,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         this.realmManager.removeRealm(realm);
     }
 
-    @Test
-    public void testApplicationIdentityProviders() throws Exception {
-        RealmModel realm = installTestRealm();
-
-        ClientModel client = realm.getClientByClientId("test-app-with-allowed-providers");
-        List<ClientIdentityProviderMappingModel> identityProviders = client.getIdentityProviders();
-
-        assertEquals(1, identityProviders.size());
-
-        ClientIdentityProviderMappingModel identityProviderMappingModel = identityProviders.get(0);
-
-        assertEquals("kc-oidc-idp", identityProviderMappingModel.getIdentityProvider());
-        assertEquals(false, identityProviderMappingModel.isRetrieveToken());
-
-        identityProviders.remove(identityProviderMappingModel);
-
-        client.updateIdentityProviders(identityProviders);
-
-        client = realm.getClientById(client.getId());
-        identityProviders = client.getIdentityProviders();
-
-        assertEquals(0, identityProviders.size());
-        this.realmManager.removeRealm(realm);
-    }
-
-
     private void assertIdentityProviderConfig(List<IdentityProviderModel> identityProviders) {
         assertFalse(identityProviders.isEmpty());
 

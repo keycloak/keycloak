@@ -1,14 +1,12 @@
 package org.keycloak.models.cache.entities;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.RealmCache;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -37,7 +35,6 @@ public class CachedClient {
     private int notBefore;
     private Set<String> scope = new HashSet<String>();
     private Set<String> webOrigins = new HashSet<String>();
-    private List<ClientIdentityProviderMappingModel> identityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
     private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
     private boolean surrogateAuthRequired;
     private String managementUrl;
@@ -67,7 +64,6 @@ public class CachedClient {
         for (RoleModel role : model.getScopeMappings())  {
             scope.add(role.getId());
         }
-        this.identityProviders = model.getIdentityProviders();
         for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
             this.protocolMappers.add(mapper);
         }
@@ -145,32 +141,8 @@ public class CachedClient {
         return frontchannelLogout;
     }
 
-    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
-        return this.identityProviders;
-    }
-
-    public boolean hasIdentityProvider(String providerId) {
-        for (ClientIdentityProviderMappingModel model : getIdentityProviders()) {
-            if (model.getIdentityProvider().equals(providerId)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public Set<ProtocolMapperModel> getProtocolMappers() {
         return protocolMappers;
-    }
-
-    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
-        for (ClientIdentityProviderMappingModel model : getIdentityProviders()) {
-            if (model.getIdentityProvider().equals(providerId)) {
-                return model.isRetrieveToken();
-            }
-        }
-
-        return false;
     }
 
     public boolean isSurrogateAuthRequired() {

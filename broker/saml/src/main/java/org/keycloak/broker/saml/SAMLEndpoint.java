@@ -7,6 +7,8 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
+import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -36,6 +38,7 @@ import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
@@ -294,6 +297,19 @@ public class SAMLEndpoint {
                         identity.getContextData().put(SAML_AUTHN_STATEMENT, authn);
                         break;
                     }
+                }
+                if (assertion.getAttributeStatements() != null ) {
+                    for (AttributeStatementType attrStatement : assertion.getAttributeStatements()) {
+                        for (AttributeStatementType.ASTChoiceType choice : attrStatement.getAttributes()) {
+                            AttributeType attribute = choice.getAttribute();
+                            if (X500SAMLProfileConstants.EMAIL.getFriendlyName().equals(attribute.getFriendlyName())
+                                    || X500SAMLProfileConstants.EMAIL.get().equals(attribute.getName())) {
+                                if (!attribute.getAttributeValue().isEmpty()) identity.setEmail(attribute.getAttributeValue().get(0).toString());
+                            }
+                        }
+
+                    }
+
                 }
                 String brokerUserId = config.getAlias() + "." + subjectNameID.getValue();
                 identity.setBrokerUserId(brokerUserId);

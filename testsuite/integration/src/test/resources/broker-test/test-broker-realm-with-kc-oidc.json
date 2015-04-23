@@ -9,11 +9,11 @@
     "clients" : [
       {
         "clientId": "broker-app",
-        "consentRequired": "true",
+        "consentRequired": "false",
         "enabled": true,
         "secret": "secret",
         "redirectUris": [
-          "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-oidc-idp/endpoint"
+          "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-oidc-idp/endpoint/*"
         ],
         "protocolMappers": [
             {

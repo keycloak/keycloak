@@ -8,6 +8,7 @@ public interface Constants {
     String ADMIN_CONSOLE_CLIENT_ID = "security-admin-console";
 
     String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
+    String BROKER_SERVICE_CLIENT_ID = "broker";
 
     String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
     String INSTALLED_APP_URL = "http://localhost";

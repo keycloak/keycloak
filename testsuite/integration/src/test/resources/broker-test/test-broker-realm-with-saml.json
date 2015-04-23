@@ -15,7 +15,12 @@
                 "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-saml-idp-basic/endpoint"
             ],
             "attributes": {
-                "saml.authnstatement": "true"
+                "saml.authnstatement": "true",
+                "saml_single_logout_service_url_post": "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-saml-idp-basic/endpoint",
+                "saml_assertion_consumer_url_post": "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-saml-idp-basic/endpoint",
+                "saml_force_name_id_format": "true",
+                "saml_name_id_format": "username"
+
             },
             "protocolMappers": [
                 {
@@ -39,6 +44,18 @@
                         "user.attribute": "mobile",
                         "attribute.name": "mobile",
                         "attribute.nameformat": "Basic"
+                    }
+                },
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
+                        "friendly.name": "email"
                     }
                 }
 

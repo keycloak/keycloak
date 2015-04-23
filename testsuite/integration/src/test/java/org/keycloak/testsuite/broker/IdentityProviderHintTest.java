@@ -66,11 +66,7 @@ public class IdentityProviderHintTest {
         // log in to identity provider
         this.loginPage.login("test-user", "password");
 
-        // grant access to broker-app
-        this.grantPage.assertCurrent();
-        this.grantPage.accept();
-
-        // authenticated and redirected to app
+         // authenticated and redirected to app
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
         assertTrue(this.driver.getPageSource().contains("idToken"));
     }

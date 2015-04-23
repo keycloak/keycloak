@@ -82,7 +82,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals(0,  session.users().getFederatedIdentities(user, realm).size());
 
         List<ClientModel> resources = realm.getClients();
-        Assert.assertEquals(6, resources.size());
+        Assert.assertEquals(7, resources.size());
 
         // Test applications imported
         ClientModel application = realm.getClientByClientId("Application");
@@ -93,7 +93,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertNotNull(otherApp);
         Assert.assertNull(nonExisting);
         Map<String, ClientModel> clients = realm.getClientNameMap();
-        Assert.assertEquals(6, clients.size());
+        Assert.assertEquals(7, clients.size());
         Assert.assertTrue(clients.values().contains(application));
         Assert.assertTrue(clients.values().contains(otherApp));
         Assert.assertTrue(clients.values().contains(accountApp));

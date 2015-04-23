@@ -116,10 +116,6 @@ public interface ClientModel extends RoleContainerModel {
 
     void setNotBefore(int notBefore);
 
-    void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders);
-    List<ClientIdentityProviderMappingModel> getIdentityProviders();
-    boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId);
-
     Set<ProtocolMapperModel> getProtocolMappers();
     ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model);
     void removeProtocolMapper(ProtocolMapperModel mapping);

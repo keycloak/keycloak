@@ -4,12 +4,10 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.entities.ClientIdentityProviderMappingEntity;
 import org.keycloak.models.entities.ProtocolMapperEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
@@ -396,49 +394,6 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
         return mapping;
     }
 
-
-    @Override
-    public void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
-        List<ClientIdentityProviderMappingEntity> stored = new ArrayList<ClientIdentityProviderMappingEntity>();
-
-        for (ClientIdentityProviderMappingModel model : identityProviders) {
-            ClientIdentityProviderMappingEntity entity = new ClientIdentityProviderMappingEntity();
-
-            entity.setId(model.getIdentityProvider());
-            entity.setRetrieveToken(model.isRetrieveToken());
-            stored.add(entity);
-        }
-
-        getMongoEntity().setIdentityProviders(stored);
-        updateMongoEntity();
-    }
-
-    @Override
-    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
-        List<ClientIdentityProviderMappingModel> models = new ArrayList<ClientIdentityProviderMappingModel>();
-
-        for (ClientIdentityProviderMappingEntity entity : getMongoEntity().getIdentityProviders()) {
-            ClientIdentityProviderMappingModel model = new ClientIdentityProviderMappingModel();
-
-            model.setIdentityProvider(entity.getId());
-            model.setRetrieveToken(entity.isRetrieveToken());
-
-            models.add(model);
-        }
-
-        return models;
-    }
-
-    @Override
-    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
-        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : getMongoEntity().getIdentityProviders()) {
-            if (identityProviderMappingModel.getId().equals(providerId)) {
-                return identityProviderMappingModel.isRetrieveToken();
-            }
-        }
-
-        return false;
-    }
 
     @Override
     public boolean isSurrogateAuthRequired() {
