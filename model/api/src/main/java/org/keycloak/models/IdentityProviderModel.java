@@ -47,6 +47,7 @@ public class IdentityProviderModel {
 
     private boolean storeToken;
 
+    protected boolean addReadTokenRoleOnCreate;
     /**
      * Specifies if particular provider should be used by default for authentication even before displaying login screen
      */
@@ -70,6 +71,7 @@ public class IdentityProviderModel {
         this.updateProfileFirstLogin = model.isUpdateProfileFirstLogin();
         this.storeToken = model.isStoreToken();
         this.authenticateByDefault = model.isAuthenticateByDefault();
+        this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
     }
 
     public String getInternalId() {
@@ -134,5 +136,13 @@ public class IdentityProviderModel {
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
+    }
+
+    public boolean isAddReadTokenRoleOnCreate() {
+        return addReadTokenRoleOnCreate;
+    }
+
+    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+        this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
 }

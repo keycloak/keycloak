@@ -30,7 +30,6 @@ public class ClientRepresentation {
     protected Boolean fullScopeAllowed;
     protected Integer nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
-    protected List<ClientIdentityProviderMappingRepresentation> identityProviders;
     protected List<ProtocolMapperRepresentation> protocolMappers;
 
     public String getId() {
@@ -207,14 +206,6 @@ public class ClientRepresentation {
 
     public void setFrontchannelLogout(Boolean frontchannelLogout) {
         this.frontchannelLogout = frontchannelLogout;
-    }
-
-    public List<ClientIdentityProviderMappingRepresentation> getIdentityProviders() {
-        return this.identityProviders;
-    }
-
-    public void setIdentityProviders(List<ClientIdentityProviderMappingRepresentation> identityProviders) {
-        this.identityProviders = identityProviders;
     }
 
     public List<ProtocolMapperRepresentation> getProtocolMappers() {

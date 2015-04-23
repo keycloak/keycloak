@@ -109,7 +109,8 @@
             "alias" : "kc-saml-signed-idp",
             "providerId" : "saml",
             "enabled": true,
-            "updateProfileFirstLogin" : "true",
+            "updateProfileFirstLogin" : true,
+            "addReadTokenRoleOnCreate": true,
             "config": {
                 "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-signed-idp/protocol/saml",
                 "singleLogoutServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-signed-idp/protocol/saml",
@@ -126,7 +127,8 @@
             "alias" : "kc-saml-idp-basic",
             "providerId" : "saml",
             "enabled": true,
-            "updateProfileFirstLogin" : "true",
+            "updateProfileFirstLogin" : true,
+            "addReadTokenRoleOnCreate": true,
             "config": {
                 "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-idp-basic/protocol/saml",
                 "singleLogoutServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-idp-basic/protocol/saml",
@@ -157,7 +159,8 @@
             "providerId" : "keycloak-oidc",
             "enabled": true,
             "updateProfileFirstLogin" : "false",
-            "storeToken" : "true",
+            "storeToken" : true,
+            "addReadTokenRoleOnCreate": true,
             "config": {
                 "clientId": "broker-app",
                 "clientSecret": "secret",
@@ -268,13 +271,7 @@
           "redirectUris": [
             "/test-app/*"
           ],
-          "webOrigins": [],
-          "identityProviders": [
-            {
-              "id": "kc-oidc-idp",
-              "retrieveToken": false
-            }
-          ]
+          "webOrigins": []
         }
     ],
     "oauthClients" : [

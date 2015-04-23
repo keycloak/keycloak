@@ -31,6 +31,7 @@ public class IdentityProviderRepresentation {
     protected boolean enabled = true;
     protected boolean updateProfileFirstLogin = true;
     protected boolean storeToken;
+    protected boolean addReadTokenRoleOnCreate;
     protected boolean authenticateByDefault;
     protected Map<String, String> config = new HashMap<String, String>();
 
@@ -96,5 +97,13 @@ public class IdentityProviderRepresentation {
 
     public void setStoreToken(boolean storeToken) {
         this.storeToken = storeToken;
+    }
+
+    public boolean isAddReadTokenRoleOnCreate() {
+        return addReadTokenRoleOnCreate;
+    }
+
+    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+        this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
 }

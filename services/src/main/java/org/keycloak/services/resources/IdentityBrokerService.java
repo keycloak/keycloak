@@ -534,7 +534,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         federatedUser.setLastName(updatedIdentity.getLastName());
 
 
-        if (updatedIdentity.getIdpConfig().isStoreToken()) {
+        if (updatedIdentity.getIdpConfig().isAddReadTokenRoleOnCreate()) {
             RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(READ_TOKEN_ROLE);
             federatedUser.grantRole(readTokenRole);
         }

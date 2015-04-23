@@ -294,6 +294,7 @@ public class ModelToRepresentation {
         providerRep.setUpdateProfileFirstLogin(identityProviderModel.isUpdateProfileFirstLogin());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
         providerRep.setConfig(identityProviderModel.getConfig());
+        providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
 
         return providerRep;
     }

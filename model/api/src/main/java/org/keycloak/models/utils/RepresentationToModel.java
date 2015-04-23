@@ -889,6 +889,7 @@ public class RepresentationToModel {
         identityProviderModel.setUpdateProfileFirstLogin(representation.isUpdateProfileFirstLogin());
         identityProviderModel.setAuthenticateByDefault(representation.isAuthenticateByDefault());
         identityProviderModel.setStoreToken(representation.isStoreToken());
+        identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
         identityProviderModel.setConfig(representation.getConfig());
 
         return identityProviderModel;

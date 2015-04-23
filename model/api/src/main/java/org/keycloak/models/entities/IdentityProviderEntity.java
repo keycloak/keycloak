@@ -32,6 +32,7 @@ public class IdentityProviderEntity {
     private boolean enabled;
     private boolean updateProfileFirstLogin;
     private boolean storeToken;
+    protected boolean addReadTokenRoleOnCreate;
     private boolean authenticateByDefault;
 
     private Map<String, String> config = new HashMap<String, String>();
@@ -106,5 +107,13 @@ public class IdentityProviderEntity {
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
+    }
+
+    public boolean isAddReadTokenRoleOnCreate() {
+        return addReadTokenRoleOnCreate;
+    }
+
+    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+        this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
 }

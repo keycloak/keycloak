@@ -90,6 +90,11 @@
             </column>
             <column name="NAME" type="VARCHAR(255)" />
         </addColumn>
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="ADD_TOKEN_ROLE" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
         <update tableName="CLIENT">
             <column name="CONSENT_REQUIRED" valueBoolean="true"/>
             <where>DTYPE = 'OAuthClientEntity'</where>
