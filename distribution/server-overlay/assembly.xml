@@ -20,14 +20,6 @@
             <outputDirectory>docs</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
-            <outputDirectory></outputDirectory>
-            <includes>
-                <include>**/*.sh</include>
-            </includes>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
             <directory>${project.build.directory}/unpacked/modules</directory>
             <outputDirectory>modules/system/layers/base</outputDirectory>
         </fileSet>
@@ -36,13 +28,6 @@
             <outputDirectory>standalone/configuration/themes</outputDirectory>
             <includes>
                 <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>src/main/welcome-content</directory>
-            <outputDirectory>welcome-content</outputDirectory>
-            <includes>
-                <include>*.*</include>
             </includes>
         </fileSet>
         <fileSet>

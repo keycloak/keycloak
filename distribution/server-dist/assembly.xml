@@ -26,6 +26,13 @@
             </includes>
             <fileMode>0755</fileMode>
         </fileSet>
+        <fileSet>
+            <directory>src/main/welcome-content</directory>
+            <outputDirectory>welcome-content</outputDirectory>
+            <includes>
+                <include>*.*</include>
+            </includes>
+        </fileSet>
     </fileSets>
 
     <dependencySets>
