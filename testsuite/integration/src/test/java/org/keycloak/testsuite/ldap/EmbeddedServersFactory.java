@@ -1,7 +1,4 @@
-package org.keycloak.testutils.ldap;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+package org.keycloak.testsuite.ldap;
 
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;

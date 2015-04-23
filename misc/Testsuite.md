@@ -23,7 +23,7 @@ To start a basic Keycloak server for testing run:
 
     mvn exec:java -Pkeycloak-server
     
-or run org.keycloak.testutils.KeycloakServer from your favourite IDE!
+or run org.keycloak.testsuite.KeycloakServer from your favourite IDE!
      
 When starting the server it can also import a realm from a json file:
 
@@ -64,7 +64,7 @@ To generate totp codes without Google authenticator run:
 
     mvn exec:java -Ptotp
     
-or run org.keycloak.testutils.TotpGenerator from your favourite IDE!
+or run org.keycloak.testsuite.TotpGenerator from your favourite IDE!
 
 Once started copy/paste the totp secret and press enter. To use a new secret just copy/paste and press enter again.
 
@@ -75,7 +75,7 @@ To start a test mail server for testing email sending run:
 
     mvn exec:java -Pmail-server
     
-or run org.keycloak.testutils.MailServer from your favourite IDE!
+or run org.keycloak.testsuite.MailServer from your favourite IDE!
 
 To configure Keycloak to use the above server add the following system properties:
 

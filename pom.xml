@@ -188,11 +188,13 @@
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-undertow</artifactId>
                 <version>${resteasy.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>async-http-servlet-3.0</artifactId>
                 <version>${resteasy.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.undertow</groupId>
@@ -233,6 +235,7 @@
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-wildfly-common</artifactId>
                 <version>${picketlink.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
@@ -270,6 +273,7 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
@@ -323,6 +327,7 @@
                 <groupId>com.icegreen</groupId>
                 <artifactId>greenmail</artifactId>
                 <version>${greenmail.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!-- Encrypted ZIP -->
@@ -337,21 +342,25 @@
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-core-annotations</artifactId>
                 <version>${apacheds.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-interceptor-kerberos</artifactId>
                 <version>${apacheds.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-server-annotations</artifactId>
                 <version>${apacheds.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.api</groupId>
                 <artifactId>api-ldap-codec-standalone</artifactId>
                 <version>${apacheds.codec.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!-- Selenium -->
@@ -359,6 +368,7 @@
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>selenium-java</artifactId>
                 <version>${selenium.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
@@ -375,16 +385,19 @@
                 <groupId>org.apache.jmeter</groupId>
                 <artifactId>ApacheJMeter_java</artifactId>
                 <version>${jmeter.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>dom4j</groupId>
                 <artifactId>dom4j</artifactId>
                 <version>${dom4j.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
                 <version>${xml-apis.version}</version>
+                <scope>test</scope>
             </dependency>
             <!-- Older 1.5.10 binding required by embedded ApacheDS -->
             <dependency>
@@ -396,12 +409,20 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
                 <version>${slf4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
+                <scope>test</scope>
             </dependency>
            <dependency>
                <groupId>org.apache.httpcomponents</groupId>
@@ -456,6 +477,7 @@
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging-processor</artifactId>
                 <version>${jboss-logging-tools.version}</version>
+                <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>

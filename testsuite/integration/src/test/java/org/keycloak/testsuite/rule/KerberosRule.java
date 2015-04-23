@@ -4,9 +4,9 @@ import java.io.File;
 import java.net.URL;
 
 import org.jboss.logging.Logger;
-import org.keycloak.testutils.ldap.EmbeddedServersFactory;
-import org.keycloak.testutils.ldap.LDAPConfiguration;
-import org.keycloak.testutils.ldap.LDAPEmbeddedServer;
+import org.keycloak.testsuite.ldap.EmbeddedServersFactory;
+import org.keycloak.testsuite.ldap.LDAPConfiguration;
+import org.keycloak.testsuite.ldap.LDAPEmbeddedServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

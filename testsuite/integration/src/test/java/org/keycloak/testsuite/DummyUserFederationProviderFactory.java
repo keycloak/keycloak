@@ -1,4 +1,4 @@
-package org.keycloak.testutils;
+package org.keycloak.testsuite;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;

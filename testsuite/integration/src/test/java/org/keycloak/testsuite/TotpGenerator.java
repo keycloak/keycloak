@@ -1,4 +1,4 @@
-package org.keycloak.testutils;
+package org.keycloak.testsuite;
 
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.TimeBasedOTP;
