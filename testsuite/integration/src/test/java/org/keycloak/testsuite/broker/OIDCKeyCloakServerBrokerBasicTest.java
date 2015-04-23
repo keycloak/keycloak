@@ -8,7 +8,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Constants;
-import org.keycloak.testsuite.pages.AccountAccessPage;
+import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -53,17 +53,17 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
     private OAuthGrantPage grantPage;
 
     @WebResource
-    protected AccountAccessPage accountAccessPage;
+    protected AccountApplicationsPage accountApplicationsPage;
 
     @Override
     protected void revokeGrant() {
         String currentUrl = driver.getCurrentUrl();
 
-        String accountAccessPath = Urls.accountAccessPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).port(PORT).build(), "realm-with-oidc-identity-provider").toString();
-        accountAccessPage.setPath(accountAccessPath);
-        accountAccessPage.open();
+        String accountAccessPath = Urls.accountApplicationsPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).port(PORT).build(), "realm-with-oidc-identity-provider").toString();
+        accountApplicationsPage.setPath(accountAccessPath);
+        accountApplicationsPage.open();
         try {
-            accountAccessPage.revokeGrant("broker-app");
+            accountApplicationsPage.revokeGrant("broker-app");
         } catch (NoSuchElementException e) {
             System.err.println("Couldn't revoke broker-app application, maybe because it wasn't granted or user not logged");
         }

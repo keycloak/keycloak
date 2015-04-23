@@ -21,7 +21,7 @@ public class AccountApplicationsPage extends AbstractAccountPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().endsWith("/account/access");
+        return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().endsWith("/account/applications");
     }
 
     @Override

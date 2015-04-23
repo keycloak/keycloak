@@ -185,7 +185,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             case SESSIONS:
                 attributes.put("sessions", new SessionsBean(realm, sessions));
                 break;
-            case ACCESS:
+            case APPLICATIONS:
                 attributes.put("consent", new ConsentBean(user));
                 attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;

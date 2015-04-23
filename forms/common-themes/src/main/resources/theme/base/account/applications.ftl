@@ -1,9 +1,9 @@
 <#import "template.ftl" as layout>
-<@layout.mainLayout active='access' bodyClass='access'; section>
+<@layout.mainLayout active='applications' bodyClass='applications'; section>
 
     <div class="row">
         <div class="col-md-10">
-            <h2>${msg("accessHtmlTitle")}</h2>
+            <h2>${msg("applicationsHtmlTitle")}</h2>
         </div>
     </div>
 
