@@ -43,6 +43,7 @@
         <module>performance</module>
         <module>tools</module>
         <module>performance-web</module>
+        <module>ui</module>
         <!--<module>docker-cluster</module>-->
     </modules>
 
