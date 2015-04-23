@@ -145,6 +145,7 @@ public interface RealmModel extends RoleContainerModel {
 
     void updateDefaultRoles(String[] defaultRoles);
 
+    // Key is clientId
     Map<String, ClientModel> getClientNameMap();
 
     List<ClientModel> getClients();

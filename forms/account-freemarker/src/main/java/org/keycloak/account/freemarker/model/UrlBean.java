@@ -27,8 +27,8 @@ public class UrlBean {
         this.stateChecker = stateChecker;
     }
 
-    public String getAccessUrl() {
-        return Urls.accountAccessPage(baseQueryURI, realm).toString();
+    public String getApplicationsUrl() {
+        return Urls.accountApplicationsPage(baseQueryURI, realm).toString();
     }
 
     public String getAccountUrl() {

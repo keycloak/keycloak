@@ -99,6 +99,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(clients.values().contains(accountApp));
         realm.getClients().containsAll(clients.values());
 
+        Assert.assertEquals("Applicationn", application.getName());
         Assert.assertEquals(50, application.getNodeReRegistrationTimeout());
         Map<String, Integer> appRegisteredNodes = application.getRegisteredNodes();
         Assert.assertEquals(2, appRegisteredNodes.size());

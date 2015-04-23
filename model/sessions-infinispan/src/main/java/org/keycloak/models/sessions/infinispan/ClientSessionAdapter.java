@@ -119,6 +119,17 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
+    public Set<String> getProtocolMappers() {
+        return entity.getProtocolMappers();
+    }
+
+    @Override
+    public void setProtocolMappers(Set<String> protocolMappers) {
+        entity.setProtocolMappers(protocolMappers);
+        update();
+    }
+
+    @Override
     public String getAuthMethod() {
         return entity.getAuthMethod();
     }

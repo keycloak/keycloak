@@ -121,6 +121,23 @@ public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessio
     }
 
     @Override
+    public Set<String> getProtocolMappers() {
+        return entity.getProtocolMappers() != null ? new HashSet<String>(entity.getProtocolMappers()) : null;
+    }
+
+    @Override
+    public void setProtocolMappers(Set<String> protocolMappers) {
+        if (protocolMappers == null) {
+            entity.setProtocolMappers(null);
+        } else {
+            List<String> list = new LinkedList<String>();
+            list.addAll(protocolMappers);
+            entity.setProtocolMappers(list);
+        }
+        updateMongoEntity();
+    }
+
+    @Override
     public String getNote(String name) {
         return entity.getNotes().get(name);
     }

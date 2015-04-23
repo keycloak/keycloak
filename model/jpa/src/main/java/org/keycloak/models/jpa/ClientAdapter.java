@@ -55,6 +55,16 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public String getName() {
+        return entity.getName();
+    }
+
+    @Override
+    public void setName(String name) {
+        entity.setName(name);
+    }
+
+    @Override
     public boolean isEnabled() {
         return entity.isEnabled();
     }

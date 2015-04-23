@@ -27,20 +27,20 @@ import java.util.Set;
  */
 public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> implements ClientModel {
 
-    protected final MongoClientEntity applicationEntity;
+    protected final MongoClientEntity clientEntity;
     private final RealmModel realm;
     protected  KeycloakSession session;
 
-    public ClientAdapter(KeycloakSession session, RealmModel realm, MongoClientEntity applicationEntity, MongoStoreInvocationContext invContext) {
+    public ClientAdapter(KeycloakSession session, RealmModel realm, MongoClientEntity clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.session = session;
         this.realm = realm;
-        this.applicationEntity = applicationEntity;
+        this.clientEntity = clientEntity;
     }
 
     @Override
     public MongoClientEntity getMongoEntity() {
-        return applicationEntity;
+        return clientEntity;
     }
 
     @Override
@@ -57,6 +57,17 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     @Override
     public String getClientId() {
         return getMongoEntity().getClientId();
+    }
+
+    @Override
+    public String getName() {
+        return getMongoEntity().getName();
+    }
+
+    @Override
+    public void setName(String name) {
+        getMongoEntity().setName(name);
+        updateMongoEntity();
     }
 
     @Override
@@ -84,12 +95,12 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
 
     @Override
     public void addWebOrigin(String webOrigin) {
-        getMongoStore().pushItemToList(applicationEntity, "webOrigins", webOrigin, true, invocationContext);
+        getMongoStore().pushItemToList(clientEntity, "webOrigins", webOrigin, true, invocationContext);
     }
 
     @Override
     public void removeWebOrigin(String webOrigin) {
-        getMongoStore().pullItemFromList(applicationEntity, "webOrigins", webOrigin, invocationContext);
+        getMongoStore().pullItemFromList(clientEntity, "webOrigins", webOrigin, invocationContext);
     }
 
     @Override
@@ -111,12 +122,12 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
 
     @Override
     public void addRedirectUri(String redirectUri) {
-        getMongoStore().pushItemToList(applicationEntity, "redirectUris", redirectUri, true, invocationContext);
+        getMongoStore().pushItemToList(clientEntity, "redirectUris", redirectUri, true, invocationContext);
     }
 
     @Override
     public void removeRedirectUri(String redirectUri) {
-        getMongoStore().pullItemFromList(applicationEntity, "redirectUris", redirectUri, invocationContext);
+        getMongoStore().pullItemFromList(clientEntity, "redirectUris", redirectUri, invocationContext);
     }
 
     @Override

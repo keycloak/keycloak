@@ -27,6 +27,7 @@ public class MongoClientSessionEntity extends AbstractIdentifiableEntity impleme
     private int timestamp;
     private ClientSessionModel.Action action;
     private List<String> roles;
+    private List<String> protocolMappers;
     private Map<String, String> notes = new HashMap<String, String>();
 
     public String getId() {
@@ -91,6 +92,14 @@ public class MongoClientSessionEntity extends AbstractIdentifiableEntity impleme
 
     public void setRoles(List<String> roles) {
         this.roles = roles;
+    }
+
+    public List<String> getProtocolMappers() {
+        return protocolMappers;
+    }
+
+    public void setProtocolMappers(List<String> protocolMappers) {
+        this.protocolMappers = protocolMappers;
     }
 
     public Map<String, String> getNotes() {

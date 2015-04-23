@@ -8,31 +8,20 @@ import java.util.Set;
  */
 public class UserConsentModel {
 
-    private final RealmModel realm;
     private final ClientModel client;
     private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
     private Set<RoleModel> roles = new HashSet<RoleModel>();
 
-    public UserConsentModel(RealmModel realm, String clientId) {
-        this.realm = realm;
-        this.client = realm.getClientById(clientId);
-
-        if (client == null) {
-            throw new ModelException("Client with id [" + clientId + "] is not available");
-        }
+    public UserConsentModel(ClientModel client) {
+        this.client = client;
     }
 
     public ClientModel getClient() {
         return client;
     }
 
-    public void addGrantedRole(String roleId) {
-        RoleModel role = realm.getRoleById(roleId);
-
-        // Chance that role was already deleted by other transaction and is not available anymore
-        if (role != null) {
-            roles.add(role);
-        }
+    public void addGrantedRole(RoleModel role) {
+        roles.add(role);
     }
 
     public Set<RoleModel> getGrantedRoles() {
@@ -46,13 +35,8 @@ public class UserConsentModel {
         return false;
     }
 
-    public void addGrantedProtocolMapper(String protocolMapperId) {
-        ProtocolMapperModel protocolMapper = client.getProtocolMapperById(protocolMapperId);
-
-        // Chance that protocolMapper was already deleted by other transaction and is not available anymore
-        if (protocolMapper != null) {
-            protocolMappers.add(protocolMapper);
-        }
+    public void addGrantedProtocolMapper(ProtocolMapperModel protocolMapper) {
+        protocolMappers.add(protocolMapper);
     }
 
     public Set<ProtocolMapperModel> getGrantedProtocolMappers() {

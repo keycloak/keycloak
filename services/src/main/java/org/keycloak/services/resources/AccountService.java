@@ -349,10 +349,10 @@ public class AccountService {
         return forwardToPage("sessions", AccountPages.SESSIONS);
     }
 
-    @Path("access")
+    @Path("applications")
     @GET
-    public Response accessPage() {
-        return forwardToPage("access", AccountPages.ACCESS);
+    public Response applicationsPage() {
+        return forwardToPage("applications", AccountPages.APPLICATIONS);
     }
 
     /**
@@ -494,7 +494,7 @@ public class AccountService {
     @POST
     public Response processRevokeGrant(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
-            return login("access");
+            return login("applications");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
@@ -502,11 +502,11 @@ public class AccountService {
 
         String clientId = formData.getFirst("clientId");
         if (clientId == null) {
-            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.ACCESS);
+            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
         ClientModel client = realm.getClientById(clientId);
         if (client == null) {
-            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.ACCESS);
+            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
 
         // Revoke grant in UserModel
@@ -527,7 +527,7 @@ public class AccountService {
         event.event(EventType.REVOKE_GRANT).client(auth.getClient()).user(auth.getUser()).detail(Details.REVOKED_CLIENT, client.getClientId()).success();
         setReferrerOnPage();
 
-        return account.setSuccess(Messages.SUCCESS_GRANT_REVOKED).createResponse(AccountPages.ACCESS);
+        return account.setSuccess(Messages.SUCCESS_GRANT_REVOKED).createResponse(AccountPages.APPLICATIONS);
     }
 
     /**
