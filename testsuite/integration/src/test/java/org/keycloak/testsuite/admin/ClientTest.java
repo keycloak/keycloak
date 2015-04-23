@@ -42,7 +42,7 @@ public class ClientTest extends AbstractClientTest {
 
     @Test
     public void getClients() {
-        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console");
+        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker");
     }
 
     @Test
@@ -52,7 +52,7 @@ public class ClientTest extends AbstractClientTest {
         rep.setEnabled(true);
         realm.clients().create(rep);
 
-        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "my-app");
+        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app");
     }
 
     @Test

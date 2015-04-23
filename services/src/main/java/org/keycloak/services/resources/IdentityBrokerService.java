@@ -34,17 +34,20 @@ import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
@@ -92,6 +95,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private static final Logger LOGGER = Logger.getLogger(IdentityBrokerService.class);
     public static final String BROKER_PROVIDER_ID = "BROKER_PROVIDER_ID";
+    public static final String READ_TOKEN_ROLE = "READ_TOKEN";
+    public static final String[] ROLES = {READ_TOKEN_ROLE};
 
     private final RealmModel realmModel;
 
@@ -185,7 +190,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             AuthResult authResult = authManager.authenticateBearerToken(this.session, this.realmModel, this.uriInfo, this.clientConnection, this.request.getHttpHeaders());
 
             if (authResult != null) {
-                String audience = authResult.getToken().getAudience();
+                AccessToken token = authResult.getToken();
+                String audience = token.getAudience();
                 ClientModel clientModel = this.realmModel.getClientByClientId(audience);
 
                 if (clientModel == null) {
@@ -194,16 +200,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
                 session.getContext().setClient(clientModel);
 
-                if (!clientModel.isAllowedRetrieveTokenFromIdentityProvider(providerId)) {
-                    return corsResponse(badRequest("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
-                }
+                ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
+                if (brokerClient == null) {
+                    return corsResponse(forbidden("Realm has not migrated to support the broker token exchange service"), clientModel);
 
-                if (clientModel.isConsentRequired()) {
-                    return corsResponse(session.getProvider(LoginFormsProvider.class)
-                            .setClientSessionCode(authManager.extractAuthorizationHeaderToken(this.request.getHttpHeaders()))
-                            .setAccessRequest("Your information from " + providerId + " identity provider.")
-                            .setActionUri(this.uriInfo.getRequestUri())
-                            .createOAuthGrant(null), clientModel);
+                }
+                Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
+                AccessToken.Access brokerRoles = resourceAccess == null ? null : resourceAccess.get(Constants.BROKER_SERVICE_CLIENT_ID);
+                if (brokerRoles == null || !brokerRoles.isUserInRole(READ_TOKEN_ROLE)) {
+                    return corsResponse(forbidden("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
+
                 }
 
                 IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
@@ -230,18 +236,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }  catch (Exception e) {
             return redirectToErrorPage(Messages.UNEXPECTED_ERROR_RETRIEVING_TOKEN, e, providerId);
         }
-    }
-
-    @POST
-    @Path("{provider_id}/token")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response consentTokenRetrieval(@PathParam("provider_id") String providerId,
-                                          MultivaluedMap<String, String> formData) {
-        if (formData.containsKey("cancel")) {
-            return redirectToErrorPage(Messages.PERMISSION_NOT_APPROVED);
-        }
-
-        return getToken(providerId, true);
     }
 
     public Response authenticated(BrokeredIdentityContext context) {
@@ -445,6 +439,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         return ErrorResponse.error(message, Status.BAD_REQUEST);
     }
 
+    private Response forbidden(String message) {
+        fireErrorEvent(message);
+        return ErrorResponse.error(message, Status.FORBIDDEN);
+    }
+
     public static IdentityProvider getIdentityProvider(KeycloakSession session, RealmModel realm, String alias) {
         IdentityProviderModel identityProviderModel = realm.getIdentityProviderByAlias(alias);
 
@@ -533,6 +532,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         federatedUser.setEmail(updatedIdentity.getEmail());
         federatedUser.setFirstName(updatedIdentity.getFirstName());
         federatedUser.setLastName(updatedIdentity.getLastName());
+
+
+        if (updatedIdentity.getIdpConfig().isStoreToken()) {
+            RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(READ_TOKEN_ROLE);
+            federatedUser.grantRole(readTokenRole);
+        }
+
 
         this.session.users().addFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
 

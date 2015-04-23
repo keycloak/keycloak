@@ -21,6 +21,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.timer.TimerProvider;
 
 import java.util.Collections;
@@ -84,6 +85,7 @@ public class RealmManager {
         setupMasterAdminManagement(realm);
         setupRealmAdminManagement(realm);
         setupAccountManagement(realm);
+        setupBrokerService(realm);
         setupAdminConsole(realm);
 
         return realm;
@@ -214,6 +216,19 @@ public class RealmManager {
         }
     }
 
+    public void setupBrokerService(RealmModel realm) {
+        ClientModel client = realm.getClientNameMap().get(Constants.BROKER_SERVICE_CLIENT_ID);
+        if (client == null) {
+            client = new ClientManager(this).createClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
+            client.setEnabled(true);
+            client.setFullScopeAllowed(false);
+
+            for (String role : IdentityBrokerService.ROLES) {
+                client.addRole(role).setDescription("${role_"+role+"}");
+            }
+        }
+    }
+
     public RealmModel importRealm(RealmRepresentation rep) {
         String id = rep.getId();
         if (id == null) {
@@ -228,6 +243,7 @@ public class RealmManager {
         setupMasterAdminManagement(realm);
         if (!hasRealmAdminManagementClient(rep)) setupRealmAdminManagement(realm);
         if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
+        if (!hasBrokerClient(rep)) setupBrokerService(realm);
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
@@ -255,6 +271,15 @@ public class RealmManager {
         if (rep.getClients() == null) return false;
         for (ClientRepresentation clientRep : rep.getClients()) {
             if (clientRep.getClientId().equals(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private boolean hasBrokerClient(RealmRepresentation rep) {
+        if (rep.getClients() == null) return false;
+        for (ClientRepresentation clientRep : rep.getClients()) {
+            if (clientRep.getClientId().equals(Constants.BROKER_SERVICE_CLIENT_ID)) {
                 return true;
             }
         }

@@ -1,11 +1,11 @@
 package org.keycloak.models;
 
-import static org.junit.Assert.fail;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.regex.PatternSyntaxException;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

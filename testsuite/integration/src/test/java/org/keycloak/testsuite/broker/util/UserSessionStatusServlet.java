@@ -27,6 +27,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -39,8 +40,11 @@ public class UserSessionStatusServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (req.getRequestURI().toString().endsWith("logout")) {
-            resp.setStatus(200);
-            req.logout();
+            String redirect = UriBuilder.fromUri("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/logout")
+                    .queryParam("redirect_uri", "http://localhost:8081/test-app").build().toString();
+            resp.sendRedirect(redirect);
+            //resp.setStatus(200);
+            //req.logout();
             return;
         }
 

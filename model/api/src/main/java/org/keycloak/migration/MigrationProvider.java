@@ -1,8 +1,9 @@
 package org.keycloak.migration;
 
-import java.util.List;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+
+import java.util.List;
 
 /**
  * Various common utils needed for migration from older version to newer

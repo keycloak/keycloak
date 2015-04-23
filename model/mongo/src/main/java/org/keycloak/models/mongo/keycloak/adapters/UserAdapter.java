@@ -1,7 +1,5 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
-
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GrantedConsentModel;
@@ -22,12 +20,13 @@ import org.keycloak.util.Time;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 /**
  * Wrapper around UserData object, which will persist wrapped object after each set operation (compatibility with picketlink based idm)

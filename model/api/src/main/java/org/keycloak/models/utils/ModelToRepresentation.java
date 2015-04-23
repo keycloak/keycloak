@@ -1,7 +1,6 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -14,8 +13,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -261,10 +258,6 @@ public class ModelToRepresentation {
             rep.setRegisteredNodes(new HashMap<>(clientModel.getRegisteredNodes()));
         }
 
-        if (!clientModel.getIdentityProviders().isEmpty()) {
-            rep.setIdentityProviders(toRepresentation(clientModel.getIdentityProviders()));
-        }
-
         if (!clientModel.getProtocolMappers().isEmpty()) {
             List<ProtocolMapperRepresentation> mappings = new LinkedList<>();
             for (ProtocolMapperModel model : clientModel.getProtocolMappers()) {
@@ -274,21 +267,6 @@ public class ModelToRepresentation {
         }
 
         return rep;
-    }
-
-    private static List<ClientIdentityProviderMappingRepresentation> toRepresentation(List<ClientIdentityProviderMappingModel> identityProviders) {
-        ArrayList<ClientIdentityProviderMappingRepresentation> representations = new ArrayList<ClientIdentityProviderMappingRepresentation>();
-
-        for (ClientIdentityProviderMappingModel model : identityProviders) {
-            ClientIdentityProviderMappingRepresentation representation = new ClientIdentityProviderMappingRepresentation();
-
-            representation.setId(model.getIdentityProvider());
-            representation.setRetrieveToken(model.isRetrieveToken());
-
-            representations.add(representation);
-        }
-
-        return representations;
     }
 
     public static UserFederationProviderRepresentation toRepresentation(UserFederationProviderModel model) {

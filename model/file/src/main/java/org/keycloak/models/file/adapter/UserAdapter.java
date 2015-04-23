@@ -16,11 +16,10 @@
  */
 package org.keycloak.models.file.adapter;
 
+import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ClientModel;
-
-import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
-
 import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -28,7 +27,11 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.CredentialEntity;
+import org.keycloak.models.entities.FederatedIdentityEntity;
+import org.keycloak.models.entities.RoleEntity;
+import org.keycloak.models.entities.UserEntity;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
+import org.keycloak.util.Time;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,12 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.keycloak.connections.file.InMemoryModel;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.entities.FederatedIdentityEntity;
-import org.keycloak.models.entities.RoleEntity;
-import org.keycloak.models.entities.UserEntity;
-import org.keycloak.util.Time;
+import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 /**
  * UserModel for JSON persistence.

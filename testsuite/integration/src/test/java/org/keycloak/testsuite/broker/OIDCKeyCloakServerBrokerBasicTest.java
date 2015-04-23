@@ -75,8 +75,8 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
     @Override
     protected void doAfterProviderAuthentication() {
         // grant access to broker-app
-        grantPage.assertCurrent();
-        grantPage.accept();
+        //grantPage.assertCurrent();
+        //grantPage.accept();
     }
 
     @Override
@@ -119,5 +119,15 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername_emailNotProvided() {
         super.testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername_emailNotProvided();
+    }
+
+    @Test
+    public void testTokenStorageAndRetrievalByApplication() {
+        super.testTokenStorageAndRetrievalByApplication();
+    }
+
+    @Test
+    public void testAccountManagementLinkIdentity() {
+        super.testAccountManagementLinkIdentity();
     }
 }

@@ -1,7 +1,5 @@
 package org.keycloak.models.entities;
 
-import org.keycloak.models.ProtocolMapperModel;
-
 import java.util.Map;
 
 /**

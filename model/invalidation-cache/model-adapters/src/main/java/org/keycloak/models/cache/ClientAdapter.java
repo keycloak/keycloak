@@ -1,7 +1,6 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -247,24 +246,6 @@ public class ClientAdapter implements ClientModel {
         Map<String, String> copy = new HashMap<String, String>();
         copy.putAll(cached.getAttributes());
         return copy;
-    }
-
-    @Override
-    public void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
-        getDelegateForUpdate();
-        updated.updateIdentityProviders(identityProviders);
-    }
-
-    @Override
-    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
-        if (updated != null) return updated.getIdentityProviders();
-        return cached.getIdentityProviders();
-    }
-
-    @Override
-    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
-        if (updated != null) return updated.isAllowedRetrieveTokenFromIdentityProvider(providerId);
-        return cached.isAllowedRetrieveTokenFromIdentityProvider(providerId);
     }
 
     @Override

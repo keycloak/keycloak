@@ -6,7 +6,6 @@ import org.keycloak.enums.SslRequired;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -22,7 +21,6 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
-import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -39,7 +37,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.UriUtils;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -610,8 +607,6 @@ public class RepresentationToModel {
             }
         }
 
-        client.updateIdentityProviders(toModel(resourceRep.getIdentityProviders(), realm));
-
         return client;
     }
 
@@ -660,7 +655,6 @@ public class RepresentationToModel {
             }
         }
 
-        updateClientIdentityProviders(rep.getIdentityProviders(), resource);
     }
 
     public static long getClaimsMask(ClaimRepresentation rep) {
@@ -887,37 +881,4 @@ public class RepresentationToModel {
         return model;
     }
 
-    private static List<ClientIdentityProviderMappingModel> toModel(List<ClientIdentityProviderMappingRepresentation> repIdentityProviders, RealmModel realm) {
-        List<ClientIdentityProviderMappingModel> result = new ArrayList<ClientIdentityProviderMappingModel>();
-
-        if (repIdentityProviders != null) {
-            for (ClientIdentityProviderMappingRepresentation rep : repIdentityProviders) {
-                ClientIdentityProviderMappingModel identityProviderMapping = new ClientIdentityProviderMappingModel();
-
-                identityProviderMapping.setIdentityProvider(rep.getId());
-                identityProviderMapping.setRetrieveToken(rep.isRetrieveToken());
-
-                result.add(identityProviderMapping);
-            }
-        }
-
-        return result;
-    }
-
-    private static void updateClientIdentityProviders(List<ClientIdentityProviderMappingRepresentation> identityProviders, ClientModel resource) {
-        if (identityProviders != null) {
-            List<ClientIdentityProviderMappingModel> result = new ArrayList<ClientIdentityProviderMappingModel>();
-
-            for (ClientIdentityProviderMappingRepresentation mappingRepresentation : identityProviders) {
-                ClientIdentityProviderMappingModel identityProviderMapping = new ClientIdentityProviderMappingModel();
-
-                identityProviderMapping.setIdentityProvider(mappingRepresentation.getId());
-                identityProviderMapping.setRetrieveToken(mappingRepresentation.isRetrieveToken());
-
-                result.add(identityProviderMapping);
-            }
-
-            resource.updateIdentityProviders(result);
-        }
-    }
 }
