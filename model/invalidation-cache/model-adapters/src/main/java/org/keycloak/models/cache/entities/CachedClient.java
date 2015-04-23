@@ -21,6 +21,7 @@ import java.util.TreeMap;
  */
 public class CachedClient {
     private String id;
+    private String clientId;
     private String name;
     private String realm;
     private Set<String> redirectUris = new HashSet<String>();
@@ -49,7 +50,8 @@ public class CachedClient {
     public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
         secret = model.getSecret();
-        name = model.getClientId();
+        clientId = model.getClientId();
+        name = model.getName();
         this.realm = realm.getId();
         enabled = model.isEnabled();
         protocol = model.getProtocol();
@@ -83,6 +85,10 @@ public class CachedClient {
     }
     public String getId() {
         return id;
+    }
+
+    public String getClientId() {
+        return clientId;
     }
 
     public String getName() {

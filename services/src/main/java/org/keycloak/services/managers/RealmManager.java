@@ -94,6 +94,7 @@ public class RealmManager {
     protected void setupAdminConsole(RealmModel realm) {
         ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
         if (adminConsole == null) adminConsole = new ClientManager(this).createClient(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
+        adminConsole.setName("${client_" + Constants.ADMIN_CONSOLE_CLIENT_ID + "}");
         String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
         adminConsole.setBaseUrl(baseUrl + "/index.html");
         adminConsole.setEnabled(true);
@@ -184,6 +185,7 @@ public class RealmManager {
         ClientModel realmAdminClient = realm.getClientByClientId(realmAdminClientId);
         if (realmAdminClient == null) {
             realmAdminClient = clientManager.createClient(realm, realmAdminClientId);
+            realmAdminClient.setName("${client_" + realmAdminClientId + "}");
         }
         RoleModel adminRole = realmAdminClient.addRole(AdminRoles.REALM_ADMIN);
         adminRole.setDescription("${role_" + AdminRoles.REALM_ADMIN + "}");
@@ -202,6 +204,7 @@ public class RealmManager {
         ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (client == null) {
             client = new ClientManager(this).createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            client.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
             client.setEnabled(true);
             client.setFullScopeAllowed(false);
             String base = contextPath + "/realms/" + realm.getName() + "/account";

@@ -167,6 +167,7 @@ public class AdminAPITest {
 
     protected void checkAppUpdate(ClientRepresentation appRep, ClientRepresentation storedApp) {
         if (appRep.getClientId() != null) Assert.assertEquals(appRep.getClientId(), storedApp.getClientId());
+        if (appRep.getName() != null) Assert.assertEquals(appRep.getName(), storedApp.getName());
         if (appRep.isEnabled() != null) Assert.assertEquals(appRep.isEnabled(), storedApp.isEnabled());
         if (appRep.isBearerOnly() != null) Assert.assertEquals(appRep.isBearerOnly(), storedApp.isBearerOnly());
         if (appRep.isPublicClient() != null) Assert.assertEquals(appRep.isPublicClient(), storedApp.isPublicClient());

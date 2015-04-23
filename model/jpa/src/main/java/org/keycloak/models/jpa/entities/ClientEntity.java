@@ -32,6 +32,8 @@ public class ClientEntity {
     @Id
     @Column(name="ID", length = 36)
     private String id;
+    @Column(name = "NAME")
+    private String name;
     @Column(name = "CLIENT_ID")
     private String clientId;
     @Column(name="ENABLED")
@@ -123,6 +125,14 @@ public class ClientEntity {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public boolean isEnabled() {

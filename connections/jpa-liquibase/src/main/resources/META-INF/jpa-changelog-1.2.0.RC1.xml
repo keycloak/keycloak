@@ -83,17 +83,19 @@
         <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="USER_CONSENT_PROT_MAPPER" constraintName="FK_GRNTCSNT_PRM_GR" referencedColumnNames="ID" referencedTableName="USER_CONSENT"/>
         <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_SESSION_PROT_MAPPER" constraintName="FK_33A8SGQW18I532811V7O2DK89" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
 
+        <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME"/>
         <addColumn tableName="CLIENT">
             <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
+            <column name="NAME" type="VARCHAR(255)" />
         </addColumn>
         <update tableName="CLIENT">
             <column name="CONSENT_REQUIRED" valueBoolean="true"/>
             <where>DTYPE = 'OAuthClientEntity'</where>
         </update>
         <dropColumn tableName="CLIENT" columnName="DTYPE"/>
-        <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME"/>
+
         <renameColumn tableName="REALM" newColumnName="MASTER_ADMIN_CLIENT" oldColumnName="MASTER_ADMIN_APP"/>
 
         <renameTable oldTableName="REALM_APPLICATION" newTableName="REALM_CLIENT"/>

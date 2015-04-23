@@ -18,6 +18,10 @@ public class ClientBean {
         return client.getClientId();
     }
 
+    public String getName() {
+        return client.getName();
+    }
+
     public String getBaseUrl() {
         return client.getBaseUrl();
     }

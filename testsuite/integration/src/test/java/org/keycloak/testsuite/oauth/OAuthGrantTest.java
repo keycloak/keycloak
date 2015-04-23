@@ -73,6 +73,16 @@ public class OAuthGrantTest {
     private static String ROLE_CUSTOMER = "Have Customer User privileges";
 
     @Test
+    public void sleepTest() throws IOException {
+        try {
+            Thread.sleep(10000000);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
+        }
+    }
+
+
+    @Test
     public void oauthGrantAcceptTest() throws IOException {
         oauth.clientId("third-party");
         oauth.doLoginGrant("test-user@localhost", "password");

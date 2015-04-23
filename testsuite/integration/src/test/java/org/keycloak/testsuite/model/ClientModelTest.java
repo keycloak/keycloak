@@ -31,6 +31,7 @@ public class ClientModelTest extends AbstractModelTest {
 
         realm = realmManager.createRealm("original");
         client = realm.addClient("application");
+        client.setName("Application");
         client.setBaseUrl("http://base");
         client.setManagementUrl("http://management");
         client.setClientId("app-name");
@@ -85,6 +86,7 @@ public class ClientModelTest extends AbstractModelTest {
 
     public static void assertEquals(ClientModel expected, ClientModel actual) {
         Assert.assertEquals(expected.getClientId(), actual.getClientId());
+        Assert.assertEquals(expected.getName(), actual.getName());
         Assert.assertEquals(expected.getBaseUrl(), actual.getBaseUrl());
         Assert.assertEquals(expected.getManagementUrl(), actual.getManagementUrl());
         Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());

@@ -15,9 +15,9 @@ import org.openqa.selenium.WebElement;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AccountAccessPage extends AbstractAccountPage {
+public class AccountApplicationsPage extends AbstractAccountPage {
 
-    private String path = Urls.accountAccessPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).build(), "test").toString();
+    private String path = Urls.accountApplicationsPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).build(), "test").toString();
 
     @Override
     public boolean isCurrent() {

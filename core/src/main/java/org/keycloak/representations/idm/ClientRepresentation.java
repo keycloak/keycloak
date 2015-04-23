@@ -10,6 +10,7 @@ import java.util.Map;
 public class ClientRepresentation {
     protected String id;
     protected String clientId;
+    protected String name;
     protected String adminUrl;
     protected String baseUrl;
     protected Boolean surrogateAuthRequired;
@@ -38,6 +39,14 @@ public class ClientRepresentation {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getClientId() {
