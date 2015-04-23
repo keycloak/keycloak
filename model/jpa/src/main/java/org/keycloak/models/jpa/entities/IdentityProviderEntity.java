@@ -47,6 +47,9 @@ public class IdentityProviderEntity {
     @Column(name="STORE_TOKEN")
     private boolean storeToken;
 
+    @Column(name="ADD_TOKEN_ROLE")
+    protected boolean addReadTokenRoleOnCreate;
+
     @Column(name="AUTHENTICATE_BY_DEFAULT")
     private boolean authenticateByDefault;
 
@@ -128,5 +131,11 @@ public class IdentityProviderEntity {
         this.config = config;
     }
 
+    public boolean isAddReadTokenRoleOnCreate() {
+        return addReadTokenRoleOnCreate;
+    }
 
+    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+        this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
+    }
 }

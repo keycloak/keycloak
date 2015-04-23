@@ -1093,6 +1093,7 @@ public class RealmAdapter implements RealmModel {
             identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
             identityProviderModel.setStoreToken(entity.isStoreToken());
+            identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
 
             identityProviders.add(identityProviderModel);
         }
@@ -1120,6 +1121,7 @@ public class RealmAdapter implements RealmModel {
         entity.setProviderId(identityProvider.getProviderId());
         entity.setEnabled(identityProvider.isEnabled());
         entity.setStoreToken(identityProvider.isStoreToken());
+        entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
         entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
         entity.setConfig(identityProvider.getConfig());
@@ -1148,6 +1150,7 @@ public class RealmAdapter implements RealmModel {
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
+                entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
                 entity.setStoreToken(identityProvider.isStoreToken());
                 entity.setConfig(identityProvider.getConfig());
             }

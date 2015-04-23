@@ -763,6 +763,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
             identityProviderModel.setStoreToken(entity.isStoreToken());
+            identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
 
             identityProviders.add(identityProviderModel);
         }
@@ -790,6 +791,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setProviderId(identityProvider.getProviderId());
         entity.setEnabled(identityProvider.isEnabled());
         entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+        entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
         entity.setStoreToken(identityProvider.isStoreToken());
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
         entity.setConfig(identityProvider.getConfig());
@@ -818,6 +820,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
+                entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
                 entity.setStoreToken(identityProvider.isStoreToken());
                 entity.setConfig(identityProvider.getConfig());
             }
