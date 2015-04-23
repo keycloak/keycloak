@@ -7,6 +7,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionNoteEntity;
+import org.keycloak.models.sessions.jpa.entities.ClientSessionProtocolMapperEntity;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 
@@ -176,5 +177,37 @@ public class ClientSessionAdapter implements ClientSessionModel {
             }
         }
         return roles;
+    }
+
+    @Override
+    public Set<String> getProtocolMappers() {
+        Set<String> protMappers = new HashSet<String>();
+        if (entity.getProtocolMappers() != null) {
+            for (ClientSessionProtocolMapperEntity e : entity.getProtocolMappers()) {
+                protMappers.add(e.getProtocolMapperId());
+            }
+        }
+        return protMappers;
+    }
+
+    @Override
+    public void setProtocolMappers(Set<String> protocolMappers) {
+        if (protocolMappers != null) {
+            for (String pm : protocolMappers) {
+                ClientSessionProtocolMapperEntity protMapperEntity = new ClientSessionProtocolMapperEntity();
+                protMapperEntity.setClientSession(entity);
+                protMapperEntity.setProtocolMapperId(pm);
+                em.persist(protMapperEntity);
+
+                entity.getProtocolMappers().add(protMapperEntity);
+            }
+        } else {
+            if (entity.getProtocolMappers() != null) {
+                for (ClientSessionProtocolMapperEntity pm : entity.getProtocolMappers()) {
+                    em.remove(pm);
+                }
+                entity.getProtocolMappers().clear();
+            }
+        }
     }
 }

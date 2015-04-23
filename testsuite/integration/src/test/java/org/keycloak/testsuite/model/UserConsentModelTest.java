@@ -46,15 +46,15 @@ public class UserConsentModelTest extends AbstractModelTest {
         UserModel john = session.users().addUser(realm, "john");
         UserModel mary = session.users().addUser(realm, "mary");
 
-        UserConsentModel johnFooGrant = new UserConsentModel(realm, fooClient.getId());
-        johnFooGrant.addGrantedRole(realmRole.getId());
-        johnFooGrant.addGrantedRole(barClientRole.getId());
-        johnFooGrant.addGrantedProtocolMapper(fooMapper.getId());
+        UserConsentModel johnFooGrant = new UserConsentModel(fooClient);
+        johnFooGrant.addGrantedRole(realmRole);
+        johnFooGrant.addGrantedRole(barClientRole);
+        johnFooGrant.addGrantedProtocolMapper(fooMapper);
         john.addConsent(johnFooGrant);
 
-        UserConsentModel johnBarGrant = new UserConsentModel(realm, barClient.getId());
-        johnBarGrant.addGrantedProtocolMapper(barMapper.getId());
-        johnBarGrant.addGrantedRole(realmRole.getId());
+        UserConsentModel johnBarGrant = new UserConsentModel(barClient);
+        johnBarGrant.addGrantedProtocolMapper(barMapper);
+        johnBarGrant.addGrantedRole(realmRole);
 
         // Update should fail as grant doesn't yet exists
         try {
@@ -65,9 +65,9 @@ public class UserConsentModelTest extends AbstractModelTest {
 
         john.addConsent(johnBarGrant);
 
-        UserConsentModel maryFooGrant = new UserConsentModel(realm, fooClient.getId());
-        maryFooGrant.addGrantedRole(realmRole.getId());
-        maryFooGrant.addGrantedProtocolMapper(fooMapper.getId());
+        UserConsentModel maryFooGrant = new UserConsentModel(fooClient);
+        maryFooGrant.addGrantedRole(realmRole);
+        maryFooGrant.addGrantedProtocolMapper(fooMapper);
         mary.addConsent(maryFooGrant);
 
         commit();
@@ -143,7 +143,7 @@ public class UserConsentModelTest extends AbstractModelTest {
         johnConsent.getGrantedRoles().remove(realmRole);
 
         RoleModel newRealmRole = realm.addRole("new-realm-role");
-        johnConsent.addGrantedRole(newRealmRole.getId());
+        johnConsent.addGrantedRole(newRealmRole);
 
         john.updateConsent(johnConsent);
 

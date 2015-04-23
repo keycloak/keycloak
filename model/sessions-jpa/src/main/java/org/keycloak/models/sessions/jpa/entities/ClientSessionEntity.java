@@ -61,6 +61,9 @@ public class ClientSessionEntity {
     protected Collection<ClientSessionRoleEntity> roles = new ArrayList<ClientSessionRoleEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
+    protected Collection<ClientSessionProtocolMapperEntity> protocolMappers = new ArrayList<ClientSessionProtocolMapperEntity>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
     protected Collection<ClientSessionNoteEntity> notes = new ArrayList<ClientSessionNoteEntity>();
 
     public String getId() {
@@ -125,6 +128,14 @@ public class ClientSessionEntity {
 
     public void setRoles(Collection<ClientSessionRoleEntity> roles) {
         this.roles = roles;
+    }
+
+    public Collection<ClientSessionProtocolMapperEntity> getProtocolMappers() {
+        return protocolMappers;
+    }
+
+    public void setProtocolMappers(Collection<ClientSessionProtocolMapperEntity> protocolMappers) {
+        this.protocolMappers = protocolMappers;
     }
 
     public Collection<ClientSessionNoteEntity> getNotes() {

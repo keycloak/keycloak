@@ -34,6 +34,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -611,16 +612,15 @@ public class LoginActionsService {
 
         UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
         if (grantedConsent == null) {
-            grantedConsent = new UserConsentModel(realm, client.getId());
+            grantedConsent = new UserConsentModel(client);
             user.addConsent(grantedConsent);
         }
-        for (String roleId : clientSession.getRoles()) {
-            grantedConsent.addGrantedRole(roleId);
+        for (RoleModel role : accessCode.getRequestedRoles()) {
+            grantedConsent.addGrantedRole(role);
         }
-        // TODO: It's not 100% sure that approved protocolMappers are same like the protocolMappers retrieved here from the client. Maybe clientSession.setProtocolMappers/getProtocolMappers should be added...
-        for (ProtocolMapperModel protocolMapper : client.getProtocolMappers()) {
-            if (protocolMapper.isConsentRequired() && protocolMapper.getProtocol().equals(clientSession.getAuthMethod()) && protocolMapper.getConsentText() != null) {
-                grantedConsent.addGrantedProtocolMapper(protocolMapper.getId());
+        for (ProtocolMapperModel protocolMapper : accessCode.getRequestedProtocolMappers()) {
+            if (protocolMapper.isConsentRequired() && protocolMapper.getConsentText() != null) {
+                grantedConsent.addGrantedProtocolMapper(protocolMapper);
             }
         }
         user.updateConsent(grantedConsent);

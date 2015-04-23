@@ -1,6 +1,5 @@
 package org.keycloak.account.freemarker.model;
 
-import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -15,22 +14,25 @@ import org.keycloak.util.MultivaluedHashMap;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AccessBean {
+public class ConsentBean {
 
     private List<ClientGrantBean> clientGrants = new LinkedList<ClientGrantBean>();
 
-    public AccessBean(RealmModel realm, UserModel user, URI baseUri, String stateChecker) {
+    public ConsentBean(UserModel user) {
         List<UserConsentModel> grantedConsents = user.getConsents();
         for (UserConsentModel consent : grantedConsents) {
             ClientModel client = consent.getClient();
 
             List<RoleModel> realmRolesGranted = new LinkedList<RoleModel>();
-            MultivaluedHashMap<String, RoleModel> resourceRolesGranted = new MultivaluedHashMap<String, RoleModel>();
+            MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted = new MultivaluedHashMap<String, ClientRoleEntry>();
             for (RoleModel role : consent.getGrantedRoles()) {
                 if (role.getContainer() instanceof RealmModel) {
                     realmRolesGranted.add(role);
                 } else {
-                    resourceRolesGranted.add(((ClientModel) role.getContainer()).getClientId(), role);
+                    ClientModel currentClient = (ClientModel) role.getContainer();
+                    ClientRoleEntry clientRole = new ClientRoleEntry(currentClient.getClientId(), currentClient.getName(),
+                            role.getName(), role.getDescription());
+                    resourceRolesGranted.add(currentClient.getClientId(), clientRole);
                 }
             }
 
@@ -51,11 +53,11 @@ public class AccessBean {
     public static class ClientGrantBean {
 
         private final List<RoleModel> realmRolesGranted;
-        private final MultivaluedHashMap<String, RoleModel> resourceRolesGranted;
+        private final MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted;
         private final ClientModel client;
         private final List<String> claimsGranted;
 
-        public ClientGrantBean(List<RoleModel> realmRolesGranted, MultivaluedHashMap<String, RoleModel> resourceRolesGranted,
+        public ClientGrantBean(List<RoleModel> realmRolesGranted, MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted,
                                ClientModel client, List<String> claimsGranted) {
             this.realmRolesGranted = realmRolesGranted;
             this.resourceRolesGranted = resourceRolesGranted;
@@ -67,7 +69,7 @@ public class AccessBean {
             return realmRolesGranted;
         }
 
-        public MultivaluedHashMap<String, RoleModel> getResourceRolesGranted() {
+        public MultivaluedHashMap<String, ClientRoleEntry> getResourceRolesGranted() {
             return resourceRolesGranted;
         }
 
@@ -79,5 +81,37 @@ public class AccessBean {
             return claimsGranted;
         }
 
+    }
+
+    // Same class used in OAuthGrantBean as well. Maybe should be merged into common-freemarker...
+    public static class ClientRoleEntry {
+
+        private final String clientId;
+        private final String clientName;
+        private final String roleName;
+        private final String roleDescription;
+
+        public ClientRoleEntry(String clientId, String clientName, String roleName, String roleDescription) {
+            this.clientId = clientId;
+            this.clientName = clientName;
+            this.roleName = roleName;
+            this.roleDescription = roleDescription;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public String getClientName() {
+            return clientName;
+        }
+
+        public String getRoleName() {
+            return roleName;
+        }
+
+        public String getRoleDescription() {
+            return roleDescription;
+        }
     }
 }

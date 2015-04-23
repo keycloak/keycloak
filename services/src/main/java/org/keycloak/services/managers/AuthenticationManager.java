@@ -439,8 +439,8 @@ public class AuthenticationManager {
             }
 
             List<ProtocolMapperModel> protocolMappers = new LinkedList<ProtocolMapperModel>();
-            for (ProtocolMapperModel protocolMapper : client.getProtocolMappers()) {
-                if (protocolMapper.isConsentRequired() && protocolMapper.getProtocol().equals(clientSession.getAuthMethod()) && protocolMapper.getConsentText() != null) {
+            for (ProtocolMapperModel protocolMapper : accessCode.getRequestedProtocolMappers()) {
+                if (protocolMapper.isConsentRequired() && protocolMapper.getConsentText() != null) {
                     if (grantedConsent == null || !grantedConsent.isProtocolMapperGranted(protocolMapper)) {
                         protocolMappers.add(protocolMapper);
                     }

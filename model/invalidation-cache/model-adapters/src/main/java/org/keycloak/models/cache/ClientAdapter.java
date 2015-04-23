@@ -293,7 +293,7 @@ public class ClientAdapter implements ClientModel {
     @Override
     public String getClientId() {
         if (updated != null) return updated.getClientId();
-        return cached.getName();
+        return cached.getClientId();
     }
 
     @Override
@@ -301,6 +301,18 @@ public class ClientAdapter implements ClientModel {
         getDelegateForUpdate();
         updated.setClientId(clientId);
         cacheSession.registerRealmInvalidation(cachedRealm.getId());
+    }
+
+    @Override
+    public String getName() {
+        if (updated != null) return updated.getName();
+        return cached.getName();
+    }
+
+    @Override
+    public void setName(String name) {
+        getDelegateForUpdate();
+        updated.setName(name);
     }
 
     @Override

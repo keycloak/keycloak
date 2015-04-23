@@ -21,6 +21,7 @@
  */
 package org.keycloak.login.freemarker.model;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -29,6 +30,7 @@ import org.keycloak.models.RoleModel;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
@@ -37,7 +39,7 @@ public class OAuthGrantBean {
 
     private final String accessRequestMessage;
     private List<RoleModel> realmRolesRequested;
-    private MultivaluedMap<String, RoleModel> resourceRolesRequested;
+    private MultivaluedMap<String, ClientRoleEntry> resourceRolesRequested;
     private String code;
     private ClientModel client;
     private List<String> claimsRequested;
@@ -47,7 +49,17 @@ public class OAuthGrantBean {
         this.code = code;
         this.client = client;
         this.realmRolesRequested = realmRolesRequested;
-        this.resourceRolesRequested = resourceRolesRequested;
+        if (resourceRolesRequested != null) {
+            this.resourceRolesRequested = new MultivaluedMapImpl<String, ClientRoleEntry>();
+            for (List<RoleModel> clientRoles : resourceRolesRequested.values()) {
+                for (RoleModel role : clientRoles) {
+                    ClientModel currentClient = (ClientModel) role.getContainer();
+                    ClientRoleEntry roleEntry = new ClientRoleEntry(currentClient.getClientId(), currentClient.getName(), role.getName(), role.getDescription());
+                    this.resourceRolesRequested.add(currentClient.getClientId(), roleEntry);
+                }
+            }
+        }
+
         this.accessRequestMessage = accessRequestMessage;
 
         List<String> claims = new LinkedList<String>();
@@ -63,7 +75,7 @@ public class OAuthGrantBean {
         return code;
     }
 
-    public MultivaluedMap<String, RoleModel> getResourceRolesRequested() {
+    public MultivaluedMap<String, ClientRoleEntry> getResourceRolesRequested() {
         return resourceRolesRequested;
     }
 
@@ -81,5 +93,37 @@ public class OAuthGrantBean {
 
     public String getAccessRequestMessage() {
         return this.accessRequestMessage;
+    }
+
+    // Same class used in ConsentBean in account as well. Maybe should be merged into common-freemarker...
+    public static class ClientRoleEntry {
+
+        private final String clientId;
+        private final String clientName;
+        private final String roleName;
+        private final String roleDescription;
+
+        public ClientRoleEntry(String clientId, String clientName, String roleName, String roleDescription) {
+            this.clientId = clientId;
+            this.clientName = clientName;
+            this.roleName = roleName;
+            this.roleDescription = roleDescription;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public String getClientName() {
+            return clientName;
+        }
+
+        public String getRoleName() {
+            return roleName;
+        }
+
+        public String getRoleDescription() {
+            return roleDescription;
+        }
     }
 }

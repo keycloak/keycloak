@@ -69,6 +69,16 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public String getName() {
+        return entity.getName();
+    }
+
+    @Override
+    public void setName(String name) {
+       entity.setName(name);
+    }
+
+    @Override
     public Set<String> getWebOrigins() {
         Set<String> result = new HashSet<String>();
         if (entity.getWebOrigins() != null) {

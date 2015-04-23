@@ -1,9 +1,9 @@
 <#import "template.ftl" as layout>
-<@layout.mainLayout active='access' bodyClass='access'; section>
+<@layout.mainLayout active='applications' bodyClass='applications'; section>
 
     <div class="row">
         <div class="col-md-10">
-            <h2>${msg("accessHtmlTitle")}</h2>
+            <h2>${msg("applicationsHtmlTitle")}</h2>
         </div>
     </div>
 
@@ -21,9 +21,13 @@
             </thead>
 
             <tbody>
-              <#list access.clientGrants as clientGrant>
+              <#list consent.clientGrants as clientGrant>
                 <tr>
-                    <td><#if clientGrant.client.baseUrl??><a href="${clientGrant.client.baseUrl}">${clientGrant.client.clientId}</a><#else>${clientGrant.client.clientId}</#if></td>
+                    <td>
+                        <#if clientGrant.client.baseUrl??><a href="${clientGrant.client.baseUrl}"></#if>
+                            <#if clientGrant.client.name??>${advancedMsg(clientGrant.client.name)}<#else>${clientGrant.client.clientId}</#if>
+                        <#if clientGrant.client.baseUrl??></a></#if>
+                    </td>
                     <td>
                         <#list clientGrant.claimsGranted as claim>
                             ${advancedMsg(claim)}<#if claim_has_next>, </#if>
@@ -36,10 +40,10 @@
                         </#list>
                         <#list clientGrant.resourceRolesGranted?keys as resource>
                             <#if clientGrant.realmRolesGranted?has_content>, </#if>
-                            <#list clientGrant.resourceRolesGranted[resource] as role>
-                                <#if role.description??>${advancedMsg(role.description)}<#else>${advancedMsg(role.name)}</#if>
-                                ${msg("inResource", resource)}
-                                <#if role_has_next>, </#if>
+                            <#list clientGrant.resourceRolesGranted[resource] as clientRole>
+                                <#if clientRole.roleDescription??>${advancedMsg(clientRole.roleDescription)}<#else>${advancedMsg(clientRole.roleName)}</#if>
+                                ${msg("inResource")} <strong><#if clientRole.clientName??>${advancedMsg(clientRole.clientName)}<#else>${clientRole.clientId}</#if></strong>
+                                <#if clientRole_has_next>, </#if>
                             </#list>
                         </#list>
                     </td>

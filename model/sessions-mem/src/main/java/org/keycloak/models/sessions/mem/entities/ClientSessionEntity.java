@@ -23,6 +23,7 @@ public class ClientSessionEntity {
     private int timestamp;
     private ClientSessionModel.Action action;
     private Set<String> roles;
+    private Set<String> protocolMappers;
     private Map<String, String> notes = new HashMap<String, String>();
 
     public String getId() {
@@ -87,6 +88,14 @@ public class ClientSessionEntity {
 
     public void setRoles(Set<String> roles) {
         this.roles = roles;
+    }
+
+    public Set<String> getProtocolMappers() {
+        return protocolMappers;
+    }
+
+    public void setProtocolMappers(Set<String> protocolMappers) {
+        this.protocolMappers = protocolMappers;
     }
 
     public Map<String, String> getNotes() {

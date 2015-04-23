@@ -17,6 +17,9 @@ public class Update1_2_0_RC1 extends Update {
 
     @Override
     public void update(KeycloakSession session) {
+        deleteEntries("clientSessions");
+        deleteEntries("sessions");
+
         convertApplicationsToClients();
         convertOAuthClientsToClients();
 
