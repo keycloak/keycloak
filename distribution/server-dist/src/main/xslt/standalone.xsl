@@ -4,9 +4,8 @@
                 xmlns:ds="urn:jboss:domain:datasources:2.0"
                 xmlns:dep="urn:jboss:domain:deployment-scanner:2.0"
                 xmlns:k="urn:jboss:domain:keycloak:1.0"
-                xmlns:sec="urn:jboss:domain:security:1.2"
                 version="2.0"
-                exclude-result-prefixes="xalan j ds dep k sec">
+                exclude-result-prefixes="xalan j ds dep k">
 
     <xsl:param name="config"/>
 
@@ -18,6 +17,12 @@
             <xsl:apply-templates select="node()|@*"/>
             <extension module="org.keycloak.keycloak-subsystem"/>
         </xsl:copy>
+    </xsl:template>
+
+    <xsl:template match="//j:extensions/j:extension[@module='org.jboss.as.deployment-scanner']">
+    </xsl:template>
+
+    <xsl:template match="//j:profile/dep:subsystem">
     </xsl:template>
 
     <xsl:template match="//ds:datasources">
@@ -44,22 +49,6 @@
                     <web-context>auth</web-context>
                 </auth-server>
             </subsystem>
-        </xsl:copy>
-    </xsl:template>
-
-    <xsl:template match="//sec:security-domains">
-        <xsl:copy>
-            <xsl:apply-templates select="node()[name(.)='security-domain']"/>
-            <security-domain name="keycloak">
-                <authentication>
-                    <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule" flag="required"/>
-                </authentication>
-            </security-domain>
-            <security-domain name="sp" cache-type="default">
-                <authentication>
-                    <login-module code="org.picketlink.identity.federation.bindings.wildfly.SAML2LoginModule" flag="required"/>
-                </authentication>
-            </security-domain>
         </xsl:copy>
     </xsl:template>
 

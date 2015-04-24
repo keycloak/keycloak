@@ -6,6 +6,7 @@
         <version>1.2.0.RC1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
     <name>Distribution Parent</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
@@ -24,14 +25,17 @@
             </plugin>
         </plugins>
     </build>
+
     <modules>
         <module>adapters</module>
-        <module>subsystem-war</module>
-        <module>modules</module>
+        <module>demo-dist</module>
+        <module>docs-dist</module>
         <module>examples-dist</module>
+        <module>modules</module>
         <module>proxy-dist</module>
-        <module>src-dist</module>
-        <module>server-overlay</module>
         <module>server-dist</module>
+        <module>server-overlay</module>
+        <module>src-dist</module>
+        <module>subsystem-war</module>
     </modules>
 </project>

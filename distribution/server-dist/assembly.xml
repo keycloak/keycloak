@@ -16,6 +16,8 @@
                 <exclude>**/*.sh</exclude>
                 <exclude>welcome-content/**</exclude>
                 <exclude>docs/**</exclude>
+                <exclude>standalone/deployments</exclude>
+                <exclude>standalone/deployments/*</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -42,6 +44,11 @@
             </includes>
             <outputDirectory></outputDirectory>
             <unpack>true</unpack>
+            <unpackOptions>
+                <excludes>
+                    <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
+                </excludes>
+            </unpackOptions>
         </dependencySet>
     </dependencySets>
 </assembly>
