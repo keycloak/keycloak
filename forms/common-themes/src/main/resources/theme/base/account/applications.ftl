@@ -13,42 +13,71 @@
         <table class="table table-striped table-bordered">
             <thead>
               <tr>
-                <td>${msg("client")}</td>
-                <td>${msg("grantedPersonalInfo")}</td>
+                <td>${msg("application")}</td>
+                <td>${msg("availablePermissions")}</td>
                 <td>${msg("grantedPermissions")}</td>
+                <td>${msg("grantedPersonalInfo")}</td>
                 <td>${msg("action")}</td>
               </tr>
             </thead>
 
             <tbody>
-              <#list consent.clientGrants as clientGrant>
+              <#list applications.applications as application>
                 <tr>
                     <td>
-                        <#if clientGrant.client.baseUrl??><a href="${clientGrant.client.baseUrl}"></#if>
-                            <#if clientGrant.client.name??>${advancedMsg(clientGrant.client.name)}<#else>${clientGrant.client.clientId}</#if>
-                        <#if clientGrant.client.baseUrl??></a></#if>
+                        <#if application.client.baseUrl??><a href="${application.client.baseUrl}"></#if>
+                            <#if application.client.name??>${advancedMsg(application.client.name)}<#else>${application.client.clientId}</#if>
+                        <#if application.client.baseUrl??></a></#if>
                     </td>
+
                     <td>
-                        <#list clientGrant.claimsGranted as claim>
-                            ${advancedMsg(claim)}<#if claim_has_next>, </#if>
-                        </#list>
-                    </td>
-                    <td>
-                        <#list clientGrant.realmRolesGranted as role>
+                        <#list application.realmRolesAvailable as role>
                             <#if role.description??>${advancedMsg(role.description)}<#else>${advancedMsg(role.name)}</#if>
                             <#if role_has_next>, </#if>
                         </#list>
-                        <#list clientGrant.resourceRolesGranted?keys as resource>
-                            <#if clientGrant.realmRolesGranted?has_content>, </#if>
-                            <#list clientGrant.resourceRolesGranted[resource] as clientRole>
+                        <#list application.resourceRolesAvailable?keys as resource>
+                            <#if application.realmRolesAvailable?has_content>, </#if>
+                            <#list application.resourceRolesAvailable[resource] as clientRole>
                                 <#if clientRole.roleDescription??>${advancedMsg(clientRole.roleDescription)}<#else>${advancedMsg(clientRole.roleName)}</#if>
                                 ${msg("inResource")} <strong><#if clientRole.clientName??>${advancedMsg(clientRole.clientName)}<#else>${clientRole.clientId}</#if></strong>
                                 <#if clientRole_has_next>, </#if>
                             </#list>
                         </#list>
                     </td>
+
                     <td>
-                        <button type='submit' class='btn btn-primary' id='revoke-${clientGrant.client.clientId}' name='clientId' value="${clientGrant.client.id}">${msg("revoke")}</button>
+                        <#if application.client.consentRequired>
+                            <#list application.realmRolesGranted as role>
+                                <#if role.description??>${advancedMsg(role.description)}<#else>${advancedMsg(role.name)}</#if>
+                                <#if role_has_next>, </#if>
+                            </#list>
+                            <#list application.resourceRolesGranted?keys as resource>
+                                <#if application.realmRolesGranted?has_content>, </#if>
+                                <#list application.resourceRolesGranted[resource] as clientRole>
+                                    <#if clientRole.roleDescription??>${advancedMsg(clientRole.roleDescription)}<#else>${advancedMsg(clientRole.roleName)}</#if>
+                                    ${msg("inResource")} <strong><#if clientRole.clientName??>${advancedMsg(clientRole.clientName)}<#else>${clientRole.clientId}</#if></strong>
+                                    <#if clientRole_has_next>, </#if>
+                                </#list>
+                            </#list>
+                        <#else>
+                            <strong>${msg("fullAccess")}</strong>
+                        </#if>
+                    </td>
+
+                    <td>
+                        <#if application.client.consentRequired>
+                            <#list application.claimsGranted as claim>
+                                ${advancedMsg(claim)}<#if claim_has_next>, </#if>
+                            </#list>
+                        <#else>
+                            <strong>${msg("fullAccess")}</strong>
+                        </#if>
+                    </td>
+
+                    <td>
+                        <#if application.client.consentRequired>
+                            <button type='submit' class='btn btn-primary' id='revoke-${application.client.clientId}' name='clientId' value="${application.client.id}">${msg("revoke")}</button>
+                        </#if>
                     </td>
                 </tr>
               </#list>

@@ -370,7 +370,7 @@ public class MongoUserProvider implements UserProvider {
                 .and("grantedProtocolMappers").is(protocolMapper.getId())
                 .get();
         DBObject pull = new BasicDBObject("$pull", query);
-        getMongoStore().updateEntities(MongoUserEntity.class, query, pull, invocationContext);
+        getMongoStore().updateEntities(MongoUserConsentEntity.class, query, pull, invocationContext);
     }
 
     @Override

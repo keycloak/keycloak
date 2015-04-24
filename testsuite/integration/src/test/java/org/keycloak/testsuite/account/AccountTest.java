@@ -28,6 +28,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.account.freemarker.model.ApplicationsBean;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
@@ -43,6 +44,7 @@ import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountSessionsPage;
@@ -63,6 +65,7 @@ import org.openqa.selenium.WebDriver;
 import javax.ws.rs.core.UriBuilder;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -128,6 +131,9 @@ public class AccountTest {
 
     @WebResource
     protected AccountSessionsPage sessionsPage;
+
+    @WebResource
+    protected AccountApplicationsPage applicationsPage;
 
     @WebResource
     protected ErrorPage errorPage;
@@ -515,6 +521,40 @@ public class AccountTest {
         } finally {
             driver2.close();
         }
+    }
+
+    // More tests (including revoke) are in OAuthGrantTest
+    @Test
+    public void applications() {
+        applicationsPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=applications").assertEvent();
+        Assert.assertTrue(applicationsPage.isCurrent());
+
+        Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
+        Assert.assertEquals(3, apps.size());
+
+        AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
+        Assert.assertEquals(2, accountEntry.getRolesAvailable().size());
+        Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account in Account"));
+        Assert.assertTrue(accountEntry.getRolesAvailable().contains("View profile in Account"));
+        Assert.assertEquals(1, accountEntry.getRolesGranted().size());
+        Assert.assertTrue(accountEntry.getRolesGranted().contains("Full Access"));
+        Assert.assertEquals(1, accountEntry.getProtocolMappersGranted().size());
+        Assert.assertTrue(accountEntry.getProtocolMappersGranted().contains("Full Access"));
+
+        AccountApplicationsPage.AppEntry testAppEntry = apps.get("test-app");
+        Assert.assertEquals(4, testAppEntry.getRolesAvailable().size());
+        Assert.assertTrue(testAppEntry.getRolesGranted().contains("Full Access"));
+        Assert.assertTrue(testAppEntry.getProtocolMappersGranted().contains("Full Access"));
+
+        AccountApplicationsPage.AppEntry thirdPartyEntry = apps.get("third-party");
+        Assert.assertEquals(2, thirdPartyEntry.getRolesAvailable().size());
+        Assert.assertTrue(thirdPartyEntry.getRolesAvailable().contains("Have User privileges"));
+        Assert.assertTrue(thirdPartyEntry.getRolesAvailable().contains("Have Customer User privileges in test-app"));
+        Assert.assertEquals(0, thirdPartyEntry.getRolesGranted().size());
+        Assert.assertEquals(0, thirdPartyEntry.getProtocolMappersGranted().size());
     }
 
 }
