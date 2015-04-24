@@ -16,7 +16,8 @@
                 <exclude>**/*.sh</exclude>
                 <exclude>welcome-content/**</exclude>
                 <exclude>docs/**</exclude>
-                <exclude>standalone/configuration/standalone*.xml</exclude>
+                <exclude>standalone/deployments</exclude>
+                <exclude>standalone/deployments/*</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -26,13 +27,6 @@
                 <include>**/*.sh</include>
             </includes>
             <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>../server-overlay/target/unpacked/wildfly-${wildfly.version}</directory>
-            <outputDirectory></outputDirectory>
-            <includes>
-                <include>standalone/configuration/standalone*.xml</include>
-            </includes>
         </fileSet>
         <fileSet>
             <directory>src/main/welcome-content</directory>
@@ -49,10 +43,12 @@
                 <include>org.keycloak:keycloak-server-overlay:zip</include>
             </includes>
             <outputDirectory></outputDirectory>
-            <excludes>
-                <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
-            </excludes>
             <unpack>true</unpack>
+            <unpackOptions>
+                <excludes>
+                    <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
+                </excludes>
+            </unpackOptions>
         </dependencySet>
     </dependencySets>
 </assembly>

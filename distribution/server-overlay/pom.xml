@@ -48,7 +48,7 @@
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
-                            <includes>*/standalone/configuration/standalone*.xml</includes>
+                            <includes>*/standalone/configuration/standalone.xml</includes>
                         </configuration>
                     </execution>
                     <execution>
@@ -87,7 +87,7 @@
                                     <dir>${project.build.directory}/unpacked/wildfly-${wildfly.version}/standalone/configuration</dir>
                                     <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
                                     <includes>
-                                        <include>standalone*.xml</include>
+                                        <include>standalone.xml</include>
                                     </includes>
                                     <outputDir>${project.build.directory}/unpacked/wildfly-${wildfly.version}/standalone/configuration</outputDir>
                                 </transformationSet>
