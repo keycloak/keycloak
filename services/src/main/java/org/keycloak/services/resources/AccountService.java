@@ -478,7 +478,10 @@ public class AccountService {
         csrfCheck(stateChecker);
 
         UserModel user = auth.getUser();
-        session.sessions().removeUserSessions(realm, user);
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
+        for (UserSessionModel userSession : userSessions) {
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+        }
 
         UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "sessionsPage");
         String referrer = uriInfo.getQueryParameters().getFirst("referrer");
@@ -519,6 +522,7 @@ public class AccountService {
             List<ClientSessionModel> clientSessions = userSession.getClientSessions();
             for (ClientSessionModel clientSession : clientSessions) {
                 if (clientSession.getClient().getId().equals(clientId)) {
+                    AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
                     TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
                 }
             }

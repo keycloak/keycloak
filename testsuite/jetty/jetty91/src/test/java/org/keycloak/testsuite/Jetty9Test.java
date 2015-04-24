@@ -172,4 +172,12 @@ public class Jetty9Test {
     public void testAdminApplicationLogout() throws Throwable {
         testStrategy.testAdminApplicationLogout();
     }
+
+    /**
+     * KEYCLOAK-1216
+     */
+    @Test
+    public void testAccountManagementSessionsLogout() throws Throwable {
+        testStrategy.testAccountManagementSessionsLogout();
+    }
 }
