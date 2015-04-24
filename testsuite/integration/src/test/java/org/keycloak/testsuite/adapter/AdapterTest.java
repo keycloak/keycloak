@@ -155,4 +155,12 @@ public class AdapterTest {
         testStrategy.testAdminApplicationLogout();
     }
 
+    /**
+     * KEYCLOAK-1216
+     */
+    @Test
+    public void testAccountManagementSessionsLogout() throws Throwable {
+        testStrategy.testAccountManagementSessionsLogout();
+    }
+
 }

@@ -4,7 +4,7 @@
     },
 
     "eventsStore": {
-        "provider": "${keycloak.eventStore.provider:jpa}"
+        "provider": "${keycloak.eventsStore.provider:jpa}"
     },
 
     "eventsListener": {

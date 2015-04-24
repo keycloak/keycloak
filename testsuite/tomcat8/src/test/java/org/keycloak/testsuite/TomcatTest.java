@@ -166,6 +166,14 @@ public class TomcatTest {
         testStrategy.testAdminApplicationLogout();
     }
 
+    /**
+     * KEYCLOAK-1216
+     */
+    @Test
+    public void testAccountManagementSessionsLogout() throws Throwable {
+        testStrategy.testAccountManagementSessionsLogout();
+    }
+
     private static String getBaseDirectory() {
         String dirPath = null;
         String relativeDirPath = "testsuite" + File.separator + "tomcat8" + File.separator + "target";
