@@ -21,6 +21,7 @@ import org.keycloak.broker.oidc.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
@@ -80,7 +81,7 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
                 JSONWebKeySet keySet = JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
                 for (JWK jwk : keySet.getKeys()) {
                     JWKParser parse = JWKParser.create(jwk);
-                    if (parse.getJwk().getPublicKeyUse().equals(JWK.SIG_USE)) {
+                    if (parse.getJwk().getPublicKeyUse().equals(JWK.SIG_USE) && keyTypeSupported(jwk.getKeyType())) {
                         PublicKey key = parse.toPublicKey();
                         config.setPublicKeySignatureVerifier(KeycloakModelUtils.getPemFromKey(key));
                         config.setValidateSignature(true);
@@ -94,5 +95,9 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
 
         }
         return config.getConfig();
+    }
+
+    protected static boolean keyTypeSupported(String type) {
+        return type != null && type.equals("RSA");
     }
 }
