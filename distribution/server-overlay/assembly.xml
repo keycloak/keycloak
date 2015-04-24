@@ -12,12 +12,8 @@
             <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
             <outputDirectory></outputDirectory>
             <includes>
-                <include>**/standalone*.xml</include>
+                <include>standalone/configuration/standalone*.xml</include>
             </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/docs</directory>
-            <outputDirectory>docs</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/modules</directory>
@@ -36,18 +32,6 @@
                 <include>License.html</include>
             </includes>
             <outputDirectory></outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../../target/site/apidocs</directory>
-            <outputDirectory>docs/javadocs</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../../services/target/apidocs</directory>
-            <outputDirectory>docs/rest-api</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../../docbook/target/docbook/publish/en-US</directory>
-            <outputDirectory>docs/userguide</outputDirectory>
         </fileSet>
     </fileSets>
 

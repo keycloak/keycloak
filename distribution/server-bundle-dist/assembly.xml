@@ -6,6 +6,7 @@
         <format>tar.gz</format>
         <format>dir</format>
     </formats>
+
     <includeBaseDirectory>true</includeBaseDirectory>
 
     <dependencySets>
@@ -19,6 +20,13 @@
         <dependencySet>
             <includes>
                 <include>org.keycloak:keycloak-examples-dist:zip</include>
+            </includes>
+            <outputDirectory></outputDirectory>
+            <unpack>true</unpack>
+        </dependencySet>
+        <dependencySet>
+            <includes>
+                <include>org.keycloak:keycloak-docs-dist:zip</include>
             </includes>
             <outputDirectory></outputDirectory>
             <unpack>true</unpack>

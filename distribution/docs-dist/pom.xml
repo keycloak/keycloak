@@ -8,32 +8,23 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-server-bundle-dist</artifactId>
+    <artifactId>keycloak-docs-dist</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak Server Bundle Distribution</name>
+    <name>Keycloak Docs Distribution</name>
     <description/>
 
     <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-dist</artifactId>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-examples-dist</artifactId>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-docs-dist</artifactId>
-            <type>zip</type>
-        </dependency>
     </dependencies>
-
     <build>
-        <finalName>keycloak-${project.version}</finalName>
+        <finalName>keycloak-docs-${project.version}</finalName>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
@@ -47,10 +38,13 @@
                             <descriptors>
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
-                            <outputDirectory>target</outputDirectory>
-                            <workDirectory>target/assembly/work</workDirectory>
+                            <outputDirectory>
+                                target
+                            </outputDirectory>
+                            <workDirectory>
+                                target/assembly/work
+                            </workDirectory>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <tarLongFileMode>gnu</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>

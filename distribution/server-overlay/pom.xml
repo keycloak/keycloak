@@ -48,7 +48,7 @@
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
-                            <includes>**/standalone*.xml</includes>
+                            <includes>*/standalone/configuration/standalone*.xml</includes>
                         </configuration>
                     </execution>
                     <execution>

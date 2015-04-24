@@ -4,6 +4,7 @@
     <formats>
         <format>zip</format>
     </formats>
+
     <includeBaseDirectory>true</includeBaseDirectory>
 
     <fileSets>
