@@ -37,62 +37,81 @@ public class AccountApplicationsPage extends AbstractAccountPage {
         driver.findElement(By.id("revoke-" + clientId)).click();
     }
 
-    public Map<String, ClientGrant> getClientGrants() {
-        Map<String, ClientGrant> table = new HashMap<String, ClientGrant>();
+    public Map<String, AppEntry> getApplications() {
+        Map<String, AppEntry> table = new HashMap<String, AppEntry>();
         for (WebElement r : driver.findElements(By.tagName("tr"))) {
             int count = 0;
-            ClientGrant currentGrant = null;
+            AppEntry currentEntry = null;
 
             for (WebElement col : r.findElements(By.tagName("td"))) {
                 count++;
                 switch (count) {
                     case 1:
-                        currentGrant = new ClientGrant();
-                        String clientId = col.getText();
-                        table.put(clientId, currentGrant);
+                        currentEntry = new AppEntry();
+                        String client = col.getText();
+                        table.put(client, currentEntry);
                         break;
                     case 2:
-                        String protMappersStr = col.getText();
-                        String[] protMappers = protMappersStr.split(",");
-                        for (String protMapper : protMappers) {
-                            protMapper = protMapper.trim();
-                            currentGrant.addMapper(protMapper);
-                        }
-                        break;
-                    case 3:
                         String rolesStr = col.getText();
                         String[] roles = rolesStr.split(",");
                         for (String role : roles) {
                             role = role.trim();
-                            currentGrant.addRole(role);
+                            currentEntry.addAvailableRole(role);
+                        }
+                        break;
+                    case 3:
+                        rolesStr = col.getText();
+                        if (rolesStr.isEmpty()) break;
+                        roles = rolesStr.split(",");
+                        for (String role : roles) {
+                            role = role.trim();
+                            currentEntry.addGrantedRole(role);
+                        }
+                        break;
+                    case 4:
+                        String protMappersStr = col.getText();
+                        if (protMappersStr.isEmpty()) break;
+                        String[] protMappers = protMappersStr.split(",");
+                        for (String protMapper : protMappers) {
+                            protMapper = protMapper.trim();
+                            currentEntry.addMapper(protMapper);
                         }
                         break;
                 }
             }
         }
-        table.remove("Client");
+        table.remove("Application");
         return table;
     }
 
-    public static class ClientGrant {
+    public static class AppEntry {
 
-        private final List<String> protocolMapperDescriptions = new ArrayList<String>();
-        private final List<String> roleDescriptions = new ArrayList<String>();
+        private final List<String> rolesAvailable = new ArrayList<String>();
+        private final List<String> rolesGranted = new ArrayList<String>();
+        private final List<String> protocolMappersGranted = new ArrayList<String>();
+
+        private void addAvailableRole(String role) {
+            rolesAvailable.add(role);
+        }
+
+        private void addGrantedRole(String role) {
+            rolesGranted.add(role);
+        }
 
         private void addMapper(String protocolMapper) {
-            protocolMapperDescriptions.add(protocolMapper);
+            protocolMappersGranted.add(protocolMapper);
         }
 
-        private void addRole(String role) {
-            roleDescriptions.add(role);
+        public List<String> getRolesGranted() {
+            return rolesGranted;
         }
 
-        public List<String> getProtocolMapperDescriptions() {
-            return protocolMapperDescriptions;
+        public List<String> getRolesAvailable() {
+            return rolesAvailable;
         }
 
-        public List<String> getRoleDescriptions() {
-            return roleDescriptions;
+        public List<String> getProtocolMappersGranted() {
+            return protocolMappersGranted;
         }
     }
 }
