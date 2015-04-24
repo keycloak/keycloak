@@ -44,6 +44,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AccountSessionsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -93,6 +94,9 @@ public class AdapterTestStrategy extends ExternalResource {
 
     @WebResource
     protected InputPage inputPage;
+
+    @WebResource
+    protected AccountSessionsPage accountSessionsPage;
 
     protected String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_URL)).build("demo").toString();
 
@@ -590,6 +594,22 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/session-portal" + slash);
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Counter=3"));
+    }
+
+    /**
+     * KEYCLOAK-1216
+     */
+    public void testAccountManagementSessionsLogout() throws Throwable {
+        // login as bburke
+        loginAndCheckSession(driver, loginPage);
+
+        // logout sessions in account management
+        accountSessionsPage.realm("demo");
+        accountSessionsPage.open();
+        accountSessionsPage.logoutAll();
+
+        // Assert I need to login again (logout was propagated to the app)
+        loginAndCheckSession(driver, loginPage);
     }
 
     protected void loginAndCheckSession(WebDriver driver, LoginPage loginPage) {

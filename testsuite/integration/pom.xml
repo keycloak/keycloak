@@ -379,7 +379,7 @@
                             <systemPropertyVariables>
                                 <keycloak.realm.provider>jpa</keycloak.realm.provider>
                                 <keycloak.user.provider>jpa</keycloak.user.provider>
-                                <keycloak.eventStore.provider>jpa</keycloak.eventStore.provider>
+                                <keycloak.eventsStore.provider>jpa</keycloak.eventsStore.provider>
                                 <keycloak.userSessions.provider>jpa</keycloak.userSessions.provider>
                             </systemPropertyVariables>
                         </configuration>
@@ -443,7 +443,7 @@
                                     <systemPropertyVariables>
                                         <keycloak.realm.provider>mongo</keycloak.realm.provider>
                                         <keycloak.user.provider>mongo</keycloak.user.provider>
-                                        <keycloak.audit.provider>mongo</keycloak.audit.provider>
+                                        <keycloak.eventsStore.provider>mongo</keycloak.eventsStore.provider>
                                         <keycloak.userSessions.provider>mongo</keycloak.userSessions.provider>
                                         <keycloak.connectionsMongo.host>${keycloak.connectionsMongo.host}</keycloak.connectionsMongo.host>
                                         <keycloak.connectionsMongo.port>${keycloak.connectionsMongo.port}</keycloak.connectionsMongo.port>

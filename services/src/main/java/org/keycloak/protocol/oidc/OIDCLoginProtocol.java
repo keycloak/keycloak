@@ -165,7 +165,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
         if (!(clientSession.getClient() instanceof ClientModel)) return;
-        ClientModel app = (ClientModel)clientSession.getClient();
+        ClientModel app = clientSession.getClient();
+        // TODO: Probably non-effective to build executor every time from scratch. Should be likely shared for whole OIDCLoginProtocolFactory
         ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
 
         try {

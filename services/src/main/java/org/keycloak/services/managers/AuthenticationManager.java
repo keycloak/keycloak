@@ -113,20 +113,24 @@ public class AuthenticationManager {
         expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-            ClientModel client = clientSession.getClient();
-            if (client instanceof ClientModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
-                String authMethod = clientSession.getAuthMethod();
-                if (authMethod == null) continue; // must be a keycloak service like account
-                LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
-                protocol.setRealm(realm)
-                        .setHttpHeaders(headers)
-                        .setUriInfo(uriInfo);
-                protocol.backchannelLogout(userSession, clientSession);
-                clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
-            }
+            backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
         }
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
         session.sessions().removeUserSession(realm, userSession);
+    }
+
+    public static void backchannelLogoutClientSession(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession, UserSessionModel userSession, UriInfo uriInfo, HttpHeaders headers) {
+        ClientModel client = clientSession.getClient();
+        if (client instanceof ClientModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
+            String authMethod = clientSession.getAuthMethod();
+            if (authMethod == null) return; // must be a keycloak service like account
+            LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
+            protocol.setRealm(realm)
+                    .setHttpHeaders(headers)
+                    .setUriInfo(uriInfo);
+            protocol.backchannelLogout(userSession, clientSession);
+            clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+        }
     }
 
 

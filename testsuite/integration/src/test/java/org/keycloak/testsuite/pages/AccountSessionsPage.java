@@ -36,7 +36,9 @@ import java.util.List;
  */
 public class AccountSessionsPage extends AbstractAccountPage {
 
-    private static String PATH = Urls.accountSessionsPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).build(), "test").toString();
+    private String realmName = "test";
+
+    private String path = Urls.accountSessionsPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).build(), "test").toString();
 
     @FindBy(id = "logout-all-sessions")
     private WebElement logoutAllLink;
@@ -45,8 +47,16 @@ public class AccountSessionsPage extends AbstractAccountPage {
         return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().endsWith("/account/sessions");
     }
 
+    public void realm(String realmName) {
+        this.realmName = realmName;
+    }
+
+    public String getPath() {
+        return Urls.accountSessionsPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).build(), realmName).toString();
+    }
+
     public void open() {
-        driver.navigate().to(PATH);
+        driver.navigate().to(getPath());
     }
 
     public void logoutAll() {
