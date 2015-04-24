@@ -6,7 +6,7 @@
     <parent>
         <artifactId>keycloak-examples-broker-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.0.CR1</version>
+        <version>1.2.0.CR1-redhat-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Broker Examples - Twitter Authentication</name>
@@ -45,9 +45,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>jaxrs-api</artifactId>
-            <version>3.0.10.Final</version>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_1.1_spec</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

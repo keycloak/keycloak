@@ -14,7 +14,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>1.2.0.CR1</version>
+    <version>1.2.0.CR1-redhat-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -63,6 +63,7 @@
         <log4j.version>1.2.17</log4j.version>
         <greenmail.version>1.3.1b</greenmail.version>
         <xmlsec.version>1.5.1</xmlsec.version>
+        <keycloak.community.version>1.2.0.CR1</keycloak.community.version>
 
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <wildfly.plugin.version>1.0.1.Final</wildfly.plugin.version>
@@ -125,7 +126,7 @@
         <module>events</module>
         <module>model</module>
         <module>integration</module>
-        <module>proxy</module>
+        <!--<module>proxy</module>-->
         <module>federation</module>
         <module>services</module>
         <module>saml</module>
@@ -141,6 +142,14 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.jboss.bom</groupId>
+                <artifactId>eap6-supported-artifacts</artifactId>
+                <version>6.4.0.GA</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
                 <version>${bouncycastle.crypto.version}</version>
@@ -155,82 +164,90 @@
                 <artifactId>base64</artifactId>
                 <version>${base64.version}</version>
             </dependency>
-            <dependency>
-                <groupId>javax.mail</groupId>
-                <artifactId>mail</artifactId>
-                <version>${javax.mail.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>jaxrs-api</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jaxrs</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-multipart-provider</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jackson-provider</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-client</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-undertow</artifactId>
-                <version>${resteasy.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>async-http-servlet-3.0</artifactId>
-                <version>${resteasy.version}</version>
-                <scope>test</scope>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>javax.mail</groupId>-->
+                <!--<artifactId>mail</artifactId>-->
+                <!--<version>${javax.mail.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.jboss.resteasy</groupId>-->
+                <!--<artifactId>jaxrs-api</artifactId>-->
+                <!--<version>${resteasy.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.jboss.resteasy</groupId>-->
+                <!--<artifactId>resteasy-jaxrs</artifactId>-->
+                <!--<version>${resteasy.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.jboss.resteasy</groupId>-->
+                <!--<artifactId>resteasy-multipart-provider</artifactId>-->
+                <!--<version>${resteasy.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.jboss.resteasy</groupId>-->
+                <!--<artifactId>resteasy-jackson-provider</artifactId>-->
+                <!--<version>${resteasy.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.jboss.resteasy</groupId>-->
+                <!--<artifactId>resteasy-client</artifactId>-->
+                <!--<version>${resteasy.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.jboss.resteasy</groupId>-->
+                <!--<artifactId>resteasy-undertow</artifactId>-->
+                <!--<version>${resteasy.version}</version>-->
+                <!--<scope>test</scope>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.jboss.resteasy</groupId>-->
+                <!--<artifactId>async-http-servlet-3.0</artifactId>-->
+                <!--<version>${resteasy.version}</version>-->
+                <!--<scope>test</scope>-->
+            <!--</dependency>-->
             <dependency>
                 <groupId>io.undertow</groupId>
                 <artifactId>undertow-servlet</artifactId>
                 <version>${undertow.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.undertow</groupId>
                 <artifactId>undertow-core</artifactId>
                 <version>${undertow.version}</version>
+                <scope>test</scope>
             </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.codehaus.jackson</groupId>-->
+                <!--<artifactId>jackson-core-asl</artifactId>-->
+                <!--<version>${jackson.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.codehaus.jackson</groupId>-->
+                <!--<artifactId>jackson-mapper-asl</artifactId>-->
+                <!--<version>${jackson.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.codehaus.jackson</groupId>-->
+                <!--<artifactId>jackson-xc</artifactId>-->
+                <!--<version>${jackson.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.codehaus.jackson</groupId>-->
+                <!--<artifactId>jackson-jaxrs</artifactId>-->
+                <!--<version>${jackson.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.jboss.spec.javax.servlet</groupId>-->
+                <!--<artifactId>jboss-servlet-api_3.0_spec</artifactId>-->
+                <!--<version>${servlet.api.30.version}</version>-->
+            <!--</dependency>-->
             <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-core-asl</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-mapper-asl</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-xc</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-jaxrs</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.servlet</groupId>
-                <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-                <version>${servlet.api.30.version}</version>
+                <groupId>org.picketlink</groupId>
+                <artifactId>picketlink-federation</artifactId>
+                <version>${picketlink.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
@@ -238,11 +255,11 @@
                 <version>${picketlink.version}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jboss.logging.version}</version>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.jboss.logging</groupId>-->
+                <!--<artifactId>jboss-logging</artifactId>-->
+                <!--<version>${jboss.logging.version}</version>-->
+            <!--</dependency>-->
             <dependency>
                 <groupId>org.syslog4j</groupId>
                 <artifactId>syslog4j</artifactId>
@@ -252,6 +269,7 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -265,44 +283,44 @@
                 <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.0-api</artifactId>
-                <version>${hibernate.javax.persistence.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${h2.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-entitymanager</artifactId>
-                <version>${hibernate.entitymanager.version}</version>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.hibernate.javax.persistence</groupId>-->
+                <!--<artifactId>hibernate-jpa-2.0-api</artifactId>-->
+                <!--<version>${hibernate.javax.persistence.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>com.h2database</groupId>-->
+                <!--<artifactId>h2</artifactId>-->
+                <!--<version>${h2.version}</version>-->
+                <!--<scope>test</scope>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.hibernate</groupId>-->
+                <!--<artifactId>hibernate-entitymanager</artifactId>-->
+                <!--<version>${hibernate.entitymanager.version}</version>-->
+            <!--</dependency>-->
             <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${freemarker.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.santuario</groupId>
-                <artifactId>xmlsec</artifactId>
-                <version>${xmlsec.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.servlet</groupId>
-                        <artifactId>servlet-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-dist</artifactId>
-                <version>${wildfly.version}</version>
-                <type>zip</type>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.apache.santuario</groupId>-->
+                <!--<artifactId>xmlsec</artifactId>-->
+                <!--<version>${xmlsec.version}</version>-->
+                <!--<exclusions>-->
+                    <!--<exclusion>-->
+                        <!--<groupId>javax.servlet</groupId>-->
+                        <!--<artifactId>servlet-api</artifactId>-->
+                    <!--</exclusion>-->
+                <!--</exclusions>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.wildfly</groupId>-->
+                <!--<artifactId>wildfly-dist</artifactId>-->
+                <!--<version>${wildfly.version}</version>-->
+                <!--<type>zip</type>-->
+            <!--</dependency>-->
 
             <!-- Twitter -->
             <dependency>
@@ -401,11 +419,11 @@
                 <scope>test</scope>
             </dependency>
             <!-- Older 1.5.10 binding required by embedded ApacheDS -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.slf4j</groupId>-->
+                <!--<artifactId>slf4j-api</artifactId>-->
+                <!--<version>${slf4j.version}</version>-->
+            <!--</dependency>-->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
@@ -425,64 +443,55 @@
                 <version>${mysql.version}</version>
                 <scope>test</scope>
             </dependency>
-           <dependency>
-               <groupId>org.apache.httpcomponents</groupId>
-               <artifactId>httpclient</artifactId>
-               <version>${apache.httpcomponents.version}</version>
-           </dependency>
-           <dependency>
-               <groupId>org.apache.httpcomponents</groupId>
-               <artifactId>httpmime</artifactId>
-               <version>${apache.httpcomponents.version}</version>
-           </dependency>
-           <dependency>
-               <groupId>org.apache.httpcomponents</groupId>
-               <artifactId>httpcore</artifactId>
-               <version>${apache.httpcomponents.httpcore.version}</version>
-           </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-controller</artifactId>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-server</artifactId>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-ee</artifactId>
-                <version>${wildfly.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-subsystem-test</artifactId>
-                <version>${wildfly.core.version}</version>
-                <type>pom</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-feature-pack</artifactId>
-                <type>pom</type>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-feature-pack</artifactId>
-                <type>zip</type>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-version</artifactId>
-                <version>${wildfly.core.version}</version>
-            </dependency>
+           <!--<dependency>-->
+               <!--<groupId>org.apache.httpcomponents</groupId>-->
+               <!--<artifactId>httpclient</artifactId>-->
+               <!--<version>${keycloak.apache.httpcomponents.version}</version>-->
+           <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.wildfly.core</groupId>-->
+                <!--<artifactId>wildfly-controller</artifactId>-->
+                <!--<version>${wildfly.core.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.wildfly.core</groupId>-->
+                <!--<artifactId>wildfly-server</artifactId>-->
+                <!--<version>${wildfly.core.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.wildfly</groupId>-->
+                <!--<artifactId>wildfly-ee</artifactId>-->
+                <!--<version>${wildfly.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.wildfly.core</groupId>-->
+                <!--<artifactId>wildfly-subsystem-test</artifactId>-->
+                <!--<version>${wildfly.core.version}</version>-->
+                <!--<type>pom</type>-->
+                <!--<scope>test</scope>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.wildfly.core</groupId>-->
+                <!--<artifactId>wildfly-core-feature-pack</artifactId>-->
+                <!--<type>pom</type>-->
+                <!--<version>${wildfly.core.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.wildfly.core</groupId>-->
+                <!--<artifactId>wildfly-core-feature-pack</artifactId>-->
+                <!--<type>zip</type>-->
+                <!--<version>${wildfly.core.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.wildfly.core</groupId>-->
+                <!--<artifactId>wildfly-version</artifactId>-->
+                <!--<version>${wildfly.core.version}</version>-->
+            <!--</dependency>-->
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-undertow</artifactId>
                 <version>${wildfly.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
@@ -490,26 +499,26 @@
                 <version>${jboss-logging-tools.version}</version>
                 <scope>compile</scope>
             </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.infinispan</groupId>-->
+                <!--<artifactId>infinispan-core</artifactId>-->
+                <!--<version>${infinispan.version}</version>-->
+            <!--</dependency>-->
             <dependency>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-core</artifactId>
                 <version>${liquibase.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.core</artifactId>
-                <version>${osgi.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.enterprise</artifactId>
-                <version>${osgi.version}</version>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.osgi</groupId>-->
+                <!--<artifactId>org.osgi.core</artifactId>-->
+                <!--<version>${osgi.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.osgi</groupId>-->
+                <!--<artifactId>org.osgi.enterprise</artifactId>-->
+                <!--<version>${osgi.version}</version>-->
+            <!--</dependency>-->
             <dependency>
                 <groupId>org.ops4j.pax.web</groupId>
                 <artifactId>pax-web-runtime</artifactId>
@@ -1036,6 +1045,10 @@
         <repository>
             <id>jboss</id>
             <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>eap</id>
+            <url>file:///home/st/tmp/jboss-eap-6.4.0.GA-maven-repository</url>
         </repository>
     </repositories>
 

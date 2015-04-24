@@ -19,11 +19,6 @@
             <artifactId>keycloak-jboss-modules</artifactId>
             <type>zip</type>
         </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-dist</artifactId>
-            <type>zip</type>
-        </dependency>
     </dependencies>
 
     <build>
@@ -33,24 +28,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
-                    <execution>
-                        <id>unpack-standalone-xml</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.wildfly</groupId>
-                                    <artifactId>wildfly-dist</artifactId>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                            <includes>*/standalone/configuration/standalone.xml</includes>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>unpack-module</id>
                         <phase>prepare-package</phase>
@@ -84,12 +61,12 @@
                         <configuration>
                             <transformationSets>
                                 <transformationSet>
-                                    <dir>${project.build.directory}/unpacked/wildfly-${wildfly.version}/standalone/configuration</dir>
+                                    <dir>src/main/jboss-eap-6.4/standalone/configuration</dir>
                                     <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
                                     <includes>
                                         <include>standalone.xml</include>
                                     </includes>
-                                    <outputDir>${project.build.directory}/unpacked/wildfly-${wildfly.version}/standalone/configuration</outputDir>
+                                    <outputDir>${project.build.directory}/unpacked/jboss-eap-6.4/standalone/configuration</outputDir>
                                 </transformationSet>
                             </transformationSets>
                         </configuration>

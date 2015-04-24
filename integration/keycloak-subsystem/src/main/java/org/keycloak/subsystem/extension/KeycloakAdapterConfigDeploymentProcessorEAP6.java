@@ -45,6 +45,8 @@ import java.util.List;
 public class KeycloakAdapterConfigDeploymentProcessorEAP6 implements DeploymentUnitProcessor {
     protected Logger log = Logger.getLogger(KeycloakAdapterConfigDeploymentProcessorEAP6.class);
 
+    public static final String AUTH_DATA_PARAM_NAME = "org.keycloak.json.adapterConfig";
+
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
@@ -117,7 +119,7 @@ public class KeycloakAdapterConfigDeploymentProcessorEAP6 implements DeploymentU
         }
 
         ParamValueMetaData param = new ParamValueMetaData();
-        param.setParamName(KeycloakAdapterConfigDeploymentProcessor.AUTH_DATA_PARAM_NAME);
+        param.setParamName(AUTH_DATA_PARAM_NAME);
         param.setParamValue(json);
         contextParams.add(param);
 

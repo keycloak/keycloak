@@ -4,7 +4,7 @@
     <parent>
 		<artifactId>keycloak-parent</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>1.2.0.CR1</version>
+		<version>1.2.0.CR1-redhat-SNAPSHOT</version>
 		<relativePath>../../../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
@@ -12,8 +12,6 @@
 	<artifactId>keycloak-tomcat-core-adapter</artifactId>
 	<name>Keycloak Tomcat Core Integration</name>
     <properties>
-        <!-- <tomcat.version>8.0.14</tomcat.version> -->
-        <!-- <tomcat.version>7.0.52</tomcat.version> -->
         <tomcat.version>6.0.41</tomcat.version>
     </properties>
 	<description />
@@ -22,7 +20,6 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>${jboss.logging.version}</version>
         </dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
@@ -56,21 +53,15 @@
 			<groupId>org.codehaus.jackson</groupId>
 			<artifactId>jackson-xc</artifactId>
 		</dependency>
-        <!--
 		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>tomcat-servlet-api</artifactId>
-			<version>${tomcat.version}</version>
+			<groupId>org.jboss.web</groupId>
+			<artifactId>jbossweb</artifactId>
 			<scope>compile</scope>
 		</dependency>
-		-->
-		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>catalina</artifactId>
-            <version>${tomcat.version}</version>
-			<scope>compile</scope>
-		</dependency>
-
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>

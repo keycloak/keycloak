@@ -328,13 +328,13 @@
             <maven-resource group="org.keycloak" artifact="keycloak-tomcat-core-adapter"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-undertow-adapter">
-            <maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter"/>
-        </module-def>
+        <!--<module-def name="org.keycloak.keycloak-undertow-adapter">-->
+            <!--<maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter"/>-->
+        <!--</module-def>-->
 
-        <module-def name="org.keycloak.keycloak-wildfly-adapter">
-            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-adapter"/>
-        </module-def>
+        <!--<module-def name="org.keycloak.keycloak-wildfly-adapter">-->
+            <!--<maven-resource group="org.keycloak" artifact="keycloak-wildfly-adapter"/>-->
+        <!--</module-def>-->
 
         <module-def name="org.keycloak.keycloak-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-subsystem"/>

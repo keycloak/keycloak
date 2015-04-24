@@ -67,19 +67,11 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
     }
 
     private DeploymentUnitProcessor chooseDependencyProcessor() {
-        if (Environment.isWildFly()) {
-            return new KeycloakDependencyProcessorWildFly();
-        } else {
-            return new KeycloakDependencyProcessorEAP6();
-        }
+        return new KeycloakDependencyProcessorEAP6();
     }
 
     private DeploymentUnitProcessor chooseConfigDeploymentProcessor() {
-        if (Environment.isWildFly()) {
-            return new KeycloakAdapterConfigDeploymentProcessor();
-        } else {
-            return new KeycloakAdapterConfigDeploymentProcessorEAP6();
-        }
+        return new KeycloakAdapterConfigDeploymentProcessorEAP6();
     }
 
     @Override

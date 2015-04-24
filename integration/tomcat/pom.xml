@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.0.CR1</version>
+        <version>1.2.0.CR1-redhat-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Keycloak Tomcat Integration</name>
@@ -15,8 +15,8 @@
 
     <modules>
         <module>tomcat-core</module>
-        <module>tomcat6</module>
-        <module>tomcat7</module>
-        <module>tomcat8</module>
+        <!--<module>tomcat6</module>-->
+        <!--<module>tomcat7</module>-->
+        <!--<module>tomcat8</module>-->
     </modules>
 </project>

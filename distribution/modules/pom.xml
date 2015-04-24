@@ -8,7 +8,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.0.CR1</version>
+        <version>1.2.0.CR1-redhat-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -46,14 +46,14 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-as7-adapter</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-adapter</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.keycloak</groupId>-->
+            <!--<artifactId>keycloak-undertow-adapter</artifactId>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.keycloak</groupId>-->
+            <!--<artifactId>keycloak-wildfly-adapter</artifactId>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-subsystem</artifactId>
