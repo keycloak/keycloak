@@ -46,14 +46,14 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-as7-adapter</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-adapter</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.keycloak</groupId>-->
+            <!--<artifactId>keycloak-undertow-adapter</artifactId>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.keycloak</groupId>-->
+            <!--<artifactId>keycloak-wildfly-adapter</artifactId>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-subsystem</artifactId>

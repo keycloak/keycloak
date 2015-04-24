@@ -150,10 +150,10 @@ public class AdapterTest {
     /**
      * KEYCLOAK-942
      */
-    @Test
-    public void testAdminApplicationLogout() throws Throwable {
-        testStrategy.testAdminApplicationLogout();
-    }
+//    @Test
+//    public void testAdminApplicationLogout() throws Throwable {
+//        testStrategy.testAdminApplicationLogout();
+//    }
 
     /**
      * KEYCLOAK-1216

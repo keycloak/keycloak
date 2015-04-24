@@ -32,7 +32,7 @@
         </plugins>
     </build>
     <modules>
-        <module>admin-client</module>
+        <!--<module>admin-client</module>-->
         <module>broker</module>
         <module>cors</module>
         <module>demo-template</module>

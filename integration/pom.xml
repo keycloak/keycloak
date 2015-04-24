@@ -15,22 +15,22 @@
 
     <modules>
         <module>adapter-core</module>
-        <module>jaxrs-oauth-client</module>
+        <!--<module>jaxrs-oauth-client</module>-->
         <module>servlet-oauth-client</module>
         <module>jboss-adapter-core</module>
         <module>tomcat</module>
         <module>as7-eap6/adapter</module>
         <module>jetty</module>
-        <module>undertow</module>
-        <module>wildfly-adapter</module>
+        <!--<module>undertow</module>-->
+        <!--<module>wildfly-adapter</module>-->
         <module>wildfly-extensions</module>
         <module>keycloak-subsystem</module>
-        <module>keycloak-as7-subsystem</module>
+        <!--<module>keycloak-as7-subsystem</module>-->
         <module>js</module>
         <module>installed</module>
-        <module>admin-client</module>
+        <!--<module>admin-client</module>-->
         <module>osgi-adapter</module>
-        <module>spring-boot</module>
-        <module>spring-security</module>
+        <!--<module>spring-boot</module>-->
+        <!--<module>spring-security</module>-->
     </modules>
 </project>
