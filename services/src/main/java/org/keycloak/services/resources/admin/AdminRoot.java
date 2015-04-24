@@ -218,12 +218,12 @@ public class AdminRoot {
     }
 
     protected boolean isAdmin(AdminAuth auth) {
-        if (auth.hasOneOfRealmRole(AdminRoles.ADMIN, AdminRoles.CREATE_REALM)) {
-            return true;
-        }
 
         RealmManager realmManager = new RealmManager(session);
         if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
+            if (auth.hasOneOfRealmRole(AdminRoles.ADMIN, AdminRoles.CREATE_REALM)) {
+                return true;
+            }
             for (RealmModel realm : session.realms().getRealms()) {
                 ClientModel client = realm.getMasterAdminClient();
                 if (auth.hasOneOfAppRole(client, AdminRoles.ALL_REALM_ROLES)) {

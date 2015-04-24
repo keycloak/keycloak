@@ -70,7 +70,10 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                 for (String sessionId : action.getKeycloakSessionIds()) {
                     String brokerSessionId = getConfig().getAlias() + "." + sessionId;
                     UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId);
-                    if (userSession != null) {
+                    if (userSession != null
+                            && userSession.getState() != UserSessionModel.State.LOGGING_OUT
+                            && userSession.getState() != UserSessionModel.State.LOGGED_OUT
+                            ) {
                         AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
                     }
                 }
