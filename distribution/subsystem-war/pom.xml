@@ -15,9 +15,6 @@
     <name>Keycloak Subsystem Server WAR</name>
     <description/>
 
-    <dependencies>
-    </dependencies>
-
     <build>
         <finalName>auth-server</finalName>
         <plugins>

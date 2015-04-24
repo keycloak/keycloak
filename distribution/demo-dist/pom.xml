@@ -8,9 +8,9 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-server-bundle-dist</artifactId>
+    <artifactId>keycloak-demo-dist</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak Server Bundle Distribution</name>
+    <name>Keycloak Demo Distribution</name>
     <description/>
 
     <dependencies>
@@ -32,7 +32,7 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-${project.version}</finalName>
+        <finalName>keycloak-demo-${project.version}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>

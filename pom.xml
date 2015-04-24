@@ -921,6 +921,24 @@
                 <type>zip</type>
             </dependency>
             <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-dist</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-docs-dist</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-examples-dist</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
                 <groupId>org.keycloak.subsystem</groupId>
                 <artifactId>keycloak-server</artifactId>
                 <version>${project.version}</version>

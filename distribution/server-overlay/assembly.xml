@@ -9,13 +9,6 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
-            <outputDirectory></outputDirectory>
-            <includes>
-                <include>standalone/configuration/standalone*.xml</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.build.directory}/unpacked/modules</directory>
             <outputDirectory>modules/system/layers/base</outputDirectory>
         </fileSet>
@@ -36,6 +29,11 @@
     </fileSets>
 
     <files>
+        <file>
+            <source>${project.build.directory}/unpacked/wildfly-${wildfly.version}/standalone/configuration/standalone.xml</source>
+            <outputDirectory>standalone/configuration</outputDirectory>
+            <destName>standalone-keycloak.xml</destName>
+        </file>
         <file>
             <source>../subsystem-war/src/main/resources/META-INF/keycloak-server.json</source>
             <outputDirectory>standalone/configuration</outputDirectory>

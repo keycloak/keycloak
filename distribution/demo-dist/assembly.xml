@@ -1,10 +1,9 @@
 <assembly>
-    <id>server-bundle-dist</id>
+    <id>demo-dist</id>
 
     <formats>
         <format>zip</format>
         <format>tar.gz</format>
-        <format>dir</format>
     </formats>
 
     <includeBaseDirectory>true</includeBaseDirectory>
