@@ -1,0 +1,21 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>distribution-pom</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.2.0.RC1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <name>Feature Pack Builds</name>
+    <description/>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>feature-pack-builds</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>adapter-only</module>
+        <module>server-only</module>
+        <module>server-and-adapter</module>
+    </modules>
+</project>

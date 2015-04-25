@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--  Template used by WildFly build when directed to include Keycloak subsystem in a configuration. -->
+<config>
+   <extension-module>org.keycloak.keycloak-adapter-subsystem</extension-module>
+   <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
+   </subsystem>
+</config>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="com.google.zxing.core">
+    <resources>
+        <artifact name="${com.google.zxing:core}"/>
+    </resources>
+    <dependencies>
+        <module name="javax.api"/>
+    </dependencies>
+
+</module>

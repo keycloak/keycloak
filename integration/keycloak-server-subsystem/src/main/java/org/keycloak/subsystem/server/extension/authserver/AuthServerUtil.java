@@ -85,8 +85,8 @@ public class AuthServerUtil {
 
     private URI findAuthServerUri() throws IllegalStateException {
         try {
-            URL subsysJar = this.subsysModule.getExportedResource("keycloak-server-subsystem-" + this.keycloakVersion + ".jar");
-            File subsysDir = new File(subsysJar.toURI()).getParentFile();
+            URL subsysResource = this.subsysModule.getExportedResource("module.xml");
+            File subsysDir = new File(subsysResource.toURI()).getParentFile();
             File authServerDir = new File(subsysDir, "auth-server");
             if (this.isAuthServerExploded) {
                 return authServerDir.toURI();

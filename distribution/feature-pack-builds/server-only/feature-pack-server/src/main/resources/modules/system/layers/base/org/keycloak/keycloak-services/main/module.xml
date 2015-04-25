@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-services">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-services}"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-account-api" services="import"/>
+        <module name="org.keycloak.keycloak-account-freemarker" services="import"/>
+        <module name="org.keycloak.keycloak-broker-core" services="import"/>
+        <module name="org.keycloak.keycloak-broker-oidc" services="import"/>
+        <module name="org.keycloak.keycloak-broker-saml" services="import"/>
+        <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
+        <module name="org.keycloak.keycloak-connections-jpa" services="import"/>
+        <module name="org.keycloak.keycloak-connections-jpa-liquibase" services="import"/>
+        <module name="org.keycloak.keycloak-connections-mongo" services="import"/>
+        <module name="org.keycloak.keycloak-connections-mongo-update" services="import"/>
+        <module name="org.keycloak.keycloak-connections-file" services="import"/>
+        <module name="org.keycloak.keycloak-core" services="import"/>
+        <module name="org.keycloak.keycloak-core-jaxrs" services="import"/>
+        <module name="org.keycloak.keycloak-email-api" services="import"/>
+        <module name="org.keycloak.keycloak-email-freemarker" services="import"/>
+        <module name="org.keycloak.keycloak-events-api" services="import"/>
+        <module name="org.keycloak.keycloak-events-email" services="import"/>
+        <module name="org.keycloak.keycloak-events-jboss-logging" services="import"/>
+        <module name="org.keycloak.keycloak-events-jpa" services="import"/>
+        <module name="org.keycloak.keycloak-events-mongo" services="import"/>
+        <module name="org.keycloak.keycloak-export-import-api" services="import"/>
+        <module name="org.keycloak.keycloak-export-import-dir" services="import"/>
+        <module name="org.keycloak.keycloak-export-import-single-file" services="import"/>
+        <module name="org.keycloak.keycloak-export-import-zip" services="import"/>
+        <module name="org.keycloak.keycloak-forms-common-freemarker" services="import"/>
+        <module name="org.keycloak.keycloak-forms-common-themes" services="import"/>
+        <module name="org.keycloak.keycloak-invalidation-cache-infinispan" services="import"/>
+        <module name="org.keycloak.keycloak-invalidation-cache-model" services="import"/>
+        <module name="org.keycloak.keycloak-jboss-adapter-core" services="import"/>
+        <module name="org.keycloak.keycloak-js-adapter" services="import"/>
+        <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
+        <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
+        <module name="org.keycloak.keycloak-login-api" services="import"/>
+        <module name="org.keycloak.keycloak-login-freemarker" services="import"/>
+        <module name="org.keycloak.keycloak-model-api" services="import"/>
+        <module name="org.keycloak.keycloak-model-jpa" services="import"/>
+        <module name="org.keycloak.keycloak-model-mongo" services="import"/>
+        <module name="org.keycloak.keycloak-model-file" services="import"/>
+        <module name="org.keycloak.keycloak-model-sessions-infinispan" services="import"/>
+        <module name="org.keycloak.keycloak-model-sessions-jpa" services="import"/>
+        <module name="org.keycloak.keycloak-model-sessions-mem" services="import"/>
+        <module name="org.keycloak.keycloak-model-sessions-mongo" services="import"/>
+        <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
+
+        <module name="org.keycloak.keycloak-saml-protocol" services="import"/>
+        <module name="org.keycloak.keycloak-services" export="true" services="import"/>
+        <module name="org.keycloak.keycloak-social-core" services="import"/>
+        <module name="org.keycloak.keycloak-social-facebook" services="import"/>
+        <module name="org.keycloak.keycloak-social-github" services="import"/>
+        <module name="org.keycloak.keycloak-social-google" services="import"/>
+        <module name="org.keycloak.keycloak-social-twitter" services="import"/>
+        <module name="org.keycloak.keycloak-social-linkedin" services="import"/>
+        <module name="org.keycloak.keycloak-social-stackoverflow" services="import"/>
+        <module name="org.keycloak.keycloak-timer-api" services="import"/>
+        <module name="org.keycloak.keycloak-timer-basic" services="import"/>
+
+        <module name="javax.ws.rs.api"/>
+        <module name="org.jboss.resteasy.resteasy-jaxrs"/>
+        <module name="org.jboss.resteasy.resteasy-crypto"/>
+        <module name="org.jboss.resteasy.resteasy-multipart-provider"/>
+        <module name="javax.servlet.api"/>
+        <module name="org.codehaus.jackson.jackson-core-asl"/>
+        <module name="org.codehaus.jackson.jackson-mapper-asl"/>
+        <module name="org.codehaus.jackson.jackson-xc"/>
+        <module name="com.google.zxing.core"/>
+        <module name="com.google.zxing.javase"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.bouncycastle" />
+        <module name="net.iharder.base64"/>
+        <module name="javax.api"/>
+        <module name="javax.activation.api"/>
+        <module name="org.apache.httpcomponents"/>
+    </dependencies>
+
+</module>

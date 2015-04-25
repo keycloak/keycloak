@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>feature-pack-builds</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.2.0.RC1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <name>Builds with both server and adapter</name>
+    <description/>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>server-and-adapter</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>server-and-adapter-build</module>
+        <module>server-and-adapter-dist</module>
+    </modules>
+</project>

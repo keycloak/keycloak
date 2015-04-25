@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--  See src/resources/configuration/ReadMe.txt for how the configuration assembly works -->
+<config>
+    <extension-module>org.jboss.as.connector</extension-module>
+    <subsystem xmlns="urn:jboss:domain:datasources:3.0">
+        <datasources>
+            <datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" use-java-context="true">
+                <connection-url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</connection-url>
+                <driver>h2</driver>
+                <security>
+                    <user-name>sa</user-name>
+                    <password>sa</password>
+                </security>
+            </datasource>
+            <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+                <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
+                <driver>h2</driver>
+                <security>
+                    <user-name>sa</user-name>
+                    <password>sa</password>
+                </security>
+            </datasource>
+            <drivers>
+                <driver name="h2" module="com.h2database.h2">
+                    <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
+                </driver>
+            </drivers>
+        </datasources>
+    </subsystem>
+</config>
