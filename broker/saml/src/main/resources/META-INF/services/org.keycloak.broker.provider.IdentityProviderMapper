@@ -1,2 +1,2 @@
-org.keycloak.broker.saml.mappers.RoleMapper
+org.keycloak.broker.saml.mappers.AttributeToRoleMapper
 org.keycloak.broker.saml.mappers.UserAttributeMapper

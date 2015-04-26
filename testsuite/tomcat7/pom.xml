@@ -13,11 +13,26 @@
     <name>Keycloak Tomcat 7 Integration TestSuite</name>
     <properties>
         <!--<tomcat.version>8.0.14</tomcat.version>-->
-        <tomcat.version>7.0.54</tomcat.version>
+        <tomcat.version>7.0.59</tomcat.version>
     </properties>
     <description />
 
    <dependencies>
+       <dependency>
+           <groupId>org.apache.tomcat</groupId>
+           <artifactId>tomcat-catalina</artifactId>
+           <version>7.0.59</version>
+       </dependency>
+       <dependency>
+           <groupId>org.apache.tomcat</groupId>
+           <artifactId>tomcat-util</artifactId>
+           <version>7.0.59</version>
+       </dependency>
+       <dependency>
+           <groupId>org.apache.tomcat.embed</groupId>
+           <artifactId>tomcat-embed-core</artifactId>
+           <version>7.0.59</version>
+       </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-dependencies-server-all</artifactId>
@@ -199,21 +214,6 @@
            <scope>test</scope>
        </dependency>
 
-       <dependency>
-           <groupId>org.apache.tomcat</groupId>
-           <artifactId>tomcat-catalina</artifactId>
-           <version>${tomcat.version}</version>
-       </dependency>
-       <dependency>
-           <groupId>org.apache.tomcat</groupId>
-           <artifactId>tomcat-util</artifactId>
-           <version>${tomcat.version}</version>
-       </dependency>
-       <dependency>
-           <groupId>org.apache.tomcat.embed</groupId>
-           <artifactId>tomcat-embed-core</artifactId>
-           <version>${tomcat.version}</version>
-       </dependency>
 
     </dependencies>
     <build>

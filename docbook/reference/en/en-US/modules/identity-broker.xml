@@ -72,7 +72,9 @@
         <para>
             When using Keycloak as an identity broker, users are not forced to provide their credentials in order to
             authenticate in a specific realm. Instead of that, they are presented with a list of identity providers from
-            where they can pick one and authenticate. The following diagram demonstrates the steps involved when using
+            where they can pick one and authenticate. You can also configure a hard-coded default broker.  In this case
+            the user will not be given a choice, but instead be redirected directly the the parent broker.
+            The following diagram demonstrates the steps involved when using
             Keycloak to broker an external identity provider:
         </para>
 
@@ -272,6 +274,25 @@
                             be used by any other means.
                         </entry>
                     </row>
+                   <row>
+                        <entry>
+                            <literal>Store Tokens</literal>
+                        </entry>
+                        <entry>
+                            Any external tokens provided by the parent IDP will be stored.
+                            This options is useful if you are using social authentication and need to access the token in order to invoke the
+                            API of a social provider on behalf of the user.
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <literal>Stored Tokens Readable</literal>
+                        </entry>
+                        <entry>
+                            Automatically assigns a <literal>broker.READ_TOKEN</literal> role that allows the user
+                            to access any stored external tokens via the broker service.
+                        </entry>
+                    </row>
                     <row>
                         <entry>
                             <literal>Update Profile on First Login</literal>
@@ -293,17 +314,6 @@
                             You can put number into this field, providers with lower numbers are shown first.
                         </entry>
                     </row>
-                    <!--<row>-->
-                        <!--<entry>-->
-                            <!--<literal>Store Tokens</literal>-->
-                        <!--</entry>-->
-                        <!--<entry>-->
-                            <!--Allows you to store tokens issued by an identity provider during the authentication of a specific user.-->
-                            <!--Tokens are stored and can be retrieved later.-->
-                            <!--This options is useful if you are using social authentication and need to access the token in order to invoke the-->
-                            <!--API of a social provider on behalf of the user.-->
-                        <!--</entry>-->
-                    <!--</row>-->
                 </tbody>
             </tgroup>
         </table>
@@ -1003,6 +1013,14 @@
                 </tbody>
             </tgroup>
         </table>
+        <para>
+            You can also import all this configuration data by providing a URL or XML file that points to the entity descriptor of the external
+            SAML IDP you want to connect to.
+        </para>
+        <para>
+            Once you create a SAML provider, there is an <literal>EXPORT</literal> button that appears when viewing that provider.
+            Clicking this button will export a SAML entity descriptor which you can use to
+        </para>
     </section>
 
     <section>
@@ -1104,63 +1122,45 @@
                 </tbody>
             </tgroup>
         </table>
+        <para>
+            You can also import all this configuration data by providing a URL or file that points to OpenID Provider Metadata (see OIDC Discovery specification)
+        </para>
     </section>
 
-    <!--<section>-->
-        <!--<title>Retrieving Tokens from Identity Providers</title>-->
-        <!--<para>-->
-            <!--Keycloak allows you to store tokens and responses from identity providers during the authentication process.-->
-            <!--For that, you can use the <literal>Store Token</literal> configuration option, as mentioned before.-->
-        <!--</para>-->
-        <!--<para>-->
-            <!--It also allows you to retrieve these tokens and responses once the user is authenticated in order to use their-->
-            <!--information or use them to invoke external resources protected by these tokens.-->
-            <!--The latter case is usually related with social providers,-->
-            <!--where you usually need to use their tokens to invoke methods on their APIs.-->
-        <!--</para>-->
-        <!--<para>-->
-            <!--To retrieve a token for a particular identity provider you need to send a request as follows:-->
-        <!--</para>-->
-        <!--<programlisting language="JAVA"><![CDATA[GET /auth/realms/{realm}/broker/{provider_alias}/token HTTP/1.1-->
-<!--Host: localhost:8080-->
-<!--Authorization: Bearer {keycloak_access_token}]]></programlisting>-->
-        <!--<para>-->
-            <!--In this case, given that you are accessing an protected service in Keycloak, you need to send the access token-->
-            <!--issued by Keycloak during the user authentication.-->
-        <!--</para>-->
-        <!--<para>-->
-            <!--By default, the Keycloak access token issued for the application can't be automatically used for retrieve thirdparty token. You will-->
-            <!--need to enable this in admin console first:-->
-            <!--<orderedlist>-->
-                <!--<listitem>-->
-                    <!--<para>-->
-                        <!--Click 'Applications' on the left side menu.-->
-                    <!--</para>-->
-                <!--</listitem>-->
-                <!--<listitem>-->
-                    <!--<para>-->
-                        <!--Select an application from the list.-->
-                    <!--</para>-->
-                <!--</listitem>-->
-                <!--<listitem>-->
-                    <!--<para>-->
-                        <!--Click the 'Identity Provider' tab.-->
-                    <!--</para>-->
-                <!--</listitem>-->
-                <!--<listitem>-->
-                    <!--<para>-->
-                        <!--From this page you can configure if an application is allowed to retrieve tokens from an specific identity provider. For that,-->
-                        <!--just click on the <emphasis>Can Retrieve Token</emphasis> button.-->
-                    <!--</para>-->
-                <!--</listitem>-->
-            <!--</orderedlist>-->
-        <!--</para>-->
-        <!--<note>-->
-            <!--<para>-->
-                <!--If your application is not at the same origin as the authentication server, make sure you have properly configured CORS.-->
-            <!--</para>-->
-        <!--</note>-->
-    <!--</section>-->
+    <section>
+        <title>Retrieving Tokens from Identity Providers</title>
+        <para>
+            Keycloak allows you to store tokens and responses from identity providers during the authentication process.
+            For that, you can use the <literal>Store Token</literal> configuration option, as mentioned before.
+        </para>
+        <para>
+            It also allows you to retrieve these tokens and responses once the user is authenticated in order to use their
+            information or use them to invoke external resources protected by these tokens.
+            The latter case is usually related with social providers,
+            where you usually need to use their tokens to invoke methods on their APIs.
+        </para>
+        <para>
+            To retrieve a token for a particular identity provider you need to send a request as follows:
+        </para>
+        <programlisting language="JAVA"><![CDATA[GET /auth/realms/{realm}/broker/{provider_alias}/token HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer {keycloak_access_token}]]></programlisting>
+        <para>
+            In this case, given that you are accessing an protected service in Keycloak, you need to send the access token
+            issued by Keycloak during the user authentication.
+        </para>
+        <para>
+            By default, the Keycloak access token issued for the application can't be automatically used for retrieve thirdparty token.
+            A user will have to have the <literal>broker.READ_TOKEN</literal> role.  The client will also have to have that role
+            in its scope.  In the broker configuration page you can automatically assign this role to newly imported users by
+            turning on the <literal>Stored Tokens Readable</literal> switch.
+        </para>
+        <note>
+            <para>
+                If your application is not at the same origin as the authentication server, make sure you have properly configured CORS.
+            </para>
+        </note>
+    </section>
 
     <section>
         <title>Automatically Select and Identity Provider</title>
@@ -1186,6 +1186,19 @@ Host: localhost:8080]]></programlisting>
 keycloak.createLoginUrl({
 	idpHint: 'facebook'
 });]]></programlisting>
+    </section>
+
+    <section>
+        <title>Mapping/Importing SAML and OIDC Metadata</title>
+        <para>
+            You can import SAML assertion data, OpenID Connect ID Token claims, and Keycloak access token claims
+            into new users that are imported from a brokered IDP.  After you configure a broker, you'll see a <literal>Mappers</literal>
+            button appear.  Click on that and you'll get to the list of mappers that are assigned to this broker.  There is a
+            <literal>Create</literal> button on this page.  Clicking on this create button allows you to create a broker mapper.
+            Broker mappers can import SAML attributes or OIDC ID/Access token claims into user attributes.  You can assign
+            a role mapping to a user if a claim or external role exists.  There's a bunch of options here so just mouse over
+            the tool tips to see what each mapper can do for you.
+        </para>
     </section>
 
     <section>

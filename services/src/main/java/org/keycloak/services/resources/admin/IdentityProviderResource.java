@@ -181,7 +181,7 @@ public class IdentityProviderResource {
         for (ProviderFactory factory : factories) {
             IdentityProviderMapper mapper = (IdentityProviderMapper)factory;
             for (String type : mapper.getCompatibleProviders()) {
-                if (type.equals(identityProviderModel.getProviderId())) {
+                if (IdentityProviderMapper.ANY_PROVIDER.equals(type) || type.equals(identityProviderModel.getProviderId())) {
                     IdentityProviderMapperTypeRepresentation rep = new IdentityProviderMapperTypeRepresentation();
                     rep.setId(mapper.getId());
                     rep.setCategory(mapper.getDisplayCategory());
@@ -198,7 +198,7 @@ public class IdentityProviderResource {
                         rep.getProperties().add(propRep);
                     }
                     types.put(rep.getId(), rep);
-
+                    break;
                 }
             }
         }
