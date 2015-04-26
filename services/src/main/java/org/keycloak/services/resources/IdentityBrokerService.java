@@ -283,9 +283,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             } catch (Exception e) {
                 return redirectToLoginPage(e, clientCode);
             }
+        } else {
+            updateFederatedIdentity(context, federatedUser);
         }
 
-        updateFederatedIdentity(context, federatedUser);
 
         UserSessionModel userSession = this.session.sessions()
                 .createUserSession(this.realmModel, federatedUser, federatedUser.getUsername(), this.clientConnection.getRemoteAddr(), "broker", false, context.getBrokerSessionId(), context.getBrokerUserId());
@@ -335,26 +336,26 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
 
-    private void updateFederatedIdentity(BrokeredIdentityContext updatedIdentity, UserModel federatedUser) {
-        FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, updatedIdentity.getIdpConfig().getAlias(), this.realmModel);
+    private void updateFederatedIdentity(BrokeredIdentityContext context, UserModel federatedUser) {
+        FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
 
         // Skip DB write if tokens are null or equal
-        if (!ObjectUtil.isEqualOrNull(updatedIdentity.getToken(), federatedIdentityModel.getToken())) {
-            federatedIdentityModel.setToken(updatedIdentity.getToken());
+        if (context.getIdpConfig().isStoreToken() && !ObjectUtil.isEqualOrNull(context.getToken(), federatedIdentityModel.getToken())) {
+            federatedIdentityModel.setToken(context.getToken());
 
             this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
 
             if (isDebugEnabled()) {
-                LOGGER.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, updatedIdentity.getIdpConfig().getAlias());
+                LOGGER.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
             }
         }
-        updatedIdentity.getIdp().updateBrokeredUser(session, realmModel, federatedUser, updatedIdentity);
-        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(updatedIdentity.getIdpConfig().getAlias());
+        context.getIdp().updateBrokeredUser(session, realmModel, federatedUser, context);
+        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
         if (mappers != null) {
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             for (IdentityProviderMapperModel mapper : mappers) {
                 IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                target.updateBrokeredUser(session, realmModel, federatedUser, mapper, updatedIdentity);
+                target.updateBrokeredUser(session, realmModel, federatedUser, mapper, context);
             }
         }
 
@@ -484,14 +485,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         throw new IdentityBrokerException("Configuration for identity provider [" + providerId + "] not found.");
     }
 
-    private UserModel createUser(BrokeredIdentityContext updatedIdentity) {
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(updatedIdentity.getIdpConfig().getAlias(), updatedIdentity.getId(),
-                updatedIdentity.getUsername(), updatedIdentity.getToken());
+    private UserModel createUser(BrokeredIdentityContext context) {
+        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
+                context.getUsername(), context.getToken());
         // Check if no user already exists with this username or email
         UserModel existingUser = null;
 
-        if (updatedIdentity.getEmail() != null) {
-            existingUser = this.session.users().getUserByEmail(updatedIdentity.getEmail(), this.realmModel);
+        if (context.getEmail() != null) {
+            existingUser = this.session.users().getUserByEmail(context.getEmail(), this.realmModel);
         }
 
         if (existingUser != null) {
@@ -499,13 +500,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_EMAIL_EXISTS);
         }
 
-        String username = updatedIdentity.getUsername();
-        if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(updatedIdentity.getEmail())) {
-            username = updatedIdentity.getEmail();
+        String username = context.getUsername();
+        if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(context.getEmail())) {
+            username = context.getEmail();
         } else if (username == null) {
-            username = updatedIdentity.getIdpConfig().getAlias() + "." + updatedIdentity.getId();
+            username = context.getIdpConfig().getAlias() + "." + context.getId();
         } else {
-            username = updatedIdentity.getIdpConfig().getAlias() + "." + updatedIdentity.getUsername();
+            username = context.getIdpConfig().getAlias() + "." + context.getUsername();
         }
         if (username != null) {
             username = username.trim();
@@ -529,33 +530,36 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         federatedUser.setEnabled(true);
-        federatedUser.setEmail(updatedIdentity.getEmail());
-        federatedUser.setFirstName(updatedIdentity.getFirstName());
-        federatedUser.setLastName(updatedIdentity.getLastName());
+        federatedUser.setEmail(context.getEmail());
+        federatedUser.setFirstName(context.getFirstName());
+        federatedUser.setLastName(context.getLastName());
 
 
-        if (updatedIdentity.getIdpConfig().isAddReadTokenRoleOnCreate()) {
+        if (context.getIdpConfig().isAddReadTokenRoleOnCreate()) {
             RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(READ_TOKEN_ROLE);
             federatedUser.grantRole(readTokenRole);
         }
 
+        if (context.getIdpConfig().isStoreToken()) {
+            federatedIdentityModel.setToken(context.getToken());
+        }
 
         this.session.users().addFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
 
-        updatedIdentity.getIdp().importNewUser(session, realmModel, federatedUser, updatedIdentity);
-        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(updatedIdentity.getIdpConfig().getAlias());
+        context.getIdp().importNewUser(session, realmModel, federatedUser, context);
+        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
         if (mappers != null) {
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             for (IdentityProviderMapperModel mapper : mappers) {
                 IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                target.importNewUser(session, realmModel, federatedUser, mapper, updatedIdentity);
+                target.importNewUser(session, realmModel, federatedUser, mapper, context);
             }
         }
 
 
         this.event.clone().user(federatedUser).event(EventType.REGISTER)
                 .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, updatedIdentity.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
                 .removeDetail("auth_method")
                 .success();
 

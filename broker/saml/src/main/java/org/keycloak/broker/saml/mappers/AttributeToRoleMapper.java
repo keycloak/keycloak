@@ -2,6 +2,7 @@ package org.keycloak.broker.saml.mappers;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.HardcodedRoleMapper;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
@@ -25,13 +26,12 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RoleMapper extends AbstractIdentityProviderMapper {
+public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
 
     public static final String[] COMPATIBLE_PROVIDERS = {SAMLIdentityProviderFactory.PROVIDER_ID};
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
-    public static final String ROLE = "role";
     public static final String ATTRIBUTE_NAME = "attribute.name";
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String ATTRIBUTE_VALUE = "attribute.value";
@@ -57,7 +57,7 @@ public class RoleMapper extends AbstractIdentityProviderMapper {
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
         property = new ProviderConfigProperty();
-        property.setName(ROLE);
+        property.setName(HardcodedRoleMapper.ROLE);
         property.setLabel("Role");
         property.setHelpText("Role to grant to user.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
         property.setType(ProviderConfigProperty.STRING_TYPE);
@@ -65,20 +65,6 @@ public class RoleMapper extends AbstractIdentityProviderMapper {
     }
 
     public static final String PROVIDER_ID = "saml-role-idp-mapper";
-
-    public static String[] parseRole(String role) {
-        int scopeIndex = role.indexOf('.');
-        if (scopeIndex > -1) {
-            String appName = role.substring(0, scopeIndex);
-            role = role.substring(scopeIndex + 1);
-            String[] rtn = {appName, role};
-            return rtn;
-        } else {
-            String[] rtn = {null, role};
-            return rtn;
-
-        }
-    }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -102,29 +88,17 @@ public class RoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public String getDisplayType() {
-        return "Role Mapper";
+        return "SAML Attribute to Role";
     }
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ROLE);
+        String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
         if (isAttributePresent(mapperModel, context)) {
-            RoleModel role = getRoleFromString(realm, roleName);
+            RoleModel role = HardcodedRoleMapper.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             user.grantRole(role);
         }
-    }
-
-    protected RoleModel getRoleFromString(RealmModel realm, String roleName) {
-        String[] parsedRole = parseRole(roleName);
-        RoleModel role = null;
-        if (parsedRole[0] == null) {
-            role = realm.getRole(parsedRole[1]);
-        } else {
-            ClientModel client = realm.getClientByClientId(parsedRole[0]);
-            role = client.getRole(parsedRole[1]);
-        }
-        return role;
     }
 
     protected boolean isAttributePresent(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
@@ -149,9 +123,9 @@ public class RoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ROLE);
+        String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
         if (!isAttributePresent(mapperModel, context)) {
-            RoleModel role = getRoleFromString(realm, roleName);
+            RoleModel role = HardcodedRoleMapper.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             user.deleteRoleMapping(role);
         }
