@@ -32,7 +32,9 @@ import org.keycloak.account.freemarker.model.ApplicationsBean;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
+import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -167,6 +169,15 @@ public class AccountTest {
     public void ideTesting() throws Exception {
         Thread.sleep(100000000);
     }
+
+    @Test
+    public void testMigrationModel() {
+        KeycloakSession keycloakSession = keycloakRule.startSession();
+        Assert.assertEquals(keycloakSession.realms().getMigrationModel().getStoredVersion(), MigrationModel.LATEST_VERSION);
+        keycloakSession.close();
+    }
+
+
 
     @Test
     public void returnToAppFromQueryParam() {

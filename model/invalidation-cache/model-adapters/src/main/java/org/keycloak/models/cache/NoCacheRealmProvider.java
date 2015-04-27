@@ -1,5 +1,6 @@
 package org.keycloak.models.cache;
 
+import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -47,6 +48,11 @@ public class NoCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public void registerRoleInvalidation(String id) {
+    }
+
+    @Override
+    public MigrationModel getMigrationModel() {
+        return getDelegate().getMigrationModel();
     }
 
     @Override

@@ -37,12 +37,22 @@ public class InMemoryModel {
     //                realmId,    userId, userModel
     private final Map<String, Map<String,UserModel>> allUsers = new HashMap<String, Map<String,UserModel>>();
 
+    private String modelVersion;
+
     public InMemoryModel() {
     }
 
     public void putRealm(String id, RealmModel realm) {
         allRealms.put(id, realm);
         allUsers.put(id, new HashMap<String, UserModel>());
+    }
+
+    public String getModelVersion() {
+        return modelVersion;
+    }
+
+    public void setModelVersion(String modelVersion) {
+        this.modelVersion = modelVersion;
     }
 
     public RealmModel getRealm(String id) {

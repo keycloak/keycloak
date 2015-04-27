@@ -21,7 +21,6 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.timer.TimerProvider;
 
 import java.util.Collections;
@@ -226,7 +225,7 @@ public class RealmManager {
             client.setEnabled(true);
             client.setFullScopeAllowed(false);
 
-            for (String role : IdentityBrokerService.ROLES) {
+            for (String role : Constants.BROKER_SERVICE_ROLES) {
                 client.addRole(role).setDescription("${role_"+role+"}");
             }
         }

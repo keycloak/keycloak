@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.codehaus.jackson.JsonToken;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.exportimport.Strategy;
@@ -84,7 +86,22 @@ public class DefaultFileConnectionProviderFactory implements FileConnectionProvi
             FileInputStream fis = null;
             try {
                 fis = new FileInputStream(kcdata);
+                Model model = JsonSerialization.readValue(fis, Model.class);
                 ImportUtils.importFromStream(session, JsonSerialization.mapper, fis, Strategy.IGNORE_EXISTING);
+                session.realms().getMigrationModel().setStoredVersion(model.getModelVersion());
+
+                List<RealmRepresentation> realmReps = new ArrayList<RealmRepresentation>();
+                for (RealmRepresentation realmRep : model.getRealms()) {
+                    if (Config.getAdminRealm().equals(realmRep.getRealm())) {
+                        realmReps.add(0, realmRep);
+                    } else {
+                        realmReps.add(realmRep);
+                    }
+                }
+                for (RealmRepresentation realmRep : realmReps) {
+                    ImportUtils.importRealm(session, realmRep, Strategy.IGNORE_EXISTING);
+                }
+
             } catch (IOException ioe) {
                 logger.error("Unable to read model file " + kcdata.getAbsolutePath(), ioe);
             } finally {
@@ -128,8 +145,10 @@ public class DefaultFileConnectionProviderFactory implements FileConnectionProvi
         for (RealmModel realm : realms) {
             reps.add(ExportUtils.exportRealm(session, realm, true));
         }
-
-        JsonSerialization.prettyMapper.writeValue(outStream, reps);
+        Model model = new Model();
+        model.setRealms(reps);
+        model.setModelVersion(session.realms().getMigrationModel().getStoredVersion());
+        JsonSerialization.prettyMapper.writeValue(outStream, model);
     }
 
     @Override

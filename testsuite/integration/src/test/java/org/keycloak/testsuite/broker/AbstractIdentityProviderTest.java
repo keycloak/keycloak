@@ -17,11 +17,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Assert;
@@ -29,7 +24,6 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
@@ -41,9 +35,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.Urls;
-import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -68,7 +60,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -423,7 +414,7 @@ public abstract class AbstractIdentityProviderTest {
 
     protected void configureClientRetrieveToken(String clientId) {
         RealmModel realm = getRealm();
-        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(IdentityBrokerService.READ_TOKEN_ROLE);
+        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
         ClientModel client = realm.getClientByClientId(clientId);
         if (!client.hasScope(readTokenRole)) client.addScopeMapping(readTokenRole);
 
@@ -435,7 +426,7 @@ public abstract class AbstractIdentityProviderTest {
     protected void configureUserRetrieveToken(String username) {
         RealmModel realm = getRealm();
         UserModel user = session.users().getUserByUsername(username, realm);
-        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(IdentityBrokerService.READ_TOKEN_ROLE);
+        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
         if (user != null && !user.hasRole(readTokenRole)) {
             user.grantRole(readTokenRole);
         }
@@ -446,7 +437,7 @@ public abstract class AbstractIdentityProviderTest {
 
     protected void unconfigureClientRetrieveToken(String clientId) {
         RealmModel realm = getRealm();
-        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(IdentityBrokerService.READ_TOKEN_ROLE);
+        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
         ClientModel client = realm.getClientByClientId(clientId);
         if (client.hasScope(readTokenRole)) client.deleteScopeMapping(readTokenRole);
 
@@ -458,7 +449,7 @@ public abstract class AbstractIdentityProviderTest {
     protected void unconfigureUserRetrieveToken(String username) {
         RealmModel realm = getRealm();
         UserModel user = session.users().getUserByUsername(username, realm);
-        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(IdentityBrokerService.READ_TOKEN_ROLE);
+        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
         if (user != null && user.hasRole(readTokenRole)) {
             user.deleteRoleMapping(readTokenRole);
         }
