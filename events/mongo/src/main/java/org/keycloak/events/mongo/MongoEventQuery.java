@@ -5,6 +5,7 @@ import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 
+import com.mongodb.DBObject;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventType;
@@ -66,7 +67,9 @@ public class MongoEventQuery implements EventQuery {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        query.put("time", BasicDBObjectBuilder.start("$gte", from).get());
+        BasicDBObject time = query.containsField("time") ? (BasicDBObject) query.get("time") : new BasicDBObject();
+        time.append("$gte", from);
+        query.put("time", time);
         return this;
     }
 
@@ -79,7 +82,9 @@ public class MongoEventQuery implements EventQuery {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        query.put("time", BasicDBObjectBuilder.start("$lte", to).get());
+        BasicDBObject time = query.containsField("time") ? (BasicDBObject) query.get("time") : new BasicDBObject();
+        time.append("$lte", to);
+        query.put("time", time);
         return this;
     }
 
