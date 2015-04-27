@@ -8,6 +8,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.exportimport.ExportImportManager;
+import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -84,7 +85,24 @@ public class KeycloakApplication extends Application {
         setupDefaultRealm(context.getContextPath());
 
         importRealms(context);
+        migrateModel();
+
+
         setupScheduledTasks(sessionFactory);
+    }
+
+    protected void migrateModel() {
+        KeycloakSession session = sessionFactory.create();
+        try {
+            session.getTransaction().begin();
+            MigrationModelManager.migrate(session);
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            session.getTransaction().rollback();
+            log.error("Failed to migrate datamodel", e);
+        } finally {
+            session.close();
+        }
     }
 
     public String getContextPath() {

@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import org.keycloak.migration.MigrationModel;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 public interface RealmProvider extends Provider {
 
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
-
+    MigrationModel getMigrationModel();
     RealmModel createRealm(String name);
     RealmModel createRealm(String id, String name);
     RealmModel getRealm(String id);

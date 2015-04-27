@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -28,6 +29,11 @@ public class JpaRealmProvider implements RealmProvider {
     public JpaRealmProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
         this.em = em;
+    }
+
+    @Override
+    public MigrationModel getMigrationModel() {
+        return new MigrationModelAdapter(em);
     }
 
     @Override

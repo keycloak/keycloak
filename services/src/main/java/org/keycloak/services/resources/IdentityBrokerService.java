@@ -44,7 +44,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
@@ -60,17 +59,13 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
 import org.keycloak.util.ObjectUtil;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
@@ -95,8 +90,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private static final Logger LOGGER = Logger.getLogger(IdentityBrokerService.class);
     public static final String BROKER_PROVIDER_ID = "BROKER_PROVIDER_ID";
-    public static final String READ_TOKEN_ROLE = "READ_TOKEN";
-    public static final String[] ROLES = {READ_TOKEN_ROLE};
 
     private final RealmModel realmModel;
 
@@ -207,7 +200,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 }
                 Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
                 AccessToken.Access brokerRoles = resourceAccess == null ? null : resourceAccess.get(Constants.BROKER_SERVICE_CLIENT_ID);
-                if (brokerRoles == null || !brokerRoles.isUserInRole(READ_TOKEN_ROLE)) {
+                if (brokerRoles == null || !brokerRoles.isUserInRole(Constants.READ_TOKEN_ROLE)) {
                     return corsResponse(forbidden("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
 
                 }
@@ -536,7 +529,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
 
         if (context.getIdpConfig().isAddReadTokenRoleOnCreate()) {
-            RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(READ_TOKEN_ROLE);
+            RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
             federatedUser.grantRole(readTokenRole);
         }
 

@@ -18,6 +18,7 @@ package org.keycloak.models.file;
 
 import org.keycloak.connections.file.FileConnectionProvider;
 import org.keycloak.connections.file.InMemoryModel;
+import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -25,6 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.entities.RealmEntity;
+import org.keycloak.models.file.adapter.MigrationModelAdapter;
 import org.keycloak.models.file.adapter.RealmAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -52,6 +54,11 @@ public class FileRealmProvider implements RealmProvider {
     @Override
     public void close() {
         fcProvider.sessionClosed(session);
+    }
+
+    @Override
+    public MigrationModel getMigrationModel() {
+        return new MigrationModelAdapter(inMemoryModel);
     }
 
     @Override
