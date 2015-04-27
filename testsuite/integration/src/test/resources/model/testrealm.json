@@ -75,15 +75,22 @@
                 "Application": [ "app-admin" ],
                 "OtherApp": [  "otherapp-admin" ]
             },
-            "clientConsents": {
-                "Application": {
-                    "grantedRoles": [ "456", "789" ]
+            "clientConsents": [
+                {
+                    "clientId": "Application",
+                    "grantedRealmRoles": [ "admin" ],
+                    "grantedClientRoles": {
+                        "Application": [ "app-admin" ]
+                    }
                 },
-                "OtherApp": {
-                    "grantedProtocolMappers": [ "123" ],
-                    "grantedRoles": [ "456" ]
+                {
+                    "clientId": "OtherApp",
+                    "grantedRealmRoles": [ "admin" ],
+                    "grantedProtocolMappers": {
+                        "openid-connect": [ "gss delegation credential" ]
+                    }
                 }
-            }
+            ]
         },
         {
             "username": "mySocialUser",
@@ -124,7 +131,6 @@
             "enabled": true,
             "protocolMappers" : [
                 {
-                    "id": "123",
                     "name" : "gss delegation credential",
                     "protocol" : "openid-connect",
                     "protocolMapper" : "oidc-usersessionmodel-note-mapper",
@@ -150,14 +156,12 @@
     "roles" : {
         "realm" : [
             {
-                "id":   "456",
                 "name": "admin"
             }
         ],
         "application" : {
             "Application" : [
                 {
-                    "id":   "789",
                     "name": "app-admin"
                 },
                 {

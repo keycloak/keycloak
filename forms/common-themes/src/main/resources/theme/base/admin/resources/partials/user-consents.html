@@ -1,0 +1,47 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <kc-navigation-user></kc-navigation-user>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+            <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></li>
+            <li class="active">Consents</li>
+        </ol>
+        <h2>User <span>{{user.username}}</span> Consents <span tooltip-placement="right" tooltip="This page shows you all the consents, which user granted permissions" class="fa fa-info-circle"></span></h2>
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th>Client</th>
+                <th>Granted Roles</th>
+                <th>Granted Protocol Mappers</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="consent in userConsents">
+                <td>{{consent.clientId}}</td>
+                <td>
+                    <span data-ng-repeat="realmRole in consent.grantedRealmRoles">
+                        <span ng-if="!$first">, </span>{{realmRole}}
+                    </span>
+                    <span data-ng-repeat="(clientId, clientRoles) in consent.grantedClientRoles">
+                        <span data-ng-repeat="clientRole in clientRoles">
+                            <span ng-if="!$first || consent.grantedRealmRoles.length > 0">, </span>{{clientRole}} in {{clientId}}
+                        </span>
+                    </span>
+                </td>
+                <td>
+                    <span data-ng-repeat="protocol in consent.grantedProtocolMappers">
+                        <span data-ng-repeat="protocolMapper in protocol">
+                            <span ng-if="!$first">, </span>{{protocolMapper}}
+                        </span>
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-danger" ng-click="revokeConsent(consent.clientId)">Revoke consent</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
