@@ -10,27 +10,21 @@
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}/unpacked</directory>
+            <includes>
+                <include>net/iharder/base64/**</include>
+                <include>org/bouncycastle/**</include>
+                <include>org/apache/httpcomponents/**</include>
+                <include>org/keycloak/keycloak-core/**</include>
+                <include>org/keycloak/keycloak-adapter-core/**</include>
+                <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
+                <include>org/keycloak/keycloak-undertow-adapter/**</include>
+                <include>org/keycloak/keycloak-as7-adapter/**</include>
+                <include>org/keycloak/keycloak-subsystem/**</include>
+            </includes>
             <excludes>
-                <exclude>org/picketlink/**</exclude>
-                <exclude>org/keycloak/keycloak-undertow-adapter/**</exclude>
-                <exclude>org/keycloak/keycloak-wildfly-adapter/**</exclude>
-                <exclude>org/keycloak/keycloak-as7-subsystem/**</exclude>
-                <exclude>org/jboss/**</exclude>
+                <exclude>**/*.war</exclude>
             </excludes>
             <outputDirectory>modules/system/layers/base</outputDirectory>
         </fileSet>
     </fileSets>
-    <!--
-    <dependencySets>
-        <dependencySet>
-            <unpack>false</unpack>
-            <useTransitiveDependencies>true</useTransitiveDependencies>
-            <useTransitiveFiltering>true</useTransitiveFiltering>
-            <includes>
-                <include>org.keycloak:keycloak-as7-adapter</include>
-            </includes>
-            <outputDirectory>lib/as7-eap6-adapter</outputDirectory>
-        </dependencySet>
-    </dependencySets>
-    -->
 </assembly>

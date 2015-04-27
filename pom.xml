@@ -23,7 +23,8 @@
         <base64.version>2.3.8</base64.version>
         <bouncycastle.crypto.version>1.50</bouncycastle.crypto.version>
         <jackson.version>1.9.9</jackson.version>
-        <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
+        <apache.httpcomponents.version>4.3.6</apache.httpcomponents.version>
+        <apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>
         <resteasy.version>3.0.10.Final</resteasy.version>
         <undertow.version>1.1.1.Final</undertow.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
@@ -427,7 +428,17 @@
            <dependency>
                <groupId>org.apache.httpcomponents</groupId>
                <artifactId>httpclient</artifactId>
-               <version>${keycloak.apache.httpcomponents.version}</version>
+               <version>${apache.httpcomponents.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.httpcomponents</groupId>
+               <artifactId>httpmime</artifactId>
+               <version>${apache.httpcomponents.version}</version>
+           </dependency>
+           <dependency>
+               <groupId>org.apache.httpcomponents</groupId>
+               <artifactId>httpcore</artifactId>
+               <version>${apache.httpcomponents.httpcore.version}</version>
            </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
@@ -1063,6 +1074,12 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>distribution</id>
+            <modules>
+                <module>distribution</module>
+            </modules>
+        </profile>
         <profile>
             <id>jboss-release</id>
             <modules>

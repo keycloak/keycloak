@@ -338,6 +338,13 @@
         <module-def name="org.keycloak.keycloak-as7-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-as7-subsystem"/>
         </module-def>
+
+        <module-def name="org.apache.httpcomponents" slot="4.3">
+            <maven-resource group="org.apache.httpcomponents" artifact="httpclient"/>
+            <maven-resource group="org.apache.httpcomponents" artifact="httpcore"/>
+            <maven-resource group="org.apache.httpcomponents" artifact="httpmime"/>
+        </module-def>
+
     </target>
 
     <target name="clean-target">

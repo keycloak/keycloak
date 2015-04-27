@@ -19,7 +19,7 @@
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.keycloak.*;version="${project.version}",
-            org.apache.http.*;version=${keycloak.apache.httpcomponents.version},
+            org.apache.http.*;version=${apache.httpcomponents.version},
             org.apache.karaf.jaas.boot.principal;resolution:=optional,
             org.apache.karaf.jaas.modules;resolution:=optional,
             *;resolution:=optional
@@ -71,7 +71,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${keycloak.apache.httpcomponents.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
