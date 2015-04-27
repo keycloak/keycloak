@@ -26,7 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
     
     <groupId>org.keycloak</groupId>
-    <artifactId>server-only-build</artifactId>
+    <artifactId>keycloak-server-only-build</artifactId>
 
     <name>Keycloak WildFly Build: Server Only</name>
     <packaging>pom</packaging>
@@ -34,14 +34,13 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>feature-pack-server</artifactId>
+            <artifactId>keycloak-server-feature-pack</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
     </dependencies>
 
     <build>
-        <finalName>${project.artifactId}-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.wildfly.build</groupId>

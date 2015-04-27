@@ -14,7 +14,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>feature-pack-adapter</module>
+        <module>adapter-feature-pack</module>
         <module>adapter-only-build</module>
         <module>adapter-only-dist</module>
     </modules>

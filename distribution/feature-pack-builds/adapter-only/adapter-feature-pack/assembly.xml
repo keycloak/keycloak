@@ -32,7 +32,7 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>target/keycloak-feature-pack-adapter-${project.version}</directory>
+            <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>            
         </fileSet>
     </fileSets>

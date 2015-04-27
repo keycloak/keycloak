@@ -17,6 +17,6 @@
 -->
 <server-provisioning xmlns="urn:wildfly:server-provisioning:1.0" extract-schemas="true" copy-module-artifacts="true">
     <feature-packs>
-        <feature-pack groupId="org.keycloak" artifactId="feature-pack-server" version="${project.version}"/>     
+        <feature-pack groupId="org.keycloak" artifactId="keycloak-server-feature-pack" version="${project.version}"/>     
     </feature-packs>
 </server-provisioning>

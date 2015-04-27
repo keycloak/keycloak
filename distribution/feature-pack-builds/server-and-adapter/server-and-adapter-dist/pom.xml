@@ -26,7 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
     
     <groupId>org.keycloak</groupId>
-    <artifactId>server-and-adapter-dist</artifactId>
+    <artifactId>keycloak-server-and-adapter-dist</artifactId>
 
     <name>Keycloak WildFly Dist: Server and Adapter</name>
     <packaging>pom</packaging>
@@ -34,22 +34,18 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>feature-pack-server</artifactId>
+            <artifactId>keycloak-server-feature-pack</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>feature-pack-adapter</artifactId>
+            <artifactId>keycloak-adapter-feature-pack</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
     </dependencies>
 
-    <build>
-        <finalName>${project.artifactId}-${project.version}</finalName>
-    </build>
-    
     <profiles>
         <profile>
             <id>jboss-release</id>

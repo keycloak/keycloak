@@ -14,7 +14,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>feature-pack-server</module>
+        <module>server-feature-pack</module>
         <module>server-only-build</module>
         <module>server-only-dist</module>
     </modules>

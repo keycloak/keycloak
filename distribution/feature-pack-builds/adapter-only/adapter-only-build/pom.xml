@@ -26,7 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
     
     <groupId>org.keycloak</groupId>
-    <artifactId>adapter-only-build</artifactId>
+    <artifactId>keycloak-adapter-only-build</artifactId>
 
     <name>Keycloak WildFly Build: Adapter Only</name>
     <packaging>pom</packaging>
@@ -34,14 +34,13 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>feature-pack-adapter</artifactId>
+            <artifactId>keycloak-adapter-feature-pack</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
     </dependencies>
 
     <build>
-        <finalName>${project.artifactId}-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.wildfly.build</groupId>
@@ -74,7 +73,7 @@
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <recompressZippedFiles>true</recompressZippedFiles>
-                            <finalName>${project.artifactId}-${project.version}</finalName>
+                            <finalName>${project.build.finalName}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>

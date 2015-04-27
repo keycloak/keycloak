@@ -29,7 +29,7 @@
             <directory>target</directory>
             <outputDirectory/>
             <includes>
-                <include>${project.artifactId}-${project.version}/**</include>
+                <include>${project.build.finalName}/**</include>
             </includes>
         </fileSet>
     </fileSets>

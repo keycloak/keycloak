@@ -26,7 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
     
     <groupId>org.keycloak</groupId>
-    <artifactId>feature-pack-adapter</artifactId>
+    <artifactId>keycloak-adapter-feature-pack</artifactId>
 
     <name>Keycloak Feature Pack: Adapter</name>
     <packaging>pom</packaging>
@@ -124,7 +124,6 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-feature-pack-adapter-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -162,7 +161,7 @@
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <recompressZippedFiles>true</recompressZippedFiles>
-                            <finalName>keycloak-feature-pack-adapter-${project.version}</finalName>
+                            <finalName>${project.build.finalName}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>target/</outputDirectory>
                             <workDirectory>target/assembly/work</workDirectory>
