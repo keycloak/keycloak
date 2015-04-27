@@ -16,7 +16,7 @@
         <module name="org.keycloak.keycloak-login-api"/>
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.keycloak.keycloak-forms-common-freemarker"/>
-        <module name="org.apache.httpcomponents" />
+        <module name="org.apache.httpcomponents" slot="4.3" />
         <module name="org.jboss.logging"/>
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>

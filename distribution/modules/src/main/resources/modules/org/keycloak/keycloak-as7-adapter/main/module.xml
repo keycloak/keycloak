@@ -12,7 +12,7 @@
         <module name="org.codehaus.jackson.jackson-core-asl"/>
         <module name="org.codehaus.jackson.jackson-mapper-asl"/>
         <module name="org.codehaus.jackson.jackson-xc"/>
-        <module name="org.apache.httpcomponents" />
+        <module name="org.apache.httpcomponents" slot="4.3" />
         <module name="javax.servlet.api"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.as.security"/>

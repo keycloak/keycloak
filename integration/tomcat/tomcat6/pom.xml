@@ -51,7 +51,6 @@
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
-			<version>${keycloak.apache.httpcomponents.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>net.iharder</groupId>
