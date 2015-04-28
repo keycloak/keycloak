@@ -27,7 +27,7 @@ public class UserRepresentation {
     protected List<FederatedIdentityRepresentation> federatedIdentities;
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
-    protected Map<String, UserConsentRepresentation> clientConsents;
+    protected List<UserConsentRepresentation> clientConsents;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
@@ -177,11 +177,11 @@ public class UserRepresentation {
         this.clientRoles = clientRoles;
     }
 
-    public Map<String, UserConsentRepresentation> getClientConsents() {
+    public List<UserConsentRepresentation> getClientConsents() {
         return clientConsents;
     }
 
-    public void setClientConsents(Map<String, UserConsentRepresentation> clientConsents) {
+    public void setClientConsents(List<UserConsentRepresentation> clientConsents) {
         this.clientConsents = clientConsents;
     }
 

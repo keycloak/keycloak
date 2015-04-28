@@ -268,6 +268,13 @@ module.factory('UserFederatedIdentity', function($resource) {
         user : '@user'
     });
 });
+module.factory('UserConsents', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/consents/:client', {
+        realm : '@realm',
+        user : '@user',
+        client: '@client'
+    });
+});
 
 module.factory('UserCredentials', function($resource) {
     var credentials = {};

@@ -9,6 +9,7 @@
 
     <form action="${url.revokeClientUrl}" method="post">
         <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
+        <input type="hidden" id="referrer" name="referrer" value="${stateChecker}">
 
         <table class="table table-striped table-bordered">
             <thead>

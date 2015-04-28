@@ -531,7 +531,14 @@ public class AccountService {
         event.event(EventType.REVOKE_GRANT).client(auth.getClient()).user(auth.getUser()).detail(Details.REVOKED_CLIENT, client.getClientId()).success();
         setReferrerOnPage();
 
-        return account.setSuccess(Messages.SUCCESS_GRANT_REVOKED).createResponse(AccountPages.APPLICATIONS);
+        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "applicationsPage");
+        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
+        if (referrer != null) {
+            builder.queryParam("referrer", referrer);
+
+        }
+        URI location = builder.build(realm.getName());
+        return Response.seeOther(location).build();
     }
 
     /**

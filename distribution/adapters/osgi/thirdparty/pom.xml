@@ -18,7 +18,7 @@
     <properties>
         <keycloak.osgi.export>
             net.iharder;version="${base64.version}",
-            org.apache.http.*;version=${keycloak.apache.httpcomponents.version}
+            org.apache.http.*;version=${apache.httpcomponents.version}
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             *;resolution:=optional
@@ -32,13 +32,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-            <version>${keycloak.apache.httpcomponents.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${keycloak.apache.httpcomponents.version}</version>
         </dependency>
     </dependencies>
 

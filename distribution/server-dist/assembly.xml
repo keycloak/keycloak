@@ -18,7 +18,15 @@
                 <exclude>docs/**</exclude>
                 <exclude>standalone/deployments</exclude>
                 <exclude>standalone/deployments/*</exclude>
+                <exclude>standalone/configuration/standalone*.xml</exclude>
             </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked</directory>
+            <outputDirectory>standalone/configuration</outputDirectory>
+            <includes>
+                <include>standalone*.xml</include>
+            </includes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>

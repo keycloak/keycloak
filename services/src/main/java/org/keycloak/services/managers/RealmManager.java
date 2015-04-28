@@ -113,11 +113,11 @@ public class RealmManager {
     }
 
     public String getRealmAdminClientId(RealmModel realm) {
-        return "realm-management";
+        return Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
 
     public String getRealmAdminClientId(RealmRepresentation realm) {
-        return "realm-management";
+        return Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
 
 
@@ -223,10 +223,11 @@ public class RealmManager {
         if (client == null) {
             client = new ClientManager(this).createClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
             client.setEnabled(true);
+            client.setName("${client_" + Constants.BROKER_SERVICE_CLIENT_ID + "}");
             client.setFullScopeAllowed(false);
 
             for (String role : Constants.BROKER_SERVICE_ROLES) {
-                client.addRole(role).setDescription("${role_"+role+"}");
+                client.addRole(role).setDescription("${role_"+ role.toLowerCase().replaceAll("_", "-") +"}");
             }
         }
     }

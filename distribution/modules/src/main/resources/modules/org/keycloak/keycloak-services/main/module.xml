@@ -77,7 +77,7 @@
         <module name="net.iharder.base64"/>
         <module name="javax.api"/>
         <module name="javax.activation.api"/>
-        <module name="org.apache.httpcomponents"/>
+        <module name="org.apache.httpcomponents" slot="4.3" />
     </dependencies>
 
 </module>

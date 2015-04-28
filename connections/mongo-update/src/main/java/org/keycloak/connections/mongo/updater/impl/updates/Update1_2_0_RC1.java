@@ -23,13 +23,15 @@ public class Update1_2_0_RC1 extends Update {
         convertApplicationsToClients();
         convertOAuthClientsToClients();
 
-        db.getCollection("realms").update(new BasicDBObject(), new BasicDBObject("$rename", new BasicDBObject("adminAppId", "clientId")), false, true);
+        db.getCollection("realms").update(new BasicDBObject(), new BasicDBObject("$rename", new BasicDBObject("adminAppId", "masterAdminClient")), false, true);
 
         ensureIndex("userConsents", new String[]{"clientId", "userId"}, true, false);
     }
 
     private void convertApplicationsToClients() {
         DBCollection applications = db.getCollection("applications");
+        applications.dropIndex("realmId_1_name_1");
+
         applications.update(new BasicDBObject(), new BasicDBObject("$set", new BasicDBObject("consentRequired", false)), false, true);
         applications.update(new BasicDBObject(), new BasicDBObject("$rename", new BasicDBObject("name", "clientId")), false, true);
         renameCollection("applications", "clients");
@@ -39,14 +41,14 @@ public class Update1_2_0_RC1 extends Update {
         roles.update(new BasicDBObject(), new BasicDBObject("$rename", new BasicDBObject("applicationId", "clientId")), false, true);
         log.debugv("Renamed roles.applicationId to roles.clientId");
 
-        db.getCollection("clients").dropIndex("realmId_1_name_1");
         ensureIndex("clients", new String[]{"realmId", "clientId"}, true, false);
-
     }
 
     private void convertOAuthClientsToClients() {
         DBCollection clients = db.getCollection("clients");
         DBCollection oauthClients = db.getCollection("oauthClients");
+        oauthClients.dropIndex("realmId_1_name_1");
+
         oauthClients.update(new BasicDBObject(), new BasicDBObject("$rename", new BasicDBObject("name", "clientId")), false, true);
         oauthClients.update(new BasicDBObject(), new BasicDBObject("$set", new BasicDBObject("consentRequired", true)), false, true);
 

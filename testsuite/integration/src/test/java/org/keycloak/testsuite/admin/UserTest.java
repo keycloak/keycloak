@@ -5,6 +5,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -43,6 +44,10 @@ public class UserTest extends AbstractClientTest {
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(409, e.getResponse().getStatus());
+
+            // Just to show how to retrieve underlying error message
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same username", error.getErrorMessage());
         }
     }
     

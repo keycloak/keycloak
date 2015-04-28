@@ -18,7 +18,7 @@
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            org.apache.http.*;version=${keycloak.apache.httpcomponents.version},
+            org.apache.http.*;version=${apache.httpcomponents.version},
             javax.servlet.*;version="[2.5,4)",
             org.keycloak.adapters.jetty;version="${project.version}",
             org.keycloak.adapters;version="${project.version}",
@@ -51,7 +51,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${keycloak.apache.httpcomponents.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

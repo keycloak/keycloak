@@ -9,6 +9,7 @@ public interface Constants {
 
     String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
     String BROKER_SERVICE_CLIENT_ID = "broker";
+    String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
 
     String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
     String INSTALLED_APP_URL = "http://localhost";
