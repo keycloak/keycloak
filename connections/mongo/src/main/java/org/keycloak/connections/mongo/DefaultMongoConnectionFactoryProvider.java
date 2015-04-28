@@ -40,7 +40,8 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.entities.UserFederationProviderEntity",
             "org.keycloak.models.entities.ProtocolMapperEntity",
             "org.keycloak.models.entities.IdentityProviderMapperEntity",
-            "org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity"
+            "org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity",
+            "org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity"
     };
 
     private static final Logger logger = Logger.getLogger(DefaultMongoConnectionFactoryProvider.class);
