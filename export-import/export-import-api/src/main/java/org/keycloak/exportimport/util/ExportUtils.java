@@ -287,29 +287,11 @@ public class ExportUtils {
 
         // Grants
         List<UserConsentModel> consents = user.getConsents();
-        Map<String, UserConsentRepresentation> consentReps = new HashMap<String, UserConsentRepresentation>();
+        LinkedList<UserConsentRepresentation> consentReps = new LinkedList<UserConsentRepresentation>();
         for (UserConsentModel consent : consents) {
-            String clientId = consent.getClient().getClientId();
-
-            List<String> grantedProtocolMappers = new LinkedList<String>();
-            for (ProtocolMapperModel protocolMapper : consent.getGrantedProtocolMappers()) {
-                grantedProtocolMappers.add(protocolMapper.getId());
-            }
-
-            List<String> grantedRoles = new LinkedList<String>();
-            for (RoleModel role : consent.getGrantedRoles()) {
-                grantedRoles.add(role.getId());
-            }
-
-
-            if (grantedRoles.size() > 0 || grantedProtocolMappers.size() > 0) {
-                UserConsentRepresentation consentRep = new UserConsentRepresentation();
-                if (grantedRoles.size() > 0) consentRep.setGrantedRoles(grantedRoles);
-                if (grantedProtocolMappers.size() > 0) consentRep.setGrantedProtocolMappers(grantedProtocolMappers);
-                consentReps.put(clientId, consentRep);
-            }
+            UserConsentRepresentation consentRep = ModelToRepresentation.toRepresentation(consent);
+            consentReps.add(consentRep);
         }
-
         if (consentReps.size() > 0) {
             userRep.setClientConsents(consentReps);
         }

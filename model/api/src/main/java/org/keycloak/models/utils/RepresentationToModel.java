@@ -788,33 +788,8 @@ public class RepresentationToModel {
             }
         }
         if (userRep.getClientConsents() != null) {
-            for (Map.Entry<String, UserConsentRepresentation> entry : userRep.getClientConsents().entrySet()) {
-                ClientModel client = clientMap.get(entry.getKey());
-                if (client == null) {
-                    throw new RuntimeException("Unable to find client consent mappings for client: " + entry.getKey());
-                }
-
-                UserConsentModel consentModel = new UserConsentModel(client);
-
-                UserConsentRepresentation consentRep = entry.getValue();
-                if (consentRep.getGrantedRoles() != null) {
-                    for (String roleId : consentRep.getGrantedRoles()) {
-                        RoleModel role = newRealm.getRoleById(roleId);
-                        if (role == null) {
-                            throw new RuntimeException("Unable to find realm role referenced in consent mappings of user " + user.getUsername() + ". Role ID: " + roleId);
-                        }
-                        consentModel.addGrantedRole(role);
-                    }
-                }
-                if (consentRep.getGrantedProtocolMappers() != null) {
-                    for (String mapperId : consentRep.getGrantedProtocolMappers()) {
-                        ProtocolMapperModel protocolMapper = client.getProtocolMapperById(mapperId);
-                        if (protocolMapper == null) {
-                            throw new RuntimeException("Unable to find protocol mapper referenced in consent mappings of user " + user.getUsername() + ". Protocol mapper ID: " + mapperId);
-                        }
-                        consentModel.addGrantedProtocolMapper(protocolMapper);
-                    }
-                }
+            for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
+                UserConsentModel consentModel = toModel(newRealm, consentRep);
                 user.addConsent(consentModel);
             }
         }
@@ -915,6 +890,55 @@ public class RepresentationToModel {
         model.setIdentityProviderMapper(rep.getIdentityProviderMapper());
         model.setConfig(rep.getConfig());
         return model;
+    }
+
+    public static UserConsentModel toModel(RealmModel newRealm, UserConsentRepresentation consentRep) {
+        ClientModel client = newRealm.getClientByClientId(consentRep.getClientId());
+        if (client == null) {
+            throw new RuntimeException("Unable to find client consent mappings for client: " + consentRep.getClientId());
+        }
+
+        UserConsentModel consentModel = new UserConsentModel(client);
+
+        if (consentRep.getGrantedRealmRoles() != null) {
+            for (String roleName : consentRep.getGrantedRealmRoles()) {
+                RoleModel role = newRealm.getRole(roleName);
+                if (role == null) {
+                    throw new RuntimeException("Unable to find realm role referenced in consent mappings of user. Role name: " + roleName);
+                }
+                consentModel.addGrantedRole(role);
+            }
+        }
+        if (consentRep.getGrantedClientRoles() != null) {
+            for (Map.Entry<String, List<String>> entry : consentRep.getGrantedClientRoles().entrySet()) {
+                String clientId2 = entry.getKey();
+                ClientModel client2 = newRealm.getClientByClientId(clientId2);
+                if (client2 == null) {
+                    throw new RuntimeException("Unable to find client referenced in consent mappings. Client ID: " + clientId2);
+                }
+                for (String clientRoleName : entry.getValue()) {
+                    RoleModel clientRole = client2.getRole(clientRoleName);
+                    if (clientRole == null) {
+                        throw new RuntimeException("Unable to find client role referenced in consent mappings of user. Role name: " + clientRole + ", Client: " + clientId2);
+                    }
+                    consentModel.addGrantedRole(clientRole);
+                }
+            }
+        }
+        if (consentRep.getGrantedProtocolMappers() != null) {
+            for (Map.Entry<String, List<String>> protocolEntry : consentRep.getGrantedProtocolMappers().entrySet()) {
+                String protocol = protocolEntry.getKey();
+                for (String protocolMapperName : protocolEntry.getValue()) {
+                    ProtocolMapperModel protocolMapper = client.getProtocolMapperByName(protocol, protocolMapperName);
+                    if (protocolMapper == null) {
+                        throw new RuntimeException("Unable to find protocol mapper for protocol " + protocol + ", mapper name " + protocolMapperName);
+                    }
+
+                    consentModel.addGrantedProtocolMapper(protocolMapper);
+                }
+            }
+        }
+        return consentModel;
     }
 
 }

@@ -1,13 +1,6 @@
 <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
 <div id="content-area" class="col-md-9" role="main">
-
-    <ul class="nav nav-tabs nav-tabs-pf" data-ng-show="!create">
-        <li class="active"><a href="#/realms/{{realm.realm}}/users/{{user.username}}">Attributes</a></li>
-        <li data-ng-show="access.manageUsers"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
-        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
-        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/sessions">Sessions</a></li>
-        <li data-ng-show="realm.identityFederationEnabled"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/federated-identity">Federated Identities</a></li>
-    </ul>
+    <kc-navigation-user></kc-navigation-user>
     <ul class="nav nav-tabs nav-tabs-pf" data-ng-show="create">
         <li class="active"><a href="">User List</a></li>
         <li><a href="#/realms/{{realm.realm}}/user-federation">Federation</a></li>

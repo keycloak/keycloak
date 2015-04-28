@@ -135,6 +135,24 @@ module.controller('UserFederatedIdentityCtrl', function($scope, realm, user, fed
     $scope.federatedIdentities = federatedIdentities;
 });
 
+module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents, UserConsents, Notifications) {
+    $scope.realm = realm;
+    $scope.user = user;
+    $scope.userConsents = userConsents;
+
+    $scope.revokeConsent = function(clientId) {
+        UserConsents.delete({realm : realm.realm, user: user.username, client: clientId }, function () {
+            UserConsents.query({realm: realm.realm, user: user.username}, function(updated) {
+                $scope.userConsents = updated;
+            })
+            Notifications.success('Consent revoked successfully');
+        }, function() {
+            Notifications.error("Consent couldn't be revoked");
+        });
+        console.log("Revoke consent " + clientId);
+    }
+});
+
 
 module.controller('UserListCtrl', function($scope, realm, User) {
     $scope.realm = realm;

@@ -399,6 +399,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserFederatedIdentityCtrl'
         })
+        .when('/realms/:realm/users/:user/consents', {
+            templateUrl : resourceUrl + '/partials/user-consents.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                userConsents : function(UserConsentsLoader) {
+                    return UserConsentsLoader();
+                }
+            },
+            controller : 'UserConsentsCtrl'
+        })
         .when('/realms/:realm/users', {
             templateUrl : resourceUrl + '/partials/user-list.html',
             resolve : {
@@ -1415,6 +1430,15 @@ module.directive('kcNavigationClient', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-navigation-client.html'
+    }
+});
+
+module.directive('kcNavigationUser', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-navigation-user.html'
     }
 });
 

@@ -17,6 +17,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -30,6 +31,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -307,6 +309,56 @@ public class UsersResource {
         }
         if (!session.users().removeFederatedIdentity(realm, user, provider)) {
             throw new NotFoundException("Link not found");
+        }
+    }
+
+    /**
+     * List set of consents granted by this user.
+     *
+     * @param username
+     * @return
+     */
+    @Path("{username}/consents")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserConsentRepresentation> getConsents(final @PathParam("username") String username) {
+        auth.requireView();
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        List<UserConsentModel> consents = user.getConsents();
+        List<UserConsentRepresentation> result = new ArrayList<UserConsentRepresentation>();
+
+        for (UserConsentModel consent : consents) {
+            UserConsentRepresentation rep = ModelToRepresentation.toRepresentation(consent);
+            result.add(rep);
+        }
+        return result;
+    }
+
+    /**
+     * Revoke consent for particular client
+     *
+     * @param username
+     * @param clientId
+     */
+    @Path("{username}/consents/{client}")
+    @DELETE
+    @NoCache
+    public void revokeConsent(final @PathParam("username") String username, final @PathParam("client") String clientId) {
+        auth.requireManage();
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        boolean revoked = user.revokeConsentForClient(client.getId());
+        if (!revoked) {
+            throw new NotFoundException("Consent not found for user " + username + " and client " + clientId);
         }
     }
 
