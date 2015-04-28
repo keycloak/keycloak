@@ -139,5 +139,7 @@
         <addUniqueConstraint columnNames="NAME,CLIENT_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
         <addUniqueConstraint columnNames="CLIENT_ID, USER_ID" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT" tableName="USER_CONSENT"/>
 
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate1_2_0_CR1"/>
+
     </changeSet>
 </databaseChangeLog>
