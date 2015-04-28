@@ -6,6 +6,12 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.ClientConnection;
 import org.keycloak.VerificationException;
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
+import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
+import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -18,22 +24,18 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.HttpAuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.ErrorPage;
 import org.keycloak.util.StreamUtil;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.dom.saml.v2.SAML2Object;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
-import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
-import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
-import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -51,6 +53,7 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
@@ -122,7 +125,7 @@ public class SamlService {
         protected Response handleSamlResponse(String samlResponse, String relayState) {
             event.event(EventType.LOGOUT);
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
-            StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
+            StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
             if (!uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
@@ -162,7 +165,7 @@ public class SamlService {
 
             SAML2Object samlObject = documentHolder.getSamlObject();
 
-            RequestAbstractType requestAbstractType = (RequestAbstractType)samlObject;
+            RequestAbstractType requestAbstractType = (RequestAbstractType) samlObject;
             String issuer = requestAbstractType.getIssuer().getValue();
             ClientModel client = realm.getClientByClientId(issuer);
 
@@ -177,7 +180,7 @@ public class SamlService {
                 event.error(Errors.CLIENT_DISABLED);
                 return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             }
-            if ((client instanceof ClientModel) && ((ClientModel)client).isBearerOnly()) {
+            if ((client instanceof ClientModel) && ((ClientModel) client).isBearerOnly()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.NOT_ALLOWED);
                 return ErrorPage.error(session, Messages.BEARER_ONLY);
@@ -221,6 +224,7 @@ public class SamlService {
         protected abstract void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException;
 
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
+
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
 
         protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
@@ -231,7 +235,8 @@ public class SamlService {
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
             }
             String bindingType = getBindingType(requestAbstractType);
-            if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING))) bindingType = SamlProtocol.SAML_POST_BINDING;
+            if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING)))
+                bindingType = SamlProtocol.SAML_POST_BINDING;
             String redirect = null;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
             if (redirectUri != null && !"null".equals(redirectUri)) {  // "null" is for testing purposes
@@ -243,7 +248,7 @@ public class SamlService {
                     redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
                 }
                 if (redirect == null && client instanceof ClientModel) {
-                    redirect = ((ClientModel)client).getManagementUrl();
+                    redirect = ((ClientModel) client).getManagementUrl();
                 }
 
             }
@@ -265,10 +270,10 @@ public class SamlService {
 
             // Handle NameIDPolicy from SP
             NameIDPolicyType nameIdPolicy = requestAbstractType.getNameIDPolicy();
-            if(nameIdPolicy != null && !SamlProtocol.forceNameIdFormat(client)) {
+            if (nameIdPolicy != null && !SamlProtocol.forceNameIdFormat(client)) {
                 String nameIdFormat = nameIdPolicy.getFormat().toString();
                 // TODO: Handle AllowCreate too, relevant for persistent NameID.
-                if(isSupportedNameIdFormat(nameIdFormat)) {
+                if (isSupportedNameIdFormat(nameIdFormat)) {
                     clientSession.setNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
                 } else {
                     event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
@@ -344,7 +349,8 @@ public class SamlService {
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
             if (authResult != null) {
                 String logoutBinding = getBindingType();
-                if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING))) logoutBinding = SamlProtocol.SAML_POST_BINDING;
+                if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING)))
+                    logoutBinding = SamlProtocol.SAML_POST_BINDING;
                 String bindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, logoutBinding);
                 UserSessionModel userSession = authResult.getSession();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
@@ -364,33 +370,51 @@ public class SamlService {
                 }
                 logger.debug("browser Logout");
                 return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
-            }
+            } else if (logoutRequest.getSessionIndex() != null) {
+                for (String sessionIndex : logoutRequest.getSessionIndex()) {
+                    ClientSessionModel clientSession = session.sessions().getClientSession(realm, sessionIndex);
+                    if (clientSession == null) continue;
+                    if (clientSession.getClient().getClientId().equals(client.getClientId())) {
+                        // remove requesting client from logout
+                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                    }
+                    UserSessionModel userSession = clientSession.getUserSession();
+                    try {
+                        authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
+                    } catch (Exception e) {
+                        logger.warn("Failure with backchannel logout", e);
+                    }
 
-
-            String redirectUri = null;
-
-            if (client instanceof ClientModel) {
-                redirectUri = ((ClientModel)client).getBaseUrl();
-            }
-
-            if (redirectUri != null) {
-                redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
-                if (redirectUri == null) {
-                    return ErrorPage.error(session, Messages.INVALID_REDIRECT_URI);
                 }
-            }
-            if (redirectUri != null) {
-                return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
-            } else {
-                return Response.ok().build();
+
             }
 
-        }
+            // default
 
-        private Response logout(UserSessionModel userSession) {
-            Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
-            if (response == null) event.user(userSession.getUser()).session(userSession).success();
-            return response;
+            String logoutBinding = getBindingType();
+            String logoutBindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, logoutBinding);
+            String logoutRelayState = relayState;
+            SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
+            builder.logoutRequestID(logoutRequest.getID());
+            builder.destination(logoutBindingUri);
+            builder.issuer(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
+            builder.relayState(logoutRelayState);
+            if (SamlProtocol.requiresRealmSignature(client)) {
+                SignatureAlgorithm algorithm = SamlProtocol.getSignatureAlgorithm(client);
+                builder.signatureAlgorithm(algorithm)
+                        .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                        .signDocument();
+
+            }
+            try {
+                if (SamlProtocol.SAML_POST_BINDING.equals(logoutBinding)) {
+                    return builder.postBinding().response(logoutBindingUri);
+                } else {
+                    return builder.redirectBinding().response(logoutBindingUri);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         private boolean checkSsl() {
@@ -414,6 +438,7 @@ public class SamlService {
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
             return SAMLRequestParser.parseRequestPostBinding(samlRequest);
         }
+
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
             return SAMLRequestParser.parseResponsePostBinding(response);
@@ -444,7 +469,6 @@ public class SamlService {
             PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
             SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo);
         }
-
 
 
         @Override
@@ -478,7 +502,7 @@ public class SamlService {
     @GET
     public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
                                     @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                    @QueryParam(GeneralConstants.RELAY_STATE) String relayState)  {
+                                    @QueryParam(GeneralConstants.RELAY_STATE) String relayState) {
         logger.debug("SAML GET");
         return new RedirectBindingProtocol().execute(samlRequest, samlResponse, relayState);
     }

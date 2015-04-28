@@ -218,7 +218,7 @@ public class SAMLEndpoint {
                 List<UserSessionModel> userSessions = session.sessions().getUserSessionByBrokerUserId(realm, brokerUserId);
                 for (UserSessionModel userSession : userSessions) {
                     try {
-                        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+                        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, false);
                     } catch (Exception e) {
                         logger.warn("failed to do backchannel logout for userSession", e);
                     }
@@ -230,7 +230,7 @@ public class SAMLEndpoint {
                     UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId);
                     if (userSession != null) {
                         try {
-                            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+                            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, false);
                         } catch (Exception e) {
                             logger.warn("failed to do backchannel logout for userSession", e);
                         }

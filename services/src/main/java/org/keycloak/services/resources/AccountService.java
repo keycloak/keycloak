@@ -480,7 +480,7 @@ public class AccountService {
         UserModel user = auth.getUser();
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
         }
 
         UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "sessionsPage");
@@ -668,7 +668,7 @@ public class AccountService {
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel s : sessions) {
             if (!s.getId().equals(auth.getSession().getId())) {
-                AuthenticationManager.backchannelLogout(session, realm, s, uriInfo, clientConnection, headers);
+                AuthenticationManager.backchannelLogout(session, realm, s, uriInfo, clientConnection, headers, true);
             }
         }
 

@@ -280,7 +280,7 @@ public class RealmAdminResource {
     public void deleteSession(@PathParam("session") String sessionId) {
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
-        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers);
+        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
     }
 
     /**

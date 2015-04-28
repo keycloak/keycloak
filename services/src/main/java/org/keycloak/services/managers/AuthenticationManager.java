@@ -104,7 +104,20 @@ public class AuthenticationManager {
 
     }
 
-    public static void backchannelLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
+    /**
+     * Do not logout broker
+     *
+     * @param session
+     * @param realm
+     * @param userSession
+     * @param uriInfo
+     * @param connection
+     * @param headers
+     */
+    public static void backchannelLogout(KeycloakSession session, RealmModel realm,
+                                         UserSessionModel userSession, UriInfo uriInfo,
+                                         ClientConnection connection, HttpHeaders headers,
+                                         boolean logoutBroker) {
         if (userSession == null) return;
         UserModel user = userSession.getUser();
         userSession.setState(UserSessionModel.State.LOGGING_OUT);
@@ -114,6 +127,16 @@ public class AuthenticationManager {
 
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
             backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
+        }
+        if (logoutBroker) {
+            String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
+            if (brokerId != null) {
+                IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
+                try {
+                    identityProvider.backchannelLogout(userSession, uriInfo, realm);
+                } catch (Exception e) {
+                }
+            }
         }
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
         session.sessions().removeUserSession(realm, userSession);
@@ -131,8 +154,8 @@ public class AuthenticationManager {
             protocol.backchannelLogout(userSession, clientSession);
             clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
         }
-    }
 
+    }
 
     public static Response browserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         if (userSession == null) return null;
@@ -525,7 +548,7 @@ public class AuthenticationManager {
 
             UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
             if (!isSessionValid(realm, userSession)) {
-                if (userSession != null) backchannelLogout(session, realm, userSession, uriInfo, connection, headers);
+                if (userSession != null) backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
                 logger.debug("User session not active");
                 return null;
             }

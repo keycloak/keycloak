@@ -110,4 +110,13 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public void setPostBindingResponse(boolean postBindingResponse) {
         getConfig().put("postBindingResponse", String.valueOf(postBindingResponse));
     }
+
+    public boolean isBackchannelSupported() {
+        return Boolean.valueOf(getConfig().get("backchannelSupported"));
+    }
+
+    public void setBackchannelSupported(boolean backchannel) {
+        getConfig().put("backchannelSupported", String.valueOf(backchannel));
+    }
+
 }

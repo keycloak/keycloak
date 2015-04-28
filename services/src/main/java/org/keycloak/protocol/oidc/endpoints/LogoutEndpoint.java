@@ -126,7 +126,7 @@ public class LogoutEndpoint {
             return AuthenticationManager.browserLogout(session, realm, authResult.getSession(), uriInfo, clientConnection, headers);
         } else if (userSession != null) { // non browser logout
             event.event(EventType.LOGOUT);
-            authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+            authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
             event.user(userSession.getUser()).session(userSession).success();
         }
 
@@ -183,7 +183,7 @@ public class LogoutEndpoint {
     }
 
     private void logout(UserSessionModel userSession) {
-        authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+        authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
         event.user(userSession.getUser()).session(userSession).success();
     }
 

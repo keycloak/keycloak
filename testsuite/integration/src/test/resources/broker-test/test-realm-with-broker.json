@@ -120,7 +120,8 @@
                 "forceAuthn": true,
                 "validateSignature": true,
                 "postBindingResponse": true,
-                "postBindingAuthnRequest": true
+                "postBindingAuthnRequest": true,
+                "backchannelSupported": true
             }
         },
         {
@@ -169,7 +170,8 @@
                 "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/token",
                 "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
                 "logoutUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/tokens/logout",
-                "defaultScope": "email profile"
+                "defaultScope": "email profile",
+                "backchannelSupported": "true"
             }
         }
     ],

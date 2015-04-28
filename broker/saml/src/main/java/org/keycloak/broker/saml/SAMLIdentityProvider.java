@@ -17,10 +17,12 @@
  */
 package org.keycloak.broker.saml;
 
+import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -34,12 +36,17 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.protocol.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.protocol.saml.SAML2NameIDPolicyBuilder;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -48,6 +55,7 @@ import java.security.PublicKey;
  * @author Pedro Igor
  */
 public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityProviderConfig> {
+    protected static final Logger logger = Logger.getLogger(SAMLIdentityProvider.class);
     public SAMLIdentityProvider(SAMLIdentityProviderConfig config) {
         super(config);
     }
@@ -141,25 +149,56 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     }
 
     @Override
-    public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
-        if (getConfig().getSingleLogoutServiceUrl() == null || getConfig().getSingleLogoutServiceUrl().trim().equals("")) return null;
+    public void backchannelLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+        String singleLogoutServiceUrl = getConfig().getSingleLogoutServiceUrl();
+        if (singleLogoutServiceUrl == null || singleLogoutServiceUrl.trim().equals("") || !getConfig().isBackchannelSupported()) return;
+        SAML2LogoutRequestBuilder logoutBuilder = buildLogoutRequest(userSession, uriInfo, realm, singleLogoutServiceUrl);
+        try {
+            int status = SimpleHttp.doPost(singleLogoutServiceUrl)
+                    .param(GeneralConstants.SAML_REQUEST_KEY, logoutBuilder.postBinding().encoded())
+                    .param(GeneralConstants.RELAY_STATE, userSession.getId()).asStatus();
+            boolean success = status >=200 && status < 400;
+            if (!success) {
+                logger.warn("Failed saml backchannel broker logout to: " + singleLogoutServiceUrl);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed saml backchannel broker logout to: " + singleLogoutServiceUrl, e);
+        }
 
+    }
+
+    @Override
+    public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+        String singleLogoutServiceUrl = getConfig().getSingleLogoutServiceUrl();
+        if (singleLogoutServiceUrl == null || singleLogoutServiceUrl.trim().equals("")) return null;
+
+        if (getConfig().isBackchannelSupported()) {
+            backchannelLogout(userSession, uriInfo, realm);
+            return null;
+       } else {
+            try {
+                SAML2LogoutRequestBuilder logoutBuilder = buildLogoutRequest(userSession, uriInfo, realm, singleLogoutServiceUrl);
+                return logoutBuilder.postBinding().request();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+    }
+
+    protected SAML2LogoutRequestBuilder buildLogoutRequest(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm, String singleLogoutServiceUrl) {
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                 .assertionExpiration(realm.getAccessCodeLifespan())
                 .issuer(getEntityId(uriInfo, realm))
                 .sessionIndex(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX))
                 .userPrincipal(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT), userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEFORMAT))
-                .destination(getConfig().getSingleLogoutServiceUrl());
+                .destination(singleLogoutServiceUrl)
+                .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
             logoutBuilder.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                     .signDocument();
         }
-        try {
-            return logoutBuilder.relayState(userSession.getId()).postBinding().request();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
+        return logoutBuilder;
     }
 
     @Override
