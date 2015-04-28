@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.model;
 
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -32,7 +34,17 @@ public class CacheTest {
         {
             // update realm, then get an AppModel and change it.  The AppModel would not be a cache adapter
             KeycloakSession session = kc.startSession();
-            RealmModel realm = session.realms().getRealmByName("test");
+
+            // KEYCLOAK-1240 - obtain the realm via session.realms().getRealms()
+            RealmModel realm = null;
+            List<RealmModel> realms = session.realms().getRealms();
+            for (RealmModel current : realms) {
+                if ("test".equals(current.getName())) {
+                    realm = current;
+                    break;
+                }
+            }
+
             Assert.assertTrue(realm instanceof org.keycloak.models.cache.RealmAdapter);
             realm.setAccessCodeLifespanLogin(200);
             ClientModel testApp = realm.getClientByClientId("test-app");
@@ -44,6 +56,7 @@ public class CacheTest {
         {
             KeycloakSession session = kc.startSession();
             RealmModel realm = session.realms().getRealmByName("test");
+            Assert.assertEquals(200, realm.getAccessCodeLifespanLogin());
             ClientModel testApp = session.realms().getClientById(appId, realm);
             Assert.assertFalse(testApp.isEnabled());
             kc.stopSession(session, true);
