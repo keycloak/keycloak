@@ -1,6 +1,6 @@
 package org.keycloak.broker.oidc;
 
-import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.EventBuilder;
@@ -74,7 +74,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                             && userSession.getState() != UserSessionModel.State.LOGGING_OUT
                             && userSession.getState() != UserSessionModel.State.LOGGED_OUT
                             ) {
-                        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+                        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, false);
                     }
                 }
 

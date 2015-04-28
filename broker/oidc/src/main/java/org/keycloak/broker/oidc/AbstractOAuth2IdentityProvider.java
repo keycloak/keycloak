@@ -22,7 +22,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;

@@ -595,7 +595,7 @@ public class LoginActionsService {
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
             event.error(Errors.INVALID_CODE);
             return ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);
         }

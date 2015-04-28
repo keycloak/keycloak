@@ -25,7 +25,8 @@ import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
-import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.oidc.util.JsonSimpleHttp;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.social.SocialIdentityProvider;
@@ -55,7 +56,7 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		log.debug("doGetFederatedIdentity()");
 		try {
-			JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
+			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken));
 
             BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 

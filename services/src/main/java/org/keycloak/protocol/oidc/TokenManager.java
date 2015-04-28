@@ -86,7 +86,7 @@ public class TokenManager {
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
         ClientSessionModel clientSession = null;

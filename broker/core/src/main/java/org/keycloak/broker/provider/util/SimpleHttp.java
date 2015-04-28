@@ -1,7 +1,4 @@
-package org.keycloak.broker.oidc.util;
-
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
+package org.keycloak.broker.provider.util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,14 +18,13 @@ import java.util.zip.GZIPInputStream;
  */
 public class SimpleHttp {
 
-    private static ObjectMapper mapper = new ObjectMapper();
 
     private String url;
     private String method;
     private Map<String, String> headers;
     private Map<String, String> params;
 
-    private SimpleHttp(String url, String method) {
+    protected SimpleHttp(String url, String method) {
         this.url = url;
         this.method = method;
     }
@@ -57,9 +53,6 @@ public class SimpleHttp {
         return this;
     }
 
-    public JsonNode asJson() throws IOException {
-        return mapper.readTree(asString());
-    }
 
     public String asString() throws IOException {
         boolean get = method.equals("GET");
@@ -126,11 +119,105 @@ public class SimpleHttp {
             return toString(is);
         } finally {
             if (os != null) {
-                os.close();
+                try {
+                    os.close();
+                } catch (IOException e) {
+                }
             }
 
             if (is != null) {
-                is.close();
+                try {
+                    is.close();
+                } catch (IOException e) {
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.disconnect();
+                } catch (Exception e) {
+                }
+            }
+        }
+    }
+
+    public int asStatus() throws IOException {
+        boolean get = method.equals("GET");
+        boolean post = method.equals("POST");
+
+        StringBuilder sb = new StringBuilder();
+        if (get) {
+            sb.append(url);
+        }
+
+        if (params != null) {
+            boolean f = true;
+            for (Map.Entry<String, String> p : params.entrySet()) {
+                if (f) {
+                    f = false;
+                    if (get) {
+                        sb.append("?");
+                    }
+                } else {
+                    sb.append("&");
+                }
+                sb.append(URLEncoder.encode(p.getKey(), "UTF-8"));
+                sb.append("=");
+                sb.append(URLEncoder.encode(p.getValue(), "UTF-8"));
+            }
+        }
+
+        if (get) {
+            url = sb.toString();
+        }
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        OutputStream os = null;
+        InputStream is = null;
+
+        try {
+            connection.setRequestMethod(method);
+
+            if (headers != null) {
+                for (Map.Entry<String, String> h : headers.entrySet()) {
+                    connection.setRequestProperty(h.getKey(), h.getValue());
+                }
+            }
+
+            if (post) {
+                String data = sb.toString();
+
+                connection.setDoOutput(true);
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                connection.setRequestProperty("Content-Length", String.valueOf(data.length()));
+
+                os = connection.getOutputStream();
+                os.write(data.getBytes());
+            } else {
+                connection.setDoOutput(false);
+            }
+
+            is = connection.getInputStream();
+            return connection.getResponseCode();
+        } finally {
+            if (os != null) {
+                try {
+                    os.close();
+                } catch (IOException e) {
+                }
+            }
+
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.disconnect();
+                } catch (Exception e) {
+                }
             }
         }
     }

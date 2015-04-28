@@ -42,7 +42,7 @@
                         <span tooltip-placement="right" tooltip="Indicates if this provider should be tried by default for authentication even before displaying login screen" class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group">
-                        <label class="col-sm-2 control-label" for="enabled">Store Tokens</label>
+                        <label class="col-sm-2 control-label" for="storeToken">Store Tokens</label>
                         <div class="col-sm-4">
                             <input ng-model="identityProvider.storeToken" id="storeToken" onoffswitch />
                         </div>
@@ -86,6 +86,13 @@
                             <input class="form-control" id="singleLogoutServiceUrl" type="text" ng-model="identityProvider.config.singleLogoutServiceUrl">
                         </div>
                         <span tooltip-placement="right" tooltip="The Url that must be used to send logout requests." class="fa fa-info-circle"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="backchannelSupported">Backchannel Logout</label>
+                        <div class="col-sm-4">
+                            <input ng-model="identityProvider.config.backchannelSupported" id="backchannelSupported" value="'true'" onoffswitchvalue />
+                        </div>
+                        <span tooltip-placement="right" tooltip="Does the external IDP support backchannel logout?" class="fa fa-info-circle"></span>
                     </div>
                     <div class="form-group clearfix">
                         <label class="col-sm-2 control-label" for="nameIDPolicyFormat">NameID Policy Format</label>

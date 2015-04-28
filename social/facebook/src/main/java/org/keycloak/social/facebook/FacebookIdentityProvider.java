@@ -3,7 +3,8 @@ package org.keycloak.social.facebook;
 import org.codehaus.jackson.JsonNode;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
-import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.oidc.util.JsonSimpleHttp;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.social.SocialIdentityProvider;
@@ -27,7 +28,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
 
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
-            JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
+            JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken));
 
             String id = getJsonProperty(profile, "id");
 

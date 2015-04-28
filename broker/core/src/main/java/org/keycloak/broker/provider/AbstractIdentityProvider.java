@@ -64,6 +64,11 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     @Override
+    public void backchannelLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+
+    }
+
+    @Override
     public void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context) {
 
     }

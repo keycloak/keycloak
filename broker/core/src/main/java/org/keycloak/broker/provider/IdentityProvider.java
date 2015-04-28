@@ -76,6 +76,8 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      */
     Response retrieveToken(FederatedIdentityModel identity);
 
+    void backchannelLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm);
+
     /**
      * Called when a Keycloak application initiates a logout through the browser.  This is expected to do a logout
      * with the IDP

@@ -19,7 +19,8 @@ package org.keycloak.broker.oidc;
 
 import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
-import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.oidc.util.JsonSimpleHttp;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -127,20 +128,51 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
-        if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
+    public void backchannelLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+        if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("") || !getConfig().isBackchannelSupported()) return;
+        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
+        if (idToken == null) return;
+        backchannelLogout(userSession, idToken);
+    }
+
+    protected void backchannelLogout(UserSessionModel userSession, String idToken) {
         String sessionId = userSession.getId();
         UriBuilder logoutUri = UriBuilder.fromUri(getConfig().getLogoutUrl())
-                                         .queryParam("state", sessionId);
+                .queryParam("state", sessionId);
+        logoutUri.queryParam("id_token_hint", idToken);
+        String url = logoutUri.build().toString();
+        try {
+            int status = JsonSimpleHttp.doGet(url).asStatus();
+            boolean success = status >=200 && status < 400;
+            if (!success) {
+                logger.warn("Failed backchannel broker logout to: " + url);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed backchannel broker logout to: " + url, e);
+        }
+    }
+
+
+    @Override
+    public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+        if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
         String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
-        if (idToken != null) logoutUri.queryParam("id_token_hint", idToken);
-        String redirect = RealmsResource.brokerUrl(uriInfo)
-                                        .path(IdentityBrokerService.class, "getEndpoint")
-                                        .path(OIDCEndpoint.class, "logoutResponse")
-                                        .build(realm.getName(), getConfig().getAlias()).toString();
-        logoutUri.queryParam("post_logout_redirect_uri", redirect);
-        Response response = Response.status(302).location(logoutUri.build()).build();
-        return response;
+        if (idToken != null && getConfig().isBackchannelSupported()) {
+            backchannelLogout(userSession, idToken);
+            return null;
+        } else {
+            String sessionId = userSession.getId();
+            UriBuilder logoutUri = UriBuilder.fromUri(getConfig().getLogoutUrl())
+                    .queryParam("state", sessionId);
+            if (idToken != null) logoutUri.queryParam("id_token_hint", idToken);
+            String redirect = RealmsResource.brokerUrl(uriInfo)
+                    .path(IdentityBrokerService.class, "getEndpoint")
+                    .path(OIDCEndpoint.class, "logoutResponse")
+                    .build(realm.getName(), getConfig().getAlias()).toString();
+            logoutUri.queryParam("post_logout_redirect_uri", redirect);
+            Response response = Response.status(302).location(logoutUri.build()).build();
+            return response;
+        }
     }
 
     @Override
@@ -184,9 +216,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             String email = (String)idToken.getOtherClaims().get(IDToken.EMAIL);
 
             if (getConfig().getUserInfoUrl() != null && (id == null || name == null || preferredUsername == null || email == null) ) {
-                JsonNode userInfo = SimpleHttp.doGet(getConfig().getUserInfoUrl())
-                        .header("Authorization", "Bearer " + accessToken)
-                        .asJson();
+                SimpleHttp request = JsonSimpleHttp.doGet(getConfig().getUserInfoUrl())
+                        .header("Authorization", "Bearer " + accessToken);
+                JsonNode userInfo = JsonSimpleHttp.asJson(request);
 
                 id = getJsonProperty(userInfo, "sub");
                 name = getJsonProperty(userInfo, "name");

@@ -70,6 +70,14 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         getConfig().put("validateSignature", String.valueOf(validateSignature));
     }
 
+    public boolean isBackchannelSupported() {
+        return Boolean.valueOf(getConfig().get("backchannelSupported"));
+    }
+
+    public void setBackchannelSupported(boolean backchannel) {
+        getConfig().put("backchannelSupported", String.valueOf(backchannel));
+    }
+
 
 
 

@@ -161,7 +161,7 @@ public class SamlProtocol implements LoginProtocol {
         return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING)) || forcePostBinding(client);
     }
 
-    protected boolean isLogoutPostBindingForInitiator(UserSessionModel session) {
+    public static boolean isLogoutPostBindingForInitiator(UserSessionModel session) {
         String note = session.getNote(SamlProtocol.SAML_LOGOUT_BINDING);
         return SamlProtocol.SAML_POST_BINDING.equals(note);
     }
