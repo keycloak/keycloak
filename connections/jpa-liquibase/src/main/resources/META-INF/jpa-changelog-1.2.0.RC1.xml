@@ -92,7 +92,7 @@
         <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="USER_CONSENT_PROT_MAPPER" constraintName="FK_GRNTCSNT_PRM_GR" referencedColumnNames="ID" referencedTableName="USER_CONSENT"/>
         <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_SESSION_PROT_MAPPER" constraintName="FK_33A8SGQW18I532811V7O2DK89" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
 
-        <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME"/>
+        <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME" columnDataType="VARCHAR(255)"/>
         <addColumn tableName="CLIENT">
             <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
@@ -110,20 +110,30 @@
         </update>
         <dropColumn tableName="CLIENT" columnName="DTYPE"/>
 
-        <renameColumn tableName="REALM" newColumnName="MASTER_ADMIN_CLIENT" oldColumnName="MASTER_ADMIN_APP"/>
+        <dropForeignKeyConstraint baseTableName="REALM" constraintName="FK_RSAF444KK6QRKMS7N56AIWQ5Y" />
+        <renameColumn tableName="REALM" newColumnName="MASTER_ADMIN_CLIENT" oldColumnName="MASTER_ADMIN_APP" columnDataType="VARCHAR(36)"/>
+        <addForeignKeyConstraint baseColumnNames="MASTER_ADMIN_CLIENT" baseTableName="REALM" constraintName="FK_TRAF444KK6QRKMS7N56AIWQ5Y" referencedColumnNames="ID" referencedTableName="CLIENT"/>
 
+        <dropForeignKeyConstraint baseTableName="REALM_APPLICATION" constraintName="FK_82S3P0DIUXAWWQQSA528UBY2Q" />
         <renameTable oldTableName="REALM_APPLICATION" newTableName="REALM_CLIENT"/>
-        <renameColumn tableName="REALM_CLIENT" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
+        <renameColumn tableName="REALM_CLIENT" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID" columnDataType="VARCHAR(36)"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="REALM_CLIENT" constraintName="FK_93S3P0DIUXAWWQQSA528UBY2Q" referencedColumnNames="ID" referencedTableName="CLIENT"/>
 
+        <dropForeignKeyConstraint baseTableName="APPLICATION_DEFAULT_ROLES" constraintName="FK_MAYLTS7KLWQW2H8M2B5JOYTKY" />
         <renameTable oldTableName="APPLICATION_DEFAULT_ROLES" newTableName="CLIENT_DEFAULT_ROLES"/>
-        <renameColumn tableName="CLIENT_DEFAULT_ROLES" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
+        <renameColumn tableName="CLIENT_DEFAULT_ROLES" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID" columnDataType="VARCHAR(36)"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_DEFAULT_ROLES" constraintName="FK_NUILTS7KLWQW2H8M2B5JOYTKY" referencedColumnNames="ID" referencedTableName="CLIENT"/>
 
+        <dropForeignKeyConstraint baseTableName="APP_NODE_REGISTRATIONS" constraintName="FK8454723BA992F594" />
         <renameTable oldTableName="APP_NODE_REGISTRATIONS" newTableName="CLIENT_NODE_REGISTRATIONS"/>
-        <renameColumn tableName="CLIENT_NODE_REGISTRATIONS" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID"/>
+        <renameColumn tableName="CLIENT_NODE_REGISTRATIONS" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID" columnDataType="VARCHAR(36)"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_NODE_REGISTRATIONS" constraintName="FK4129723BA992F594" referencedColumnNames="ID" referencedTableName="CLIENT"/>
 
-        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT" oldColumnName="APPLICATION"/>
-        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_ROLE" oldColumnName="APPLICATION_ROLE"/>
-        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_REALM_CONSTRAINT" oldColumnName="APP_REALM_CONSTRAINT"/>
+        <dropForeignKeyConstraint baseTableName="KEYCLOAK_ROLE" constraintName="FK_PIMO5LE2C0RAL09FL8CM9WFW9" />
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT" oldColumnName="APPLICATION" columnDataType="VARCHAR(36)"/>
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_ROLE" oldColumnName="APPLICATION_ROLE" columnDataType="BOOLEAN"/>
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_REALM_CONSTRAINT" oldColumnName="APP_REALM_CONSTRAINT" columnDataType="VARCHAR(36)"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT" baseTableName="KEYCLOAK_ROLE" constraintName="FK_KJHO5LE2C0RAL09FL8CM9WFW9" referencedColumnNames="ID" referencedTableName="CLIENT"/>
 
         <dropUniqueConstraint tableName="KEYCLOAK_ROLE" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2"/>
         <addUniqueConstraint columnNames="NAME,CLIENT_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
