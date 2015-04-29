@@ -269,7 +269,7 @@ public class AdminConsole {
         } else {
             String adminTheme = realm.getAdminTheme();
             if (adminTheme == null) {
-                adminTheme = "patternfly";
+                adminTheme = "keycloak";
             }
 
             Map<String, Object> map = new HashMap<>();
