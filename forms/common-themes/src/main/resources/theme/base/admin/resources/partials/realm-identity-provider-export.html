@@ -1,26 +1,28 @@
-<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-md-9" role="main">
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2" data-ng-init="initProvider()">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
+        <li>{{identityProvider.alias}}</li>
+    </ol>
 
-    <data-kc-navigation data-kc-current="social" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
-    <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
-            <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}} Provider</a></li>
-            <li class="active">{{identityProvider.alias}} Provider Export</li>
-        </ol>
-        <h2 class="pull-left">{{identityProvider.alias}} Provider Export</h2>
-        <form class="form-horizontal" name="realmForm" novalidate>
-            <fieldset class="border-top">
-                <div class="form-group">
-                    <div class="col-sm-12">
-                        <textarea class="form-control" rows="20" kc-select-action="click">{{exported}}</textarea>
-                    </div>
+    <h1 data-ng-hide="create"><strong>Identity Provider</strong> {{identityProvider.alias|capitalize}}</h1>
+    <h1 data-ng-show="create"><strong>Add OpenID Connect Identity Provider</strong></h1>
+
+    <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Settings</a></li>
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Mappers</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}/export" data-ng-show="!importFile && !newIdentityProvider">Export</a></li>
+    </ul>
+
+    <form class="form-horizontal" name="realmForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <div class="col-sm-12">
+                    <a class="btn btn-primary" data-ng-click="download()" type="submit">Download</a>
+                    <textarea class="form-control" rows="20" kc-select-action="click">{{exported}}</textarea>
                 </div>
-            </fieldset>
-        </form>
-
-        <div class="pull-right form-actions">
-            <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit">Download</a>
-        </div>
-    </div>
+            </div>
+        </fieldset>
+    </form>
 </div>
+
+<kc-menu></kc-menu>

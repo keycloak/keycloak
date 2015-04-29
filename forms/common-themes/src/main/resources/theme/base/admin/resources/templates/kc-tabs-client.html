@@ -1,0 +1,28 @@
+<ul class="nav nav-tabs nav-tabs-pf"  data-ng-hide="create && !path[4]">
+    <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">Settings</a></li>
+    <li ng-class="{active: path[4] == 'credentials'}" data-ng-show="!client.publicClient && client.protocol != 'saml'"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/credentials">Credentials</a></li>
+    <li ng-class="{active: path[4] == 'saml'}" data-ng-show="client.protocol == 'saml' && (client.attributes['saml.client.signature'] == 'true' || client.attributes['saml.encrypt'] == 'true')"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">SAML Keys</a></li>
+    <li ng-class="{active: path[4] == 'roles'}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">Roles</a></li>
+    <li ng-class="{active: path[4] == 'mappers'}" data-ng-show="!client.bearerOnly">
+        <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers">Mappers</a>
+        <kc-tooltip>Protocol mappers perform transformation on tokens and documents.  They an do things like map user data into protocol claims, or just transform any requests going between the client and auth server.</kc-tooltip>
+    </li>
+    <li ng-class="{active: path[4] == 'scope-mappings'}" data-ng-show="!client.bearerOnly">
+        <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/scope-mappings">Scope</a>
+        <kc-tooltip>Scope mappings allow you to restrict which user role mappings are included within the access token requested by the client.</kc-tooltip>
+    </li>
+    <li ng-class="{active: path[4] == 'revocation'}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/revocation">Revocation</a></li>
+<!--    <li ng-class="{active: path[4] == 'identity-provider'}" data-ng-show="realm.identityFederationEnabled"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/identity-provider">Identity Provider</a></li> -->
+    <li ng-class="{active: path[4] == 'sessions'}" data-ng-show="!client.bearerOnly">
+        <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/sessions">Sessions</a>
+        <kc-tooltip>View active sessions for this client.  Allows you to see which users are active and when they logged in.</kc-tooltip>
+    </li>
+
+    <li ng-class="{active: path[4] == 'clustering'}" data-ng-show="!client.publicClient"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering">Clustering</a></li>
+
+    <li ng-class="{active: path[4] == 'installation'}" data-ng-show="client.protocol != 'saml'">
+        <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/installation">Installation</a>
+        <kc-tooltip>Helper utility for generating various client adapter configuration formats which you can download or cut and paste to configure your clients.</kc-tooltip>
+    </li>
+
+</ul>

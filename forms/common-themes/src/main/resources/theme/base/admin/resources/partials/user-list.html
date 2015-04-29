@@ -1,65 +1,62 @@
-<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-md-9" role="main">
-    <ul class="nav nav-tabs nav-tabs-pf">
-        <li class="active"><a href="">User List</a></li>
-        <li><a href="#/realms/{{realm.realm}}/user-federation">Federation</a></li>
-    </ul>
-    <h2></h2>
-    <div id="content">
-        <h2><span>{{realm.realm}}</span> Users</h2>
-        <table class="table table-striped table-bordered">
-            <caption data-ng-show="users" class="hidden">Table of realm users</caption>
-            <thead>
-            <tr>
-                <th class="kc-table-actions" colspan="4">
-                    <div class="search-comp clearfix">
-                        <input type="text" placeholder="Search..." data-ng-model="query.search" class="form-control search"
-                               onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
-                        <button data-ng-click="firstPage()" type="submit"
-                                class="kc-icon-search" tooltip-placement="right"
-                                tooltip="Search by full name, last name, email, or username.">
-                            Icon: search
-                        </button>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1><strong>Users</strong> {{realm.realm|capitalize}}</h1>
+
+    <table class="table table-striped table-bordered">
+        <caption data-ng-show="users" class="hidden">Table of realm users</caption>
+        <thead>
+        <tr>
+            <th colspan="4">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" placeholder="Search..." data-ng-model="query.search" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                            <div class="input-group-addon">
+                                    <i class="fa fa-search" data-ng-click="firstPage()" type="submit"></i>
+                            </div>
+                        </div>
                     </div>
-                    <span><span>or</span><button class="kc-link" ng-click="query.search = null; firstPage()">View all users</button></span>
+                    <button class="btn btn-primary" ng-click="query.search = null; firstPage()">View all users</button>
+
                     <div class="pull-right">
                         <a class="btn btn-primary" href="#/create/user/{{realm.realm}}">Add User</a>
                     </div>
-                </th>
-            </tr>
-            <tr>
-            <tr data-ng-show="searchLoaded && users.length > 0">
-                <th>Username</th>
-                <th>Last Name</th>
-                <th>First Name</th>
-                <th>Email</th>
-            </tr>
-            </tr>
-            </thead>
-            <tfoot data-ng-show="users && (users.length >= query.max || query.first > 0)">
-            <tr>
-                <td colspan="7">
-                    <div class="table-nav">
-                        <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">First page</button>
-                        <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">Previous page</button>
-                        <button data-ng-click="nextPage()" class="next" ng-disabled="users.length < query.max">Next page</button>
-                    </div>
-                </td>
-            </tr>
-            </tfoot>
-            <tbody>
-            <tr ng-repeat="user in users">
-                <td><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></td>
-                <td>{{user.lastName}}</td>
-                <td>{{user.firstName}}</td>
-                <td>{{user.email}}</td>
-            </tr>
-            <tr data-ng-show="!users || users.length == 0">
-                <td data-ng-show="!users">Please enter a search, or click on view all users</td>
-                <td data-ng-show="searchLoaded && users.length == 0 && lastSearch != null">Your search returned no results</td>
-                <td data-ng-show="searchLoaded && users.length == 0 && lastSearch == null">No users available</td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
+                </div>
+            </th>
+        </tr>
+        <tr>
+        <tr data-ng-show="searchLoaded && users.length > 0">
+            <th>Username</th>
+            <th>Last Name</th>
+            <th>First Name</th>
+            <th>Email</th>
+        </tr>
+        </tr>
+        </thead>
+        <tfoot data-ng-show="users && (users.length >= query.max || query.first > 0)">
+        <tr>
+            <td colspan="7">
+                <div class="table-nav">
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">First page</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">Previous page</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="users.length < query.max">Next page</button>
+                </div>
+            </td>
+        </tr>
+        </tfoot>
+        <tbody>
+        <tr ng-repeat="user in users">
+            <td><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></td>
+            <td>{{user.lastName}}</td>
+            <td>{{user.firstName}}</td>
+            <td>{{user.email}}</td>
+        </tr>
+        <tr data-ng-show="!users || users.length == 0">
+            <td class="text-muted" data-ng-show="!users">Please enter a search, or click on view all users</td>
+            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch != null">No results</td>
+            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch == null">No users available</td>
+        </tr>
+        </tbody>
+    </table>
 </div>
+
+<kc-menu></kc-menu>

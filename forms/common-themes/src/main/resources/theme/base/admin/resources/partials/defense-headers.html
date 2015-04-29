@@ -1,39 +1,38 @@
-<div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-sm-9" role="main">
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1><strong>Settings</strong> {{realm.realm|capitalize}}</h1>
+
+    <kc-tabs-realm></kc-tabs-realm>
+
     <ul class="nav nav-tabs nav-tabs-pf">
         <li class="active"><a href="#/realms/{{realm.realm}}/defense/headers">Headers</a></li>
         <li><a href="#/realms/{{realm.realm}}/defense/brute-force">Brute Force Detection</a></li>
     </ul>
-    <h2></h2>
-    <div id="content">
-        <div data-ng-show="access.viewRealm">
-            <h2><span>{{realm.realm}}</span> Browser Security Headers <span tooltip-placement="right" tooltip="HTTP Response header values that you can set to help prevent clickjacking and XSS attacks." class="fa fa-info-circle"></span></h2>
-            <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
-                <fieldset class="border-top">
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="xFrameOptions"><a href="http://tools.ietf.org/html/rfc7034">X-Frame-Options</a></label>
-                        <div class="col-sm-6">
-                            <input class="form-control" id="xFrameOptions" type="text" ng-model="realm.browserSecurityHeaders.xFrameOptions">
-                        </div>
-                        <span tooltip-placement="right" tooltip="Click on label link for more information.  The default value prevents pages from being included via non-origin iframes." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="contentSecurityPolicy"><a href="http://www.w3.org/TR/CSP/">Content-Security-Policy</a></label>
-                        <div class="col-sm-6">
-                            <input class="form-control" id="contentSecurityPolicy" type="text" ng-model="realm.browserSecurityHeaders.contentSecurityPolicy">
-                        </div>
-                        <span tooltip-placement="right" tooltip="Click on label link for more information.  The default value prevents pages from being included via non-origin iframes." class="fa fa-info-circle"></span>
-                    </div>
-                </fieldset>
-                <div class="pull-right form-actions" data-ng-show="access.manageRealm">
-                    <button kc-reset data-ng-show="changed">Clear changes</button>
-                    <button kc-save  data-ng-show="changed">Save</button>
-                </div>
-            </form>
-        </div>
-        <div data-ng-hide="access.viewRealm">
-            <h2 ><span>{{realm.realm}}</span></h2>
-        </div>
 
-    </div>
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="xFrameOptions"><a href="http://tools.ietf.org/html/rfc7034">X-Frame-Options</a></label>
+                <div class="col-sm-6">
+                    <input class="form-control" id="xFrameOptions" type="text" ng-model="realm.browserSecurityHeaders.xFrameOptions">
+                </div>
+                <kc-tooltip>Click on label link for more information.  The default value prevents pages from being included via non-origin iframes.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="contentSecurityPolicy"><a href="http://www.w3.org/TR/CSP/">Content-Security-Policy</a></label>
+                <div class="col-sm-6">
+                    <input class="form-control" id="contentSecurityPolicy" type="text" ng-model="realm.browserSecurityHeaders.contentSecurityPolicy">
+                </div>
+                <kc-tooltip>Click on label link for more information.  The default value prevents pages from being included via non-origin iframes.</kc-tooltip>
+            </div>
+        </fieldset>
+        <div class="form-group" data-ng-show="access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save  data-ng-show="changed">Save</button>
+                <button kc-reset data-ng-show="changed">Cancel</button>
+            </div>
+        </div>
+    </form>
 </div>
+
+
+<kc-menu></kc-menu>
