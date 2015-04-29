@@ -1,61 +1,61 @@
-<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-md-9" role="main">
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
-    <kc-navigation-client></kc-navigation-client>
-    <div id="content">
-        <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
-            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
-            <li class="active">Scope</li>
-        </ol>
-        <h2><span>{{client.clientId}}</span> Scope Mappings <span tooltip-placement="right" tooltip="Scope mappings allow you to restrict which user role mappings are included within the access token requested by the client." class="fa fa-info-circle"></span></h2>
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+        <li>{{client.clientId}}</li>
+    </ol>
+
+    <h1><strong>Client</strong> {{client.clientId|capitalize}}</h1>
+
+    <kc-tabs-client></kc-tabs-client>
+
+        <h2><span>{{client.clientId}}</span> Scope Mappings </h2>
         <p class="subtitle"></p>
         <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageClients">
             <fieldset class="border-top">
                 <div class="form-group">
-                    <label class="col-sm-2 control-label" for="fullScopeAllowed">Full Scope Allowed</label>
-                    <div class="col-sm-4">
+                    <label class="col-md-2 control-label" for="fullScopeAllowed">Full Scope Allowed</label>
+                    <kc-tooltip>Allows you to disable all restrictions.</kc-tooltip>
+                    <div class="col-md-6">
                         <input ng-model="client.fullScopeAllowed" ng-click="changeFullScopeAllowed()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch />
                     </div>
-                    <span tooltip-placement="right" tooltip="Allows you to disable all restrictions." class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
         </form>
 
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients" data-ng-show="!client.fullScopeAllowed">
-            <fieldset>
-                <legend><span class="text">Realm Roles</span>  <span tooltip-placement="right" tooltip="Realm level roles assigned to scope." class="fa fa-info-circle"></span></legend>
-                <div class="form-group col-sm-10">
-                    <div class="controls changing-selectors">
-                        <div class="select-title">
-                            <label class="control-label" for="available">Available Roles  <span tooltip-placement="right" tooltip="Realm level roles that can be assigned to scope." class="fa fa-info-circle"></span></label>
+            <div class="form-group">
+                <label class="col-md-2 control-label" class="control-label">Realm Roles</label>
+                <div class="col-md-10">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="control-label" for="available">Available Roles</label>
+                            <kc-tooltip>Realm level roles that can be assigned to scope.</kc-tooltip>
+
                             <select id="available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedRealmRoles"
                                     ng-options="r.name for r in realmRoles">
                             </select>
-                        </div>
-                        <div class="middle-buttons kc-vertical">
                             <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right">
-                                <span class="kc-icon-arrow-right">Assign role</span>
-                            </button>
-                            <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="left">
-                                <span class="kc-icon-arrow-left">Unassign role</span>
+                                Add selected <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
-                        <div class="select-title">
-                            <label class="control-label" for="assigned">Assigned Roles  <span tooltip-placement="right" tooltip="Realm level roles assigned to scope." class="fa fa-info-circle"></span></label>
+                        <div class="col-md-3">
+                            <label class="control-label" for="assigned">Assigned Roles</label>
+                            <kc-tooltip>Realm level roles assigned to scope.</kc-tooltip>
                             <select id="assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedRealmMappings"
                                     ng-options="r.name for r in realmMappings">
                             </select>
+                            <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="left">
+                                <i class="fa fa-angle-double-left"></i> Remove selected
+                            </button>
                         </div>
-                        <div class="middle-buttons">
-                            -
-                        </div>
-                        <div class="select-title">
-                            <label class="control-label" for="realm-composite">Effective Roles  <span tooltip-placement="right" tooltip="Assigned realm level roles that may have been inherited from a composite role." class="fa fa-info-circle"></span></label>
+                        <div class="col-md-3">
+                            <label class="control-label" for="realm-composite">Effective Roles  </label>
+                            <kc-tooltip>Assigned realm level roles that may have been inherited from a composite role.</kc-tooltip>
                             <select id="realm-composite" class="form-control" multiple size=5
                                     ng-disabled="true"
                                     ng-model="dummymodel"
@@ -64,54 +64,46 @@
                         </div>
                     </div>
                 </div>
-            </fieldset>
+            </div>
 
-            <fieldset ng-show="clients.length > 0">
-                <legend><span class="text">Client Roles</span> </legend>
-                <div class="form-group input-select">
-                    <label class="col-sm-2 control-label" for="clients">Client <span tooltip-placement="right" tooltip="Select a client to view or modify additional roles to assign." class="fa fa-info-circle"></span></label>
-                    <div class="col-sm-4">
-                        <div class="input-group">
-                            <div class="select-kc">
-                                <select id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in (clients|remove:client:'id')" ng-disabled="false">
-                                    <option value="" selected> Select a Client </option>
-                                </select>
-                            </div>
-                        </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" class="control-label">
+                    <span>Client Roles</span>
+                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
+                </label>
+
+                <div class="col-md-10">
+                    <div class="row" data-ng-hide="targetClient">
+                        <div class="col-md-4"><span class="text-muted">Select client to view roles for client</span></div>
                     </div>
-
-                </div>
-                <div class="form-group" ng-show="targetClient">
-                    <div class="controls changing-selectors col-sm-10">
-                        <div class="select-title">
-                            <label class="control-label" for="client-available">Available Roles  <span tooltip-placement="right" tooltip="Client roles available to be assigned." class="fa fa-info-circle"></span></label>
+                    <div class="row" data-ng-show="targetClient">
+                        <div class="col-md-3">
+                            <label class="control-label" for="client-available">Available Roles</label>
+                            <kc-tooltip>Client roles available to be assigned.</kc-tooltip>
                             <select id="client-available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedClientRoles"
                                     ng-options="r.name for r in clientRoles">
                             </select>
-                        </div>
-                        <div class="middle-buttons kc-vertical">
                             <button class="btn btn-default" type="submit" ng-click="addClientRole()" tooltip="Assign role" tooltip-placement="right">
-                                <span class="kc-icon-arrow-right">Move right</span>
-                            </button>
-                            <button class="btn btn-default" type="submit" ng-click="deleteClientRole()" tooltip="Unassign role" tooltip-placement="left">
-                                <span class="kc-icon-arrow-left">Move left</span>
+                                Add selected <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
-                        <div class="select-title">
-                            <label class="control-label" for="client-assigned">Assigned Roles  <span tooltip-placement="right" tooltip="Assigned client roles." class="fa fa-info-circle"></span></label>
+                        <div class="col-md-3">
+                            <label class="control-label" for="client-assigned">Assigned Roles</label>
+                            <kc-tooltip>Assigned client roles.</kc-tooltip>
                             <select id="client-assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedClientMappings"
                                     ng-options="r.name for r in clientMappings">
                             </select>
+                            <button class="btn btn-default" type="submit" ng-click="deleteClientRole()" tooltip="Unassign role" tooltip-placement="left">
+                                <i class="fa fa-angle-double-left"></i> Remove selected
+                            </button>
                         </div>
-                        <div class="middle-buttons">
-                            -
-                        </div>
-                        <div class="select-title">
-                            <label class="control-label" for="client-composite">Effective Roles  <span tooltip-placement="right" tooltip="Assigned client roles that may have been inherited from a composite role." class="fa fa-info-circle"></span></label>
+                        <div class="col-md-3">
+                            <label class="control-label" for="client-composite">Effective Roles</label>
+                            <kc-tooltip>Assigned client roles that may have been inherited from a composite role.</kc-tooltip>
                             <select id="client-composite" class="form-control" multiple size=5
                                     ng-disabled="true"
                                     ng-model="dummymodel"
@@ -120,7 +112,8 @@
                         </div>
                     </div>
                 </div>
-            </fieldset>
+            </div>
         </form>
     </div>
-</div>
+
+<kc-menu></kc-menu>

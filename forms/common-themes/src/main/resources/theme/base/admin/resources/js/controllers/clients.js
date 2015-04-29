@@ -689,10 +689,30 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo
         $scope.path = $location.path().substring(1).split("/");
     });
 
-    $scope.$watch('client', function() {
+    function isChanged() {
         if (!angular.equals($scope.client, client)) {
-            $scope.changed = true;
+            return true;
         }
+        if ($scope.newRedirectUri && $scope.newRedirectUri.length > 0) {
+            return true;
+        }
+        if ($scope.newWebOrigin && $scope.newWebOrigin.length > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    $scope.$watch('client', function() {
+        $scope.changed = isChanged();
+    }, true);
+
+    $scope.$watch('newRedirectUri', function() {
+        $scope.changed = isChanged();
+    }, true);
+
+
+    $scope.$watch('newWebOrigin', function() {
+        $scope.changed = isChanged();
     }, true);
 
     $scope.deleteWebOrigin = function(index) {
@@ -705,12 +725,21 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo
     $scope.deleteRedirectUri = function(index) {
         $scope.client.redirectUris.splice(index, 1);
     }
+
     $scope.addRedirectUri = function() {
         $scope.client.redirectUris.push($scope.newRedirectUri);
         $scope.newRedirectUri = "";
     }
 
     $scope.save = function() {
+        if ($scope.newRedirectUri && $scope.newRedirectUri.length > 0) {
+            $scope.addRedirectUri();
+        }
+
+        if ($scope.newWebOrigin && $scope.newWebOrigin.length > 0) {
+            $scope.addWebOrigin();
+        }
+
         if ($scope.samlServerSignature == true) {
             $scope.client.attributes["saml.server.signature"] = "true";
         } else {

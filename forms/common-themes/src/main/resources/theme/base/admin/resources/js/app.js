@@ -1078,11 +1078,9 @@ module.directive('collapsable', function() {
 // collapsable form fieldsets
 module.directive('uncollapsed', function() {
     return function(scope, element, attrs) {
-        element.prepend('<span class="kc-icon-collapse toggle-icons">Icon: collapse</span>');
+        element.prepend('<i class="toggle-class fa fa-angle-down"></i> ');
         element.click(function() {
-            $(this).toggleClass('collapsed');
-            $(this).find('.toggle-icons').toggleClass('kc-icon-collapse').toggleClass('kc-icon-expand');
-            $(this).find('.toggle-icons').text($(this).text() == "Icon: expand" ? "Icon: collapse" : "Icon: expand");
+            $(this).find('.toggle-class').toggleClass('fa-angle-down').toggleClass('fa-angle-right');
             $(this).parent().find('.form-group').toggleClass('hidden');
         });
     }
@@ -1091,12 +1089,10 @@ module.directive('uncollapsed', function() {
 // collapsable form fieldsets
 module.directive('collapsed', function() {
     return function(scope, element, attrs) {
-        element.prepend('<span class="kc-icon-expand toggle-icons">Icon: expand</span>');
+        element.prepend('<i class="toggle-class fa fa-angle-right"></i> ');
         element.parent().find('.form-group').toggleClass('hidden');
         element.click(function() {
-            $(this).toggleClass('collapsed');
-            $(this).find('.toggle-icons').toggleClass('kc-icon-collapse').toggleClass('kc-icon-expand');
-            $(this).find('.toggle-icons').text($(this).text() == "Icon: expand" ? "Icon: collapse" : "Icon: expand");
+            $(this).find('.toggle-class').toggleClass('fa-angle-down').toggleClass('fa-angle-right');
             $(this).parent().find('.form-group').toggleClass('hidden');
         });
     }
@@ -1282,7 +1278,7 @@ module.directive('kcSave', function ($compile, Notifications) {
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
-            elem.addClass("btn btn-primary btn-lg");
+            elem.addClass("btn btn-primary");
             elem.attr("type","submit");
             elem.bind('click', function() {
                 $scope.$apply(function() {
@@ -1313,7 +1309,7 @@ module.directive('kcReset', function ($compile, Notifications) {
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
-            elem.addClass("btn btn-default btn-lg");
+            elem.addClass("btn btn-default");
             elem.attr("type","submit");
             elem.bind('click', function() {
                 $scope.$apply(function() {
@@ -1333,7 +1329,7 @@ module.directive('kcCancel', function ($compile, Notifications) {
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
-            elem.addClass("btn btn-default btn-lg");
+            elem.addClass("btn btn-default");
             elem.attr("type","submit");
         }
     }
@@ -1343,7 +1339,7 @@ module.directive('kcDelete', function ($compile, Notifications) {
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
-            elem.addClass("btn btn-danger btn-lg");
+            elem.addClass("btn btn-danger");
             elem.attr("type","submit");
         }
     }
@@ -1409,27 +1405,39 @@ module.directive('kcReadOnly', function() {
     return d;
 });
 
-module.directive('kcNavigation', function ($compile, Notifications) {
+module.directive('kcMenu', function () {
     return {
         scope: true,
         restrict: 'E',
         replace: true,
-        templateUrl: resourceUrl + '/templates/kc-navigation.html',
-
-        compile: function(element, attrs){
-            if (!attrs.kcSocial) {
-                attrs.kcSocial = false;
-            }
-        }
+        templateUrl: resourceUrl + '/templates/kc-menu.html'
     }
 });
 
-module.directive('kcNavigationClient', function () {
+module.directive('kcTabsRealm', function () {
     return {
         scope: true,
         restrict: 'E',
         replace: true,
-        templateUrl: resourceUrl + '/templates/kc-navigation-client.html'
+        templateUrl: resourceUrl + '/templates/kc-tabs-realm.html'
+    }
+});
+
+module.directive('kcTabsUser', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-user.html'
+    }
+});
+
+module.directive('kcTabsClient', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-client.html'
     }
 });
 
@@ -1525,4 +1533,52 @@ module.filter('capitalize', function() {
         };
         return result;
     };
+});
+
+module.directive('kcSidebarResize', function ($window) {
+    return function (scope, element) {
+        function resize() {
+            var navBar = angular.element(document.getElementsByClassName('navbar-pf')).height();
+            var container = angular.element(document.getElementById("view").getElementsByTagName("div")[0]).height();
+            var height = Math.max(container, window.innerHeight - navBar - 3);
+
+            element[0].style['min-height'] = height + 'px';
+        }
+
+        resize();
+
+        var w = angular.element($window);
+        scope.$watch(function () {
+            return {
+                'h': window.innerHeight,
+                'w': window.innerWidth
+            };
+        }, function () {
+            resize();
+        }, true);
+        w.bind('resize', function () {
+            scope.$apply();
+        });
+    }
+});
+
+
+
+module.directive('kcTooltip', function($compile) {
+        return {
+            restrict: 'E',
+            replace: false,
+            terminal: true,
+            priority: 1000,
+            link: function link(scope,element, attrs) {
+                var tooltip = element[0].innerText;
+                element[0].innerText = null;
+                element.addClass('hidden');
+
+                var label = angular.element(element.parent().children()[0]);
+                label.append(' <i class="fa fa-question-circle text-muted" tooltip="' + tooltip + '" tooltip-placement="right"></i>');
+
+                $compile(label)(scope);
+            }
+        };
 });

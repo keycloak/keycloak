@@ -1,256 +1,252 @@
-<div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-sm-9" role="main">
-    <ul class="nav nav-tabs nav-tabs-pf">
-        <li><a href="#/realms/{{realm.realm}}/users">User List</a></li>
-        <li><a href="#/realms/{{realm.realm}}/user-federation">Federation</a></li>
-    </ul>
-    <div id="content">
-        <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}/user-federation">Federation Providers</a></li>
-            <li><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{instance.displayName}}</a></li>
-            <li class="active">LDAP Settings</li>
-        </ol>
-        <ol class="breadcrumb" data-ng-show="create">
-            <li><a href="#/realms/{{realm.realm}}/user-federation">Federation Providers</a></li>
-            <li class="active">Add LDAP Provider</li>
-        </ol>
-        <h2 class="pull-left" data-ng-hide="create">LDAP Provider Settings</h2>
-        <h2 class="pull-left" data-ng-show="create">Add LDAP Provider</h2>
-        <p class="subtitle"><span class="required">*</span> Required fields</p>
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
-            
-            <fieldset>
-                <legend><span class="text">Required Settings</span></legend>
-                <div class="form-group clearfix" data-ng-show="!create">
-                    <label class="col-sm-2 control-label" for="providerId">Provider ID </label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="providerId" type="text" ng-model="instance.id" readonly>
-                    </div>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="consoleDisplayName">Console display name </label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.displayName" placeholder="defaults to id">
-                    </div>
-                    <span tooltip-placement="right" tooltip="Display name of provider when linked in admin console." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="priority">Priority </label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="priority" type="text" ng-model="instance.priority">
-                    </div>
-                    <span tooltip-placement="right" tooltip="Priority of provider when doing a user lookup.  Lowest first." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label" for="editMode">Edit mode</label>
-                    <div class="col-sm-4">
-                        <div class="select-kc">
-                            <select id="editMode"
-                                    ng-model="instance.config.editMode">
-                                <option>READ_ONLY</option>
-                                <option>WRITABLE</option>
-                                <option>UNSYNCED</option>
-                            </select>
-                        </div>
-                    </div>
-                    <span tooltip-placement="right" tooltip="READ_ONLY is a read only LDAP store.  WRITABLE means data will be synced back to LDAP on demand.  UNSYNCED means user data will be imported, but not synced back to LDAP." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix block">
-                    <label class="col-sm-2 control-label" for="syncRegistrations">Sync Registrations</label>
-                    <div class="col-sm-4">
-                        <input ng-model="instance.config.syncRegistrations" name="syncRegistrations" id="syncRegistrations" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Should newly created users be created within LDAP store?  Priority effects which provider is chose to sync the new user." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="vendor">Vendor<span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <div class="select-kc">
-                            <select id="vendor"
-                                    ng-model="instance.config.vendor"
-                                    ng-options="vendor.id as vendor.name for vendor in ldapVendors"
-                                    required>
-                            </select>
-                        </div>
-                    </div>
-                    <span tooltip-placement="right" tooltip="LDAP vendor (provider)" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="usernameLDAPAttribute">Username LDAP attribute<span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="usernameLDAPAttribute" type="text" ng-model="instance.config.usernameLDAPAttribute" placeholder="LDAP attribute for uid" required>
-                    </div>
-                    <span tooltip-placement="right" tooltip="Name of LDAP attribute, which is mapped as Keycloak username. For many LDAP server vendors it's 'uid'. For Active directory it's usually 'sAMAccountName' or 'cn'" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="userObjectClasses">User Object Classes<span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="userObjectClasses" type="text" ng-model="instance.config.userObjectClasses" placeholder="LDAP User Object Classes (div. by comma)" required>
-                    </div>
-                    <span tooltip-placement="right" tooltip="All values of LDAP objectClass attribute for users in LDAP divided by comma" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="ldapConnectionUrl">Connection URL<span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="ldapConnectionUrl" type="text" ng-model="instance.config.connectionUrl" placeholder="LDAP connection URL" required>
-                    </div>
-                    <span tooltip-placement="right" tooltip="Connection URL to your LDAP server" class="fa fa-info-circle"></span>
-                    <div class="col-sm-4" data-ng-show="access.manageRealm">
-                        <a class="btn btn-primary" data-ng-click="testConnection()">Test connection</a>
-                    </div>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="ldapBaseDn">Base DN <span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="ldapBaseDn" type="text" ng-model="instance.config.baseDn" placeholder="LDAP Base DN" required>
-                    </div>
-                    <span tooltip-placement="right" tooltip="Base DN of LDAP tree where your data are. Base DN is usually ancestor of User DN Suffix" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="ldapUserDnSuffix">User DN Suffix <span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="ldapUserDnSuffix" type="text" ng-model="instance.config.userDnSuffix" placeholder="LDAP User DN Suffix" required>
-                    </div>
-                    <span tooltip-placement="right" tooltip="Base DN of LDAP tree where your users are. This DN is parent of all DNs of LDAP users" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="ldapBindDn">Bind DN <span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="ldapBindDn" type="text" ng-model="instance.config.bindDn" placeholder="LDAP Bind DN" required>
-                    </div>
-                    <span tooltip-placement="right" tooltip="DN of LDAP admin, which will be used by Keycloak to access LDAP server" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="ldapBindCredential">Bind Credential <span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="ldapBindCredential" type="password" ng-model="instance.config.bindCredential" placeholder="LDAP Bind Credentials" required>
-                    </div>
-                    <span tooltip-placement="right" tooltip="Password of LDAP admin" class="fa fa-info-circle"></span>
-                    <div class="col-sm-4" data-ng-show="access.manageRealm">
-                        <a class="btn btn-primary" data-ng-click="testAuthentication()">Test authentication</a>
-                    </div>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="connectionPooling">Connection pooling</label>
-                    <div class="col-sm-4">
-                        <input ng-model="instance.config.connectionPooling" name="connectionPooling" id="connectionPooling" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Does Keycloak should use connection pooling for accessing LDAP server" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="pagination">Pagination</label>
-                    <div class="col-sm-4">
-                        <input ng-model="instance.config.pagination" name="pagination" id="pagination" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Does the LDAP server support pagination." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix" data-ng-show="instance.config.vendor === 'ad' ">
-                    <label class="col-sm-2 control-label" for="userAccountControlsAfterPasswordUpdate">Enable Account After Password Update</label>
-                    <div class="col-sm-4">
-                        <input ng-model="instance.config.userAccountControlsAfterPasswordUpdate" name="userAccountControlsAfterPasswordUpdate" id="userAccountControlsAfterPasswordUpdate" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Useful just for Active Directory. If enabled, then Keycloak will always set
-                    Active Directory userAccountControl attribute to 512 after password update. This would mean that particular user will be enabled in Active Directory" class="fa fa-info-circle"></span>
-                </div>
-            </fieldset>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/user-federation">User Federation</a></li>
+        <li data-ng-hide="create">{{instance.displayName|capitalize}}</li>
+        <li data-ng-show="create">Add User Federation Provider</li>
+    </ol>
 
-            <fieldset>
-                <legend><span class="text">Kerberos integration</span></legend>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label" for="allowKerberosAuthentication">Allow Kerberos authentication </label>
-                    <div class="col-sm-4">
-                        <input ng-model="instance.config.allowKerberosAuthentication" id="allowKerberosAuthentication" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Enable/disable HTTP authentication of users with SPNEGO/Kerberos tokens. The data about authenticated users will be provisioned from this LDAP server" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
-                    <label class="col-sm-2 control-label" for="kerberosRealm">Kerberos Realm <span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="kerberosRealm" type="text" ng-model="instance.config.kerberosRealm" ng-required="instance.config.allowKerberosAuthentication">
-                    </div>
-                    <span tooltip-placement="right" tooltip="Name of kerberos realm. For example FOO.ORG" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
-                    <label class="col-sm-2 control-label" for="serverPrincipal">Server principal <span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="serverPrincipal" type="text" ng-model="instance.config.serverPrincipal" ng-required="instance.config.allowKerberosAuthentication">
-                    </div>
-                    <span tooltip-placement="right" tooltip="Full name of server principal for HTTP service including server and domain name. For example HTTP/host.foo.org@FOO.ORG" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
-                    <label class="col-sm-2 control-label" for="keyTab">KeyTab <span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="keyTab" type="text" ng-model="instance.config.keyTab" ng-required="instance.config.allowKerberosAuthentication">
-                    </div>
-                    <span tooltip-placement="right" tooltip="Location of Kerberos KeyTab file containing the credentials of server principal. For example /etc/krb5.keytab" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group" data-ng-show="instance.config.allowKerberosAuthentication">
-                    <label class="col-sm-2 control-label" for="debug">Debug </label>
-                    <div class="col-sm-4">
-                        <input ng-model="instance.config.debug" id="debug" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Enable/disable debug logging to standard output for Krb5LoginModule." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group" data-ng-show="instance.config.allowKerberosAuthentication">
-                    <label class="col-sm-2 control-label" for="debug">Use Kerberos For Password Authentication </label>
-                    <div class="col-sm-4">
-                        <input ng-model="instance.config.useKerberosForPasswordAuthentication" id="useKerberosForPasswordAuthentication" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Use Kerberos login module for authenticate username/password against Kerberos server instead of authenticating against LDAP server with Directory Service API" class="fa fa-info-circle"></span>
-                </div>
-            </fieldset>
+    <h1 data-ng-hide="create"><strong>LDAP User Federation Provider</strong> {{instance.displayName|capitalize}}</h1>
+    <h1 data-ng-show="create"><strong>Add LDAP User Federation Provider</strong></h1>
 
-            <fieldset>
-                <legend><span class="text">Sync settings</span></legend>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="batchSizeForSync">Batch size</label>
-                    <div class="col-sm-4">
-                        <input class="form-control" type="text" ng-model="instance.config.batchSizeForSync" id="batchSizeForSync" />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Count of LDAP users to be imported from LDAP to Keycloak within single transaction." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="fullSyncEnabled">Periodic full sync</label>
-                    <div class="col-sm-4">
-                        <input ng-model="fullSyncEnabled" name="fullSyncEnabled" id="fullSyncEnabled" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Does periodic full synchronization of LDAP users to Keycloak should be enabled or not" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix" data-ng-show="fullSyncEnabled">
-                    <label class="col-sm-2 control-label" for="fullSyncPeriod">Full sync period</label>
-                    <div class="col-sm-4">
-                        <input class="form-control" type="number" ng-model="instance.fullSyncPeriod" id="fullSyncPeriod" />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Period for full synchronization in seconds" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="changedSyncEnabled">Periodic changed users sync</label>
-                    <div class="col-sm-4">
-                        <input ng-model="changedSyncEnabled" name="changedSyncEnabled" id="changedSyncEnabled" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Does periodic synchronization of changed or newly created LDAP users to Keycloak should be enabled or not" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix" data-ng-show="changedSyncEnabled">
-                    <label class="col-sm-2 control-label" for="changedSyncPeriod">Changed users sync period</label>
-                    <div class="col-sm-4">
-                        <input class="form-control" type="number" ng-model="instance.changedSyncPeriod" id="changedSyncPeriod" />
-                    </div>
-                    <span tooltip-placement="right" tooltip="Period for synchronization of changed or newly created LDAP users in seconds" class="fa fa-info-circle"></span>
-                </div>
-            </fieldset>
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
 
-            <div class="pull-right form-actions" data-ng-show="create && access.manageUsers">
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+        <fieldset>
+            <legend><span class="text">Required Settings</span></legend>
+            <div class="form-group clearfix" data-ng-show="!create">
+                <label class="col-md-2 control-label" for="providerId">Provider ID </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="providerId" type="text" ng-model="instance.id" readonly>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="consoleDisplayName">Console display name </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.displayName" placeholder="defaults to id">
+                </div>
+                <kc-tooltip>Display name of provider when linked in admin console.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="priority">Priority </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="priority" type="text" ng-model="instance.priority">
+                </div>
+                <kc-tooltip>Priority of provider when doing a user lookup.  Lowest first.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="editMode">Edit mode</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="editMode"
+                                ng-model="instance.config.editMode">
+                            <option>READ_ONLY</option>
+                            <option>WRITABLE</option>
+                            <option>UNSYNCED</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>READ_ONLY is a read only LDAP store.  WRITABLE means data will be synced back to LDAP on demand.  UNSYNCED means user data will be imported, but not synced back to LDAP.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="syncRegistrations">Sync Registrations</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config.syncRegistrations" name="syncRegistrations" id="syncRegistrations" onoffswitch />
+                </div>
+                <kc-tooltip>Should newly created users be created within LDAP store?  Priority effects which provider is chose to sync the new user.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="vendor"><span class="required">*</span> Vendor</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="vendor"
+                                ng-model="instance.config.vendor"
+                                ng-options="vendor.id as vendor.name for vendor in ldapVendors"
+                                required>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>LDAP vendor (provider)</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="usernameLDAPAttribute"><span class="required">*</span> Username LDAP attribute</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="usernameLDAPAttribute" type="text" ng-model="instance.config.usernameLDAPAttribute" placeholder="LDAP attribute for uid" required>
+                </div>
+                <kc-tooltip>Name of LDAP attribute, which is mapped as Keycloak username. For many LDAP server vendors it's 'uid'. For Active directory it's usually 'sAMAccountName' or 'cn'</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="userObjectClasses"><span class="required">*</span> User Object Classes</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="userObjectClasses" type="text" ng-model="instance.config.userObjectClasses" placeholder="LDAP User Object Classes (div. by comma)" required>
+                </div>
+                <kc-tooltip>All values of LDAP objectClass attribute for users in LDAP divided by comma</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="ldapConnectionUrl"><span class="required">*</span> Connection URL</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="ldapConnectionUrl" type="text" ng-model="instance.config.connectionUrl" placeholder="LDAP connection URL" required>
+                </div>
+                <kc-tooltip>Connection URL to your LDAP server</kc-tooltip>
+                <div class="col-sm-4" data-ng-show="access.manageRealm">
+                    <a class="btn btn-primary" data-ng-click="testConnection()">Test connection</a>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="ldapBaseDn"><span class="required">*</span> Base DN</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="ldapBaseDn" type="text" ng-model="instance.config.baseDn" placeholder="LDAP Base DN" required>
+                </div>
+                <kc-tooltip>Base DN of LDAP tree where your data are. Base DN is usually ancestor of User DN Suffix</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="ldapUserDnSuffix"><span class="required">*</span> User DN Suffix</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="ldapUserDnSuffix" type="text" ng-model="instance.config.userDnSuffix" placeholder="LDAP User DN Suffix" required>
+                </div>
+                <kc-tooltip>Base DN of LDAP tree where your users are. This DN is parent of all DNs of LDAP users</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="ldapBindDn"><span class="required">*</span> Bind DN</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="ldapBindDn" type="text" ng-model="instance.config.bindDn" placeholder="LDAP Bind DN" required>
+                </div>
+                <kc-tooltip>DN of LDAP admin, which will be used by Keycloak to access LDAP server</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="ldapBindCredential"><span class="required">*</span> Bind Credential</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="ldapBindCredential" type="password" ng-model="instance.config.bindCredential" placeholder="LDAP Bind Credentials" required>
+                </div>
+                <kc-tooltip>Password of LDAP admin</kc-tooltip>
+                <div class="col-sm-4" data-ng-show="access.manageRealm">
+                    <a class="btn btn-primary" data-ng-click="testAuthentication()">Test authentication</a>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="connectionPooling">Connection pooling</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config.connectionPooling" name="connectionPooling" id="connectionPooling" onoffswitch />
+                </div>
+                <kc-tooltip>Does Keycloak should use connection pooling for accessing LDAP server</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="pagination">Pagination</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config.pagination" name="pagination" id="pagination" onoffswitch />
+                </div>
+                <kc-tooltip>Does the LDAP server support pagination.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config.vendor === 'ad' ">
+                <label class="col-md-2 control-label" for="userAccountControlsAfterPasswordUpdate">Enable Account After Password Update</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config.userAccountControlsAfterPasswordUpdate" name="userAccountControlsAfterPasswordUpdate" id="userAccountControlsAfterPasswordUpdate" onoffswitch />
+                </div>
+                <kc-tooltip>Useful just for Active Directory. If enabled, then Keycloak will always set
+                Active Directory userAccountControl attribute to 512 after password update. This would mean that particular user will be enabled in Active Directory</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend><span class="text">Kerberos integration</span></legend>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="allowKerberosAuthentication">Allow Kerberos authentication </label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config.allowKerberosAuthentication" id="allowKerberosAuthentication" onoffswitch />
+                </div>
+                <kc-tooltip>Enable/disable HTTP authentication of users with SPNEGO/Kerberos tokens. The data about authenticated users will be provisioned from this LDAP server</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
+                <label class="col-md-2 control-label" for="kerberosRealm"><span class="required">*</span> Kerberos Realm</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="kerberosRealm" type="text" ng-model="instance.config.kerberosRealm" ng-required="instance.config.allowKerberosAuthentication">
+                </div>
+                <kc-tooltip>Name of kerberos realm. For example FOO.ORG</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
+                <label class="col-md-2 control-label" for="serverPrincipal"><span class="required">*</span> Server principal</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="serverPrincipal" type="text" ng-model="instance.config.serverPrincipal" ng-required="instance.config.allowKerberosAuthentication">
+                </div>
+                <kc-tooltip>Full name of server principal for HTTP service including server and domain name. For example HTTP/host.foo.org@FOO.ORG</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
+                <label class="col-md-2 control-label" for="keyTab"><span class="required">*</span> KeyTab</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="keyTab" type="text" ng-model="instance.config.keyTab" ng-required="instance.config.allowKerberosAuthentication">
+                </div>
+                <kc-tooltip>Location of Kerberos KeyTab file containing the credentials of server principal. For example /etc/krb5.keytab</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="instance.config.allowKerberosAuthentication">
+                <label class="col-md-2 control-label" for="debug">Debug </label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config.debug" id="debug" onoffswitch />
+                </div>
+                <kc-tooltip>Enable/disable debug logging to standard output for Krb5LoginModule.</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="instance.config.allowKerberosAuthentication">
+                <label class="col-md-2 control-label" for="debug">Use Kerberos For Password Authentication </label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config.useKerberosForPasswordAuthentication" id="useKerberosForPasswordAuthentication" onoffswitch />
+                </div>
+                <kc-tooltip>Use Kerberos login module for authenticate username/password against Kerberos server instead of authenticating against LDAP server with Directory Service API</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend><span class="text">Sync settings</span></legend>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="batchSizeForSync">Batch size</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" ng-model="instance.config.batchSizeForSync" id="batchSizeForSync" />
+                </div>
+                <kc-tooltip>Count of LDAP users to be imported from LDAP to Keycloak within single transaction.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="fullSyncEnabled">Periodic full sync</label>
+                <div class="col-md-6">
+                    <input ng-model="fullSyncEnabled" name="fullSyncEnabled" id="fullSyncEnabled" onoffswitch />
+                </div>
+                <kc-tooltip>Does periodic full synchronization of LDAP users to Keycloak should be enabled or not</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="fullSyncEnabled">
+                <label class="col-md-2 control-label" for="fullSyncPeriod">Full sync period</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="number" ng-model="instance.fullSyncPeriod" id="fullSyncPeriod" />
+                </div>
+                <kc-tooltip>Period for full synchronization in seconds</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="changedSyncEnabled">Periodic changed users sync</label>
+                <div class="col-md-6">
+                    <input ng-model="changedSyncEnabled" name="changedSyncEnabled" id="changedSyncEnabled" onoffswitch />
+                </div>
+                <kc-tooltip>Does periodic synchronization of changed or newly created LDAP users to Keycloak should be enabled or not</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="changedSyncEnabled">
+                <label class="col-md-2 control-label" for="changedSyncPeriod">Changed users sync period</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="number" ng-model="instance.changedSyncPeriod" id="changedSyncPeriod" />
+                </div>
+                <kc-tooltip>Period for synchronization of changed or newly created LDAP users in seconds</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageUsers">
                 <button kc-save data-ng-show="changed">Save</button>
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
             </div>
+        </div>
 
-            <div class="pull-right form-actions" data-ng-show="!create && access.manageUsers">
-                <button kc-reset data-ng-show="changed">Clear changes</button>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
                 <button kc-save  data-ng-show="changed">Save</button>
-                <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
-                <button kc-delete data-ng-click="triggerFullSync()" data-ng-hide="changed">Synchronize all users</button>
-                <button kc-delete data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">Synchronize changed users</button>
+                <button kc-reset data-ng-show="changed">Cancel</button>
+                <button class="btn btn-primary" data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">Synchronize changed users</button>
+                <button class="btn btn-primary" data-ng-click="triggerFullSync()" data-ng-hide="changed">Synchronize all users</button>
+                <button class="btn btn-danger" data-ng-click="remove()" data-ng-hide="changed">Delete</button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
+
+<kc-menu></kc-menu>

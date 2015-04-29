@@ -269,10 +269,10 @@ public class AdminConsole {
         } else {
             String adminTheme = realm.getAdminTheme();
             if (adminTheme == null) {
-                adminTheme = "keycloak";
+                adminTheme = "patternfly";
             }
 
-            Map<String, String> map = new HashMap<String, String>();
+            Map<String, Object> map = new HashMap<>();
 
             URI baseUri = uriInfo.getBaseUri();
 
@@ -285,6 +285,8 @@ public class AdminConsole {
 
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
             Theme theme = themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
+
+            map.put("properties", theme.getProperties());
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
