@@ -16,19 +16,11 @@
  */
 package org.keycloak.subsystem.adapter.extension;
 
-
-import junit.framework.Assert;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.subsystem.test.AbstractSubsystemTest;
-import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
-import org.keycloak.subsystem.adapter.extension.KeycloakExtension;
 
-import java.util.List;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
+import java.io.IOException;
 
 
 /**
@@ -38,8 +30,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
  * is hidden inside of test harness
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author Tomaz Cerar
+ * @author <a href="marko.strukelj@gmail.com">Marko Strukelj</a>
  */
-public class SubsystemParsingTestCase extends AbstractSubsystemTest {
+public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
 
     public SubsystemParsingTestCase() {
         super(KeycloakExtension.SUBSYSTEM_NAME, new KeycloakExtension());
@@ -61,112 +55,21 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
 
         System.out.println("json=" + node.toJSONString(false));
     }
-    /**
-     * Tests that the xml is parsed into the correct operations
-     */
-    @Test
-    public void testParseSubsystem() throws Exception {
-        //Parse the subsystem xml into operations
-        String subsystemXml =
-                "<subsystem xmlns=\"" + KeycloakExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
-        List<ModelNode> operations = super.parse(subsystemXml);
 
-        ///Check that we have the expected number of operations
-        Assert.assertEquals(1, operations.size());
-
-        //Check that each operation has the correct content
-        ModelNode addSubsystem = operations.get(0);
-        Assert.assertEquals(ADD, addSubsystem.get(OP).asString());
-        PathAddress addr = PathAddress.pathAddress(addSubsystem.get(OP_ADDR));
-        Assert.assertEquals(1, addr.size());
-        PathElement element = addr.getElement(0);
-        Assert.assertEquals(SUBSYSTEM, element.getKey());
-        Assert.assertEquals(KeycloakExtension.SUBSYSTEM_NAME, element.getValue());
+    @Override
+    protected String getSubsystemXml() throws IOException {
+        return readResource("keycloak-1.1.xml");
     }
 
-    /**
-     * Test that the model created from the xml looks as expected
-     */
-    @Test
-    public void testInstallIntoController() throws Exception {
-        //Parse the subsystem xml and install into the controller
-        String subsystemXml =
-                "<subsystem xmlns=\"" + KeycloakExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
-        KernelServices services = super.installInController(subsystemXml);
-
-        //Read the whole model and make sure it looks as expected
-        ModelNode model = services.readWholeModel();
-        Assert.assertTrue(model.get(SUBSYSTEM).hasDefined(KeycloakExtension.SUBSYSTEM_NAME));
+    @Override
+    protected String getSubsystemXsdPath() throws Exception {
+        return "schema/wildfly-keycloak_1_1.xsd";
     }
 
-    /**
-     * Starts a controller with a given subsystem xml and then checks that a second
-     * controller started with the xml marshalled from the first one results in the same model
-     */
-    @Test
-    public void testParseAndMarshalModel() throws Exception {
-        //Parse the subsystem xml and install into the first controller
-        //TODO: Figure out why this fails
-        String subsystemXml =
-                "<subsystem xmlns=\"" + KeycloakExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
-        KernelServices servicesA = super.installInController(subsystemXml);
-        //Get the model and the persisted xml from the first controller
-        ModelNode modelA = servicesA.readWholeModel();
-        String marshalled = servicesA.getPersistedSubsystemXml();
-
-        //Install the persisted xml from the first controller into a second controller
-        KernelServices servicesB = super.installInController(marshalled);
-        ModelNode modelB = servicesB.readWholeModel();
-
-        //Make sure the models from the two controllers are identical
-        super.compare(modelA, modelB);
-    }
-
-    /**
-     * Starts a controller with the given subsystem xml and then checks that a second
-     * controller started with the operations from its describe action results in the same model
-     */
-    @Test
-    public void testDescribeHandler() throws Exception {
-        //Parse the subsystem xml and install into the first controller
-        String subsystemXml =
-                "<subsystem xmlns=\"" + KeycloakExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
-        KernelServices servicesA = super.installInController(subsystemXml);
-        //Get the model and the describe operations from the first controller
-        ModelNode modelA = servicesA.readWholeModel();
-        ModelNode describeOp = new ModelNode();
-        describeOp.get(OP).set(DESCRIBE);
-        describeOp.get(OP_ADDR).set(
-                PathAddress.pathAddress(
-                        PathElement.pathElement(SUBSYSTEM, KeycloakExtension.SUBSYSTEM_NAME)).toModelNode());
-        List<ModelNode> operations = super.checkResultAndGetContents(servicesA.executeOperation(describeOp)).asList();
-
-
-        //Install the describe options from the first controller into a second controller
-        KernelServices servicesB = super.installInController(operations);
-        ModelNode modelB = servicesB.readWholeModel();
-
-        //Make sure the models from the two controllers are identical
-        super.compare(modelA, modelB);
-    }
-
-    /**
-     * Tests that the subsystem can be removed
-     */
-    @Test
-    public void testSubsystemRemoval() throws Exception {
-        //Parse the subsystem xml and install into the first controller
-        String subsystemXml =
-                "<subsystem xmlns=\"" + KeycloakExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
-        KernelServices services = super.installInController(subsystemXml);
-        //Checks that the subsystem was removed from the model
-        super.assertRemoveSubsystemResources(services);
-
-        //TODO Chek that any services that were installed were removed here
+    @Override
+    protected String[] getSubsystemTemplatePaths() throws IOException {
+        return new String[]{
+            "/subsystem-templates/keycloak.xml"
+        };
     }
 }

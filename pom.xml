@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>14</version>
+        <version>16</version>
     </parent>
 
     <name>Keycloak</name>
@@ -58,7 +58,7 @@
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>3.1.2</pax.web.version>
         <jmeter.version>2.10</jmeter.version>
-        <junit.version>4.11</junit.version>
+        <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
         <log4j.version>1.2.17</log4j.version>
         <greenmail.version>1.3.1b</greenmail.version>
@@ -481,7 +481,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-undertow</artifactId>
+                <artifactId>wildfly-web-common</artifactId>
                 <version>${wildfly.version}</version>
             </dependency>
             <dependency>

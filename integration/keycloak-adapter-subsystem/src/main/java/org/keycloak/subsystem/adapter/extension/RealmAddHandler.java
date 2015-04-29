@@ -58,6 +58,9 @@ public final class RealmAddHandler extends AbstractAddStepHandler {
         }
     }
 
+    /*
+     * TODO: Fix deprecated signature when dropping WildFly 8 support
+     */
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
         KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.getInstance();

@@ -22,7 +22,6 @@ import java.io.IOException;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
-import org.keycloak.subsystem.server.extension.KeycloakExtension;
 
 
 /**
@@ -66,12 +65,5 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     @Override
     protected String getSubsystemXsdPath() throws Exception {
         return "schema/wildfly-keycloak_1_0.xsd";
-    }
-
-    @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[]{
-                "/subsystem-templates/keycloak.xml"
-        };
     }
 }

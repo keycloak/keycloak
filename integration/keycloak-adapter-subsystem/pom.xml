@@ -33,14 +33,6 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <redirectTestOutputToFile>false</redirectTestOutputToFile>
@@ -70,7 +62,7 @@
             <artifactId>wildfly-server</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-version</artifactId>
             <scope>provided</scope>
@@ -79,10 +71,16 @@
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-ee</artifactId>
             <scope>provided</scope>
+        </dependency> -->
+        <dependency>
+            <groupId>org.jboss.metadata</groupId>
+            <artifactId>jboss-metadata-common</artifactId>
+            <version>8.1.2.Final</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-undertow</artifactId>
+            <artifactId>wildfly-web-common</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -106,25 +104,19 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-subsystem-test</artifactId>
-            <type>pom</type>
+            <artifactId>wildfly-subsystem-test-framework</artifactId>
             <scope>test</scope>
+            <version>1.0.0.Beta3</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        
-        <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-web</artifactId>
-            <version>7.1.1.Final</version>
-        </dependency>
-        
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-as7-adapter</artifactId>
+            <artifactId>keycloak-wildfly-adapter</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>
