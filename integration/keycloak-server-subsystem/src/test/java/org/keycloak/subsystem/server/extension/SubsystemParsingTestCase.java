@@ -43,27 +43,19 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testJson() throws Exception {
         ModelNode node = new ModelNode();
-        node.get("realm").set("demo");
-        node.get("resource").set("customer-portal");
-        node.get("realm-public-key").set("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB");
-        node.get("auth-url").set("http://localhost:8080/auth-server/rest/realms/demo/protocol/openid-connect/login");
-        node.get("code-url").set("http://localhost:8080/auth-server/rest/realms/demo/protocol/openid-connect/access/codes");
-        node.get("ssl-required").set("external");
-        node.get("expose-token").set(true);
-        ModelNode credential = new ModelNode();
-        credential.get("password").set("password");
-        node.get("credentials").set(credential);
+        node.get("enabled").set(true);
+        node.get("web-context").set("auth");
 
         System.out.println("json=" + node.toJSONString(false));
     }
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("keycloak-1.0.xml");
+        return readResource("keycloak-server-1.1.xml");
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-keycloak_1_0.xsd";
+        return "schema/wildfly-keycloak-server_1_1.xsd";
     }
 }
