@@ -7,6 +7,7 @@ import org.keycloak.admin.client.Config;
 import org.keycloak.admin.client.resource.BasicAuthFilter;
 import org.keycloak.representations.AccessTokenResponse;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Form;
 import java.util.Calendar;
 import java.util.Date;
@@ -76,10 +77,13 @@ public class TokenManager {
 
         TokenService tokenService = target.proxy(TokenService.class);
 
-        AccessTokenResponse response = tokenService.refreshToken(config.getRealm(), form.asMap());
-
-        defineCurrentToken(response);
-        return response;
+        try {
+            AccessTokenResponse response = tokenService.refreshToken(config.getRealm(), form.asMap());
+            defineCurrentToken(response);
+            return response;
+        } catch (BadRequestException e) {
+            return grantToken();
+        }
     }
 
     private void setExpirationTime() {
