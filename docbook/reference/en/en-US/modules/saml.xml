@@ -183,7 +183,7 @@
             format described in SAML 2.0.  You should review all the information there to make sure everything is set up correctly.
         </para>
         <para>
-            Each realm has a URL where you can view the XML entity descriptor for the IDP.  <literal>root/realms/{realm}/protocol/saml/descriptor</literal>
+            Each realm has a URL where you can view the XML entity descriptor for the IDP.  <literal>root/auth/realms/{realm}/protocol/saml/descriptor</literal>
         </para>
     </section>
 </chapter>
