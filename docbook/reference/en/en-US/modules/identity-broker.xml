@@ -956,6 +956,23 @@
                     </row>
                     <row>
                         <entry>
+                            <literal>Single Logout Service Url</literal>
+                        </entry>
+                        <entry>
+                            Allows you to specify the URL that will be used to send SAML logout requests.
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <literal>Backchannel Logout</literal>
+                        </entry>
+                        <entry>
+                            If set to true, logout to the external IDP will be done in a background HTTP request.  If
+                            set to false, then the browser will be redirected to the external IDP to perform the logout.
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
                             <literal>NameID Policy Format</literal>
                         </entry>
                         <entry>
@@ -1069,6 +1086,23 @@
                         </entry>
                         <entry>
                             The token url.
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <literal>Logout Url</literal>
+                        </entry>
+                        <entry>
+                            The IDP logout url.
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <literal>Backchannel Logout</literal>
+                        </entry>
+                        <entry>
+                            If set to true, logout to the external IDP will be done in a background HTTP request.  If
+                            set to false, then the browser will be redirected to the external IDP to perform the logout.
                         </entry>
                     </row>
                     <row>
