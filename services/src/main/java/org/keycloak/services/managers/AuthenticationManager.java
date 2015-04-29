@@ -157,6 +157,22 @@ public class AuthenticationManager {
 
     }
 
+    // Logout all clientSessions of this user and client
+    public static void backchannelUserFromClient(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
+        String clientId = client.getId();
+
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
+        for (UserSessionModel userSession : userSessions) {
+            List<ClientSessionModel> clientSessions = userSession.getClientSessions();
+            for (ClientSessionModel clientSession : clientSessions) {
+                if (clientSession.getClient().getId().equals(clientId)) {
+                    AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
+                    TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
+                }
+            }
+        }
+    }
+
     public static Response browserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         if (userSession == null) return null;
         UserModel user = userSession.getUser();
